@@ -1,0 +1,229 @@
+# tests/golden/MANIFEST.toml — the golden-layer manifest (authority 1).
+#
+# IS/DOES: the read-side index for the MANIFEST-driven golden runner.
+#   3-way partition: byte_identical | expected_to_change | net_new_surface.
+# GROUNDING: the behaviour ORACLE is a reference render corpus produced by an earlier
+#   implementation. The corpus fixtures (source legacy_harvest) are the examples/ corpus rendered
+#   against that reference; this engine reproduces them BYTE-FOR-BYTE on the six
+#   newline-terminated files + modulo exactly one trailing 0x0a on JuliaCon (divergence (3) below).
+# DIVERGENCES from the reference ((1)/(2): documented, not exercised by this corpus so not asserted
+#   here; (3): reconciled here via the input-keyed oracle-parity check):
+#   (1) discard component-skip vs the reference finalVisib-precedence (a show-override inside a
+#       discard-skipped ancestor is omitted; documented in src/emit/emit.jl) — accept-as-documented;
+#   (2) multi-byte segment-slicing: this engine's parse layer is byte-correct on multi-byte
+#       segment bounds where the reference truncates;
+#   (3) terminal-newline byte-faithfulness: render_bytes is byte-faithful on the WHOLE-FILE terminal
+#       newline (output ends 0x0a IFF input does — v0's file-level rule), whereas the reference
+#       corpus's writer appends one unconditionally. UNLIKE (1)/(2) this IS reconciled here:
+#       JuliaCon's input ends 0x22, so its render ends without a trailing 0x0a — the committed
+#       OutFileFolder copy EQUALS the 1656 B render — and the oracle-parity check
+#       (golden_tests.jl's drift-check) accepts modulo one trailing 0x0a, keyed on the input's
+#       terminal byte. The JuliaCon fixture carries a category-(i) [[fixture.repin]] row.
+# Missing-key policy: required keys missing => HARD test error (fail-closed). Only optional: annotations golden.
+# Append-only: rows are NEVER rewritten; a re-pin adds a [[fixture.repin]] row. (ONE dispositioned
+#   exception: the constructed rr48 rows' input_path values moved in place for the
+#   git-mv relocation corpus/ -> constructed/ — shas untouched; tool-emitted since.)
+
+schema_version = 1
+oracle = "reference-render-corpus"
+oracle_corpus = "examples (InFileFolder = single source of truth; OutFileFolder = reference)"
+captured = "2026-08-02"
+
+[[fixture]]
+id = "feature_contiguous_metablock.jl"
+partition = "byte_identical"
+source = "legacy_harvest"   # from the reference render corpus; reproduced == reference
+input_path = "tests/golden/corpus/InFileFolder/feature_contiguous_metablock.jl"
+input_sha256 = "3755a79ae17cc68f4c9e2d74fe4a5ff0a722c714cc386ab0665be00db999280e"
+tree_golden_path = "tests/golden/corpus/tree/feature_contiguous_metablock.jl.tree.txt"
+tree_golden_sha256 = "0d6a2ee1a0eba0bf601b28b94a19bb24701e61d116cdff57bcecebcb54f39798"
+render_golden_path = "tests/golden/corpus/render/feature_contiguous_metablock.jl"
+render_golden_sha256 = "93dafb4b2edbf319154f2424180daeb207a65483933a601e432fd6d2d8ebb48b"
+
+[[fixture]]
+id = "feature_contiguous_metablock_blankline.jl"
+partition = "byte_identical"
+source = "legacy_harvest"   # from the reference render corpus; reproduced == reference
+input_path = "tests/golden/corpus/InFileFolder/feature_contiguous_metablock_blankline.jl"
+input_sha256 = "6dd334dadcb95669e7cce3bc101c4d255c719cc519af9a34a384008cf66e5c95"
+tree_golden_path = "tests/golden/corpus/tree/feature_contiguous_metablock_blankline.jl.tree.txt"
+tree_golden_sha256 = "ca49e0a1da5021c6f72fb68b9d8a425dd8c24df5910066ee72d9b02590b1a7bf"
+render_golden_path = "tests/golden/corpus/render/feature_contiguous_metablock_blankline.jl"
+render_golden_sha256 = "2b6212b51baae1505ce538f71abdf17eedd61715388e2a03edbb89e93c3462b3"
+
+[[fixture]]
+id = "feature_explicit_close.jl"
+partition = "byte_identical"
+source = "legacy_harvest"   # from the reference render corpus; reproduced == reference
+input_path = "tests/golden/corpus/InFileFolder/feature_explicit_close.jl"
+input_sha256 = "3d414179fcb27b3947425a977513f053789768f0b506a2887c1cf1f17218f810"
+tree_golden_path = "tests/golden/corpus/tree/feature_explicit_close.jl.tree.txt"
+tree_golden_sha256 = "058619c1b45d4144a4e60cdff283156dfc214f6240b0fe641e52602112f53664"
+render_golden_path = "tests/golden/corpus/render/feature_explicit_close.jl"
+render_golden_sha256 = "cd176783ee3a9e28b769e90cb8b84a28dc58ab18dafd4f3d79874bd194b62b30"
+
+[[fixture]]
+id = "feature_order_of_application.jl"
+partition = "byte_identical"
+source = "legacy_harvest"   # from the reference render corpus; reproduced == reference
+input_path = "tests/golden/corpus/InFileFolder/feature_order_of_application.jl"
+input_sha256 = "2d7024a1208ad69e356a8f166cbb878523840c2971aa28cea312cf12b5116418"
+tree_golden_path = "tests/golden/corpus/tree/feature_order_of_application.jl.tree.txt"
+tree_golden_sha256 = "9a705e9a736734c09ddd35a5a5911fb3b51aa010b54b80ecf16246bbb25256c0"
+render_golden_path = "tests/golden/corpus/render/feature_order_of_application.jl"
+render_golden_sha256 = "2d7024a1208ad69e356a8f166cbb878523840c2971aa28cea312cf12b5116418"
+
+[[fixture]]
+id = "feature_triple_tilde.jl"
+partition = "byte_identical"
+source = "legacy_harvest"   # from the reference render corpus; reproduced == reference
+input_path = "tests/golden/corpus/InFileFolder/feature_triple_tilde.jl"
+input_sha256 = "436042dfa8a45e7bb65e0784f847bf6dcc182f1b65aa0793a23554f41d437514"
+tree_golden_path = "tests/golden/corpus/tree/feature_triple_tilde.jl.tree.txt"
+tree_golden_sha256 = "1cfd0cef6a6c99c0a813d11f56e20e37b3d6305ec1eec4cffb746b326f30d6f8"
+render_golden_path = "tests/golden/corpus/render/feature_triple_tilde.jl"
+render_golden_sha256 = "93a577afe259e0a7d4cd737f2b7a2f0a34b594b1e0595ade1b9f768dfa58556f"
+
+[[fixture]]
+id = "file_for_Example_Extended.jl"
+partition = "byte_identical"
+source = "legacy_harvest"   # from the reference render corpus; reproduced == reference
+input_path = "tests/golden/corpus/InFileFolder/file_for_Example_Extended.jl"
+input_sha256 = "c0a168a2cc2051412df775342a224e4ef9a7580c400c58d370165c7ac9d90634"
+tree_golden_path = "tests/golden/corpus/tree/file_for_Example_Extended.jl.tree.txt"
+tree_golden_sha256 = "1a3b0fa2d8dc5ca66fa0314b504f7f73de3e1a9ee185de8795a7329eee82a4ed"
+render_golden_path = "tests/golden/corpus/render/file_for_Example_Extended.jl"
+render_golden_sha256 = "5e58757192aa1b5eb1f4ac1f87689cbc8a5dc95b4e12bc2fbbce1e12f13330ed"
+
+[[fixture.repin]]
+date = "2026-08-07"
+category = "i"
+reason = "the v0.3 comment-aware hide fold (owner-ruled (a)-(c) 2026-08-07): a comment-CLASSIFIED, `##`-initial line/segment takes NO additional hide marker (ensure-token). The origin oracle double-prefixed unconditionally (a NEW rule, not a reversion); oracle-parity for this fixture is now modulo the fold (the hidden `## ` narration lines L46-L49 render unchanged, formerly `## ##`; one segment-grain case per ruling (c)). Tree golden UNCHANGED (render-only rule)."
+old_sha256 = "d604af7ebe8bf3fa834bedcf8fa84556e0432506eeaeb20e94a572f2f7c6ae7d"
+new_sha256 = "5e58757192aa1b5eb1f4ac1f87689cbc8a5dc95b4e12bc2fbbce1e12f13330ed"
+# Annotation (appended — the row above is immutable): the "comment-CLASSIFIED" scope was
+# later NARROWED by the token-delimiter law — `###+` runs and glued `##x` are no longer
+# comment-classified (bucket (A) content) and thus no longer fold-eligible; hidden they take
+# the `## ` marker. This fixture's bytes are unaffected (its `## ` narration lines remain
+# comment-classified; recorded in the development fork's provenance ledger).
+ratified_by = "the comment-aware-hide-fold ruling, three sub-rulings (a)-(c), owner-ratified 2026-08-07, with its recorded adjudications"
+
+[[fixture]]
+id = "file_for_Example_Proposal_JuliaCon.jl"
+partition = "byte_identical"
+source = "legacy_harvest"   # from the reference render corpus; reproduced == reference
+input_path = "tests/golden/corpus/InFileFolder/file_for_Example_Proposal_JuliaCon.jl"
+input_sha256 = "fb44c903fc614d795d210e46d04335e3dc1eb47bcf3eb8b7b5b45b1d88971214"
+tree_golden_path = "tests/golden/corpus/tree/file_for_Example_Proposal_JuliaCon.jl.tree.txt"
+tree_golden_sha256 = "8454832d237e72d57ebb25f434830ad2d478b327708352bb6ec36c984b94ce04"
+render_golden_path = "tests/golden/corpus/render/file_for_Example_Proposal_JuliaCon.jl"
+render_golden_sha256 = "490dd6ef20b6c2fda0b4aa1ed99cf4c037a583eb15f51f97575ea802824d2533"
+
+[[fixture.repin]]
+date = "2026-08-02"
+category = "i"
+reason = "terminal-newline byte-faithfulness: render_bytes is byte-faithful on the whole-file terminal newline (output ends 0x0a IFF input does — v0's file-level rule); JuliaCon input ends 0x22 (no terminal 0x0a) so its render carries no trailing 0x0a. Oracle-parity is input-keyed modulo one trailing 0x0a (divergence (3))."
+old_sha256 = "4f3c49e56f73734f84193f434d59f35c64be120fca8ee69d0eeae9fd56e361af"
+new_sha256 = "34d6b878f5c0cdcefbe148ff53ed136c683b44592fee7d71288820964fe094b2"
+
+[[fixture.repin]]
+date = "2026-08-07"
+category = "i"
+reason = "the v0.3 comment-aware hide fold (owner-ruled (a)-(c)): comment-CLASSIFIED `##`-initial lines/segments take NO additional hide marker (ensure-token) — this fixture's hidden `## ` narration block (8 lines) renders unchanged, formerly `## ##`; render 1656→1632 B (−24 = 8 removed 3-byte markers). The origin engine double-prefixed unconditionally (a NEW rule, not a reversion); oracle-parity is now modulo the fold + the newline-key convention. Tree golden UNCHANGED."
+old_sha256 = "34d6b878f5c0cdcefbe148ff53ed136c683b44592fee7d71288820964fe094b2"
+new_sha256 = "490dd6ef20b6c2fda0b4aa1ed99cf4c037a583eb15f51f97575ea802824d2533"
+# Annotation (appended — the row above is immutable): the "comment-CLASSIFIED" fold scope
+# was later NARROWED by the token-delimiter law (`###+`/glued `##x` → bucket (A), marked
+# when hidden). This fixture's bytes are unaffected (development-fork provenance ledger).
+ratified_by = "the comment-aware-hide-fold ruling, three sub-rulings (a)-(c), owner-ratified 2026-08-07, with its recorded adjudications"
+
+[[fixture]]
+id = "annotations@file_for_Example_Extended.jl"
+partition = "net_new_surface"
+source = "captured"   # the annotations SURFACE has no oracle FILE (the reference corpus holds no verdicts);
+                      #   its VALUES are oracle-grounded (this engine's apply matches the reference's).
+input_path = "tests/golden/corpus/InFileFolder/file_for_Example_Extended.jl"
+input_sha256 = "c0a168a2cc2051412df775342a224e4ef9a7580c400c58d370165c7ac9d90634"
+annotations_golden_path = "tests/golden/corpus/annotations/file_for_Example_Extended.jl.ann.txt"
+annotations_golden_sha256 = "fb3a9eb5eab027ba76b545e7a19da4a61aa589cd78fd9cd5d9c0b467e6d21ab8"
+
+[[fixture.repin]]
+date = "2026-07-30"
+category = "i"
+reason = "v0.2 occurrence-key swap: the annotations store keys by the normalized structural occurrence handle (occurrence_key bytes) instead of verbatim content bytes; the golden's cell_handle hex column now serializes the KEY (content demoted to the content_fingerprint sibling accessor). Population UNCHANGED (probe-verified, decision-instrumented); values/attrs/polarity unchanged; golden 17489->19108 B (5-column form: key hex + the demoted content-fingerprint hex column — reviewability + per-fixture discrimination retained)."
+old_sha256 = "dbd764f8dd896899b1f2402fc176d5bd825d430455099280f31984f282f02195"
+new_sha256 = "fb3a9eb5eab027ba76b545e7a19da4a61aa589cd78fd9cd5d9c0b467e6d21ab8"
+
+[[fixture]]
+id = "annotations@file_for_Example_Proposal_JuliaCon.jl"
+partition = "net_new_surface"
+source = "captured"   # the annotations SURFACE has no oracle FILE (the reference corpus holds no verdicts);
+                      #   its VALUES are oracle-grounded (this engine's apply matches the reference's).
+input_path = "tests/golden/corpus/InFileFolder/file_for_Example_Proposal_JuliaCon.jl"
+input_sha256 = "fb44c903fc614d795d210e46d04335e3dc1eb47bcf3eb8b7b5b45b1d88971214"
+annotations_golden_path = "tests/golden/corpus/annotations/file_for_Example_Proposal_JuliaCon.jl.ann.txt"
+annotations_golden_sha256 = "e5a8bcd0ac5389e27c14a74884d2f64f762a9ad08cfd8ae81a1a99a7e1a2056f"
+
+[[fixture.repin]]
+date = "2026-07-30"
+category = "i"
+reason = "v0.2 occurrence-key swap: same swap as the Extended sibling — cell_handle hex = occurrence-key bytes; content -> content_fingerprint; population identity probe-verified; golden 9829->11752 B (5-column form)."
+old_sha256 = "21f22b92cf0aef98fdd265b97d5f1ac25e50d67217d47e92aa585fccc318e876"
+new_sha256 = "e5a8bcd0ac5389e27c14a74884d2f64f762a9ad08cfd8ae81a1a99a7e1a2056f"
+
+[[fixture]]
+id = "annotations@heading_quoted_first.jl"
+partition = "net_new_surface"
+source = "captured"   # CONSTRUCTED regression fixture (no oracle file).
+input_path = "tests/golden/constructed/InFileFolder/heading_quoted_first.jl"
+input_sha256 = "ed5ddabaef2d94d3b332e4f458b4ec0de8fa17fc7bf1e608380b484fb27fb09e"
+annotations_golden_path = "tests/golden/corpus/annotations/heading_quoted_first.jl.ann.txt"
+annotations_golden_sha256 = "0459799d9f9b0f4ef40dbe640933923acb30c378a538a7f61d1f8e91b080dc21"
+
+[[fixture]]
+id = "annotations@negation_discard_tworegion.jl"
+partition = "net_new_surface"
+source = "captured"   # CONSTRUCTED negated-membership acceptance fixture (two regions, one conditioned
+                      #   discard): the marked region is RETAINED (negation over a set label evaluates false),
+                      #   the unmarked region is DISCARDED (empty label set: membership false, negation true —
+                      #   fail-closed); the discarded region's verdict stays recorded in the evals surface
+                      #   (the ratified divergence pin rides tests/integration/divergence_tests.jl).
+input_path = "tests/golden/constructed/InFileFolder/negation_discard_tworegion.jl"
+input_sha256 = "97db435549dfdabef0c0d4f4c55cb362471ad0d2ebbf59bfce0ff31c8b669512"
+annotations_golden_path = "tests/golden/corpus/annotations/negation_discard_tworegion.jl.ann.txt"
+annotations_golden_sha256 = "37b56bd89e795e269e8735fed06dfd8cc7afdeee59564069ba02188d7eb15aa9"
+
+[[fixture]]
+id = "annotations@negation_hide_tworegion.jl"
+partition = "net_new_surface"
+source = "captured"   # CONSTRUCTED negated-membership acceptance fixture (two regions, one conditioned
+                      #   hide): the marked region stays PLAIN, the unmarked region FOLDS to the comment form
+                      #   — the hide-fold arm of the acceptance rails.
+input_path = "tests/golden/constructed/InFileFolder/negation_hide_tworegion.jl"
+input_sha256 = "1a0c16055ac2a96b4b6804c0cbf2c1d36b8faec42b53d6c28d5ddd6f268e2231"
+annotations_golden_path = "tests/golden/corpus/annotations/negation_hide_tworegion.jl.ann.txt"
+annotations_golden_sha256 = "5f4b78dbc0a6c96b4fd9b523309aa2fce653dad098a484fa185aed60246d33e7"
+
+[[fixture]]
+id = "annotations@rr48_1_alignment_swap.jl"
+partition = "net_new_surface"
+source = "captured"   # CONSTRUCTED alignment-swap collision REGRESSION FIXTURE: two byte-IDENTICAL lines with OPPOSITE Visib fates — under
+                      #   occurrence keys BOTH survive with their OWN verdicts (impossible-by-construction
+                      #   collision, provably); no oracle file (the construction post-dates the oracle).
+input_path = "tests/golden/constructed/InFileFolder/rr48_1_alignment_swap.jl"
+input_sha256 = "1751d5ac2a1c2655d70ad478eb32da8c0d7fb17bf8e5abc059da340763dc7edf"
+annotations_golden_path = "tests/golden/corpus/annotations/rr48_1_alignment_swap.jl.ann.txt"
+annotations_golden_sha256 = "40aa52d28307be21114fb0651a34b3df81803b6951ffaa3775c4b95a3914e2ef"
+
+[[fixture]]
+id = "annotations@rr48_3_containment_fallback.jl"
+partition = "net_new_surface"
+source = "captured"   # CONSTRUCTED containment-fallback fixture — PRECISION: the
+                      #   CONTAINMENT hazard is the Extension-script MATCHING class (containment-fallback
+                      #   binding); this pair's distinct content never collided under content keys either —
+                      #   pinned HERE as a per-occurrence distinctness+fate fixture a future Extension-suite
+                      #   consumer pairs with its own matching-side rows.
+input_path = "tests/golden/constructed/InFileFolder/rr48_3_containment_fallback.jl"
+input_sha256 = "35516d5df941e986b8a19359cd37ecd73e212669b131c5ee71314add5b5be59f"
+annotations_golden_path = "tests/golden/corpus/annotations/rr48_3_containment_fallback.jl.ann.txt"
+annotations_golden_sha256 = "5888faa06c4f4b96a7d4498bc7611bd8291ffb8d56ddb80c2202110143c7cdd9"

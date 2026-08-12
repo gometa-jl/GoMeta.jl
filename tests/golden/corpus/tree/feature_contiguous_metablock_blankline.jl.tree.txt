@@ -1,0 +1,21 @@
+{:B-Text:L-Text [## ============================================================================================]}
+{       :L-Text [## FEATURE (variant of feature_contiguous_metablock.jl): the SAME content, but with a BLANK LINE]}
+{       :L-Text [## inserted between the two meta-lines. That one blank line breaks the single contiguous block into TWO]}
+{       :L-Text [## separate blocks — and FLIPS both content lines relative to the no-blank version. Compare the two]}
+{       :L-Text [## committed outputs side by side.]}
+{       :L-Text [## ============================================================================================]}
+{       :L-Text [## Why both flip (each for a different reason):]}
+{       :L-Text [##   - line A becomes HIDDEN: hide{:label1} and :label1 are now in SEPARATE blocks, so the in-block]}
+{       :L-Text [##     order-of-application protection is gone; the standing hide{:label1} fires on A (which has :label1).]}
+{       :L-Text [##   - line B becomes SHOWN: :label1 now lives in its OWN depth-2 block, which the following sibling]}
+{       :L-Text [##     depth-2 :label2 block SUPERSEDES, so B no longer inherits :label1.]}
+{       :L-Text [##]}
+{       :L-Text [## EXPECTED RENDER — see OutFileFolder/: line A HIDDEN, line B SHOWN.]}
+{       :L-Text [## (feature_contiguous_metablock.jl, with NO blank line, renders the opposite: A SHOWN, B HIDDEN.)]}
+{       :L-Text [## ============================================================================================]}
+{:B-Meta:L-Meta [#~ hide{ :label1 }]}
+
+{:B-Meta:L-Meta [#~2 :label1]}
+{:B-Text:L-Text [# A line attached to the (now separate) :label1 block.]}
+{:B-Meta:L-Meta [#~2 :label2]}
+{:B-Text:L-Text [# B line under the second, sibling block.]}

@@ -1,0 +1,93 @@
+# `file_for_Example_Proposal_JuliaCon.jl`
+
+**Proves:** `()` grouping; `hide{…,isCode}`; `show{!:label5}`; conditional `:label1{…}`; inline `#~ show` overriding inherited hide; depth 2/3; markdown `hide`
+
+*(The "proves" line is this example's row in the [syntax reference](../SYNTAX-AND-SEMANTICS.md)
+§11 proof-set table; every rule there cites a runnable committed example.)*
+
+Committed pair: `examples/InFileFolder/file_for_Example_Proposal_JuliaCon.jl` → `examples/OutFileFolder/file_for_Example_Proposal_JuliaCon.jl` — the same
+bytes the golden test layer pins. Verify locally from the repository root:
+`julia --startup-file=no --project=. run_examples.jl`.
+
+## Input
+
+```julia
+#~ hide{ :label4 , isCode } ## This is a comment within a `Block` of meta.
+## The above `Line` of meta initiated this `Block` of meta.
+#~ :label1{ (isText && containsMeta), isMeta } ## This meta `Block` ends here.
+
+# This `Line` of text starts a new `Block` of text.
+# This `Block` is NOT attached to metadata - it does NOT INHERIT metadata.
+# However, this `Line` will get discarded due to: #~ discard
+
+#~2 :label5 show{ !:label5} ## This is line 9. It is a one-line meta `Block`.
+using Plots ## This `Line` starts a new `Block` of code.
+## This code `Block` is ATTACHED to metadata - it inherits metadata from above.
+## Therefore, this code `Block` receives label5.
+## `show` from line 9 above does NOT get applied to this `Block`
+##      as this can only happen
+##      if label5 has NOT been applied. Note `{!:label5}` following `show`.
+## This code `Block` inherits `hide` from line 1 above
+##      since this is a code `Block` and due to: `{isCode}` following `hide`.
+
+println("!!! NOTE !!! Only Code and Text `Block`s may contain empty lines.")
+println("\t Whereas an empty line after a meta `Line` starts a new `Block`.")
+
+#~3 :label4 discard{:label3} :label3
+# This `Block` of text receives label4
+#       plus label5 from further above
+#       plus label1 since it `isText` AND `containsMeta` [last statement].
+# It is NOT "discarded" since label3 has not been applied yet
+#       when `discard{:label3}` is issued.
+# Only after that it receives label3.
+# Instead, it gets hidden due to label4 and `hide{:label4}` on line 1.
+# This `Line`, however, will NOT get hidden. #~ show
+
+#~2 :label5
+md"""
+This is a `Block` of markdown text. #~ hide
+"""
+```
+
+*(The committed input file ends without a final newline; a fenced quotation must end its block with one, so the quote above shows a final newline the committed bytes do not have. The committed file is the authority.)*
+
+## Rendered output
+
+```julia
+#~ hide{ :label4 , isCode } ## This is a comment within a `Block` of meta.
+## The above `Line` of meta initiated this `Block` of meta.
+#~ :label1{ (isText && containsMeta), isMeta } ## This meta `Block` ends here.
+
+# This `Line` of text starts a new `Block` of text.
+# This `Block` is NOT attached to metadata - it does NOT INHERIT metadata.
+
+#~2 :label5 show{ !:label5} ## This is line 9. It is a one-line meta `Block`.
+## using Plots ## This `Line` starts a new `Block` of code.
+## This code `Block` is ATTACHED to metadata - it inherits metadata from above.
+## Therefore, this code `Block` receives label5.
+## `show` from line 9 above does NOT get applied to this `Block`
+##      as this can only happen
+##      if label5 has NOT been applied. Note `{!:label5}` following `show`.
+## This code `Block` inherits `hide` from line 1 above
+##      since this is a code `Block` and due to: `{isCode}` following `hide`.
+
+## println("!!! NOTE !!! Only Code and Text `Block`s may contain empty lines.")
+## println("\t Whereas an empty line after a meta `Line` starts a new `Block`.")
+
+## #~3 :label4 discard{:label3} :label3
+## # This `Block` of text receives label4
+## #       plus label5 from further above
+## #       plus label1 since it `isText` AND `containsMeta` [last statement].
+## # It is NOT "discarded" since label3 has not been applied yet
+## #       when `discard{:label3}` is issued.
+## # Only after that it receives label3.
+## # Instead, it gets hidden due to label4 and `hide{:label4}` on line 1.
+# This `Line`, however, will NOT get hidden. #~ show
+
+#~2 :label5
+md"""
+## This is a `Block` of markdown text. ## #~ hide
+"""
+```
+
+*(The committed rendered-output file ends without a final newline; a fenced quotation must end its block with one, so the quote above shows a final newline the committed bytes do not have. The committed file is the authority.)*

@@ -1,0 +1,14 @@
+[deps]
+GoMeta = "98657bb6-a3a3-4080-bc8f-2c439ca970f1"
+SHA = "ea8e919c-243c-51af-8825-aaa63cd721ce"
+TOML = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[compat]
+SHA = "0.7"
+TOML = "1"
+Test = "1"
+julia = "1.12"
+
+[sources]
+GoMeta = {path = ".."}

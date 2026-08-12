@@ -1,0 +1,12 @@
+# GoMeta public repository — generated-file exclusions.
+# Manifest.toml receipts are machine-resolved (Pkg.instantiate / Pkg.resolve in place); none
+# is tracked — a fresh clone resolves its own environments from the Project.toml contracts.
+/Manifest.toml
+/tests/Manifest.toml
+/test/Manifest.toml
+# Documenter build artifacts: docs/make.jl stages docs/src/ from the committed docs/*.md
+# pages at build time and renders into docs/build/; the docs environment resolves its own
+# Manifest. All three are generated, never tracked.
+/docs/src/
+/docs/build/
+/docs/Manifest.toml

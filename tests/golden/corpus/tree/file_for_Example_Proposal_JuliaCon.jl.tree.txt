@@ -1,0 +1,35 @@
+{:B-Meta:L-Meta [{:S-Meta [#~ hide{ :label4 , isCode } ]}{:S-Meta [## This is a comment within a `Block` of meta.]}]}
+{       :L-Meta [## The above `Line` of meta initiated this `Block` of meta.]}
+{       :L-Meta [{:S-Meta [#~ :label1{ (isText && containsMeta), isMeta } ]}{:S-Meta [## This meta `Block` ends here.]}]}
+
+{:B-Text:L-Text [# This `Line` of text starts a new `Block` of text.]}
+{       :L-Text [# This `Block` is NOT attached to metadata - it does NOT INHERIT metadata.]}
+{       :L-Text [{:S-Text [# However, this `Line` will get discarded due to: ]}{:S-Meta [#~ discard]}]}
+
+{:B-Meta:L-Meta [{:S-Meta [#~2 :label5 show{ !:label5} ]}{:S-Meta [## This is line 9. It is a one-line meta `Block`.]}]}
+{:B-Code:L-Code [{:S-Code [using Plots ]}{:S-Code [## This `Line` starts a new `Block` of code.]}]}
+{       :L-Code [## This code `Block` is ATTACHED to metadata - it inherits metadata from above.]}
+{       :L-Code [## Therefore, this code `Block` receives label5.]}
+{       :L-Code [## `show` from line 9 above does NOT get applied to this `Block`]}
+{       :L-Code [##      as this can only happen]}
+{       :L-Code [##      if label5 has NOT been applied. Note `{!:label5}` following `show`.]}
+{       :L-Code [## This code `Block` inherits `hide` from line 1 above]}
+{       :L-Code [##      since this is a code `Block` and due to: `{isCode}` following `hide`.]}
+
+{       :L-Code [println("!!! NOTE !!! Only Code and Text `Block`s may contain empty lines.")]}
+{       :L-Code [println("\t Whereas an empty line after a meta `Line` starts a new `Block`.")]}
+
+{:B-Meta:L-Meta [#~3 :label4 discard{:label3} :label3]}
+{:B-Text:L-Text [# This `Block` of text receives label4]}
+{       :L-Text [#       plus label5 from further above]}
+{       :L-Text [#       plus label1 since it `isText` AND `containsMeta` [last statement].]}
+{       :L-Text [# It is NOT "discarded" since label3 has not been applied yet]}
+{       :L-Text [#       when `discard{:label3}` is issued.]}
+{       :L-Text [# Only after that it receives label3.]}
+{       :L-Text [# Instead, it gets hidden due to label4 and `hide{:label4}` on line 1.]}
+{       :L-Text [{:S-Text [# This `Line`, however, will NOT get hidden. ]}{:S-Meta [#~ show]}]}
+
+{:B-Meta:L-Meta [#~2 :label5]}
+{:B-Text:L-Text [md"""]}
+{       :L-Text [{:S-Text [This is a `Block` of markdown text. ]}{:S-Meta [#~ hide]}]}
+{       :L-Text ["""]}

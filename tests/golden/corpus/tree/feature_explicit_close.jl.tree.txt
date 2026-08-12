@@ -1,0 +1,37 @@
+{:B-Text:L-Text [## ============================================================================================]}
+{       :L-Text [## FEATURE: the explicit close-marker line (a line that is only the close bracket).]}
+{       :L-Text [## Labels are limited to :label1..:label5; the Visib actions are show / hide / discard.]}
+{       :L-Text [## ============================================================================================]}
+{       :L-Text [## The close-marker has TWO distinct effects, on two different axes — both demonstrated here at once:]}
+{       :L-Text [##]}
+{       :L-Text [##   (1) SCOPE — it closes only the INNERMOST currently-open meta-block. An OUTER block (a "chapter")]}
+{       :L-Text [##       stays open, so a later, deeper meta-block still nests inside it and inherits its metadata.]}
+{       :L-Text [##]}
+{       :L-Text [##   (2) ATTACHMENT — it detaches the line IMMEDIATELY following it: that one line inherits no metadata.]}
+{       :L-Text [##]}
+{       :L-Text [## Setup (the lines below): a level-2 chapter applies :label1 and hides anything carrying :label1; a]}
+{       :L-Text [## level-4 block nests inside it; then the close-marker; then a plain line; then a level-5 block.]}
+{       :L-Text [##]}
+{       :L-Text [## EXPECTED RENDER — see OutFileFolder/:]}
+{       :L-Text [##   - the level-2 chapter line, line A, the level-4 block line, and line B  ->  HIDDEN (## -prefixed):]}
+{       :L-Text [##       each carries :label1 (A directly; the level-4 block + B by inheritance), so hide{:label1} applies.]}
+{       :L-Text [##   - line C, immediately after the close-marker                            ->  SHOWN: the close-marker]}
+{       :L-Text [##       DETACHED it (axis 2), so it carries no :label1.]}
+{       :L-Text [##   - the level-5 block line and line D                                     ->  HIDDEN: the close-marker]}
+{       :L-Text [##       closed ONLY the level-4 block; the level-2 chapter is STILL OPEN, so the level-5 block nests in it]}
+{       :L-Text [##       and inherits :label1 (axis 1).]}
+{       :L-Text [##]}
+{       :L-Text [##   The proof is "C shown but D hidden": the chapter resumed (axis 1) while the single line right after the]}
+{       :L-Text [##   close-marker detached (axis 2). The two effects are independent.]}
+{       :L-Text [##]}
+{       :L-Text [## TRY IT: delete the close-marker line below and rerun — line C is then attached + nested, so it too is]}
+{       :L-Text [##   hidden; this shows the close-marker is what detaches C.]}
+{       :L-Text [## ============================================================================================]}
+{:B-Meta:L-Meta [#~2 :label1 hide{ :label1 }]}
+{:B-Text:L-Text [# A line adjacent to the level-2 chapter.]}
+{:B-Meta:L-Meta [#~4 :label2]}
+{:B-Text:L-Text [# B line adjacent to the level-4 block nested in the chapter.]}
+{:B-Meta:L-Meta [#]]}
+{:B-Text:L-Text [# C line immediately after the close-marker.]}
+{:B-Meta:L-Meta [#~5 :label3]}
+{:B-Text:L-Text [# D line adjacent to a level-5 block.]}

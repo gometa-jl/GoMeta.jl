@@ -1,0 +1,4 @@
+# GoMeta ships byte-exact oracles (golden corpus goldens and the
+# examples/ display pairs): no text/eol normalization anywhere — the bytes as committed ARE the
+# contract, and an autocrlf checkout would rewrite the LF fixtures and fail the suite.
+* -text

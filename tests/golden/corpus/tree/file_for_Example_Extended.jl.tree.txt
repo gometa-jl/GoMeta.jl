@@ -1,0 +1,63 @@
+{:B-Text:L-Text [## Test File]}
+{       :L-Text [## NOTE: I've addes some markers to this file such as: "## @: Input line 2"]}
+{       :L-Text [##      They have nothing to do with `GoMeta` [yet].]}
+{       :L-Text [##      They are simply meant to assist orientation when]}
+{       :L-Text [##      comparing the input file to the output file.]}
+
+{:B-Meta:L-Meta [{:S-Meta [#~ discard{ :label2 , isCode} ]}{:S-Meta [## This is a comment within a meta `Block`.]}]}
+{       :L-Meta [#~ :label1{ isText && containsMeta }]}
+{       :L-Meta [## The following meta `Line` within this `Block` will be ignored due to the `!`.]}
+{       :L-Meta [{:S-Meta [#~! discard{ isMeta } ]}{:S-Meta [## This `Line` of meta ends this `Block` of meta.]}]}
+
+{:B-Text:L-Text [{:S-Text [# With this `Line` of text starts a new `Block` of text. ]}{:S-Text [## @: Input line 12.]}]}
+{       :L-Text [# This `Block` is NOT attached to metadata - it does NOT inherit metadata.]}
+{       :L-Text [{:S-Text [# This `Line` should still be "hidden" / commented out. ]}{:S-Meta [#~ hide]}]}
+{       :L-Text [{:S-Text [# ... and this `Line` should still be "discarded" / removed ]}{:S-Meta [#~ discard]}]}
+{       :L-Text [{:S-Text [# NOTE: Input line 15 will be missing from the output file! ]}{:S-Text [## @: Input line 16.]}]}
+
+{:B-Meta:L-Meta [{:S-Meta [#~2 :label3 :label5 show{ !:label5} ]}{:S-Meta [## @: Input line 18.]}]}
+{       :L-Meta [{:S-Meta [#~ hide{:label1} ]}{:S-Meta [## This comment ends this meta `Block` at level 2 [`#~2`].]}]}
+{:B-Code:L-Code [{:S-Code [using Plots ]}{:S-Code [## This `Segment` is a comment within a `Block` of code. ]}{:S-Code [## @: Input line 20.]}]}
+{       :L-Code [## This `Block` of code starts with `using Plots` above on line 20.]}
+{       :L-Code [## This `Block` is ATTACHED to metadata - it inherits metadata from above.]}
+{       :L-Code [## Therefore, this code `Block` receives label3 and label5 from input line 18.]}
+{       :L-Code [## `show` [input line 18] does NOT get applied]}
+{       :L-Code [##      as this can only happen if label5 has NOT been applied: `{!:label5}`]}
+
+{       :L-Code [## Instead, this code `Block` inherits `discard` from input line 7 above]}
+{       :L-Code [{:S-Code [##      since it is code i.e.: `isCode`. ]}{:S-Code [## @: Input line 28.]}]}
+
+{       :L-Code [println("!!! NOTE !!! Only Code and Text `Block`s may contain empty lines.")]}
+{       :L-Code [println("\t Whereas an empty line after a meta `Line` starts a new `Block`.")]}
+{       :L-Code [## @: Input line 32. It marks the end of this `Block` of code.]}
+
+{:B-Meta:L-Meta [{:S-Meta [#~3 discard{:label4} :label4 ]}{:S-Meta [## This comment ends this meta `Block` at level 3.]}]}
+{:B-Text:L-Text [{:S-Text [# Here starts a new `Block` of text ]}{:S-Text [## @: Input line 35.]}]}
+{       :L-Text [#       which receives label4 from line 34]}
+{       :L-Text [#       and label3 and label5 from line 18]}
+{       :L-Text [#       and receives label1 from line 8]}
+{       :L-Text [{:S-Text [#       since it is a `Block` of text containing this meta here: ]}{:S-Meta [#~]}]}
+
+{       :L-Text [# This `Block` does NOT get "discarded" since label4 has]}
+{       :L-Text [#       NOT been applied yet when `discard{:label4}` [line 34] is issued.]}
+{       :L-Text [# Instead this `Block` gets "hidden" due to circumstance that it is]}
+{       :L-Text [#       text and contains meta, therefore receiving label1]}
+{       :L-Text [#       and consequently inheriting the `hide` from line 19.]}
+{       :L-Text [## NOTE: Line 39, however, will get "discarded"]}
+{       :L-Text [##      since this `Line` inherits label4 due to the "#~" at its end]}
+{       :L-Text [##      and consequently `discard{:label4}` [line 34] gets applied here.]}
+{       :L-Text [## @: Input line 49. It is at the end of this `Block` of text.]}
+
+{:B-Meta:L-Meta [{:S-Meta [#~2 :label2 ]}{:S-Meta [## This is a comment within this one-`Line` meta `Block`.]}]}
+{:B-Text:L-Text [md"""]}
+{       :L-Text [This is a `Block` of markdown text.]}
+
+{       :L-Text [It is ATTACHED to the one-`Line` meta `Block` on line 51.]}
+{       :L-Text [It therefore inherits label2.]}
+
+{       :L-Text [This meta `Block`, however, neither inherits from the meta `Block`]}
+{       :L-Text [starting with "#~3" nor that further above starting with "#~2".]}
+
+{       :L-Text [It DOES inherit from the first meta `Block` starting on input line 7.]}
+{       :L-Text [Which is why it gets "discarded" - due to `discard{:label2}`.]}
+{       :L-Text ["""]}
