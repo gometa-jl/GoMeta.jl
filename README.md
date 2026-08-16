@@ -7,6 +7,19 @@
 
 # GoMeta.jl
 
+**Embed formalized meaning into comments.**
+
+The core idea of GoMeta is to embed formalized meaning within all kinds of comments and
+provide Extensions with its interpretations so they can act on them.
+
+So on the one hand, GoMeta is a domain specific language for metadata and on the other a
+framework with facilities which Extensions can build on.
+
+> [!WARNING]
+> 🚧 First, **heavily Claude assisted** draft — brand-new for JuliaCon 2026.
+>
+> Will be updated gradually. For now, check out the **JuliaCon slides [here](https://gometa.dev/talk/)**.
+
 **Interpretable metadata for source files.** GoMeta makes accumulated files **retrievable,
 interlinkable, re-renderable, and shareable-with-control** through `#~` **metaLines** — ordinary
 comment lines that carry machine-interpretable metadata (labels, visibility actions, conditions)
