@@ -624,8 +624,27 @@ function parseLeadHeader!(
         ## Meta arm — the SHARED `_re_meta` (flavor-neutral post-lead DSL); a
         ## glued no-match resolves by the glued policy.
         matchFound = match(_re_meta, subStr)
-        matchFound === nothing &&
+        if matchFound === nothing
+            ## §4.1 refusal (v0.3.1, R-INERT-1 family): the TRANSPOSED inert
+            ## marker — tildes, then '!', then digits (ws/EOL-terminated) — is the known
+            ## "#~!N" mistake for the canonical trailing-bang "#~N!". It must NEVER silently
+            ## become content of any flavor (it did: bucket-(A) made it Text at file start,
+            ## Code after code, an inert Meta line in a Meta neighbourhood — three meanings
+            ## across three engine generations). REFUSE loudly, before the glued fallthrough.
+            ## The refused FAMILY is exactly: tildes + ONE '!' + digits + an OPTIONAL trailing
+            ## '!' ("#~!N" and "#~!N!"), ws/EOL-terminated. Multi-bang shapes ("#~!!0") and
+            ## glued tails ("#~!0x") stay bucket-(A) user content (the token-delimiter
+            ## law; this refusal narrows it by exactly the one family).
+            local _bangFirst = match(r"\A([~]+)!([0-9]+)!?(?=[\h]|$)", subStr)
+            if _bangFirst !== nothing
+                error("GoMeta parse: bang-first meta marker \"#", _bangFirst.match,
+                    "\" — the inert marker is the TRAILING bang (\"#",
+                    _bangFirst.captures[1], _bangFirst.captures[2],
+                    "!\": depth, then !); \"#~!N\" is not a metaLine and is refused ",
+                    "(SYNTAX-AND-SEMANTICS.md §9 — ships at docs/ in the released package)")
+            end
             return _lead_fallthrough!(profile, thisComponentSettribute)
+        end
         setElement(thisComponentSettribute, :containsMeta => true, :hasMetaStr => true)
         givenDepthMH::Int = min(length(matchFound[:hashDef]), 8)
         if nothing !== matchFound[:metaDef]
@@ -633,7 +652,14 @@ function parseLeadHeader!(
                 givenDepthMH = parse(Int, first(matchFound[:metaDef]))
             end
             if last(matchFound[:metaDef]) == '!'
-                setElement(thisComponentSettribute, :ignoreThisMeta => true)
+                ## R-INERT-4 (v0.3.1): the author's trailing-bang marker mints
+                ## :ignoreMetaContent — NOT :ignoreThisMeta. The component stays structurally
+                ## LIVE (the absorb gates key on :ignoreThisMeta, which this line no longer
+                ## carries, so it walks/closes/supersedes exactly like the bare live marker);
+                ## only its content is absorbed as EMPTY (walk.jl applyAbsorbFn). The other
+                ## :ignoreThisMeta mint classes (comment-in-Meta, bucket-A-in-Meta, the "#]"
+                ## flavor rows) are UNCHANGED and stay absorb-skipped.
+                setElement(thisComponentSettribute, :ignoreMetaContent => true)
             end
         end
         setElement(thisComponentSettribute, Symbol("depth", string(givenDepthMH)) => true)

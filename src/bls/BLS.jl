@@ -35,6 +35,12 @@ NamedElements.@namedElement ComponentSettribute Bool begin
     stopAttachmentToMeta
     detachedFromMeta
     ignoreThisMeta
+    ignoreMetaContent ## R-INERT-4 (v0.3.1): the AUTHOR's trailing-bang inert marker
+                      ## ("#~N!"/"#~!") — the component IS structurally live (walks, closes,
+                      ## supersedes, attaches exactly like the bare live marker) and ONLY its
+                      ## content after the '!' is ignored (absorbed as EMPTY). Distinct from
+                      ## :ignoreThisMeta, which stays the absorb-walk SKIP flag of the other mint
+                      ## classes (the "#]" close-marker rows, comment-in-Meta, glued bucket-A).
     hide
     show
     discard

@@ -40,4 +40,5 @@ using Test
     include(joinpath(@__DIR__, "carrier_seam_tests.jl"))            # WP1-W2: run_absorb_apply! seam + validate_carrier_state witnesses (APPEND-ONLY)
     include(joinpath(@__DIR__, "latex_flavor_tests.jl"))            # WP1-W5 (F-22): the FLAVOR_LATEX pure-data acceptance battery (APPEND-ONLY)
     include(joinpath(@__DIR__, "ensure_token_tests.jl"))            # WP1-W6 step (b): the ensure-token witness battery (K1 second disjunct; APPEND-ONLY)
+    include(joinpath(@__DIR__, "inert_semantics_tests.jl"))         # v0.3.1: the R-INERT-4 differential oracle + §4.1 refusal + §4.8 Alterant guards (APPEND-ONLY)
 end

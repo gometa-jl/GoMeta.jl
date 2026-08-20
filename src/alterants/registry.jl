@@ -62,6 +62,16 @@ function setLabels(
 )
 
     if actionName == :(:)
+        ## §4.8 guard (v0.3.1, "fixed WITHIN THE Labels Alterant"): a lone ':'
+        ## (or ':()') reaches this setter with ZERO labels — the vacuous loop below then stored
+        ## nothing, minted no evals row, and the author's mistyped label vanished SILENTLY
+        ## (probe m_lone_colon). The Alterant verifies its own input: an empty label list
+        ## refuses loudly. error() (not ArgumentError) deliberately: the setter seam displays
+        ## an ErrorException's message verbatim (the unknown-label mechanics below), while an
+        ## ArgumentError's message is discarded to its type name at the seam's conversion.
+        isempty(labels) && error("GoMeta apply: empty label list — the labels action ':' ",
+            "names no label; v0 requires at least one label (e.g. ':label1'); ",
+            "see docs/public-api.md §3.4")
         for label ∈ labels
             if insorted(label, sortedSetOfLabelsSVec)
                 crntLabels[label] = true
@@ -82,6 +92,14 @@ function checkLabels(
     actionName::Symbol,
     labels::Vararg{Symbol}
 )
+    ## §4.8 twin guard (v0.3.1, with the setLabels guard above): the word-less
+    ## label query ':()' reached this checker with ZERO labels and returned a vacuous TRUE —
+    ## a wrong-verdict class (the K5/K6 family). The K2 pin that held the misapply at its old
+    ## fate ("so it cannot drift silently") is flipped by name in the same change. The corpus
+    ## sweep (v0.3.1) found no input depending on the vacuous form.
+    isempty(labels) && error("GoMeta apply: empty label query — ':()' names no label to ",
+        "check; v0 requires at least one label (e.g. ':(:label1)'); ",
+        "see docs/public-api.md §3.4")
     for label ∈ labels
         ## Condition-side whitelist guard: a label outside the closed v0 whitelist refuses loudly
         ## (the SAME contract as setLabels' guard above), never a silent `false` — a query for an

@@ -420,6 +420,30 @@ fabricated typed code:
   the E-07 shape, whose typed mint is pending (§3.2). Witnesses:
   `tests/unit/arg_guard_tests.jl`.
 
+- **The bang-first meta marker — GUARDED (v0.3.1):** the transposed inert spelling — tildes,
+  then ONE `!`, then digits, then an optional trailing `!`, whitespace/EOL-terminated
+  (`#~!2`, `#~!2!`, `#~~~!3`) — raises the stable-message `ErrorException`
+  `"GoMeta parse: bang-first meta marker …"` EARLY, at the parse-plane head reader — BOTH
+  grains (metaLine and inline metaSegment), in every neighbourhood; there is no prose,
+  fence, or string-literal shelter. The message names the corrected TRAILING-bang spelling
+  (`#~2!`). Before v0.3.1 the shape silently fell through as plain content — the known
+  authoring mistake this refusal exists to catch. Glued and multi-bang neighbours
+  (`#~!!0`, `#~!0x`, `#~2!x`) stay plain content — the refusal covers exactly the one
+  family. To MENTION the shape in prose, quote-glue it (`"#~!2"`; see
+  `docs/SYNTAX-AND-SEMANTICS.md` §1/§9). Witnesses: `tests/unit/inert_semantics_tests.jl`.
+- **The empty label LIST — GUARDED (v0.3.1):** a labels SET action that parses to zero
+  labels (`#~ :` — the lone colon — or `#~ :()`) raises the stable-message `ErrorException`
+  `"GoMeta apply: empty label list …"` INSIDE the Labels Alterant (`setLabels`) — before
+  v0.3.1 the vacuous loop stored nothing, minted no evals row, and a mistyped label
+  vanished SILENTLY. The guard fires when `setLabels` is actually INVOKED (apply-plane);
+  a set action that never applies stays silent. An inert `#~2! :` is exempt by
+  construction — its content is never absorbed. Witnesses:
+  `tests/unit/inert_semantics_tests.jl`.
+- **The empty label QUERY — GUARDED (v0.3.1):** the condition-side twin — a label check
+  with zero labels (`{ :() }`) — raises the stable-message `ErrorException`
+  `"GoMeta apply: empty label query …"` inside the Labels Alterant (`checkLabels`) —
+  before v0.3.1 the vacuous check silently evaluated TRUE.
+
 **Message stability:** every input-reachable engine-layer message a v0 input can trigger through
 the parse/absorb/apply/emit pipeline is STABLE and explanatory (stage-honest prefix
 `GoMeta parse:` / `GoMeta absorb:` / `GoMeta apply:` / `GoMeta emit:`, the offending token

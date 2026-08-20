@@ -129,7 +129,8 @@ function applyAbsorbFn(
         crntAbsorbGoFn = absorbGoFnNamedTuple[
             metaDefNamedTuple[Symbol(matchFound[:metaDef])]]
     end
-    if matchFound.offsets[end] != 0
+    if matchFound.offsets[end] != 0 &&
+       !BLS.getElement(crntComponent.componentSettribute, :ignoreMetaContent)
         ## Whitespace-alphabet unification: the body starts at the char AFTER the postDef
         ## delimiter — char-safe via nextind, because postDef may be a MULTIBYTE
         ## horizontal space (NBSP, U+3000, …); byte+1 arithmetic landed on a
@@ -144,6 +145,18 @@ function applyAbsorbFn(
                 :stopMainStr)]
         )
     else
+        ## Two roads here: a live marker with NOTHING after it (offsets[end] == 0), and —
+        ## R-INERT-4 (v0.3.1) — an :ignoreMetaContent component (the author's
+        ## trailing-bang "#~N!"), whose content is deliberately absorbed as EMPTY: the specified
+        ## law is "#~N! <content>" ≡ "#~N" (structure live, content ignored), so BOTH roads
+        ## run the IDENTICAL live-empty intake — the ≡ holds by construction, not by a
+        ## parallel code path. (Everything upstream — snapshot, MetaContext publish, the
+        ## dispatch — already ran identically; the dispatch sees metaDef "N!"/"0!" but every
+        ## metaDef routes to the standard absorbMeta: the comparison above is a SubString-vs-
+        ## Symbol TYPE MISMATCH (always unequal via ===), so its else-arm is dead code — AND,
+        ## independently, metaDefNamedTuple maps the keys to the same fn, so even "fixing"
+        ## the comparison needs the table taught the "N!" keys first. Pinned by the
+        ## differential-oracle tests; do not "clean up" the comparison without both.)
         crntAbsorbGoFn(SubString{String}(""))
     end
 end

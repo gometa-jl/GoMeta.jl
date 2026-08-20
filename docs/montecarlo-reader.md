@@ -11,7 +11,7 @@ project's own convention — the legend is data, not engine vocabulary):
 
 ## Parameters
 
-```@example montecarlo
+```@example gometa_montecarlo
 n_darts  = 10_000
 rng_seed = 2026
 ```
@@ -25,7 +25,7 @@ julia> round(4 * atan(1); digits = 4)   # the target the darts approach
 3.1416
 ```
 
-```@example montecarlo
+```@example gometa_montecarlo
 using Random
 function estimate_pi(n; rng = MersenneTwister(rng_seed))
     hits = count(_ -> rand(rng)^2 + rand(rng)^2 <= 1, 1:n)

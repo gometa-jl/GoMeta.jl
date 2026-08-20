@@ -189,6 +189,10 @@ end
 ## class silently dropped NBSP-indented metaLines the engine consumes).
 ## The whitespace alphabet: the delimiter class is Unicode
 ## horizontal whitespace (`[\h]`) — unified with the engine.
+## The bang-first family `#~!N`/`#~!N!` is NOT matched here (not a token) — DELIBERATE:
+## the ENGINE refuses that family at parse (§4.1, v0.3.1), and `goMeta` runs
+## before `partition`, so a bang-first line can never reach this out-of-tree mirror
+## alive (the correctness argument recorded in ENGINE-DESIGN_R-INERT-4.md §2).
 const _TOKEN_HEAD_RE = r"^#(?:~+(?:[0-9]+!?|!)?|\])(?=[\h]|$)"
 is_meta_line(t)  = occursin(_TOKEN_HEAD_RE, lstrip(t))
 is_prose_line(t) = begin
@@ -218,12 +222,17 @@ end
 # blank lines and text/code type changes bound blocks; meta lines are consumed
 function mark_depth(t::String)
     ## The token-delimiter law: only a ws-or-EOL-terminated head is a mark; glued
-    ## shapes return nothing (content). The `!` tail = the inert form (no depth); the
-    ## digit form takes the FIRST digit (the engine's first-digit depth semantics);
-    ## the tilde-run form clamps to the window top (min(len, 8), the engine's clamp).
+    ## shapes return nothing (content). R-INERT-4 (v0.3.1): the inert
+    ## trailing-bang form CARRIES ITS DEPTH — `#~N! …` ≡ `#~N` structurally (open/
+    ## close/supersede), so the scrape reads the depth straight through the `!` and
+    ## the dstack pushes/supersedes on an inert head exactly as on its live twin
+    ## (pre-fix this returned nothing for `!` forms — the slides edition then mis-typed
+    ## inert-governed cells and a deeper sibling escaped supersession). The digit form
+    ## takes the FIRST digit (the engine's first-digit depth semantics); the tilde-run
+    ## form — bare `#~`/`#~~~`, inert twins included — clamps to the window top
+    ## (min(len, 8), the engine's clamp).
     m = match(r"^#(~+)([0-9]*)(!?)(?=[\h]|$)", lstrip(t))
     m === nothing && return nothing
-    m.captures[3] == "!" && return nothing           # inert form — carries no depth
     return m.captures[2] == "" ? min(length(m.captures[1]), 8) :
                                  parse(Int, string(first(m.captures[2])))
 end
@@ -597,10 +606,11 @@ is_heading(c::Cell) = c.kind === :markdown && any(startswith(lstrip(lf.text), "#
 function sectionize(cells::Vector{Cell})
     sections = Section[]; cur = Cell[]; head = nothing
     for c in cells
-        # panel V4: line-less cells stay OUT of sectionize — pages are views
-        # (R-EXT-11), and a surviving meta run must not steer the reader page's
-        # label-based section selection (drops() would newly see its labels)
-        isempty(c.lines) && continue
+        # The V4-panel guard, in its v0.3.1 form (ruled: metaLines RIDE the full
+        # page — R-EXT-11's metaLine half reversed): line-less carrier cells now stay IN the
+        # section stream so the FULL page can place their carriage envelope at the right
+        # position — and the guard's invariant moves to drops(), which must NEVER see a
+        # line-less cell's labels (the reader page's section selection stays byte-identical).
         if is_heading(c)
             (head !== nothing || !isempty(cur)) && push!(sections, Section(head, cur))
             head = c; cur = Cell[]
@@ -612,55 +622,326 @@ function sectionize(cells::Vector{Cell})
     return sections
 end
 
-function page_body(sections::Vector{Section}, legend, keep::Function, chain::String)
+# ── the page-carriage envelope (v0.3.1: the ruled envelope law) ──────────
+# The FULL page is a transformation artifact: every non-discarded metaLine and every hidden
+# non-executed line rides INVISIBLY in a reserved-name `@setup`-class block at its cell's
+# head — lines are `## ` + the ORIGINAL bytes (a comments-only block builds, renders nothing,
+# and stays OUT of the site's search index — probed at v0.3.1; the `@raw html` alternative
+# leaks into search_index.js and was REJECTED by ruling). The header line starts `##gometa`
+# — NO space after `##`, a shape no payload can produce (payloads are always `## ` + bytes),
+# so a decoder's envelope identity cannot be spoofed by PAYLOAD or stripped PROSE (the
+# forged-envelope check below guards the prose side). Scope note (reconfirm wave 2): an
+# authored Julia comment inside a generated CODE fence can still place the sigil bytes at
+# a line start on the built page, so decoders identify envelopes NAME-FIRST (the reserved
+# `gometa_carriage_`/`gometa_` namespaces are disjoint and stem-guarded), never by
+# scanning for the sigil alone. Indices are 0-based over the cell's
+# reconstructable sequence [attached meta run…, non-discarded content lines…]: `carried=`
+# lists the envelope-carried entries, `hidden=` the natively-hidden-in-place executed lines
+# (the ` # hide` suffix / `@setup` body — strip/locate by exactly these indices), every other
+# index is a visible body line in order. The reader page is a VIEW: NO envelopes.
+_carriage_name(chain::String) = "gometa_carriage_" * chain
+# §4.3 edge (ii): partial fence hiding unbalances the page — refuse loudly. Covers heading
+# AND body markdown cells (a heading cell can carry fences under its heading line).
+# WAVE-5 FIXED POINT — a MIRROR OF THE MEASURED PARSER, not of any spec: the rules below
+# were probed against Markdown.parse (julia flavor — what Documenter feeds pages through)
+# and recorded in the development records. Measured law:
+#   OPENER — a homogeneous run (3+) of backticks OR tildes at ANY indent (0/1/3/4-space
+#   and TAB-led all open — the CommonMark 4-space-literal rule does NOT apply here),
+#   with an info string; a line whose info contains the fence character is NOT a fence
+#   (both flavors — `ch in flavor` in the stdlib fencedcode).
+#   CLOSER — a ZERO-indent run of the SAME character of EXACTLY the opener's width
+#   (a longer run is content; an indented exact run is content), with ANY suffix
+#   (the parser closes on the run and ignores the rest of the line).
+# Delimiters are classified from the SAME lead-stripped form the page emitter produces
+# (_strip_lead byte-mirrors the md strip). Refusals: opener/closer FATE mismatch
+# (partial hiding), and a fence still OPEN at cell end (stray opener; blank-split
+# fragment; a DISCARDED closing delimiter — c.lines pre-excludes :discard, so a
+# discarded closer leaves its opener dangling here). Disclosed residuals: a discarded
+# delimiter PAIR passes as zero (authored whole-fence discard — the interior renders
+# unfenced), and two interleaved blank-split fences can still pair up inside their
+# fragments; neither occurs in the committed corpus. Fences inside NESTED Markdown
+# contexts (blockquotes) are handled by a separate fail-closed refusal below.
+_strip_lead(t) = begin
+    s = lstrip(t)
+    startswith(s, "# ") ? s[3:end] : (s == "#" ? "" : startswith(s, "#") ? lstrip(s[2:end]) : String(s))
+end
+function _fence_delims(lines)
+    out = @NamedTuple{j::Int, fate::Symbol, ch::Char, width::Int, indented::Bool, info::String}[]
+    for (j, lf) in enumerate(lines)
+        m = match(r"^([\h]*)(`{3,}|~{3,})(.*)$", _strip_lead(lf.text))
+        m === nothing && continue
+        push!(out, (j = j, fate = lf.fate, ch = first(m.captures[2]),
+                    width = length(m.captures[2]), indented = !isempty(m.captures[1]),
+                    info = String(m.captures[3])))
+    end
+    return out
+end
+function _check_fence_pairing(c::Cell)
+    # Nested-context bound (probe-verified: a blockquoted fence parses as a Code node
+    # INSIDE the BlockQuote — MDPARSE-matrix.out rows blockquoted-*): fences inside `>`
+    # contexts are invisible to this line-grain machine, so a cell mixing HIDDEN lines
+    # with blockquoted fence runs cannot be fate-checked — refuse as unprovable.
+    # DELIBERATE BREADTH (disclosed; wave-5b): ANY 3+ fence-char run on a blockquoted
+    # line trips this — opener-shaped or mid-prose mention alike — because nested-context
+    # fence shapes are exactly what this machine declines to model; mention fences
+    # outside blockquotes (or un-hide the cell) to pass.
+    if any(lf.fate === :hide for lf in c.lines) &&
+       any((t = _strip_lead(lf.text); occursin(r"^[\h]*(?:>[\h]?)+", t) && occursin(r"`{3,}|~{3,}", t)) for lf in c.lines)
+        error("notebooks_from_source: a fence inside a nested Markdown context (blockquote) ",
+            "cannot be fate-checked at line grain (cell head: ", repr(first(c.lines).text),
+            "); hide the whole cell or un-nest the fence")
+    end
+    open_w = 0
+    open_ch = '`'
+    open_fate = :show
+    for d in _fence_delims(c.lines)
+        if open_w == 0
+            occursin(d.ch, d.info) && continue      # not a fence (measured: ch in info)
+            open_w = d.width
+            open_ch = d.ch
+            open_fate = d.fate
+        elseif d.ch == open_ch && d.width == open_w && !d.indented
+            # the measured closer: same char, EXACT width, zero indent, any suffix
+            if d.fate != open_fate
+                error("notebooks_from_source: partial fence hiding — a markdown cell ",
+                    "hides one fence delimiter while its pair is shown (cell head: ",
+                    repr(first(c.lines).text), "); hide the whole fenced block or none")
+            end
+            open_w = 0
+        end
+    end
+    open_w == 0 || error("notebooks_from_source: unbalanced fence delimiters — a fence ",
+        "opened in this cell never closes (cell head: ", repr(first(c.lines).text),
+        "); close every fence inside its cell (no blank line inside a fenced block, and ",
+        "give both delimiters one fate)")
+end
+# The forged-envelope refusal (WAVE-5 FIXED POINT; probe-grounded): the page path strips
+# the `# ` Text lead from prose, and the measured parser accepts fences at ANY indent, in
+# BOTH flavors, and inside NESTED contexts — MDPARSE-matrix.out rows blockquoted-*: a
+# blockquoted ```/~~~ `@setup gometa_…` parses as a directive-language Code node INSIDE
+# the BlockQuote — so shape-matching authored forgeries is an arms race. The fixed point:
+# the `gometa_` name family is RESERVED on generated pages — ANY authored line mentioning
+# it refuses, in every Markdown context (§4.3 edge (iv) at the AUTHORED-page grain). The
+# `##gometa` no-space sigil (unproducible by PAYLOAD lines — always `## ` + bytes)
+# refuses likewise. To DISCUSS the mechanism on a page, write the names spaced or split;
+# the tail template's own mentions are emitter-appended AFTER page_body — never authored,
+# never scanned here. (Whether Documenter's expander EXECUTES a nested directive block
+# was left unprobed — moot under this total refusal; recorded in the adjudication.)
+# The cell-grain twin (wave-5b): scans ORIGINAL authored lines — every cell kind,
+# carried metaLines included — so the reserved-mention law holds for code strings and
+# hidden lines too, not only emitted visible Markdown. (The sigil rule stays on the
+# STRIPPED scan below — the strip is what could mint the byte-exact header shape.)
+function _check_reserved_mention(lines)
+    for l in lines
+        if occursin("gometa_", l)
+            error("notebooks_from_source: an authored line mentions the reserved ",
+                "`gometa_` namespace (", repr(l), ") — generated envelope/execution ",
+                "names are reserved on pages in every Markdown context (§4.3 edge (iv)); ",
+                "rewrite the line (spaced/split mention)")
+        end
+    end
+end
+function _check_forged_envelope(stripped)
+    for l in stripped
+        if occursin("gometa_", l)
+            error("notebooks_from_source: an authored line mentions the reserved ",
+                "`gometa_` namespace (", repr(l), ") — generated envelope/execution ",
+                "names are reserved on pages in every Markdown context (§4.3 edge (iv)); ",
+                "rewrite the line (spaced/split mention)")
+        end
+        if startswith(lstrip(l), "##gometa")
+            error("notebooks_from_source: an authored line strips to the reserved ",
+                "`##gometa` envelope-header sigil (", repr(l), ") — a page decoder ",
+                "would mistake it for a generated carriage header; rewrite the line")
+        end
+    end
+end
+function _carriage_envelope(io, c::Cell, chain::String; hidden_idx::Vector{Int} = Int[])
+    n = length(c.carried) + length(c.lines)
+    carried_idx = Int[]
+    payload = String[]
+    for (i, lf) in enumerate(c.carried)
+        push!(carried_idx, i - 1); push!(payload, lf.text)
+    end
+    if c.kind === :markdown || c.kind === :carrier
+        for (j, lf) in enumerate(c.lines)
+            if lf.fate === :hide || c.kind === :carrier
+                push!(carried_idx, length(c.carried) + j - 1); push!(payload, lf.text)
+            end
+        end
+    elseif c.kind === :code && !isempty(hidden_idx)
+        # executed cells: hidden lines stay IN PLACE natively (`# hide`/@setup — §4.3(a));
+        # only the meta run rides the envelope; `hidden=` records the in-place positions
+    elseif c.kind === :code
+        for (j, lf) in enumerate(c.lines)
+            if lf.fate === :hide
+                push!(carried_idx, length(c.carried) + j - 1); push!(payload, lf.text)
+            end
+        end
+    end
+    isempty(payload) && isempty(hidden_idx) && return false
+    println(io, "```@setup ", _carriage_name(chain))
+    println(io, "##gometa carriage v1 kind=", c.kind === :carrier ? "carrier" :
+        (c.kind === :markdown ? "markdown" : "code"), " n=", n,
+        " carried=", join(carried_idx, ","), " hidden=", join(sort(hidden_idx), ","))
+    for t in payload
+        println(io, "## ", t)
+    end
+    println(io, "```")
+    println(io)
+    return true
+end
+# a generated executed block's fence must outrun any backtick run in its body (§4.3 edge iii)
+_fence(bodylines) = "`" ^ max(3, 1 + maximum(vcat(0,
+    [length(match(r"^`*", lstrip(l)).match) for l in bodylines])))
+
+function page_body(sections::Vector{Section}, legend, keep::Function, chain::String;
+                   carriage::Bool = false)
     io = IOBuffer()
+    exec_chain = "gometa_" * chain     # §4.3 edge (iv): reserved generated namespace —
+                                       # an authored block can never share the sandbox
     for s in sections
         keep(s) || continue
         if s.heading !== nothing
+            _check_reserved_mention([lf.text for lf in vcat(s.heading.carried, s.heading.lines)])
+            _check_fence_pairing(s.heading)
+            carriage && _carriage_envelope(io, s.heading, chain)
             # the same no-trace guard as body cells (reconfirm wave: a fully hidden
             # heading must not leave stray blanks)
             hl = md_lines_page(s.heading)
+            _check_forged_envelope(hl)
             isempty(hl) || (println(io, join(hl, '\n')); println(io))
         end
         for c in s.cells
-            # PAGES ARE VIEWS (owner-ruled 2026-08-12): carrier cells and carried meta
-            # runs do not ride pages — the notebook full edition is the
-            # metadata-bearing artifact; hidden lines DROP here (HTML comments render
-            # VISIBLY through the Documenter markdown pipeline, probe-proven)
-            (c.kind === :carrier || isempty(c.lines)) && continue
+            _check_reserved_mention([lf.text for lf in vcat(c.carried, c.lines)])
+            # FULL page (v0.3.1, §4.2): hidden content AND metaLines
+            # ride in the carriage envelope; the READER page is a VIEW (carriage=false —
+            # NO envelopes, and trimmed sections travel nowhere). Ruled bound, stated
+            # exactly (reconfirm wave 2): hidden EXECUTED lines of a RETAINED section
+            # still ride the reader NATIVELY (' # hide' / @setup — §4.3(a) preserves
+            # execution continuity); the committed reader selection has zero hidden lines
+            # today — if a future selection gains one, surface it to the owner first (the
+            # adjudication ledger's reader-view row carries the re-raise trigger).
+            # Carrier cells (detached meta runs) are envelope-only cells on the full
+            # page and vanish from the reader.
+            if c.kind === :carrier || isempty(c.lines)
+                carriage && _carriage_envelope(io, c, chain)
+                continue
+            end
             ms = meaning(c, legend)
             if c.kind === :markdown
+                _check_fence_pairing(c)
+                carriage && _carriage_envelope(io, c, chain)
                 pl = md_lines_page(c)
+                _check_forged_envelope(pl)
                 # a fully hidden markdown cell leaves NO trace on the page (panel V4:
                 # no stray blank lines for an invisible cell)
                 isempty(pl) || (println(io, join(pl, '\n')); println(io))
             elseif :expensive in ms
                 # the branch order is load-bearing: expensive-BEFORE-all-hidden keeps
                 # the never-execute law (an all-hidden expensive cell must not fall to
-                # the executing @setup branch below); when every line is hidden the
-                # cell leaves no trace (panel V2/V4: no empty fence + caption)
+                # the executing @setup branch below); hidden lines of a NEVER-executed
+                # cell ride the envelope (owner-ruled §4.3: only EXECUTED hidden code
+                # stays in place natively)
+                carriage && _carriage_envelope(io, c, chain)
                 shown = code_lines(c)
                 if !isempty(shown)
-                    println(io, "```julia")
+                    f = _fence(shown)
+                    println(io, f, "julia")
                     foreach(l -> println(io, l), shown)       # shown lines only;
-                    println(io, "```")                        # hidden lines drop
+                    println(io, f)                            # hidden lines ride the envelope
                     println(io)
                     println(io, "*(Marked expensive in the source — shown here, deliberately NOT executed by the docs build.)*")
                     println(io)
                 end
             elseif all(lf.fate === :hide for lf in c.lines)
-                # execute-but-fully-hide → a NAMED @setup block (the # hide suffix hides
-                # source only; a fully hidden cell must not leak its output either)
-                println(io, "```@setup ", chain)
-                foreach(l -> println(io, l), (lf.text for lf in c.lines))
-                println(io, "```")
+                # execute-but-fully-hide → a NAMED @setup block (§4.3(a): the native
+                # execute channel; `hidden=` indices record the in-place lines).
+                # An authored trailing `# hide` in THIS branch is deliberately NOT
+                # refused (unlike the @example branch below): no suffix is appended to
+                # @setup body lines, the whole cell is already display-hidden, and
+                # `hidden=` covers every body index — the marker is inert here and the
+                # decoder's suffix-strip stays exact (disclosed; reconfirm wave).
+                carriage && _carriage_envelope(io, c, chain;
+                    hidden_idx = [length(c.carried) + j - 1 for j in eachindex(c.lines)])
+                bodyl = [lf.text for lf in c.lines]
+                f = _fence(bodyl)
+                println(io, f, "@setup ", exec_chain)
+                foreach(l -> println(io, l), bodyl)
+                println(io, f)
                 println(io)
             else
-                println(io, "```@example ", chain)
+                # The §4.3(a) authored-marker refusal: an AUTHORED shown line already
+                # ending in `# hide` would be display-hidden by Documenter AGAINST its
+                # GoMeta fate — refuse loudly; a HIDDEN line ending in `# hide` would
+                # double-suffix — refused outright too (stricter than edge (v)'s
+                # hidden=-index answer: refusing keeps display fates byte-derivable).
                 for lf in c.lines
-                    println(io, lf.fate === :hide ? lf.text * " # hide" : lf.text)
+                    if match(r"#\s*hide\s*$", lf.text) !== nothing
+                        error("notebooks_from_source: a source line inside an executed cell ",
+                            "ends in the Documenter-native '# hide' marker (", repr(lf.text),
+                            ") — its display fate would no longer follow its GoMeta ",
+                            "evaluation; rewrite the line (the marker is reserved on pages)")
+                    end
                 end
-                println(io, "```")
+                # §4.3 edge (i) — the ruled byte-integrity refusal (WAVE-5 FIXED POINT):
+                # appending ` # hide` to a hidden line whose EOL sits inside an OPEN
+                # multiline literal (STRING or COMMAND — a Cmd's arguments are runtime
+                # bytes exactly like string contents) would write the marker INTO the
+                # literal's runtime bytes. IS: a LEXER-grounded check — the cell's lines
+                # are tokenized with Base.JuliaSyntax (the real Julia lexer), so strings,
+                # command literals, comments, and escapes are classified by the language
+                # itself, not by a heuristic (the earlier toggle scans were
+                # parity-poisonable by delimiter bytes inside comments and strings —
+                # reconfirm rounds 1-2, probe-verified). DOES: refuses any hidden line
+                # whose EOL byte falls inside a String/CmdString content token, and
+                # refuses UNPROVABLE cells (an error token — e.g. a literal left open by
+                # the blank-line cell split — or a tokenizer failure) instead of
+                # guessing. A hidden line that CLOSES a literal is accepted (its EOL is
+                # past the closing delimiter — the suffix lands as a plain comment).
+                # Cells with no hidden lines never enter the check. PURPOSE: edge (i)
+                # can never silently corrupt runtime bytes. REASONING: fail-closed at
+                # the real lexer's grain ends the decoy arms race.
+                if any(lf.fate === :hide for lf in c.lines)
+                    _lsrc = join([lf.text for lf in c.lines], "\n") * "\n"
+                    _eol = cumsum([sizeof(lf.text) + 1 for lf in c.lines])
+                    _toks = try
+                        collect(Base.JuliaSyntax.tokenize(_lsrc))
+                    catch
+                        nothing
+                    end
+                    if _toks === nothing ||
+                       any(Base.JuliaSyntax.is_error(Base.JuliaSyntax.kind(t)) for t in _toks)
+                        error("notebooks_from_source: line-grain hiding in an executed cell ",
+                            "whose literal state cannot be proven (the Julia lexer reports ",
+                            "an unterminated or unlexable region — cell head: ",
+                            repr(first(c.lines).text), ") — the appended ' # hide' could ",
+                            "land inside a literal's runtime bytes (§4.3 edge (i)); hide ",
+                            "the whole cell or close the literal within the cell")
+                    end
+                    for (_j, lf) in enumerate(c.lines)
+                        lf.fate === :hide || continue
+                        for t in _toks
+                            k = string(Base.JuliaSyntax.kind(t))
+                            (k == "String" || k == "CmdString") || continue
+                            if first(t.range) <= _eol[_j] <= last(t.range)
+                                error("notebooks_from_source: line-grain hiding inside an ",
+                                    "open multiline literal (string or command) (",
+                                    repr(lf.text), ") — the appended ' # hide' would alter ",
+                                    "the literal's runtime bytes (§4.3 edge (i)); hide the ",
+                                    "whole cell or move the marker outside the literal")
+                            end
+                        end
+                    end
+                end
+                carriage && _carriage_envelope(io, c, chain;
+                    hidden_idx = [length(c.carried) + j - 1
+                                  for (j, lf) in enumerate(c.lines) if lf.fate === :hide])
+                bodyl = [lf.fate === :hide ? lf.text * " # hide" : lf.text for lf in c.lines]
+                f = _fence(bodyl)
+                println(io, f, "@example ", exec_chain)
+                foreach(l -> println(io, l), bodyl)
+                println(io, f)
                 println(io)
             end
         end
@@ -672,12 +953,22 @@ count_doctests(page::String) = length(collect(eachmatch(r"^```jldoctest"m, page)
 
 function derive_pages(spec::SourceSpec, cells::Vector{Cell})
     stem = splitext(basename(spec.path))[1]
+    # Namespace injectivity (reconfirm wave): carriage blocks are `gometa_carriage_<stem>`
+    # and execution blocks `gometa_<stem>` — a stem itself starting with `carriage_` would
+    # alias the carriage namespace of ANOTHER stem in the same build (stem `carriage_x`'s
+    # exec name == stem `x`'s carriage name). The prefix is reserved; refuse loudly.
+    startswith(stem, "carriage_") && error("notebooks_from_source: the page stem ",
+        repr(stem), " begins with the reserved prefix 'carriage_' — its execution ",
+        "namespace gometa_", stem, " would alias the carriage namespace of stem ",
+        repr(stem[10:end]), "; rename the source file")
     sections = sectionize(cells)
     keep_all(s) = true
-    drops(s) = any(m in (:solution, :deep_dive) for c in vcat(s.heading === nothing ? Cell[] : [s.heading], s.cells) for m in meaning(c, spec.legend))
+    # the V4-guard invariant, relocated (see sectionize): line-less carrier cells are
+    # placement-only — the reader page's section selection must not see their labels
+    drops(s) = any(m in (:solution, :deep_dive) for c in vcat(s.heading === nothing ? Cell[] : [s.heading], s.cells) if !isempty(c.lines) for m in meaning(c, spec.legend))
     keep_reader(s) = !drops(s)
-    full   = page_body(sections, spec.legend, keep_all, stem)
-    reader = page_body(sections, spec.legend, keep_reader, stem)
+    full   = page_body(sections, spec.legend, keep_all, stem; carriage = true)
+    reader = page_body(sections, spec.legend, keep_reader, stem; carriage = false)
     nfull, nreader = count_doctests(full), count_doctests(reader)
     tail_full = """
     ---
@@ -698,14 +989,18 @@ function derive_pages(spec::SourceSpec, cells::Vector{Cell})
     | run + hidden | `# hide` on the line (a fully hidden cell becomes a named `@setup`) | yes — the SOURCE line is hidden; a `# hide` line's output can still show |
     | shown, not run | a plain fenced block | no |
 
-    This page is a derived VIEW: verdict-hidden lines are simply not on it (except the
-    lines of EXECUTED blocks — `# hide`-marked lines and whole `@setup` bodies — which
-    run at the docs build and stay display-hidden on the built page, though they are
-    plainly present in this page's raw markdown), and the source's `#~` metaLines do
-    not ride it. The metadata-bearing artifact is the FULL
-    notebook edition, where hidden lines and every metaLine travel invisibly (HTML
-    comments in markdown cells, `gometa` cell metadata in code cells) in source form;
-    discarded lines travel nowhere.
+    This FULL page is a TRANSFORMATION artifact (v0.3.1): every
+    non-discarded metaLine — `#~` marks and `#]` close-markers alike — and every
+    hidden non-executed line rides INVISIBLY in the
+    page's `@setup gometa_carriage_…` blocks (`## `-commented original bytes with an
+    `##gometa carriage v1` index header — invisible on the built site and absent from its
+    search index), while hidden lines of EXECUTED blocks stay in place natively
+    (`# hide`-suffixed lines and whole `@setup` bodies: they run at the docs build,
+    display-hidden, and their positions are recorded in each envelope's `hidden=`
+    indices). The reader twin is a VIEW: its trimmed sections travel nowhere and it
+    carries no envelopes. The FULL notebook edition is the same transformation in
+    notebook form (HTML comments in markdown cells, `gometa` cell metadata in code
+    cells); discarded lines travel nowhere in any edition.
 
     Regenerate and byte-compare every GENERATED file (notebooks and pages) yourself:
     `julia --startup-file=no --project=. notebooks_from_source.jl --check` — the executed
@@ -884,12 +1179,339 @@ function run_selfchecks()
         fail("carriage: the detached file rule did not travel as a carrier comment")
     (occursin("visible = 1", dnb) && occursin("ok = 2", dnb)) ||
         fail("discard fixture: shown content missing")
+    # ── page-carriage fixtures (v0.3.1: the ruled envelope law + §4.3 edges) ──
+    function pages_of(src::String, name::String)
+        spec = fixspec(name)
+        bytes = Vector{UInt8}(codeunits(src))
+        r = GoMeta.goMeta(bytes)
+        r.status == GoMeta.PROCESS_OK || fail("page fixture did not process: $(r.status)")
+        fates = verdict_fates(String(copy(bytes)), GoMeta.altValues_evals(r), GoMeta.content_fingerprint(r))
+        cells = partition(fates)
+        join_labels!(cells, GoMeta.altValues_evals(r), GoMeta.content_fingerprint(r))
+        pages = derive_pages(spec, cells)
+        return last(pages[1]), last(pages[2])            # full, reader
+    end
+    psrc = "#~ discard{ :label5 }\n\n#~2 :label1\n# # Params section\n# hidden note line #~ hide\nn = 10\n\n#~2 :label4\n# # Deep section\ndeep = 1\n"
+    pfull, preader = pages_of(psrc, "fixture-pages.jl")
+    # (1) the FULL page carries: the detached file rule as a carrier envelope, the attached
+    # meta runs, and the hidden prose line — each as `## `-payload under the reserved @setup
+    occursin("```@setup gometa_carriage_", pfull) || fail("carriage: no carriage envelope on the full page")
+    occursin("## #~ discard{ :label5 }", pfull)   || fail("carriage: the detached file rule did not ride the full page")
+    occursin("## #~2 :label1", pfull)             || fail("carriage: an attached meta run did not ride the full page")
+    occursin("hidden note line", pfull)           || fail("carriage: a hidden prose line did not ride the full page")
+    # (2) header shape: the unproducible `##gometa` sigil with index fields
+    occursin(r"##gometa carriage v1 kind=(markdown|code|carrier) n=\d+ carried=[\d,]* hidden=[\d,]*", pfull) ||
+        fail("carriage: envelope header malformed or missing")
+    # (3) the READER page is a VIEW: zero envelopes, and the trimmed deep section's
+    # bytes travel NOWHERE in it
+    occursin("gometa_carriage_", preader) && fail("2c: the reader page carries an envelope")
+    occursin("deep = 1", preader)         && fail("2c: a trimmed section's bytes are on the reader page")
+    # (4) hidden prose stays INVISIBLE in the full page's visible body (the envelope is the
+    # only carrier): the line must not appear outside a `## `-payload
+    for l in split(pfull, '\n')
+        occursin("hidden note line", l) && !startswith(l, "## ") &&
+            fail("carriage: a hidden prose line is VISIBLE on the full page")
+    end
+    # (5) the §4.3(a) authored-marker refusal: an authored `# hide` tail inside an executed
+    # cell refuses loudly (edge (v)'s double-suffix case is answered by this refusal too)
+    hide_refused = try
+        pages_of("#~2 :label1\nx = 1 # hide\n", "fixture-hidetail.jl"); false
+    catch err
+        err isa ErrorException && occursin("'# hide'", err.msg)
+    end
+    hide_refused || fail("§4.3(a): an authored '# hide' tail was not refused")
+    # (6) §4.3 edge (ii): partial fence hiding in markdown refuses loudly
+    fence_refused = try
+        pages_of("#~2 hide{ :label1 }\n# # S\n# ```jldoctest #~ hide\n# julia> 1\n# 1\n# ```\n", "fixture-fence.jl"); false
+    catch err
+        err isa ErrorException && occursin("partial fence hiding", err.msg)
+    end
+    fence_refused || fail("edge (ii): partial fence hiding was not refused")
+    # (7) Jupyter adversarial carriage (the §3.5 audit): a hidden md line carrying `-->` and
+    # `<!--` travels carrier-ESCAPED inside its comment wrapper (never raw — a raw payload
+    # `-->` would close the wrapper early), the escape provably inverts, and kind fidelity
+    # for a fully hidden CODE cell rides the metadata
+    jsrc = "# tricky --> and <!-- inside #~ hide\n\n#~2 hide{ isCode }\nhidden_code = 7\n"
+    jnb = nb_of(jsrc, "fixture-jadv.jl")
+    occursin("tricky", jnb) || fail("jupyter adversarial: the tricky hidden line vanished")
+    # the ESCAPED payload form (`-\->` / `<!-\-`; JSON doubles each backslash) must be the
+    # form on the artifact…
+    occursin("tricky -\\\\-> and <!-\\\\- inside", jnb) ||
+        fail("jupyter adversarial: the payload's `--` runs did not travel carrier-escaped")
+    # …inside the exact comment WRAPPER (a broken html_comment emitting the escaped text
+    # VISIBLY would satisfy the substring asserts alone), and exactly once:
+    occursin("<!-- # tricky -\\\\-> and <!-\\\\- inside #~ hide -->", jnb) ||
+        fail("jupyter adversarial: the exact escaped comment wrapper is missing")
+    length(findall("tricky", jnb)) == 1 ||
+        fail("jupyter adversarial: the tricky payload must appear exactly once (inside its wrapper)")
+    # …and the raw form must NOT be (wrapper delimiters are the only raw `-->`s)
+    occursin("tricky --> and", jnb) &&
+        fail("jupyter adversarial: a raw payload `-->` leaked into the artifact")
+    # reversibility, pinned on the artifact's own form: the decoder's documented inverse
+    # recovers the original bytes from the escaped payload
+    carrier_unescape("tricky -\\-> and <!-\\- inside") == "tricky --> and <!-- inside" ||
+        fail("jupyter adversarial: carrier_unescape does not invert the escaped payload")
+    occursin("\"kind\": \"code\"", jnb) || fail("jupyter adversarial: fully hidden code cell lost kind fidelity")
+    # (8) the mark_depth ≡ law (R-INERT-4; reconfirm wave): an inert `#~2! x` head governs
+    # its cell at depth 2 exactly like live `#~2` — identical slides-edition slide_type
+    # sequences, subslide included (pre-fix the inert head scraped as no-depth → fragment)
+    slidespec(name) = SourceSpec(name, legend, [:slides], false)
+    slideseq(nb) = [m.captures[1] for m in eachmatch(r"\"slide_type\": \"(\w+)\"", nb)]
+    snb_i = last(only(derive_from_bytes(Vector{UInt8}(codeunits("#~2! x\ncode9 = 1\n")), slidespec("fixture-slides-inert.jl"))))
+    snb_l = last(only(derive_from_bytes(Vector{UInt8}(codeunits("#~2\ncode9 = 1\n")), slidespec("fixture-slides-live.jl"))))
+    slideseq(snb_i) == slideseq(snb_l) || fail("slides ≡: inert vs live twin slide_type sequences differ")
+    "subslide" in slideseq(snb_i) || fail("slides ≡: the inert depth-2 head did not scrape as depth 2")
+    # the tilde-run and first-digit forms obey the same ≡ (a constant-depth mutant fails):
+    for (isrc, lsrc, nm) in (("#~~! x\ncode8 = 1\n", "#~~\ncode8 = 1\n", "tilde2"),
+                             ("#~31! x\ncode7 = 1\n", "#~31\ncode7 = 1\n", "digit31"))
+        a8 = last(only(derive_from_bytes(Vector{UInt8}(codeunits(isrc)), slidespec("fixture-slides-" * nm * "-i.jl"))))
+        b8 = last(only(derive_from_bytes(Vector{UInt8}(codeunits(lsrc)), slidespec("fixture-slides-" * nm * "-l.jl"))))
+        slideseq(a8) == slideseq(b8) || fail("slides ≡ (" * nm * "): inert vs live twin sequences differ")
+        nm == "tilde2" && ("subslide" in slideseq(a8) || fail("slides ≡ (tilde2): depth-2 tilde run must scrape as depth 2"))
+    end
+    # (9) exact-index envelope pinning (a PARTIALLY hidden executed cell): concrete
+    # n=/carried=/hidden= VALUES + the in-place ` # hide` suffix on exactly the hidden line
+    # (0-based over [carried…, lines…]: 0 = the metaLine, 2 = the hidden body line)
+    p2full, _ = pages_of("#~2 :label1\nshown1 = 1\nhid = 2 #~ hide\nshown2 = 3\n", "fixture-hidx.jl")
+    occursin("##gometa carriage v1 kind=code n=4 carried=0 hidden=2", p2full) ||
+        fail("exact-index: the executed-cell envelope header indices are wrong")
+    occursin("## #~2 :label1", p2full) || fail("exact-index: the carried metaLine payload is missing")
+    occursin("hid = 2 #~ hide # hide", p2full) || fail("exact-index: the hidden line lost its in-place ' # hide' suffix")
+    occursin("shown1 = 1 # hide", p2full) && fail("exact-index: a SHOWN line took a ' # hide' suffix")
+    occursin("shown2 = 3 # hide", p2full) && fail("exact-index: a SHOWN line took a ' # hide' suffix")
+    # (10) a FULLY hidden executed cell: the named @setup channel, all-indices hidden=,
+    # body riding IN PLACE (not as envelope payload)
+    p3full, _ = pages_of("#~2 hide{ isCode }\nsecret9 = 9\n", "fixture-fullhide.jl")
+    occursin("```@setup gometa_fixture-fullhide", p3full) ||
+        fail("full-hide: the fully hidden executed cell did not become a named @setup block")
+    occursin("##gometa carriage v1 kind=code n=2 carried=0 hidden=1", p3full) ||
+        fail("full-hide: the envelope header indices are wrong")
+    occursin("\nsecret9 = 9\n", p3full) || fail("full-hide: the hidden body line is not riding in place")
+    length(findall("secret9 = 9", p3full)) == 1 || fail("full-hide: the body must ride exactly once")
+    first(findfirst("secret9 = 9", p3full)) > first(findfirst("```@setup gometa_fixture-fullhide", p3full)) ||
+        fail("full-hide: the body must sit inside the named @setup block")
+    occursin("```@setup gometa_fixture-fullhide\nsecret9 = 9\n```", p3full) ||
+        fail("full-hide: the exact opener/body/closer block shape is broken")
+    # (11) §4.3 edge (iii): a body backtick run forces a LONGER generated fence (4+)
+    p4full, _ = pages_of("#~2 :label2\ns = \"\"\"\n```\n\"\"\"\n", "fixture-outrun.jl")
+    occursin("````julia", p4full) || fail("edge (iii): the generated fence did not outrun the body's ``` run")
+    p4b, _ = pages_of("#~2 :label2\ns6 = \"\"\"\n````\n\"\"\"\n", "fixture-outrun4.jl")
+    occursin("`````julia", p4b) || fail("edge (iii): a 4-run body did not force a 5-backtick fence")
+    p4c, _ = pages_of("#~2 :label1\ncmd9 = ```\necho ok line\n``` ## pad-close\n", "fixture-outrun-exec.jl")
+    occursin("````@example", p4c) || fail("edge (iii): the EXECUTED branch fence did not outrun a ``` body line")
+    # (12) the reserved-stem guard: a `carriage_`-prefixed stem refuses (namespace injectivity)
+    stem_refused = try
+        pages_of("#~2 :label1\nx = 1\n", "carriage_x.jl"); false
+    catch err
+        err isa ErrorException && occursin("reserved prefix", err.msg)
+    end
+    stem_refused || fail("reserved-stem: a carriage_-prefixed stem was not refused")
+    # (13) the forged-envelope refusals: authored prose stripping to a reserved-namespace
+    # fence opener, and to the `##gometa` sigil — both refuse loudly
+    forge1 = try
+        pages_of("#~2 :label1\n# # S\n# ```@setup gometa_carriage_evil\n# ## fake\n# ```\n", "fixture-forge1.jl"); false
+    catch err
+        err isa ErrorException && occursin("reserved `gometa_` namespace", err.msg)
+    end
+    forge1 || fail("forged-envelope: a reserved-namespace fence opener was not refused")
+    forge2 = try
+        pages_of("#~2 :label1\n# ##gometa carriage v1 kind=code n=1 carried= hidden=\n", "fixture-forge2.jl"); false
+    catch err
+        err isa ErrorException && occursin("sigil", err.msg)
+    end
+    forge2 || fail("forged-envelope: the ##gometa sigil was not refused")
+    # (14) §4.3 edge (i): a hidden line inside an OPEN multiline string literal refuses
+    str_refused = try
+        pages_of("#~2 :label1\ns = \"\"\"\nline #~ hide\n\"\"\"\nafter_str = 10\n", "fixture-strhide.jl"); false
+    catch err
+        err isa ErrorException && occursin("open multiline literal", err.msg)
+    end
+    str_refused || fail("edge (i): hiding inside an open multiline string was not refused")
+    # (15) the odd-delimiter-count refusal: an authored unclosed fence refuses
+    odd_refused = try
+        pages_of("#~2 :label1\n# # S\n# ```julia\n# x = 1\n", "fixture-oddfence.jl"); false
+    catch err
+        err isa ErrorException && occursin("unbalanced fence delimiters", err.msg)
+    end
+    odd_refused || fail("odd-count: an unclosed authored fence was not refused")
+    # (16) forged-envelope BODY-site twins + tab-indent variant (reconfirm wave 2: the
+    # The earlier fixtures both routed through the HEADING path; a body-site-only regression was
+    # invisible to the battery)
+    forge3 = try
+        pages_of("#~2 :label1\n# prose line here\n#  ##gometa carriage v1 kind=code n=1 carried= hidden=\n", "fixture-forge3.jl"); false
+    catch err
+        err isa ErrorException && occursin("sigil", err.msg)
+    end
+    forge3 || fail("forged-envelope: the BODY-cell two-space sigil form was not refused")
+    forge4 = try
+        pages_of("#~2 :label1\n# prose line here\n# ```@example gometa_evil\n# ```\n", "fixture-forge4.jl"); false
+    catch err
+        err isa ErrorException && occursin("reserved `gometa_` namespace", err.msg)
+    end
+    forge4 || fail("forged-envelope: a BODY-cell @example gometa_* fence was not refused")
+    forge5 = try
+        pages_of("#~2 :label1\n# prose line here\n#\t```@setup gometa_carriage_evil\n#\t```\n", "fixture-forge5.jl"); false
+    catch err
+        err isa ErrorException && occursin("reserved `gometa_` namespace", err.msg)
+    end
+    forge5 || fail("forged-envelope: a TAB-led gometa_* fence was not refused")
+    # (17) edge (i) toggle ORDER: a hidden OPENING delimiter refuses (update-then-check —
+    # a check-then-update mutant passes fixture 14 yet injects on the opener); a hidden
+    # CLOSING delimiter is ACCEPTED with its native suffix (lands after the close)
+    stro_refused = try
+        pages_of("#~2 :label1\ns4 = \"\"\" #~ hide\nbody line here\n\"\"\" ## pad-close\nafter_open = 10\n", "fixture-strhide-open.jl"); false
+    catch err
+        err isa ErrorException && occursin("open multiline literal", err.msg)
+    end
+    stro_refused || fail("edge (i): a hidden OPENING delimiter line was not refused (toggle order)")
+    p14c, _ = pages_of("#~2 :label1\ns5 = \"\"\"\nbody line here\n\"\"\" #~ hide\nafter_close = 10\n", "fixture-strhide-close.jl")
+    occursin("\"\"\" #~ hide # hide", p14c) || fail("edge (i): a hidden CLOSING delimiter must be accepted with its native suffix")
+    # (18) edge (i) Cmd-literal family: a hidden line inside an open ``` command literal
+    # refuses (its arguments are runtime bytes exactly like string contents)
+    cmd_refused = try
+        pages_of("#~2 :label1\ncmd0 = ```\necho hidden #~ hide\n``` ## pad-close\nafter_cmd = 12\n", "fixture-cmdhide.jl"); false
+    catch err
+        err isa ErrorException && occursin("open multiline literal", err.msg)
+    end
+    cmd_refused || fail("edge (i): a hidden line inside an open ``` Cmd literal was not refused")
+    # (19) edge (i), lexer-grounded: block-comment and escaped-delimiter DECOYS ahead of
+    # a REAL open literal — the lexer classifies the decoys away and refuses the hidden
+    # line inside the actual literal (the retired toggle gate refused these as unprovable)
+    conf1_refused = try
+        pages_of("#~2 :label1\n#= \"\"\" =# note9 = 1\ns2 = \"\"\"\nhidden here #~ hide\n\"\"\" ## pad-close\nafter_conf = 10\n", "fixture-confound1.jl"); false
+    catch err
+        err isa ErrorException && occursin("open multiline literal", err.msg)
+    end
+    conf1_refused || fail("edge (i): hiding inside the real literal behind a block-comment decoy was not refused")
+    conf2_refused = try
+        pages_of("#~2 :label1\ns3 = \"\"\"\ninner \\\"\"\" quoted line\nhidden line #~ hide\n\"\"\" ## pad-close\nafter_esc = 10\n", "fixture-confound2.jl"); false
+    catch err
+        err isa ErrorException && occursin("open multiline literal", err.msg)
+    end
+    conf2_refused || fail("edge (i): hiding inside a literal with escaped delimiters was not refused")
+    # (20) width/state-aware fence scan — POSITIVE control: a literal ``` payload inside
+    # a wider authored fence passes and renders (the retired odd-count scan false-refused it)
+    p16, _ = pages_of("#~2 :label1\n# # Wide\n# ````julia\n# ``` literal line\n# ````\n", "fixture-widefence.jl")
+    occursin("``` literal line", p16) || fail("width-aware: a literal ``` payload inside a wider fence must pass and render")
+    # (21) parser-mirror — a suffixed EXACT-width line IS a closer (measured: the parser
+    # closes on the run and ignores the suffix), so a hidden one refuses as the
+    # opener/closer FATE mismatch
+    wmix_refused = try
+        pages_of("#~2 :label1\n# # Wmix\n# ````julia\n# ``` inner line\n# ```` #~ hide\n", "fixture-widemix.jl"); false
+    catch err
+        err isa ErrorException && occursin("partial fence hiding", err.msg)
+    end
+    wmix_refused || fail("parser-mirror: a hidden exact-width suffixed CLOSER (measured: suffix allowed) must refuse the fate mismatch")
+    # (22) TAB-led fence delimiters are classified (the retired literal-prefix scan missed
+    # them entirely — a tab-led partial hide sailed through)
+    tab_refused = try
+        pages_of("#~2 hide{ :label1 }\n# # Tabf\n#\t```julia #~ hide\n# xx9 = 11\n#\t```\n", "fixture-tabfence.jl"); false
+    catch err
+        err isa ErrorException && occursin("partial fence hiding", err.msg)
+    end
+    tab_refused || fail("width-aware: a TAB-led hidden opener escaped the fence scan")
+    # (23) three delimiters: a closed pair + a stray opener refuses as unbalanced
+    odd3_refused = try
+        pages_of("#~2 :label1\n# # Odd3\n# ```julia\n# aa1 = 1\n# ```\n# ```python\n# bb2 = 2\n", "fixture-odd3.jl"); false
+    catch err
+        err isa ErrorException && occursin("unbalanced fence delimiters", err.msg)
+    end
+    odd3_refused || fail("odd-count: a closed pair + stray opener was not refused")
+    # (24) the TILDE fence flavor (compliance breaker MAJOR): Documenter parses ~~~ fences
+    # identically — an authored tilde @setup forge refuses, and tilde partial hiding refuses
+    forge6 = try
+        pages_of("#~2 :label1\n# prose line here\n# ~~~@setup gometa_carriage_evil\n# ~~~\n", "fixture-forge6.jl"); false
+    catch err
+        err isa ErrorException && occursin("reserved `gometa_` namespace", err.msg)
+    end
+    forge6 || fail("forged-envelope: a TILDE-fence @setup gometa_* forge was not refused")
+    # (measured nuance, MDPARSE-matrix.out row tilde-in-tilde-info: a tilde OPENER whose
+    # info contains a tilde is NOT a fence — so an inline `#~` marker on the OPENER line
+    # de-fences it; the mixed-fate tilde case is therefore a hidden CLOSER, whose suffix
+    # is free)
+    tilde_refused = try
+        pages_of("#~2 :label1\n# # Tildef\n# ~~~text\n# body tilde line\n# ~~~ #~ hide\n", "fixture-tildefence.jl"); false
+    catch err
+        err isa ErrorException && occursin("partial fence hiding", err.msg)
+    end
+    tilde_refused || fail("width-aware: TILDE-fence partial hiding was not refused")
+    # (25) lexer ground truth — the STRING-DECOY (round-2 counterexample): a single-quote
+    # string containing ``` must not poison the Cmd state; the hidden line inside the REAL
+    # Cmd literal refuses
+    decoy1 = try
+        pages_of("#~2 :label1\nnoteA = \"```\"\ncmdB = ```\necho secret9 #~ hide\n``` ## pad-close\nafter_x = 12\n", "fixture-decoy-string.jl"); false
+    catch err
+        err isa ErrorException && occursin("open multiline literal", err.msg)
+    end
+    decoy1 || fail("lexer: the string-decoy counterexample was not refused")
+    # (26) the LINE-COMMENT decoy: `# \"\"\"` in a trailing comment must not poison the
+    # string state; the hidden line inside the REAL string refuses
+    decoy2 = try
+        pages_of("#~2 :label1\nxA = 1 # \"\"\"\nsB = \"\"\"\nbody here #~ hide\n\"\"\" ## pad-close\nafter_y = 13\n", "fixture-decoy-comment.jl"); false
+    catch err
+        err isa ErrorException && occursin("open multiline literal", err.msg)
+    end
+    decoy2 || fail("lexer: the line-comment-decoy counterexample was not refused")
+    # (27) ACCEPT control: a CLOSED one-line Cmd + a later hidden line outside every
+    # literal — accepted, with the native suffix in place
+    p27, _ = pages_of("#~2 :label1\ncmdA = ```echo x```\nplain_ln = 1\nhide_me = 2 #~ hide\n", "fixture-closedcmd.jl")
+    occursin("hide_me = 2 #~ hide # hide", p27) || fail("lexer: a hidden line outside every literal must be accepted")
+    # (28) parser-mirror ACCEPT: an exact-width SUFFIXED closer closes (measured:
+    # closer-suffixed row) — same fate, no refusal, suffix rides the page
+    p28, _ = pages_of("#~2 :label1\n# # Sfx\n# ```julia\n# code_q = 1\n# ``` trailing note\n", "fixture-sfxclose.jl")
+    occursin("``` trailing note", p28) || fail("parser-mirror: a suffixed exact-width closer must close and render")
+    # (29) parser-mirror: a 4-SPACE-led opener IS a fence (measured: opener-4space row —
+    # the CommonMark literal-code rule does NOT apply); partial hiding refuses
+    ind5_refused = try
+        pages_of("#~2 hide{ :label1 }\n# # Ind5\n#     ```julia #~ hide\n# ind_code = 1\n# ```\n", "fixture-ind5.jl"); false
+    catch err
+        err isa ErrorException && occursin("partial fence hiding", err.msg)
+    end
+    ind5_refused || fail("parser-mirror: a 4-space-led hidden opener escaped the scan")
+    # (30) the nested-context bound: a blockquoted fence + hidden lines refuses fail-closed
+    bq_refused = try
+        pages_of("#~2 hide{ :label1 }\n# # Bq\n# > ```julia #~ hide\n# > bq_code = 1\n# > ```\n", "fixture-bqfence.jl"); false
+    catch err
+        err isa ErrorException && occursin("nested Markdown context", err.msg)
+    end
+    bq_refused || fail("nested-context: a blockquoted fence with hidden lines was not refused")
+    # (31) the reserved-mention refusal covers PROSE in any context (the fixed point that
+    # closes the blockquote/list/indent forge family)
+    mention_refused = try
+        pages_of("#~2 :label1\n# See the gometa_carriage_montecarlo block for details.\n", "fixture-mention.jl"); false
+    catch err
+        err isa ErrorException && occursin("reserved `gometa_` namespace", err.msg)
+    end
+    mention_refused || fail("reserved-mention: an authored gometa_ mention was not refused")
+    # (32) every ERROR KIND refuses (probe: ErrorInvalidEscapeSequence — a specific error
+    # token REPLACES the String token, so a generic-"error" test alone would miss it)
+    err_refused = try
+        pages_of("#~2 :label1\ns8 = \"\"\"\nbad\\q line #~ hide\n\"\"\" ## pad\nafter_e = 14\n", "fixture-errkind.jl"); false
+    catch err
+        err isa ErrorException && occursin("cannot be proven", err.msg)
+    end
+    err_refused || fail("lexer: a specific error kind did not trigger the unprovable refusal")
+    # (33) the reserved-mention law covers CODE lines too (wave-5b: original-lines scan)
+    codemention_refused = try
+        pages_of("#~2 :label1\nxg = \"gometa_evil\"\n", "fixture-codemention.jl"); false
+    catch err
+        err isa ErrorException && occursin("reserved `gometa_` namespace", err.msg)
+    end
+    codemention_refused || fail("reserved-mention: a code-line gometa_ mention was not refused")
+    # (34) the nested-guard's DISCLOSED breadth: a blockquoted PROSE mention of ``` in a
+    # hidden-line cell refuses (deliberate fail-closed breadth, pinned)
+    bq2_refused = try
+        pages_of("#~2 hide{ :label1 }\n# # Bq2\n# > prose mentions ``` inline\n# hidden line here #~ hide\n", "fixture-bqprose.jl"); false
+    catch err
+        err isa ErrorException && occursin("nested Markdown context", err.msg)
+    end
+    bq2_refused || fail("nested-context: the disclosed blockquote-mention breadth is unpinned")
     return nothing
 end
 
 function main()
     check = "--check" in ARGS
-    check && (run_selfchecks(); println("--check: self-check battery green (escape · ensure-token trap · inline override · discard absence · carriage)"))
+    check && (run_selfchecks(); println("--check: self-check battery green (escape · ensure-token trap · inline override · discard absence · carriage · carriage edges/forgery/≡-depth)"))
     failures = String[]
     for spec in SOURCES
         println(basename(spec.path), ":")

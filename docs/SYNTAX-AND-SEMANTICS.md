@@ -61,8 +61,9 @@ can learn GoMeta exactly, and verify it, before writing or changing a metaLine.
   refused: it processes to `PROCESS_OK` with no diagnostic (the form is outside the committed
   corpus; the corpus is the reference — §13). *Notation:* `depthN`
   in backticks is the literal settribute flag; "depth N" in prose is the level; "depth-N" is its adjective form.
-- **attachment** — a content block is *attached* to the meta above it **iff there is no blank line between them**;
-  an attached block *inherits* the open metaBlocks' alterants; a blank line *detaches* it (no inheritance) (§4).
+- **attachment** — a content block is *attached* to the meta above it when no blank line separates them and no
+  `#]` intervenes (§4 states the full chain law); an attached block *inherits* the open metaBlocks' alterants;
+  a blank line *detaches* it (no inheritance) (§4).
 - **metadata scope** — the set of components that inherit a metaBlock's alterants, governed by depth + attachment.
 
 ---
@@ -88,7 +89,8 @@ actions, and an optional human comment. Its general shape:
 
 **MetaLines have three syntax forms** — the **standard metaLine** on its own line (`#~` / `#~N` / `#~~~`); the
 **close-marker** `#]` (§4/§9); and the **inline `#~`** at the end of a content line (§9). Plus one **modifier**:
-the **inert `#~!`**, which makes a standard metaLine's content *not be processed* (§9).
+the **inert trailing bang `#~N!`** (`#~!` at depth 1), which keeps the metaLine structurally live but
+makes its *content* not be processed — `#~N! <content>` ≡ `#~N` (§9).
 
 > ⚠ **Parsing gotcha:** inside a single-hash `# ` *content* line, **any `#~` token (any form — `#~`, `#~N`,
 > `#~!`, `#~~~`, or an inline `#~`) and `#]`** are parsed as **live inline syntax** (§9), not prose. To write
@@ -121,14 +123,16 @@ characters (U+200B and friends) are NOT whitespace and never delimit — though 
 IN the delimiter class (the no-break space foremost) render indistinguishably from an ordinary space
 while activating a token: only zero-width characters are guaranteed inert. A shape that fails the after-side —
 `something##glued`, `#~someWord`, `#]x`, `###banner`, a bare `#x` — is **plain content of its
-neighbourhood**: not meta, not a comment, never refused, and it never splits the block it sits in. This is
+neighbourhood**: not meta, not a comment, not refused (two named carve-outs below excepted), and it never
+splits the block it sits in. This is
 deliberate: `someCharacters##someMoreCharacters` is a valid thing to write in a file PRECISELY BECAUSE
 tokens demand their delimiters. The law gates token *recognition* only — a delimited token with a
 malformed body still refuses loudly (`##` is a comment exactly when BOTH sides delimit — whitespace or a
 line boundary before it, whitespace or end-of-line after it;
 `###`-runs are content).
 
-**One carve-out from the plain-content rule:** the four RESERVED structural-directive comment
+**Two carve-outs from the plain-content rule** *(the second added at v0.3.1)*: **(1)** the four
+RESERVED structural-directive comment
 forms — `#-`, `#+`, `#[`, `#>`-initial, which fire on their prefix (so ordinary `#----` dividers
 and `#->` arrows are in the family) — are NOT plain content. They are parse-level structure
 hints held as reserved future GoMeta syntax: a directive-form line can start a new block, and,
@@ -138,6 +142,12 @@ multi-line string, `#+`/`#>` interior lines remain string content even directly 
 metadata, while the `#-`/`#[` twins refuse; the escapes and the full behavior catalogue live
 in [Public API + error modes](public-api.md) §3.4). Away from metadata — at file start,
 between code lines, after an interposed content line — they behave as render-inert comments.
+**(2)** *(v0.3.1)* the **transposed inert marker** `#~!N` (and `#~!N!`) — tildes, then `!`,
+then digits, then an OPTIONAL trailing `!`, ws/EOL-terminated — REFUSES loudly instead of
+falling through as content: the
+shape is the known mistake for the canonical trailing-bang `#~N!` and silently passing it
+caused real, hard-to-find authoring errors (§9). To MENTION the shape in prose, quote-glue it
+(`"#~!2"`), exactly like every live marker.
 
 ---
 
@@ -180,7 +190,11 @@ refusal, not a crash) — do not author beyond depth 8.
   close/supersede happens BETWEEN metaBlocks, not inside a contiguous run (§4).
 - A `## ` comment line **between** metaLines does **not** break the block. Cite: `Extended L7–L10` are one meta
   block even though `L9` is a `## ` comment ("The following meta `Line` within this `Block`…").
-- A block **ends** at: a blank line, a content line (type change), a `#]` close-marker, or a `#~!`.
+- A block **ends** at: a blank line (a metaBlock always; Text and Code blocks may contain INTERIOR blank
+  lines and end only when the content type changes — §4's attach rules build on this), a content line (type
+  change), or a `#]` close-marker. *(Corrected at v0.3.1: an inert `#~N!` line does NOT structurally end a
+  contiguous meta run — probe-verified; a contiguous run stays ONE metaBlock through it. Between blocks it
+  closes/supersedes like a live marker — §9's ≡ law.)*
 - **A blank line after a meta line starts a new block** (only Code and Text blocks may contain interior blank
   lines). Verified end-to-end by `feature_contiguous_metablock_blankline.jl`: inserting one blank line splits a
   contiguous meta-block into two and changes the render (§8).
@@ -195,13 +209,15 @@ These are independent; keep them separate.
 - `#]` closes the **innermost** open meta-block; outer blocks stay open.
 - An implicit close happens when a following `#~P` has **`P ≤ N`** (the open block's depth) — it
   **closes/supersedes** (the `P = N` "sibling" case included); if **`P > N`** it **nests** inside (and
-  inherits). Also closed by a blank line, a `#~!`, or end-of-file.
+  inherits). Also closed by a blank line or end-of-file. *(Trued at v0.3.1: an inert `#~N!` that HEADS its own
+  metaBlock closes/supersedes at its depth exactly like the live marker — `#~N! …` ≡ `#~N`, §9; the
+  earlier "closes nothing" note described the pre-fix engine.)*
 - Verified: `feature_explicit_close.jl` — after `#]`, the level-5 block still inherits the level-2 chapter
   (`D` hidden), proving the chapter stayed open (only the innermost level-4 closed). Implicit supersede:
   `Extended L51` (`#~2`) supersedes the earlier `#~3`/`#~2`. (A CONTIGUOUS shallower line is a
   different case — it stays inside the same metaBlock and closes nothing; §3.)
 
-**Close vs rule lifetime** — closing a metaBlock (blank line, `#]`, `#~!`, end-of-file) ends its
+**Close vs rule lifetime** — closing a metaBlock (blank line, `#]`, end-of-file) ends its
 ATTACHMENT scope for following plain content in some forms, but does **not retire** alterant rules
 already absorbed: a standing conditional rule (`hide{ :label1 }`) is still evaluated against later
 matching content, and a later **deeper** metaBlock re-enters the hierarchy so earlier standing rules
@@ -210,19 +226,57 @@ yet line A, attached to the (now separate) `:label1` block, renders hidden). The
 the sibling rule: an implicit close by a following `#~P` with `P ≤ N` retires the superseded
 block's labels AND its standing rules for everything under the new block — a standing rule reaches
 later content only through DEEPER re-entry, never across a supersession (verified by a
-section-swap fixture in the development fork, outside this document's §11 proof set). `#~!` does not detach
-following content as `#]` does (§9). Unpinned shapes: the corpus is the reference (§13).
+section-swap fixture in the development fork, outside this document's §11 proof set). *(Trued at
+v0.3.1: an inert `#~N!` HEAD does NOT belong in the non-retiring closer list above — it
+closes/supersedes at its depth exactly like the live marker, so at `P ≤ N` it RETIRES the
+superseded block's rules via the sibling rule (§9's ≡ law; test-pinned —
+`inert_semantics_tests.jl` [P]/[O] and the banked `p_discrim2_POSTFIX` re-probe: an inert
+depth-2 sibling after `#~2 hide{ isText }` leaves the later block SHOWN; the ORIGINAL banked
+`p_discrim2` render predates the v0.3.1 fix and shows the pre-fix outcome). Mid-run an inert line is a continuation
+and closes nothing (§3). `#~!` does not detach following content as `#]` does — a metaLine head
+conducts attachment (§9).)* Unpinned shapes: the corpus is the reference (§13).
 
 **ATTACH — what a content block *inherits***:
-- A content block is **attached** (inherits the open metaLines' alterants) **iff there is no blank line** between
-  the last metaLine and the block's first line.
-- A **blank line detaches** the next block (it inherits nothing). Cite: `Extended L12–L16` is a text block that
-  the blank `L11` detached, so it does **not** inherit the `L7` meta-block.
-- `#]` additionally **detaches the single line immediately after it**. Verified: `feature_explicit_close.jl`
-  line `C` (right after `#]`) is **shown** (inherits nothing) while the later level-5 block is hidden.
-
+- **The attach law (precedence-ordered, exactly the engine's decision):** (1) every metaLine's block is
+  itself attached — always, blanks or not; (2) content at file start, before any metaLine, is attached to
+  nothing; (3) any other content block is attached **iff** the block directly above it is attached AND **no
+  blank line** separates them AND the line directly above is not a `#]` close-marker. A detached block's
+  contiguous followers stay detached until the next metaLine.
+- **Attachment is a contiguity CHAIN, not a per-section property** — it passes block-to-block through
+  contiguous content of ANY type: with no blank lines anywhere, Text → Code → Text after one metaLine are ALL
+  attached, and a rule like `hide{ isText }` still reaches the later text block through intervening code
+  *(probe-verified at v0.3.1; a corpus fixture for the cross-type chain is owed — see the out-of-scope list)*.
+- **The chain re-seeds at every Meta-flavored head** after a blank: a metaLine — or a `##` comment line that
+  directly continues a meta context across the blank (it inherits the Meta flavor and heads a governed block;
+  probe-verified at v0.3.1). And metaLines are themselves governable: a standing rule still OPEN for a later
+  metaBlock (e.g. one it nests under) can hide it in the render *(probe-verified at v0.3.1; a live same- or
+  shallower-depth sibling would first supersede the rule — CLOSE above)*.
+- A **blank line at a block boundary detaches** the next block — **even from a live metaLine directly above
+  the blank**: after `#~2 hide{ isText }` + one blank line, a following text block is NOT hidden and gets no
+  evaluations from that rule *(probe-verified at v0.3.1)*. Cite: `Extended L12–L16` is a text block that the
+  blank `L11` detached, so it does **not** inherit the `L7` meta-block. A blank line INSIDE a continuing Text
+  or Code block is interior (no new block starts — §3), so the block keeps its attachment: text ⏎ blank ⏎
+  text stays one attached block.
+- `#]` **breaks the chain without a blank**: the following BLOCK is detached, and the chain stays severed
+  until the next metaLine **that heads its own block** — a metaLine glued DIRECTLY under `#]` (no blank, no
+  content between) joins the close-marker's block and is not absorbed *(probe-verified at v0.3.1)*.
+  Verified: `feature_explicit_close.jl` line `C` (right after `#]`) is **shown** (inherits nothing) while the
+  later level-5 block is hidden. (The fixture pins the single-line case — its next metaLine follows
+  immediately; the block-grain statement is engine-derived, see the out-of-scope list.)
+- **Detachment blocks the standing scopes — not the block's own lines**: a detached block gets no evaluations
+  FROM the standing metaLine scopes (no rules fire on it from outside), but its own lines' **inline `#~`
+  metaSegments (§9) are their own source and still fire**. Cite: `Extended L14–L15` — the inline `#~ hide`
+  and `#~ discard` fire INSIDE the blank-detached `L12–L16` block (L14 renders `## `-prefixed, L15 is absent
+  from the render).
 The proof these are orthogonal: in `feature_explicit_close.jl`, `C` is shown (attach severed) **yet** `D` is
-hidden (scope resumed) — one `#]`, two independent effects.
+hidden (scope resumed) — one `#]`, two independent effects. **The reconciliation with "Close vs rule lifetime"
+(§4 above):** a standing rule is "still evaluated against later matching content" ONLY through that content's
+own attachment — a Meta-flavored head whose block re-seeds the chain AND (per the eviction rule above) sits
+DEEPER than the standing rule, so the rule survives for it. The blankline fixture
+(`feature_contiguous_metablock_blankline.jl`) shows both halves at once: the pre-blank depth-1
+`hide{ :label1 }` fires on post-blank content because that content is attached to its own contiguous DEEPER
+(depth-2) `:label1` metaLine; without such a re-heading Meta-flavored line, the same rule reaches no
+content-only block across the blank.
 
 ---
 
@@ -352,9 +406,29 @@ drops `:label1` from depth 1 to depth 2. One blank line, two flips, two reasons.
 
 ## 9. Special metaLines
 
-- **`#~!` (inert)** — the metaLine's content is **not processed**; it also ends the metaBlock (the next content
-  attaches per §4, unless a blank line detaches it). Cite: `Extended L10` `#~! discard{ isMeta }` — the
-  `discard{isMeta}` is **not** applied (the surrounding meta lines are not discarded), purely because of the `!`.
+- **`#~N!` (inert — the TRAILING bang: depth, then `!`)** — the metaLine's **content is not processed**
+  (absorbed as if empty), while the marker itself stays **fully live structurally**: `#~2! …` behaves
+  exactly like a bare `#~2` — it opens/closes/supersedes at its depth and conducts attachment (§4) — with
+  only the labels/actions after the `!` ignored. The law, exactly: **`#~N! <content>` ≡ `#~N`** (v0.3.1;
+  probe-verified by a differential test over every shape class). `#~!` is the depth-1 form; the depth digit
+  is validated like a live marker's (`#~9!` refuses "meta depth out of range" exactly as `#~9` does).
+  Cite: `Extended L10` `#~! discard{ isMeta }` — the `discard{isMeta}` is **not** applied, purely because
+  of the `!`. Mid-run, an inert line is a CONTINUATION line of its contiguous metaBlock (§3).
+  The ≡ law holds at BOTH grains: an inline `… #~N! <content>` metaSegment ≡ an inline `… #~N`
+  (SD-2, v0.3.1; differential-oracle-pinned). *(Honesty note, v0.3.1: the cited fixture's own
+  frozen narration predates these corrections — its L9 says the line "will be ignored" (only its
+  CONTENT is) and L10's in-line comment says it "ends" the metaBlock (a mid-run inert line ends
+  nothing — §3). The fixture bytes stay frozen by the golden pin; the corrected law is this row.)*
+  **The transposed spelling `#~!N` — and its trailing-bang twin `#~!N!` — is a REFUSED mistake.** The
+  refused family, exactly: tildes, then ONE `!`, then digits, then an OPTIONAL trailing `!`,
+  whitespace/EOL-terminated. It parses as nothing valid and the engine throws `GoMeta parse:
+  bang-first meta marker …` naming the corrected spelling (v0.3.1; it must never silently pass as
+  content). The refusal has no prose shelter — it fires even inside `# `-prose, prose code fences,
+  and string literals (probe-pinned at v0.3.1); to MENTION a refused spelling, quote-glue it
+  (`"#~!2"`), exactly like a live marker (§1's escape convention). This is the second — and only
+  other — carve-out from the token-delimiter law's glued-namespace rule (§1; the reserved
+  directive-adjacency refusal is the first); every OTHER glued or multi-bang shape (`#~!!0`,
+  `#~!0x`, `#~2!x`) remains plain user content.
 - **`#]` (close-marker)** — see §4 (the two axes). Demonstrated end-to-end in `feature_explicit_close.jl`.
 - **inline `#~`** — a `#~` at the **end of a content line** applies meta to *that line*. The corpus exercises
   three inline forms (other inline forms, e.g. inline labels or depth markers, are not exercised — see §13):
@@ -396,7 +470,7 @@ drops `:label1` from depth 1 to depth 2. One blank line, two flips, two reasons.
 |---|---|
 | `file_for_Example_Extended.jl` | depth 1/2/3; `,`/`&&`/`!` conditions; `#~!`; inline `#~ hide`/`#~ discard`/`#~`; blank-line detach; inheritance (file-level rule → code + markdown); order-of-application; implicit close; `hide`=`## ` / `discard`=omit / default=show |
 | `file_for_Example_Proposal_JuliaCon.jl` | `()` grouping; `hide{…,isCode}`; `show{!:label5}`; conditional `:label1{…}`; inline `#~ show` overriding inherited hide; depth 2/3; markdown `hide` |
-| `feature_explicit_close.jl` | `#]` — the two axes (close-innermost scope + detach-next line), independent |
+| `feature_explicit_close.jl` | `#]` — the two axes (close-innermost scope + detach the following block — a single line in this fixture), independent *(its frozen in-file header narrates the detach at LINE grain; §4's block-grain chain law is the corrected statement — v0.3.1)* |
 | `feature_order_of_application.jl` | token order on a metaLine decides whether a condition sees a label |
 | `feature_contiguous_metablock.jl` | contiguous metaLines = one block (depth = the first line's); cross-block order-of-application |
 | `feature_contiguous_metablock_blankline.jl` | the contiguous-metablock metaLine pair with one blank line inserted between them — flips both content lines (proves blank-line block-splitting; the metaLines are byte-identical across the two fixtures, the surrounding narration is not) |
@@ -438,8 +512,9 @@ To keep the verified claims honest, these are **known but not established here**
 - **Digit-vs-tilde-count conflict.** A multi-tilde form carrying a *differing* digit (e.g. `#~~3`) is not
   exercised; `#~2`/`#~3` (one tilde + digit) are.
 - **`## ` and inline `#~` in the same `# ` content line** — their parsing interaction is not exercised.
-- **Multi-line detachment after `#]`** — `#]` is verified to detach the *immediately-following* line; whether it
-  detaches multiple consecutive plain lines is not exercised.
+- **Multi-line detachment after `#]`** — the corpus pins only the *immediately-following* line; the block-grain
+  chain law (§4: severed until the next metaLine heading its own block) is engine-derived and probe-verified
+  (v0.3.1), not corpus-exercised. A cross-type-chain fixture (Text → Code → Text, no blanks) is owed with it.
 - **Multiple Visib actions in one metaStatement** (e.g. `discard{…} show`) — resolved by THE FIRST
   APPLICABLE VALUE IN SOURCE ORDER: the first value whose condition holds (no condition = holds) wins
   and the remaining values are skipped without evaluating their conditions. `discard{ isCode } show`
