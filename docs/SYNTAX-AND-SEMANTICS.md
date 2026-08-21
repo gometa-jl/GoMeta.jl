@@ -175,6 +175,21 @@ refusal, not a crash) — do not author beyond depth 8.
 **REASONING** — depth drives the open/close (scope) rules in §4 and §8, exactly like nesting headings.
 **PURPOSE** — lets one file express nested metadata regions.
 
+**The full meta hierarchy** — the ladder runs from the outside in:
+
+| level | written | scope |
+|---|---|---|
+| user / config | `GoMetaConfig.user_mh_profile` — no in-file marker | one metaLine body, seeded into the reserved user slot before the walk (deliberately minimal at v0: a single entry, not a configuration system) |
+| 0 — the file level | `#~0` | the shallowest in-file depth: no depth-1..8 marker can supersede it — only another `#~0` can |
+| 1 — the top Block level | `#~` = `#~1` | the default depth (one tilde; the digit form is equivalent — engine-verified) |
+| 2 … 8 | `#~2` … `#~8`, or tilde-runs | nested regions, exactly like sub-headings |
+
+Inheritance flows OUTSIDE-IN along the ladder (§8 rule 3: a block inherits the open
+shallower-depth scopes). The ATTACH law applies at every level: a `#~0` rule reaches later
+content only through the §4 attachment chain — a blank line detaches content from a
+file-level scope exactly as from any other (probe-verified), while a `#~0` rule survives a
+later depth-1 sibling that would supersede a depth-1 rule.
+
 ---
 
 ## 3. Blocks — the unit of scope
@@ -383,7 +398,7 @@ see §13.)
    This is the CLOSE/scope axis; whether a following content block's *content* inherits is the separate ATTACH
    axis of §4 — a blank line detaches it regardless of depth.
 3. **A block inherits the open shallower-depth scopes** (their labels and standing conditions). (`Extended`:
-   the code block and the markdown both inherit the file-level `L7` rule; the text block inherits `L8`'s
+   the code block and the markdown both inherit the file-wide depth-1 `L7` rule; the text block inherits `L8`'s
    `:label1` and `L19`'s `hide{:label1}`.)
 4. **Order-of-application — left-to-right within a metaLine; a standing condition reaches later blocks.** Tokens
    on a metaLine are processed left-to-right; a condition issued **before** its label is evaluated with that

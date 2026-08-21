@@ -38,6 +38,58 @@
 #     output flowing through `outputs` / `altValues_evals`.
 module GoMeta
 
+"""
+    GoMeta
+
+Interpretable `#~` metadata for source files: `goMeta(bytes)` parses the input into the
+BLS tree (File → Block → Line → Segment), absorbs the metadata, applies the registered
+Alterants, and renders the share view — bytes in, bytes out; it **evaluates, never
+executes**.
+
+# The metaLine marker family
+
+| marker              | meaning                                                           |
+|:--------------------|:------------------------------------------------------------------|
+| `#~`, `#~N`, `#~~…` | a metaLine — meta content at depth 1, `N`, or the tilde-run count |
+| `#~N!`, bare `#~!`  | the INERT metaLine — structurally live, its content ignored       |
+| `#~!N`              | a refused mistake (transposed inert marker) — loud parse error    |
+| `#]`                | the close-marker — closes the innermost metaBlock, detaches after |
+| trailing `#~ …`     | an inline metaSegment applying to its own content line            |
+
+The authoritative reference ships at `docs/SYNTAX-AND-SEMANTICS.md`.
+
+# `#~N!` — the inert metaLine (`#~!` is the depth-1 form)
+
+**IS**: the in-grammar "ignore the meta content following this `!`" toggle — `#~N`
+remains valid in terms of the BLS structure. **DOES**: `#~N! <content>` ≡ `#~N` — depth,
+block role, close/supersede participation, and attachment all behave exactly like the
+live marker; only the content after the `!` is ignored. Holds at both grains (whole
+metaLines and inline metaSegments); the depth digit is still validated (`#~9!` refuses
+out-of-window exactly like `#~9`). **REASONING**: if the marker also lost its BLS place,
+components following `#~2!` could inherit things they were not meant to inherit —
+inheritance routes through the last metaBlock whose depth is less than the component's
+own, so the inert marker must keep its depth for the usual rules to hold (detaching
+instead would merely duplicate `#]`). **PURPOSE**: toggle a metaLine's effect off while
+editing, without disturbing the structure around it — remove the `!` and the same line
+is live again.
+
+The transposed spelling `#~!N` is flagged loudly as a mistake: it throws
+`GoMeta parse: bang-first meta marker …`, naming the corrected spelling. To MENTION a
+marker in prose, quote-glue it: `"#~!2"`.
+
+# `#]` — the close-marker
+
+**IS**: the explicit end of the innermost open metaBlock. **DOES**: closes the innermost
+open metaBlock (outer blocks stay open) and DETACHES the components following it — they
+do not inherit anything at all anymore, until the next metaLine that heads its own
+block. In settribute terms: starts a new block, counts as meta, carries no content of
+its own, and stops attachment (`:startNewBlock`, `:containsMeta`, `:ignoreThisMeta`,
+`:stopAttachmentToMeta`). **PURPOSE**: bound a metadata scope exactly, where an implicit
+close (a following shallower-or-equal marker, a blank line, end-of-file) is not what the
+author means. Demonstrated end-to-end in `examples/` (`feature_explicit_close.jl`).
+"""
+GoMeta
+
 #########################################################################################
 ########### Imports #####################################################################
 using StaticArrays, InlineStrings  # stack-allocated fixed-size arrays + inline string types; the slot tensors and the work vectors are plain Vector/Array (registry.jl, apply.jl)
@@ -258,6 +310,13 @@ the SOLE output surfaces. The config-time error rows are armed + typed; the cond
 condition interpreter — E-07's typed mint is PENDING (the unqueryable-alt shape still aborts raw) —
 and the E-04 apply-path crash-origin and the E-06 absorb-path guarded depth refusal stay un-typed for
 now (the honest partition — docs/public-api.md §3). The full honest-edges catalogue: docs/public-api.md §3.4.
+
+# The marker syntax (short form)
+
+`#~` / `#~N` / `#~~…` open metadata at a depth · `#~N!` (bare `#~!`) is the INERT form —
+structurally identical, content ignored · the transposed `#~!N` refuses loudly · `#]`
+closes the innermost metaBlock and detaches what follows · a trailing `#~ …` applies to
+its own line. Full family + laws: the module docstring and `docs/SYNTAX-AND-SEMANTICS.md`.
 """
 function goMeta(
     bytes::Vector{UInt8};

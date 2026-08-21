@@ -1,7 +1,7 @@
 name = "GoMeta"
 uuid = "98657bb6-a3a3-4080-bc8f-2c439ca970f1"
 authors = ["GoMeta Project <hello@gometa.dev>"]
-version = "0.3.1"
+version = "0.3.2"
 
 [deps]
 InlineStrings = "842dd82b-1e85-43dc-bf29-5d0ee9dffc48"
