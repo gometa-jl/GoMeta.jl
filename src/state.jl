@@ -498,8 +498,10 @@ struct AlterantRegistry
     # not the only POSSIBLE one in-process — see the constructor note); `nothing` = an UNPUBLISHED value (the
     # gated route-U construction), which the `goMeta` door refuses typed. The seal is the
     # algorithm-tagged registration digest over every declared slot + the declared source digests
-    # + policy_id; the door recomputes it — a post-publication mutation of any container fires
-    # `POST_SEAL_MUTATION` (accident-grade integrity, never security-grade).
+    # + policy_id; the door recomputes it — a post-publication mutation of a container BY CONFORMING
+    # CODE, as represented by the canonical encoding (closed domain; module-unqualified type names
+    # are the one disclosed collision), fires `POST_SEAL_MUTATION` (accident-grade integrity, never
+    # security-grade; the entry check is not a lock).
     seal::Union{Nothing,String}
     # v0.4 T2 (cure batch 1) — the validated CALLABLE IDENTITIES captured at publish (every
     # altConstructor / setter / getter / atom evaluator / validate slot, declaration order); the

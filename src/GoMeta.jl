@@ -664,8 +664,9 @@ docs/public-api.md §4, GUARDED); on a non-OK result the contract is
 parse never ran. The NamedTuple field order is `(blsStructure_bytes, render_bytes)`.
 """
 function outputs(result::GoMetaResult)
-    ## The non-OK output contract. A fail-closed PROCESS_ERROR GoMetaResult — at v0 the only source is a
-    ## config-time validation error, which pre-empts the parse — yields an EMPTY (tree, render):
+    ## The non-OK output contract. A fail-closed PROCESS_ERROR GoMetaResult — at v0.3 the only source was a
+    ## config-time validation error; at v0.4 the registry DOOR (`REG_UNPUBLISHED` / `POST_SEAL_MUTATION`) is
+    ## the second pre-parse source — either pre-empts the parse — yields an EMPTY (tree, render):
     ## "no render attempted", and a parse that never ran ⇒ an empty tree. `render_bytes` is NOT invoked
     ## (the emit path stays untriggered). Once an apply-path error can arise AFTER a successful parse, this
     ## branch will surface the parse-so-far tree per the "tree-if-parse-succeeded" half of the contract.
