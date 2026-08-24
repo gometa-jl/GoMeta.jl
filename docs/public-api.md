@@ -18,7 +18,7 @@ crashes remain latent or are guarded by a stable refusal.
 **DOES.** (1) names the **exported** surface (§1.1) and the **package-public** supporting names
 (§1.2); (2) names the **two output surfaces** through which every observable byte flows (§1.3 —
 the sole-surface invariant); (3) restates each public signature + its contract (§2); (4) enumerates
-the typed error catalogue with its honest partition (§3 — the 0.3.x eight rows, plus the v0.4
+the typed error catalogue with its honest partition (§3 — the 0.3.x rows as the tables list them, plus the v0.4
 registration/door rows of §3.5); (5) records the
 CRLF-normalization convention (§4), the explicitly **deferred / not-v0** surfaces (§5), and the
 additive-only **versioning policy** (§6).
@@ -129,13 +129,20 @@ These are part of the documented public surface — declared with Julia's `publi
   over the run — a task mutating a registry concurrently with a run that already passed the door
   is outside the model. A loaded module that does any of these has full process authority
   anyway; the trust act is the user's (load only trustworthy Alterants). The canonical
-  encoding's domain is CLOSED (v0.4 T2, cure batch 4): `Nothing` · `Symbol` · strings · `Bool` ·
-  the machine integers · the machine floats (bit-exact) · `Complex` and `Rational` of those ·
-  `VersionNumber` · `Type` · `Function` (by name) · vectors, tuples, pairs, dicts and named
-  tuples of encodable values · the slot types — a declared value of ANY other type (or a cyclic
-  container) is REFUSED at `validate` (`REG_PROTOCOL`), never folded by a lossy fallback. One
-  disclosed collision remains: type identities fold module-UNQUALIFIED (two same-named types
-  from different modules collide — the recorded trade of the profile digest).
+  encoding's domain is CLOSED (v0.4 T2, cure batches 4–5 — **data slots hold concrete data**):
+  `Nothing` · `Symbol` · strings · `Bool` · the machine integers · the machine floats (bit-exact)
+  · `Complex` and `Rational` of those · `VersionNumber` · `Type` (parameters type-tagged) ·
+  CONCRETE `Vector` / `Dict` / `Tuple` / `Pair` / `NamedTuple` of encodable values · the slot
+  types. A `Function` is encodable (by name) ONLY in a designated callable field (setter, getter,
+  `evaluate`, `validate`, constructor — identity-checked by the door's third check); inside a
+  data value (`Declared`, an effect payload, any container in them) it is refused. A declared
+  value of ANY other type — a range, a view, a user container, `BigInt`, `Char`, an enum, an
+  opaque struct — or a cyclic container is REFUSED at `validate` (`REG_PROTOCOL`, one row per
+  record slot), never folded by a lossy fallback. The disclosed collisions of the encoding: type
+  identities fold module-UNQUALIFIED (two same-named types from different modules collide — the
+  recorded trade of the profile digest); the designated callables fold by NAME in the digest (a
+  same-named swap is caught by the door's identity check, not by the seal); UnionAll/Union
+  signature types fold by `string`.
 - `GoMeta.next_plugin_index(builder) -> Int8` — the index the next `register!` assigns (§ the
   plugin index rule below); throws `RegistrationRefused` (`REG_SLOT_EXHAUSTED`) at capacity.
 - **The record VOCABULARY (v0.4; what `register!` accepts — the Alterant registration record and
@@ -375,9 +382,9 @@ arg2)` — parsed with the metaLine and handed to the action when it fires. The 
 ## §3 — The typed error-mode catalogue
 
 `Diagnostic = {code::Symbol, severity, message, context}`; a catalogued failure is a typed
-`Diagnostic` — **never** a bare `error()`. The catalogued rows (the eight E-numbered classes of
-0.3.x + the three unnumbered rows `ERR_UNKNOWN_FLAVOR` / the v0.4 §3.5 registration + door rows
-/ the E-05 handled class) fall into three classes
+`Diagnostic` — **never** a bare `error()`. The catalogue's inventory IS the tables of §3.1–§3.5
+below (no aggregate count is maintained by hand — two hand-written counts drifted at v0.4 T2);
+the rows fall into three classes
 (§3.1–§3.3); §3.4 additionally documents the latent crashes and the stable-message refusals that
 are not catalogued typed codes.
 
@@ -613,7 +620,7 @@ rows; **(iv) DOOR results** — `REG_UNPUBLISHED` / `POST_SEAL_MUTATION` come ba
 
 | Code | Severity | Trigger | Context |
 |---|---|---|---|
-| `REG_PROTOCOL` | error | a STRUCTURAL defect of the record (tier 1): an enum tag outside its closed set, a kinds/kind_sources mismatch, an overlong kinds vector, a `queryable` row on a getter-less plugin, the dispatch-target uniqueness law, a dangling plugin index, a declared `settribute` key the component does not carry, an empty `MutEx`, a record passed to `register!` that names another plugin | the action or alterant name |
+| `REG_PROTOCOL` | error | a STRUCTURAL defect of the record (tier 1): an enum tag outside its closed set, a kinds/kind_sources mismatch, an overlong kinds vector, a `queryable` row on a getter-less plugin, the dispatch-target uniqueness law, a dangling plugin index, a declared `settribute` key the component does not carry, an empty `MutEx`, a record passed to `register!` that names another plugin; (v0.4 T2 cure batches 4–5) a declared value outside the CLOSED encodable domain — a cyclic container, a `Function` inside a data value, a non-`Vector`/`Dict` container (range, view, user container), any type without an encoder — one row per record SLOT, naming it | the action or alterant name |
 | `REG_UNKNOWN_SETMODE` | error | `setMode` outside `(:accumulate, :mutExclusive, :mutExclusivePerField, :localOnly)` | the alterant |
 | `REG_DUPLICATE_ALTNAME` | error | two records with the same `altName` | the alterant |
 | `REG_DUPLICATE_ACTION` | error (`:refuse` arm) / warning (`:warn` arm, first-writer-wins) | two action records with the same `name` | the action |

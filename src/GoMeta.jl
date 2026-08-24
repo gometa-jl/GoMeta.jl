@@ -668,8 +668,8 @@ function outputs(result::GoMetaResult)
     ## config-time validation error; at v0.4 the registry DOOR (`REG_UNPUBLISHED` / `POST_SEAL_MUTATION`) is
     ## the second pre-parse source — either pre-empts the parse — yields an EMPTY (tree, render):
     ## "no render attempted", and a parse that never ran ⇒ an empty tree. `render_bytes` is NOT invoked
-    ## (the emit path stays untriggered). Once an apply-path error can arise AFTER a successful parse, this
-    ## branch will surface the parse-so-far tree per the "tree-if-parse-succeeded" half of the contract.
+    ## (the emit path stays untriggered). No post-parse error class exists at v0.4: this branch returns two
+    ## EMPTY vectors unconditionally (a "tree-if-parse-succeeded" distinction would be a new contract row).
     if result.status === PROCESS_ERROR
         return (blsStructure_bytes = UInt8[], render_bytes = UInt8[])
     end

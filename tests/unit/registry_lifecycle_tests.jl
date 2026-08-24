@@ -5,14 +5,17 @@
 #       the token-gated constructor; the token form itself is reachable by loaded code, the
 #       disclosed accident-grade bound), the two-tier typed diagnostics with FULL collection (validate
 #       never throws), atomic DEEP-copy publication, the seal + the door's three checks (the declared
-#       record's seal · every derived table re-derived · the callable identities by `===`), the STRICT
+#       record's seal · the derived tables re-derived — REPRESENTATIVE tables mutated here, not every
+#       field · the callable identities by `===`), the STRICT
 #       published-only door at `goMeta(bytes; registry)` AND at the internal callable seam (an
 #       unpublished value refuses typed NAMING the sanctioned path), the real freeze gate
 #       (`POST_SEAL_MUTATION` on declared, derived, re-ordered, cyclic and callable-identity mutations by
 #       conforming code), `register!`'s binding + pool refusals, the slot encoding's distinctions
-#       (length-prefixed boundaries, concrete numeric types incl. bit-exact floats, vectors vs tuples —
-#       NOT global injectivity: the opaque-payload fallback and module-unqualified type names are
-#       disclosed collisions), the 0.4.x contract family, warnings emitted at publish, the two
+#       (length-prefixed boundaries, concrete numeric types incl. bit-exact floats, vectors vs tuples,
+#       the CLOSED domain — data slots hold concrete data only, anything else refused at validation;
+#       NOT global injectivity: module-unqualified type names and the name-folded designated
+#       callables are the disclosed collisions — the latter door-checked by identity, witnessed
+#       below; the former NOT witnessed here), the 0.4.x contract family, warnings emitted at publish, the two
 #       exhaustion refusals (the typed registry-grain diagnostic + the stable-message per-call slot-pool
 #       guard), and full collection at the entry (config + registry diagnostics in ONE result).
 # DOES: builds registries through every route, mutates published values, drives the door, and pins
@@ -207,8 +210,9 @@ import GoMeta as GM
         # (cure batch 3) the attacked shape "a Visib record declaring NO write-back key" is REFUSED by
         # the record's own shadow law before it can run — the resolved Visib key is always one of the
         # instance's field names (hide/show/discard), all settribute keys, so `settribute = nothing`
-        # on them is `REG_RESERVED_SHADOW`; the driver's `get(action_to_settribute, …)` guard stays as
-        # defense-in-depth for an unvalidated (route-U/unchecked) registry
+        # on them is `REG_RESERVED_SHADOW`; the driver's `get(action_to_settribute, …)` guard is
+        # NECESSARY even for a VALIDATED registry (t2r3 A-4 / t2r4 A-7: a validated CUSTOM Visib-plugin
+        # action with no `settribute` can map onto a built-in field) — cured BY the guard, not refuted
         bv = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
         h = bv.action_specs[2]
         bv.action_specs[2] = GM.ActionSpec(; name = :hide, spelling = :identifier, plugin = Int8(2),
@@ -271,6 +275,60 @@ import GoMeta as GM
         @test GM._slot_text(Any[shared, shared]) == GM._slot_text(Any[Symbol[:a], Symbol[:a]])
         # (cure batch 4) dict encoding is canonical over entry text, not `string(key)` order
         @test GM._slot_text(Dict{Any,Any}(:x => 1, "x" => 2)) == GM._slot_text(Dict{Any,Any}("x" => 2, :x => 1))
+        # (cure batch 5) DATA SLOTS HOLD DATA: a Function inside a declared value/payload is refused at
+        # validation (a same-named swap there would be invisible to seal AND identity check); the
+        # designated callable fields still encode by name
+        @test_throws GM._UnencodableSlot GM._slot_text(GM.Declared(Any[sin]))
+        @test_throws GM._UnencodableSlot GM._slot_text(GM.EffectRow(:mark, sin))
+        @test GM._slot_text(sin) == "f3:sin"
+        bfn = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
+        bfn.action_specs[3] = GM.ActionSpec(; name = :show, spelling = :identifier, plugin = Int8(2),
+                                              overloads = bfn.action_specs[3].overloads, settribute = :show,
+                                              default = GM.Declared(Any[sin]))
+        dfn = GM.validate(bfn)
+        @test :REG_PROTOCOL in _errors(dfn) && occursin("slot default", only(filter(x -> x.code === :REG_PROTOCOL, dfn)).message)
+        # (cure batch 5) CONCRETE containers only: a range/view is not a Vector — refused, so `1:3` can
+        # never collide with `[1,2,3]` inside a published value
+        @test_throws GM._UnencodableSlot GM._slot_text(1:3)
+        @test_throws GM._UnencodableSlot GM._slot_text(view([1, 2, 3], 1:2))
+        @test GM._slot_text([1, 2, 3]) isa String
+        # (cure batch 5) type parameters are TYPE-TAGGED values
+        @test GM._slot_text(Val{Int8(1)}) != GM._slot_text(Val{Int64(1)})
+        @test GM._slot_text(Val{:x}) != GM._slot_text(Val{1})
+        @test GM._type_text(Tuple{Vararg{Symbol}}) isa String && GM._type_text(Vector{Symbol}) isa String
+        # (cure batch 5) the publish → mutate → DOOR witness of the bit-exact composite encoding (t2r4 A-4:
+        # the batch-4 witness only compared two encodings and passed on the pre-batch tree)
+        bcx = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
+        bcx.action_specs[3] = GM.ActionSpec(; name = :show, spelling = :identifier, plugin = Int8(2),
+                                              overloads = bcx.action_specs[3].overloads, settribute = :show,
+                                              default = GM.Declared(Any[complex(nan1, 0.0)]))
+        Rcx = GM.publish(bcx)
+        @test isempty(GM._registry_door_check(Rcx))
+        Rcx.action_specs[3].default.value[1] = complex(nan2, 0.0)
+        @test _codes(GM._registry_door_check(Rcx)) == [:POST_SEAL_MUTATION]
+        # (cure batch 5) a published value mutated from encodable to UNENCODABLE is a mutation at the door
+        Rcx.action_specs[3].default.value[1] = 'c'
+        @test _codes(GM._registry_door_check(Rcx)) == [:POST_SEAL_MUTATION]
+        # (cure batch 5) Rational: concrete-type-tagged + structural; BigInt parts are outside the machine domain
+        @test GM._slot_text(Rational{Int8}(1, 2)) != GM._slot_text(1//2)
+        @test_throws GM._UnencodableSlot GM._slot_text(big(1)//2)
+        # (cure batch 5) a failed encode leaves the visiting set clean — a second encode in the same scope succeeds
+        dv = Dict{Any,Any}(:k => 'c')
+        @test_throws GM._UnencodableSlot GM._slot_text(Any[dv])
+        dv[:k] = 1
+        @test GM._slot_text(Any[dv]) isa String
+        # (cure batch 5) encodability is probed PER SLOT with FULL collection: two defective records ⇒ two
+        # diagnostics, each naming its record + slot
+        bps = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
+        bps.action_specs[3] = GM.ActionSpec(; name = :show, spelling = :identifier, plugin = Int8(2),
+                                              overloads = bps.action_specs[3].overloads, settribute = :show,
+                                              default = GM.Declared(1:3))
+        bps.action_specs[2] = GM.ActionSpec(; name = :hide, spelling = :identifier, plugin = Int8(2),
+                                              overloads = bps.action_specs[2].overloads, settribute = :hide,
+                                              default = GM.Declared('c'))
+        dps = filter(x -> x.code === :REG_PROTOCOL, GM.validate(bps))
+        @test length(dps) == 2 && all(x -> occursin("slot default", x.message), dps) &&
+              Set(x.context for x in dps) == Set([:hide, :show])
         # deep-copy publication: a NESTED declared container of the builder is not shared with the published value
         bdp = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
         bdp.plugins[2] = GM.PlugIn(; altName = :Visib, setMode = :mutExclusive, altConstructor = GM.Alterants.Visib,

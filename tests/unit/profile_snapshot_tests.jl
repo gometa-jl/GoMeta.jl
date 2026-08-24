@@ -77,6 +77,11 @@ import GoMeta as GM
               GM._registration_digest(specs; plugins = pl2)
         @test GM._registration_digest(specs; plugins = pl1) !=
               GM._registration_digest(specs)
+        # plugin ORDER is index-bearing and folds as declared (the header's claim, witnessed —
+        # t2r4 C-11): the same two plugins in the other order move the fingerprint
+        plq = GM.PlugIn(:zq, :accumulate, Dict{Symbol,Bool}, identity, nothing, nothing)
+        @test GM._registration_digest(specs; plugins = [pl1[1], plq]) !=
+              GM._registration_digest(specs; plugins = [plq, pl1[1]])
         # clash-arm-W shape: the digest fingerprints the EFFECTIVE first-wins record —
         # a same-named loser spec never moves it (panel-cured)
         loser = _syn(:zza; sig = Type[Dict{Symbol,Bool}, Symbol])

@@ -499,8 +499,10 @@ struct AlterantRegistry
     # gated route-U construction), which the `goMeta` door refuses typed. The seal is the
     # algorithm-tagged registration digest over every declared slot + the declared source digests
     # + policy_id; the door recomputes it — a post-publication mutation of a container BY CONFORMING
-    # CODE, as represented by the canonical encoding (closed domain; module-unqualified type names
-    # are the one disclosed collision), fires `POST_SEAL_MUTATION` (accident-grade integrity, never
+    # CODE, as represented by the canonical encoding (closed domain — concrete data only; the disclosed
+    # collisions: module-unqualified type names; the designated callables fold by NAME, their identity
+    # being the door's third check; UnionAll/Union signature types by `string`), fires
+    # `POST_SEAL_MUTATION` (accident-grade integrity, never
     # security-grade; the entry check is not a lock).
     seal::Union{Nothing,String}
     # v0.4 T2 (cure batch 1) — the validated CALLABLE IDENTITIES captured at publish (every

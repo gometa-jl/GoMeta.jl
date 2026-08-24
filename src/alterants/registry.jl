@@ -29,7 +29,9 @@
 #     row has a query getter (`checkLabels`); Visib/Id carry none — `cell`/`parent`/`file` as a
 #     condition atom is the deferred E-07 row. `DEFAULT_REGISTRY` is a PUBLISHED, SEALED value (v0.4
 #     T2): its Dict/Vector fields stay mutable containers, but a mutation by CONFORMING code
-#     through any of them — the declared record, a derived table, or a callable IDENTITY — is
+#     through any of them — the declared record AS REPRESENTED by the canonical encoding (closed
+#     domain; the disclosed collisions: module-unqualified type names, name-folded designated
+#     callables), a derived table, or a callable IDENTITY — is
 #     DETECTED at the entry door (`POST_SEAL_MUTATION`), never silently effective (accident-grade:
 #     a callable's BEHAVIOR is not pinned by its identity, and the door is an entry check, not a
 #     lock over the run — B-2); the former `===` alias onto its write-back Dict is retired (v0.4 T1).
@@ -973,7 +975,9 @@ function _registration_digest(action_specs::Vector{ActionSpec};
 end
 
 ## v0.4 T2 — the canonical TEXT of a declared slot for the digest fold: deterministic, module-
-## unqualified, callables by NAME, containers element-wise in declaration order, and INJECTIVE
+## unqualified, callables by NAME, containers element-wise in declaration order, and BOUNDARY-
+## UNAMBIGUOUS — NOT globally injective: module-unqualified type names and the name-folded
+## designated callables (identity-checked at the door instead) are the disclosed collisions
 ## (cure batch 1: the first encoding joined elements with delimiters, so `[Symbol("a,b")]` and
 ## `[:a, :b]` folded identically — every element, every string leaf and every component is now
 ## LENGTH-PREFIXED, netstring-style `<bytes>:<text>`, so no boundary can be re-cut).
@@ -1001,7 +1005,14 @@ _slot_text(x::Rational)::String = string("r", _nsv((_type_text(typeof(x)), _slot
 _slot_text(x::Number)::String = throw(_UnencodableSlot(typeof(x)))
 _slot_text(x::VersionNumber)::String = string("v", _ns(string(x)))
 _slot_text(x::Type)::String = string("t", _ns(_type_text(x)))
-_slot_text(f::Function)::String = string("f", _ns(String(nameof(f))))
+# (cure batch 5) DATA SLOTS HOLD DATA: a `Function` encodes by NAME only in the DESIGNATED callable
+# fields (setter/getter/evaluate/validate — their IDENTITY is the door's third check); inside a
+# declared DATA value (`Declared.value`, `EffectRow.payload`, any container in them) a same-named
+# function from another module would be invisible to the seal AND to the identity check, so a
+# function there is UNENCODABLE (refused at validation).
+const _IN_DATA = Base.ScopedValues.ScopedValue{Bool}(false)
+_slot_text(f::Function)::String =
+    _IN_DATA[] ? throw(_UnencodableSlot(typeof(f))) : string("f", _ns(String(nameof(f))))
 # (cure batch 3) CYCLE-aware container encoding: a published mutable container mutated into a
 # cycle (`push!(v, v)`) must be REFUSED at the door as a mutation, never recursed into a
 # StackOverflowError. The visiting set is task-local per top-level encode.
@@ -1022,12 +1033,15 @@ function _slot_container(open::String, close::String, v)
         delete!(vis, v)
     end
 end
-_slot_text(v::AbstractVector)::String = _slot_container("[", "]", v)
+# (cure batch 5) CONCRETE containers only: a range, a view or a user AbstractVector/AbstractDict
+# would fold content-only (`1:3` ≡ `[1,2,3]` — an undisclosed collision) and could specialize
+# `deepcopy` past the atomic copy at publish — outside the closed domain, refused.
+_slot_text(v::Vector)::String = _slot_container("[", "]", v)
 _slot_text(v::Tuple)::String = string("<", _nsv(_slot_text(e) for e in v), ">")
 _slot_text(p::Pair)::String = string("(", _nsv((_slot_text(p.first), _slot_text(p.second))), ")")
 # (cure batch 4) dicts are cycle-guarded like vectors and CANONICAL: entries sorted by their
 # ENCODED text (a `string`-keyed sort left `:x` vs `"x"` in iteration order — non-deterministic).
-function _slot_text(d::AbstractDict)::String
+function _slot_text(d::Dict)::String
     vis = _SLOT_VISITING[]
     if vis === nothing
         return Base.ScopedValues.with(_SLOT_VISITING => Base.IdSet{Any}()) do
@@ -1046,11 +1060,13 @@ end
 _slot_text(nt::NamedTuple)::String =
     string("N", _nsv(string(_ns(String(k)), _ns(_slot_text(getfield(nt, k)))) for k in keys(nt)))
 _slot_text(x::NoDefault)::String = "NoDefault"
-_slot_text(x::Declared)::String = string("Declared", _ns(_slot_text(x.value)))
+_slot_text(x::Declared)::String =
+    Base.ScopedValues.with(_IN_DATA => true) do; string("Declared", _ns(_slot_text(x.value))) end
 _slot_text(x::DomainRef)::String = string("DomainRef", _nsv((_slot_text(x.artifact), x.digest)))
 _slot_text(x::CaptureDecl)::String =
     string("Capture", _nsv((_type_text(x.instance_type), String(x.attr_scheme), String(x.multiplicity), _slot_text(x.mode_gate))))
-_slot_text(x::EffectRow)::String = string("Effect", _nsv((String(x.kind), _slot_text(x.payload))))
+_slot_text(x::EffectRow)::String =
+    Base.ScopedValues.with(_IN_DATA => true) do; string("Effect", _nsv((String(x.kind), _slot_text(x.payload)))) end
 _slot_text(x::RenderDecl)::String =
     string("Render", _nsv((_slot_text(x.effects), _slot_text(x.resolve_order), _slot_text(x.materialize))))
 _slot_text(x::InlineVocabulary)::String = string("Inline", _nsv((_slot_text(x.names), _slot_text(x.flags))))
@@ -1073,28 +1089,33 @@ _slot_text(x)::String = throw(_UnencodableSlot(typeof(x)))
 
 (cure batch 4) Tier 1's ENCODABILITY row: every declared slot value must encode canonically —
 no cycle, no value outside the closed encodable domain — so `publish` can seal it and the door
-can re-check it. Each offending plugin/action record yields ONE `REG_PROTOCOL` diagnostic naming
-the offending type (or "cyclic"); `validate` never throws.
+can re-check it. (cure batch 5) Probed PER SLOT: each offending SLOT of a plugin/action record
+yields its own `REG_PROTOCOL` diagnostic naming the record, the slot and the offending type (or
+"cyclic") — full collection across slots and records; `validate` never throws. The slots probed
+are exactly the OPEN ones `_mint_seal` folds (the remaining folded fields — setter/getter names,
+the precedence tuple, enum tags — are statically encodable by their field types).
 """
+const _PLUGIN_OPEN_SLOTS = (:capture, :render, :vocabulary, :constraints, :atoms, :contract_version,
+                            :requires, :sugar, :provenance, :permissions)
+const _ACTION_OPEN_SLOTS = (:default, :settribute)
 function _encodability_collect!(diags::Vector{Diagnostic}, plugins::Vector{PlugIn}, action_specs::Vector{ActionSpec})
-    probe(label, ctx, f) = try
-        f(); nothing
+    probe(label, ctx, slot, x) = try
+        _slot_text(x); nothing
     catch e
         e isa _CyclicSlot && return push!(diags, Diagnostic(:REG_PROTOCOL, :error, string(
-            "GoMeta registry: ", label, " ", repr(ctx), " declares a CYCLIC container — a declared value ",
-            "must encode canonically (the record shape law)"), ctx))
+            "GoMeta registry: ", label, " ", repr(ctx), " slot ", slot, " declares a CYCLIC container — a ",
+            "declared value must encode canonically (the record shape law)"), ctx))
         e isa _UnencodableSlot && return push!(diags, Diagnostic(:REG_PROTOCOL, :error, string(
-            "GoMeta registry: ", label, " ", repr(ctx), " declares a value of type ", e.T,
-            " which has no canonical encoder — outside the closed encodable domain (the record shape law)"), ctx))
+            "GoMeta registry: ", label, " ", repr(ctx), " slot ", slot, " declares a value of type ", e.T,
+            " which has no canonical encoder — outside the closed encodable domain (the record shape law: ",
+            "concrete data only; a Function belongs in a designated callable field, never in a value)"), ctx))
         rethrow()
     end
-    for p in plugins
-        probe("alterant", p.altName, () -> (_slot_text(p.capture); _slot_text(p.render); _slot_text(p.vocabulary);
-            _slot_text(p.constraints); _slot_text(p.atoms); _slot_text(p.contract_version);
-            _slot_text(p.requires); _slot_text(p.sugar); _slot_text(p.provenance); _slot_text(p.permissions)))
+    for p in plugins, slot in _PLUGIN_OPEN_SLOTS
+        probe("alterant", p.altName, slot, getfield(p, slot))
     end
-    for s in action_specs
-        probe("action", s.name, () -> (_slot_text(s.default); _slot_text(s.settribute)))
+    for s in action_specs, slot in _ACTION_OPEN_SLOTS
+        probe("action", s.name, slot, getfield(s, slot))
     end
     return nothing
 end
@@ -1109,18 +1130,22 @@ _overload_text(ov::ActionOverload)::String =
 
 # The digest's type serialization: module-UNQUALIFIED (stable across load contexts) but
 # parameter-FAITHFUL (`Dict{Symbol,Bool}` ≠ `Dict{Symbol,Int}` — a real drift class a bare
-# `nameof` would collapse). Non-type parameters fall through to `string` — NOTE (recorded
-# limits): the `string` fallback for UnionAll/Union sig types is show-context-dependent
-# (may qualify); symbol-vs-string `Val` parameters collide as the same text; and two
-# SAME-NAMED types from DIFFERENT modules collide as one identity (the unqualified choice's
-# deliberate trade — dispatch treats them as distinct; a second type-contributing module is
-# the revisit trigger). No shipped record row reaches any of these — extend consciously.
+# `nameof` would collapse). (cure batch 5) a NON-type parameter is a VALUE and folds type-tagged
+# through `_slot_text` (`Val{Int8(1)}` ≠ `Val{Int64(1)}`, `Val{:x}` ≠ `Val{1}`; a parameter value
+# outside the closed domain is unencodable); TypeVar / Vararg parameters keep their text. NOTE
+# (recorded limits): the `string` fallback for UnionAll/Union sig types is show-context-dependent
+# (may qualify); and two SAME-NAMED types from DIFFERENT modules collide as one identity (the
+# unqualified choice's deliberate trade — dispatch treats them as distinct; a second
+# type-contributing module is the revisit trigger). No shipped record row reaches these — extend
+# consciously.
 function _type_text(t)::String
     t === Any && return "Any"
     t isa DataType || return string(t)
     isempty(t.parameters) && return String(nameof(t))
-    return string(nameof(t), "{", join((_type_text(p) for p in t.parameters), ","), "}")
+    return string(nameof(t), "{", join((_type_param_text(p) for p in t.parameters), ","), "}")
 end
+_type_param_text(p)::String =
+    p isa Type ? _type_text(p) : (p isa TypeVar || p isa Core.TypeofVararg) ? string(p) : _slot_text(p)
 
 """
     _reflection_cross_check(action_specs, plugins) -> nothing
