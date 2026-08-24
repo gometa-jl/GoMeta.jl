@@ -273,7 +273,8 @@ function absorbWalk(
                 applyAltActionFns(childComponent) ## `childComponent` is :Segment.
                 # Segment-grain Visib write-back: a resolved Visib verdict maps through
                 # `st.registry.alt_index[:Visib]` / `st.working` to a settribute key via the
-                # per-call registry's `visib_to_settribute` table (identity at v0), written in the Pair form
+                # per-call registry's generic `action_to_settribute` table (v0.4 T1: derived from the
+                # declared per-action `settribute` slots; identity at v0.4.0), written in the Pair form
                 # `setElement(cs, key => true)` — `setElement(::BLS.ComponentSettribute, ::Symbol)` has
                 # NO method (only `Vararg{Pair{Symbol, Bool}}`), so the Pair form is required at both
                 # grains (the Block-grain sibling lives in GoMeta.jl).
@@ -286,13 +287,14 @@ function absorbWalk(
                 ## / `#~ show`(override) / `#~ discard` / bare-`#~` verdicts would not gate the render
                 ## and the content segment would emit before the override. Hence the target is
                 ## `crntComponent` (the Line, in scope here).
-                ## The Visib-action → settribute-key map is read off the PER-CALL registry
-                ## (`st.registry.visib_to_settribute`), not the module-global alias, so a custom
-                ## `registry` kwarg's mapping is honored at the Segment grain too.
+                ## The action → settribute-key table is read off the PER-CALL registry
+                ## (`st.registry.action_to_settribute`; the module-global alias is retired), so a
+                ## custom `registry` kwarg's mapping is honored at the Segment grain too. The
+                ## `:Visib` index literal + the `keys(Alterants.Visib)` read = the T7 cure's scope.
                 if st.registry.alt_index[:Visib] ∈ keys(st.working)
                     BLS.setElement(
                         crntComponent.componentSettribute,
-                        st.registry.visib_to_settribute[
+                        st.registry.action_to_settribute[
                             keys(Alterants.Visib)[
                                 st.working[
                                     st.registry.alt_index[:Visib]

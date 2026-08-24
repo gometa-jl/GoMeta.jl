@@ -1,0 +1,149 @@
+# record_schema_tests.jl — v0.4 T1: the registration-record schema EXTENSION witnesses (APPEND-ONLY).
+#
+# IS:   the unit witnesses of the T1 schema extension — the ten declared slots ride the record
+#       nothing/empty-defaulted; the v0.3.2 positional constructors still admit (the additive-extension
+#       law); the generic `action_to_settribute` table DERIVES from the declared per-action
+#       `settribute` slots (the Alterant-named `visib_to_settribute` field and the `===` alias
+#       `VISIB_TO_SETTRIBUTE` are GONE); the new closed enums refuse LOUDLY at the record shape law;
+#       the registration digest's fold is (still) blind to the new slots — witnessed BY NAME as the T2
+#       flip target (the fold extends when the publication seal is minted).
+# DOES: constructs records positionally and by keyword, inspects DEFAULT_REGISTRY, drives the shape
+#       law with mis-tagged slots, and pins the digest-blindness witness.
+# REASONING: the golden layer proves T1 is BEHAVIOR-NEUTRAL (byte-identical renders); only unit
+#       introspection can prove the schema carries what the later cures consume.
+# PURPOSE: the T1 acceptance row of the v0.4 build (the cure inventory's slot substrate).
+
+using Test
+import GoMeta as GM
+
+@testset "record_schema (v0.4 T1)" begin
+
+    @testset "positional v0.3.2 shapes still construct, slots nothing/empty-defaulted" begin
+        p = GM.PlugIn(:zz, :accumulate, Dict{Symbol,Bool}, identity, nothing, nothing)
+        @test p.capture === nothing
+        @test p.render === nothing
+        @test p.vocabulary === nothing
+        @test isempty(p.constraints) && isempty(p.atoms) && isempty(p.sugar)
+        @test p.contract_version === nothing
+        @test p.requires === ()
+        @test p.provenance isa GM.Provenance
+        @test p.permissions === nothing
+        ov = GM.ActionOverload(Type[Dict{Symbol,Bool}, Symbol], Symbol[], Symbol[], nothing,
+                               Nothing, :set, false, :context_free, :apply, true)
+        s = GM.ActionSpec(:zza, :identifier, Int8(1), [ov], 0, :none, nothing, nothing)
+        @test s.default === GM.NoDefault()
+        @test s.settribute === nothing
+    end
+
+    @testset "keyword shapes round-trip every slot" begin
+        ref = GM.DomainRef("labels/vocab.toml", "sha256:" * "0"^64)
+        cap = GM.CaptureDecl(Dict{Symbol,Bool}, :per_key, :many, nothing)
+        rd  = GM.RenderDecl([:hide => GM.EffectRow(:drop, nothing),
+                             :show => GM.EffectRow(:pass, nothing)], [:Line, :Block], true)
+        p = GM.PlugIn(; altName = :zz, setMode = :accumulate, altConstructor = Dict{Symbol,Bool},
+                        setAltInstance = identity, capture = cap, render = rd,
+                        vocabulary = GM.VocabularyRef(ref), constraints = [GM.MutEx([:hide, :show])],
+                        atoms = [GM.ConditionAtom(:zzq, "zzq", nothing)],
+                        contract_version = v"0.4.0", requires = (),
+                        sugar = [GM.SugarRow(:quoted_first, :head, :localOnly)],
+                        provenance = GM.Provenance(; sources = [ref], policy_id = "pol-1",
+                                                     acquisition_mode = :shipped),
+                        permissions = GM.PermissionManifest(; ambient = [:file_read]))
+        @test p.capture === cap && p.render === rd
+        @test p.vocabulary isa GM.VocabularyRef && p.vocabulary.ref === ref
+        @test p.constraints[1].actions == [:hide, :show]
+        @test p.atoms[1].name === :zzq
+        @test p.contract_version == v"0.4.0"
+        @test p.sugar[1].pattern === :quoted_first
+        @test p.provenance.sources == [ref] && p.provenance.policy_id == "pol-1"
+        @test p.provenance.acquisition_mode === :shipped
+        @test p.permissions.ambient == [:file_read]
+        ov = GM.ActionOverload(Type[Dict{Symbol,Bool}, Symbol], Symbol[], Symbol[], nothing,
+                               Bool, :set, false, :context_free, :apply, true)
+        s = GM.ActionSpec(; name = :zzh, spelling = :identifier, plugin = Int8(1), overloads = [ov],
+                            default = GM.Declared(:show), settribute = :zzh)
+        @test s.default isa GM.Declared && s.default.value === :show
+        @test s.settribute === :zzh
+    end
+
+    @testset "the generic action_to_settribute table derives from declarations" begin
+        R = GM.DEFAULT_REGISTRY
+        @test R.action_to_settribute == Dict(:hide => :hide, :show => :show, :discard => :discard)
+        # every table entry is a DECLARED datum on its spec; every non-declaring spec is absent
+        for s in R.action_specs
+            if s.settribute === nothing
+                @test !haskey(R.action_to_settribute, s.name)
+            else
+                @test R.action_to_settribute[s.name] === s.settribute
+            end
+        end
+        @test !hasfield(GM.AlterantRegistry, :visib_to_settribute)
+        @test !isdefined(GM, :VISIB_TO_SETTRIBUTE)
+        # the default record's per-action defaults are all UNDECLARED at v0.4.0 T1
+        @test all(s -> s.default === GM.NoDefault(), R.action_specs)
+    end
+
+    @testset "DomainRef refuses an un-tagged or mis-shaped digest" begin
+        @test_throws ErrorException GM.DomainRef("x", "0"^64)
+        @test_throws ErrorException GM.DomainRef("x", "sha256:" * "0"^63)
+        @test_throws ErrorException GM.DomainRef("x", "SHA256:" * "0"^64)
+        @test_throws ErrorException GM.DomainRef("x", "md5:" * "0"^32)
+        @test GM.DomainRef("x", "sha256:" * "a"^64).digest == "sha256:" * "a"^64
+    end
+
+    @testset "Provenance is schema-versioned and otherwise nothing-defaulted" begin
+        pr = GM.Provenance()
+        @test pr.sec_schema == v"1.0.0"
+        @test isempty(pr.sources) && isempty(pr.signatures) && isempty(pr.declared_capabilities)
+        for f in (:policy_id, :package_digest, :artifact_manifest, :signer, :source_identity,
+                  :acquisition_mode, :artifact_version, :not_before, :load_act)
+            @test getfield(pr, f) === nothing
+        end
+        sr = GM.SignatureRecord()
+        @test sr.algorithm === nothing && sr.key_id === nothing && sr.signature === nothing
+        pm = GM.PermissionManifest()
+        @test isempty(pm.seam) && isempty(pm.ambient)
+    end
+
+    @testset "the record shape law refuses mis-tagged new-slot enums LOUDLY" begin
+        plugs = GM.DEFAULT_REGISTRY.plugins
+        specs = GM.DEFAULT_REGISTRY.action_specs
+        bad_cap = GM.PlugIn(; altName = :zz, setMode = :accumulate, altConstructor = Dict{Symbol,Bool},
+                              setAltInstance = identity,
+                              capture = GM.CaptureDecl(Dict{Symbol,Bool}, :per_bogus, :many, nothing))
+        @test_throws ErrorException GM._record_wellformed_check(specs, [plugs; bad_cap])
+        bad_eff = GM.PlugIn(; altName = :zz, setMode = :accumulate, altConstructor = Dict{Symbol,Bool},
+                              setAltInstance = identity,
+                              render = GM.RenderDecl([:hide => GM.EffectRow(:vanish, nothing)], nothing, false))
+        @test_throws ErrorException GM._record_wellformed_check(specs, [plugs; bad_eff])
+        bad_pay = GM.PlugIn(; altName = :zz, setMode = :accumulate, altConstructor = Dict{Symbol,Bool},
+                              setAltInstance = identity,
+                              render = GM.RenderDecl([:hide => GM.EffectRow(:drop, "payload")], nothing, false))
+        @test_throws ErrorException GM._record_wellformed_check(specs, [plugs; bad_pay])
+        bad_acq = GM.PlugIn(; altName = :zz, setMode = :accumulate, altConstructor = Dict{Symbol,Bool},
+                              setAltInstance = identity,
+                              provenance = GM.Provenance(; acquisition_mode = :downloaded))
+        @test_throws ErrorException GM._record_wellformed_check(specs, [plugs; bad_acq])
+        bad_mx = GM.PlugIn(; altName = :zz, setMode = :accumulate, altConstructor = Dict{Symbol,Bool},
+                             setAltInstance = identity, constraints = [GM.MutEx(Symbol[])])
+        @test_throws ErrorException GM._record_wellformed_check(specs, [plugs; bad_mx])
+        # and the DEFAULT record passes the extended law unchanged
+        @test GM._record_wellformed_check(specs, plugs) === nothing
+    end
+
+    @testset "the registration digest is BLIND to the new slots at T1 (the T2 flip target)" begin
+        # WITNESS, named as such: the fold reads the v0.3.2 fields only, so the profile's bootstrap
+        # pins hold through T1. When the publication seal (T2, HC-9) extends the fold over the
+        # declared slots, THIS assertion flips to `!=` — a registered, disclosed change, never silent.
+        specs = GM.DEFAULT_REGISTRY.action_specs
+        alt = copy(specs)
+        i = findfirst(s -> s.name === :hide, alt)
+        h = alt[i]
+        alt[i] = GM.ActionSpec(; name = h.name, spelling = h.spelling, plugin = h.plugin,
+                                 overloads = h.overloads, accepts_string_slot = h.accepts_string_slot,
+                                 sugar_candidacy = h.sugar_candidacy, validate = h.validate,
+                                 keyed_slot = h.keyed_slot, default = GM.Declared(:show),
+                                 settribute = :elsewhere)
+        @test GM._registration_digest(alt) == GM._registration_digest(specs)   # T2 flips this
+    end
+end

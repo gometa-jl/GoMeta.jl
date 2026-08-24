@@ -459,18 +459,20 @@ function run_absorb_apply!(parse_state::BLS.ParseState;
                 # Block-grain Visib write-back, resolved through the per-call state: the alterant index
                 # `st.registry.alt_index[:Visib]` + the working set `st.working` carry the
                 # resolution, and the resolved Visib action maps through the per-call registry's
-                # `visib_to_settribute` settribute-key table (an identity mapping at v0). BOTH grains use
+                # generic `action_to_settribute` write-back table (v0.4 T1: DERIVED from the declared
+                # per-action `settribute` slots — identity at v0.4.0). BOTH grains use
                 # the Pair-form `=> true` — the Block form here, and the Segment grain in walk.jl.
                 # The driver IS the per-call state producer — `st` (the `init_state` result above, captured
                 #   by this `with(STATE=>st) do` closure) === `ctx()` === `STATE[]` — so the write-back reads
                 #   the in-scope `st` instead of repeating the `ctx()` lookup once per iteration.
-                ## The Visib-action → settribute-key map is read off the PER-CALL registry
-                ## (`st.registry.visib_to_settribute`), not the module-global alias, so a custom
-                ## `registry` kwarg's mapping is honored at the Block grain.
+                ## The action → settribute-key table is read off the PER-CALL registry
+                ## (`st.registry.action_to_settribute`; the module-global alias is retired), so a
+                ## custom `registry` kwarg's mapping is honored at the Block grain. The `:Visib`
+                ## index literal + the `keys(Alterants.Visib)` read are the T7 write-back cure's scope.
                 if st.registry.alt_index[:Visib] ∈ keys(st.working)
                     BLS.setElement(
                         childComponent.componentSettribute,
-                        st.registry.visib_to_settribute[
+                        st.registry.action_to_settribute[
                             keys(Alterants.Visib)[
                                 st.working[
                                     st.registry.alt_index[:Visib]

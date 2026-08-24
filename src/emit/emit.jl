@@ -44,8 +44,9 @@ module WriteOutFile
 import ..BLS
 
 ## The HIDE-aware render. A component's own Visib verdict lives in its ComponentSettribute
-## :show/:hide/:discard keys (set by the Apply write-back; VISIB_TO_SETTRIBUTE is identity,
-## registry.jl): `checkVisib` resolves one component's verdict and `finalVisib` applies
+## :show/:hide/:discard keys (set by the Apply write-back through the registry's generic
+## `action_to_settribute` table — identity at v0.4.0, declared per action; registry.jl):
+## `checkVisib` resolves one component's verdict and `finalVisib` applies
 ## nearest-wins precedence (Block ◁ Line ◁ Segment), ported from the origin engine's
 ## behaviour oracle (its `checkVisib` + its hide-marker write sites),
 ## adapted to parse_state threading, eachchildid and the pure IOBuffer, and preserving the

@@ -83,6 +83,222 @@ const userMHIdx    = maxDepthMH + 1   # 10
 const lineMHIdx    = maxDepthMH + 2   # 11
 const defaultMHIdx = maxDepthMH + 3   # 12 == NUM_MH_LEVELS
 
+# --- the v0.4 registration-record SLOTS (the Stage-A T1 schema extension) ---------------------------
+# IS: the DECLARED data slots the v0.4 record carries (the architecture chapter's sec 2.a, slots
+#     (1)–(10)): the per-action settribute mapping · the capture declaration · the presence-typed
+#     explicit default · the render-plane data · the vocabulary slot · constraint rows · contributed
+#     condition atoms · identity/contract/requires · sugar rows · the schema-versioned provenance
+#     group + the RESERVED permissions manifest.
+# DOES: defines the slot types with their closed enum sets; every slot is NOTHING/EMPTY-defaulted so a
+#     record declared in the v0.3.2 shape still constructs (the additive-extension law: old records
+#     admit; nothing is silently defaulted to a VALUE — absence stays mechanically distinguishable
+#     from every declared value, the G-DEF disjointness law).
+# REASONING: the engine's three measured clean planes (apply, interpreter, absorb dispatch) are
+#     registry-DATA-driven; the dirty planes (capture, defaults, render, vocabulary, diagnostics) were
+#     hard-coded per Alterant. Moving what those planes need INTO the record as data is the cure's
+#     substrate: Core keeps schema knowledge, never a particular Alterant's content. At T1 the slots
+#     are CARRIED, not consumed — their consumers land with the per-plane cures (T4–T10), each proving
+#     its slot flows by the D6 mutation probe.
+# PURPOSE: one record, extended never replaced, that a registration can declare completely.
+
+"""
+    DomainRef(artifact, digest)
+
+A digest-pinned reference to an artifact OUTSIDE the record (a vocabulary file, an imported
+label set): `artifact` = the artifact's declared coordinate (a path or a name the loader
+resolves), `digest` = the ALGORITHM-TAGGED content digest of the bytes, `"sha256:<64 lowercase
+hex>"` — per-file SHA-256, tag in the value (the survey's discipline: a digest without its
+algorithm is not comparable). The constructor refuses any other form LOUDLY (a mis-shaped pin
+would otherwise register silently and never verify). Verification against the artifact's bytes
+is the loader's act (typed `SRC_DIGEST_MISMATCH` at the confined loader places), never this
+constructor's.
+"""
+struct DomainRef
+    artifact::String
+    digest::String
+    function DomainRef(artifact::AbstractString, digest::AbstractString)
+        occursin(r"^sha256:[0-9a-f]{64}$", digest) ||
+            error("GoMeta registry: DomainRef digest ", repr(first(String(digest), 80)),
+                " is not algorithm-tagged — the required form is \"sha256:<64 lowercase hex>\" ",
+                "(the record shape law)")
+        new(String(artifact), String(digest))
+    end
+end
+
+## Slot (2): the capture declaration — HOW an Alterant's applied value becomes evals rows.
+const _CAPTURE_SCHEMES        = (:per_key, :single, :per_field, :per_occurrence)
+const _CAPTURE_MULTIPLICITIES = (:many, :one, :per_field)
+"""
+    CaptureDecl(instance_type, attr_scheme, multiplicity, mode_gate)
+
+The declared capture row: `instance_type` = the Alterant instance type the capture walk keys on
+(DECLARED, so the walk never hard-codes a store type); `attr_scheme` ∈ `(:per_key, :single,
+:per_field, :per_occurrence)` = how attr names mint (`label_<key>` per set key · one `visib`-style
+row · `id_<field>` per non-default field · one row per occurrence handle); `multiplicity` ∈
+`(:many, :one, :per_field)`; `mode_gate` = the set mode that gates delivery (`:localOnly` for the
+occurrence-keyed absorb-seam capture) or `nothing`.
+"""
+struct CaptureDecl
+    instance_type::Type
+    attr_scheme::Symbol
+    multiplicity::Symbol
+    mode_gate::Union{Nothing,Symbol}
+end
+
+## Slot (3): the presence-typed explicit default — undeclared is a TYPE, never a sentinel value.
+"The explicit-default slot's abstract root: `NoDefault()` (undeclared) | `Declared(v)`."
+abstract type DefaultSlot end
+"The UNDECLARED default — mechanically distinct from every declared value (the G-DEF disjointness law)."
+struct NoDefault <: DefaultSlot end
+"A DECLARED default value for an action; `value` is the Alterant's own datum, Core never interprets it."
+struct Declared{T} <: DefaultSlot
+    value::T
+end
+
+## Slot (4): render-plane data — effect rows + declared resolve order + the materialize flag.
+const _EFFECT_ROW_KINDS = (:drop, :mark, :pass)
+"""
+    EffectRow(kind, payload)
+
+One render effect: `kind` ∈ `(:drop, :mark, :pass)` — the content is dropped from the render ·
+marked (the writer-side marker rides `payload`, an opaque per-flavor datum Core never indexes —
+the record-carried carriage) · passed through. `payload` is `nothing` unless `kind === :mark`.
+"""
+struct EffectRow
+    kind::Symbol
+    payload::Any
+end
+"""
+    RenderDecl(effects, resolve_order, materialize)
+
+The render-plane declaration: `effects` = action → `EffectRow` pairs in declaration order;
+`resolve_order` = the declared grain resolve order (e.g. `[:Line, :Block]` — the Line-over-Block
+arm) or `nothing`; `materialize` = whether the resolved verdict is written back into the
+component's settribute (the generic write-back gate).
+"""
+struct RenderDecl
+    effects::Vector{Pair{Symbol,EffectRow}}
+    resolve_order::Union{Nothing,Vector{Symbol}}
+    materialize::Bool
+end
+
+## Slot (5): the vocabulary slot — inline names+flags, or a digest-pinned artifact reference.
+"The vocabulary slot's abstract root: `InlineVocabulary` | `VocabularyRef`."
+abstract type VocabularySlot end
+"""
+    InlineVocabulary(names, flags)
+
+An inline closed vocabulary: `names` (Symbol, byte-exact), `flags` per name — `(query = Bool,)`
+(`query = false` = a write-only name the query plane refuses: the sized valve, declared and
+disclosed rather than discovered).
+"""
+struct InlineVocabulary <: VocabularySlot
+    names::Vector{Symbol}
+    flags::Dict{Symbol,NamedTuple{(:query,),Tuple{Bool}}}
+end
+"""
+    VocabularyRef(ref)
+
+A vocabulary owned OUTSIDE Core: the `DomainRef` to the artifact that carries the names AND
+their per-name flags (content custody stays the Alterant's; the digest is ENFORCED at load).
+"""
+struct VocabularyRef <: VocabularySlot
+    ref::DomainRef
+end
+
+## Slot (6): constraint rows — compiled at publication into both refusal planes.
+"A mutual-exclusion constraint over the named actions (one applied value among them per unit)."
+struct MutEx
+    actions::Vector{Symbol}
+end
+
+## Slot (7): contributed condition atoms — NAME-addressed, never order-addressed.
+"""
+    ConditionAtom(name, print_spelling, evaluate)
+
+A condition atom the Alterant contributes: looked up BY NAME (the registration-order class of
+defect cannot arise), printed with its declared `print_spelling`, evaluated by `evaluate` (an
+Alterant callable) or `nothing` for a state-only atom.
+"""
+struct ConditionAtom
+    name::Symbol
+    print_spelling::String
+    evaluate::Union{Nothing,Function}
+end
+
+## Slot (9): sugar rows — a surface pattern lowering to an action, mode-gated.
+"A declared sugar row: surface `pattern` → `action`, delivered only under `mode_gate` (or always)."
+struct SugarRow
+    pattern::Symbol
+    action::Symbol
+    mode_gate::Union{Nothing,Symbol}
+end
+
+## Slot (10): the schema-versioned PROVENANCE group + the RESERVED permissions manifest.
+const _ACQUISITION_MODES = (:shipped, :pinned_by_user, :first_use)
+"""
+    SignatureRecord(; algorithm, key_id, signature)
+
+RESERVED (Rung 2): a signature over the package digest — fields nothing-defaulted; verification
+is a LATER feature (keys pinned at config); the record only carries the declaration room.
+"""
+struct SignatureRecord
+    algorithm::Union{Nothing,String}
+    key_id::Union{Nothing,String}
+    signature::Union{Nothing,String}
+end
+SignatureRecord(; algorithm = nothing, key_id = nothing, signature = nothing) =
+    SignatureRecord(algorithm, key_id, signature)
+"""
+    PermissionManifest(; seam, ambient)
+
+RESERVED (Rung 2): DECLARED permissions — `seam` rows (the registration-surface capability
+vocabulary) and `ambient` rows (`:file_read`-class ambient authority). Declarations are
+displayed and diffed, NEVER enforced in-process (the honest bound: no in-process arrangement
+confines a loaded module).
+"""
+struct PermissionManifest
+    seam::Vector{Symbol}
+    ambient::Vector{Symbol}
+end
+PermissionManifest(; seam = Symbol[], ambient = Symbol[]) = PermissionManifest(seam, ambient)
+"""
+    Provenance(; sec_schema = v"1.0.0", sources = DomainRef[], policy_id = nothing, …)
+
+The schema-versioned provenance group (the security frame's field UNION, all additive, all
+nothing/empty-defaulted — the ONE non-nothing member is `sec_schema`, the group's own schema
+version, so later rungs land as versioned additions never breaks). Live at v0.4.0 (Rung 0):
+`sources` (the per-source `DomainRef` pins, digest-ENFORCED for label-set imports) and
+`policy_id` (the vocabulary-policy identity the publication mints). RESERVED, records-not-
+enforces: `package_digest` · `artifact_manifest` · `signatures` + `signer` · `source_identity`
+(a non-name coordinate) · `acquisition_mode` ∈ `(:shipped, :pinned_by_user, :first_use)` ·
+`artifact_version` · `not_before` · `load_act` (the resolved coordinate + digest as loaded) ·
+`declared_capabilities` (displayed, diffed, never enforced).
+"""
+struct Provenance
+    sec_schema::VersionNumber
+    sources::Vector{DomainRef}
+    policy_id::Union{Nothing,String}
+    package_digest::Union{Nothing,String}
+    artifact_manifest::Union{Nothing,String}
+    signatures::Vector{SignatureRecord}
+    signer::Union{Nothing,String}
+    source_identity::Union{Nothing,String}
+    acquisition_mode::Union{Nothing,Symbol}
+    artifact_version::Union{Nothing,VersionNumber}
+    not_before::Union{Nothing,String}
+    load_act::Union{Nothing,String}
+    declared_capabilities::Vector{Symbol}
+end
+Provenance(; sec_schema = v"1.0.0", sources = DomainRef[], policy_id = nothing,
+             package_digest = nothing, artifact_manifest = nothing,
+             signatures = SignatureRecord[], signer = nothing, source_identity = nothing,
+             acquisition_mode = nothing, artifact_version = nothing, not_before = nothing,
+             load_act = nothing, declared_capabilities = Symbol[]) =
+    Provenance(sec_schema, sources, policy_id, package_digest, artifact_manifest, signatures,
+               signer, source_identity, acquisition_mode, artifact_version, not_before,
+               load_act, declared_capabilities)
+
 # --- the immutable alterant inventory ----------------------------------------------------------------
 """
     PlugIn
@@ -103,7 +319,37 @@ struct PlugIn
     setAltInstance::Function
     getAltInstance::Union{Nothing,Function}
     precedencesTuple::Union{Nothing,NTuple{NUM_MH_LEVELS,Symbol}}
+    # --- the v0.4 declared slots (T1; all nothing/empty-defaulted; carried at T1, consumed T4–T10) ---
+    capture::Union{Nothing,CaptureDecl}            # slot (2): the capture declaration
+    render::Union{Nothing,RenderDecl}              # slot (4): render-plane data
+    vocabulary::Union{Nothing,VocabularySlot}      # slot (5): inline table or a DomainRef artifact
+    constraints::Vector{MutEx}                     # slot (6): constraint rows
+    atoms::Vector{ConditionAtom}                   # slot (7): contributed condition atoms, name-addressed
+    contract_version::Union{Nothing,VersionNumber} # slot (8): the contract version the record targets
+    requires::Tuple{Vararg{Symbol}}                # slot (8): required capabilities — any uninterpreted
+                                                   #   token refuses WHOLE-record at the gate (T2)
+    sugar::Vector{SugarRow}                        # slot (9): sugar rows (surface pattern → action)
+    provenance::Provenance                         # slot (10): the schema-versioned provenance group
+    permissions::Union{Nothing,PermissionManifest} # slot (10): RESERVED permissions (Rung 2, inert)
 end
+"The v0.3.2 positional shape still constructs — the additive-extension law (old records admit)."
+PlugIn(altName::Symbol, setMode::Symbol, altConstructor::Type, setAltInstance::Function,
+       getAltInstance::Union{Nothing,Function},
+       precedencesTuple::Union{Nothing,NTuple{NUM_MH_LEVELS,Symbol}}) =
+    PlugIn(altName, setMode, altConstructor, setAltInstance, getAltInstance, precedencesTuple,
+           nothing, nothing, nothing, MutEx[], ConditionAtom[], nothing, (), SugarRow[],
+           Provenance(), nothing)
+"The keyword form: every v0.4 slot addressable by name; unnamed slots take their nothing/empty default."
+PlugIn(; altName::Symbol, setMode::Symbol, altConstructor::Type, setAltInstance::Function,
+         getAltInstance::Union{Nothing,Function} = nothing,
+         precedencesTuple::Union{Nothing,NTuple{NUM_MH_LEVELS,Symbol}} = nothing,
+         capture = nothing, render = nothing, vocabulary = nothing,
+         constraints = MutEx[], atoms = ConditionAtom[], contract_version = nothing,
+         requires::Tuple{Vararg{Symbol}} = (), sugar = SugarRow[],
+         provenance::Provenance = Provenance(), permissions = nothing) =
+    PlugIn(altName, setMode, altConstructor, setAltInstance, getAltInstance, precedencesTuple,
+           capture, render, vocabulary, constraints, atoms, contract_version, requires, sugar,
+           provenance, permissions)
 
 """
     ActionOverload
@@ -162,7 +408,24 @@ struct ActionSpec
     sugar_candidacy::Symbol
     validate::Union{Nothing,Function}
     keyed_slot::Union{Nothing,Tuple{Symbol,Symbol}}
+    # --- the v0.4 declared per-action slots (T1) ---
+    default::DefaultSlot              # slot (3): the explicit default — `NoDefault()` = undeclared
+    settribute::Union{Nothing,Symbol} # slot (1): the settribute key this action's applied verdict
+                                      #   writes back to (`nothing` = no write-back); the registry's
+                                      #   generic `action_to_settribute` table is DERIVED from these
 end
+"The v0.3.2 positional shape still constructs (default `NoDefault()`, no write-back key)."
+ActionSpec(name::Symbol, spelling::Symbol, plugin::Int8, overloads::Vector{ActionOverload},
+           accepts_string_slot::Int, sugar_candidacy::Symbol, validate::Union{Nothing,Function},
+           keyed_slot::Union{Nothing,Tuple{Symbol,Symbol}}) =
+    ActionSpec(name, spelling, plugin, overloads, accepts_string_slot, sugar_candidacy, validate,
+               keyed_slot, NoDefault(), nothing)
+"The keyword form of the per-action record."
+ActionSpec(; name::Symbol, spelling::Symbol, plugin::Int8, overloads::Vector{ActionOverload},
+             accepts_string_slot::Int = 0, sugar_candidacy::Symbol = :none, validate = nothing,
+             keyed_slot = nothing, default::DefaultSlot = NoDefault(), settribute = nothing) =
+    ActionSpec(name, spelling, plugin, overloads, accepts_string_slot, sugar_candidacy, validate,
+               keyed_slot, default, settribute)
 
 """
     AlterantRegistry
@@ -181,7 +444,9 @@ Fields (declaration-order indices: `labels=1, Visib=2, id=3, heading=4` — the 
   within-slot first-applicable stop); `:mutExclusivePerField` plugins — the `id` compound, whose
   fields fill independently — deliberately sit in NEITHER set. `build_default_registry` MUST sort
   both.
-- `visib_to_settribute` — a Visib action (e.g. `:hide`) → its `ComponentSettribute` key.
+- `action_to_settribute` — the GENERIC action → `ComponentSettribute`-key write-back table, DERIVED
+  from the declared per-action `settribute` slots (v0.4 T1; formerly the Alterant-named
+  `visib_to_settribute` — the rename is a registered breaking change with no forwarding window).
 
 REASONING: `DEFAULT_REGISTRY` is read-only after construction: its `Dict`/`Vector` fields are mutable
 containers, and mutating any of them post-construction breaks the determinism guarantee.
@@ -194,7 +459,7 @@ struct AlterantRegistry
     alt_index::Dict{Symbol,Int8}
     accum_alt_idxs::Vector{Int8}
     mutex_alt_idxs::Vector{Int8}
-    visib_to_settribute::Dict{Symbol,Symbol}
+    action_to_settribute::Dict{Symbol,Symbol}   # v0.4 T1: generic, derived from declarations
     # v0.2 registration build: the DECLARED registration record — one ActionSpec per
     # registered action, DECLARATION order (the parallel derived tables above stay
     # the hot-path lookups; the record is the authority the cross-check verified).

@@ -5,7 +5,8 @@
 #     `checkLabels`/`setVisib`/`setId` over the `@namedElement` types `Visib` (Bool: hide/show/discard)
 #     and `Id` (Int16: cell/parent/file). `module CnS`: the per-call state accessors `wipeAltActionSlots`/
 #     `updateMetaHierarchy`/`getState`/`getAltState`. The tail builds the immutable `AlterantRegistry`
-#     (type: src/state.jl) — `build_default_registry()` → `const DEFAULT_REGISTRY` + `VISIB_TO_SETTRIBUTE`.
+#     (type: src/state.jl) — `build_default_registry()` → `const DEFAULT_REGISTRY` (v0.4 T1: the former
+#     `VISIB_TO_SETTRIBUTE` alias is retired; the write-back table is the generic `action_to_settribute`).
 # DOES: registers the closed v0 inventory (3 alterants / 7 actions) in DECLARATION order (labels=1,
 #     Visib=2, id=3 — the live key is :id): the sorted action table, the parallel action→plugin index, the name→index Dicts,
 #     the SORTED `accum_alt_idxs` (the apply-phase `insorted` consumer in apply.jl depends on the sort),
@@ -26,7 +27,8 @@
 #     refusal (docs/public-api.md §3.4; tests/unit/arg_guard_tests.jl). Only the labels
 #     row has a query getter (`checkLabels`); Visib/Id carry none — `cell`/`parent`/`file` as a
 #     condition atom is the deferred E-07 row. `DEFAULT_REGISTRY` is read-only by convention (its
-#     Dict/Vector fields are mutable containers); `VISIB_TO_SETTRIBUTE` aliases its Dict (===, not a copy).
+#     Dict/Vector fields are mutable containers); the former `===` alias onto its write-back Dict is
+#     retired at v0.4 T1 (the publication seal, T2, closes the mutation class it exposed).
 # PURPOSE: the closed, deterministic alterant inventory + the state accessors the absorb/apply phases consume.
 
 ## Alterants — the label / Visib / Id inventory sub-module
@@ -387,9 +389,10 @@ end # module CnS
 # DOES: `build_default_registry()` constructs FRESH top-level `PlugIn` instances in DECLARATION order
 #     (labels=1, Visib=2, id=3, heading=4 — the live keys are :id / :heading), derives the sorted action
 #     table + the parallel `action_to_plugin` index
-#     + the `Dict` lookups + the SORTED `accum_alt_idxs` + the `visib_to_settribute` identity map through
-#     the CHECKED owner fill (a duplicate action name refuses at load — no silent last-writer-wins), and
-#     returns `const DEFAULT_REGISTRY`. `VISIB_TO_SETTRIBUTE` aliases that same map.
+#     + the `Dict` lookups + the SORTED `accum_alt_idxs` + the generic `action_to_settribute` table
+#     (DERIVED from the declared per-action `settribute` slots — v0.4 T1) through the CHECKED owner
+#     fill (a duplicate action name refuses at load — no silent last-writer-wins), and returns
+#     `const DEFAULT_REGISTRY`.
 # REASONING: alterant/action indices are fixed by declaration order, never by `Dict` iteration order —
 #     those indices are baked into the eval'd condition strings.
 # PURPOSE: a deterministic-by-construction, immutable, read-only alterant inventory for the pipeline.
@@ -444,17 +447,21 @@ function build_default_registry()
         # Visib hide/show/discard — zero literal slots (the action name selects);
         # NON-queryable at v0.2 (getAltInstance=nothing; the I20 class). The inherited
         # SubString feed shape is the internal row on :hide.
+        # v0.4 T1: the write-back settribute key is DECLARED per action (slot (1)) — identity to
+        # the action name at v0.4.0, exactly the v0.3.2 map; the registry's generic
+        # `action_to_settribute` table derives from these declarations below, so Core no longer
+        # knows "plugin 2 is Visib" anywhere in this constructor.
         ActionSpec(:hide, :identifier, Int8(2),
             [_ov(Type[Alterants.Visib, Symbol], Symbol[], Symbol[]; rt=Bool),
              _ov(Type[Alterants.Visib, SubString{String}], Symbol[], Symbol[];
                  rt=Bool, gr=false)],
-            0, :none, nothing, nothing),
+            0, :none, nothing, nothing, NoDefault(), :hide),
         ActionSpec(:show, :identifier, Int8(2),
             [_ov(Type[Alterants.Visib, Symbol], Symbol[], Symbol[]; rt=Bool)],
-            0, :none, nothing, nothing),
+            0, :none, nothing, nothing, NoDefault(), :show),
         ActionSpec(:discard, :identifier, Int8(2),
             [_ov(Type[Alterants.Visib, Symbol], Symbol[], Symbol[]; rt=Bool)],
-            0, :none, nothing, nothing),
+            0, :none, nothing, nothing, NoDefault(), :discard),
         # Id cell/parent/file — ONE literal slot, kind :symbol DECLARED (the setter
         # slot is `Any` — the untyped-slot class the reflection memo tags; reflection
         # cannot carry this kind). NON-queryable (experimental, I21). The inherited
@@ -520,16 +527,18 @@ function build_default_registry()
     # PER FIELD — cell/parent/file fill independently) is deliberately OUTSIDE both sets, so it
     # keeps the pre-stop flow; its per-field semantics are deferred at v0.
     mutex_alt_idxs     = sort!(Int8[i for (i, p) in enumerate(plugins) if p.setMode === :mutExclusive])
-    # A Visib action → its `ComponentSettribute` key. IDENTITY at v0 — verified, not assumed: the Visib
-    # write-back in GoMeta.jl sets the matching settribute key directly, and `ComponentSettribute`
-    # carries the `:hide`/`:show`/`:discard` keys. The explicit map decouples the action name from the
-    # settribute key, so a divergence between the two would be a registry edit, not a code change.
-    visib_to_settribute = Dict{Symbol,Symbol}(
-        s.name => s.name for s in action_specs if s.plugin == Int8(2))
+    # The GENERIC action → `ComponentSettribute`-key write-back table, DERIVED from the declared
+    # per-action `settribute` slots (v0.4 T1). At v0.4.0 the three Visib rows declare identity
+    # keys, so the table equals the v0.3.2 map byte-for-byte — verified by the A/B oracle, not
+    # assumed. Nothing here names an Alterant or a plugin index: a new Alterant's write-back is
+    # record data (zero Core edits). `ComponentSettribute` carries the `:hide`/`:show`/`:discard`
+    # keys; a declared key it does not carry is a registration-time refusal (T2's gate).
+    action_to_settribute = Dict{Symbol,Symbol}(
+        s.name => s.settribute for s in action_specs if s.settribute !== nothing)
 
     return AlterantRegistry(
         plugins, sorted_alt_actions, action_to_plugin,
-        action_index, alt_index, accum_alt_idxs, mutex_alt_idxs, visib_to_settribute,
+        action_index, alt_index, accum_alt_idxs, mutex_alt_idxs, action_to_settribute,
         action_specs, spec_index,
     )
 end
@@ -684,6 +693,45 @@ function _record_wellformed_check(action_specs::Vector{ActionSpec},
                 " declares two Symbol-addressable rows with overlapping arity ",
                 "sets — the dispatch-target uniqueness law refuses (one declared ",
                 "form per arity; the guard's row set must be a singleton)")
+        end
+        # v0.4 T1 — the per-action slots' shape (additive; the closed enums of state.jl):
+        spec.default isa DefaultSlot ||
+            error("GoMeta registry: the default slot on ", repr(spec.name),
+                " is not a DefaultSlot (NoDefault() | Declared(v)) (the record shape law)")
+    end
+    # v0.4 T1 — the per-Alterant slots' shape (additive): every enum-tagged member of the new
+    # slots sits in its closed set; a mis-spelled tag registers LOUDLY, never silently.
+    for p in plugins
+        if p.capture !== nothing
+            p.capture.attr_scheme in _CAPTURE_SCHEMES ||
+                error("GoMeta registry: unknown capture attr scheme ", repr(p.capture.attr_scheme),
+                    " on alterant ", repr(p.altName), " (the record shape law; the closed set is ",
+                    _CAPTURE_SCHEMES, ")")
+            p.capture.multiplicity in _CAPTURE_MULTIPLICITIES ||
+                error("GoMeta registry: unknown capture multiplicity ", repr(p.capture.multiplicity),
+                    " on alterant ", repr(p.altName), " (the record shape law; the closed set is ",
+                    _CAPTURE_MULTIPLICITIES, ")")
+        end
+        if p.render !== nothing
+            for (act, row) in p.render.effects
+                row.kind in _EFFECT_ROW_KINDS ||
+                    error("GoMeta registry: unknown effect kind ", repr(row.kind), " on action ",
+                        repr(act), " of alterant ", repr(p.altName),
+                        " (the record shape law; the closed set is ", _EFFECT_ROW_KINDS, ")")
+                row.kind === :mark || row.payload === nothing ||
+                    error("GoMeta registry: effect row ", repr(act), " of alterant ", repr(p.altName),
+                        " carries a payload but is not a :mark row (the record shape law)")
+            end
+        end
+        p.provenance.acquisition_mode === nothing ||
+            p.provenance.acquisition_mode in _ACQUISITION_MODES ||
+            error("GoMeta registry: unknown acquisition mode ", repr(p.provenance.acquisition_mode),
+                " on alterant ", repr(p.altName), " (the record shape law; the closed set is ",
+                _ACQUISITION_MODES, ")")
+        for c in p.constraints
+            isempty(c.actions) &&
+                error("GoMeta registry: an empty MutEx constraint on alterant ", repr(p.altName),
+                    " (the record shape law)")
         end
     end
     return nothing
@@ -924,16 +972,13 @@ absorb/apply phases read it from there (`ctx().registry`) rather than from a mod
 """
 const DEFAULT_REGISTRY = build_default_registry()
 
-"""
-    const VISIB_TO_SETTRIBUTE :: Dict{Symbol,Symbol}
-
-The Visib-action → settribute-key map of the DEFAULT inventory (identity at v0), kept as a
-convenience alias. The write-back at both grains reads the PER-CALL `st.registry.visib_to_settribute`
-(a custom registry's mapping is honored), not this alias. It is the SAME `Dict` object as
-`DEFAULT_REGISTRY.visib_to_settribute` (===, not a copy) — READ-ONLY by convention; mutating it
-corrupts the registry.
-"""
-const VISIB_TO_SETTRIBUTE = DEFAULT_REGISTRY.visib_to_settribute
+## v0.4 T1 — the `VISIB_TO_SETTRIBUTE` convenience alias is RETIRED (a registered breaking change,
+## no forwarding window): it was the SAME `Dict` object as the registry's map (`===`, not a copy),
+## i.e. a mutable alias onto the "immutable" inventory — the measured post-publication-mutation
+## class the freeze/publication seal (T2) closes. The write-back at both grains reads the
+## PER-CALL `st.registry.action_to_settribute` (derived from the declared per-action `settribute`
+## slots); the default inventory's table is `DEFAULT_REGISTRY.action_to_settribute`. It was never
+## in the `export`/`public` surface (docs/public-api.md §1), so no consumer contract moves.
 
 """
     const DEFAULT_GRAMMAR_PROFILE :: GrammarProfile
