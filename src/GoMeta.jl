@@ -12,8 +12,9 @@
 #     actions) -> Apply (evaluate conditions + apply) -> lazy render. `validate_config` fail-closes
 #     an invalid config into a `PROCESS_ERROR` `GoMetaResult` carrying typed `Diagnostic`s BEFORE any
 #     parse or render work (the input bytes are never touched): `ERR_UNKNOWN_PROFILE` (E-03 — the
-#     three profile names are `:jl_share_v1` + the two opt-in names, docs/public-api.md §3.1)
-#     and `ERR_RANGE_INVALID` (E-08 — a given `parse_range` requires `first == 1` and a non-empty
+#     three profile names are `:jl_share_v1` + the two opt-in names, docs/public-api.md §3.1),
+#     `ERR_UNKNOWN_FLAVOR` (the closed three-flavor set `:julia`/`:c`/`:latex`, selected never
+#     inferred) and `ERR_RANGE_INVALID` (E-08 — a given `parse_range` requires `first == 1` and a non-empty
 #     range). The absorb-walk + apply run inside one per-call dynamic scope, `with(STATE =>
 #     init_state(parse_state, config, registry))`, so two
 #     concurrent calls never share state; the driver walk enters each file-level Block, absorbs its
@@ -137,8 +138,8 @@ import .WriteOutFile: render_bytes
 # EVERYTHING else stays PACKAGE-PUBLIC (reached qualified, e.g. GoMeta.PROCESS_OK / .Diagnostic):
 # the supporting types (ProcessStatus/Diagnostic/EvalStore/AlterantRegistry),
 # DEFAULT_REGISTRY, serialize_evals, outputs, content_fingerprint, EvalRecord, and the PROCESS_OK/PROCESS_ERROR values
-# — the names on the `public` lines below (eleven at 0.3.x; thirty-five since v0.4 T2: + the
-#   registration lifecycle + the record vocabulary; docs/public-api.md §1.2 is the mirror).
+# — the names on the `public` lines below (eleven at 0.3.x; thirty-six since v0.4 T2: + the
+#   registration lifecycle incl. `next_plugin_index` + the record vocabulary; docs/public-api.md §1.2 is the mirror).
 # Qualified import (`import GoMeta as GM`) is UNAFFECTED by these exports and remains canonical for namespace
 # hygiene + multi-implementation use; exporting serves the single-implementation `using` convenience only.
 export goMeta, altValues_evals, GoMetaConfig, GoMetaResult
@@ -396,7 +397,7 @@ The CALLABLE DRIVER SEAM. ONE callable exposes, indivisibly: the absorb WALK pla
 (both grains), the CONDITIONS plane (the closed interpreter via the per-call state),
 the ALTERANTS/APPLY plane (registry + slot tensors + write-backs), and the EVALS
 plane (capture → `altValues_evals`). An adapter never composes them individually.
-Package-public, NOT exported, and deliberately carrying NO `public` declaration
+Package-INTERNAL (a qualified implementation seam, NOT exported, and deliberately carrying NO `public` declaration
 (`names(GoMeta)` stays byte-stable).
 
 THE CONTRACT (normative rows):
@@ -436,7 +437,7 @@ THE CONTRACT (normative rows):
 function run_absorb_apply!(parse_state::BLS.ParseState;
                            config::GoMetaConfig = GoMetaConfig(),
                            registry::AlterantRegistry = DEFAULT_REGISTRY)::GoMetaResult
-    ## v0.4 T2 (cure batch 1) — THE DOOR RUNS HERE TOO: the seam is a public entry that accepts a
+    ## v0.4 T2 (cure batch 1) — THE DOOR RUNS HERE TOO: the seam is a package-internal callable entry that accepts a
     ## registry, so an unpublished or post-publication-mutated registry could otherwise drive the
     ## engine around `goMeta`'s door (the CRX after-T2 breaker). Same typed refusals, same
     ## no-work outcome (an EMPTY parse state rides the error result — nothing is rendered). Row 3
@@ -493,14 +494,12 @@ function run_absorb_apply!(parse_state::BLS.ParseState;
                 ## (cure batch 2, interim until T7) a PUBLISHED custom registry need not carry the
                 ## built-in Visib alterant — guard the literal lookup so such a registry RUNS.
                 if haskey(st.registry.alt_index, :Visib) && st.registry.alt_index[:Visib] ∈ keys(st.working)
-                    BLS.setElement(
-                        childComponent.componentSettribute,
-                        st.registry.action_to_settribute[
-                            keys(Alterants.Visib)[
-                                st.working[
-                                    st.registry.alt_index[:Visib]
-                                ].array][1]
-                        ] => true)
+                    ## (cure batch 3) a Visib record may declare NO write-back key (`settribute =
+                    ## nothing` is schema-legal) — an absent mapping = no write-back, never a KeyError
+                    let act = keys(Alterants.Visib)[st.working[st.registry.alt_index[:Visib]].array][1],
+                        key = get(st.registry.action_to_settribute, act, nothing)
+                        key === nothing || BLS.setElement(childComponent.componentSettribute, key => true)
+                    end
                 end
                 # Capture this Block's FINAL verdicts (Labels + Visib + Id) into st.verdicts BEFORE the
                 #   next apply wipes st.working — the cell is this Block. Render-neutral: it only reads

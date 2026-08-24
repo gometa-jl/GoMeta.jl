@@ -23,7 +23,9 @@
 #     registry is sealed, not frozen by type: a mutation through any container (declared record OR
 #     derived table) is DETECTED at the entry door (`POST_SEAL_MUTATION`, v0.4 T2 — the seal is
 #     recomputed, the tables re-derived, the callables identity-compared), never silently effective;
-#     the construction capability is token-gated so no caller forges a seal; `accum_alt_idxs` must stay sorted
+#     the construction capability is token-gated so no POSITIONAL or accidental construction by
+#     conforming code carries a seal (accident-grade: any loaded module can reach the token — B-2);
+#     `accum_alt_idxs` must stay sorted
 #     ascending (the apply phase's `insorted` membership test depends on it). The queue matrices are
 #     sized `numAltActions × num_slots` as the per-slot upper bound; exceeding the per-slot capacity
 #     (7 actions at v0) is refused at the enqueue guard (src/absorb/absorb_meta.jl) with
@@ -121,7 +123,7 @@ struct DomainRef
     artifact::String
     digest::String
     function DomainRef(artifact::AbstractString, digest::AbstractString)
-        occursin(r"^sha256:[0-9a-f]{64}$", digest) ||
+        occursin(r"\Asha256:[0-9a-f]{64}\z", digest) ||   # absolute anchors: `$` would admit a trailing newline (cure batch 3)
             error("GoMeta registry: DomainRef digest ", repr(first(String(digest), 80)),
                 " is not algorithm-tagged — the required form is \"sha256:<64 lowercase hex>\" ",
                 "(the record shape law)")
@@ -490,7 +492,8 @@ struct AlterantRegistry
     # `spec_index`: action name → index into `action_specs`.
     action_specs::Vector{ActionSpec}
     spec_index::Dict{Symbol,Int}
-    # v0.4 T2 — THE SEAL (HC-9): minted ONLY by `publish`; `nothing` = an UNPUBLISHED value (the
+    # v0.4 T2 — THE SEAL (HC-9): minted by the sanctioned route `publish` (the only SUPPORTED one;
+    # not the only POSSIBLE one in-process — see the constructor note); `nothing` = an UNPUBLISHED value (the
     # gated route-U construction), which the `goMeta` door refuses typed. The seal is the
     # algorithm-tagged registration digest over every declared slot + the declared source digests
     # + policy_id; the door recomputes it — a post-publication mutation of any container fires
@@ -534,7 +537,8 @@ collection); any error-severity defect throws `RegistrationRefused` with EVERY c
 diagnostic. A conforming construction yields an UNSEALED registry (`seal === nothing`) — the
 `goMeta` door refuses it typed, naming the sanctioned path (`RegistryBuilder → validate →
 publish`); route U therefore dies at the entry too (R-V04-34's STRICT door). No positional form
-accepts a seal: sealed values come from `publish` alone.
+accepts a seal: for conforming callers, sealed values come from `publish` (the honest bound: the
+token form is reachable by any loaded module — accident-grade, B-2).
 """
 function AlterantRegistry(plugins::Vector{PlugIn}, sorted_alt_actions::Vector{Symbol},
                           action_to_plugin::Vector{Int8}, action_index::Dict{Symbol,Int8},
@@ -599,8 +603,28 @@ mutable struct RegistryBuilder
     action_specs::Vector{ActionSpec}
 end
 RegistryBuilder() = RegistryBuilder(PlugIn[], ActionSpec[])
-"The declaration-order index the NEXT `register!`ed record must name (`length(builder.plugins) + 1`)."
-next_plugin_index(b::RegistryBuilder)::Int = length(b.plugins) + 1
+"""
+    next_plugin_index(builder) -> Int8
+
+The declaration-order index the NEXT `register!`ed record must name (`length(builder.plugins) +
+1`), typed `Int8` so it passes straight into `ActionSpec(; plugin = …)`; at capacity (127 plugins
+already) it throws the lifecycle's typed `REG_SLOT_EXHAUSTED` refusal instead of an unusable 128.
+"""
+function next_plugin_index(b::RegistryBuilder)::Int8
+    n = length(b.plugins) + 1
+    n > typemax(Int8) && throw(RegistrationRefused([Diagnostic(:REG_SLOT_EXHAUSTED, :error, string(
+        "GoMeta registry: next_plugin_index — the builder already holds ", Int(typemax(Int8)),
+        " alterants (the Int8 slot pool); no further index exists"), nothing)]))
+    return Int8(n)
+end
+"""
+    RegistryBuilder(published::AlterantRegistry) -> RegistryBuilder
+
+A builder PRELOADED with a published registry's declarations (deep-copied — nothing shared with
+the published value): the documented way to extend the built-in inventory
+(`RegistryBuilder(DEFAULT_REGISTRY)`), then `register!` the new Alterant at `next_plugin_index`.
+"""
+RegistryBuilder(r::AlterantRegistry) = RegistryBuilder(deepcopy(r.plugins), deepcopy(r.action_specs))
 
 """
     register!(builder, plugin, specs...) -> builder
@@ -609,8 +633,8 @@ Append one Alterant registration record + ITS action records: the plugin takes t
 declaration-order index `i`, and every supplied `ActionSpec` MUST name `plugin == i` — a record
 naming another index would pass validation against that other Alterant's setter and leave the
 appended one silently actionless (cure batch 1), so the mismatch refuses HERE, loudly, as
-`REG_PROTOCOL`; the 127-plugin pool (the Int8 index space) refuses `REG_SLOT_EXHAUSTED` at the
-128th append.
+`REG_PROTOCOL`; the Int8 slot pool refuses `REG_SLOT_EXHAUSTED` at the 128th PLUGIN append AND
+when the appended action records would exceed 127 ACTIONS (cure batch 2).
 """
 function register!(b::RegistryBuilder, plugin::PlugIn, specs::ActionSpec...)
     n = length(b.plugins) + 1
@@ -637,8 +661,10 @@ end
     RegistrationRefused(diagnostics)
 
 The typed refusal of a registration: thrown by `publish` (and by the gated positional route) with
-EVERY collected error/warning diagnostic — never the first one only. Catch it, read
-`.diagnostics` (stable `code`s), fix the record, re-validate.
+EVERY collected error/warning diagnostic — never the first one only — and by `register!` /
+`next_plugin_index` for their two IMMEDIATE checks (the plugin-index binding `REG_PROTOCOL`; the
+plugin/action pool overflow `REG_SLOT_EXHAUSTED`). Catch it, read `.diagnostics` (stable
+`code`s), fix the record, re-validate.
 """
 struct RegistrationRefused <: Exception
     diagnostics::Vector{Diagnostic}
@@ -674,11 +700,13 @@ end
 The action-argument LITERAL FLOOR: an enqueued argument is a `Symbol` (every bare token,
 INCLUDING numeric text — `Symbol("7")`; the integer space is deliberately not an arm of
 this union, so numeric arguments keep their exact fates at the `_invoke_set` argument
-seam) or a `String` (the CONTENT of a well-formed quoted token). The String kind exists in
-the lane while NO metaLine grammar accepts it yet — a quoted argument meets a typed
-refusal at `absorbMeta`'s enqueue seam (dispatch alone cannot hold that law: the built-in
-setters keep an untyped value slot that would parse `cell("7")`). Exactly
-`Union{Symbol,String}`.
+seam) or a `String` (the CONTENT of a well-formed quoted token). ONE grammar accepts the String
+kind — the Heading action's TEXT slot (`accepts_string_slot = 1`, the quoted-first sugar); every
+other slot of every action refuses a quoted argument with a typed refusal at `absorbMeta`'s
+enqueue seam (dispatch alone cannot hold that law: the built-in setters keep an untyped value
+slot that would parse `cell("7")`). *(This docstring said "NO metaLine grammar accepts it yet"
+— stale since the heading registration; corrected at v0.4 T2 on a CrossReview finding.)*
+Exactly `Union{Symbol,String}`.
 """
 const AlterantArgT = Union{Symbol,String}
 

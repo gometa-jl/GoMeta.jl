@@ -1,16 +1,20 @@
 # registry_lifecycle_tests.jl — v0.4 T2: the registry LIFECYCLE witnesses (APPEND-ONLY).
 #
 # IS:   the unit witnesses of Builder → validate → PUBLISH, the ONE validation chain on every public
-#       construction route (the route-U cure; NO positional form accepts a seal — the token-gated
-#       constructor), the two-tier typed diagnostics with FULL collection (validate never throws),
-#       atomic DEEP-copy publication, the seal + the door's three checks (the declared record's seal ·
-#       every derived table re-derived · the callable identities by `===`), the STRICT published-only
-#       door at `goMeta(bytes; registry)` AND at the callable seam (an unpublished value refuses typed
-#       NAMING the sanctioned path), the real freeze gate (`POST_SEAL_MUTATION` on declared, derived,
-#       re-ordered and callable mutations), `register!`'s binding + pool refusals, the injective slot
-#       encoding, the 0.4.x contract family, warnings emitted at publish, the two exhaustion refusals
-#       (registry grain + the per-call slot pool), and full collection at the entry (config + registry
-#       diagnostics in ONE result).
+#       construction route (the route-U cure; no generated/public positional form accepts a seal —
+#       the token-gated constructor; the token form itself is reachable by loaded code, the
+#       disclosed accident-grade bound), the two-tier typed diagnostics with FULL collection (validate
+#       never throws), atomic DEEP-copy publication, the seal + the door's three checks (the declared
+#       record's seal · every derived table re-derived · the callable identities by `===`), the STRICT
+#       published-only door at `goMeta(bytes; registry)` AND at the internal callable seam (an
+#       unpublished value refuses typed NAMING the sanctioned path), the real freeze gate
+#       (`POST_SEAL_MUTATION` on declared, derived, re-ordered, cyclic and callable-identity mutations by
+#       conforming code), `register!`'s binding + pool refusals, the slot encoding's distinctions
+#       (length-prefixed boundaries, concrete numeric types incl. bit-exact floats, vectors vs tuples —
+#       NOT global injectivity: the opaque-payload fallback and module-unqualified type names are
+#       disclosed collisions), the 0.4.x contract family, warnings emitted at publish, the two
+#       exhaustion refusals (the typed registry-grain diagnostic + the stable-message per-call slot-pool
+#       guard), and full collection at the entry (config + registry diagnostics in ONE result).
 # DOES: builds registries through every route, mutates published values, drives the door, and pins
 #       the codes and the messages' load-bearing substrings.
 # REASONING: the golden layer proves the PUBLISHED default is byte-neutral; only these witnesses prove
@@ -199,6 +203,52 @@ import GoMeta as GM
         Rc = GM.publish(bc)
         rc = GM.goMeta(Vector{UInt8}(codeunits("x = 1\n#~ :label1\n\ny = 2\n")); registry = Rc)
         @test rc.status === GM.PROCESS_OK && !isempty(GM.outputs(rc).render_bytes)
+        # (cure batch 3) the attacked shape "a Visib record declaring NO write-back key" is REFUSED by
+        # the record's own shadow law before it can run — the resolved Visib key is always one of the
+        # instance's field names (hide/show/discard), all settribute keys, so `settribute = nothing`
+        # on them is `REG_RESERVED_SHADOW`; the driver's `get(action_to_settribute, …)` guard stays as
+        # defense-in-depth for an unvalidated (route-U/unchecked) registry
+        bv = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
+        h = bv.action_specs[2]
+        bv.action_specs[2] = GM.ActionSpec(; name = :hide, spelling = :identifier, plugin = Int8(2),
+                                             overloads = h.overloads, settribute = nothing)
+        e = try GM.publish(bv); nothing catch err; err end
+        @test e isa GM.RegistrationRefused && :REG_RESERVED_SHADOW in _errors(e.diagnostics)
+        # (cure batch 3) floats fold BIT-EXACTLY: two NaN payloads with different bits differ
+        nan1 = reinterpret(Float64, 0x7ff8000000000001); nan2 = reinterpret(Float64, 0x7ff8000000000002)
+        @test string(nan1) == string(nan2) && GM._slot_text(nan1) != GM._slot_text(nan2)
+        # (cure batch 3) a published container mutated into a CYCLE is refused as a mutation, not a StackOverflow
+        bcy = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
+        bcy.action_specs[3] = GM.ActionSpec(; name = :show, spelling = :identifier, plugin = Int8(2),
+                                              overloads = bcy.action_specs[3].overloads, settribute = :show,
+                                              default = GM.Declared(Any[]))
+        Rcy = GM.publish(bcy)
+        v = Rcy.action_specs[3].default.value; push!(v, v)
+        @test _codes(GM._registry_door_check(Rcy)) == [:POST_SEAL_MUTATION]
+        # (cure batch 3) a PLUGIN-level structural defect does not mark the actions broken: a sound
+        # action's tier-2 defect is still reported
+        bpl = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
+        bpl.plugins[1] = GM.PlugIn(; altName = :labels, setMode = :accumulate, altConstructor = Dict{Symbol,Bool},
+                                     setAltInstance = GM.Alterants.setLabels, getAltInstance = GM.Alterants.checkLabels,
+                                     capture = GM.CaptureDecl(Dict{Symbol,Bool}, :per_bogus, :many, nothing))
+        push!(bpl.action_specs, GM.ActionSpec(:zzalg, :identifier, Int8(2),
+            [_ov(Type[GM.Alterants.Visib, Symbol]; rt = Float64)], 0, :none, nothing, nothing))
+        dpl = GM.validate(bpl)
+        @test :REG_PROTOCOL in _errors(dpl) && :REG_VALUE_ALGEBRA in _errors(dpl)
+        # (cure batch 3) the digest form is ABSOLUTELY anchored (a trailing newline is refused)
+        @test_throws ErrorException GM.DomainRef("x", "sha256:" * "0"^64 * "\n")
+        # (cure batch 3) next_plugin_index is Int8 and passes straight into ActionSpec; RegistryBuilder(published) preloads
+        bx = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
+        @test length(bx.plugins) == 4 && bx.plugins !== GM.DEFAULT_REGISTRY.plugins
+        i5 = GM.next_plugin_index(bx)
+        @test i5 isa Int8 && i5 == 5
+        GM.register!(bx, GM.PlugIn(:bag2, :accumulate, Dict{Symbol,Bool}, GM.Alterants.setLabels, GM.Alterants.checkLabels, nothing),
+                     GM.ActionSpec(; name = :bagset, spelling = :identifier, plugin = i5,
+                                     overloads = [GM.ActionOverload(; sig_types = Type[Dict{Symbol,Bool}, Symbol],
+                                                                      vararg_kind = :symbol, queryable = true)]))
+        Rx = GM.publish(bx)
+        rx = GM.goMeta(Vector{UInt8}(codeunits("x = 1\n#~ hide\n\ny = 2\n")); registry = Rx)
+        @test rx.status === GM.PROCESS_OK
         # warnings are emitted by the sanctioned publish route (cure batch 1), never swallowed
         bw = GM.default_registry_builder()
         bw.action_specs[3] = GM.ActionSpec(; name = :show, spelling = :identifier, plugin = Int8(2),
@@ -336,7 +386,7 @@ import GoMeta as GM
         @test _codes(r.diagnostics) == [:ERR_UNKNOWN_PROFILE, :REG_UNPUBLISHED]   # config first, then registry
     end
 
-    @testset "the per-call slot-pool exhaustion refuses typed (r-21; the findfirst-nothing site)" begin
+    @testset "the per-call slot-pool exhaustion refuses with the stable GUARDED message (r-21; the findfirst-nothing site; typed conversion = the diagnostics catalogue row)" begin
         # Drive `updateMetaHierarchy` directly with every slot occupied: on v0.3.2 the Int8 store
         # of `findfirst(...) === nothing` raised a RAW MethodError (uncontained); T2 refuses with the
         # stable absorb-style message. Input-reachability is NOT claimed here (the walk allocates

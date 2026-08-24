@@ -126,7 +126,8 @@ import GoMeta as GM
         # grammar pin did NOT move — a moved grammar pin here would mean the fold touched
         # what it must not)
         # (registration pin RE-MINTED a FOURTH time, consciously, at the after-T2 CRX cure batch:
-        # the slot encoding became INJECTIVE (length-prefixed) and the fold gained the setter/getter
+        # the slot encoding gained length-prefixed element boundaries (a boundary can no longer be
+        # re-cut; NOT global injectivity — see the lifecycle tests' header) and the fold gained the setter/getter
         # names + precedencesTuple — 0x29012b84e8284212 → 0xd9356f388ea12597; the grammar pin
         # still unmoved)
         # (a FIFTH re-mint at cure batch 2: the encoding now tags the concrete numeric type and

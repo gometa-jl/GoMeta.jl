@@ -18,7 +18,8 @@ crashes remain latent or are guarded by a stable refusal.
 **DOES.** (1) names the **exported** surface (§1.1) and the **package-public** supporting names
 (§1.2); (2) names the **two output surfaces** through which every observable byte flows (§1.3 —
 the sole-surface invariant); (3) restates each public signature + its contract (§2); (4) enumerates
-the eight-row typed error catalogue with its honest partition (§3); (5) records the
+the typed error catalogue with its honest partition (§3 — the 0.3.x eight rows, plus the v0.4
+registration/door rows of §3.5); (5) records the
 CRLF-normalization convention (§4), the explicitly **deferred / not-v0** surfaces (§5), and the
 additive-only **versioning policy** (§6).
 
@@ -84,16 +85,25 @@ These are part of the documented public surface — declared with Julia's `publi
 - `Diagnostic` `{code::Symbol, severity::Symbol, message::String, context::Any}` — the typed,
   non-throwing diagnostic record.
 - `AlterantRegistry` + the `const DEFAULT_REGISTRY` — the deterministic alterant inventory (the
-  `goMeta` default registry), a PUBLISHED (validated + sealed) value since v0.4. A custom
-  `registry`'s mappings over the BUILT-IN inventory are honored per call (e.g. the generic
-  action→settribute write-back table); custom plugin IMPLEMENTATIONS are outside the supported
-  surface at v0.4.0 — the verdict capture reads the built-in alterant instance types (the
-  registration-driven capture lands with the v0.4 cure series).
-- **The registration LIFECYCLE (v0.4):** `RegistryBuilder()` + `GoMeta.register!(builder,
+  `goMeta` default registry), a PUBLISHED (validated + sealed) value since v0.4. **What a custom
+  registry can do at THIS build state (v0.4.0-candidate, Stage-A rows T0–T2 landed):** it is
+  built through the lifecycle below, its declared record + derived tables + callables are
+  sealed and door-checked, its setters DISPATCH (the apply plane is registry-data-driven) and a
+  registry without the built-in Visib RUNS; what is NOT yet registration-driven — landing with
+  the named Stage-A rows — is the CAPTURE plane (T5: `altValues_evals` rows are minted only for
+  the built-in instance types today; a new Alterant's verdicts apply but do not yet surface as
+  rows), the QUERY plane's argument floor (T3: the getter is called with Symbol literals only;
+  the getter's signature is not yet verified at registration), and the RENDER write-back
+  (T6/T7: only a Visib-style `settribute` mapping writes back). The release contract page states,
+  per slot, which row consumes it.
+- **The registration LIFECYCLE (v0.4):** `RegistryBuilder()` (empty) or
+  `RegistryBuilder(DEFAULT_REGISTRY)` (PRELOADED with the four built-ins, deep-copied — the way
+  to EXTEND the shipped inventory) + `GoMeta.register!(builder,
   plugin, specs...)` — the mutable declaration site; `GoMeta.validate(builder) ->
   Vector{Diagnostic}` — the ONE validation chain, returning EVERY defect (errors and warnings, in
   deterministic order) and never throwing; `GoMeta.publish(builder) -> AlterantRegistry` — the
-  ONLY route that mints a SEALED registry: refuses with `RegistrationRefused` (carrying every
+  SANCTIONED route to a SEALED registry for conforming callers (the only supported one; see the
+  honest bound below — in-process Julia cannot make it the only POSSIBLE one): refuses with `RegistrationRefused` (carrying every
   diagnostic) on any error, proceeds on warnings, COPIES every container (nothing mutable is
   shared with the builder), derives the hot-path tables from the declarations, and seals.
   `RegistrationRefused <: Exception` — `.diagnostics::Vector{Diagnostic}` with stable codes
@@ -117,9 +127,13 @@ These are part of the documented public surface — declared with Julia's `publi
   (a closure over a `Ref`, a redefined generic), and the door is a check at entry, not a lock
   over the run — a task mutating a registry concurrently with a run that already passed the door
   is outside the model. A loaded module that does any of these has full process authority
-  anyway; the trust act is the user's (load only trustworthy Alterants).
-- `GoMeta.next_plugin_index(builder) -> Int` — the index the next `register!` assigns (§ the
-  plugin index rule below).
+  anyway; the trust act is the user's (load only trustworthy Alterants). Two further disclosed
+  limits of the seal's canonical encoding: an OPAQUE effect-row payload of a type without a
+  registered encoder folds by `typeof` + `repr` (a mutation with a stable `repr` is invisible —
+  T10 gives every admitted payload an encoder), and type identities fold module-UNQUALIFIED (two
+  same-named types from different modules collide — the recorded trade of the profile digest).
+- `GoMeta.next_plugin_index(builder) -> Int8` — the index the next `register!` assigns (§ the
+  plugin index rule below); throws `RegistrationRefused` (`REG_SLOT_EXHAUSTED`) at capacity.
 - **The record VOCABULARY (v0.4; what `register!` accepts — the Alterant registration record and
   its action records; construct with the keyword forms):**
   - `PlugIn(; altName, setMode, altConstructor, setAltInstance, getAltInstance = nothing,
@@ -153,10 +167,12 @@ These are part of the documented public surface — declared with Julia's `publi
     `:context_required` for rows that derive from placement (the heading sugar); `phase` =
     `:absorb` for `:localOnly` delivery; `grammar = false` marks an INTERNAL row.
   - **The getter contract** (`PlugIn.getAltInstance`, required iff any overload is `queryable`):
-    called as `getter(instance, actionName::Symbol, args...) -> Bool` — the query plane passes
-    the action name and the literal arguments exactly as the setter receives them; a getter of
-    another shape is a `MethodError` at query time (its registration-time verification against
-    each queryable overload is the query-seam envelope's, landing with the v0.4 seam cure).
+    called as `getter(instance, actionName::Symbol, args::Symbol...) -> Bool` — at this build
+    state the query plane passes the action name and SYMBOL literals only (the argument floor of
+    `getAltState`); a queryable `:string` overload is admitted by registration but its getter is
+    not reached with a String until T3's query-seam envelope, which also verifies each queryable
+    overload's getter signature at registration. A getter of another shape is a `MethodError`
+    at query time until then.
   - **The plugin index rule:** `ActionSpec.plugin` is the declaration-order index of the owning
     Alterant, an `Int8` you supply — `GoMeta.next_plugin_index(builder)` returns the index the
     NEXT `register!` call will assign (1 on an empty builder; 5 after the four built-ins), and
@@ -353,12 +369,11 @@ are not catalogued typed codes.
 
 ### §3.1 — Non-condition codes (5): 3 armed config-time + 1 crash-origin with deferred typed conversion + 1 GUARDED
 
-| `ERR_UNKNOWN_FLAVOR` | config-time, **armed + typed** | `config.flavor_tag` outside the three armed flavors `{:julia, :c, :latex}` — fail-closed before any parse (selected, never inferred). *(Row added at v0.4 T2 on a CrossReview finding — the code armed it at the flavor arming; the catalogue had not followed.)* |
-
 | Code | Status | Trigger |
 |---|---|---|
 | `ERR_UNKNOWN_PROFILE` (E-03) | config-time, **armed + typed** | `config.profile` outside the three profile names `{:jl_share_v1, :jl_share_v1_full_parse, :jl_share_v1_full_eval}` — fail-closed `PROCESS_ERROR`, no parse, verdict, or render work attempted (an opt-in name passes THIS row and refuses later at profile resolution unless the opt-in extension is explicitly included — the two-act law, §3.2) |
 | `ERR_RANGE_INVALID` (E-08) | config-time, **armed + typed** | `config.parse_range` with `first ≠ 1`, or an empty range |
+| `ERR_UNKNOWN_FLAVOR` | config-time, **armed + typed** | `config.flavor_tag` outside the three armed flavors `{:julia, :c, :latex}` — fail-closed before any parse (selected, never inferred). *(Row added at v0.4 T2 on a CrossReview finding — the code armed it at the flavor arming; the catalogue had not followed.)* |
 | `ERR_VISIB_NO_FLAG` (E-04) | apply-path **crash-origin** (typed conversion deferred) | a Visib verdict carries no set flag at write-back |
 | `ERR_DEPTH_OUT_OF_WINDOW` (E-06) | **GUARDED** — stable untyped refusal; typed conversion deferred | a `#~9`-style **digit** depth beyond the meta-hierarchy's depth window raises the stable-message `ErrorException` "meta depth out of range …" at the depth lookup (§3.4) |
 
@@ -569,14 +584,16 @@ deferred.
 
 ### §3.5 — Registration + door codes (v0.4; typed `Diagnostic`s)
 
-Every row below is a `Diagnostic{code, severity, message, context}`; the registration rows come
-back from `GoMeta.validate` (all of them, in one vector, deterministic order) and ride
-`RegistrationRefused.diagnostics` when `publish` (or the gated positional route) refuses; the door
-rows come back as a `PROCESS_ERROR` result from `goMeta` / `run_absorb_apply!` before any parse.
-**Two rows are raised by `register!` itself, immediately and atomically (nothing appended), as a
-thrown `RegistrationRefused`** — the plugin-index binding (`REG_PROTOCOL`) and the slot-pool
-overflow (`REG_SLOT_EXHAUSTED`) — so a caller that only inspects `validate` must still wrap
-`register!` in a `try`; every other row is validation-time.
+Every row below is a `Diagnostic{code, severity, message, context}`. FOUR delivery channels,
+partitioned: **(i) `register!`-time THROWS** — immediate and atomic (nothing appended), a thrown
+`RegistrationRefused`: the plugin-index binding (`REG_PROTOCOL`) and the plugin/action pool
+overflow (`REG_SLOT_EXHAUSTED`; also `next_plugin_index` at capacity) — wrap `register!` in a
+`try`; **(ii) VALIDATION-time rows** — every other `REG_*` row below comes back from
+`GoMeta.validate` (all validation-time rows, in one vector, deterministic order) and rides
+`RegistrationRefused.diagnostics` when `publish` refuses; **(iii) ROUTE-U-only** —
+`REG_DERIVED_TABLES`, raised by the gated positional constructor together with the validation
+rows; **(iv) DOOR results** — `REG_UNPUBLISHED` / `POST_SEAL_MUTATION` come back as a
+`PROCESS_ERROR` result from `goMeta` / the internal seam before any parse.
 
 | Code | Severity | Trigger | Context |
 |---|---|---|---|

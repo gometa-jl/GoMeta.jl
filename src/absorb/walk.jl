@@ -293,15 +293,11 @@ function absorbWalk(
                 ## `:Visib` index literal + the `keys(Alterants.Visib)` read = the T7 cure's scope.
                 ## (cure batch 2, interim until T7) guarded: a published custom registry without Visib runs.
                 if haskey(st.registry.alt_index, :Visib) && st.registry.alt_index[:Visib] ∈ keys(st.working)
-                    BLS.setElement(
-                        crntComponent.componentSettribute,
-                        st.registry.action_to_settribute[
-                            keys(Alterants.Visib)[
-                                st.working[
-                                    st.registry.alt_index[:Visib]
-                                    ].array][1]
-                        ] => true
-                    )
+                    ## (cure batch 3) an absent write-back mapping (`settribute = nothing`) = no write-back
+                    let act = keys(Alterants.Visib)[st.working[st.registry.alt_index[:Visib]].array][1],
+                        key = get(st.registry.action_to_settribute, act, nothing)
+                        key === nothing || BLS.setElement(crntComponent.componentSettribute, key => true)
+                    end
                 end
                 # Capture the Segment-grain FINAL verdicts before the next apply wipes `st.working`;
                 # the cell is the LINE (`crntComponent`) the Segment's meta applies to, NOT the Segment.

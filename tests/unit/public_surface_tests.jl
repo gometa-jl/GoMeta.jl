@@ -6,7 +6,7 @@
 # DOES: (1) introspects the surface — `names(GoMeta)` (minus the module name) returns the
 #       exported ∪ `public` names; the EXPORTED tier (via `Base.isexported`) must equal the FOUR
 #       declared exports and the remaining tier (via `Base.ispublic`) must equal the declared
-#       package-public names (11 at v0.3.2; 35 since v0.4 T2 — the lifecycle + the record vocabulary;
+#       package-public names (11 at v0.3.2; 36 since v0.4 T2 — the lifecycle + the record vocabulary;
 #       no accidental leak, no gap, no silent demotion) — the
 #       machine-checkable surface oracle; (2) asserts each supporting package-public name is
 #       defined, `public`, and NOT exported (the controlled surface); (3) asserts the internal
@@ -53,7 +53,7 @@ import TOML
         live = setdiff(Set(names(GM)), Set([:GoMeta]))     # names() on Julia ≥1.11 == exported ∪ `public` (+ the module name)
         exported = Set(filter(n -> Base.isexported(GM, n), collect(live)))
         @test exported == DECLARED_EXPORTS                        # [1] no accidental leak AND no gap (exact equality)
-        @test setdiff(live, exported) == Set(SUPPORTING_PUBLIC)   # [1b] the `public` tier is EXACTLY the declared names (35 since v0.4 T2)
+        @test setdiff(live, exported) == Set(SUPPORTING_PUBLIC)   # [1b] the `public` tier is EXACTLY the declared names (36 since v0.4 T2)
         @test all(n -> Base.ispublic(GM, n), SUPPORTING_PUBLIC)   # [1c] every supporting name carries the `public` marking
         @test all(n -> !Base.isexported(GM, n), SUPPORTING_PUBLIC) # [1d] …and none is exported (the two-tier partition is real)
         for n in DECLARED_EXPORTS

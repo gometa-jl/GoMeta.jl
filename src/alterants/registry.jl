@@ -28,10 +28,11 @@
 #     refusal (docs/public-api.md §3.4; tests/unit/arg_guard_tests.jl). Only the labels
 #     row has a query getter (`checkLabels`); Visib/Id carry none — `cell`/`parent`/`file` as a
 #     condition atom is the deferred E-07 row. `DEFAULT_REGISTRY` is a PUBLISHED, SEALED value (v0.4
-#     T2): its Dict/Vector fields stay mutable containers, but a mutation through any of them —
-#     declared record, derived table, or callable — is DETECTED at the entry door
-#     (`POST_SEAL_MUTATION`), never silently effective; the former `===` alias onto its write-back
-#     Dict is retired (v0.4 T1).
+#     T2): its Dict/Vector fields stay mutable containers, but a mutation by CONFORMING code
+#     through any of them — the declared record, a derived table, or a callable IDENTITY — is
+#     DETECTED at the entry door (`POST_SEAL_MUTATION`), never silently effective (accident-grade:
+#     a callable's BEHAVIOR is not pinned by its identity, and the door is an entry check, not a
+#     lock over the run — B-2); the former `===` alias onto its write-back Dict is retired (v0.4 T1).
 # PURPOSE: the closed, deterministic alterant inventory + the state accessors the absorb/apply phases consume.
 
 ## Alterants — the label / Visib / Id inventory sub-module
@@ -663,20 +664,28 @@ function _record_wellformed_check(action_specs::Vector{ActionSpec},
     return nothing
 end
 
-"The indices of the action records tier 1 finds structurally broken (the tier-2 skip set; cure batch 2)."
+"The indices of the action records tier 1 finds structurally broken (the tier-2 skip set; cure batch 2). Cure batch 3: the ACTION-level law only — a plugin-level defect never marks an action broken."
 function _broken_record_indices(action_specs::Vector{ActionSpec}, plugins::Vector{PlugIn})
     broken = Set{Int}()
     for (i, spec) in enumerate(action_specs)
         d = Diagnostic[]
-        _record_wellformed_collect!(d, [spec], plugins)
+        _record_wellformed_actions_collect!(d, [spec], plugins)
         any(x -> x.code === :REG_PROTOCOL, d) && push!(broken, i)
     end
     return broken
 end
 
-"The tier-1 STRUCTURAL law, accumulating: every row a `REG_PROTOCOL` diagnostic (the `protocol` class)."
+"The tier-1 STRUCTURAL law, accumulating: every row a `REG_PROTOCOL` diagnostic (the `protocol` class) — the action-level law then the plugin-level law."
 function _record_wellformed_collect!(diags::Vector{Diagnostic}, action_specs::Vector{ActionSpec},
                                      plugins::Vector{PlugIn})
+    _record_wellformed_actions_collect!(diags, action_specs, plugins)
+    _record_wellformed_plugins_collect!(diags, plugins)
+    return nothing
+end
+
+"Tier 1, the ACTION-level rows (cure batch 3: split from the plugin-level rows so the tier-2 skip set is per action)."
+function _record_wellformed_actions_collect!(diags::Vector{Diagnostic}, action_specs::Vector{ActionSpec},
+                                             plugins::Vector{PlugIn})
     proto(msg, ctx) = push!(diags, Diagnostic(:REG_PROTOCOL, :error, msg, ctx))
     for spec in action_specs
         # the owning-plugin index must exist BEFORE any dependent check reads `plugins[spec.plugin]`
@@ -757,6 +766,12 @@ function _record_wellformed_collect!(diags::Vector{Diagnostic}, action_specs::Ve
                 "settribute key ", repr(spec.settribute), " which ComponentSettribute does not carry ",
                 "(the record shape law)"), spec.name)
     end
+    return nothing
+end
+
+"Tier 1, the PLUGIN-level rows (the v0.4 T1 slot shapes)."
+function _record_wellformed_plugins_collect!(diags::Vector{Diagnostic}, plugins::Vector{PlugIn})
+    proto(msg, ctx) = push!(diags, Diagnostic(:REG_PROTOCOL, :error, msg, ctx))
     # v0.4 T1 — the per-Alterant slots' shape (additive): every enum-tagged member of the new
     # slots sits in its closed set; a mis-spelled tag registers LOUDLY, never silently.
     for p in plugins
@@ -806,7 +821,8 @@ const _CONTRACT_VERSIONS = (v"0.4.0",)      # the family's anchor (display); the
 _contract_accepts(v::VersionNumber) = v.major == 0 && v.minor == 4
 const _SLOT_POOL = Int(typemax(Int8))       # the Int8 index space of plugins/actions (127)
 function _inventory_collect!(diags::Vector{Diagnostic}, plugins::Vector{PlugIn},
-                             action_specs::Vector{ActionSpec})
+                             action_specs::Vector{ActionSpec};
+                             sound::Vector{ActionSpec} = action_specs)   # (cure batch 3) ownership from SOUND records only
     seen = Dict{Symbol,Int}()
     for (i, p) in enumerate(plugins)
         p.setMode in _SET_MODES ||
@@ -831,7 +847,7 @@ function _inventory_collect!(diags::Vector{Diagnostic}, plugins::Vector{PlugIn},
             push!(diags, Diagnostic(:REG_CONTRACT_VERSION, :error, string("GoMeta registry: alterant ",
                 repr(p.altName), " targets contract version ", p.contract_version, " — the accepted ",
                 "family is v0.4.x (anchor ", _CONTRACT_VERSIONS[1], "; or undeclared)"), p.altName))
-        own = Set(s.name for s in action_specs if Int(s.plugin) == i)   # never Int8(i): i may exceed the pool
+        own = Set(s.name for s in sound if Int(s.plugin) == i)   # never Int8(i): i may exceed the pool; a malformed record owns nothing
         for c in p.constraints
             for a in c.actions
                 a in own || push!(diags, Diagnostic(:REG_MUTEX_CONFLICT, :error, string(
@@ -970,10 +986,35 @@ _slot_text(x::Bool)::String = x ? "T" : "F"
 # (cure batch 2) the CONCRETE numeric type is part of the value (`Int8(1)` ≠ `Int64(1)`), and a
 # vector is not a tuple — distinct tags, so a same-display substitution moves the seal.
 _slot_text(x::Number)::String = string("n", _nsv((_type_text(typeof(x)), string(x))))
+# (cure batch 3) floats encode BIT-EXACTLY — display text collapses distinct NaN payloads (and
+# signed zeros' bit patterns) into one string; the bits are the value.
+_slot_text(x::Float64)::String = string("n", _nsv((_type_text(typeof(x)), string(reinterpret(UInt64, x); base = 16))))
+_slot_text(x::Float32)::String = string("n", _nsv((_type_text(typeof(x)), string(reinterpret(UInt32, x); base = 16))))
+_slot_text(x::Float16)::String = string("n", _nsv((_type_text(typeof(x)), string(reinterpret(UInt16, x); base = 16))))
 _slot_text(x::VersionNumber)::String = string("v", _ns(string(x)))
 _slot_text(x::Type)::String = string("t", _ns(_type_text(x)))
 _slot_text(f::Function)::String = string("f", _ns(String(nameof(f))))
-_slot_text(v::AbstractVector)::String = string("[", _nsv(_slot_text(e) for e in v), "]")
+# (cure batch 3) CYCLE-aware container encoding: a published mutable container mutated into a
+# cycle (`push!(v, v)`) must be REFUSED at the door as a mutation, never recursed into a
+# StackOverflowError. The visiting set is task-local per top-level encode.
+const _SLOT_VISITING = Base.ScopedValues.ScopedValue{Union{Nothing,Base.IdSet{Any}}}(nothing)
+struct _CyclicSlot <: Exception; end
+function _slot_container(open::String, close::String, v)
+    vis = _SLOT_VISITING[]
+    if vis === nothing
+        return Base.ScopedValues.with(_SLOT_VISITING => Base.IdSet{Any}()) do
+            _slot_container(open, close, v)
+        end
+    end
+    v in vis && throw(_CyclicSlot())
+    push!(vis, v)
+    try
+        return string(open, _nsv(_slot_text(e) for e in v), close)
+    finally
+        delete!(vis, v)
+    end
+end
+_slot_text(v::AbstractVector)::String = _slot_container("[", "]", v)
 _slot_text(v::Tuple)::String = string("<", _nsv(_slot_text(e) for e in v), ">")
 _slot_text(p::Pair)::String = string("(", _nsv((_slot_text(p.first), _slot_text(p.second))), ")")
 _slot_text(d::AbstractDict)::String =
@@ -1208,7 +1249,7 @@ function _validate_registration(plugins::Vector{PlugIn}, action_specs::Vector{Ac
     # plugin-named record must not shadow a well-formed one's tier-2 defects.
     broken = _broken_record_indices(action_specs, plugins)
     sound = ActionSpec[s for (i, s) in enumerate(action_specs) if !(i in broken)]
-    _inventory_collect!(diags, plugins, action_specs)
+    _inventory_collect!(diags, plugins, action_specs; sound = sound)
     _register_actions_collect!(diags, Dict{Symbol,Int8}(), action_specs)
     _reflection_collect!(diags, sound, plugins)
     _value_algebra_collect!(diags, sound)
@@ -1252,7 +1293,9 @@ validate(b::RegistryBuilder) = _validate_registration(b.plugins, b.action_specs)
 """
     publish(builder::RegistryBuilder) -> AlterantRegistry
 
-The ONLY route that mints a SEALED registry. Refuses (throws `RegistrationRefused` carrying every
+The SANCTIONED route to a SEALED registry — the only SUPPORTED one for conforming callers (not the
+only possible one in-process: the construction token and this file's helpers are reachable by any
+loaded module, the accident-grade bound recorded at `_SealToken`). Refuses (throws `RegistrationRefused` carrying every
 diagnostic) if `validate` reports any error; proceeds on warnings. Atomic COPY-publication: every
 container is copied, so no mutable container is shared between the builder and the published value
 (a later mutation of the builder cannot reach a published registry, and vice versa); the derived
@@ -1306,7 +1349,13 @@ function _registry_door_check(registry::AlterantRegistry)
     # — changes dispatch without touching the declared bytes); (iii) the validated CALLABLE
     # identities compared by `===` (a same-named swapped setter/getter/ctor/evaluator/validator).
     what = String[]
-    registry.seal == _mint_seal(registry.plugins, registry.action_specs) || push!(what, "the declared record (seal)")
+    # (cure batch 3) an UNENCODABLE declared record (a container mutated into a cycle) is itself a
+    # post-publication mutation — refused typed, never a StackOverflowError out of the door
+    sealed_now = try _mint_seal(registry.plugins, registry.action_specs) catch e
+        e isa _CyclicSlot || rethrow(); nothing end
+    (sealed_now !== nothing && registry.seal == sealed_now) || push!(what,
+        sealed_now === nothing ? "the declared record (a cyclic container — no longer encodable)" :
+                                 "the declared record (seal)")
     derived = try _derive_tables(registry.plugins, registry.action_specs) catch; nothing end
     if derived === nothing
         push!(what, "the declared record (tables no longer derivable)")
