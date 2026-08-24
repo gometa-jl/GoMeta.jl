@@ -137,12 +137,16 @@ import .WriteOutFile: render_bytes
 # EVERYTHING else stays PACKAGE-PUBLIC (reached qualified, e.g. GoMeta.PROCESS_OK / .Diagnostic):
 # the supporting types (ProcessStatus/Diagnostic/EvalStore/AlterantRegistry),
 # DEFAULT_REGISTRY, serialize_evals, outputs, content_fingerprint, EvalRecord, and the PROCESS_OK/PROCESS_ERROR values
-# — the eleven names on the `public` line below.
+# — the names on the `public` lines below (eleven at 0.3.x; thirty-five since v0.4 T2: + the
+#   registration lifecycle + the record vocabulary; docs/public-api.md §1.2 is the mirror).
 # Qualified import (`import GoMeta as GM`) is UNAFFECTED by these exports and remains canonical for namespace
 # hygiene + multi-implementation use; exporting serves the single-implementation `using` convenience only.
 export goMeta, altValues_evals, GoMetaConfig, GoMetaResult
 public outputs, serialize_evals, content_fingerprint, EvalRecord, EvalStore, ProcessStatus, PROCESS_OK, PROCESS_ERROR, Diagnostic, AlterantRegistry, DEFAULT_REGISTRY,
-       RegistryBuilder, register!, validate, publish, RegistrationRefused   # v0.4 T2: the registration lifecycle (docs/public-api.md §1.2)
+       RegistryBuilder, register!, validate, publish, RegistrationRefused,   # v0.4 T2: the registration lifecycle (docs/public-api.md §1.2)
+       PlugIn, ActionSpec, ActionOverload, DomainRef, CaptureDecl, DefaultSlot, NoDefault, Declared,   # v0.4 T2 (cure batch 1): the record
+       EffectRow, RenderDecl, VocabularySlot, InlineVocabulary, VocabularyRef, MutEx, ConditionAtom,   #   VOCABULARY a third-party author
+       SugarRow, Provenance, SignatureRecord, PermissionManifest                                      #   constructs (docs/public-api.md §1.2)
 
 #########################################################################################
 #~~ Config-time validation
@@ -432,6 +436,15 @@ THE CONTRACT (normative rows):
 function run_absorb_apply!(parse_state::BLS.ParseState;
                            config::GoMetaConfig = GoMetaConfig(),
                            registry::AlterantRegistry = DEFAULT_REGISTRY)::GoMetaResult
+    ## v0.4 T2 (cure batch 1) — THE DOOR RUNS HERE TOO: the seam is a public entry that accepts a
+    ## registry, so an unpublished or post-publication-mutated registry could otherwise drive the
+    ## engine around `goMeta`'s door (the CRX after-T2 breaker). Same typed refusals, same
+    ## no-work outcome (an EMPTY parse state rides the error result — nothing is rendered). Row 3
+    ## of the contract is untouched: the seam still does NOT re-validate CONFIG. The state-seam
+    ## semantics (seal-bound injected state, the poison marker) are T3's.
+    reg_diags = _registry_door_check(registry)
+    isempty(reg_diags) ||
+        return _config_error_result(BLS.setUpToProcessFromBytes(UInt8[]), config, registry, reg_diags)
     ## Build the FRESH per-call `ProcessState` (`init_state` is reset-safe, so neither the slot
     ## tensors nor the cursors leak between calls) + open the per-call
     ## dynamic scope. `STATE => st` carries the per-call state so the eval'd bare-name `getState`/`getAltState`

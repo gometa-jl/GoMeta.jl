@@ -5,8 +5,8 @@
 #       law); the generic `action_to_settribute` table DERIVES from the declared per-action
 #       `settribute` slots (the Alterant-named `visib_to_settribute` field and the `===` alias
 #       `VISIB_TO_SETTRIBUTE` are GONE); the new closed enums refuse LOUDLY at the record shape law;
-#       the registration digest's fold is (still) blind to the new slots — witnessed BY NAME as the T2
-#       flip target (the fold extends when the publication seal is minted).
+#       the registration digest's fold COVERS the new slots (flipped at T2 when the publication seal
+#       was minted — at T1 this file witnessed the fold's blindness by name, as the T2 flip target).
 # DOES: constructs records positionally and by keyword, inspects DEFAULT_REGISTRY, drives the shape
 #       law with mis-tagged slots, and pins the digest-blindness witness.
 # REASONING: the golden layer proves T1 is BEHAVIOR-NEUTRAL (byte-identical renders); only unit

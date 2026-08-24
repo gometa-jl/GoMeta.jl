@@ -1,11 +1,16 @@
 # registry_lifecycle_tests.jl — v0.4 T2: the registry LIFECYCLE witnesses (APPEND-ONLY).
 #
 # IS:   the unit witnesses of Builder → validate → PUBLISH, the ONE validation chain on every public
-#       construction route (the route-U cure), the two-tier typed diagnostics with FULL collection,
-#       atomic COPY-publication, the seal, the STRICT published-only door at `goMeta(bytes; registry)`
-#       (an unpublished value refuses typed NAMING the sanctioned path), the real freeze gate
-#       (`POST_SEAL_MUTATION`), the two exhaustion refusals (registry grain + the per-call slot pool),
-#       and full collection at the entry (config + registry diagnostics in ONE result).
+#       construction route (the route-U cure; NO positional form accepts a seal — the token-gated
+#       constructor), the two-tier typed diagnostics with FULL collection (validate never throws),
+#       atomic DEEP-copy publication, the seal + the door's three checks (the declared record's seal ·
+#       every derived table re-derived · the callable identities by `===`), the STRICT published-only
+#       door at `goMeta(bytes; registry)` AND at the callable seam (an unpublished value refuses typed
+#       NAMING the sanctioned path), the real freeze gate (`POST_SEAL_MUTATION` on declared, derived,
+#       re-ordered and callable mutations), `register!`'s binding + pool refusals, the injective slot
+#       encoding, the 0.4.x contract family, warnings emitted at publish, the two exhaustion refusals
+#       (registry grain + the per-call slot pool), and full collection at the entry (config + registry
+#       diagnostics in ONE result).
 # DOES: builds registries through every route, mutates published values, drives the door, and pins
 #       the codes and the messages' load-bearing substrings.
 # REASONING: the golden layer proves the PUBLISHED default is byte-neutral; only these witnesses prove
@@ -76,6 +81,53 @@ import GoMeta as GM
         @test r1.status === GM.PROCESS_ERROR
         @test _codes(r1.diagnostics) == [:POST_SEAL_MUTATION]
         @test isempty(GM.outputs(r1).render_bytes)
+        # (cure batch 1) a mutated DERIVED table — the declared record untouched, the seal still
+        # matching — is refused too: the door re-derives every table (the CRX after-T2 breaker's
+        # `action_to_settribute[:hide] = :show` attack)
+        R2 = GM.publish(GM.default_registry_builder())
+        R2.action_to_settribute[:hide] = :show
+        d2 = GM._registry_door_check(R2)
+        @test _codes(d2) == [:POST_SEAL_MUTATION] && occursin("action_to_settribute", d2[1].message)
+        R3 = GM.publish(GM.default_registry_builder())
+        R3.action_index[:hide] = Int8(3)
+        @test _codes(GM._registry_door_check(R3)) == [:POST_SEAL_MUTATION]
+        # a re-ordered action_specs (the order-insensitive fold would not see it) is refused
+        R4 = GM.publish(GM.default_registry_builder())
+        reverse!(R4.action_specs)
+        @test _codes(GM._registry_door_check(R4)) == [:POST_SEAL_MUTATION]
+        # a plugin swapped for one with a SAME-NAMED evil setter (folds identically) is refused by
+        # the callable-identity comparison
+        R5 = GM.publish(GM.default_registry_builder())
+        evil = let setVisib = (args...) -> nothing; setVisib end    # a different function, same name text
+        R5.plugins[2] = GM.PlugIn(:Visib, :mutExclusive, GM.Alterants.Visib, evil, nothing, nothing)
+        @test _codes(GM._registry_door_check(R5)) == [:POST_SEAL_MUTATION]
+        # NO positional form accepts a seal: the generated all-fields constructor is gone (the forge
+        # attack: copying DEFAULT_REGISTRY.seal onto hand-built tables)
+        D = GM.DEFAULT_REGISTRY
+        @test_throws MethodError GM.AlterantRegistry(D.plugins, D.sorted_alt_actions, D.action_to_plugin,
+            D.action_index, D.alt_index, D.accum_alt_idxs, D.mutex_alt_idxs, D.action_to_settribute,
+            D.action_specs, D.spec_index, D.seal)
+        @test_throws MethodError GM.AlterantRegistry(D.plugins, D.sorted_alt_actions, D.action_to_plugin,
+            D.action_index, D.alt_index, D.accum_alt_idxs, D.mutex_alt_idxs, D.action_to_settribute,
+            D.action_specs, D.spec_index, D.seal, D._callables)
+        # the callable SEAM runs the door too (cure batch 1): an unpublished registry cannot drive it
+        U = GM.AlterantRegistry(D.plugins, D.sorted_alt_actions, D.action_to_plugin, D.action_index,
+                                D.alt_index, D.accum_alt_idxs, D.mutex_alt_idxs, D.action_to_settribute,
+                                D.action_specs, D.spec_index)
+        ps = GM.BLS.setUpToProcessFromBytes(Vector{UInt8}(codeunits("x = 1\n#~ hide\n\ny = 2\n")))
+        GM.BLS.parseBLS(ps, 1, -1)
+        rs = GM.run_absorb_apply!(ps; registry = U)
+        @test rs.status === GM.PROCESS_ERROR && _codes(rs.diagnostics) == [:REG_UNPUBLISHED]
+        @test isempty(GM.outputs(rs).render_bytes)
+        # the injective slot encoding (cure batch 1): a re-cut vector boundary no longer collides
+        @test GM._slot_text([Symbol("a,b")]) != GM._slot_text([:a, :b])
+        @test GM._slot_text(GM.Declared(Symbol[:a, :b])) != GM._slot_text(GM.Declared(Symbol[Symbol("a,b")]))
+        # warnings are emitted by the sanctioned publish route (cure batch 1), never swallowed
+        bw = GM.default_registry_builder()
+        bw.action_specs[3] = GM.ActionSpec(; name = :show, spelling = :identifier, plugin = Int8(2),
+                                             overloads = bw.action_specs[3].overloads,
+                                             sugar_candidacy = :candidate, settribute = :show)
+        @test_logs (:warn, r"sugar CANDIDACY") GM.publish(bw)
     end
 
     @testset "typed inventory refusals — each code, FULL collection, deterministic order" begin
@@ -115,11 +167,12 @@ import GoMeta as GM
                      GM.ActionSpec(:containsMeta, :identifier, Int8(5),
                                    [_ov(Type[GM.Alterants.Visib, Symbol]; rt = Bool)], 0, :none, nothing, nothing))
         @test :REG_RESERVED_SHADOW in _errors(GM.validate(b))
-        # a dangling plugin index is STRUCTURAL (REG_PROTOCOL), never a BoundsError
+        # a dangling plugin index is STRUCTURAL (REG_PROTOCOL), never a BoundsError — pushed DIRECTLY
+        # (register! itself refuses the mismatch since cure batch 1; validate must still be total)
         b = GM.RegistryBuilder(copy(base.plugins), copy(base.action_specs))
-        GM.register!(b, GM.PlugIn(:p5, :accumulate, Dict{Symbol,Bool}, GM.Alterants.setLabels, nothing, nothing),
-                     GM.ActionSpec(:zzq, :identifier, Int8(42),
-                                   [_ov(Type[Dict{Symbol,Bool}, Symbol])], 0, :none, nothing, nothing))
+        push!(b.plugins, GM.PlugIn(:p5, :accumulate, Dict{Symbol,Bool}, GM.Alterants.setLabels, nothing, nothing))
+        push!(b.action_specs, GM.ActionSpec(:zzq, :identifier, Int8(42),
+                                            [_ov(Type[Dict{Symbol,Bool}, Symbol])], 0, :none, nothing, nothing))
         d = GM.validate(b)
         @test :REG_PROTOCOL in _errors(d)
         # a declared write-back key ComponentSettribute does not carry
@@ -127,13 +180,47 @@ import GoMeta as GM
         b.action_specs[2] = GM.ActionSpec(; name = :hide, spelling = :identifier, plugin = Int8(2),
                                             overloads = base.action_specs[2].overloads, settribute = :nowhere)
         @test :REG_PROTOCOL in _errors(GM.validate(b))
-        # slot-pool exhaustion at the REGISTRY grain (the Int8 index space)
+        # slot-pool exhaustion at the REGISTRY grain (the Int8 index space): `register!` refuses the
+        # 128th append (cure batch 1); a builder whose fields were pushed directly is caught by validate
         b = GM.RegistryBuilder(copy(base.plugins), copy(base.action_specs))
-        for i in 1:130
+        for i in 1:123
             GM.register!(b, GM.PlugIn(Symbol("zz", i), :accumulate, Dict{Symbol,Bool},
                                       GM.Alterants.setLabels, GM.Alterants.checkLabels, nothing))
         end
+        @test length(b.plugins) == 127
+        e = try GM.register!(b, GM.PlugIn(:zz128, :accumulate, Dict{Symbol,Bool}, GM.Alterants.setLabels,
+                                          GM.Alterants.checkLabels, nothing)); nothing catch err; err end
+        @test e isa GM.RegistrationRefused && _errors(e.diagnostics) == [:REG_SLOT_EXHAUSTED]
+        push!(b.plugins, GM.PlugIn(:zz128, :accumulate, Dict{Symbol,Bool}, GM.Alterants.setLabels,
+                                   GM.Alterants.checkLabels, nothing))   # the direct-push bypass
         @test :REG_SLOT_EXHAUSTED in _errors(GM.validate(b))
+        # `register!` binds the records to the appended plugin (cure batch 1): a record naming another
+        # index refuses loudly instead of leaving the appended alterant silently actionless
+        b = GM.RegistryBuilder(copy(base.plugins), copy(base.action_specs))
+        e = try GM.register!(b, GM.PlugIn(:p5, :mutExclusive, GM.Alterants.Visib, GM.Alterants.setVisib, nothing, nothing),
+                             GM.ActionSpec(:zzv, :identifier, Int8(2),
+                                           [_ov(Type[GM.Alterants.Visib, Symbol]; rt = Bool)], 0, :none, nothing, nothing)); nothing
+        catch err; err end
+        @test e isa GM.RegistrationRefused && _errors(e.diagnostics) == [:REG_PROTOCOL]
+        @test length(b.plugins) == 4                         # nothing appended on refusal
+        # the 0.4.x contract family is accepted (the design's rule; cure batch 1)
+        b = GM.RegistryBuilder(copy(base.plugins), copy(base.action_specs))
+        b.plugins[3] = GM.PlugIn(; altName = :id, setMode = :mutExclusivePerField, altConstructor = GM.Alterants.Id,
+                                   setAltInstance = GM.Alterants.setId, contract_version = v"0.4.7")
+        @test :REG_CONTRACT_VERSION ∉ _errors(GM.validate(b))
+        # validate NEVER throws on a structurally broken row (cure batch 1): tier 2 skips it
+        b = GM.RegistryBuilder(copy(base.plugins), copy(base.action_specs))
+        h = base.action_specs[2]
+        b.action_specs[2] = GM.ActionSpec(; name = :hide, spelling = :identifier, plugin = Int8(2),
+            overloads = [GM.ActionOverload(Type[GM.Alterants.Visib, Symbol], Symbol[], Symbol[], :bogus,
+                                           Bool, :set, false, :context_free, :apply, true)], settribute = :hide)
+        d = GM.validate(b)
+        @test :REG_PROTOCOL in _errors(d) && !any(x -> x.code === :REG_SIG_MISMATCH && x.context === :hide, d)
+        b.action_specs[2] = GM.ActionSpec(; name = :hide, spelling = :identifier, plugin = Int8(2),
+            overloads = [GM.ActionOverload(Type[GM.Alterants.Visib, Symbol], Symbol[:symbol, :symbol, :symbol],
+                                           Symbol[:declared, :declared, :declared], nothing, Bool, :set, false,
+                                           :context_free, :apply, true)], settribute = :hide)
+        @test :REG_PROTOCOL in _errors(GM.validate(b))       # a kinds vector longer than the arity — no throw
         # FULL collection: two independent defects ⇒ both reported, in the chain's deterministic order
         b = GM.RegistryBuilder(copy(base.plugins), copy(base.action_specs))
         b.plugins[1] = GM.PlugIn(:labels, :bogus, Dict{Symbol,Bool}, GM.Alterants.setLabels,

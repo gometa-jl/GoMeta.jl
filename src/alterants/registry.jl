@@ -7,8 +7,9 @@
 #     `updateMetaHierarchy`/`getState`/`getAltState`. The tail builds the immutable `AlterantRegistry`
 #     (type: src/state.jl) — `build_default_registry()` → `const DEFAULT_REGISTRY` (v0.4 T1: the former
 #     `VISIB_TO_SETTRIBUTE` alias is retired; the write-back table is the generic `action_to_settribute`).
-# DOES: registers the closed v0 inventory (3 alterants / 7 actions) in DECLARATION order (labels=1,
-#     Visib=2, id=3 — the live key is :id): the sorted action table, the parallel action→plugin index, the name→index Dicts,
+# DOES: declares the closed default inventory (4 alterants / 8 actions since the heading registration) in
+#     DECLARATION order (labels=1, Visib=2, id=3, heading=4 — the live keys are :id / :heading) and PUBLISHES
+#     it through the v0.4 lifecycle (Builder → validate → publish): the sorted action table, the parallel action→plugin index, the name→index Dicts,
 #     the SORTED `accum_alt_idxs` (the apply-phase `insorted` consumer in apply.jl depends on the sort),
 #     and the identity Visib-action→settribute-key map. `setLabels` (the `:` labels action) checks every
 #     label against the whitelist; an unknown label raises the stable "GoMeta apply: unknown label"
@@ -26,9 +27,11 @@
 #     around these setters are guarded at the apply seam by the stable "GoMeta apply: invalid arguments"
 #     refusal (docs/public-api.md §3.4; tests/unit/arg_guard_tests.jl). Only the labels
 #     row has a query getter (`checkLabels`); Visib/Id carry none — `cell`/`parent`/`file` as a
-#     condition atom is the deferred E-07 row. `DEFAULT_REGISTRY` is read-only by convention (its
-#     Dict/Vector fields are mutable containers); the former `===` alias onto its write-back Dict is
-#     retired at v0.4 T1 (the publication seal, T2, closes the mutation class it exposed).
+#     condition atom is the deferred E-07 row. `DEFAULT_REGISTRY` is a PUBLISHED, SEALED value (v0.4
+#     T2): its Dict/Vector fields stay mutable containers, but a mutation through any of them —
+#     declared record, derived table, or callable — is DETECTED at the entry door
+#     (`POST_SEAL_MUTATION`), never silently effective; the former `===` alias onto its write-back
+#     Dict is retired (v0.4 T1).
 # PURPOSE: the closed, deterministic alterant inventory + the state accessors the absorb/apply phases consume.
 
 ## Alterants — the label / Visib / Id inventory sub-module
@@ -787,7 +790,9 @@ end
 ## MutEx conflicts, the contract version, and slot-pool exhaustion at the registry grain.
 const _SET_MODES = (:accumulate, :mutExclusive, :mutExclusivePerField, :localOnly)
 const _INTERPRETED_REQUIRES = ()            # the v0.4.0 roster interprets NO capability token
-const _CONTRACT_VERSIONS = (v"0.4.0",)      # accepted `contract_version` values (or `nothing`)
+const _CONTRACT_VERSIONS = (v"0.4.0",)      # the family's anchor (display); the accepted set = the 0.4 MINOR family
+"The accepted `contract_version` family: `nothing` (undeclared) or any v0.4.x (the design's 0.4.x rule; cure batch 1)."
+_contract_accepts(v::VersionNumber) = v.major == 0 && v.minor == 4
 const _SLOT_POOL = Int(typemax(Int8))       # the Int8 index space of plugins/actions (127)
 function _inventory_collect!(diags::Vector{Diagnostic}, plugins::Vector{PlugIn},
                              action_specs::Vector{ActionSpec})
@@ -811,10 +816,10 @@ function _inventory_collect!(diags::Vector{Diagnostic}, plugins::Vector{PlugIn},
                 "alterant ", repr(p.altName), " requires ", p.requires, " — the v0.4.0 roster ",
                 "interprets none of it; the WHOLE record refuses (no partial admission; the ",
                 "Execute room is a later contract version)"), p.altName))
-        p.contract_version === nothing || p.contract_version in _CONTRACT_VERSIONS ||
+        p.contract_version === nothing || _contract_accepts(p.contract_version) ||
             push!(diags, Diagnostic(:REG_CONTRACT_VERSION, :error, string("GoMeta registry: alterant ",
                 repr(p.altName), " targets contract version ", p.contract_version, " — the accepted ",
-                "versions are ", _CONTRACT_VERSIONS, " (or undeclared)"), p.altName))
+                "family is v0.4.x (anchor ", _CONTRACT_VERSIONS[1], "; or undeclared)"), p.altName))
         own = Set(s.name for s in action_specs if Int(s.plugin) == i)   # never Int8(i): i may exceed the pool
         for c in p.constraints
             for a in c.actions
@@ -923,10 +928,14 @@ function _registration_digest(action_specs::Vector{ActionSpec};
     for p in plugins
         h = _fold_parts(h, "plug", p.altName, p.setMode,
             _type_text(p.altConstructor), p.getAltInstance !== nothing,
+            # v0.4 T2 (cure batch 1) — the BEHAVIOR-BEARING base fields join the fold: the setter and
+            # getter by NAME, the precedence tuple (the CRX after-T2 set: a plugin swapped for one
+            # with a different setter kept the seal). Callables fold by name — the identity
+            # comparison at the door (`_callables`, `===`) closes the same-named-swap remainder.
+            "setter", _slot_text(p.setAltInstance), "getter", _slot_text(p.getAltInstance),
+            "prec", _slot_text(p.precedencesTuple),
             # v0.4 T2 — every declared per-Alterant slot joins the fold: the seal (HC-9) covers the
-            # record + the declared source digests + policy_id. Inherited limit, disclosed: callables
-            # fold by NAME (a same-named swapped atom evaluator is invisible — the validate-slot
-            # precedent above).
+            # record + the declared source digests + policy_id.
             "capture", _slot_text(p.capture), "render", _slot_text(p.render),
             "vocab", _slot_text(p.vocabulary), "constraints", _slot_text(p.constraints),
             "atoms", _slot_text(p.atoms), "contract", _slot_text(p.contract_version),
@@ -937,41 +946,49 @@ function _registration_digest(action_specs::Vector{ActionSpec};
 end
 
 ## v0.4 T2 — the canonical TEXT of a declared slot for the digest fold: deterministic, module-
-## unqualified, callables by NAME, containers element-wise in declaration order.
+## unqualified, callables by NAME, containers element-wise in declaration order, and INJECTIVE
+## (cure batch 1: the first encoding joined elements with delimiters, so `[Symbol("a,b")]` and
+## `[:a, :b]` folded identically — every element, every string leaf and every component is now
+## LENGTH-PREFIXED, netstring-style `<bytes>:<text>`, so no boundary can be re-cut).
+_ns(s::String)::String = string(sizeof(s), ":", s)
+_nsv(parts)::String = join((_ns(String(p)) for p in parts), ",")
 _slot_text(x::Nothing)::String = "-"
-_slot_text(x::Symbol)::String = String(x)
-_slot_text(x::AbstractString)::String = string("\"", x, "\"")
+_slot_text(x::Symbol)::String = string("y", _ns(String(x)))
+_slot_text(x::AbstractString)::String = string("s", _ns(String(x)))
 _slot_text(x::Bool)::String = x ? "T" : "F"
-_slot_text(x::Number)::String = string(x)
-_slot_text(x::VersionNumber)::String = string("v", x)
-_slot_text(x::Type)::String = _type_text(x)
-_slot_text(f::Function)::String = String(nameof(f))
-_slot_text(v::Union{AbstractVector,Tuple})::String = string("[", join((_slot_text(e) for e in v), ","), "]")
-_slot_text(p::Pair)::String = string(_slot_text(p.first), "=>", _slot_text(p.second))
+_slot_text(x::Number)::String = string("n", _ns(string(x)))
+_slot_text(x::VersionNumber)::String = string("v", _ns(string(x)))
+_slot_text(x::Type)::String = string("t", _ns(_type_text(x)))
+_slot_text(f::Function)::String = string("f", _ns(String(nameof(f))))
+_slot_text(v::Union{AbstractVector,Tuple})::String = string("[", _nsv(_slot_text(e) for e in v), "]")
+_slot_text(p::Pair)::String = string("(", _nsv((_slot_text(p.first), _slot_text(p.second))), ")")
 _slot_text(d::AbstractDict)::String =
-    string("{", join((string(_slot_text(k), ":", _slot_text(d[k])) for k in sort!(collect(keys(d)); by = string)), ","), "}")
+    string("{", _nsv(string(_ns(_slot_text(k)), _ns(_slot_text(d[k]))) for k in sort!(collect(keys(d)); by = string)), "}")
 _slot_text(nt::NamedTuple)::String =
-    string("(", join((string(k, "=", _slot_text(getfield(nt, k))) for k in keys(nt)), ","), ")")
+    string("N", _nsv(string(_ns(String(k)), _ns(_slot_text(getfield(nt, k)))) for k in keys(nt)))
 _slot_text(x::NoDefault)::String = "NoDefault"
-_slot_text(x::Declared)::String = string("Declared(", _slot_text(x.value), ")")
-_slot_text(x::DomainRef)::String = string("DomainRef(", _slot_text(x.artifact), ",", x.digest, ")")
+_slot_text(x::Declared)::String = string("Declared", _ns(_slot_text(x.value)))
+_slot_text(x::DomainRef)::String = string("DomainRef", _nsv((_slot_text(x.artifact), x.digest)))
 _slot_text(x::CaptureDecl)::String =
-    string("Capture(", _type_text(x.instance_type), ",", x.attr_scheme, ",", x.multiplicity, ",", _slot_text(x.mode_gate), ")")
-_slot_text(x::EffectRow)::String = string("Effect(", x.kind, ",", _slot_text(x.payload), ")")
+    string("Capture", _nsv((_type_text(x.instance_type), String(x.attr_scheme), String(x.multiplicity), _slot_text(x.mode_gate))))
+_slot_text(x::EffectRow)::String = string("Effect", _nsv((String(x.kind), _slot_text(x.payload))))
 _slot_text(x::RenderDecl)::String =
-    string("Render(", _slot_text(x.effects), ",", _slot_text(x.resolve_order), ",", _slot_text(x.materialize), ")")
-_slot_text(x::InlineVocabulary)::String = string("Inline(", _slot_text(x.names), ",", _slot_text(x.flags), ")")
-_slot_text(x::VocabularyRef)::String = string("Ref(", _slot_text(x.ref), ")")
-_slot_text(x::MutEx)::String = string("MutEx", _slot_text(x.actions))
+    string("Render", _nsv((_slot_text(x.effects), _slot_text(x.resolve_order), _slot_text(x.materialize))))
+_slot_text(x::InlineVocabulary)::String = string("Inline", _nsv((_slot_text(x.names), _slot_text(x.flags))))
+_slot_text(x::VocabularyRef)::String = string("Ref", _ns(_slot_text(x.ref)))
+_slot_text(x::MutEx)::String = string("MutEx", _ns(_slot_text(x.actions)))
 _slot_text(x::ConditionAtom)::String =
-    string("Atom(", x.name, ",", _slot_text(x.print_spelling), ",", _slot_text(x.evaluate), ")")
-_slot_text(x::SugarRow)::String = string("Sugar(", x.pattern, ",", x.action, ",", _slot_text(x.mode_gate), ")")
+    string("Atom", _nsv((String(x.name), _slot_text(x.print_spelling), _slot_text(x.evaluate))))
+_slot_text(x::SugarRow)::String = string("Sugar", _nsv((String(x.pattern), String(x.action), _slot_text(x.mode_gate))))
 _slot_text(x::SignatureRecord)::String =
-    string("Sig(", _slot_text(x.algorithm), ",", _slot_text(x.key_id), ",", _slot_text(x.signature), ")")
-_slot_text(x::PermissionManifest)::String = string("Perm(", _slot_text(x.seam), ",", _slot_text(x.ambient), ")")
-_slot_text(x::Provenance)::String = string("Prov(",
-    join((string(f, "=", _slot_text(getfield(x, f))) for f in fieldnames(Provenance)), ","), ")")
-_slot_text(x)::String = string(typeof(x), "(", repr(x), ")")   # the honest fallback (a payload of an unknown type folds by its repr)
+    string("Sig", _nsv((_slot_text(x.algorithm), _slot_text(x.key_id), _slot_text(x.signature))))
+_slot_text(x::PermissionManifest)::String = string("Perm", _nsv((_slot_text(x.seam), _slot_text(x.ambient))))
+_slot_text(x::Provenance)::String = string("Prov",
+    _nsv(string(_ns(String(f)), _ns(_slot_text(getfield(x, f)))) for f in fieldnames(Provenance)))
+# The honest fallback: an OPAQUE payload of an unknown type folds by its type + `repr` — a
+# disclosed limit (a mutation whose `repr` is stable is invisible to the seal); T10 defines the
+# opaque payload shapes and closes this by giving each an encoder.
+_slot_text(x)::String = string("any", _nsv((string(typeof(x)), repr(x))))
 
 "The canonical serialized text of one overload row (the digest's SORT KEY only — the fold
 itself goes through the injective `_fold_parts`, never through this joined text)."
@@ -1066,9 +1083,19 @@ function _reflection_collect!(diags::Vector{Diagnostic}, action_specs::Vector{Ac
             end
         end
     end
-    # (b) executable ≡ declared, the executable→declared direction
-    for (setter, sigs) in declared_by_setter
-        for m in methods(setter)
+    # (b) executable ≡ declared, the executable→declared direction — in DECLARATION order of the
+    # setters (first-seen), methods in a stable signature-text order (cure batch 1: a
+    # `Dict{Function}` iteration made this row's order hash-dependent, against the deterministic-
+    # order contract)
+    order = Function[]
+    for spec in action_specs
+        1 <= spec.plugin <= length(plugins) || continue
+        f = plugins[spec.plugin].setAltInstance
+        f in order || push!(order, f)
+    end
+    for setter in order
+        sigs = declared_by_setter[setter]
+        for m in sort!(collect(methods(setter)); by = m -> string(m.sig))
             m_argtypes = collect(m.sig.parameters[2:end])
             matched = any(sigs) do full
                 length(full) == length(m_argtypes) &&
@@ -1155,12 +1182,21 @@ decides the terminal outcome (error present ⇒ refuse). Deterministic order ⇒
 """
 function _validate_registration(plugins::Vector{PlugIn}, action_specs::Vector{ActionSpec})
     diags = Diagnostic[]
+    n0 = length(diags)
     _record_wellformed_collect!(diags, action_specs, plugins)
+    # (cure batch 1) tier 2 SKIPS every action record tier 1 found structurally broken: the semantic
+    # collectors index and consult closed maps on the record's own data, and a malformed row would
+    # otherwise THROW out of the accumulator (the CRX after-T2 set: `vararg_kind = :bogus` reached
+    # `_kind_type`). `validate` never throws; every well-formed row is still fully checked.
+    broken = Set{Symbol}(d.context for d in diags[(n0 + 1):end]
+                         if d.code === :REG_PROTOCOL && d.context isa Symbol &&
+                            any(s -> s.name === d.context, action_specs))
+    sound = ActionSpec[s for s in action_specs if !(s.name in broken)]
     _inventory_collect!(diags, plugins, action_specs)
     _register_actions_collect!(diags, Dict{Symbol,Int8}(), action_specs)
-    _reflection_collect!(diags, action_specs, plugins)
-    _value_algebra_collect!(diags, action_specs)
-    _reachability_collect!(diags, action_specs)
+    _reflection_collect!(diags, sound, plugins)
+    _value_algebra_collect!(diags, sound)
+    _reachability_collect!(diags, sound)
     _candidacy_collect!(diags, action_specs)
     return diags
 end
@@ -1211,6 +1247,12 @@ containers are READ-ONLY by contract — a mutation through them is detected at 
 function publish(b::RegistryBuilder)
     diags = validate(b)
     any(d -> d.severity === :error, diags) && throw(RegistrationRefused(diags))
+    # (cure batch 1) warnings are NEVER swallowed by the sanctioned route: every warning
+    # diagnostic is emitted at publication (the legacy load-time @warn behavior kept); a caller
+    # wanting them as data calls `validate` first.
+    for d in diags
+        d.severity === :warning && @warn d.message
+    end
     # DEEP copies: the record structs are immutable but carry Vectors/Dicts (constraints, atoms,
     # sugar rows, vocabulary flags, provenance sources) — a shallow `copy` of the outer vectors
     # would leave those NESTED containers shared with the builder (finding 3's class: a later
@@ -1218,9 +1260,10 @@ function publish(b::RegistryBuilder)
     plugins = deepcopy(b.plugins)
     specs   = deepcopy(b.action_specs)
     t = _derive_tables(plugins, specs)
-    return AlterantRegistry(plugins, t.sorted_alt_actions, t.action_to_plugin, t.action_index,
-                            t.alt_index, t.accum_alt_idxs, t.mutex_alt_idxs, t.action_to_settribute,
-                            specs, t.spec_index, _mint_seal(plugins, specs))
+    return AlterantRegistry(_SealToken(), plugins, t.sorted_alt_actions, t.action_to_plugin,
+                            t.action_index, t.alt_index, t.accum_alt_idxs, t.mutex_alt_idxs,
+                            t.action_to_settribute, specs, t.spec_index, _mint_seal(plugins, specs),
+                            _callable_identities(plugins, specs))
 end
 
 """
@@ -1238,12 +1281,45 @@ function _registry_door_check(registry::AlterantRegistry)
             "to goMeta is not published — the v0.4 door accepts ONLY published (validated + sealed) ",
             "registries; build it via RegistryBuilder → validate → publish (GoMeta.publish) and pass ",
             "the published value"), nothing))
-    elseif registry.seal != _mint_seal(registry.plugins, registry.action_specs)
-        push!(diags, Diagnostic(:POST_SEAL_MUTATION, :error, string("GoMeta registry: the published ",
-            "registry's declared record no longer matches its seal ", registry.seal, " — a container ",
-            "was mutated after publication; re-publication is the sanctioned change path"), registry.seal))
+        return diags
     end
+    # (cure batch 1) THREE checks, all three required — the CRX after-T2 set showed each alone
+    # leaves a mutation class through: (i) the seal over the DECLARED record; (ii) every DERIVED
+    # table re-derived from the declarations and compared (a mutated `action_to_settribute`,
+    # `action_index`, `alt_index`, index vector or `spec_index` — or a re-ordered `action_specs`
+    # — changes dispatch without touching the declared bytes); (iii) the validated CALLABLE
+    # identities compared by `===` (a same-named swapped setter/getter/ctor/evaluator/validator).
+    what = String[]
+    registry.seal == _mint_seal(registry.plugins, registry.action_specs) || push!(what, "the declared record (seal)")
+    derived = try _derive_tables(registry.plugins, registry.action_specs) catch; nothing end
+    if derived === nothing
+        push!(what, "the declared record (tables no longer derivable)")
+    else
+        for f in (:sorted_alt_actions, :action_to_plugin, :action_index, :alt_index, :accum_alt_idxs,
+                  :mutex_alt_idxs, :action_to_settribute, :spec_index)
+            getfield(registry, f) == getfield(derived, f) || push!(what, string("the derived table `", f, "`"))
+        end
+    end
+    now = _callable_identities(registry.plugins, registry.action_specs)
+    (registry._callables === nothing || length(now) != length(registry._callables) ||
+        !all(a === b for (a, b) in zip(now, registry._callables))) &&
+        push!(what, "a callable identity (setter/getter/constructor/evaluator/validator)")
+    isempty(what) || push!(diags, Diagnostic(:POST_SEAL_MUTATION, :error, string("GoMeta registry: the ",
+        "published registry was MUTATED after publication — ", join(what, "; "), " no longer match(es) ",
+        "the sealed publication ", registry.seal, "; re-publication is the sanctioned change path"),
+        registry.seal))
     return diags
+end
+
+"The validated callable identities of a record, declaration order (compared by `===` at the door)."
+function _callable_identities(plugins::Vector{PlugIn}, action_specs::Vector{ActionSpec})
+    ids = Any[]
+    for p in plugins
+        push!(ids, p.altConstructor, p.setAltInstance, p.getAltInstance)
+        for a in p.atoms; push!(ids, a.evaluate); end
+    end
+    for s in action_specs; push!(ids, s.validate); end
+    return ids
 end
 
 ## (The interim `_fill_action_owners!` uniqueness assert was RETIRED at the registration build

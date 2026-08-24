@@ -14,6 +14,10 @@
 #   - arg_guard_tests.jl      — witnesses for the "GoMeta apply: invalid arguments" refusal at the
 #                               action-args seam.
 #   - condition_cap_tests.jl  — witnesses for the condition-length-cap refusal.
+#   … and every further member in the include list below (the list IS the index: token law · ws alphabet ·
+#   unicode cures · textlaw · reserved adjacency · condition modes · heading recognizer · registration ·
+#   profile snapshot · flavor profile · carrier seam · latex flavor · ensure token · inert semantics ·
+#   record schema (v0.4 T1) · registry lifecycle (v0.4 T2)); each include line carries its one-liner.
 # REASONING: the byte-exact golden layer cannot see these concerns — the introspected public surface and
 #       the stable refusal messages — so each lives in its own self-contained file.
 # PURPOSE: one stable index for the unit layer.

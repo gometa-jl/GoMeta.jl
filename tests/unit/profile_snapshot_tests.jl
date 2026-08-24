@@ -125,11 +125,15 @@ import GoMeta as GM
         # (0x887ec3b4c760dc70 → 0x29012b84e8284212, registered at the build's T1 close; the
         # grammar pin did NOT move — a moved grammar pin here would mean the fold touched
         # what it must not)
+        # (registration pin RE-MINTED a FOURTH time, consciously, at the after-T2 CRX cure batch:
+        # the slot encoding became INJECTIVE (length-prefixed) and the fold gained the setter/getter
+        # names + precedencesTuple — 0x29012b84e8284212 → 0xd9356f388ea12597; the grammar pin
+        # still unmoved)
         p = GM.resolve_profile(GM.GoMetaConfig())
         @test p.grammar_digest      == 0x12972c9924c2bf2b
-        @test p.registration_digest == 0x29012b84e8284212
+        @test p.registration_digest == 0xd9356f388ea12597
         @test GM.cache_key(p) == string("gometa/v", GM._ENGINE_VERSION,
-            "/jl_share_v1/closed_v1/s3/g12972c9924c2bf2b/r29012b84e8284212")   # the r-component re-minted with the pin above (v0.4 T2)
+            "/jl_share_v1/closed_v1/s3/g12972c9924c2bf2b/rd9356f388ea12597")   # the r-component re-minted with the pin above (v0.4 T2 + cure batch 1)
     end
 
     @testset "test_error_oracle_corrupt_and_incompatible" begin

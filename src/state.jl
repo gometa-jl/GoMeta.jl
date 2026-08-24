@@ -12,14 +12,18 @@
 #     (`NUM_MH_LEVELS = 12`: the file level, the depth window `1..maxDepthMH`, then the user / line /
 #     default levels — the user level is the reserved slot that `GoMetaConfig.user_mh_profile`
 #     seeds; docs/public-api.md §2); `PlugIn`; `AlterantRegistry` with
-#     `num_alterants` / `num_alt_actions` (3 alterants / 7 actions at v0, incl. the Visib-action →
-#     settribute-key map); `MetaHierarchyState`; `AlterantQueue`; `ProcessState`; `GoMetaResult`; the
-#     `STATE` ScopedValue + `ctx()`; `init_state`; `snapshot_settribute!`; `get_state`.
+#     `num_alterants` / `num_alt_actions` (4 alterants / 8 actions since the heading registration,
+#     incl. the generic action → settribute write-back table); `MetaHierarchyState`; `AlterantQueue`;
+#     `ProcessState`; `GoMetaResult`; the `STATE` ScopedValue + `ctx()`; `init_state`;
+#     `snapshot_settribute!`; `get_state`; the v0.4 record SLOTS + the registration LIFECYCLE types.
 # REASONING: every mutable container lives in one per-call `ProcessState`, so two concurrent
 #     `goMeta` calls never share state. Conditions eval'd at apply time read it through a
 #     `ScopedValue`; an unscoped read throws.
-# Honest edges: `AlterantRegistry`'s `Dict`/`Vector` fields are mutable containers — `DEFAULT_REGISTRY`
-#     is read-only by convention after construction, not by type; `accum_alt_idxs` must stay sorted
+# Honest edges: `AlterantRegistry`'s `Dict`/`Vector` fields are mutable containers — a PUBLISHED
+#     registry is sealed, not frozen by type: a mutation through any container (declared record OR
+#     derived table) is DETECTED at the entry door (`POST_SEAL_MUTATION`, v0.4 T2 — the seal is
+#     recomputed, the tables re-derived, the callables identity-compared), never silently effective;
+#     the construction capability is token-gated so no caller forges a seal; `accum_alt_idxs` must stay sorted
 #     ascending (the apply phase's `insorted` membership test depends on it). The queue matrices are
 #     sized `numAltActions × num_slots` as the per-slot upper bound; exceeding the per-slot capacity
 #     (7 actions at v0) is refused at the enqueue guard (src/absorb/absorb_meta.jl) with
@@ -427,6 +431,9 @@ ActionSpec(; name::Symbol, spelling::Symbol, plugin::Int8, overloads::Vector{Act
     ActionSpec(name, spelling, plugin, overloads, accepts_string_slot, sugar_candidacy, validate,
                keyed_slot, default, settribute)
 
+"The private construction capability of `AlterantRegistry` (never `public`): held by the lifecycle only."
+struct _SealToken end
+
 """
     AlterantRegistry
 
@@ -472,6 +479,24 @@ struct AlterantRegistry
     # + policy_id; the door recomputes it — a post-publication mutation of any container fires
     # `POST_SEAL_MUTATION` (accident-grade integrity, never security-grade).
     seal::Union{Nothing,String}
+    # v0.4 T2 (cure batch 1) — the validated CALLABLE IDENTITIES captured at publish (every
+    # altConstructor / setter / getter / atom evaluator / validate slot, declaration order); the
+    # door compares them by `===`, so a plugin swapped for one with a same-NAMED evil setter is
+    # refused even though names fold identically in the seal. `nothing` on unsealed values.
+    _callables::Union{Nothing,Vector{Any}}
+    # THE ONE CONSTRUCTOR, token-gated (cure batch 1: the generated all-fields constructor let any
+    # caller forge a sealed value by copying DEFAULT_REGISTRY.seal onto hand-built tables): only
+    # code holding a `_SealToken` — `publish`, the gated route-U outer constructor (seal=nothing),
+    # and the internal `_unchecked_registry` test seam — can construct.
+    function AlterantRegistry(::_SealToken, plugins::Vector{PlugIn}, sorted_alt_actions::Vector{Symbol},
+                              action_to_plugin::Vector{Int8}, action_index::Dict{Symbol,Int8},
+                              alt_index::Dict{Symbol,Int8}, accum_alt_idxs::Vector{Int8},
+                              mutex_alt_idxs::Vector{Int8}, action_to_settribute::Dict{Symbol,Symbol},
+                              action_specs::Vector{ActionSpec}, spec_index::Dict{Symbol,Int},
+                              seal::Union{Nothing,String}, callables::Union{Nothing,Vector{Any}})
+        new(plugins, sorted_alt_actions, action_to_plugin, action_index, alt_index, accum_alt_idxs,
+            mutex_alt_idxs, action_to_settribute, action_specs, spec_index, seal, callables)
+    end
 end
 """
     AlterantRegistry(plugins, sorted_alt_actions, action_to_plugin, action_index, alt_index,
@@ -480,10 +505,12 @@ end
 ROUTE U — positional construction from hand-built tables — is GATED at v0.4.0 (the route-U cure:
 every public construction route runs the ONE validation chain; removal = v0.5): the full chain runs
 over `(plugins, action_specs)` AND the hand-built derived tables must equal the tables derived from
-the declarations (`REG_DERIVED_TABLES`); any error-severity defect throws `RegistrationRefused`
-with EVERY collected diagnostic. A conforming construction yields an UNSEALED registry (`seal ===
-nothing`) — the `goMeta` door refuses it typed, naming the sanctioned path (`RegistryBuilder →
-validate → publish`); route U therefore dies at the entry too (R-V04-34's STRICT door).
+the declarations (`REG_DERIVED_TABLES`, collected ALONGSIDE the chain's diagnostics — full
+collection); any error-severity defect throws `RegistrationRefused` with EVERY collected
+diagnostic. A conforming construction yields an UNSEALED registry (`seal === nothing`) — the
+`goMeta` door refuses it typed, naming the sanctioned path (`RegistryBuilder → validate →
+publish`); route U therefore dies at the entry too (R-V04-34's STRICT door). No positional form
+accepts a seal: sealed values come from `publish` alone.
 """
 function AlterantRegistry(plugins::Vector{PlugIn}, sorted_alt_actions::Vector{Symbol},
                           action_to_plugin::Vector{Int8}, action_index::Dict{Symbol,Int8},
@@ -491,8 +518,8 @@ function AlterantRegistry(plugins::Vector{PlugIn}, sorted_alt_actions::Vector{Sy
                           mutex_alt_idxs::Vector{Int8}, action_to_settribute::Dict{Symbol,Symbol},
                           action_specs::Vector{ActionSpec}, spec_index::Dict{Symbol,Int})
     diags = _validate_registration(plugins, action_specs)
-    if !any(d -> d.severity === :error, diags)
-        derived = _derive_tables(plugins, action_specs)
+    derived = try _derive_tables(plugins, action_specs) catch; nothing end   # a structurally broken
+    if derived !== nothing                                                  # record already reported
         derived.sorted_alt_actions == sorted_alt_actions &&
             derived.action_to_plugin == action_to_plugin &&
             derived.action_index == action_index &&
@@ -507,9 +534,9 @@ function AlterantRegistry(plugins::Vector{PlugIn}, sorted_alt_actions::Vector{Sy
                 "build via RegistryBuilder → validate → publish)"))
     end
     any(d -> d.severity === :error, diags) && throw(RegistrationRefused(diags))
-    return AlterantRegistry(plugins, sorted_alt_actions, action_to_plugin, action_index, alt_index,
-                            accum_alt_idxs, mutex_alt_idxs, action_to_settribute, action_specs,
-                            spec_index, nothing)
+    return AlterantRegistry(_SealToken(), plugins, sorted_alt_actions, action_to_plugin, action_index,
+                            alt_index, accum_alt_idxs, mutex_alt_idxs, action_to_settribute,
+                            action_specs, spec_index, nothing, nothing)
 end
 """
     _unchecked_registry(plugins, …, spec_index) -> AlterantRegistry   (INTERNAL, test seam)
@@ -524,9 +551,9 @@ _unchecked_registry(plugins::Vector{PlugIn}, sorted_alt_actions::Vector{Symbol},
                     alt_index::Dict{Symbol,Int8}, accum_alt_idxs::Vector{Int8},
                     mutex_alt_idxs::Vector{Int8}, action_to_settribute::Dict{Symbol,Symbol},
                     action_specs::Vector{ActionSpec}, spec_index::Dict{Symbol,Int}) =
-    AlterantRegistry(plugins, sorted_alt_actions, action_to_plugin, action_index, alt_index,
-                     accum_alt_idxs, mutex_alt_idxs, action_to_settribute, action_specs,
-                     spec_index, nothing)
+    AlterantRegistry(_SealToken(), plugins, sorted_alt_actions, action_to_plugin, action_index,
+                     alt_index, accum_alt_idxs, mutex_alt_idxs, action_to_settribute, action_specs,
+                     spec_index, nothing, nothing)
 "The number of registered alterants (4 since CH-3 step 9; 3 before the heading registration)."
 num_alterants(r::AlterantRegistry) = length(r.plugins)
 
@@ -545,8 +572,27 @@ mutable struct RegistryBuilder
     action_specs::Vector{ActionSpec}
 end
 RegistryBuilder() = RegistryBuilder(PlugIn[], ActionSpec[])
-"Append one Alterant registration record + its action records (declaration order = plugin index)."
+"""
+    register!(builder, plugin, specs...) -> builder
+
+Append one Alterant registration record + ITS action records: the plugin takes the next
+declaration-order index `i`, and every supplied `ActionSpec` MUST name `plugin == i` — a record
+naming another index would pass validation against that other Alterant's setter and leave the
+appended one silently actionless (cure batch 1), so the mismatch refuses HERE, loudly, as
+`REG_PROTOCOL`; the 127-plugin pool (the Int8 index space) refuses `REG_SLOT_EXHAUSTED` at the
+128th append.
+"""
 function register!(b::RegistryBuilder, plugin::PlugIn, specs::ActionSpec...)
+    n = length(b.plugins) + 1
+    n > typemax(Int8) && throw(RegistrationRefused([Diagnostic(:REG_SLOT_EXHAUSTED, :error, string(
+        "GoMeta registry: register! — appending alterant ", repr(plugin.altName), " would be plugin ",
+        n, ", beyond the slot pool of ", Int(typemax(Int8)), " (the Int8 index space)"), plugin.altName)]))
+    idx = Int8(n)
+    bad = [s.name for s in specs if s.plugin != idx]
+    isempty(bad) || throw(RegistrationRefused([Diagnostic(:REG_PROTOCOL, :error, string(
+        "GoMeta registry: register! — action record(s) ", bad, " do not name the plugin index ", idx,
+        " of the alterant ", repr(plugin.altName), " just appended (a record must belong to the ",
+        "alterant it is registered with; the record shape law)"), plugin.altName)]))
     push!(b.plugins, plugin)
     append!(b.action_specs, collect(specs))
     return b

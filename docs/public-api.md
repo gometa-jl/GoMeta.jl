@@ -1,6 +1,9 @@
 # public-api.md — GoMeta's declared public API (the semver surface) + the error-mode catalogue
 
-**Status:** the declared public API and error-mode catalogue of GoMeta `0.3.0` (alpha maturity).
+**Status:** the declared public API and error-mode catalogue of GoMeta `0.4.0` (candidate; the v0.4
+Stage-A build in progress — the registration lifecycle + the published-only door are live; the
+per-plane cures land row by row; alpha maturity). Backward compatibility with 0.3.x is NOT
+promised (the v0.4 ruling); the breaking-change register ships with the release.
 
 ---
 
@@ -48,7 +51,8 @@ by `tests/unit/public_surface_tests.jl`) and of the refusal behavior the shipped
 | `GoMetaConfig` | type | the v0 input options |
 | `GoMetaResult` | type | the typed pipeline result |
 
-`names(GoMeta)` is exactly this set plus the eleven §1.2 public names (and the module name) — the
+`names(GoMeta)` is exactly this set plus the §1.2 public names (35 since v0.4: the eleven of 0.3.x,
+the five lifecycle names, the nineteen record-vocabulary names; and the module name) — the
 **machine-checkable surface oracle** that `tests/unit/public_surface_tests.jl` asserts against
 this document: the four exported names via `Base.isexported`, the §1.2 names via `Base.ispublic`.
 
@@ -99,7 +103,50 @@ These are part of the documented public surface — declared with Julia's `publi
   `REG_SLOT_EXHAUSTED`; `REG_CANDIDACY` is a warning). Positional `AlterantRegistry(...)`
   construction from hand-built tables is GATED at v0.4.0 (it runs the same chain and refuses
   inconsistent tables with `REG_DERIVED_TABLES`) and yields an UNPUBLISHED value that `goMeta`
-  refuses — build through the lifecycle; positional construction is removed at v0.5.
+  refuses — build through the lifecycle; positional construction is removed at v0.5. No positional
+  form accepts a seal (the constructor is capability-gated); a published registry's containers are
+  READ-ONLY by contract — the door detects a mutation of the declared record, of any derived
+  table, or of any callable (`POST_SEAL_MUTATION`), and the callable seam
+  `GoMeta.run_absorb_apply!` runs the same door.
+- **The record VOCABULARY (v0.4; what `register!` accepts — the Alterant registration record and
+  its action records; construct with the keyword forms):**
+  - `PlugIn(; altName, setMode, altConstructor, setAltInstance, getAltInstance = nothing,
+    precedencesTuple = nothing, capture, render, vocabulary, constraints, atoms, contract_version,
+    requires, sugar, provenance, permissions)` — the Alterant registration record. Required:
+    `altName::Symbol`; `setMode ∈ (:accumulate, :mutExclusive, :mutExclusivePerField, :localOnly)`;
+    `altConstructor::Type` (the instance type); `setAltInstance::Function` (the setter — its
+    method signatures are the record's overloads, verified by reflection). Optional, every one
+    nothing/empty-defaulted: `getAltInstance` (the query getter; required iff an overload is
+    `queryable`); the v0.4 declared slots below. The 6-positional 0.3.x form
+    `PlugIn(altName, setMode, altConstructor, setAltInstance, getAltInstance, precedencesTuple)`
+    still constructs.
+  - `ActionSpec(; name, spelling, plugin, overloads, accepts_string_slot = 0, sugar_candidacy =
+    :none, validate = nothing, keyed_slot = nothing, default = NoDefault(), settribute =
+    nothing)` — one action record. `plugin::Int8` = the declaration-order index of the OWNING
+    Alterant (`register!` binds it: every record passed with a plugin must name that plugin's
+    index); `spelling ∈ (:identifier, :operator)`; `overloads::Vector{ActionOverload}`;
+    `settribute` = the `ComponentSettribute` key this action's verdict writes back to (or
+    `nothing`); `default` = `NoDefault()` | `Declared(value)`.
+  - `ActionOverload(sig_types::Vector{Type}, kinds::Vector{Symbol}, kind_sources::Vector{Symbol},
+    vararg_kind, return_type::Type, effect = :set, queryable::Bool, applicability ∈
+    (:context_free, :context_required), phase ∈ (:apply, :absorb), grammar::Bool)` — one
+    setter-method row: `sig_types` = the setter's argument types AFTER the function type
+    (instance · action name · literal slots); `kinds ∈ (:symbol, :string, :raw)` per literal
+    slot; `return_type ∈ (Nothing, Bool, Int16)` (the closed serializable set).
+  - The declared SLOTS: `DomainRef(artifact, "sha256:<64 hex>")` · `CaptureDecl(instance_type,
+    attr_scheme ∈ (:per_key, :single, :per_field, :per_occurrence), multiplicity ∈ (:many, :one,
+    :per_field), mode_gate)` · `DefaultSlot` = `NoDefault()` | `Declared(v)` · `EffectRow(kind ∈
+    (:drop, :mark, :pass), payload)` + `RenderDecl(effects::Vector{Pair{Symbol,EffectRow}},
+    resolve_order, materialize::Bool)` · `VocabularySlot` = `InlineVocabulary(names, flags)` |
+    `VocabularyRef(ref::DomainRef)` · `MutEx(actions)` · `ConditionAtom(name, print_spelling,
+    evaluate)` · `SugarRow(pattern, action, mode_gate)` · `Provenance(; sec_schema = v"1.0.0",
+    sources = DomainRef[], policy_id, package_digest, artifact_manifest, signatures, signer,
+    source_identity, acquisition_mode ∈ (:shipped, :pinned_by_user, :first_use),
+    artifact_version, not_before, load_act, declared_capabilities)` · `SignatureRecord(;
+    algorithm, key_id, signature)` (reserved) · `PermissionManifest(; seam, ambient)`
+    (reserved, never enforced). At v0.4.0 the slots are CARRIED (validated for shape, sealed);
+    their consumers land with the per-plane cures — a slot the engine does not yet consume has no
+    effect on a run (the contract page of the release states, per slot, which cure consumes it).
 
 They are not exported; reach them qualified. `tests/unit/public_surface_tests.jl` asserts every
 §1.2 name is `public` and NOT exported (no accidental leak, no silent demotion).
@@ -159,9 +206,12 @@ The v0 input options (additive evolution only). `profile::Symbol` — the closed
 `:jl_share_v1`; the two OPT-IN names `:jl_share_v1_full_parse` / `:jl_share_v1_full_eval` are
 also config-valid and additionally require the explicitly-included opt-in extension (the two-act
 law, §3.2). The remainder of this paragraph describes the default: the share-profile proper is
-`:jl_share_v1`. `flavor_tag::Symbol` — the content flavor (`:julia`); RESERVED at v0: the value
-is accepted and stored but read by no v0 code path (any value is accepted and ignored;
-validation is deferred at v0).
+`:jl_share_v1`. `flavor_tag::Symbol` — the content flavor: a CLOSED set of three armed flavors,
+`:julia` (the `#` lead alphabet — the default) · `:c` (the C-family `//` line-comment flavor) ·
+`:latex` (the `%` lead alphabet); any other value fail-closes with `ERR_UNKNOWN_FLAVOR` (§3.1)
+before any parse — selected, never inferred (no file-extension or content sniffing). *(This
+sentence previously said "any value is accepted and ignored; validation is deferred" — stale
+since the flavor arming; corrected at v0.4 T2 on a CrossReview finding.)*
 `namespace::Symbol` — the occurrence-key namespace every `altValues_evals` cell handle is scoped
 under (`:default` by default; the key's length-prefixed namespace segment, §1.4). One
 constructor-time guard: a namespace over 65535 bytes throws an `ArgumentError` at
@@ -482,6 +532,37 @@ keep their existing forms; they are not part of the typed catalogue above.
 Additionally, a non-fatal `:warning` `Diagnostic` — `WARN_VERDICT_COLLISION` — is emitted (the run
 continues) when two byte-identical cells receive conflicting verdicts; cell-id disambiguation is
 deferred.
+
+### §3.5 — Registration + door codes (v0.4; typed `Diagnostic`s)
+
+Every row below is a `Diagnostic{code, severity, message, context}`; the registration rows come
+back from `GoMeta.validate` (all of them, in one vector, deterministic order) and ride
+`RegistrationRefused.diagnostics` when `publish` (or the gated positional route) refuses; the door
+rows come back as a `PROCESS_ERROR` result from `goMeta` / `run_absorb_apply!` before any parse.
+
+| Code | Severity | Trigger | Context |
+|---|---|---|---|
+| `REG_PROTOCOL` | error | a STRUCTURAL defect of the record (tier 1): an enum tag outside its closed set, a kinds/kind_sources mismatch, an overlong kinds vector, a `queryable` row on a getter-less plugin, the dispatch-target uniqueness law, a dangling plugin index, a declared `settribute` key the component does not carry, an empty `MutEx`, a record passed to `register!` that names another plugin | the action or alterant name |
+| `REG_UNKNOWN_SETMODE` | error | `setMode` outside `(:accumulate, :mutExclusive, :mutExclusivePerField, :localOnly)` | the alterant |
+| `REG_DUPLICATE_ALTNAME` | error | two records with the same `altName` | the alterant |
+| `REG_DUPLICATE_ACTION` | error (`:refuse` arm) / warning (`:warn` arm, first-writer-wins) | two action records with the same `name` | the action |
+| `REG_RESERVED_SHADOW` | error | an action named like a `ComponentSettribute` key without declaring it as its own `settribute` | the action |
+| `REG_SIG_MISMATCH` | error | the reflection cross-check: a declared overload with no executable method, an executable method matching no declared overload, or a literal-kind/type disagreement | the action (or the setter's name) |
+| `REG_VALUE_ALGEBRA` | error | a declared `return_type` outside `(Nothing, Bool, Int16)` | the action |
+| `REG_UNREACHABLE` | error | a grammar overload's literal kind outside the active literal floor `(:symbol, :string)` | the action |
+| `REG_CANDIDACY` | warning | `sugar_candidacy = :candidate` without activation — registered, not active; `publish` proceeds and emits the warning | the action |
+| `REG_MUTEX_CONFLICT` | error | a `MutEx` naming an action the alterant does not register | the alterant |
+| `REG_UNINTERPRETED_REQUIRES` | error | any `requires` token the v0.4.0 roster does not interpret — the WHOLE record refuses | the alterant |
+| `REG_CONTRACT_VERSION` | error | a `contract_version` outside the v0.4.x family | the alterant |
+| `REG_SLOT_EXHAUSTED` | error | more than 127 alterants or actions (the Int8 index space) — at `register!`'s 128th append, or at `validate` for directly-pushed builders | the alterant / `nothing` |
+| `REG_DERIVED_TABLES` | error | positional (route-U) construction whose hand-built tables differ from the tables derived from the declarations | `nothing` |
+| `REG_UNPUBLISHED` (door) | error | an unsealed registry reached `goMeta` or `run_absorb_apply!` — the message names `RegistryBuilder → validate → publish` | `nothing` |
+| `POST_SEAL_MUTATION` (door) | error | a published registry whose declared record, derived tables, or callables no longer match its publication — the message names what moved; re-publication is the change path | the seal |
+
+Stable-message refusals (NOT typed codes; the §3.4 class): `"GoMeta absorb: meta-hierarchy slot pool
+exhausted"` — the per-call slot pool (`NUM_MH_LEVELS` = 12 slots) fully occupied at an
+`updateMetaHierarchy` allocation (v0.4 T2; previously a raw `MethodError`); guarded, nothing
+displaced or aliased; its typed conversion rides the v0.4 diagnostics catalogue.
 
 ## §4 — CRLF normalization (documented, not an error)
 
