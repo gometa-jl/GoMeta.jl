@@ -37,7 +37,11 @@ import TOML
     DECLARED_EXPORTS = Set([:goMeta, :altValues_evals, :GoMetaConfig, :GoMetaResult])
     # The supporting PACKAGE-PUBLIC surface (docs/public-api.md §1.2): documented + qualified-access, NOT exported.
     SUPPORTING_PUBLIC = [:outputs, :serialize_evals, :content_fingerprint, :EvalRecord, :EvalStore, :ProcessStatus, :PROCESS_OK,
-                         :PROCESS_ERROR, :Diagnostic, :AlterantRegistry, :DEFAULT_REGISTRY]   # mirrors docs/public-api.md §1.2 EXACTLY
+                         :PROCESS_ERROR, :Diagnostic, :AlterantRegistry, :DEFAULT_REGISTRY,
+                         # v0.4 T2 — the registration LIFECYCLE surface (Builder → validate → publish; the
+                         # typed refusal): 11 → 16 package-public names (a registered widening — the
+                         # sanctioned registration surface IS the intended Extension-facing seam).
+                         :RegistryBuilder, :register!, :validate, :publish, :RegistrationRefused]   # mirrors docs/public-api.md §1.2 EXACTLY
 
     @testset "export set is EXACTLY the declared semver surface" begin
         live = setdiff(Set(names(GM)), Set([:GoMeta]))     # names() on Julia ≥1.11 == exported ∪ `public` (+ the module name)

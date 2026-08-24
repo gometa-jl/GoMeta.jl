@@ -42,4 +42,5 @@ using Test
     include(joinpath(@__DIR__, "ensure_token_tests.jl"))            # WP1-W6 step (b): the ensure-token witness battery (K1 second disjunct; APPEND-ONLY)
     include(joinpath(@__DIR__, "inert_semantics_tests.jl"))         # v0.3.1: the R-INERT-4 differential oracle + §4.1 refusal + §4.8 Alterant guards (APPEND-ONLY)
     include(joinpath(@__DIR__, "record_schema_tests.jl"))           # v0.4 T1: the registration-record schema extension witnesses (APPEND-ONLY)
+    include(joinpath(@__DIR__, "registry_lifecycle_tests.jl"))      # v0.4 T2: Builder → validate → publish, the one chain, the STRICT door, the seal gate, the exhaustion refusals (APPEND-ONLY)
 end

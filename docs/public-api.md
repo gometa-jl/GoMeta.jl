@@ -80,9 +80,26 @@ These are part of the documented public surface — declared with Julia's `publi
 - `Diagnostic` `{code::Symbol, severity::Symbol, message::String, context::Any}` — the typed,
   non-throwing diagnostic record.
 - `AlterantRegistry` + the `const DEFAULT_REGISTRY` — the deterministic alterant inventory (the
-  `goMeta` default registry). A custom `registry`'s mappings over the BUILT-IN inventory are
-  honored per call (e.g. the Visib action→settribute mapping); custom plugin IMPLEMENTATIONS are
-  outside v0's supported surface — the verdict capture reads the built-in alterant instance types.
+  `goMeta` default registry), a PUBLISHED (validated + sealed) value since v0.4. A custom
+  `registry`'s mappings over the BUILT-IN inventory are honored per call (e.g. the generic
+  action→settribute write-back table); custom plugin IMPLEMENTATIONS are outside the supported
+  surface at v0.4.0 — the verdict capture reads the built-in alterant instance types (the
+  registration-driven capture lands with the v0.4 cure series).
+- **The registration LIFECYCLE (v0.4):** `RegistryBuilder()` + `GoMeta.register!(builder,
+  plugin, specs...)` — the mutable declaration site; `GoMeta.validate(builder) ->
+  Vector{Diagnostic}` — the ONE validation chain, returning EVERY defect (errors and warnings, in
+  deterministic order) and never throwing; `GoMeta.publish(builder) -> AlterantRegistry` — the
+  ONLY route that mints a SEALED registry: refuses with `RegistrationRefused` (carrying every
+  diagnostic) on any error, proceeds on warnings, COPIES every container (nothing mutable is
+  shared with the builder), derives the hot-path tables from the declarations, and seals.
+  `RegistrationRefused <: Exception` — `.diagnostics::Vector{Diagnostic}` with stable codes
+  (`REG_PROTOCOL` for structural defects; `REG_UNKNOWN_SETMODE`, `REG_DUPLICATE_ALTNAME`,
+  `REG_DUPLICATE_ACTION`, `REG_RESERVED_SHADOW`, `REG_SIG_MISMATCH`, `REG_VALUE_ALGEBRA`,
+  `REG_UNREACHABLE`, `REG_MUTEX_CONFLICT`, `REG_UNINTERPRETED_REQUIRES`, `REG_CONTRACT_VERSION`,
+  `REG_SLOT_EXHAUSTED`; `REG_CANDIDACY` is a warning). Positional `AlterantRegistry(...)`
+  construction from hand-built tables is GATED at v0.4.0 (it runs the same chain and refuses
+  inconsistent tables with `REG_DERIVED_TABLES`) and yields an UNPUBLISHED value that `goMeta`
+  refuses — build through the lifecycle; positional construction is removed at v0.5.
 
 They are not exported; reach them qualified. `tests/unit/public_surface_tests.jl` asserts every
 §1.2 name is `public` and NOT exported (no accidental leak, no silent demotion).
@@ -126,6 +143,15 @@ host-evaluated, and the guarantees then hold only for inputs whose conditions ar
 effects.) An invalid `config`
 fail-closes into a `PROCESS_ERROR` `GoMetaResult` **before any parse or render** — the input
 bytes are never touched; no parse, verdict, or render work occurs (§3.1).
+
+**The registry door (v0.4, STRICT — published-only).** `registry` must be a PUBLISHED value
+(`DEFAULT_REGISTRY`, or the result of `GoMeta.publish`). A conforming-but-unpublished registry
+(e.g. a gated positional construction) fail-closes exactly like an invalid config — a
+`PROCESS_ERROR` result before any parse, carrying `REG_UNPUBLISHED`, whose message names the
+sanctioned path `RegistryBuilder → validate → publish`. A published registry whose containers
+were mutated after publication fail-closes with `POST_SEAL_MUTATION` (the seal is recomputed at
+the door — the real freeze gate; re-publication is the sanctioned change path). Config-time and
+registry-time diagnostics are collected FULLY into ONE result (config rows first).
 
 ### `GoMetaConfig(; profile = :jl_share_v1, flavor_tag = :julia, parse_range = nothing, user_mh_profile = nothing, namespace = :default)`
 

@@ -141,7 +141,8 @@ import .WriteOutFile: render_bytes
 # Qualified import (`import GoMeta as GM`) is UNAFFECTED by these exports and remains canonical for namespace
 # hygiene + multi-implementation use; exporting serves the single-implementation `using` convenience only.
 export goMeta, altValues_evals, GoMetaConfig, GoMetaResult
-public outputs, serialize_evals, content_fingerprint, EvalRecord, EvalStore, ProcessStatus, PROCESS_OK, PROCESS_ERROR, Diagnostic, AlterantRegistry, DEFAULT_REGISTRY
+public outputs, serialize_evals, content_fingerprint, EvalRecord, EvalStore, ProcessStatus, PROCESS_OK, PROCESS_ERROR, Diagnostic, AlterantRegistry, DEFAULT_REGISTRY,
+       RegistryBuilder, register!, validate, publish, RegistrationRefused   # v0.4 T2: the registration lifecycle (docs/public-api.md §1.2)
 
 #########################################################################################
 #~~ Config-time validation
@@ -334,6 +335,13 @@ function goMeta(
     ## (absorb) guarded refusal and the condition-path crash-origins remain untyped at v0
     ## (their typed conversion sits at the apply.jl seam).
     config_diags = validate_config(config)
+    ## v0.4 T2 — THE STRICT DOOR (R-V04-34): the registry must be PUBLISHED (validated + sealed);
+    ## an unpublished value refuses typed (`REG_UNPUBLISHED`, naming RegistryBuilder → validate →
+    ## publish) and a published value mutated after publication refuses `POST_SEAL_MUTATION`
+    ## (the recomputed seal ≠ the stored one — the real freeze gate). FULL COLLECTION before the
+    ## ONE terminal outcome: config-time AND registry-time diagnostics ride ONE fail-closed
+    ## PROCESS_ERROR result (config first, then registry); the input bytes are never touched.
+    append!(config_diags, _registry_door_check(registry))
     isempty(config_diags) ||
         return _config_error_result(BLS.setUpToProcessFromBytes(UInt8[]), config, registry, config_diags)
 

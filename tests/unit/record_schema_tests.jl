@@ -131,10 +131,12 @@ import GoMeta as GM
         @test GM._record_wellformed_check(specs, plugs) === nothing
     end
 
-    @testset "the registration digest is BLIND to the new slots at T1 (the T2 flip target)" begin
-        # WITNESS, named as such: the fold reads the v0.3.2 fields only, so the profile's bootstrap
-        # pins hold through T1. When the publication seal (T2, HC-9) extends the fold over the
-        # declared slots, THIS assertion flips to `!=` — a registered, disclosed change, never silent.
+    @testset "the registration digest COVERS the new slots (flipped at T2 — the seal covers the record)" begin
+        # WITNESS, flipped at T2 as registered at T1: at T1 the fold read the v0.3.2 fields only
+        # (this assertion was `==`); T2 extended the fold over every declared slot so the HC-9 seal
+        # covers the record — a declared default or write-back key now MOVES the digest. The
+        # profile's bootstrap registration pin re-minted with it (profile_snapshot_tests.jl,
+        # disclosed old → new); the grammar pin did not move.
         specs = GM.DEFAULT_REGISTRY.action_specs
         alt = copy(specs)
         i = findfirst(s -> s.name === :hide, alt)
@@ -144,6 +146,6 @@ import GoMeta as GM
                                  sugar_candidacy = h.sugar_candidacy, validate = h.validate,
                                  keyed_slot = h.keyed_slot, default = GM.Declared(:show),
                                  settribute = :elsewhere)
-        @test GM._registration_digest(alt) == GM._registration_digest(specs)   # T2 flips this
+        @test GM._registration_digest(alt) != GM._registration_digest(specs)   # flipped at T2 (was ==)
     end
 end

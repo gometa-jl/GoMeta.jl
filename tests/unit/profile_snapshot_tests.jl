@@ -120,11 +120,16 @@ import GoMeta as GM
         # component serialization, and the cache key gained the engine-version
         # component — asserted composition-wise so the pin is version-agnostic
         # across the two build variants)
+        # (registration pin RE-MINTED a third time, consciously, at v0.4 T2: the fold was
+        # EXTENDED over every declared record slot so the publication SEAL covers the record
+        # (0x887ec3b4c760dc70 → 0x29012b84e8284212, registered at the build's T1 close; the
+        # grammar pin did NOT move — a moved grammar pin here would mean the fold touched
+        # what it must not)
         p = GM.resolve_profile(GM.GoMetaConfig())
         @test p.grammar_digest      == 0x12972c9924c2bf2b
-        @test p.registration_digest == 0x887ec3b4c760dc70
+        @test p.registration_digest == 0x29012b84e8284212
         @test GM.cache_key(p) == string("gometa/v", GM._ENGINE_VERSION,
-            "/jl_share_v1/closed_v1/s3/g12972c9924c2bf2b/r887ec3b4c760dc70")
+            "/jl_share_v1/closed_v1/s3/g12972c9924c2bf2b/r29012b84e8284212")   # the r-component re-minted with the pin above (v0.4 T2)
     end
 
     @testset "test_error_oracle_corrupt_and_incompatible" begin

@@ -146,17 +146,30 @@ import GoMeta as GM
         # regression), plus the refusal-throws half and the record-totality half.
         src = read(joinpath(dirname(dirname(@__DIR__)), "src", "alterants",
             "registry.jl"), String)
-        body = src[findfirst("function build_default_registry", src)[1]:end]
-        body = body[1:findfirst("return AlterantRegistry", body)[1]]
-        for checkname in ("_register_actions!", "_record_wellformed_check",
-                          "_reflection_cross_check", "_value_algebra_check",
-                          "_reachability_check", "_candidacy_check",
-                          "_first_wins_spec_index")   # the USE-SITE wiring pinned
-                                                      # (delta-caught: reverting to
-                                                      # a naive comprehension was
-                                                      # battery-invisible)
-            @test occursin(checkname, body)   # every check sits BEFORE the constructor
+        # v0.4 T2 (re-scoped, the referents moved — recorded, not silently re-pinned): the ONE
+        # chain now lives in `_validate_registration` (the accumulating `_*_collect!` forms) and
+        # `publish` runs it BEFORE the constructor. Two source-order assertions replace the old
+        # single body: (i) every collect! form is wired inside `_validate_registration`;
+        # (ii) `publish` calls `validate(` (the chain) before `return AlterantRegistry(`, and
+        # derives its tables through `_derive_tables` (which pins `_first_wins_spec_index`).
+        chain = src[findfirst("function _validate_registration", src)[1]:end]
+        chain = chain[1:findfirst("return diags", chain)[1]]
+        for checkname in ("_record_wellformed_collect!", "_inventory_collect!",
+                          "_register_actions_collect!", "_reflection_collect!",
+                          "_value_algebra_collect!", "_reachability_collect!",
+                          "_candidacy_collect!")
+            @test occursin(checkname, chain)   # every check is wired in the ONE chain
         end
+        pub = src[findfirst("function publish(", src)[1]:end]
+        pub = pub[1:findfirst("return AlterantRegistry(", pub)[1]]
+        @test occursin("validate(b)", pub)              # the chain runs BEFORE the constructor
+        @test occursin("_derive_tables(", pub)          # the tables come from the declarations
+        derive = src[findfirst("function _derive_tables", src)[1]:end]
+        derive = derive[1:findfirst("\nend", derive)[1]]
+        @test occursin("_first_wins_spec_index", derive)   # the USE-SITE wiring pinned
+                                                          # (delta-caught: reverting to
+                                                          # a naive comprehension was
+                                                          # battery-invisible)
         # a failing check THROWS (nothing constructed) …
         dup = [_mkspec(:alpha, 1), _mkspec(:alpha, 2)]
         @test (try
@@ -385,7 +398,10 @@ import GoMeta as GM
             # setter lying about its return type passes load fully and is caught ONLY
             # here (the dispatch-boundary tests measure the four SHIPPED setters, which
             # is a test-time fact, not a load-time refusal).
-            _mini(specs) = GM.AlterantRegistry(GM.PlugIn[], Symbol[], Int8[],
+            # v0.4 T2: positional `AlterantRegistry(...)` is GATED (route U runs the one chain, which
+            # refuses these deliberately-drifted shapes by design) — the witness rides the INTERNAL
+            # `_unchecked_registry` test seam instead (unsealed; never a consumer route).
+            _mini(specs) = GM._unchecked_registry(GM.PlugIn[], Symbol[], Int8[],
                 Dict{Symbol,Int8}(), Dict{Symbol,Int8}(), Int8[], Int8[],
                 Dict{Symbol,Symbol}(), specs, GM._first_wins_spec_index(specs))
             _row(sig, rt) = GM.ActionOverload(sig, Symbol[], Symbol[], nothing, rt,

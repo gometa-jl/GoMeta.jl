@@ -466,9 +466,109 @@ struct AlterantRegistry
     # `spec_index`: action name → index into `action_specs`.
     action_specs::Vector{ActionSpec}
     spec_index::Dict{Symbol,Int}
+    # v0.4 T2 — THE SEAL (HC-9): minted ONLY by `publish`; `nothing` = an UNPUBLISHED value (the
+    # gated route-U construction), which the `goMeta` door refuses typed. The seal is the
+    # algorithm-tagged registration digest over every declared slot + the declared source digests
+    # + policy_id; the door recomputes it — a post-publication mutation of any container fires
+    # `POST_SEAL_MUTATION` (accident-grade integrity, never security-grade).
+    seal::Union{Nothing,String}
 end
+"""
+    AlterantRegistry(plugins, sorted_alt_actions, action_to_plugin, action_index, alt_index,
+                     accum_alt_idxs, mutex_alt_idxs, action_to_settribute, action_specs, spec_index)
+
+ROUTE U — positional construction from hand-built tables — is GATED at v0.4.0 (the route-U cure:
+every public construction route runs the ONE validation chain; removal = v0.5): the full chain runs
+over `(plugins, action_specs)` AND the hand-built derived tables must equal the tables derived from
+the declarations (`REG_DERIVED_TABLES`); any error-severity defect throws `RegistrationRefused`
+with EVERY collected diagnostic. A conforming construction yields an UNSEALED registry (`seal ===
+nothing`) — the `goMeta` door refuses it typed, naming the sanctioned path (`RegistryBuilder →
+validate → publish`); route U therefore dies at the entry too (R-V04-34's STRICT door).
+"""
+function AlterantRegistry(plugins::Vector{PlugIn}, sorted_alt_actions::Vector{Symbol},
+                          action_to_plugin::Vector{Int8}, action_index::Dict{Symbol,Int8},
+                          alt_index::Dict{Symbol,Int8}, accum_alt_idxs::Vector{Int8},
+                          mutex_alt_idxs::Vector{Int8}, action_to_settribute::Dict{Symbol,Symbol},
+                          action_specs::Vector{ActionSpec}, spec_index::Dict{Symbol,Int})
+    diags = _validate_registration(plugins, action_specs)
+    if !any(d -> d.severity === :error, diags)
+        derived = _derive_tables(plugins, action_specs)
+        derived.sorted_alt_actions == sorted_alt_actions &&
+            derived.action_to_plugin == action_to_plugin &&
+            derived.action_index == action_index &&
+            derived.alt_index == alt_index &&
+            derived.accum_alt_idxs == accum_alt_idxs &&
+            derived.mutex_alt_idxs == mutex_alt_idxs &&
+            derived.action_to_settribute == action_to_settribute &&
+            derived.spec_index == spec_index ||
+            push!(diags, Diagnostic(:REG_DERIVED_TABLES, :error,
+                "GoMeta registry: positional construction supplied derived tables that do not " *
+                "match the tables derived from the declared record (route U is GATED at v0.4.0; " *
+                "build via RegistryBuilder → validate → publish)"))
+    end
+    any(d -> d.severity === :error, diags) && throw(RegistrationRefused(diags))
+    return AlterantRegistry(plugins, sorted_alt_actions, action_to_plugin, action_index, alt_index,
+                            accum_alt_idxs, mutex_alt_idxs, action_to_settribute, action_specs,
+                            spec_index, nothing)
+end
+"""
+    _unchecked_registry(plugins, …, spec_index) -> AlterantRegistry   (INTERNAL, test seam)
+
+Constructs an UNSEALED registry with NO validation — the ONE bypass, kept so the runtime walls
+downstream of registration (the `_invoke_set` return/drift guards) can be witnessed on DELIBERATELY
+drifted shapes the gated routes refuse by design. Never `public`, never a consumer route; the door
+refuses its values like any unsealed one.
+"""
+_unchecked_registry(plugins::Vector{PlugIn}, sorted_alt_actions::Vector{Symbol},
+                    action_to_plugin::Vector{Int8}, action_index::Dict{Symbol,Int8},
+                    alt_index::Dict{Symbol,Int8}, accum_alt_idxs::Vector{Int8},
+                    mutex_alt_idxs::Vector{Int8}, action_to_settribute::Dict{Symbol,Symbol},
+                    action_specs::Vector{ActionSpec}, spec_index::Dict{Symbol,Int}) =
+    AlterantRegistry(plugins, sorted_alt_actions, action_to_plugin, action_index, alt_index,
+                     accum_alt_idxs, mutex_alt_idxs, action_to_settribute, action_specs,
+                     spec_index, nothing)
 "The number of registered alterants (4 since CH-3 step 9; 3 before the heading registration)."
 num_alterants(r::AlterantRegistry) = length(r.plugins)
+
+# --- the v0.4 registration LIFECYCLE types (T2): Builder → validated → PUBLISHED ------------------
+"""
+    RegistryBuilder()
+
+The MUTABLE declaration site of a registry: `register!(builder, plugin, specs...)` appends an
+Alterant registration record + its action records in declaration order. Nothing is checked at
+registration time — `validate(builder)` collects EVERY defect as typed diagnostics (full collection
+before the one terminal outcome), and `publish(builder)` refuses on any error, else COPIES every
+container into an immutable, SEALED `AlterantRegistry` (the only route that mints a seal).
+"""
+mutable struct RegistryBuilder
+    plugins::Vector{PlugIn}
+    action_specs::Vector{ActionSpec}
+end
+RegistryBuilder() = RegistryBuilder(PlugIn[], ActionSpec[])
+"Append one Alterant registration record + its action records (declaration order = plugin index)."
+function register!(b::RegistryBuilder, plugin::PlugIn, specs::ActionSpec...)
+    push!(b.plugins, plugin)
+    append!(b.action_specs, collect(specs))
+    return b
+end
+
+"""
+    RegistrationRefused(diagnostics)
+
+The typed refusal of a registration: thrown by `publish` (and by the gated positional route) with
+EVERY collected error/warning diagnostic — never the first one only. Catch it, read
+`.diagnostics` (stable `code`s), fix the record, re-validate.
+"""
+struct RegistrationRefused <: Exception
+    diagnostics::Vector{Diagnostic}
+end
+function Base.showerror(io::IO, e::RegistrationRefused)
+    n = count(d -> d.severity === :error, e.diagnostics)
+    print(io, "RegistrationRefused: ", n, " error diagnostic(s) (", length(e.diagnostics), " total):")
+    for d in e.diagnostics
+        print(io, "\n  [", d.severity, "] ", d.code, " — ", d.message)
+    end
+end
 "The number of registered alterant actions (8 since CH-3 step 9; 7 before the heading registration)."
 num_alt_actions(r::AlterantRegistry) = length(r.sorted_alt_actions)
 
