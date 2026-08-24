@@ -220,7 +220,8 @@ end
     _config_error_result(parse_state, config, registry, config_diags) -> GoMetaResult
 
 Build the fail-closed `PROCESS_ERROR` `GoMetaResult` for an invalid `GoMetaConfig`. `@noinline` + cold:
-it is reached ONLY when `validate_config` returned a non-empty diagnostics vector, so its `init_state` +
+it is reached ONLY on a PRE-PARSE refusal — a non-empty `validate_config` vector, or (v0.4) the registry
+door's diagnostics at `goMeta` / `run_absorb_apply!` — so its `init_state` +
 `GoMetaResult` construction never perturb the byte-exact, low-allocation main `goMeta` path. A per-call
 `ProcessState` is built (container SIZING only — no parse content is read, no `parseBLS`/absorb-walk/render
 runs) so the `GoMetaResult` carries the standard state shape; the typed `config_diags` are appended; the unparsed
@@ -289,7 +290,8 @@ end
             registry::AlterantRegistry = DEFAULT_REGISTRY) -> GoMetaResult
 
 Run the GoMeta pipeline over `bytes` and return a typed `GoMetaResult` — the package's primary public entry
-(docs/public-api.md §2). PURE + DETERMINISTIC: the same `(bytes, config, registry)` always yields
+(docs/public-api.md §2). PURE + DETERMINISTIC under `DEFAULT_REGISTRY` (under a custom registry,
+as far as its own callables are — the trust model): the same `(bytes, config, registry)` always yields
 the same `GoMetaResult`, with no filesystem / clock / environment read — conditions run in the
 closed no-eval interpreter, so in a default-configured run a condition body cannot read or have
 effects (only the explicitly opt-in `:full_eval_v1` extension mode host-evaluates condition text —

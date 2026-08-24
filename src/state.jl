@@ -21,8 +21,10 @@
 #     `ScopedValue`; an unscoped read throws.
 # Honest edges: `AlterantRegistry`'s `Dict`/`Vector` fields are mutable containers — a PUBLISHED
 #     registry is sealed, not frozen by type: a mutation through any container (declared record OR
-#     derived table) is DETECTED at the entry door (`POST_SEAL_MUTATION`, v0.4 T2 — the seal is
-#     recomputed, the tables re-derived, the callables identity-compared), never silently effective;
+#     derived table) BY CONFORMING CODE is DETECTED at the entry door (`POST_SEAL_MUTATION`, v0.4 T2 —
+#     the seal is recomputed over the canonical encoding, the tables re-derived, the callables
+#     identity-compared), never silently effective — accident-grade, within the disclosed bounds
+#     (module-unqualified type names; callable behavior ≠ identity; the entry check is not a lock);
 #     the construction capability is token-gated so no POSITIONAL or accidental construction by
 #     conforming code carries a seal (accident-grade: any loaded module can reach the token — B-2);
 #     `accum_alt_idxs` must stay sorted

@@ -985,12 +985,20 @@ _slot_text(x::AbstractString)::String = string("s", _ns(String(x)))
 _slot_text(x::Bool)::String = x ? "T" : "F"
 # (cure batch 2) the CONCRETE numeric type is part of the value (`Int8(1)` ≠ `Int64(1)`), and a
 # vector is not a tuple — distinct tags, so a same-display substitution moves the seal.
-_slot_text(x::Number)::String = string("n", _nsv((_type_text(typeof(x)), string(x))))
-# (cure batch 3) floats encode BIT-EXACTLY — display text collapses distinct NaN payloads (and
-# signed zeros' bit patterns) into one string; the bits are the value.
+# (cure batch 4) THE ENCODABLE DOMAIN IS CLOSED. Numbers: the machine integers by decimal text,
+# the machine floats BIT-EXACTLY (display text collapses distinct NaN payloads), Complex and
+# Rational STRUCTURALLY over their parts; any other Number — and any value of a type without an
+# encoder below — is UNENCODABLE and REFUSED at validation (`REG_PROTOCOL`), never folded by a
+# lossy fallback (the former `typeof`+`repr` fallback let a stable-`repr` mutation hide).
+struct _UnencodableSlot <: Exception; T::Type; end
+_slot_text(x::Union{Int8,Int16,Int32,Int64,Int128,UInt8,UInt16,UInt32,UInt64,UInt128})::String =
+    string("n", _nsv((_type_text(typeof(x)), string(x))))
 _slot_text(x::Float64)::String = string("n", _nsv((_type_text(typeof(x)), string(reinterpret(UInt64, x); base = 16))))
 _slot_text(x::Float32)::String = string("n", _nsv((_type_text(typeof(x)), string(reinterpret(UInt32, x); base = 16))))
 _slot_text(x::Float16)::String = string("n", _nsv((_type_text(typeof(x)), string(reinterpret(UInt16, x); base = 16))))
+_slot_text(x::Complex)::String = string("c", _nsv((_type_text(typeof(x)), _slot_text(real(x)), _slot_text(imag(x)))))
+_slot_text(x::Rational)::String = string("r", _nsv((_type_text(typeof(x)), _slot_text(numerator(x)), _slot_text(denominator(x)))))
+_slot_text(x::Number)::String = throw(_UnencodableSlot(typeof(x)))
 _slot_text(x::VersionNumber)::String = string("v", _ns(string(x)))
 _slot_text(x::Type)::String = string("t", _ns(_type_text(x)))
 _slot_text(f::Function)::String = string("f", _ns(String(nameof(f))))
@@ -1017,8 +1025,24 @@ end
 _slot_text(v::AbstractVector)::String = _slot_container("[", "]", v)
 _slot_text(v::Tuple)::String = string("<", _nsv(_slot_text(e) for e in v), ">")
 _slot_text(p::Pair)::String = string("(", _nsv((_slot_text(p.first), _slot_text(p.second))), ")")
-_slot_text(d::AbstractDict)::String =
-    string("{", _nsv(string(_ns(_slot_text(k)), _ns(_slot_text(d[k]))) for k in sort!(collect(keys(d)); by = string)), "}")
+# (cure batch 4) dicts are cycle-guarded like vectors and CANONICAL: entries sorted by their
+# ENCODED text (a `string`-keyed sort left `:x` vs `"x"` in iteration order — non-deterministic).
+function _slot_text(d::AbstractDict)::String
+    vis = _SLOT_VISITING[]
+    if vis === nothing
+        return Base.ScopedValues.with(_SLOT_VISITING => Base.IdSet{Any}()) do
+            _slot_text(d)
+        end
+    end
+    d in vis && throw(_CyclicSlot())
+    push!(vis, d)
+    try
+        entries = [string(_ns(_slot_text(k)), _ns(_slot_text(v))) for (k, v) in d]
+        return string("{", _nsv(sort!(entries)), "}")
+    finally
+        delete!(vis, d)
+    end
+end
 _slot_text(nt::NamedTuple)::String =
     string("N", _nsv(string(_ns(String(k)), _ns(_slot_text(getfield(nt, k)))) for k in keys(nt)))
 _slot_text(x::NoDefault)::String = "NoDefault"
@@ -1040,10 +1064,40 @@ _slot_text(x::SignatureRecord)::String =
 _slot_text(x::PermissionManifest)::String = string("Perm", _nsv((_slot_text(x.seam), _slot_text(x.ambient))))
 _slot_text(x::Provenance)::String = string("Prov",
     _nsv(string(_ns(String(f)), _ns(_slot_text(getfield(x, f)))) for f in fieldnames(Provenance)))
-# The honest fallback: an OPAQUE payload of an unknown type folds by its type + `repr` — a
-# disclosed limit (a mutation whose `repr` is stable is invisible to the seal); T10 defines the
-# opaque payload shapes and closes this by giving each an encoder.
-_slot_text(x)::String = string("any", _nsv((string(typeof(x)), repr(x))))
+# (cure batch 4) NO opaque fallback: a value of a type without an encoder is UNENCODABLE — refused
+# at validation as `REG_PROTOCOL`; a payload type T10 admits gets its own encoder then.
+_slot_text(x)::String = throw(_UnencodableSlot(typeof(x)))
+
+"""
+    _encodability_collect!(diags, plugins, action_specs)
+
+(cure batch 4) Tier 1's ENCODABILITY row: every declared slot value must encode canonically —
+no cycle, no value outside the closed encodable domain — so `publish` can seal it and the door
+can re-check it. Each offending plugin/action record yields ONE `REG_PROTOCOL` diagnostic naming
+the offending type (or "cyclic"); `validate` never throws.
+"""
+function _encodability_collect!(diags::Vector{Diagnostic}, plugins::Vector{PlugIn}, action_specs::Vector{ActionSpec})
+    probe(label, ctx, f) = try
+        f(); nothing
+    catch e
+        e isa _CyclicSlot && return push!(diags, Diagnostic(:REG_PROTOCOL, :error, string(
+            "GoMeta registry: ", label, " ", repr(ctx), " declares a CYCLIC container — a declared value ",
+            "must encode canonically (the record shape law)"), ctx))
+        e isa _UnencodableSlot && return push!(diags, Diagnostic(:REG_PROTOCOL, :error, string(
+            "GoMeta registry: ", label, " ", repr(ctx), " declares a value of type ", e.T,
+            " which has no canonical encoder — outside the closed encodable domain (the record shape law)"), ctx))
+        rethrow()
+    end
+    for p in plugins
+        probe("alterant", p.altName, () -> (_slot_text(p.capture); _slot_text(p.render); _slot_text(p.vocabulary);
+            _slot_text(p.constraints); _slot_text(p.atoms); _slot_text(p.contract_version);
+            _slot_text(p.requires); _slot_text(p.sugar); _slot_text(p.provenance); _slot_text(p.permissions)))
+    end
+    for s in action_specs
+        probe("action", s.name, () -> (_slot_text(s.default); _slot_text(s.settribute)))
+    end
+    return nothing
+end
 
 "The canonical serialized text of one overload row (the digest's SORT KEY only — the fold
 itself goes through the injective `_fold_parts`, never through this joined text)."
@@ -1241,6 +1295,7 @@ function _validate_registration(plugins::Vector{PlugIn}, action_specs::Vector{Ac
     diags = Diagnostic[]
     n0 = length(diags)
     _record_wellformed_collect!(diags, action_specs, plugins)
+    _encodability_collect!(diags, plugins, action_specs)   # (cure batch 4) the seal must be mintable
     # (cure batch 1) tier 2 SKIPS every action record tier 1 found structurally broken: the semantic
     # collectors index and consult closed maps on the record's own data, and a malformed row would
     # otherwise THROW out of the accumulator (the CRX after-T2 set: `vararg_kind = :bogus` reached
@@ -1301,7 +1356,8 @@ container is copied, so no mutable container is shared between the builder and t
 (a later mutation of the builder cannot reach a published registry, and vice versa); the derived
 tables come from the declarations alone; the seal covers the declared record. The published value's
 containers are READ-ONLY by contract — a mutation through them is detected at the door
-(`POST_SEAL_MUTATION`), never silently effective.
+(`POST_SEAL_MUTATION`), never silently effective — for conforming code, as represented by the
+canonical encoding / the derived tables / the callable identities (the disclosed bounds apply).
 """
 function publish(b::RegistryBuilder)
     diags = validate(b)
@@ -1319,9 +1375,17 @@ function publish(b::RegistryBuilder)
     plugins = deepcopy(b.plugins)
     specs   = deepcopy(b.action_specs)
     t = _derive_tables(plugins, specs)
+    # (cure batch 4) validation has already refused cyclic/unencodable declarations; this catch is
+    # the defensive conversion so no internal exception can ever leave the public lifecycle.
+    seal = try _mint_seal(plugins, specs) catch e
+        (e isa _CyclicSlot || e isa _UnencodableSlot) || rethrow()
+        throw(RegistrationRefused([Diagnostic(:REG_PROTOCOL, :error, string("GoMeta registry: the ",
+            "declared record could not be sealed (", e isa _CyclicSlot ? "a cyclic container" :
+            string("an unencodable value of type ", e.T), ") — the record shape law"), nothing)]))
+    end
     return AlterantRegistry(_SealToken(), plugins, t.sorted_alt_actions, t.action_to_plugin,
                             t.action_index, t.alt_index, t.accum_alt_idxs, t.mutex_alt_idxs,
-                            t.action_to_settribute, specs, t.spec_index, _mint_seal(plugins, specs),
+                            t.action_to_settribute, specs, t.spec_index, seal,
                             _callable_identities(plugins, specs))
 end
 
@@ -1352,9 +1416,9 @@ function _registry_door_check(registry::AlterantRegistry)
     # (cure batch 3) an UNENCODABLE declared record (a container mutated into a cycle) is itself a
     # post-publication mutation — refused typed, never a StackOverflowError out of the door
     sealed_now = try _mint_seal(registry.plugins, registry.action_specs) catch e
-        e isa _CyclicSlot || rethrow(); nothing end
+        (e isa _CyclicSlot || e isa _UnencodableSlot) || rethrow(); nothing end
     (sealed_now !== nothing && registry.seal == sealed_now) || push!(what,
-        sealed_now === nothing ? "the declared record (a cyclic container — no longer encodable)" :
+        sealed_now === nothing ? "the declared record (mutated into a cyclic or unencodable value)" :
                                  "the declared record (seal)")
     derived = try _derive_tables(registry.plugins, registry.action_specs) catch; nothing end
     if derived === nothing

@@ -112,7 +112,8 @@ import GoMeta as GM
         # match the swap through the published value
         @test R5._callables isa Tuple
         @test_throws MethodError setindex!(R5._callables, evil, 1)
-        # NO positional form accepts a seal: the generated all-fields constructor is gone (the forge
+        # no GENERATED/public positional form accepts a seal — the token form exists for the lifecycle
+        # and is reachable by loaded code (the disclosed accident-grade bound); the all-fields constructor is gone (the forge
         # attack: copying DEFAULT_REGISTRY.seal onto hand-built tables)
         D = GM.DEFAULT_REGISTRY
         @test_throws MethodError GM.AlterantRegistry(D.plugins, D.sorted_alt_actions, D.action_to_plugin,
@@ -235,6 +236,48 @@ import GoMeta as GM
             [_ov(Type[GM.Alterants.Visib, Symbol]; rt = Float64)], 0, :none, nothing, nothing))
         dpl = GM.validate(bpl)
         @test :REG_PROTOCOL in _errors(dpl) && :REG_VALUE_ALGEBRA in _errors(dpl)
+        # (cure batch 4) the encodable domain is CLOSED — composite numbers fold structurally, an
+        # unknown value type is REFUSED at validation, never folded by a lossy fallback
+        @test GM._slot_text(complex(nan1, 0.0)) != GM._slot_text(complex(nan2, 0.0))
+        @test GM._slot_text(1//2) != GM._slot_text(2//4 + 0//1 + 1//3)   # structural, not display
+        @eval module _Opaque; struct Thing; x::Int; end; end
+        bu = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
+        bu.action_specs[3] = GM.ActionSpec(; name = :show, spelling = :identifier, plugin = Int8(2),
+                                             overloads = bu.action_specs[3].overloads, settribute = :show,
+                                             default = GM.Declared(_Opaque.Thing(1)))
+        du = GM.validate(bu)
+        @test :REG_PROTOCOL in _errors(du) && occursin("no canonical encoder", only(filter(x -> x.code === :REG_PROTOCOL, du)).message)
+        @test_throws GM.RegistrationRefused GM.publish(bu)
+        # (cure batch 4) a PRE-publication cycle is a validation refusal, never a leaked internal exception
+        bpc = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
+        cyc = Any[]; push!(cyc, cyc)
+        bpc.action_specs[3] = GM.ActionSpec(; name = :show, spelling = :identifier, plugin = Int8(2),
+                                              overloads = bpc.action_specs[3].overloads, settribute = :show,
+                                              default = GM.Declared(cyc))
+        dpc = GM.validate(bpc)
+        @test :REG_PROTOCOL in _errors(dpc) && occursin("CYCLIC", only(filter(x -> x.code === :REG_PROTOCOL, dpc)).message)
+        e = try GM.publish(bpc); nothing catch err; err end
+        @test e isa GM.RegistrationRefused
+        # (cure batch 4) a published Dict mutated into a cycle is refused as a mutation (the Dict encoder is guarded)
+        bdc = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
+        bdc.action_specs[3] = GM.ActionSpec(; name = :show, spelling = :identifier, plugin = Int8(2),
+                                              overloads = bdc.action_specs[3].overloads, settribute = :show,
+                                              default = GM.Declared(Dict{Any,Any}(:k => 1)))
+        Rdc = GM.publish(bdc)
+        dd = Rdc.action_specs[3].default.value; dd[:self] = dd
+        @test _codes(GM._registry_door_check(Rdc)) == [:POST_SEAL_MUTATION]
+        # (cure batch 4) a DAG (the same container reached twice, no cycle) is NOT reported cyclic
+        shared = Symbol[:a]
+        @test GM._slot_text(Any[shared, shared]) == GM._slot_text(Any[Symbol[:a], Symbol[:a]])
+        # (cure batch 4) dict encoding is canonical over entry text, not `string(key)` order
+        @test GM._slot_text(Dict{Any,Any}(:x => 1, "x" => 2)) == GM._slot_text(Dict{Any,Any}("x" => 2, :x => 1))
+        # deep-copy publication: a NESTED declared container of the builder is not shared with the published value
+        bdp = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
+        bdp.plugins[2] = GM.PlugIn(; altName = :Visib, setMode = :mutExclusive, altConstructor = GM.Alterants.Visib,
+                                     setAltInstance = GM.Alterants.setVisib, constraints = [GM.MutEx([:hide, :show])])
+        Rdp = GM.publish(bdp)
+        push!(bdp.plugins[2].constraints[1].actions, :discard)
+        @test Rdp.plugins[2].constraints[1].actions == [:hide, :show] && isempty(GM._registry_door_check(Rdp))
         # (cure batch 3) the digest form is ABSOLUTELY anchored (a trailing newline is refused)
         @test_throws ErrorException GM.DomainRef("x", "sha256:" * "0"^64 * "\n")
         # (cure batch 3) next_plugin_index is Int8 and passes straight into ActionSpec; RegistryBuilder(published) preloads

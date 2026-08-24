@@ -115,8 +115,9 @@ These are part of the documented public surface — declared with Julia's `publi
   inconsistent tables with `REG_DERIVED_TABLES`) and yields an UNPUBLISHED value that `goMeta`
   refuses — build through the lifecycle; positional construction is removed at v0.5. No positional
   form accepts a seal (the generated all-fields constructor is suppressed by a construction
-  token); a published registry's containers are READ-ONLY by contract — the door detects a
-  mutation of the declared record, of any derived table, or of any callable
+  token); a published registry's containers are READ-ONLY by contract — the door detects, for
+  conforming code and within the disclosed bounds below, a mutation of the declared record (as
+  represented by the canonical encoding), of any derived table, or of any callable IDENTITY
   (`POST_SEAL_MUTATION`), and the package-internal callable seam `run_absorb_apply!` (NOT a
   `public` name; consumed by adapters at their own risk, documented in its source) runs the
   same door. **The honest bound (the security frame's B-2 — no in-process arrangement in Julia
@@ -127,11 +128,14 @@ These are part of the documented public surface — declared with Julia's `publi
   (a closure over a `Ref`, a redefined generic), and the door is a check at entry, not a lock
   over the run — a task mutating a registry concurrently with a run that already passed the door
   is outside the model. A loaded module that does any of these has full process authority
-  anyway; the trust act is the user's (load only trustworthy Alterants). Two further disclosed
-  limits of the seal's canonical encoding: an OPAQUE effect-row payload of a type without a
-  registered encoder folds by `typeof` + `repr` (a mutation with a stable `repr` is invisible —
-  T10 gives every admitted payload an encoder), and type identities fold module-UNQUALIFIED (two
-  same-named types from different modules collide — the recorded trade of the profile digest).
+  anyway; the trust act is the user's (load only trustworthy Alterants). The canonical
+  encoding's domain is CLOSED (v0.4 T2, cure batch 4): `Nothing` · `Symbol` · strings · `Bool` ·
+  the machine integers · the machine floats (bit-exact) · `Complex` and `Rational` of those ·
+  `VersionNumber` · `Type` · `Function` (by name) · vectors, tuples, pairs, dicts and named
+  tuples of encodable values · the slot types — a declared value of ANY other type (or a cyclic
+  container) is REFUSED at `validate` (`REG_PROTOCOL`), never folded by a lossy fallback. One
+  disclosed collision remains: type identities fold module-UNQUALIFIED (two same-named types
+  from different modules collide — the recorded trade of the profile digest).
 - `GoMeta.next_plugin_index(builder) -> Int8` — the index the next `register!` assigns (§ the
   plugin index rule below); throws `RegistrationRefused` (`REG_SLOT_EXHAUSTED`) at capacity.
 - **The record VOCABULARY (v0.4; what `register!` accepts — the Alterant registration record and
@@ -178,18 +182,23 @@ These are part of the documented public surface — declared with Julia's `publi
     NEXT `register!` call will assign (1 on an empty builder; 5 after the four built-ins), and
     `register!` REFUSES (throws `RegistrationRefused`, `REG_PROTOCOL`, nothing appended) any record
     whose index is not that one. Immutable records are never re-stamped silently.
-  - The declared SLOTS: `DomainRef(artifact, "sha256:<64 hex>")` · `CaptureDecl(instance_type,
+  - The declared SLOTS: `DomainRef(artifact, "sha256:<64 LOWERCASE hex digits>")` · `CaptureDecl(instance_type,
     attr_scheme ∈ (:per_key, :single, :per_field, :per_occurrence), multiplicity ∈ (:many, :one,
     :per_field), mode_gate)` · `DefaultSlot` = `NoDefault()` | `Declared(v)` · `EffectRow(kind ∈
     (:drop, :mark, :pass), payload)` + `RenderDecl(effects::Vector{Pair{Symbol,EffectRow}},
     resolve_order, materialize::Bool)` · `VocabularySlot` = `InlineVocabulary(names, flags)` |
     `VocabularyRef(ref::DomainRef)` · `MutEx(actions)` · `ConditionAtom(name, print_spelling,
     evaluate)` · `SugarRow(pattern, action, mode_gate)` · `Provenance(; sec_schema = v"1.0.0",
-    sources = DomainRef[], policy_id, package_digest, artifact_manifest, signatures, signer,
-    source_identity, acquisition_mode ∈ (:shipped, :pinned_by_user, :first_use),
-    artifact_version, not_before, load_act, declared_capabilities)` · `SignatureRecord(;
-    algorithm, key_id, signature)` (reserved) · `PermissionManifest(; seam, ambient)`
-    (reserved, never enforced). At v0.4.0 the slots are CARRIED (validated for shape, sealed);
+    sources = DomainRef[], policy_id = nothing, package_digest = nothing, artifact_manifest =
+    nothing, signatures = SignatureRecord[], signer = nothing, source_identity = nothing,
+    acquisition_mode = nothing ∈ (:shipped, :pinned_by_user, :first_use), artifact_version =
+    nothing, not_before = nothing, load_act = nothing, declared_capabilities = Symbol[])` —
+    EVERY keyword optional · `SignatureRecord(; algorithm = nothing, key_id = nothing, signature
+    = nothing)` (reserved) · `PermissionManifest(; seam = Symbol[], ambient = Symbol[])`
+    (reserved, never enforced). `PlugIn`'s keyword form likewise defaults every slot (`capture =
+    nothing`, `render = nothing`, `vocabulary = nothing`, `constraints = MutEx[]`, `atoms =
+    ConditionAtom[]`, `contract_version = nothing`, `requires = ()`, `sugar = SugarRow[]`,
+    `provenance = Provenance()`, `permissions = nothing`). At v0.4.0 the slots are CARRIED (validated for shape, sealed);
     their consumers land with the per-plane cures — a slot the engine does not yet consume has no
     effect on a run (the contract page of the release states, per slot, which cure consumes it).
 
@@ -227,7 +236,10 @@ partition). `GoMetaResult` carries the run's cargo: `status::ProcessStatus` ·
 `verdicts::EvalStore` (the store behind `altValues_evals`) · `state::ProcessState` — INTERNAL and
 semver-UNSTABLE at v0: depend only on `status`, `diagnostics`, `altValues_evals(result)`, and
 `GoMeta.outputs(result)`. No filesystem / clock / environment read. **These three guarantees —
-purity, determinism, isolation — cover the whole default-configured run:** a `{…}` condition body
+purity, determinism, isolation — cover the whole default-configured run under `DEFAULT_REGISTRY`
+(under a CUSTOM registry they hold exactly as far as its own setters/getters/validators do: a
+callable closing over mutable state or performing I/O is that Alterant's act, outside the
+engine's guarantee — the user-loads-trustworthy-Alterants trust model):** a `{…}` condition body
 is parsed and evaluated by the closed no-eval interpreter, so it cannot read the filesystem, the
 clock or the environment, and cannot perform effects. (Under the explicitly opt-in
 `:full_eval_v1` extension mode — see the SECURITY section of `README.md` — a condition body IS
@@ -303,7 +315,7 @@ serialization of the final parse tree; `render_bytes` = the `jl-share-v1` refere
 on any OK result, with one documented qualification: more than one surviving Visib verdict on a
 single cell meets the render plane's stable guard error (§3.4). The render plane's string
 indexing is character-safe — including a multibyte-whitespace indent — and is witnessed
-(a GUARDED edge). On a non-OK (config-time `PROCESS_ERROR`) result it yields the
+(a GUARDED edge). On a non-OK (any pre-parse `PROCESS_ERROR` — config-time or registry-door) result it yields the
 **empty** `(tree, render)` ("no render attempted"). The NamedTuple field order is
 `(blsStructure_bytes, render_bytes)`. See `docs/CANONICAL-OUTPUT.md` for the full surface definition.
 
@@ -363,7 +375,9 @@ arg2)` — parsed with the metaLine and handed to the action when it fires. The 
 ## §3 — The typed error-mode catalogue
 
 `Diagnostic = {code::Symbol, severity, message, context}`; a catalogued failure is a typed
-`Diagnostic` — **never** a bare `error()`. The eight catalogued rows fall into three classes
+`Diagnostic` — **never** a bare `error()`. The catalogued rows (the eight E-numbered classes of
+0.3.x + the three unnumbered rows `ERR_UNKNOWN_FLAVOR` / the v0.4 §3.5 registration + door rows
+/ the E-05 handled class) fall into three classes
 (§3.1–§3.3); §3.4 additionally documents the latent crashes and the stable-message refusals that
 are not catalogued typed codes.
 
@@ -377,7 +391,7 @@ are not catalogued typed codes.
 | `ERR_VISIB_NO_FLAG` (E-04) | apply-path **crash-origin** (typed conversion deferred) | a Visib verdict carries no set flag at write-back |
 | `ERR_DEPTH_OUT_OF_WINDOW` (E-06) | **GUARDED** — stable untyped refusal; typed conversion deferred | a `#~9`-style **digit** depth beyond the meta-hierarchy's depth window raises the stable-message `ErrorException` "meta depth out of range …" at the depth lookup (§3.4) |
 
-E-03 / E-08 are armed: a bad profile/range returns a `PROCESS_ERROR` `GoMetaResult` carrying the
+E-03 / E-08 / `ERR_UNKNOWN_FLAVOR` are armed (the three config-time rows): a bad profile/range/flavor returns a `PROCESS_ERROR` `GoMetaResult` carrying the
 typed code, with `GoMeta.outputs` yielding empty `(tree, render)`. E-04 (apply-path) is the
 remaining crash-origin whose **typed conversion is deferred at v0**:
 its current crash-reachability is a documented v0 edge.
@@ -584,8 +598,10 @@ deferred.
 
 ### §3.5 — Registration + door codes (v0.4; typed `Diagnostic`s)
 
-Every row below is a `Diagnostic{code, severity, message, context}`. FOUR delivery channels,
-partitioned: **(i) `register!`-time THROWS** — immediate and atomic (nothing appended), a thrown
+Every row below is a `Diagnostic{code, severity, message, context}`. FOUR delivery channels (a
+trigger/site matrix — two CODES appear on two channels: `REG_PROTOCOL` and `REG_SLOT_EXHAUSTED`
+are immediate `register!`/`next_plugin_index` throws for their two entry checks AND validation
+rows for every other trigger, e.g. a directly-pushed builder): **(i) `register!`-time THROWS** — immediate and atomic (nothing appended), a thrown
 `RegistrationRefused`: the plugin-index binding (`REG_PROTOCOL`) and the plugin/action pool
 overflow (`REG_SLOT_EXHAUSTED`; also `next_plugin_index` at capacity) — wrap `register!` in a
 `try`; **(ii) VALIDATION-time rows** — every other `REG_*` row below comes back from

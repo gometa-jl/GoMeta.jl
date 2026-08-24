@@ -2,8 +2,8 @@
 # snapshot + the profile error oracle (APPEND-ONLY).
 #
 # IS:   the witnesses of the profile provenance substrate: the registration digest's
-#       CANONICALIZATION (multi-order determinism — declaration order never leaks into the
-#       fingerprint), its SNAPSHOT-NOT-LIVE purity (a spec vector backed by NO real methods
+#       CANONICALIZATION (multi-order determinism over ACTION-SPEC and OVERLOAD-ROW order — plugin
+#       order is index-bearing and folds as declared), its SNAPSHOT-NOT-LIVE purity (a spec vector backed by NO real methods
 #       digests identically well — a live method-table consult would refuse or drift), the
 #       BOOTSTRAP pins of the default profile's two digests (any grammar or registration
 #       drift trips a conscious re-pin), the cache-key composition point, and the error
