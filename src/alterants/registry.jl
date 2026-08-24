@@ -663,6 +663,17 @@ function _record_wellformed_check(action_specs::Vector{ActionSpec},
     return nothing
 end
 
+"The indices of the action records tier 1 finds structurally broken (the tier-2 skip set; cure batch 2)."
+function _broken_record_indices(action_specs::Vector{ActionSpec}, plugins::Vector{PlugIn})
+    broken = Set{Int}()
+    for (i, spec) in enumerate(action_specs)
+        d = Diagnostic[]
+        _record_wellformed_collect!(d, [spec], plugins)
+        any(x -> x.code === :REG_PROTOCOL, d) && push!(broken, i)
+    end
+    return broken
+end
+
 "The tier-1 STRUCTURAL law, accumulating: every row a `REG_PROTOCOL` diagnostic (the `protocol` class)."
 function _record_wellformed_collect!(diags::Vector{Diagnostic}, action_specs::Vector{ActionSpec},
                                      plugins::Vector{PlugIn})
@@ -956,11 +967,14 @@ _slot_text(x::Nothing)::String = "-"
 _slot_text(x::Symbol)::String = string("y", _ns(String(x)))
 _slot_text(x::AbstractString)::String = string("s", _ns(String(x)))
 _slot_text(x::Bool)::String = x ? "T" : "F"
-_slot_text(x::Number)::String = string("n", _ns(string(x)))
+# (cure batch 2) the CONCRETE numeric type is part of the value (`Int8(1)` ≠ `Int64(1)`), and a
+# vector is not a tuple — distinct tags, so a same-display substitution moves the seal.
+_slot_text(x::Number)::String = string("n", _nsv((_type_text(typeof(x)), string(x))))
 _slot_text(x::VersionNumber)::String = string("v", _ns(string(x)))
 _slot_text(x::Type)::String = string("t", _ns(_type_text(x)))
 _slot_text(f::Function)::String = string("f", _ns(String(nameof(f))))
-_slot_text(v::Union{AbstractVector,Tuple})::String = string("[", _nsv(_slot_text(e) for e in v), "]")
+_slot_text(v::AbstractVector)::String = string("[", _nsv(_slot_text(e) for e in v), "]")
+_slot_text(v::Tuple)::String = string("<", _nsv(_slot_text(e) for e in v), ">")
 _slot_text(p::Pair)::String = string("(", _nsv((_slot_text(p.first), _slot_text(p.second))), ")")
 _slot_text(d::AbstractDict)::String =
     string("{", _nsv(string(_ns(_slot_text(k)), _ns(_slot_text(d[k]))) for k in sort!(collect(keys(d)); by = string)), "}")
@@ -1096,7 +1110,9 @@ function _reflection_collect!(diags::Vector{Diagnostic}, action_specs::Vector{Ac
     for setter in order
         sigs = declared_by_setter[setter]
         for m in sort!(collect(methods(setter)); by = m -> string(m.sig))
-            m_argtypes = collect(m.sig.parameters[2:end])
+            # (cure batch 2) a `where`-parametric method's `sig` is a UnionAll — unwrap it, never
+            # index `.parameters` on it (validate must not throw on a parametric setter)
+            m_argtypes = collect(Base.unwrap_unionall(m.sig).parameters[2:end])
             matched = any(sigs) do full
                 length(full) == length(m_argtypes) &&
                     all(a === b for (a, b) in zip(full, m_argtypes))
@@ -1188,10 +1204,10 @@ function _validate_registration(plugins::Vector{PlugIn}, action_specs::Vector{Ac
     # collectors index and consult closed maps on the record's own data, and a malformed row would
     # otherwise THROW out of the accumulator (the CRX after-T2 set: `vararg_kind = :bogus` reached
     # `_kind_type`). `validate` never throws; every well-formed row is still fully checked.
-    broken = Set{Symbol}(d.context for d in diags[(n0 + 1):end]
-                         if d.code === :REG_PROTOCOL && d.context isa Symbol &&
-                            any(s -> s.name === d.context, action_specs))
-    sound = ActionSpec[s for s in action_specs if !(s.name in broken)]
+    # (cure batch 2) broken records are tracked by INDEX, never by name: a duplicate-named or
+    # plugin-named record must not shadow a well-formed one's tier-2 defects.
+    broken = _broken_record_indices(action_specs, plugins)
+    sound = ActionSpec[s for (i, s) in enumerate(action_specs) if !(i in broken)]
     _inventory_collect!(diags, plugins, action_specs)
     _register_actions_collect!(diags, Dict{Symbol,Int8}(), action_specs)
     _reflection_collect!(diags, sound, plugins)
@@ -1311,7 +1327,13 @@ function _registry_door_check(registry::AlterantRegistry)
     return diags
 end
 
-"The validated callable identities of a record, declaration order (compared by `===` at the door)."
+"""
+The validated callable identities of a record, declaration order, as an IMMUTABLE Tuple (compared
+by `===` at the door; cure batch 2: a Vector baseline could be rewritten through the published
+value). Honest bound (the reconfirm set's finding): identity ≠ behavior — a closure over a `Ref`
+or a generic whose methods are redefined keeps its identity while its behavior moves; both are
+acts of loaded code with full process authority (B-2), outside the accident-grade guarantee.
+"""
 function _callable_identities(plugins::Vector{PlugIn}, action_specs::Vector{ActionSpec})
     ids = Any[]
     for p in plugins
@@ -1319,7 +1341,7 @@ function _callable_identities(plugins::Vector{PlugIn}, action_specs::Vector{Acti
         for a in p.atoms; push!(ids, a.evaluate); end
     end
     for s in action_specs; push!(ids, s.validate); end
-    return ids
+    return Tuple(ids)
 end
 
 ## (The interim `_fill_action_owners!` uniqueness assert was RETIRED at the registration build

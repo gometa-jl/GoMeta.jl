@@ -41,9 +41,9 @@ import TOML
                          :PROCESS_ERROR, :Diagnostic, :AlterantRegistry, :DEFAULT_REGISTRY,
                          # v0.4 T2 — the registration LIFECYCLE surface (Builder → validate → publish; the
                          # typed refusal) + (cure batch 1) the record VOCABULARY a third-party author
-                         # constructs: 11 → 35 package-public names (a registered widening — the
+                         # constructs: 11 → 36 package-public names (a registered widening — the
                          # sanctioned registration surface IS the intended Extension-facing seam).
-                         :RegistryBuilder, :register!, :validate, :publish, :RegistrationRefused,
+                         :RegistryBuilder, :register!, :next_plugin_index, :validate, :publish, :RegistrationRefused,
                          :PlugIn, :ActionSpec, :ActionOverload, :DomainRef, :CaptureDecl, :DefaultSlot,
                          :NoDefault, :Declared, :EffectRow, :RenderDecl, :VocabularySlot,
                          :InlineVocabulary, :VocabularyRef, :MutEx, :ConditionAtom, :SugarRow,

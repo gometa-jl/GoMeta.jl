@@ -143,7 +143,7 @@ import .WriteOutFile: render_bytes
 # hygiene + multi-implementation use; exporting serves the single-implementation `using` convenience only.
 export goMeta, altValues_evals, GoMetaConfig, GoMetaResult
 public outputs, serialize_evals, content_fingerprint, EvalRecord, EvalStore, ProcessStatus, PROCESS_OK, PROCESS_ERROR, Diagnostic, AlterantRegistry, DEFAULT_REGISTRY,
-       RegistryBuilder, register!, validate, publish, RegistrationRefused,   # v0.4 T2: the registration lifecycle (docs/public-api.md §1.2)
+       RegistryBuilder, register!, next_plugin_index, validate, publish, RegistrationRefused,   # v0.4 T2: the registration lifecycle (docs/public-api.md §1.2)
        PlugIn, ActionSpec, ActionOverload, DomainRef, CaptureDecl, DefaultSlot, NoDefault, Declared,   # v0.4 T2 (cure batch 1): the record
        EffectRow, RenderDecl, VocabularySlot, InlineVocabulary, VocabularyRef, MutEx, ConditionAtom,   #   VOCABULARY a third-party author
        SugarRow, Provenance, SignatureRecord, PermissionManifest                                      #   constructs (docs/public-api.md §1.2)
@@ -490,7 +490,9 @@ function run_absorb_apply!(parse_state::BLS.ParseState;
                 ## (`st.registry.action_to_settribute`; the module-global alias is retired), so a
                 ## custom `registry` kwarg's mapping is honored at the Block grain. The `:Visib`
                 ## index literal + the `keys(Alterants.Visib)` read are the T7 write-back cure's scope.
-                if st.registry.alt_index[:Visib] ∈ keys(st.working)
+                ## (cure batch 2, interim until T7) a PUBLISHED custom registry need not carry the
+                ## built-in Visib alterant — guard the literal lookup so such a registry RUNS.
+                if haskey(st.registry.alt_index, :Visib) && st.registry.alt_index[:Visib] ∈ keys(st.working)
                     BLS.setElement(
                         childComponent.componentSettribute,
                         st.registry.action_to_settribute[

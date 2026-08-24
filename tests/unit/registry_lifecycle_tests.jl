@@ -98,9 +98,16 @@ import GoMeta as GM
         # a plugin swapped for one with a SAME-NAMED evil setter (folds identically) is refused by
         # the callable-identity comparison
         R5 = GM.publish(GM.default_registry_builder())
-        evil = let setVisib = (args...) -> nothing; setVisib end    # a different function, same name text
+        # a GENUINELY same-named function from another module (same `nameof` text, different identity)
+        @eval module _EvilVisib; setVisib(args...) = nothing; end
+        evil = _EvilVisib.setVisib
+        @test nameof(evil) === nameof(GM.Alterants.setVisib)
         R5.plugins[2] = GM.PlugIn(:Visib, :mutExclusive, GM.Alterants.Visib, evil, nothing, nothing)
         @test _codes(GM._registry_door_check(R5)) == [:POST_SEAL_MUTATION]
+        # (cure batch 2) the callable baseline is an IMMUTABLE Tuple — it cannot be rewritten to
+        # match the swap through the published value
+        @test R5._callables isa Tuple
+        @test_throws MethodError setindex!(R5._callables, evil, 1)
         # NO positional form accepts a seal: the generated all-fields constructor is gone (the forge
         # attack: copying DEFAULT_REGISTRY.seal onto hand-built tables)
         D = GM.DEFAULT_REGISTRY
@@ -122,6 +129,76 @@ import GoMeta as GM
         # the injective slot encoding (cure batch 1): a re-cut vector boundary no longer collides
         @test GM._slot_text([Symbol("a,b")]) != GM._slot_text([:a, :b])
         @test GM._slot_text(GM.Declared(Symbol[:a, :b])) != GM._slot_text(GM.Declared(Symbol[Symbol("a,b")]))
+        # (cure batch 2) the concrete numeric type and the container kind are part of the value
+        @test GM._slot_text(Int8(1)) != GM._slot_text(Int64(1))
+        @test GM._slot_text([:a]) != GM._slot_text((:a,))
+        @test GM._slot_text(GM.Declared(Int8(1))) != GM._slot_text(GM.Declared(1))
+        # (cure batch 2) validate is total over a PARAMETRIC (`where`) setter — a UnionAll method
+        # signature is unwrapped, never indexed
+        @eval module _ParamSetter
+            paramset(store::T, ::Symbol, x::Symbol) where {T<:AbstractDict} = (store[x] = true; nothing)
+        end
+        base = GM.default_registry_builder()
+        bp = GM.RegistryBuilder(copy(base.plugins), copy(base.action_specs))
+        GM.register!(bp, GM.PlugIn(:pz, :accumulate, Dict{Symbol,Bool}, _ParamSetter.paramset, nothing, nothing),
+                     GM.ActionSpec(; name = :pzset, spelling = :identifier, plugin = Int8(5),
+                                     overloads = [GM.ActionOverload(; sig_types = Type[Dict{Symbol,Bool}, Symbol, Symbol],
+                                                                      kinds = Symbol[:symbol])]))
+        dp = GM.validate(bp)                                  # must return, not throw
+        @test dp isa Vector{GM.Diagnostic}
+        # (cure batch 2) broken records are skipped by INDEX: a malformed duplicate does not hide a
+        # well-formed duplicate's tier-2 defect
+        bd = GM.RegistryBuilder(copy(base.plugins), copy(base.action_specs))
+        push!(bd.action_specs, GM.ActionSpec(:zzdup, :bogusspelling, Int8(2),
+            [_ov(Type[GM.Alterants.Visib, Symbol]; rt = Bool)], 0, :none, nothing, nothing))       # malformed
+        push!(bd.action_specs, GM.ActionSpec(:zzdup, :identifier, Int8(2),
+            [_ov(Type[GM.Alterants.Visib, Symbol]; rt = Float64)], 0, :none, nothing, nothing))    # well-formed, bad algebra
+        dd = GM.validate(bd)
+        @test :REG_PROTOCOL in _errors(dd) && :REG_VALUE_ALGEBRA in _errors(dd)
+        # (cure batch 2) register! refuses the ACTION pool too
+        ba = GM.RegistryBuilder()
+        many = [GM.ActionSpec(Symbol("act", i), :identifier, Int8(1),
+                              [_ov(Type[Dict{Symbol,Bool}, Symbol])], 0, :none, nothing, nothing) for i in 1:128]
+        e = try GM.register!(ba, GM.PlugIn(:big, :accumulate, Dict{Symbol,Bool}, GM.Alterants.setLabels, nothing, nothing),
+                             many...); nothing catch err; err end
+        @test e isa GM.RegistrationRefused && _errors(e.diagnostics) == [:REG_SLOT_EXHAUSTED]
+        @test isempty(ba.plugins) && isempty(ba.action_specs)
+        @test GM.next_plugin_index(ba) == 1 && GM.next_plugin_index(GM.default_registry_builder()) == 5
+        # (cure batch 2) route U reports REG_DERIVED_TABLES ALONGSIDE an independent record defect
+        D = GM.DEFAULT_REGISTRY
+        badp = copy(D.plugins); badp[1] = GM.PlugIn(:labels, :bogus, Dict{Symbol,Bool}, GM.Alterants.setLabels,
+                                                    GM.Alterants.checkLabels, nothing)
+        bad_idx = copy(D.action_index); bad_idx[:hide] = Int8(99)
+        e = try GM.AlterantRegistry(badp, D.sorted_alt_actions, D.action_to_plugin, bad_idx, D.alt_index,
+                                    D.accum_alt_idxs, D.mutex_alt_idxs, D.action_to_settribute,
+                                    D.action_specs, D.spec_index); nothing catch err; err end
+        @test e isa GM.RegistrationRefused
+        @test :REG_UNKNOWN_SETMODE in _errors(e.diagnostics) && :REG_DERIVED_TABLES in _errors(e.diagnostics)
+        # (cure batch 2) reflection diagnostics come in DECLARATION order across two setters, twice
+        @eval module _TwoSetters
+            s1(::Dict{Symbol,Bool}, ::Symbol) = nothing; s1(::Dict{Symbol,Bool}, ::Symbol, ::Int) = nothing
+            s2(::Dict{Symbol,Int}, ::Symbol) = nothing;  s2(::Dict{Symbol,Int}, ::Symbol, ::Int) = nothing
+        end
+        b2 = GM.RegistryBuilder()
+        GM.register!(b2, GM.PlugIn(:one, :accumulate, Dict{Symbol,Bool}, _TwoSetters.s1, nothing, nothing),
+                     GM.ActionSpec(; name = :o1, spelling = :identifier, plugin = Int8(1),
+                                     overloads = [GM.ActionOverload(; sig_types = Type[Dict{Symbol,Bool}, Symbol])]))
+        GM.register!(b2, GM.PlugIn(:two, :accumulate, Dict{Symbol,Int}, _TwoSetters.s2, nothing, nothing),
+                     GM.ActionSpec(; name = :o2, spelling = :identifier, plugin = Int8(2),
+                                     overloads = [GM.ActionOverload(; sig_types = Type[Dict{Symbol,Int}, Symbol])]))
+        r1 = [(d.code, d.context) for d in GM.validate(b2) if d.code === :REG_SIG_MISMATCH]
+        r2 = [(d.code, d.context) for d in GM.validate(b2) if d.code === :REG_SIG_MISMATCH]
+        @test r1 == r2 && [c for (_, c) in r1] == [:s1, :s2]   # the undeclared extra methods, setters in declaration order
+        # (cure batch 2, interim until T7) a PUBLISHED custom registry WITHOUT the built-in Visib RUNS
+        bc = GM.RegistryBuilder()
+        GM.register!(bc, GM.PlugIn(:bag, :accumulate, Dict{Symbol,Bool}, GM.Alterants.setLabels, GM.Alterants.checkLabels, nothing),
+                     GM.ActionSpec(; name = Symbol(":"), spelling = :operator, plugin = Int8(1),
+                                     overloads = [GM.ActionOverload(; sig_types = Type[Dict{Symbol,Bool}, Symbol],
+                                                                      vararg_kind = :symbol, queryable = true)],
+                                     sugar_candidacy = :activated))
+        Rc = GM.publish(bc)
+        rc = GM.goMeta(Vector{UInt8}(codeunits("x = 1\n#~ :label1\n\ny = 2\n")); registry = Rc)
+        @test rc.status === GM.PROCESS_OK && !isempty(GM.outputs(rc).render_bytes)
         # warnings are emitted by the sanctioned publish route (cure batch 1), never swallowed
         bw = GM.default_registry_builder()
         bw.action_specs[3] = GM.ActionSpec(; name = :show, spelling = :identifier, plugin = Int8(2),

@@ -51,8 +51,8 @@ by `tests/unit/public_surface_tests.jl`) and of the refusal behavior the shipped
 | `GoMetaConfig` | type | the v0 input options |
 | `GoMetaResult` | type | the typed pipeline result |
 
-`names(GoMeta)` is exactly this set plus the §1.2 public names (35 since v0.4: the eleven of 0.3.x,
-the five lifecycle names, the nineteen record-vocabulary names; and the module name) — the
+`names(GoMeta)` is exactly this set plus the §1.2 public names (36 since v0.4: the eleven of 0.3.x,
+the six lifecycle names, the nineteen record-vocabulary names; and the module name) — the
 **machine-checkable surface oracle** that `tests/unit/public_surface_tests.jl` asserts against
 this document: the four exported names via `Base.isexported`, the §1.2 names via `Base.ispublic`.
 
@@ -104,10 +104,22 @@ These are part of the documented public surface — declared with Julia's `publi
   construction from hand-built tables is GATED at v0.4.0 (it runs the same chain and refuses
   inconsistent tables with `REG_DERIVED_TABLES`) and yields an UNPUBLISHED value that `goMeta`
   refuses — build through the lifecycle; positional construction is removed at v0.5. No positional
-  form accepts a seal (the constructor is capability-gated); a published registry's containers are
-  READ-ONLY by contract — the door detects a mutation of the declared record, of any derived
-  table, or of any callable (`POST_SEAL_MUTATION`), and the callable seam
-  `GoMeta.run_absorb_apply!` runs the same door.
+  form accepts a seal (the generated all-fields constructor is suppressed by a construction
+  token); a published registry's containers are READ-ONLY by contract — the door detects a
+  mutation of the declared record, of any derived table, or of any callable
+  (`POST_SEAL_MUTATION`), and the package-internal callable seam `run_absorb_apply!` (NOT a
+  `public` name; consumed by adapters at their own risk, documented in its source) runs the
+  same door. **The honest bound (the security frame's B-2 — no in-process arrangement in Julia
+  constrains a loaded module):** every integrity guarantee here is ACCIDENT-grade — typed
+  refusal of unpublished or post-publication-mutated registries produced by CONFORMING code.
+  It is not security-grade: the construction token and the seal-minting helpers are reachable by
+  any loaded code (Julia has no access control), a callable's identity does not pin its behavior
+  (a closure over a `Ref`, a redefined generic), and the door is a check at entry, not a lock
+  over the run — a task mutating a registry concurrently with a run that already passed the door
+  is outside the model. A loaded module that does any of these has full process authority
+  anyway; the trust act is the user's (load only trustworthy Alterants).
+- `GoMeta.next_plugin_index(builder) -> Int` — the index the next `register!` assigns (§ the
+  plugin index rule below).
 - **The record VOCABULARY (v0.4; what `register!` accepts — the Alterant registration record and
   its action records; construct with the keyword forms):**
   - `PlugIn(; altName, setMode, altConstructor, setAltInstance, getAltInstance = nothing,
@@ -127,12 +139,29 @@ These are part of the documented public surface — declared with Julia's `publi
     index); `spelling ∈ (:identifier, :operator)`; `overloads::Vector{ActionOverload}`;
     `settribute` = the `ComponentSettribute` key this action's verdict writes back to (or
     `nothing`); `default` = `NoDefault()` | `Declared(value)`.
-  - `ActionOverload(sig_types::Vector{Type}, kinds::Vector{Symbol}, kind_sources::Vector{Symbol},
-    vararg_kind, return_type::Type, effect = :set, queryable::Bool, applicability ∈
-    (:context_free, :context_required), phase ∈ (:apply, :absorb), grammar::Bool)` — one
-    setter-method row: `sig_types` = the setter's argument types AFTER the function type
-    (instance · action name · literal slots); `kinds ∈ (:symbol, :string, :raw)` per literal
-    slot; `return_type ∈ (Nothing, Bool, Int16)` (the closed serializable set).
+  - `ActionOverload(; sig_types::Vector{Type}, kinds = Symbol[], kind_sources = [:declared …],
+    vararg_kind = nothing, return_type = Nothing, effect = :set, queryable = false,
+    applicability = :context_free, phase = :apply, grammar = true)` — one setter-method row
+    (the keyword form; the 10-positional form takes the same fields in this order, all
+    mandatory): `sig_types` = the setter's argument types AFTER the function type (instance ·
+    action name · literal slots — e.g. `Type[Dict{Symbol,Bool}, Symbol, Symbol]` for one Symbol
+    literal); `kinds ∈ (:symbol, :string, :raw)` per literal slot (tail-aligned to the last user
+    slots); `kind_sources ∈ (:declared, :reflected)` parallel to `kinds`; `vararg_kind` a trailing
+    vararg literal kind or `nothing`; `return_type ∈ (Nothing, Bool, Int16)` (the closed
+    serializable set); `effect` = `:set` (the one v0.4.0 effect class); `queryable` = the action
+    is usable as a condition atom (then the plugin MUST carry a getter); `applicability` =
+    `:context_required` for rows that derive from placement (the heading sugar); `phase` =
+    `:absorb` for `:localOnly` delivery; `grammar = false` marks an INTERNAL row.
+  - **The getter contract** (`PlugIn.getAltInstance`, required iff any overload is `queryable`):
+    called as `getter(instance, actionName::Symbol, args...) -> Bool` — the query plane passes
+    the action name and the literal arguments exactly as the setter receives them; a getter of
+    another shape is a `MethodError` at query time (its registration-time verification against
+    each queryable overload is the query-seam envelope's, landing with the v0.4 seam cure).
+  - **The plugin index rule:** `ActionSpec.plugin` is the declaration-order index of the owning
+    Alterant, an `Int8` you supply — `GoMeta.next_plugin_index(builder)` returns the index the
+    NEXT `register!` call will assign (1 on an empty builder; 5 after the four built-ins), and
+    `register!` REFUSES (throws `RegistrationRefused`, `REG_PROTOCOL`, nothing appended) any record
+    whose index is not that one. Immutable records are never re-stamped silently.
   - The declared SLOTS: `DomainRef(artifact, "sha256:<64 hex>")` · `CaptureDecl(instance_type,
     attr_scheme ∈ (:per_key, :single, :per_field, :per_occurrence), multiplicity ∈ (:many, :one,
     :per_field), mode_gate)` · `DefaultSlot` = `NoDefault()` | `Declared(v)` · `EffectRow(kind ∈
@@ -287,11 +316,14 @@ arg2)` — parsed with the metaLine and handed to the action when it fires. The 
   record `head_2`, `#~0 "T"` records `head_0` (a file-level heading), and an inline segment
   meta (`x = 1 #~ "T"`) records the documented constant `head_10` — the one fixed exception;
   an inline DEPTH DIGIT (`x = 1 #~2 "T"`) is accepted by the structural parse but does not
-  affect the recorded level (still `head_10`). The explicit level argument accepts any
-  integer literal and records AS GIVEN — it is not constrained by the structural 0–8 depth
-  window (`head("T", 9)` records `head_9`; `head("T", 10)` records `head_10`, sharing the
-  inline constant's name; out-of-window and negative levels are accepted — level hygiene is
-  the author's concern at v0). The `head` TEXT slot is the one
+  affect the recorded level (still `head_10`). The explicit level argument must land in the
+  LEVEL VOCABULARY — the structural window `0..8` or the documented inline constant `10`
+  (`head("T", 10)` records `head_10`, sharing the inline constant's name); any other explicit
+  level (`head("T", 9)`, a negative level, `11`) is REFUSED by the Heading alterant's own
+  validation seam with the §3.4 stable message `"GoMeta absorb: explicit heading level … is
+  outside the level vocabulary"` — a standing v0.2 semantic. *(This passage previously claimed
+  any integer level was accepted and recorded as given — stale against the code since the
+  level-window guard; corrected at v0.4 T2 on a CrossReview finding.)* The `head` TEXT slot is the one
   String-accepting argument position on the one String-accepting action — every other slot
   of every action, including `head`'s level slot, refuses a String. A NON-first quoted token
   on a metaLine is reserved and refuses (today via the §3.4 malformed-metaLine punctuation
@@ -319,7 +351,9 @@ arg2)` — parsed with the metaLine and handed to the action when it fires. The 
 (§3.1–§3.3); §3.4 additionally documents the latent crashes and the stable-message refusals that
 are not catalogued typed codes.
 
-### §3.1 — Non-condition codes (4): 2 armed config-time + 1 crash-origin with deferred typed conversion + 1 GUARDED
+### §3.1 — Non-condition codes (5): 3 armed config-time + 1 crash-origin with deferred typed conversion + 1 GUARDED
+
+| `ERR_UNKNOWN_FLAVOR` | config-time, **armed + typed** | `config.flavor_tag` outside the three armed flavors `{:julia, :c, :latex}` — fail-closed before any parse (selected, never inferred). *(Row added at v0.4 T2 on a CrossReview finding — the code armed it at the flavor arming; the catalogue had not followed.)* |
 
 | Code | Status | Trigger |
 |---|---|---|
@@ -539,6 +573,10 @@ Every row below is a `Diagnostic{code, severity, message, context}`; the registr
 back from `GoMeta.validate` (all of them, in one vector, deterministic order) and ride
 `RegistrationRefused.diagnostics` when `publish` (or the gated positional route) refuses; the door
 rows come back as a `PROCESS_ERROR` result from `goMeta` / `run_absorb_apply!` before any parse.
+**Two rows are raised by `register!` itself, immediately and atomically (nothing appended), as a
+thrown `RegistrationRefused`** — the plugin-index binding (`REG_PROTOCOL`) and the slot-pool
+overflow (`REG_SLOT_EXHAUSTED`) — so a caller that only inspects `validate` must still wrap
+`register!` in a `try`; every other row is validation-time.
 
 | Code | Severity | Trigger | Context |
 |---|---|---|---|

@@ -210,7 +210,8 @@ struct VocabularyRef <: VocabularySlot
     ref::DomainRef
 end
 
-## Slot (6): constraint rows — compiled at publication into both refusal planes.
+## Slot (6): constraint rows — VALIDATED (ownership + shape) and SEALED at publication (T2); their
+## compilation into the two refusal planes lands with the planes' cures (T5 capture / T6 render).
 "A mutual-exclusion constraint over the named actions (one applied value among them per unit)."
 struct MutEx
     actions::Vector{Symbol}
@@ -387,6 +388,14 @@ struct ActionOverload
     phase::Symbol
     grammar::Bool
 end
+"The keyword form (v0.4 T2, cure batch 2 — the documented defaults exist): only `sig_types` is required."
+ActionOverload(; sig_types::Vector{Type}, kinds::Vector{Symbol} = Symbol[],
+                 kind_sources::Vector{Symbol} = Symbol[:declared for _ in kinds],
+                 vararg_kind = nothing, return_type::Type = Nothing, effect::Symbol = :set,
+                 queryable::Bool = false, applicability::Symbol = :context_free,
+                 phase::Symbol = :apply, grammar::Bool = true) =
+    ActionOverload(sig_types, kinds, kind_sources, vararg_kind, return_type, effect, queryable,
+                   applicability, phase, grammar)
 
 """
     ActionSpec
@@ -431,7 +440,15 @@ ActionSpec(; name::Symbol, spelling::Symbol, plugin::Int8, overloads::Vector{Act
     ActionSpec(name, spelling, plugin, overloads, accepts_string_slot, sugar_candidacy, validate,
                keyed_slot, default, settribute)
 
-"The private construction capability of `AlterantRegistry` (never `public`): held by the lifecycle only."
+"""
+    _SealToken
+
+The construction capability of `AlterantRegistry` (never `public`), held by the lifecycle. It
+suppresses the generated all-fields constructor (no positional form carries a seal) — an
+ACCIDENT-grade guard: Julia has no access control, so any loaded module can call
+`GoMeta._SealToken()`; such a caller sits outside the trust model (the security frame's bound
+B-2). See the constructor's note.
+"""
 struct _SealToken end
 
 """
@@ -482,18 +499,25 @@ struct AlterantRegistry
     # v0.4 T2 (cure batch 1) — the validated CALLABLE IDENTITIES captured at publish (every
     # altConstructor / setter / getter / atom evaluator / validate slot, declaration order); the
     # door compares them by `===`, so a plugin swapped for one with a same-NAMED evil setter is
-    # refused even though names fold identically in the seal. `nothing` on unsealed values.
-    _callables::Union{Nothing,Vector{Any}}
-    # THE ONE CONSTRUCTOR, token-gated (cure batch 1: the generated all-fields constructor let any
-    # caller forge a sealed value by copying DEFAULT_REGISTRY.seal onto hand-built tables): only
-    # code holding a `_SealToken` — `publish`, the gated route-U outer constructor (seal=nothing),
-    # and the internal `_unchecked_registry` test seam — can construct.
+    # refused even though names fold identically in the seal. An IMMUTABLE Tuple (cure batch 2:
+    # a Vector baseline could be rewritten through the published value alongside the swap).
+    # `nothing` on unsealed values.
+    _callables::Union{Nothing,Tuple}
+    # THE ONE CONSTRUCTOR, token-gated. What the token IS and IS NOT (cure batch 2, the honest
+    # bound): it removes the generated all-fields constructor so no POSITIONAL or ACCIDENTAL
+    # construction can carry a seal — the route-U and mutation classes conforming code produces.
+    # It is NOT an unforgeable capability: Julia has no access control, `GoMeta._SealToken()` is
+    # callable by any loaded code, and a caller who reaches for it (and for `_mint_seal`) can
+    # construct an unvalidated sealed value — that caller is a loaded module with full process
+    # authority, OUTSIDE the trust model by the security frame's bound B-2 ("no in-process
+    # arrangement in Julia constrains a loaded module"). Every integrity claim of this type is
+    # accident-grade: typed refusal of post-seal mutation by CONFORMING code, never security-grade.
     function AlterantRegistry(::_SealToken, plugins::Vector{PlugIn}, sorted_alt_actions::Vector{Symbol},
                               action_to_plugin::Vector{Int8}, action_index::Dict{Symbol,Int8},
                               alt_index::Dict{Symbol,Int8}, accum_alt_idxs::Vector{Int8},
                               mutex_alt_idxs::Vector{Int8}, action_to_settribute::Dict{Symbol,Symbol},
                               action_specs::Vector{ActionSpec}, spec_index::Dict{Symbol,Int},
-                              seal::Union{Nothing,String}, callables::Union{Nothing,Vector{Any}})
+                              seal::Union{Nothing,String}, callables::Union{Nothing,Tuple})
         new(plugins, sorted_alt_actions, action_to_plugin, action_index, alt_index, accum_alt_idxs,
             mutex_alt_idxs, action_to_settribute, action_specs, spec_index, seal, callables)
     end
@@ -562,16 +586,22 @@ num_alterants(r::AlterantRegistry) = length(r.plugins)
     RegistryBuilder()
 
 The MUTABLE declaration site of a registry: `register!(builder, plugin, specs...)` appends an
-Alterant registration record + its action records in declaration order. Nothing is checked at
-registration time — `validate(builder)` collects EVERY defect as typed diagnostics (full collection
-before the one terminal outcome), and `publish(builder)` refuses on any error, else COPIES every
-container into an immutable, SEALED `AlterantRegistry` (the only route that mints a seal).
+Alterant registration record + its action records in declaration order. `register!` performs
+exactly TWO immediate checks (throwing `RegistrationRefused`): the records must name the plugin
+index being appended, and the Int8 slot pool (127 plugins, 127 actions) must not overflow; every
+other check is DEFERRED to `validate(builder)`, which collects EVERY defect as typed diagnostics
+(full collection before the one terminal outcome, never throwing), and `publish(builder)` refuses
+on any error, else DEEP-copies every container into a SEALED `AlterantRegistry` (the sanctioned
+route to a sealed value; `next_plugin_index(builder)` gives the index the next record must name).
 """
 mutable struct RegistryBuilder
     plugins::Vector{PlugIn}
     action_specs::Vector{ActionSpec}
 end
 RegistryBuilder() = RegistryBuilder(PlugIn[], ActionSpec[])
+"The declaration-order index the NEXT `register!`ed record must name (`length(builder.plugins) + 1`)."
+next_plugin_index(b::RegistryBuilder)::Int = length(b.plugins) + 1
+
 """
     register!(builder, plugin, specs...) -> builder
 
@@ -587,6 +617,11 @@ function register!(b::RegistryBuilder, plugin::PlugIn, specs::ActionSpec...)
     n > typemax(Int8) && throw(RegistrationRefused([Diagnostic(:REG_SLOT_EXHAUSTED, :error, string(
         "GoMeta registry: register! — appending alterant ", repr(plugin.altName), " would be plugin ",
         n, ", beyond the slot pool of ", Int(typemax(Int8)), " (the Int8 index space)"), plugin.altName)]))
+    na = length(b.action_specs) + length(specs)
+    na > typemax(Int8) && throw(RegistrationRefused([Diagnostic(:REG_SLOT_EXHAUSTED, :error, string(
+        "GoMeta registry: register! — appending ", length(specs), " action record(s) with alterant ",
+        repr(plugin.altName), " would make ", na, " actions, beyond the slot pool of ",
+        Int(typemax(Int8)), " (the Int8 index space)"), plugin.altName)]))   # (cure batch 2: the ACTION pool too)
     idx = Int8(n)
     bad = [s.name for s in specs if s.plugin != idx]
     isempty(bad) || throw(RegistrationRefused([Diagnostic(:REG_PROTOCOL, :error, string(

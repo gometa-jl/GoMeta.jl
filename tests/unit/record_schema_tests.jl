@@ -8,7 +8,8 @@
 #       the registration digest's fold COVERS the new slots (flipped at T2 when the publication seal
 #       was minted — at T1 this file witnessed the fold's blindness by name, as the T2 flip target).
 # DOES: constructs records positionally and by keyword, inspects DEFAULT_REGISTRY, drives the shape
-#       law with mis-tagged slots, and pins the digest-blindness witness.
+#       law with mis-tagged slots, and pins the digest-COVERAGE witness (the former blindness witness,
+#       flipped at T2).
 # REASONING: the golden layer proves T1 is BEHAVIOR-NEUTRAL (byte-identical renders); only unit
 #       introspection can prove the schema carries what the later cures consume.
 # PURPOSE: the T1 acceptance row of the v0.4 build (the cure inventory's slot substrate).

@@ -291,7 +291,8 @@ function absorbWalk(
                 ## (`st.registry.action_to_settribute`; the module-global alias is retired), so a
                 ## custom `registry` kwarg's mapping is honored at the Segment grain too. The
                 ## `:Visib` index literal + the `keys(Alterants.Visib)` read = the T7 cure's scope.
-                if st.registry.alt_index[:Visib] ∈ keys(st.working)
+                ## (cure batch 2, interim until T7) guarded: a published custom registry without Visib runs.
+                if haskey(st.registry.alt_index, :Visib) && st.registry.alt_index[:Visib] ∈ keys(st.working)
                     BLS.setElement(
                         crntComponent.componentSettribute,
                         st.registry.action_to_settribute[
