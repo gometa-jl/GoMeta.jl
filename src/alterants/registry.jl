@@ -28,16 +28,15 @@
 #     refusal (docs/public-api.md §3.4; tests/unit/arg_guard_tests.jl). Only the labels
 #     row has a query getter (`checkLabels`); Visib/Id carry none — `cell`/`parent`/`file` as a
 #     condition atom is the deferred E-07 row. `DEFAULT_REGISTRY` is a PUBLISHED, SEALED value (v0.4
-#     T2): its Dict/Vector fields stay mutable containers, but a mutation by CONFORMING code
-#     through any of them — the declared record AS REPRESENTED by the canonical encoding (closed
-#     domain; the disclosed collisions: module-unqualified type names, name-folded designated
-#     callables, UnionAll/Union types by `string`; PLUS the five KNOWN OPEN classes of the review
-#     loop's hard stop — docs/public-api.md §1.2 "KNOWN OPEN": function-valued type parameters,
-#     untagged parameter categories, un-encoded container parameters, `AbstractString` folding
-#     as `String`, type-bearing fields unprobed at validate), a derived table, or a callable IDENTITY — is
-#     DETECTED at the entry door (`POST_SEAL_MUTATION`), never silently effective (accident-grade:
-#     a callable's BEHAVIOR is not pinned by its identity, and the door is an entry check, not a
-#     lock over the run — B-2); the former `===` alias onto its write-back Dict is retired (v0.4 T1).
+#     T2; the T2-bis SNAPSHOT door): its Dict/Vector fields stay mutable containers, but a mutation
+#     by CONFORMING code through any of them is DETECTED at the entry door (`POST_SEAL_MUTATION`)
+#     by the ONE structural deep-egal comparison against the publish-time snapshot (`===`-only
+#     leaves; the fingerprint `seal` is a lossy CACHE KEY with its disclosed collisions —
+#     docs/public-api.md §1.2 — never the door's mechanism), never silently effective
+#     (accident-grade: a callable's BEHAVIOR is not pinned by its identity, the snapshot's own
+#     members are mutable — the disclosed mixed residue, docs §1.2 — and the door is an entry
+#     check, not a lock over the run — B-2); the former `===` alias onto its write-back Dict is
+#     retired (v0.4 T1).
 # PURPOSE: the closed, deterministic alterant inventory + the state accessors the absorb/apply phases consume.
 
 ## Alterants — the label / Visib / Id inventory sub-module
@@ -964,8 +963,8 @@ function _registration_digest(action_specs::Vector{ActionSpec};
             _type_text(p.altConstructor), p.getAltInstance !== nothing,
             # v0.4 T2 (cure batch 1) — the BEHAVIOR-BEARING base fields join the fold: the setter and
             # getter by NAME, the precedence tuple (the CRX after-T2 set: a plugin swapped for one
-            # with a different setter kept the seal). Callables fold by name — the identity
-            # comparison at the door (`_callables`, `===`) closes the same-named-swap remainder.
+            # with a different setter kept the seal). Callables fold by name — the snapshot's
+            # `===` leaf compare at the door (T2-bis) closes the same-named-swap remainder.
             "setter", _slot_text(p.setAltInstance), "getter", _slot_text(p.getAltInstance),
             "prec", _slot_text(p.precedencesTuple),
             # v0.4 T2 — every declared per-Alterant slot joins the fold: the seal (HC-9) covers the
@@ -1044,8 +1043,9 @@ function _slot_container(open::String, close::String, v)
     end
 end
 # (cure batch 5) CONCRETE containers only: a range, a view or a user AbstractVector/AbstractDict
-# would fold content-only (`1:3` ≡ `[1,2,3]` — an undisclosed collision) and could specialize
-# `deepcopy` past the atomic copy at publish — outside the closed domain, refused.
+# would fold content-only (`1:3` ≡ `[1,2,3]` — an undisclosed collision) and sits outside the
+# domain copier's closed rebuild classes (T2-bis: `deepcopy` is never dispatched anywhere) —
+# outside the closed domain, refused.
 _slot_text(v::Vector)::String = _slot_container("[", "]", v)
 _slot_text(v::Tuple)::String = string("<", _nsv(_slot_text(e) for e in v), ">")
 _slot_text(p::Pair)::String = string("(", _nsv((_slot_text(p.first), _slot_text(p.second))), ")")
@@ -1094,40 +1094,940 @@ _slot_text(x::Provenance)::String = string("Prov",
 # at validation as `REG_PROTOCOL`; a payload type T10 admits gets its own encoder then.
 _slot_text(x)::String = throw(_UnencodableSlot(typeof(x)))
 
+## ————————————————————————————————————————————————————————————————————————————————————————
+## v0.4 T2-bis — THE ONE DOMAIN + the three walks (T2BIS-DESIGN, R-V04B-4 (c+)): ONE leaf
+## predicate (`_domain_leaf`) is the law for `validate` (the domain walk), the domain COPIER
+## `_domain_copy` (publish stages 1+2 and the contained `RegistryBuilder(published)` route)
+## and the deep-egal COMPARATOR `_deep_egal` (the one-check door). Leaves are carried BY
+## REFERENCE and compared by `===` ONLY; containers are REBUILT at their exact concrete
+## types and walked element-/field-wise; everything else is outside the domain. All three
+## walks are ITERATIVE — explicit work stacks, no native recursion anywhere, probe frames
+## included.
+
+"The enumerated machine-scalar run of the closed value domain (R-V04B-8; **Bool IS in** —
+`Bool <: Integer`, the Bool arm of the ratified encoder)."
+const _MACHINE_REAL = Union{Bool, Int8, Int16, Int32, Int64, Int128,
+                            UInt8, UInt16, UInt32, UInt64, UInt128,
+                            Float16, Float32, Float64}
+const _MACHINE_INT = Union{Bool, Int8, Int16, Int32, Int64, Int128,
+                           UInt8, UInt16, UInt32, UInt64, UInt128}
+
+# the parts-recursive numeric arm, matching the RATIFIED encoder exactly (T2BIS-DESIGN §1):
+# `Complex`/`Rational` OF the machine run, parts-recursively — `Complex{Rational{Int64}}`,
+# `Complex{Bool}` and `Rational{Bool}` admit; `BigInt` parts fall to the else-arm exactly
+# as today. Bounded: Complex parts are `<:Real`, so the recursion depth is ≤ 2.
+_numeric_leaf(x)::Bool = x isa _MACHINE_REAL ||
+    (x isa Rational && numerator(x) isa _MACHINE_INT) ||
+    (x isa Complex && _numeric_leaf(real(x)) && _numeric_leaf(imag(x)))
+
+"""
+    _domain_leaf(x) -> Bool
+
+THE ONE leaf predicate (T2BIS-DESIGN §1) — enumerated, never `isbits` (which would admit
+`Char`, enums and opaque isbits structs R-V04B-8 refuses): `Function` · `Type` · `Symbol` ·
+`Nothing` · `String` (VALUES are `String`-only — a non-`String` `AbstractString` value is
+OUTSIDE the domain; `AbstractString` stays a legal `Type` leaf) · `VersionNumber` · the
+machine scalars · `Complex`/`Rational` of those, parts-recursively. Leaves are carried by
+reference by the copier and compared by `===` only by the comparator (bitwise on isbits —
+NaN payloads and signed zero stay detected; `String` content-egal; `VersionNumber`
+field-wise egal; `Function`/`Type`/`Symbol` by identity). Position rules (a `Function`
+only in a designated callable field, never inside declared data — DATA WINS) live in the
+walks, not here.
+"""
+_domain_leaf(x)::Bool =
+    x isa Function || x isa Type || x isa Symbol || x === nothing || x isa String ||
+    x isa VersionNumber || _numeric_leaf(x)
+
+## the per-record explicit field lists — 16/10/10, each asserted against the compiler at
+## load (T2BIS-DESIGN §15 (7)); the three record structs are POSITION-RESTRICTED walker
+## containers (elements of `plugins`/`action_specs`; `ActionOverload` inside
+## `ActionSpec.overloads`) and are REFUSED anywhere else, declared data included.
+const _WALK_PLUGIN_FIELDS = (:altName, :setMode, :altConstructor, :setAltInstance,
+    :getAltInstance, :precedencesTuple, :capture, :render, :vocabulary, :constraints, :atoms,
+    :contract_version, :requires, :sugar, :provenance, :permissions)
+@assert _WALK_PLUGIN_FIELDS == fieldnames(PlugIn)
+const _WALK_ACTION_FIELDS = (:name, :spelling, :plugin, :overloads, :accepts_string_slot,
+    :sugar_candidacy, :validate, :keyed_slot, :default, :settribute)
+@assert _WALK_ACTION_FIELDS == fieldnames(ActionSpec)
+const _WALK_OVERLOAD_FIELDS = (:sig_types, :kinds, :kind_sources, :vararg_kind, :return_type,
+    :effect, :queryable, :applicability, :phase, :grammar)
+@assert _WALK_OVERLOAD_FIELDS == fieldnames(ActionOverload)
+
+"The 14 record-reachable slot-struct types (walked field-wise GENERICALLY; rebuilt
+positionally at `typeof(x)`)."
+const _SLOT_STRUCTS = (DomainRef, CaptureDecl, NoDefault, Declared, EffectRow, RenderDecl,
+                       InlineVocabulary, VocabularyRef, MutEx, ConditionAtom, SugarRow,
+                       SignatureRecord, PermissionManifest, Provenance)
+const _SLOT_STRUCT_UNION = Union{DomainRef, CaptureDecl, NoDefault, Declared, EffectRow,
+                                 RenderDecl, InlineVocabulary, VocabularyRef, MutEx,
+                                 ConditionAtom, SugarRow, SignatureRecord,
+                                 PermissionManifest, Provenance}
+const _RECORD_STRUCT_UNION = Union{PlugIn, ActionSpec, ActionOverload}
+
+# a VALUE-domain container at any position (the record structs are position-restricted and
+# handled by the walks' `rk` class, never by this predicate); CONCRETE classes only —
+# `Vector`/`Dict` are the concrete Base types, so ranges/views/user containers fall through
+_value_container(x)::Bool = x isa Vector || x isa Dict || x isa Tuple || x isa Pair ||
+                            x isa NamedTuple || x isa _SLOT_STRUCT_UNION
+
+"Predicate 2's totality bound (T2BIS-DESIGN §2, THE BUDGET LAW): the node budget of the
+iterative type-parameter walk. A budget-PASSING type has a whole parameter TREE of ≤ this
+many nodes, so every text-encoder recursion over it at the mint is depth-bounded —
+MINT-SAFE by construction, with NO catch (catching `StackOverflowError` is shape-dependent
+at the Julia semantics — probes P1/P4, log §S2.6/§S2.9 — and is never a design premise)."
+const _TYPE_BUDGET = 256
+
+# the ITERATIVE budgeted type walk: EVERY child type node is descended — `DataType`
+# parameters, `UnionAll` var/body, `Union` a/b, `TypeVar` lb/ub, `Vararg` T/N (probe P4,
+# §S2.9: a UnionAll wrapping a deep body would count as ONE node under a counted-not-
+# descended reading, yet `string()` on it recurses to a StackOverflowError at the mint —
+# so the walk descends everything). A NON-type value parameter is leaf-checked (the
+# `Val{'c'}` refusal — KNOWN OPEN (v) closes, witnessed by W5).
+function _type_budget_check(t)
+    stack = Any[t]
+    seen = 0
+    while !isempty(stack)
+        x = pop!(stack)
+        seen += 1
+        seen > _TYPE_BUDGET && return (:over_budget, Nothing)
+        if x isa DataType
+            for p in x.parameters
+                push!(stack, p)
+            end
+        elseif x isa UnionAll
+            push!(stack, x.var)
+            push!(stack, x.body)
+        elseif x isa Union
+            push!(stack, x.a)
+            push!(stack, x.b)
+        elseif x isa TypeVar
+            push!(stack, x.lb)
+            push!(stack, x.ub)
+        elseif x isa Core.TypeofVararg
+            isdefined(x, :T) && push!(stack, x.T)
+            isdefined(x, :N) && push!(stack, x.N)
+        elseif !(x isa Type) && !_domain_leaf(x)
+            return (:bad_param, typeof(x))
+        end
+    end
+    return (:ok, Nothing)
+end
+
+# the Dict-ORDER budget (T2BIS-DESIGN §2's determinism clause, AMENDED at the code commit,
+# §S2.9: a deep VALUE key with a shallow type — a `Vector{Any}` nest — evades the TYPE
+# budget alone, and the ordering's `_slot_text` call would recurse unboundedly; so the
+# ordering qualification counts the key's VALUE nodes and, at type nodes, their parameter
+# trees, ALL against the same `_TYPE_BUDGET`): a budget-passing key bounds `_slot_text`'s
+# recursion depth, so the two typed encoder exceptions are the only possible escapes under
+# the catch below. Total on cycles too — a cyclic key overruns the budget and falls back.
+function _key_order_budget(k)::Bool
+    stack = Any[k]
+    seen = 0
+    while !isempty(stack)
+        x = pop!(stack)
+        seen += 1
+        seen > _TYPE_BUDGET && return false
+        if x isa Type || x isa TypeVar || x isa Core.TypeofVararg
+            if x isa DataType
+                for p in x.parameters
+                    push!(stack, p)
+                end
+            elseif x isa UnionAll
+                push!(stack, x.var)
+                push!(stack, x.body)
+            elseif x isa Union
+                push!(stack, x.a)
+                push!(stack, x.b)
+            elseif x isa TypeVar
+                push!(stack, x.lb)
+                push!(stack, x.ub)
+            elseif x isa Core.TypeofVararg
+                isdefined(x, :T) && push!(stack, x.T)
+                isdefined(x, :N) && push!(stack, x.N)
+            end
+        elseif x isa Vector || x isa Tuple || x isa NamedTuple
+            for e in x
+                push!(stack, e)
+            end
+        elseif x isa Dict
+            for (k2, v2) in x
+                push!(stack, k2)
+                push!(stack, v2)
+            end
+        elseif x isa Pair
+            push!(stack, x.first)
+            push!(stack, x.second)
+        elseif x isa _SLOT_STRUCT_UNION || x isa _RECORD_STRUCT_UNION
+            for f in fieldnames(typeof(x))
+                push!(stack, getfield(x, f))
+            end
+        end
+    end
+    return true
+end
+
+# canonical Dict entry order for the VALIDATE walk (deterministic first-failure,
+# T2BIS-DESIGN §2): entries sorted by the encoded key text where EVERY key passes the
+# order budget and encodes; ANY over-budget or unencodable key sends the whole Dict to the
+# live iteration order (within-run stable — the A/A pin's property). Entries are collected
+# by ITERATION — no Dict lookup, so no user `hash`/`isequal` can throw out of `validate`.
+function _walk_dict_entries(d::Dict)
+    entries = Any[kv for kv in d]
+    texts = Vector{Any}(nothing, length(entries))
+    for (i, kv) in enumerate(entries)
+        k = kv.first
+        if _key_order_budget(k)
+            texts[i] = try
+                _slot_text(k)
+            catch e
+                (e isa _UnencodableSlot || e isa _CyclicSlot) || rethrow()
+                nothing
+            end
+        end
+        texts[i] === nothing && return entries
+    end
+    return entries[sortperm(String[t for t in texts])]
+end
+
+"internal walk marker: the bracketed visiting-set removal + per-slot done-cache entry."
+struct _PopVisit
+    v::Any
+end
+
+function _emit_cyclic!(diags, label, ctx, slot)
+    push!(diags, Diagnostic(:REG_PROTOCOL, :error, string(
+        "GoMeta registry: ", label, " ", repr(ctx), " slot ", slot, " declares a CYCLIC container — a ",
+        "declared value must encode canonically (the record shape law)"), ctx))
+    return nothing
+end
+function _emit_unencodable!(diags, label, ctx, slot, T)
+    push!(diags, Diagnostic(:REG_PROTOCOL, :error, string(
+        "GoMeta registry: ", label, " ", repr(ctx), " slot ", slot, " declares a value of type ", T,
+        " which has no canonical encoder — outside the closed encodable domain (the record shape law: ",
+        "concrete data only; a Function belongs in a designated callable field, never in a value)"), ctx))
+    return nothing
+end
+function _emit_overbudget!(diags, label, ctx, slot)
+    push!(diags, Diagnostic(:REG_PROTOCOL, :error, string(
+        "GoMeta registry: ", label, " ", repr(ctx), " slot ", slot, " declares a type that ",
+        "exceeds the type-encoder budget (", _TYPE_BUDGET, " nodes — the domain walk's totality bound)"), ctx))
+    return nothing
+end
+
+# ONE (record, slot) probe of the validate walk (T2BIS-DESIGN §2): the iterative
+# two-predicate walk, emitting AT MOST ONE slot-named row — the FIRST failure on the
+# deterministic traversal (fields in listed order · Vector/Tuple by index · Pair
+# first/second · NamedTuple by name order · Dict per `_walk_dict_entries`). Work items are
+# `(value, pos, des, rk)`: `pos` ∈ (:structural, :data) — flipped at the two DATA loci
+# `Declared.value`/`EffectRow.payload` and never flipped back (DATA WINS —
+# `ConditionAtom.evaluate` nested in data is refused like any Function in data); `des` =
+# the value sits in a designated callable field (`setAltInstance`/`getAltInstance`/
+# `evaluate`/`validate`); `rk` = 0x02 for a Vector whose elements are admitted
+# `ActionOverload` records (the `overloads` slot only), 0x01 for such an element itself.
+# Cycle-guarded (visiting `IdSet`, push!/delete! bracketed) with a per-slot DONE-cache on
+# the mutable containers; `validate` NEVER throws.
+function _domain_slot_probe!(diags::Vector{Diagnostic}, label::String, ctx, slot::Symbol,
+                             x, des0::Bool, ovvec::Bool)
+    visiting = Base.IdSet{Any}()
+    done = Base.IdSet{Any}()
+    work = Any[(x, :structural, des0, ovvec ? 0x02 : 0x00)]
+    while !isempty(work)
+        item = pop!(work)
+        if item isa _PopVisit
+            delete!(visiting, item.v)
+            push!(done, item.v)
+            continue
+        end
+        (v, pos, des, rk) = item
+        if v isa _RECORD_STRUCT_UNION
+            (v isa ActionOverload && rk === 0x01 && pos === :structural) ||
+                return _emit_unencodable!(diags, label, ctx, slot, typeof(v))
+            for i in length(_WALK_OVERLOAD_FIELDS):-1:1
+                push!(work, (getfield(v, _WALK_OVERLOAD_FIELDS[i]), pos, false, 0x00))
+            end
+        elseif v isa Vector || v isa Dict
+            v in visiting && return _emit_cyclic!(diags, label, ctx, slot)
+            v in done && continue
+            push!(visiting, v)
+            push!(work, _PopVisit(v))
+            if v isa Vector
+                kidrk = rk === 0x02 ? 0x01 : 0x00
+                for i in length(v):-1:1
+                    push!(work, (v[i], pos, false, kidrk))
+                end
+            else
+                entries = _walk_dict_entries(v)
+                for i in length(entries):-1:1
+                    push!(work, (entries[i].second, pos, false, 0x00))
+                    push!(work, (entries[i].first, pos, false, 0x00))
+                end
+            end
+        elseif v isa Declared
+            push!(work, (v.value, :data, false, 0x00))
+        elseif v isa EffectRow
+            push!(work, (v.payload, :data, false, 0x00))
+            push!(work, (v.kind, pos, false, 0x00))
+        elseif v isa ConditionAtom
+            push!(work, (v.evaluate, pos, pos === :structural, 0x00))
+            push!(work, (v.print_spelling, pos, false, 0x00))
+            push!(work, (v.name, pos, false, 0x00))
+        elseif v isa _SLOT_STRUCT_UNION
+            flds = fieldnames(typeof(v))
+            for i in length(flds):-1:1
+                push!(work, (getfield(v, flds[i]), pos, false, 0x00))
+            end
+        elseif v isa Tuple || v isa NamedTuple
+            vals = v isa Tuple ? v : values(v)
+            for i in length(vals):-1:1
+                push!(work, (vals[i], pos, false, 0x00))
+            end
+        elseif v isa Pair
+            push!(work, (v.second, pos, false, 0x00))
+            push!(work, (v.first, pos, false, 0x00))
+        elseif v isa Function
+            (des && pos === :structural) ||
+                return _emit_unencodable!(diags, label, ctx, slot, typeof(v))
+        elseif v isa Type
+            verdict, badT = _type_budget_check(v)
+            verdict === :over_budget && return _emit_overbudget!(diags, label, ctx, slot)
+            verdict === :bad_param && return _emit_unencodable!(diags, label, ctx, slot, badT)
+        elseif _domain_leaf(v)
+            # an in-domain leaf — nothing further to check
+        else
+            return _emit_unencodable!(diags, label, ctx, slot, typeof(v))
+        end
+    end
+    return nothing
+end
+
 """
     _encodability_collect!(diags, plugins, action_specs)
 
-(cure batch 4) Tier 1's ENCODABILITY row: every declared slot value must encode canonically —
-no cycle, no value outside the closed encodable domain — so `publish` can seal it and the door
-can re-check it. (cure batch 5) Probed PER SLOT: each offending SLOT of a plugin/action record
-yields its own `REG_PROTOCOL` diagnostic naming the record, the slot and the offending type (or
-"cyclic") — full collection across slots and records; `validate` never throws. The slots probed
-are exactly the OPEN ones `_mint_seal` folds (the remaining folded fields — setter/getter names,
-the precedence tuple, enum tags — are statically encodable by their field types).
+(T2-bis, replacing the cure-batch-4/5 `_slot_text` probe) tier 1's DOMAIN row — the ONE
+walk with TWO predicates over EVERY record field (plugin × 16, spec × 10, overloads walked
+within over all 10 overload fields — T2BIS-DESIGN §2): predicate 1 = membership AT
+POSITION (leaves via `_domain_leaf`; the value-domain containers; the record structs only
+at their structural positions; a `Function` only in the designated callable fields and
+never inside declared data; `String`-only string values); predicate 2 = the type-encoder
+BUDGET over every admitted `Type` leaf's parameter tree, so a validated record is
+MINT-SAFE. At most ONE slot-named `REG_PROTOCOL` row per (record, slot), in deterministic
+order; full collection across slots and records; `validate` never throws.
 """
-const _PLUGIN_OPEN_SLOTS = (:capture, :render, :vocabulary, :constraints, :atoms, :contract_version,
-                            :requires, :sugar, :provenance, :permissions)
-const _ACTION_OPEN_SLOTS = (:default, :settribute)
 function _encodability_collect!(diags::Vector{Diagnostic}, plugins::Vector{PlugIn}, action_specs::Vector{ActionSpec})
-    probe(label, ctx, slot, x) = try
-        _slot_text(x); nothing
-    catch e
-        e isa _CyclicSlot && return push!(diags, Diagnostic(:REG_PROTOCOL, :error, string(
-            "GoMeta registry: ", label, " ", repr(ctx), " slot ", slot, " declares a CYCLIC container — a ",
-            "declared value must encode canonically (the record shape law)"), ctx))
-        e isa _UnencodableSlot && return push!(diags, Diagnostic(:REG_PROTOCOL, :error, string(
-            "GoMeta registry: ", label, " ", repr(ctx), " slot ", slot, " declares a value of type ", e.T,
-            " which has no canonical encoder — outside the closed encodable domain (the record shape law: ",
-            "concrete data only; a Function belongs in a designated callable field, never in a value)"), ctx))
-        rethrow()
+    for p in plugins
+        for slot in _WALK_PLUGIN_FIELDS
+            _domain_slot_probe!(diags, "alterant", p.altName, slot, getfield(p, slot),
+                                slot === :setAltInstance || slot === :getAltInstance, false)
+        end
     end
-    for p in plugins, slot in _PLUGIN_OPEN_SLOTS
-        probe("alterant", p.altName, slot, getfield(p, slot))
-    end
-    for s in action_specs, slot in _ACTION_OPEN_SLOTS
-        probe("action", s.name, slot, getfield(s, slot))
+    for s in action_specs
+        for slot in _WALK_ACTION_FIELDS
+            _domain_slot_probe!(diags, "action", s.name, slot, getfield(s, slot),
+                                slot === :validate, slot === :overloads)
+        end
     end
     return nothing
+end
+
+"internal: a value outside the copyable domain met by `_domain_copy` — the offending type
++ the typed segment path to it."
+struct _OutsideDomain <: Exception
+    T::Type
+    path::Vector{Any}
+end
+"internal: a cycle met by `_domain_copy` on the contained route (path to the revisited
+container). Named beside `_OutsideDomain` per T2BIS-DESIGN §3 route 2 — both convert to
+the typed refusal, never escape a public constructor."
+struct _CyclicValue <: Exception
+    path::Vector{Any}
+end
+
+"a Dict-key path segment carrying the LIVE key value; two `_Key`s are egal iff their
+carried values are `===` (field-wise tuple egal — the property oracle's segment law)."
+struct _Key
+    k::Any
+end
+
+# one in-flight container of the iterative post-order copier
+mutable struct _CopyFrame
+    src::Any
+    cls::Symbol              # :vector | :dict | :tuple | :namedtuple | :pair | :struct | :record
+    fpos::Symbol             # this container's own position class
+    seg::Any                 # the segment from the parent to THIS container (nothing at a root)
+    kids::Vector{Any}
+    kpos::Vector{Symbol}
+    kdes::Vector{Bool}
+    krk::Vector{UInt8}
+    ksegs::Vector{Any}
+    out::Vector{Any}
+    i::Int
+end
+
+function _copy_rebuild(fr::_CopyFrame)
+    v = fr.src
+    if fr.cls === :vector
+        T = typeof(v)
+        out = T(undef, length(fr.out))
+        for (i, c) in enumerate(fr.out)
+            out[i] = c
+        end
+        return out
+    elseif fr.cls === :dict
+        T = typeof(v)
+        out = T()
+        n = length(fr.out) ÷ 2
+        sizehint!(out, n)
+        for j in 1:n
+            out[fr.out[2j - 1]] = fr.out[2j]   # the fill MAY dispatch hash/isequal — publish-side only, never the door
+        end
+        return out
+    elseif fr.cls === :tuple
+        return (fr.out...,)                    # element types are reproduced exactly, so typeof is too
+    elseif fr.cls === :namedtuple
+        return typeof(v)((fr.out...,))
+    elseif fr.cls === :pair
+        return typeof(v)(fr.out[1], fr.out[2])
+    else                                       # :struct | :record — positional at the EXACT concrete type
+        return typeof(v)(fr.out...)
+    end
+end
+
+"""
+    _domain_copy(x, memo::IdDict{Any,Any}; visiting = nothing, pos = :structural, rk = 0x02)
+
+THE DOMAIN COPIER (T2BIS-DESIGN §3; NOT `Base.deepcopy` — `deepcopy_internal` is never
+dispatched, a capturing closure/callable struct keeps its identity): leaves BY REFERENCE;
+containers, slot structs and (at structural positions) record structs REBUILT at their
+EXACT concrete types (`T = typeof(v)` — THE TYPE LAW; a `Vector`/`Dict` is constructed AS
+`T` and filled, never by an inferred comprehension); the else-arm throws the internal
+`_OutsideDomain`. ITERATIVE — an explicit frame stack with post-order rebuild, no native
+recursion. The `memo` is ALWAYS caller-supplied — ONE per copy stage/route, over EVERY
+container class (immutables included: `IdDict` egal-keying makes the reuse sound), so
+sharing is preserved WITHIN a stage and the copy is linear in the stage's distinct
+containers. `visiting !== nothing` selects the CONTAINED route
+(`RegistryBuilder(published)` — the one route that meets UNVALIDATED values): the on-stack
+cycle guard rides beside the memo, the memo is keyed by `(source, position-class)`, and
+§1's POSITION rules are ENFORCED (a `Function` in data or outside a designated field, or
+a record struct outside its structural position, throws `_OutsideDomain`); cycles throw
+`_CyclicValue`. Both carry the path. On the publish route (`visiting === nothing`) the
+copy is TYPE-based — `validate` has already run, so every value is in-domain and acyclic.
+"""
+function _domain_copy(x, memo::IdDict{Any,Any};
+                      visiting::Union{Nothing,Base.IdSet{Any}} = nothing,
+                      pos::Symbol = :structural, rk::UInt8 = 0x02)
+    contained = visiting !== nothing
+    frames = _CopyFrame[]
+
+    pathto(extra) = begin
+        p = Any[]
+        for f in frames
+            f.seg === nothing || push!(p, f.seg)
+        end
+        extra === nothing || push!(p, extra)
+        p
+    end
+
+    # step: leaf/memo-hit -> (true, value); container -> pushes a frame, (false, nothing)
+    step(v, vpos, vdes, vrk, seg) = begin
+        if v isa Function
+            contained && (vpos === :data || !vdes) &&
+                throw(_OutsideDomain(typeof(v), pathto(seg)))
+            return (true, v)
+        end
+        if v isa _RECORD_STRUCT_UNION
+            contained && !(vrk === 0x01 && vpos === :structural) &&
+                throw(_OutsideDomain(typeof(v), pathto(seg)))
+            mk = contained ? (v, vpos) : v
+            haskey(memo, mk) && return (true, memo[mk])
+            flds = v isa PlugIn ? _WALK_PLUGIN_FIELDS :
+                   v isa ActionSpec ? _WALK_ACTION_FIELDS : _WALK_OVERLOAD_FIELDS
+            n = length(flds)
+            fr = _CopyFrame(v, :record, vpos, seg, Vector{Any}(undef, n), fill(vpos, n),
+                            fill(false, n), fill(0x00, n), Vector{Any}(undef, n),
+                            Vector{Any}(undef, n), 1)
+            for (i, f) in enumerate(flds)
+                fr.kids[i] = getfield(v, f)
+                fr.ksegs[i] = f
+            end
+            if v isa PlugIn
+                fr.kdes[4] = true            # setAltInstance
+                fr.kdes[5] = true            # getAltInstance
+            elseif v isa ActionSpec
+                fr.krk[4] = 0x02             # overloads — its elements are admitted records
+                fr.kdes[7] = true            # validate
+            end
+            push!(frames, fr)
+            return (false, nothing)
+        end
+        if v isa Vector || v isa Dict
+            mk = contained ? (v, vpos) : v
+            haskey(memo, mk) && return (true, memo[mk])
+            if contained
+                v in visiting && throw(_CyclicValue(pathto(seg)))
+                push!(visiting, v)
+            end
+            if v isa Vector
+                n = length(v)
+                kidrk = vrk === 0x02 ? 0x01 : 0x00
+                fr = _CopyFrame(v, :vector, vpos, seg, Vector{Any}(undef, n), fill(vpos, n),
+                                fill(false, n), fill(kidrk, n), Vector{Any}(undef, n),
+                                Vector{Any}(undef, n), 1)
+                for i in 1:n
+                    fr.kids[i] = v[i]
+                    fr.ksegs[i] = i
+                end
+            else
+                n = 2 * length(v)
+                fr = _CopyFrame(v, :dict, vpos, seg, Vector{Any}(undef, n), fill(vpos, n),
+                                fill(false, n), fill(0x00, n), Vector{Any}(undef, n),
+                                Vector{Any}(undef, n), 1)
+                i = 1
+                for (k2, v2) in v
+                    fr.kids[i] = k2
+                    fr.ksegs[i] = _Key(k2)
+                    fr.kids[i + 1] = v2
+                    fr.ksegs[i + 1] = _Key(k2)
+                    i += 2
+                end
+            end
+            push!(frames, fr)
+            return (false, nothing)
+        end
+        if v isa Tuple || v isa NamedTuple || v isa Pair || v isa _SLOT_STRUCT_UNION
+            mk = contained ? (v, vpos) : v
+            haskey(memo, mk) && return (true, memo[mk])
+            if v isa Tuple || v isa NamedTuple
+                vals = v isa Tuple ? v : values(v)
+                names = v isa Tuple ? nothing : fieldnames(typeof(v))
+                n = length(vals)
+                fr = _CopyFrame(v, v isa Tuple ? :tuple : :namedtuple, vpos, seg,
+                                Vector{Any}(undef, n), fill(vpos, n), fill(false, n),
+                                fill(0x00, n), Vector{Any}(undef, n), Vector{Any}(undef, n), 1)
+                for i in 1:n
+                    fr.kids[i] = vals[i]
+                    fr.ksegs[i] = names === nothing ? i : names[i]
+                end
+            elseif v isa Pair
+                fr = _CopyFrame(v, :pair, vpos, seg, Any[v.first, v.second],
+                                Symbol[vpos, vpos], Bool[false, false], UInt8[0x00, 0x00],
+                                Any[:first, :second], Vector{Any}(undef, 2), 1)
+            else
+                flds = fieldnames(typeof(v))
+                n = length(flds)
+                fr = _CopyFrame(v, :struct, vpos, seg, Vector{Any}(undef, n), fill(vpos, n),
+                                fill(false, n), fill(0x00, n), Vector{Any}(undef, n),
+                                Vector{Any}(undef, n), 1)
+                for (i, f) in enumerate(flds)
+                    fr.kids[i] = getfield(v, f)
+                    fr.ksegs[i] = f
+                end
+                if v isa Declared
+                    fr.kpos[1] = :data
+                elseif v isa EffectRow
+                    fr.kpos[2] = :data                        # payload
+                elseif v isa ConditionAtom
+                    fr.kdes[3] = (vpos === :structural)       # evaluate — DATA WINS
+                end
+            end
+            push!(frames, fr)
+            return (false, nothing)
+        end
+        _domain_leaf(v) && return (true, v)
+        throw(_OutsideDomain(typeof(v), pathto(seg)))
+    end
+
+    ok, val = step(x, pos, false, rk, nothing)
+    ok && return val
+    while true
+        fr = frames[end]
+        if fr.i <= length(fr.kids)
+            i = fr.i
+            ok2, v2 = step(fr.kids[i], fr.kpos[i], fr.kdes[i], fr.krk[i], fr.ksegs[i])
+            if ok2
+                fr.out[i] = v2
+                fr.i += 1
+            end
+            continue
+        end
+        built = _copy_rebuild(fr)
+        if contained && (fr.cls === :vector || fr.cls === :dict)
+            delete!(visiting, fr.src)
+        end
+        memo[contained ? (fr.src, fr.fpos) : fr.src] = built
+        pop!(frames)
+        isempty(frames) && return built
+        parent = frames[end]
+        parent.out[parent.i] = built
+        parent.i += 1
+    end
+end
+
+## ————— the deep-egal COMPARATOR (T2BIS-DESIGN §4): ONE explicit machine — work-stack
+## frames; a Dict entry-probe is a PROBE FRAME on the same stack carrying its overlay
+## guard segment + backtracking state; NO native probe recursion. GUARD: a
+## `Base.IdSet{Any}` of `(live, snap)` tuples per segment — the spine plus one overlay per
+## active probe; a probe's guard view = the EFFECTIVE guard (the spine ∪ every enclosing
+## overlay); a pair anywhere in it returns equal (coinductive — termination on tandem
+## cycles at any depth); an overlay is DISCARDED on rejection and on acceptance MERGES
+## into the ENCLOSING segment. There is NO verdict memo (the round-5 SIMPLIFY cure —
+## degenerate nested duplicate-equal-key rejected-twin towers are exponential-in-depth by
+## disclosure, T2BIS-DESIGN §11). The door dispatches NO user-extensible method anywhere —
+## no `hash`, no `isequal`, no `==`, no user `show` (rendering included): Dicts are
+## compared by the ONE-PATH structural ENTRY-MATCHING law — every snapshot entry must
+## match a not-yet-consumed live entry with `_deep_egal`-equal stored KEY AND VALUE
+## (greedy over entries is maximum: entry-equality is a product of two partial
+## equivalences — the banked R1 proof).
+
+"the first divergence of the deep-egal walk: the typed segment path (`Symbol` field ·
+`Int` index · `_Key`) + the reason (:typeof | :size | :leaf | :outside_domain | :key_set
+| :entry)."
+struct _Divergence
+    path::Vector{Any}
+    reason::Symbol
+end
+
+struct _EgalTask
+    a::Any                   # live
+    b::Any                   # snapshot
+    path::Any                # linked (parentnode, seg); nothing at a root
+    pos::Symbol
+    des::Bool
+    rk::UInt8
+end
+
+mutable struct _EgalDict
+    lk::Vector{Any}; lv::Vector{Any}      # live entries, iteration order
+    sk::Vector{Any}; sv::Vector{Any}      # snapshot entries
+    consumed::Vector{Bool}
+    si::Int                               # current snapshot entry
+    stage::Symbol                         # :keys | :values
+    ci::Int                               # keys: live index last probed; values: index into matched
+    matched::Vector{Int}                  # key-matched live indices, counted over ALL entries
+    path::Any
+    pos::Symbol
+    ws_base::Int
+    probe_state::Int8                     # 0 = none · 1 = pending/succeeded · -1 = failed
+end
+
+struct _EgalProbe
+    frame::_EgalDict
+    ws_base::Int
+end
+
+function _egal_guard!(guards::Vector{Base.IdSet{Any}}, a, b)::Bool
+    p = (a, b)
+    for g in guards
+        p in g && return true
+    end
+    push!(guards[end], p)
+    return false
+end
+
+function _linked_to_vec(p)
+    segs = Any[]
+    while p !== nothing
+        push!(segs, p[2])
+        p = p[1]
+    end
+    reverse!(segs)
+    return segs
+end
+
+# compare one task; returns nothing (children pushed / equal) or (linkedpath, reason)
+function _egal_cmp(t::_EgalTask, work, guards)
+    a = t.a
+    b = t.b
+    if a isa _RECORD_STRUCT_UNION || b isa _RECORD_STRUCT_UNION
+        (t.rk === 0x01 && t.pos === :structural) || return (t.path, :outside_domain)
+        (a isa _RECORD_STRUCT_UNION && b isa _RECORD_STRUCT_UNION &&
+            typeof(a) === typeof(b)) || return (t.path, :typeof)
+        _egal_guard!(guards, a, b) && return nothing
+        flds = a isa PlugIn ? _WALK_PLUGIN_FIELDS :
+               a isa ActionSpec ? _WALK_ACTION_FIELDS : _WALK_OVERLOAD_FIELDS
+        for i in length(flds):-1:1
+            f = flds[i]
+            des = (a isa PlugIn && (f === :setAltInstance || f === :getAltInstance)) ||
+                  (a isa ActionSpec && f === :validate)
+            rk2 = (a isa ActionSpec && f === :overloads) ? 0x02 : 0x00
+            push!(work, _EgalTask(getfield(a, f), getfield(b, f), (t.path, f), t.pos, des, rk2))
+        end
+        return nothing
+    end
+    if _value_container(a) || _value_container(b)
+        typeof(a) === typeof(b) || return (t.path, :typeof)
+        _egal_guard!(guards, a, b) && return nothing
+        if a isa Vector
+            length(a) == length(b) || return (t.path, :size)
+            kidrk = t.rk === 0x02 ? 0x01 : 0x00
+            for i in length(a):-1:1
+                push!(work, _EgalTask(a[i], b[i], (t.path, i), t.pos, false, kidrk))
+            end
+        elseif a isa Dict
+            length(a) == length(b) || return (t.path, :size)
+            lk = Any[]; lv = Any[]
+            for (k, v) in a
+                push!(lk, k); push!(lv, v)
+            end
+            sk = Any[]; sv = Any[]
+            for (k, v) in b
+                push!(sk, k); push!(sv, v)
+            end
+            push!(work, _EgalDict(lk, lv, sk, sv, fill(false, length(lk)), 1, :keys, 0,
+                                  Int[], t.path, t.pos, 0, Int8(0)))
+        elseif a isa Tuple
+            length(a) == length(b) || return (t.path, :size)
+            for i in length(a):-1:1
+                push!(work, _EgalTask(a[i], b[i], (t.path, i), t.pos, false, 0x00))
+            end
+        elseif a isa NamedTuple
+            flds = fieldnames(typeof(a))
+            for i in length(flds):-1:1
+                f = flds[i]
+                push!(work, _EgalTask(getfield(a, f), getfield(b, f), (t.path, f), t.pos, false, 0x00))
+            end
+        elseif a isa Pair
+            push!(work, _EgalTask(a.second, b.second, (t.path, :second), t.pos, false, 0x00))
+            push!(work, _EgalTask(a.first, b.first, (t.path, :first), t.pos, false, 0x00))
+        else                                     # slot struct — generic, with the data flips
+            flds = fieldnames(typeof(a))
+            for i in length(flds):-1:1
+                f = flds[i]
+                pos2 = ((a isa Declared && f === :value) || (a isa EffectRow && f === :payload)) ?
+                    :data : t.pos
+                des2 = a isa ConditionAtom && f === :evaluate && t.pos === :structural
+                push!(work, _EgalTask(getfield(a, f), getfield(b, f), (t.path, f), pos2, des2, 0x00))
+            end
+        end
+        return nothing
+    end
+    # leaves — the outside-domain test PRECEDES the `===` compare; the position rules bind
+    # the outside-domain arm (a Function in data or outside a designated field, either side)
+    aok = _domain_leaf(a) && !(a isa Function && (t.pos === :data || !t.des))
+    bok = _domain_leaf(b) && !(b isa Function && (t.pos === :data || !t.des))
+    (aok && bok) || return (t.path, :outside_domain)
+    return a === b ? nothing : (t.path, :leaf)
+end
+
+function _egal_probe!(fr::_EgalDict, work, guards, probes, task::_EgalTask)
+    push!(work, fr)
+    fr.ws_base = length(work)
+    push!(guards, Base.IdSet{Any}())
+    push!(probes, _EgalProbe(fr, fr.ws_base))
+    fr.probe_state = Int8(1)
+    push!(work, task)
+    return nothing
+end
+
+# one step of a Dict frame: resolve a pending probe, then advance the entry-matching
+# machine. Returns nothing (probe launched / dict equal) or (linkedpath, reason).
+function _egal_dict_step(fr::_EgalDict, work, guards, probes)
+    n = length(fr.lk)
+    if fr.probe_state != 0
+        ok = fr.probe_state == Int8(1)
+        if ok                                    # the probe drained without divergence: ACCEPT —
+            seg = pop!(guards)                   # its overlay MERGES into the enclosing segment
+            union!(guards[end], seg)
+            pop!(probes)
+        end                                      # (on failure the unwinder discarded overlay + record)
+        fr.probe_state = Int8(0)
+        if fr.stage === :keys
+            ok && push!(fr.matched, fr.ci)
+        elseif ok
+            fr.consumed[fr.matched[fr.ci]] = true
+            fr.si += 1
+            fr.stage = :keys
+            fr.ci = 0
+            empty!(fr.matched)
+        end
+    end
+    while true
+        fr.si > length(fr.sk) && return nothing  # every snapshot entry matched — the pair is equal
+        if fr.stage === :keys
+            fr.ci += 1
+            if fr.ci <= n
+                _egal_probe!(fr, work, guards, probes,
+                             _EgalTask(fr.lk[fr.ci], fr.sk[fr.si], nothing, fr.pos, false, 0x00))
+                return nothing
+            end
+            isempty(fr.matched) && return (fr.path, :key_set)   # no key-match at all ⇒ CONTAINER
+            fr.stage = :values
+            fr.ci = 0
+        else
+            fr.ci += 1
+            while fr.ci <= length(fr.matched) && fr.consumed[fr.matched[fr.ci]]
+                fr.ci += 1
+            end
+            if fr.ci <= length(fr.matched)
+                _egal_probe!(fr, work, guards, probes,
+                             _EgalTask(fr.lv[fr.matched[fr.ci]], fr.sv[fr.si], nothing, fr.pos, false, 0x00))
+                return nothing
+            end
+            # no unconsumed key-matched entry's value matched: EXACTLY ONE key-matched live
+            # entry (over ALL, consumed included) with a failing value ⇒ that entry's ELEMENT
+            # path; every other no-entry-match outcome (the duplicate-equal-key class) ⇒ the
+            # CONTAINER path
+            if length(fr.matched) == 1 && !fr.consumed[fr.matched[1]]
+                return ((fr.path, _Key(fr.lk[fr.matched[1]])), :entry)
+            end
+            return (fr.path, :entry)
+        end
+    end
+end
+
+"""
+    _deep_egal(live, snap) -> Union{Nothing, _Divergence}
+
+The comparator (T2BIS-DESIGN §4): the first divergent typed-segment path, or `nothing`
+when the pair is content-structurally equal. Container-type-FIRST dispatch; per-class
+gates (`typeof` → size → element-wise); leaves by `===` ONLY; alias topology is NOT
+significant (the pair guard makes shared DAGs and even both-sided cycles terminate);
+Dicts by the one-path structural entry-matching law. A fresh spine guard per call.
+"""
+function _deep_egal(live, snap)
+    guards = Base.IdSet{Any}[Base.IdSet{Any}()]
+    probes = _EgalProbe[]
+    work = Any[_EgalTask(live, snap, nothing, :structural, false, 0x02)]
+    while !isempty(work)
+        t = pop!(work)
+        d = t isa _EgalDict ? _egal_dict_step(t, work, guards, probes) :
+                              _egal_cmp(t, work, guards)
+        d === nothing && continue
+        isempty(probes) && return _Divergence(_linked_to_vec(d[1]), d[2])
+        pr = pop!(probes)                        # the innermost probe FAILS: candidate rejected
+        resize!(work, pr.ws_base)                # its frame is back on top
+        pop!(guards)                             # overlay DISCARDED — with every pair merged
+        pr.frame.probe_state = Int8(-1)          # into it by nested accepted probes (B2-5)
+    end
+    return nothing
+end
+
+## non-dispatching diagnostic rendering (T2BIS-DESIGN §4; probes P2a/P2b, §S2.8): a
+## Base-owned leaf key renders by `repr` (its `show` is Base-owned; a user method on a
+## Base-owned type is piracy, outside conforming code — the disclosed B-2-class boundary);
+## `Type`/`Function` keys render as fixed category text; container/struct keys via
+## `nameof(typeof(k))`. The door dispatches NO user-extensible method — rendering included.
+_render_key(k)::String =
+    (k === nothing || k isa Symbol || k isa String || k isa VersionNumber || _numeric_leaf(k)) ?
+        repr(k) :
+    k isa Type ? "<Type key>" :
+    k isa Function ? "<Function key>" :
+    string("<", String(nameof(typeof(k))), " key>")
+
+"render a typed segment path for a diagnostic message (rendering is one-way — the
+property oracle compares SEGMENTS, never rendered strings)."
+function _render_path(segs::Vector{Any})::String
+    io = IOBuffer()
+    for (i, s) in enumerate(segs)
+        if s isa Symbol
+            i == 1 ? print(io, s) : print(io, ".", s)
+        elseif s isa Int
+            print(io, "[", s, "]")
+        elseif s isa _Key
+            print(io, "[", _render_key(s.k), "]")
+        else
+            print(io, "[?]")
+        end
+    end
+    return String(take!(io))
+end
+
+"the §3 disjointness assert: no MUTABLE container (`Vector`/`Dict`) is shared between the
+live field values and the snapshot (designated leaves ARE shared by reference — by design;
+immutable rebuilt containers are fresh by construction of the stage-2 copy). A bare
+runtime `@assert` — the witnesses carry the testable part."
+function _assert_snapshot_disjoint(live::NamedTuple, snap::NamedTuple)
+    collect_mutables(root) = begin
+        out = Base.IdSet{Any}()
+        stack = Any[root]
+        while !isempty(stack)
+            v = pop!(stack)
+            if v isa Vector || v isa Dict
+                v in out && continue
+                push!(out, v)
+                if v isa Vector
+                    for e in v
+                        push!(stack, e)
+                    end
+                else
+                    for (k, v2) in v
+                        push!(stack, k)
+                        push!(stack, v2)
+                    end
+                end
+            elseif v isa Tuple || v isa NamedTuple
+                for e in v
+                    push!(stack, e)
+                end
+            elseif v isa Pair
+                push!(stack, v.first)
+                push!(stack, v.second)
+            elseif v isa _SLOT_STRUCT_UNION || v isa _RECORD_STRUCT_UNION
+                for f in fieldnames(typeof(v))
+                    push!(stack, getfield(v, f))
+                end
+            end
+        end
+        out
+    end
+    l = collect_mutables(live)
+    s = collect_mutables(snap)
+    @assert all(x -> !(x in s), l) "GoMeta registry: the publish snapshot shares a mutable container with the live value (the disjointness law)"
+    return nothing
+end
+
+# a type NAME for the contained route's messages — category text via `nameof`, never a
+# dispatched `show` (the non-dispatching rule applies to this route's messages too)
+_domain_type_name(T::Type)::String = String(nameof(T))
+
+function _route2_refuse(r::AlterantRegistry, e, field::Symbol)
+    (e isa _OutsideDomain || e isa _CyclicValue) || rethrow()
+    p = Any[field]
+    append!(p, e.path)
+    ptext = _render_path(p)
+    recs = field === :plugins ? r.plugins : r.action_specs
+    recname = "?"
+    slotname = "?"
+    if length(p) >= 2 && p[2] isa Int && 1 <= p[2] <= length(recs)
+        rec = recs[p[2]]
+        recname = String(rec isa PlugIn ? rec.altName : rec.name)
+        length(p) >= 3 && p[3] isa Symbol && (slotname = String(p[3]))
+    end
+    msg = if e isa _CyclicValue
+        string("GoMeta registry: RegistryBuilder(published) met a CYCLIC container at ", ptext,
+               " (record ", repr(recname), ", slot ", slotname, ") — the published value was ",
+               "mutated after publication; a declared value must be acyclic (the record shape law)")
+    elseif e.T <: Function || e.T <: PlugIn || e.T <: ActionSpec || e.T <: ActionOverload
+        string("GoMeta registry: RegistryBuilder(published) met a value of type ",
+               _domain_type_name(e.T), " at ", ptext, " (record ", repr(recname), ", slot ",
+               slotname, ") that violates the position rule — a Function is legal only in a ",
+               "designated callable field and a record struct only at its structural registry ",
+               "position, never inside declared data")
+    else
+        string("GoMeta registry: RegistryBuilder(published) met a value of type ",
+               _domain_type_name(e.T), " at ", ptext, " (record ", repr(recname), ", slot ",
+               slotname, ") — outside the closed copyable domain (the record shape law: ",
+               "concrete data only)")
+    end
+    throw(RegistrationRefused([Diagnostic(:REG_PROTOCOL, :error, msg, ptext)]))
+end
+
+"the CONTAINED preload copy behind `RegistryBuilder(published)` (T2BIS-DESIGN §3 route 2):
+ONE route memo across both per-field calls; no internal exception and no unbounded
+recursion leaves the public constructor."
+function _copy_published_records(r::AlterantRegistry)
+    memo = IdDict{Any,Any}()
+    vis = Base.IdSet{Any}()
+    plugins = try
+        _domain_copy(r.plugins, memo; visiting = vis, pos = :structural, rk = 0x02)
+    catch e
+        _route2_refuse(r, e, :plugins)
+    end
+    specs = try
+        _domain_copy(r.action_specs, memo; visiting = vis, pos = :structural, rk = 0x02)
+    catch e
+        _route2_refuse(r, e, :action_specs)
+    end
+    return (plugins, specs)
 end
 
 "The canonical serialized text of one overload row (the digest's SORT KEY only — the fold
@@ -1386,15 +2286,17 @@ validate(b::RegistryBuilder) = _validate_registration(b.plugins, b.action_specs)
 The SANCTIONED route to a SEALED registry — the only SUPPORTED one for conforming callers (not the
 only possible one in-process: the construction token and this file's helpers are reachable by any
 loaded module, the accident-grade bound recorded at `_SealToken`). Refuses (throws `RegistrationRefused` carrying every
-diagnostic) if `validate` reports any error; proceeds on warnings. Atomic COPY-publication: every
-container of the closed domain is `deepcopy`-ed, so no mutable container is shared between the
-builder and the published value (a user `AbstractString` subtype is the one admitted type that
-could specialize copying — KNOWN OPEN (iv), docs/public-api.md §1.2)
-(a later mutation of the builder cannot reach a published registry, and vice versa); the derived
-tables come from the declarations alone; the seal covers the declared record. The published value's
-containers are READ-ONLY by contract — a mutation through them is detected at the door
-(`POST_SEAL_MUTATION`), never silently effective — for conforming code, as represented by the
-canonical encoding / the derived tables / the callable identities (the disclosed bounds apply).
+diagnostic) if `validate` reports any error; proceeds on warnings. Atomic COPY-publication (T2-bis):
+every container is copied by the domain copier `_domain_copy` — callables/Types/Symbols/Strings/
+VersionNumbers/numbers carried BY REFERENCE, containers and slot structs REBUILT at their exact
+concrete types, sharing preserved within each copy stage; `deepcopy_internal` is never dispatched,
+so no user type can specialize the copy (a later mutation of the builder cannot reach a published
+registry, and vice versa). The derived tables come from the declarations alone; the seal field
+keeps the registration FINGERPRINT (a lossy cache key); the `_snapshot` baseline is a SECOND,
+disjoint domain copy of all eleven `_SNAPSHOT_FIELDS`. The published value's containers are
+READ-ONLY by contract — a mutation through them is detected at the door (`POST_SEAL_MUTATION`)
+by the structural deep-egal comparison against the snapshot, never silently effective — for
+conforming code (the disclosed bounds apply, docs/public-api.md §1.2).
 """
 function publish(b::RegistryBuilder)
     diags = validate(b)
@@ -1405,12 +2307,13 @@ function publish(b::RegistryBuilder)
     for d in diags
         d.severity === :warning && @warn d.message
     end
-    # DEEP copies: the record structs are immutable but carry Vectors/Dicts (constraints, atoms,
-    # sugar rows, vocabulary flags, provenance sources) — a shallow `copy` of the outer vectors
-    # would leave those NESTED containers shared with the builder (finding 3's class: a later
-    # builder mutation reaching the published record). Callables/Types deepcopy to themselves.
-    plugins = deepcopy(b.plugins)
-    specs   = deepcopy(b.action_specs)
+    # T2-bis STAGE 1 (T2BIS-DESIGN §5): the LIVE field values by the domain copier — validate
+    # has run, so every value is in-domain and acyclic (predicate ground per field: validate
+    # reaches `plugins`/`action_specs`; the derived tables are grounded in their concrete
+    # declared types + their construction from the already-copied record) — ONE stage-1 memo.
+    m1 = IdDict{Any,Any}()
+    plugins = _domain_copy(b.plugins, m1)
+    specs   = _domain_copy(b.action_specs, m1)
     t = _derive_tables(plugins, specs)
     # (cure batch 4) validation has already refused cyclic/unencodable declarations; this catch is
     # the defensive conversion so no internal exception can ever leave the public lifecycle.
@@ -1420,78 +2323,57 @@ function publish(b::RegistryBuilder)
             "declared record could not be sealed (", e isa _CyclicSlot ? "a cyclic container" :
             string("an unencodable value of type ", e.T), ") — the record shape law"), nothing)]))
     end
-    return AlterantRegistry(_SealToken(), plugins, t.sorted_alt_actions, t.action_to_plugin,
-                            t.action_index, t.alt_index, t.accum_alt_idxs, t.mutex_alt_idxs,
-                            t.action_to_settribute, specs, t.spec_index, seal,
-                            _callable_identities(plugins, specs))
+    # T2-bis STAGE 2: the SNAPSHOT — built MECHANICALLY over the field-name tuple (no per-table
+    # keyword binding anywhere); ONE stage-2 memo, SEPARATE from stage 1's, so live and snapshot
+    # share no mutable container (the disjointness assert below); the fingerprint String is a
+    # leaf, carried by reference — a seal-only divergence fires at path `seal`.
+    base = (; plugins = plugins, action_specs = specs, seal = seal, t...)
+    snapshot = let m2 = IdDict{Any,Any}()
+        NamedTuple{_SNAPSHOT_FIELDS}(map(k -> _domain_copy(base[k], m2), _SNAPSHOT_FIELDS))
+    end
+    _assert_snapshot_disjoint(base, snapshot)
+    return AlterantRegistry(_SealToken(), plugins, specs, t, seal, snapshot)
 end
 
 """
     _registry_door_check(registry) -> Vector{Diagnostic}
 
-The R-V04-34 STRICT door: an UNPUBLISHED registry (`seal === nothing`) refuses typed, naming the
-sanctioned path; a published registry whose recomputed seal differs from the stored one has been
-MUTATED after publication (through one of its containers) and refuses `POST_SEAL_MUTATION` — the
-real freeze gate (M-AC-9), accident-grade: typed refusal of post-seal mutation by conforming code.
+The R-V04-34 STRICT door, T2-bis ONE-CHECK form (T2BIS-DESIGN §6): an UNPUBLISHED registry
+(`_snapshot === nothing`) refuses typed, naming the sanctioned path; else the eleven
+`_SNAPSHOT_FIELDS` are compared field-by-field against the publish-time snapshot by the ONE
+structural deep-egal walk (`===`-only leaves; no `hash`/`isequal`/`==`/user `show` dispatched
+anywhere, rendering included) and the FIRST divergent path fires exactly one
+`POST_SEAL_MUTATION` row — the real freeze gate (M-AC-9), accident-grade: typed refusal of
+post-seal mutation by conforming code. The retired seal re-mint, derived-table re-derivation
+and callable-identity compare lose no detection for conforming code (the field lists being
+COMPLETE): re-derivation is deterministic, so it never catches what the snapshot cannot; the
+same-typed table swap is excluded by §5's by-name construction; every callable identity —
+altConstructor, the setters/getters, `atom.evaluate`, `spec.validate` — is a snapshot leaf
+compared by `===`.
 """
 function _registry_door_check(registry::AlterantRegistry)
     diags = Diagnostic[]
-    if registry.seal === nothing
+    if registry._snapshot === nothing
         push!(diags, Diagnostic(:REG_UNPUBLISHED, :error, string("GoMeta registry: the registry passed ",
             "to goMeta is not published — the v0.4 door accepts ONLY published (validated + sealed) ",
             "registries; build it via RegistryBuilder → validate → publish (GoMeta.publish) and pass ",
             "the published value"), nothing))
         return diags
     end
-    # (cure batch 1) THREE checks, all three required — the CRX after-T2 set showed each alone
-    # leaves a mutation class through: (i) the seal over the DECLARED record; (ii) every DERIVED
-    # table re-derived from the declarations and compared (a mutated `action_to_settribute`,
-    # `action_index`, `alt_index`, index vector or `spec_index` — or a re-ordered `action_specs`
-    # — changes dispatch without touching the declared bytes); (iii) the validated CALLABLE
-    # identities compared by `===` (a same-named swapped setter/getter/ctor/evaluator/validator).
-    what = String[]
-    # (cure batch 3) an UNENCODABLE declared record (a container mutated into a cycle) is itself a
-    # post-publication mutation — refused typed, never a StackOverflowError out of the door
-    sealed_now = try _mint_seal(registry.plugins, registry.action_specs) catch e
-        (e isa _CyclicSlot || e isa _UnencodableSlot) || rethrow(); nothing end
-    (sealed_now !== nothing && registry.seal == sealed_now) || push!(what,
-        sealed_now === nothing ? "the declared record (mutated into a cyclic or unencodable value)" :
-                                 "the declared record (seal)")
-    derived = try _derive_tables(registry.plugins, registry.action_specs) catch; nothing end
-    if derived === nothing
-        push!(what, "the declared record (tables no longer derivable)")
-    else
-        for f in (:sorted_alt_actions, :action_to_plugin, :action_index, :alt_index, :accum_alt_idxs,
-                  :mutex_alt_idxs, :action_to_settribute, :spec_index)
-            getfield(registry, f) == getfield(derived, f) || push!(what, string("the derived table `", f, "`"))
-        end
+    snap = registry._snapshot
+    for f in _SNAPSHOT_FIELDS
+        d = _deep_egal(getfield(registry, f), snap[f])
+        d === nothing && continue
+        path = Any[f]
+        append!(path, d.path)
+        ptext = _render_path(path)
+        push!(diags, Diagnostic(:POST_SEAL_MUTATION, :error, string("GoMeta registry: the ",
+            "published registry was MUTATED after publication — at ", ptext, " the live value ",
+            "no longer matches the published snapshot; re-publication is the sanctioned ",
+            "change path"), ptext))
+        break
     end
-    now = _callable_identities(registry.plugins, registry.action_specs)
-    (registry._callables === nothing || length(now) != length(registry._callables) ||
-        !all(a === b for (a, b) in zip(now, registry._callables))) &&
-        push!(what, "a callable identity (setter/getter/constructor/evaluator/validator)")
-    isempty(what) || push!(diags, Diagnostic(:POST_SEAL_MUTATION, :error, string("GoMeta registry: the ",
-        "published registry was MUTATED after publication — ", join(what, "; "), " no longer match(es) ",
-        "the sealed publication ", registry.seal, "; re-publication is the sanctioned change path"),
-        registry.seal))
     return diags
-end
-
-"""
-The validated callable identities of a record, declaration order, as an IMMUTABLE Tuple (compared
-by `===` at the door; cure batch 2: a Vector baseline could be rewritten through the published
-value). Honest bound (the reconfirm set's finding): identity ≠ behavior — a closure over a `Ref`
-or a generic whose methods are redefined keeps its identity while its behavior moves; both are
-acts of loaded code with full process authority (B-2), outside the accident-grade guarantee.
-"""
-function _callable_identities(plugins::Vector{PlugIn}, action_specs::Vector{ActionSpec})
-    ids = Any[]
-    for p in plugins
-        push!(ids, p.altConstructor, p.setAltInstance, p.getAltInstance)
-        for a in p.atoms; push!(ids, a.evaluate); end
-    end
-    for s in action_specs; push!(ids, s.validate); end
-    return Tuple(ids)
 end
 
 ## (The interim `_fill_action_owners!` uniqueness assert was RETIRED at the registration build

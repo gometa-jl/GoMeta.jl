@@ -4,9 +4,9 @@
 #       construction route (the route-U cure; no generated/public positional form accepts a seal —
 #       the token-gated constructor; the token form itself is reachable by loaded code, the
 #       disclosed accident-grade bound), the two-tier typed diagnostics with FULL collection (validate
-#       never throws), atomic DEEP-copy publication, the seal + the door's three checks (the declared
-#       record's seal · the derived tables re-derived — REPRESENTATIVE tables mutated here, not every
-#       field · the callable identities by `===`), the STRICT
+#       never throws), atomic domain-copy publication, the fingerprint + the T2-bis ONE-check door
+#       (the eleven `_SNAPSHOT_FIELDS` compared structurally against the publish-time snapshot —
+#       REPRESENTATIVE fields mutated here, not every one; the property file is the proof), the STRICT
 #       published-only door at `goMeta(bytes; registry)` AND at the internal callable seam (an
 #       unpublished value refuses typed NAMING the sanctioned path), the real freeze gate
 #       (`POST_SEAL_MUTATION` on declared, derived, re-ordered, cyclic and callable-identity mutations by
@@ -112,10 +112,12 @@ import GoMeta as GM
         @test nameof(evil) === nameof(GM.Alterants.setVisib)
         R5.plugins[2] = GM.PlugIn(:Visib, :mutExclusive, GM.Alterants.Visib, evil, nothing, nothing)
         @test _codes(GM._registry_door_check(R5)) == [:POST_SEAL_MUTATION]
-        # (cure batch 2) the callable baseline is an IMMUTABLE Tuple — it cannot be rewritten to
-        # match the swap through the published value
-        @test R5._callables isa Tuple
-        @test_throws MethodError setindex!(R5._callables, evil, 1)
+        # (T2-bis — one of the TWO named append-only exceptions, T2BIS-DESIGN §8) the snapshot
+        # BINDING is immutable: a NamedTuple has no `setindex!`, so the baseline binding cannot
+        # be rewritten to match the swap through the published value (the snapshot's MEMBERS are
+        # mutable — the disclosed §11 residue, deliberately NOT pinned here)
+        @test R5._snapshot isa NamedTuple
+        @test_throws MethodError setindex!(R5._snapshot, evil, :plugins)
         # no GENERATED/public positional form accepts a seal — the token form exists for the lifecycle
         # and is reachable by loaded code (the disclosed accident-grade bound); the all-fields constructor is gone (the forge
         # attack: copying DEFAULT_REGISTRY.seal onto hand-built tables)
@@ -125,7 +127,7 @@ import GoMeta as GM
             D.action_specs, D.spec_index, D.seal)
         @test_throws MethodError GM.AlterantRegistry(D.plugins, D.sorted_alt_actions, D.action_to_plugin,
             D.action_index, D.alt_index, D.accum_alt_idxs, D.mutex_alt_idxs, D.action_to_settribute,
-            D.action_specs, D.spec_index, D.seal, D._callables)
+            D.action_specs, D.spec_index, D.seal, D._snapshot)   # (T2-bis: the second named exception — the field is `_snapshot` now)
         # the callable SEAM runs the door too (cure batch 1): an unpublished registry cannot drive it
         U = GM.AlterantRegistry(D.plugins, D.sorted_alt_actions, D.action_to_plugin, D.action_index,
                                 D.alt_index, D.accum_alt_idxs, D.mutex_alt_idxs, D.action_to_settribute,
@@ -502,5 +504,89 @@ import GoMeta as GM
         end
         @test e isa ErrorException && occursin("slot pool exhausted", e.msg)
         @test all(st.mh.slot_occupied)                       # nothing displaced, nothing aliased
+    end
+
+    @testset "T2-bis: the EIGHT snapshot-door witnesses W1–W8 (T2BIS-DESIGN §8; APPENDED)" begin
+        # W1 — the CONTAINED route refuses a published value mutated into a CYCLE, typed,
+        # naming the record + slot via the path (Rcx/Rcy above are testset-locals — rebuilt)
+        b1 = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
+        b1.action_specs[3] = GM.ActionSpec(; name = :show, spelling = :identifier, plugin = Int8(2),
+                                             overloads = b1.action_specs[3].overloads, settribute = :show,
+                                             default = GM.Declared(Any[]))
+        R1 = GM.publish(b1)
+        v1 = R1.action_specs[3].default.value; push!(v1, v1)
+        e1 = try GM.RegistryBuilder(R1); nothing catch err; err end
+        @test e1 isa GM.RegistrationRefused
+        @test occursin("show", e1.diagnostics[1].message) && occursin("default", e1.diagnostics[1].message)
+        # W2 — the contained route refuses an out-of-domain value ('c'), naming the TYPE + path
+        b2 = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
+        b2.action_specs[3] = GM.ActionSpec(; name = :show, spelling = :identifier, plugin = Int8(2),
+                                             overloads = b2.action_specs[3].overloads, settribute = :show,
+                                             default = GM.Declared(Any[1]))
+        R2b = GM.publish(b2)
+        R2b.action_specs[3].default.value[1] = 'c'
+        e2 = try GM.RegistryBuilder(R2b); nothing catch err; err end
+        @test e2 isa GM.RegistrationRefused
+        @test occursin("Char", e2.diagnostics[1].message) && occursin("action_specs[3].default.value[1]", e2.diagnostics[1].message)
+        # W3 — the ASYMMETRY witness: rewriting the SNAPSHOT side ALONE fires (the length gate)
+        R3b = GM.publish(GM.default_registry_builder())
+        push!(R3b._snapshot.plugins, R3b.plugins[1])
+        d3 = GM._registry_door_check(R3b)
+        @test _codes(d3) == [:POST_SEAL_MUTATION]
+        @test occursin("at plugins", d3[1].message)
+        # W4 — the seal-via-token-seam witness: `t` comes from the DERIVATION form (§5's ban
+        # excludes a written keyword list at this snapshot-carrying site); a FOREIGN seal beside
+        # DEFAULT's snapshot fires at path `seal` (a LEAF `===` failure), as does `seal = nothing`
+        D = GM.DEFAULT_REGISTRY
+        t4 = GM._derive_tables(D.plugins, D.action_specs)
+        F4 = GM.AlterantRegistry(GM._SealToken(), D.plugins, D.action_specs, t4,
+                                 "fnv1a64:0000000000000000", D._snapshot)
+        d4a = GM._registry_door_check(F4)
+        @test _codes(d4a) == [:POST_SEAL_MUTATION] && occursin("at seal", d4a[1].message)
+        F4n = GM.AlterantRegistry(GM._SealToken(), D.plugins, D.action_specs, t4, nothing, D._snapshot)
+        d4b = GM._registry_door_check(F4n)
+        @test _codes(d4b) == [:POST_SEAL_MUTATION] && occursin("at seal", d4b[1].message)
+        # W5 — KNOWN OPEN (v) closes: `altConstructor = Val{'c'}` is a SLOT-NAMED validate row
+        # (record in context, slot in the message) + a typed publish refusal
+        b5 = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
+        b5.plugins[1] = GM.PlugIn(; altName = :labels, setMode = :accumulate, altConstructor = Val{'c'},
+                                    setAltInstance = GM.Alterants.setLabels,
+                                    getAltInstance = GM.Alterants.checkLabels)
+        d5 = GM.validate(b5)
+        @test any(x -> x.code === :REG_PROTOCOL && x.context === :labels &&
+                       occursin("altConstructor", x.message), d5)
+        @test_throws GM.RegistrationRefused GM.publish(b5)
+        # W6 — a RECORD STRUCT in declared data refuses at validate (the slot-named row, never
+        # the publish-containment generic row) + a typed publish refusal
+        b6 = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
+        b6.action_specs[3] = GM.ActionSpec(; name = :show, spelling = :identifier, plugin = Int8(2),
+                                             overloads = b6.action_specs[3].overloads, settribute = :show,
+                                             default = GM.Declared(GM.ActionOverload(; sig_types = Type[])))
+        d6 = GM.validate(b6)
+        @test any(x -> x.code === :REG_PROTOCOL && x.context === :show &&
+                       occursin("slot default", x.message) && occursin("ActionOverload", x.message), d6)
+        @test_throws GM.RegistrationRefused GM.publish(b6)
+        # W7 — the contained route ENFORCES the position rules on its unvalidated input: a
+        # Function IN DATA refuses typed, the message naming the position rule + the path
+        b7 = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
+        b7.action_specs[3] = GM.ActionSpec(; name = :show, spelling = :identifier, plugin = Int8(2),
+                                             overloads = b7.action_specs[3].overloads, settribute = :show,
+                                             default = GM.Declared(Any[1]))
+        R7 = GM.publish(b7)
+        R7.action_specs[3].default.value[1] = sin
+        e7 = try GM.RegistryBuilder(R7); nothing catch err; err end
+        @test e7 isa GM.RegistrationRefused
+        @test occursin("position rule", e7.diagnostics[1].message) &&
+              occursin("action_specs[3].default.value[1]", e7.diagnostics[1].message)
+        # W8 — the MINT-PARITY witness of the DATA-WINS precedence: an atom nested in data has
+        # its `evaluate` REFUSED (a Function in data), never the generic containment row
+        b8 = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
+        b8.action_specs[3] = GM.ActionSpec(; name = :show, spelling = :identifier, plugin = Int8(2),
+                                             overloads = b8.action_specs[3].overloads, settribute = :show,
+                                             default = GM.Declared(GM.ConditionAtom(:n, "s", sin)))
+        d8 = GM.validate(b8)
+        @test any(x -> x.code === :REG_PROTOCOL && x.context === :show &&
+                       occursin("slot default", x.message), d8)
+        @test_throws GM.RegistrationRefused GM.publish(b8)
     end
 end

@@ -458,6 +458,18 @@ B-2). See the constructor's note.
 struct _SealToken end
 
 """
+    _SNAPSHOT_FIELDS
+
+The registry fields the T2-bis snapshot door walks (T2BIS-DESIGN §1): the declared record
+(`plugins`, `action_specs`) + the eight derived tables + the published `seal` fingerprint
+string. The `_snapshot` field itself is NEVER walked (no recursion into the baseline). A
+seal-only divergence fires at path `seal` — what the retired re-mint used to catch.
+"""
+const _SNAPSHOT_FIELDS = (:plugins, :sorted_alt_actions, :action_to_plugin, :action_index,
+                          :alt_index, :accum_alt_idxs, :mutex_alt_idxs, :action_to_settribute,
+                          :action_specs, :spec_index, :seal)
+
+"""
     AlterantRegistry
 
 The immutable, DETERMINISTIC alterant inventory — built ONCE by `build_default_registry()` into
@@ -496,25 +508,26 @@ struct AlterantRegistry
     # `spec_index`: action name → index into `action_specs`.
     action_specs::Vector{ActionSpec}
     spec_index::Dict{Symbol,Int}
-    # v0.4 T2 — THE SEAL (HC-9): minted by the sanctioned route `publish` (the only SUPPORTED one;
-    # not the only POSSIBLE one in-process — see the constructor note); `nothing` = an UNPUBLISHED value (the
-    # gated route-U construction), which the `goMeta` door refuses typed. The seal is the
-    # algorithm-tagged registration digest over every declared slot + the declared source digests
-    # + policy_id; the door recomputes it — a post-publication mutation of a container BY CONFORMING
-    # CODE, as represented by the canonical encoding (closed domain — concrete data only; the disclosed
-    # collisions: module-unqualified type names; the designated callables fold by NAME, their identity
-    # being the door's third check; UnionAll/Union signature types by `string`; and the five KNOWN
-    # OPEN classes at the review loop's hard stop — docs/public-api.md §1.2 "KNOWN OPEN"), fires
-    # `POST_SEAL_MUTATION` (accident-grade integrity, never
-    # security-grade; the entry check is not a lock).
+    # v0.4 T2/T2-bis — THE SEAL FIELD keeps the registration FINGERPRINT (HC-9), minted by the
+    # sanctioned route `publish` (the only SUPPORTED one; not the only POSSIBLE one in-process —
+    # see the constructor note); `nothing` = an UNPUBLISHED value (the gated route-U
+    # construction), which the `goMeta` door refuses typed. Since T2-bis the fingerprint is a
+    # LOSSY CACHE KEY, never an identity and never the door's mechanism (T2BIS-DESIGN §12: the
+    # ruling's word "seal" names the snapshot MECHANISM below; this field keeps the digest) —
+    # the algorithm-tagged registration digest over every declared slot + the declared source
+    # digests + policy_id, with its disclosed collisions (docs/public-api.md §1.2).
     seal::Union{Nothing,String}
-    # v0.4 T2 (cure batch 1) — the validated CALLABLE IDENTITIES captured at publish (every
-    # altConstructor / setter / getter / atom evaluator / validate slot, declaration order); the
-    # door compares them by `===`, so a plugin swapped for one with a same-NAMED evil setter is
-    # refused even though names fold identically in the seal. An IMMUTABLE Tuple (cure batch 2:
-    # a Vector baseline could be rewritten through the published value alongside the swap).
-    # `nothing` on unsealed values.
-    _callables::Union{Nothing,Tuple}
+    # v0.4 T2-bis (R-V04B-4 (c+)) — THE SNAPSHOT BASELINE: a deep domain-copy of the eleven
+    # `_SNAPSHOT_FIELDS` values taken at publish (leaves — callables/Types/Symbols/Strings/
+    # VersionNumbers/numbers — carried by reference; containers rebuilt at their exact concrete
+    # types). The door compares the live fields against it by the ONE structural deep-egal walk
+    # (`===`-only leaves) and fires `POST_SEAL_MUTATION` at the first divergent path — replacing
+    # the retired seal re-mint + derived-table re-derivation + callable-identity compare
+    # (accident-grade integrity, never security-grade; the entry check is not a lock; the
+    # snapshot's own members are mutable — the B-2 residue, T2BIS-DESIGN §11). `nothing` on
+    # unsealed values; the underscore is deliberate — an integrity baseline is not a plain
+    # member of a package-public struct.
+    _snapshot::Union{Nothing,NamedTuple}
     # THE ONE CONSTRUCTOR, token-gated. What the token IS and IS NOT (cure batch 2, the honest
     # bound): it removes the generated all-fields constructor so no POSITIONAL or ACCIDENTAL
     # construction can carry a seal — the route-U and mutation classes conforming code produces.
@@ -524,14 +537,17 @@ struct AlterantRegistry
     # authority, OUTSIDE the trust model by the security frame's bound B-2 ("no in-process
     # arrangement in Julia constrains a loaded module"). Every integrity claim of this type is
     # accident-grade: typed refusal of post-seal mutation by CONFORMING code, never security-grade.
-    function AlterantRegistry(::_SealToken, plugins::Vector{PlugIn}, sorted_alt_actions::Vector{Symbol},
-                              action_to_plugin::Vector{Int8}, action_index::Dict{Symbol,Int8},
-                              alt_index::Dict{Symbol,Int8}, accum_alt_idxs::Vector{Int8},
-                              mutex_alt_idxs::Vector{Int8}, action_to_settribute::Dict{Symbol,Symbol},
-                              action_specs::Vector{ActionSpec}, spec_index::Dict{Symbol,Int},
-                              seal::Union{Nothing,String}, callables::Union{Nothing,Tuple})
-        new(plugins, sorted_alt_actions, action_to_plugin, action_index, alt_index, accum_alt_idxs,
-            mutex_alt_idxs, action_to_settribute, action_specs, spec_index, seal, callables)
+    # T2-bis FORM (T2BIS-DESIGN §5): the eight derived tables enter BY NAME as ONE NamedTuple
+    # argument, destructured by field name HERE — the one reviewed destructuring site. No
+    # hand-written table binding exists at any seal/snapshot-carrying call site, so the two
+    # same-typed groups (`action_index`/`alt_index`; `action_to_plugin`/`accum_alt_idxs`/
+    # `mutex_alt_idxs`) cannot be swapped by a caller.
+    function AlterantRegistry(::_SealToken, plugins::Vector{PlugIn},
+                              action_specs::Vector{ActionSpec}, t::NamedTuple,
+                              seal::Union{Nothing,String}, snapshot::Union{Nothing,NamedTuple})
+        new(plugins, t.sorted_alt_actions, t.action_to_plugin, t.action_index, t.alt_index,
+            t.accum_alt_idxs, t.mutex_alt_idxs, t.action_to_settribute, action_specs,
+            t.spec_index, seal, snapshot)
     end
 end
 """
@@ -571,9 +587,15 @@ function AlterantRegistry(plugins::Vector{PlugIn}, sorted_alt_actions::Vector{Sy
                 "build via RegistryBuilder → validate → publish)"))
     end
     any(d -> d.severity === :error, diags) && throw(RegistrationRefused(diags))
-    return AlterantRegistry(_SealToken(), plugins, sorted_alt_actions, action_to_plugin, action_index,
-                            alt_index, accum_alt_idxs, mutex_alt_idxs, action_to_settribute,
-                            action_specs, spec_index, nothing, nothing)
+    # T2-bis (§15 (8)): `derived === nothing` is unreachable here — a `_derive_tables` failure
+    # always co-occurs with an error diagnostic, thrown above. Were the invariant ever false,
+    # route U refuses TYPED before the token form rather than passing `t === nothing`.
+    derived === nothing && throw(RegistrationRefused([Diagnostic(:REG_DERIVED_TABLES, :error,
+        "GoMeta registry: positional construction could not derive tables from the declared " *
+        "record (route U is GATED at v0.4.0; build via RegistryBuilder → validate → publish)")]))
+    # the constructed value's tables are `derived`'s objects (`==`-equal to the caller's,
+    # distinct identity — recorded, not silent; no pin reads their identity)
+    return AlterantRegistry(_SealToken(), plugins, action_specs, derived, nothing, nothing)
 end
 """
     _unchecked_registry(plugins, …, spec_index) -> AlterantRegistry   (INTERNAL, test seam)
@@ -588,9 +610,16 @@ _unchecked_registry(plugins::Vector{PlugIn}, sorted_alt_actions::Vector{Symbol},
                     alt_index::Dict{Symbol,Int8}, accum_alt_idxs::Vector{Int8},
                     mutex_alt_idxs::Vector{Int8}, action_to_settribute::Dict{Symbol,Symbol},
                     action_specs::Vector{ActionSpec}, spec_index::Dict{Symbol,Int}) =
-    AlterantRegistry(_SealToken(), plugins, sorted_alt_actions, action_to_plugin, action_index,
-                     alt_index, accum_alt_idxs, mutex_alt_idxs, action_to_settribute, action_specs,
-                     spec_index, nothing, nothing)
+    # the explicitly written NamedTuple from POSITIONAL arguments is ADMITTED here (T2BIS-DESIGN
+    # §5): the by-name ban is scoped to seal/snapshot-CARRYING construction, and this seam
+    # constructs with `nothing, nothing` — a binding swap could only affect the deliberately-
+    # drifted-shape witnesses it exists to feed.
+    AlterantRegistry(_SealToken(), plugins, action_specs,
+                     (sorted_alt_actions = sorted_alt_actions, action_to_plugin = action_to_plugin,
+                      action_index = action_index, alt_index = alt_index,
+                      accum_alt_idxs = accum_alt_idxs, mutex_alt_idxs = mutex_alt_idxs,
+                      action_to_settribute = action_to_settribute, spec_index = spec_index),
+                     nothing, nothing)
 "The number of registered alterants (4 since CH-3 step 9; 3 before the heading registration)."
 num_alterants(r::AlterantRegistry) = length(r.plugins)
 
@@ -629,11 +658,18 @@ end
 """
     RegistryBuilder(published::AlterantRegistry) -> RegistryBuilder
 
-A builder PRELOADED with a published registry's declarations (deep-copied — nothing shared with
-the published value): the documented way to extend the built-in inventory
+A builder PRELOADED with a published registry's declarations (copied by the domain copier
+`_domain_copy` — nothing mutable shared with the published value; leaves carried by reference;
+`deepcopy` is never dispatched): the documented way to extend the built-in inventory
 (`RegistryBuilder(DEFAULT_REGISTRY)`), then `register!` the new Alterant at `next_plugin_index`.
+This is the ONE route that meets UNVALIDATED values (the input may carry a post-publication
+cycle, an out-of-domain value, or a position-rule offense), so the copy is CONTAINED
+(T2BIS-DESIGN §3 route 2): a cycle, an outside-domain value, or a `Function`/record struct
+outside its lawful position converts to a typed `RegistrationRefused` (`REG_PROTOCOL`) whose
+message names the offending type and the path — no internal exception and no unbounded
+recursion leaves this public constructor.
 """
-RegistryBuilder(r::AlterantRegistry) = RegistryBuilder(deepcopy(r.plugins), deepcopy(r.action_specs))
+RegistryBuilder(r::AlterantRegistry) = RegistryBuilder(_copy_published_records(r)...)
 
 """
     register!(builder, plugin, specs...) -> builder

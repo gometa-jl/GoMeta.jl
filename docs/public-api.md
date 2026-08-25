@@ -97,17 +97,21 @@ These are part of the documented public surface — declared with Julia's `publi
   (T6/T7: only a Visib-style `settribute` mapping writes back). The release contract page states,
   per slot, which row consumes it.
 - **The registration LIFECYCLE (v0.4):** `RegistryBuilder()` (empty) or
-  `RegistryBuilder(DEFAULT_REGISTRY)` (PRELOADED with the four built-ins, deep-copied — the way
+  `RegistryBuilder(DEFAULT_REGISTRY)` (PRELOADED with the four built-ins, copied by the domain
+  copier — nothing mutable shared with the published value; a cycle, an out-of-domain value or
+  a position-rule offense in the input refuses typed — the way
   to EXTEND the shipped inventory) + `GoMeta.register!(builder,
   plugin, specs...)` — the mutable declaration site; `GoMeta.validate(builder) ->
   Vector{Diagnostic}` — the ONE validation chain, returning EVERY defect (errors and warnings, in
   deterministic order) and never throwing; `GoMeta.publish(builder) -> AlterantRegistry` — the
   SANCTIONED route to a SEALED registry for conforming callers (the only supported one; see the
   honest bound below — in-process Julia cannot make it the only POSSIBLE one): refuses with `RegistrationRefused` (carrying every
-  diagnostic) on any error, proceeds on warnings, COPIES every container by `deepcopy` (nothing
-  mutable is shared with the builder — for the concrete containers of the closed domain; a
-  user `AbstractString` subtype is the one admitted type that could specialize copying, KNOWN
-  OPEN (iv) above), derives the hot-path tables from the declarations, and seals.
+  diagnostic) on any error, proceeds on warnings, COPIES every container by the domain copier
+  `_domain_copy` (callables/Types/Symbols/Strings/VersionNumbers/numbers carried by reference;
+  containers and slot structs rebuilt at their EXACT concrete types; sharing preserved within
+  each copy); `deepcopy_internal` is never dispatched, so KNOWN OPEN (iv)'s user-type copy
+  residue is closed; derives the hot-path tables from the declarations, seals (the fingerprint),
+  and takes the SNAPSHOT baseline the door compares against.
   `RegistrationRefused <: Exception` — `.diagnostics::Vector{Diagnostic}` with stable codes
   (`REG_PROTOCOL` for structural defects; `REG_UNKNOWN_SETMODE`, `REG_DUPLICATE_ALTNAME`,
   `REG_DUPLICATE_ACTION`, `REG_RESERVED_SHADOW`, `REG_SIG_MISMATCH`, `REG_VALUE_ALGEBRA`,
@@ -118,11 +122,27 @@ These are part of the documented public surface — declared with Julia's `publi
   refuses — build through the lifecycle; positional construction is removed at v0.5. No positional
   form accepts a seal (the generated all-fields constructor is suppressed by a construction
   token); a published registry's containers are READ-ONLY by contract — the door detects, for
-  conforming code and within the disclosed bounds below, a mutation of the declared record (as
-  represented by the canonical encoding), of any derived table, or of any callable IDENTITY
-  (`POST_SEAL_MUTATION`), and the package-internal callable seam `run_absorb_apply!` (NOT a
+  conforming code and within the disclosed bounds below, a mutation of ANY walked field (the
+  declared record, every derived table, every callable identity, the fingerprint) by ONE
+  structural deep-egal comparison against the publish-time SNAPSHOT (`===`-only leaves; the
+  first divergent path is named in the message; `POST_SEAL_MUTATION`), and the
+  package-internal callable seam `run_absorb_apply!` (NOT a
   `public` name; consumed by adapters at their own risk, documented in its source) runs the
-  same door. **The honest bound (the security frame's B-2 — no in-process arrangement in Julia
+  same door. *The T2-bis honest bound, stated exactly: the snapshot's own members are mutable
+  and reachable through the published value, so a mutation through a published container is
+  refused UNLESS the same actor also rewrites the corresponding snapshot container — a MIXED
+  case (the live half accident-grade, the snapshot half a B-2 reach into an underscored
+  field); the frozen-container path closes it (the v0.5 lane, row V05-1). A callable's
+  IDENTITY is compared, never its BEHAVIOR — a closure's captured state, a
+  `mutable struct <: Function`'s fields, or a redefined generic's methods move behavior under
+  an unchanged `===` identity, on BOTH sides at once (the leaf is shared by reference), so the
+  door stays silent — inherited from the retired callable-identity baseline's semantics. A
+  Dict whose keys are structurally equal but DISTINCT objects is compared as a multiset of
+  entries — a permutation of values across such keys stays silent although a stored-key lookup
+  observes the change (reachable only through declared container/struct-keyed Dicts; the
+  engine's own tables are Symbol-keyed). A degenerate NESTED duplicate-equal-key Dict tower is
+  compared in time exponential in its nesting depth (reachable only through deliberately
+  constructed duplicate-equal-key nests).* **The honest bound (the security frame's B-2 — no in-process arrangement in Julia
   constrains a loaded module):** every integrity guarantee here is ACCIDENT-grade — typed
   refusal of unpublished or post-publication-mutated registries produced by CONFORMING code.
   It is not security-grade: the construction token and the seal-minting helpers are reachable by
@@ -140,26 +160,26 @@ These are part of the documented public surface — declared with Julia's `publi
   data value (`Declared`, an effect payload, any container in them) it is refused. A declared
   value of ANY other type — a range, a view, a user container, `BigInt`, `Char`, an enum, an
   opaque struct — or a cyclic container is REFUSED at `validate` (`REG_PROTOCOL`, one row per
-  record slot), never folded by a lossy fallback. The disclosed collisions of the encoding: type
+  record slot), never folded by a lossy fallback; declared string VALUES are `String`-only
+  since T2-bis (a non-`String` `AbstractString` value that published before refuses typed —
+  a registered 0.4.x contract narrowing). The disclosed collisions of the encoding: type
   identities fold module-UNQUALIFIED (two same-named types from different modules collide — the
   recorded trade of the profile digest); the designated callables fold by NAME in the digest (a
-  same-named swap is caught by the door's identity check, not by the seal); UnionAll/Union
-  signature types fold by `string`.
-  **KNOWN OPEN at the review loop's HARD STOP (the fifth reconfirm set `crx-t2r5`, 2026-08-25 —
-  NOT cured, DISCLOSED; the owner's decision row on the encoder design is pending):** (i) a
-  function-valued TYPE PARAMETER (`Val{M.f}`) folds by name outside the data context and
-  outside the callable baseline (a same-named cross-module swap inside a signature/constructor
-  type is invisible); (ii) type-parameter CATEGORIES are untagged (`Val{M.T}` and `Val{true}`
-  both fold as `Val{T}`; a `TypeVar` named `T` vs a type `T`); (iii) a container's CONCRETE
-  parameters are not encoded (`Any[1]` ≡ `Int[1]`; `Dict{Symbol,Any}` ≡ `Dict{Any,Any}`); (iv)
-  every `AbstractString` is admitted and folds as `String` (`String` ≡ `SubString`; a user
-  string type reaches `deepcopy`); (v) the type-bearing fields (`altConstructor`, an overload's
-  `sig_types`/`return_type`) are folded by the seal but NOT probed at `validate` (a type such
-  as `Val{'c'}` passes `validate` and refuses at `publish` with a generic `REG_PROTOCOL`, not a
-  slot-named row). Until ruled, the seal's honest guarantee reads: a post-publication mutation
-  by conforming code is detected iff it changes the canonical text, a derived table, or a
-  designated callable's identity — the three disclosed collisions and the five open classes
-  above are the exceptions. No shipped declaration uses any of the five shapes.
+  same-named swap is caught by the snapshot's `===` leaf compare, not by the fingerprint);
+  UnionAll/Union signature types fold by `string`.
+  **The FINGERPRINT is a lossy CACHE KEY, never an identity and never the door's mechanism
+  (T2-bis):** its residual collision classes — (i) a function-valued TYPE PARAMETER
+  (`Val{M.f}`) folds by name; (ii) type-parameter CATEGORIES are untagged (`Val{M.T}` and
+  `Val{true}` both fold as `Val{T}`); (iii) a container's CONCRETE parameters are not encoded
+  (`Any[1]` ≡ `Int[1]`) — are FINGERPRINT-only: the snapshot door compares every `Type` leaf
+  by `===`, so each of these swaps FIRES at the door. The former class (iv) is CLOSED —
+  declared values are `String`-only and `deepcopy_internal` is never dispatched. The former
+  class (v) is CLOSED — `validate`'s domain walk probes every type-bearing field (a type such
+  as `Val{'c'}` refuses with a slot-named row; a type whose parameter tree exceeds the
+  type-encoder budget of 256 nodes likewise refuses slot-named). The door's guarantee reads: a
+  post-publication mutation of any walked field by conforming code is detected iff it changes
+  the content-structural value (`===` at the leaves) — the honest bound above states the
+  disclosed exceptions. No shipped declaration uses any of the collision shapes.
 - `GoMeta.next_plugin_index(builder) -> Int8` — the index the next `register!` assigns (§ the
   plugin index rule below); throws `RegistrationRefused` (`REG_SLOT_EXHAUSTED`) at capacity.
 - **The record VOCABULARY (v0.4; what `register!` accepts — the Alterant registration record and
@@ -277,9 +297,11 @@ bytes are never touched; no parse, verdict, or render work occurs (§3.1).
 (e.g. a gated positional construction) fail-closes exactly like an invalid config — a
 `PROCESS_ERROR` result before any parse, carrying `REG_UNPUBLISHED`, whose message names the
 sanctioned path `RegistryBuilder → validate → publish`. A published registry whose containers
-were mutated after publication fail-closes with `POST_SEAL_MUTATION` (the seal is recomputed at
-the door — the real freeze gate; re-publication is the sanctioned change path). Config-time and
-registry-time diagnostics are collected FULLY into ONE result (config rows first).
+were mutated after publication fail-closes with `POST_SEAL_MUTATION` (the live fields are
+compared structurally against the publish-time snapshot at the door — the real freeze gate;
+the message names the first divergent path; re-publication is the sanctioned change path).
+Config-time and registry-time diagnostics are collected FULLY into ONE result (config rows
+first).
 
 ### `GoMetaConfig(; profile = :jl_share_v1, flavor_tag = :julia, parse_range = nothing, user_mh_profile = nothing, namespace = :default)`
 
@@ -637,7 +659,7 @@ rows; **(iv) DOOR results** — `REG_UNPUBLISHED` / `POST_SEAL_MUTATION` come ba
 
 | Code | Severity | Trigger | Context |
 |---|---|---|---|
-| `REG_PROTOCOL` | error | a STRUCTURAL defect of the record (tier 1): an enum tag outside its closed set, a kinds/kind_sources mismatch, an overlong kinds vector, a `queryable` row on a getter-less plugin, the dispatch-target uniqueness law, a dangling plugin index, a declared `settribute` key the component does not carry, an empty `MutEx`, a record passed to `register!` that names another plugin; (v0.4 T2 cure batches 4–5) a declared value outside the CLOSED encodable domain — a cyclic container, a `Function` inside a data value, a non-`Vector`/`Dict` container (range, view, user container), any type without an encoder — one row per record SLOT, naming it (KNOWN OPEN (v): the type-bearing fields `altConstructor` / overload `sig_types` / `return_type` are not yet probed here — an unencodable type parameter in them refuses at `publish` instead) | the action or alterant name |
+| `REG_PROTOCOL` | error | a STRUCTURAL defect of the record (tier 1): an enum tag outside its closed set, a kinds/kind_sources mismatch, an overlong kinds vector, a `queryable` row on a getter-less plugin, the dispatch-target uniqueness law, a dangling plugin index, a declared `settribute` key the component does not carry, an empty `MutEx`, a record passed to `register!` that names another plugin; (v0.4 T2 cure batches 4–5) a declared value outside the CLOSED encodable domain — a cyclic container, a `Function` inside a data value, a non-`Vector`/`Dict` container (range, view, user container), any type without an encoder, a `Type` whose parameter tree exceeds the type-encoder budget, or (T2-bis) any domain-walk membership failure over the FULL field lists — one row per record SLOT, naming it | the action or alterant name |
 | `REG_UNKNOWN_SETMODE` | error | `setMode` outside `(:accumulate, :mutExclusive, :mutExclusivePerField, :localOnly)` | the alterant |
 | `REG_DUPLICATE_ALTNAME` | error | two records with the same `altName` | the alterant |
 | `REG_DUPLICATE_ACTION` | error (`:refuse` arm) / warning (`:warn` arm, first-writer-wins) | two action records with the same `name` | the action |
@@ -652,7 +674,7 @@ rows; **(iv) DOOR results** — `REG_UNPUBLISHED` / `POST_SEAL_MUTATION` come ba
 | `REG_SLOT_EXHAUSTED` | error | more than 127 alterants or actions (the Int8 index space) — at `register!`'s 128th append, or at `validate` for directly-pushed builders | the alterant / `nothing` |
 | `REG_DERIVED_TABLES` | error | positional (route-U) construction whose hand-built tables differ from the tables derived from the declarations | `nothing` |
 | `REG_UNPUBLISHED` (door) | error | an unsealed registry reached `goMeta` or `run_absorb_apply!` — the message names `RegistryBuilder → validate → publish` | `nothing` |
-| `POST_SEAL_MUTATION` (door) | error | a published registry whose declared record, derived tables, or callables no longer match its publication — the message names what moved; re-publication is the change path | the seal |
+| `POST_SEAL_MUTATION` (door) | error | a published registry whose live fields no longer match the publish-time snapshot — the message carries "at <path>", the first divergent path; re-publication is the change path | the rendered path |
 
 Stable-message refusals (NOT typed codes; the §3.4 class): `"GoMeta absorb: meta-hierarchy slot pool
 exhausted"` — the per-call slot pool (`NUM_MH_LEVELS` = 12 slots) fully occupied at an

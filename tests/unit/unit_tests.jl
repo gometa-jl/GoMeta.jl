@@ -47,4 +47,5 @@ using Test
     include(joinpath(@__DIR__, "inert_semantics_tests.jl"))         # v0.3.1: the R-INERT-4 differential oracle + §4.1 refusal + §4.8 Alterant guards (APPEND-ONLY)
     include(joinpath(@__DIR__, "record_schema_tests.jl"))           # v0.4 T1: the registration-record schema extension witnesses (APPEND-ONLY)
     include(joinpath(@__DIR__, "registry_lifecycle_tests.jl"))      # v0.4 T2: Builder → validate → publish, the one chain, the STRICT door, the seal gate, the exhaustion refusals (APPEND-ONLY)
+    include(joinpath(@__DIR__, "snapshot_property_tests.jl"))       # v0.4 T2-bis: the snapshot door's PROPERTY proof (N=1024 site mutations + FP rebuilds + named cases; T2BIS-DESIGN §9)
 end
