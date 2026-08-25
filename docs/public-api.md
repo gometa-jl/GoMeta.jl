@@ -156,7 +156,7 @@ These are part of the documented public surface — declared with Julia's `publi
   · `Complex` and `Rational` of those · `VersionNumber` · `Type` (parameters type-tagged) ·
   CONCRETE `Vector` / `Dict` / `Tuple` / `Pair` / `NamedTuple` of encodable values · the slot
   types. A `Function` is encodable (by name) ONLY in a designated callable field (setter, getter,
-  `evaluate`, `validate`, constructor — identity-checked by the door's third check); inside a
+  `evaluate`, `validate`, constructor — each a snapshot leaf the door compares by `===`); inside a
   data value (`Declared`, an effect payload, any container in them) it is refused. A declared
   value of ANY other type — a range, a view, a user container, `BigInt`, `Char`, an enum, an
   opaque struct — or a cyclic container is REFUSED at `validate` (`REG_PROTOCOL`, one row per

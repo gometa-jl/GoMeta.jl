@@ -980,13 +980,14 @@ end
 
 ## v0.4 T2 — the canonical TEXT of a declared slot for the digest fold: deterministic, module-
 ## unqualified, callables by NAME, containers element-wise in declaration order, and BOUNDARY-
-## UNAMBIGUOUS (no element boundary can be re-cut) — NOT globally injective: module-unqualified
-## type names, the name-folded designated callables (identity-checked at the door instead) and
-## UnionAll/Union types by `string` are the disclosed collisions, and five further classes are
-## KNOWN OPEN at the review loop's hard stop (docs/public-api.md §1.2 "KNOWN OPEN"; owner row
-## pending): function-valued type parameters; untagged parameter categories (`Val{M.T}` ≡
-## `Val{true}`); un-encoded container parameters (`Any[1]` ≡ `Int[1]`); `AbstractString` folded
-## as `String`; type-bearing fields unprobed at validate
+## UNAMBIGUOUS (no element boundary can be re-cut) — NOT globally injective. Since T2-bis the
+## fold is a lossy CACHE KEY, never the door's mechanism (docs/public-api.md §1.2): its residual
+## collision classes — module-unqualified type names; the name-folded designated callables;
+## function-valued type parameters; untagged parameter categories (`Val{M.T}` ≡ `Val{true}`);
+## un-encoded container parameters (`Any[1]` ≡ `Int[1]`) — are FINGERPRINT-only, each caught at
+## the door by the snapshot's `===` leaf compare. The former (iv)/(v) hard-stop classes are
+## CLOSED (`String`-only values; every type-bearing field probed at validate under the node
+## budget); non-DataType type nodes encode STRUCTURALLY (crx-t2bis cure A1 — never `string`)
 ## (cure batch 1: the first encoding joined elements with delimiters, so `[Symbol("a,b")]` and
 ## `[:a, :b]` folded identically — every element, every string leaf and every component is now
 ## LENGTH-PREFIXED, netstring-style `<bytes>:<text>`, so no boundary can be re-cut).
@@ -1015,10 +1016,11 @@ _slot_text(x::Number)::String = throw(_UnencodableSlot(typeof(x)))
 _slot_text(x::VersionNumber)::String = string("v", _ns(string(x)))
 _slot_text(x::Type)::String = string("t", _ns(_type_text(x)))
 # (cure batch 5) DATA SLOTS HOLD DATA: a `Function` encodes by NAME only in the DESIGNATED callable
-# fields (setter/getter/evaluate/validate — their IDENTITY is the door's third check); inside a
-# declared DATA value (`Declared.value`, `EffectRow.payload`, any container in them) a same-named
-# function from another module would be invisible to the seal AND to the identity check, so a
-# function there is UNENCODABLE (refused at validation).
+# fields (setter/getter/evaluate/validate — each a snapshot leaf the door compares by `===`);
+# inside a declared DATA value (`Declared.value`, `EffectRow.payload`, any container in them) a
+# same-named function from another module would be invisible to the fingerprint AND, were it not
+# refused, indistinguishable in the fold, so a function there is UNENCODABLE (refused at
+# validation; the snapshot door would separately fire on the identity move).
 const _IN_DATA = Base.ScopedValues.ScopedValue{Bool}(false)
 _slot_text(f::Function)::String =
     _IN_DATA[] ? throw(_UnencodableSlot(typeof(f))) : string("f", _ns(String(nameof(f))))
@@ -1245,7 +1247,12 @@ function _key_order_budget(k)::Bool
                 isdefined(x, :T) && push!(stack, x.T)
                 isdefined(x, :N) && push!(stack, x.N)
             end
-        elseif x isa Vector || x isa Tuple || x isa NamedTuple
+        elseif x isa Vector
+            for i in 1:length(x)
+                isassigned(x, i) || return false                  # crx-t2bis cure A3: no undef read
+                push!(stack, x[i])
+            end
+        elseif x isa Tuple || x isa NamedTuple
             for e in x
                 push!(stack, e)
             end
@@ -1313,6 +1320,12 @@ function _emit_overbudget!(diags, label, ctx, slot)
         "exceeds the type-encoder budget (", _TYPE_BUDGET, " nodes — the domain walk's totality bound)"), ctx))
     return nothing
 end
+function _emit_undef!(diags, label, ctx, slot)
+    push!(diags, Diagnostic(:REG_PROTOCOL, :error, string(
+        "GoMeta registry: ", label, " ", repr(ctx), " slot ", slot, " declares a container with an ",
+        "UNDEFINED element — a declared value must be fully constructed (the record shape law)"), ctx))
+    return nothing
+end
 
 # ONE (record, slot) probe of the validate walk (T2BIS-DESIGN §2): the iterative
 # two-predicate walk, emitting AT MOST ONE slot-named row — the FIRST failure on the
@@ -1352,6 +1365,9 @@ function _domain_slot_probe!(diags::Vector{Diagnostic}, label::String, ctx, slot
             push!(work, _PopVisit(v))
             if v isa Vector
                 kidrk = rk === 0x02 ? 0x01 : 0x00
+                for i in 1:length(v)                              # crx-t2bis cure A3
+                    isassigned(v, i) || return _emit_undef!(diags, label, ctx, slot)
+                end
                 for i in length(v):-1:1
                     push!(work, (v[i], pos, false, kidrk))
                 end
@@ -1441,6 +1457,16 @@ the typed refusal, never escape a public constructor."
 struct _CyclicValue <: Exception
     path::Vector{Any}
 end
+"internal (crx-t2bis cure A2): a USER method (`hash`/`isequal`/`convert`) thrown while a
+rebuilt `Dict` was being filled — the one rebuild step that dispatches user-extensible
+code. Converted to a typed refusal at both public copy boundaries, never leaked raw."
+struct _RebuildFailed <: Exception
+    T::Type
+end
+"internal (crx-t2bis cure A3): an UNDEFINED container element met by a walk — a
+`resize!`-widened published Vector, or an undef-slot declared vector. Refused typed at
+validate and the contained route; a divergence at the door."
+struct _UndefSlot <: Exception end
 
 "a Dict-key path segment carrying the LIVE key value; two `_Key`s are egal iff their
 carried values are `===` (field-wise tuple egal — the property oracle's segment law)."
@@ -1478,7 +1504,15 @@ function _copy_rebuild(fr::_CopyFrame)
         n = length(fr.out) ÷ 2
         sizehint!(out, n)
         for j in 1:n
-            out[fr.out[2j - 1]] = fr.out[2j]   # the fill MAY dispatch hash/isequal — publish-side only, never the door
+            k = fr.out[2j - 1]
+            # the fill dispatches hash/isequal (copy-side only, never the door); a USER
+            # method throwing here is contained TYPED (crx-t2bis cure A2), never leaked raw
+            try
+                out[k] = fr.out[2j]
+            catch e
+                e isa InterruptException && rethrow()
+                throw(_RebuildFailed(typeof(k)))
+            end
         end
         return out
     elseif fr.cls === :tuple
@@ -1573,6 +1607,7 @@ function _domain_copy(x, memo::IdDict{Any,Any};
                                 fill(false, n), fill(kidrk, n), Vector{Any}(undef, n),
                                 Vector{Any}(undef, n), 1)
                 for i in 1:n
+                    isassigned(v, i) || throw(_UndefSlot())   # crx-t2bis cure A3
                     fr.kids[i] = v[i]
                     fr.ksegs[i] = i
                 end
@@ -1760,6 +1795,15 @@ function _egal_cmp(t::_EgalTask, work, guards)
             length(a) == length(b) || return (t.path, :size)
             kidrk = t.rk === 0x02 ? 0x01 : 0x00
             for i in length(a):-1:1
+                # (crx-t2bis cure A3) an UNDEFINED element (a resize!-widened live vector)
+                # never reads: assignment-state divergence FIRES at the element path; a
+                # conforming snapshot has no undef slot, so both-undef only means equal
+                la = isassigned(a, i)
+                lb = isassigned(b, i)
+                if !(la && lb)
+                    la === lb || return ((t.path, i), :leaf)
+                    continue
+                end
                 push!(work, _EgalTask(a[i], b[i], (t.path, i), t.pos, false, kidrk))
             end
         elseif a isa Dict
@@ -1945,8 +1989,8 @@ function _assert_snapshot_disjoint(live::NamedTuple, snap::NamedTuple)
                 v in out && continue
                 push!(out, v)
                 if v isa Vector
-                    for e in v
-                        push!(stack, e)
+                    for i in 1:length(v)
+                        isassigned(v, i) && push!(stack, v[i])    # crx-t2bis cure A3
                     end
                 else
                     for (k, v2) in v
@@ -1980,6 +2024,15 @@ end
 _domain_type_name(T::Type)::String = String(nameof(T))
 
 function _route2_refuse(r::AlterantRegistry, e, field::Symbol)
+    # (crx-t2bis cures A2/A3) the two path-less internal classes convert typed too
+    if e isa _RebuildFailed || e isa _UndefSlot
+        throw(RegistrationRefused([Diagnostic(:REG_PROTOCOL, :error, string(
+            "GoMeta registry: RegistryBuilder(published) could not copy field ", field, " (",
+            e isa _RebuildFailed ?
+                string("a user method thrown while rebuilding a Dict keyed by ", _domain_type_name(e.T)) :
+                "an UNDEFINED container element — the published value was mutated after publication",
+            ") — the record shape law"), field)]))
+    end
     (e isa _OutsideDomain || e isa _CyclicValue) || rethrow()
     p = Any[field]
     append!(p, e.path)
@@ -2050,12 +2103,28 @@ _overload_text(ov::ActionOverload)::String =
 # consciously.
 function _type_text(t)::String
     t === Any && return "Any"
-    t isa DataType || return string(t)
-    isempty(t.parameters) && return String(nameof(t))
-    return string(nameof(t), "{", join((_type_param_text(p) for p in t.parameters), ","), "}")
+    if t isa DataType
+        isempty(t.parameters) && return String(nameof(t))
+        return string(nameof(t), "{", join((_type_param_text(p) for p in t.parameters), ","), "}")
+    end
+    # (T2-bis crx cure A1) non-DataType type nodes encode STRUCTURALLY — `string()` on a
+    # UnionAll/Union/TypeVar dispatches `show`, and a user's own display method on its own
+    # admitted type (legitimate specialization, not piracy) could throw out of the mint. The
+    # structural text dispatches nothing (`nameof`/`Symbol` reads only) and stays
+    # module-unqualified. Recursion is bounded: every minted type passed predicate 2's
+    # descending node budget, so the tree has ≤ `_TYPE_BUDGET` nodes.
+    t === Union{} && return "Bottom"
+    t isa UnionAll && return string("where(", _typevar_text(t.var), ",", _type_text(t.body), ")")
+    t isa Union && return string("union(", _type_text(t.a), ",", _type_text(t.b), ")")
+    throw(_UnencodableSlot(typeof(t)))   # unreachable for an admitted `Type` leaf
 end
+_typevar_text(v::TypeVar)::String =
+    string("tv(", String(v.name), ",", _type_text(v.lb), ",", _type_text(v.ub), ")")
 _type_param_text(p)::String =
-    p isa Type ? _type_text(p) : (p isa TypeVar || p isa Core.TypeofVararg) ? string(p) : _slot_text(p)
+    p isa TypeVar ? _typevar_text(p) :
+    p isa Core.TypeofVararg ? string("va(", isdefined(p, :T) ? _type_text(p.T) : "-", ",",
+                                     isdefined(p, :N) ? _type_param_text(p.N) : "-", ")") :
+    p isa Type ? _type_text(p) : _slot_text(p)
 
 """
     _reflection_cross_check(action_specs, plugins) -> nothing
@@ -2311,9 +2380,21 @@ function publish(b::RegistryBuilder)
     # has run, so every value is in-domain and acyclic (predicate ground per field: validate
     # reaches `plugins`/`action_specs`; the derived tables are grounded in their concrete
     # declared types + their construction from the already-copied record) — ONE stage-1 memo.
+    # (crx-t2bis cures A2/A3) the ONE remaining escape class — a USER `hash`/`isequal`
+    # thrown at a Dict rebuild fill, or an undefined element racing in after validate —
+    # converts to the typed refusal here, never a raw exception out of `publish`.
+    copyc = (x, m) -> try
+        _domain_copy(x, m)
+    catch e
+        (e isa _RebuildFailed || e isa _UndefSlot) || rethrow()
+        throw(RegistrationRefused([Diagnostic(:REG_PROTOCOL, :error, string("GoMeta registry: the ",
+            "declared record could not be copied for publication (", e isa _RebuildFailed ?
+            string("a user method thrown while rebuilding a Dict keyed by ", _domain_type_name(e.T)) :
+            "an UNDEFINED container element", ") — the record shape law"), nothing)]))
+    end
     m1 = IdDict{Any,Any}()
-    plugins = _domain_copy(b.plugins, m1)
-    specs   = _domain_copy(b.action_specs, m1)
+    plugins = copyc(b.plugins, m1)
+    specs   = copyc(b.action_specs, m1)
     t = _derive_tables(plugins, specs)
     # (cure batch 4) validation has already refused cyclic/unencodable declarations; this catch is
     # the defensive conversion so no internal exception can ever leave the public lifecycle.
@@ -2329,7 +2410,7 @@ function publish(b::RegistryBuilder)
     # leaf, carried by reference — a seal-only divergence fires at path `seal`.
     base = (; plugins = plugins, action_specs = specs, seal = seal, t...)
     snapshot = let m2 = IdDict{Any,Any}()
-        NamedTuple{_SNAPSHOT_FIELDS}(map(k -> _domain_copy(base[k], m2), _SNAPSHOT_FIELDS))
+        NamedTuple{_SNAPSHOT_FIELDS}(map(k -> copyc(base[k], m2), _SNAPSHOT_FIELDS))
     end
     _assert_snapshot_disjoint(base, snapshot)
     return AlterantRegistry(_SealToken(), plugins, specs, t, seal, snapshot)

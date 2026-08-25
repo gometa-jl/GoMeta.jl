@@ -12,11 +12,10 @@
 #       (`POST_SEAL_MUTATION` on declared, derived, re-ordered, cyclic and callable-identity mutations by
 #       conforming code), `register!`'s binding + pool refusals, the slot encoding's distinctions
 #       (length-prefixed boundaries, concrete numeric types incl. bit-exact floats, vectors vs tuples,
-#       the CLOSED domain — data slots hold concrete data, the refusals witnessed below; NOT global
-#       injectivity: module-unqualified type names, the name-folded designated callables (door-checked
-#       by identity, witnessed below) and UnionAll/Union by `string` are the disclosed collisions, and
-#       FIVE classes are KNOWN OPEN at the review loop's hard stop, NOT witnessed and NOT cured here
-#       (docs/public-api.md §1.2 "KNOWN OPEN"; owner row pending)), the 0.4.x contract family, warnings emitted at publish, the two
+#       the CLOSED domain — data slots hold concrete data, the refusals witnessed below; the
+#       fingerprint is a lossy CACHE KEY since T2-bis — its residual collision classes are
+#       fingerprint-only, each caught at the door by the snapshot's `===` leaf compare; the former
+#       (iv)/(v) hard-stop classes are CLOSED — docs/public-api.md §1.2), the 0.4.x contract family, warnings emitted at publish, the two
 #       exhaustion refusals (the typed registry-grain diagnostic + the stable-message per-call slot-pool
 #       guard), and full collection at the entry (config + registry diagnostics in ONE result).
 # DOES: builds registries through every route, mutates published values, drives the door, and pins
@@ -82,16 +81,17 @@ import GoMeta as GM
         R = GM.publish(GM.default_registry_builder())
         r0 = GM.goMeta(Vector{UInt8}(codeunits("x = 1\n#~ hide\n\ny = 2\n")); registry = R)
         @test r0.status === GM.PROCESS_OK
-        # a mutation through a published container (the finding-3 class): the seal no longer matches
+        # a mutation through a published container (the finding-3 class): the live record no
+        # longer matches the snapshot (T2-bis — the length gate on action_specs)
         push!(R.action_specs, GM.ActionSpec(:zzz, :identifier, Int8(2),
             [_ov(Type[GM.Alterants.Visib, Symbol]; rt = Bool)], 0, :none, nothing, nothing))
         r1 = GM.goMeta(Vector{UInt8}(codeunits("x = 1\n#~ hide\n\ny = 2\n")); registry = R)
         @test r1.status === GM.PROCESS_ERROR
         @test _codes(r1.diagnostics) == [:POST_SEAL_MUTATION]
         @test isempty(GM.outputs(r1).render_bytes)
-        # (cure batch 1) a mutated DERIVED table — the declared record untouched, the seal still
-        # matching — is refused too: the door re-derives every table (the CRX after-T2 breaker's
-        # `action_to_settribute[:hide] = :show` attack)
+        # (cure batch 1; T2-bis) a mutated DERIVED table — the declared record untouched — is
+        # refused too: every table is a walked snapshot field (the CRX after-T2 breaker's
+        # `action_to_settribute[:hide] = :show` attack fires at the entry's element path)
         R2 = GM.publish(GM.default_registry_builder())
         R2.action_to_settribute[:hide] = :show
         d2 = GM._registry_door_check(R2)
@@ -103,8 +103,8 @@ import GoMeta as GM
         R4 = GM.publish(GM.default_registry_builder())
         reverse!(R4.action_specs)
         @test _codes(GM._registry_door_check(R4)) == [:POST_SEAL_MUTATION]
-        # a plugin swapped for one with a SAME-NAMED evil setter (folds identically) is refused by
-        # the callable-identity comparison
+        # a plugin swapped for one with a SAME-NAMED evil setter (folds identically in the
+        # fingerprint) is refused by the snapshot's `===` leaf compare on the setter field (T2-bis)
         R5 = GM.publish(GM.default_registry_builder())
         # a GENUINELY same-named function from another module (same `nameof` text, different identity)
         @eval module _EvilVisib; setVisib(args...) = nothing; end
@@ -279,7 +279,7 @@ import GoMeta as GM
         # (cure batch 4) dict encoding is canonical over entry text, not `string(key)` order
         @test GM._slot_text(Dict{Any,Any}(:x => 1, "x" => 2)) == GM._slot_text(Dict{Any,Any}("x" => 2, :x => 1))
         # (cure batch 5) DATA SLOTS HOLD DATA: a Function inside a declared value/payload is refused at
-        # validation (a same-named swap there would be invisible to seal AND identity check); the
+        # validation (a same-named swap there would be invisible to the fingerprint fold); the
         # designated callable fields still encode by name
         @test_throws GM._UnencodableSlot GM._slot_text(GM.Declared(Any[sin]))
         @test_throws GM._UnencodableSlot GM._slot_text(GM.EffectRow(:mark, sin))
@@ -588,5 +588,63 @@ import GoMeta as GM
         @test any(x -> x.code === :REG_PROTOCOL && x.context === :show &&
                        occursin("slot default", x.message), d8)
         @test_throws GM.RegistrationRefused GM.publish(b8)
+    end
+
+    @testset "T2-bis crx-t2bis cure witnesses (A1/A2/A3; APPENDED)" begin
+        # CW1 (A1) — an admitted user UnionAll carrying its OWN `Base.show` (legitimate
+        # specialization): the structural type text dispatches nothing, so the record
+        # publishes and the door is silent (before the cure, `string()` dispatched the user
+        # show and `publish` leaked the raw error — probe P6-A1)
+        @eval module _CrxPoison
+            struct Poison{T} end
+            Base.show(io::IO, ::Type{Poison}) = error("A1-BOOM")
+        end
+        bc1 = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
+        bc1.plugins[2] = GM.PlugIn(; altName = :Visib, setMode = :mutExclusive,
+                                     altConstructor = _CrxPoison.Poison,
+                                     setAltInstance = GM.Alterants.setVisib)
+        Rc1 = GM.publish(bc1)
+        @test Rc1 isa GM.AlterantRegistry
+        @test isempty(GM._registry_door_check(Rc1))
+        # CW2 (A2) — a flag-armed THROWING user `hash` on an own Type key: validation and the
+        # fold never hash, but the copier's Dict-rebuild fill does — the throw converts to a
+        # TYPED refusal, never a raw exception out of `publish` (probe P6-A2)
+        @eval module _CrxHashBomb
+            struct K end
+            const ARMED = Base.RefValue(false)
+            Base.hash(::Type{K}, h::UInt) = ARMED[] ? error("A2-BOOM") : (h ⊻ 0x5ca1ab1e)
+        end
+        bc2 = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
+        s2c = bc2.action_specs[3]
+        bc2.action_specs[3] = GM.ActionSpec(; name = s2c.name, spelling = s2c.spelling,
+            plugin = s2c.plugin, overloads = s2c.overloads, settribute = s2c.settribute,
+            default = GM.Declared(Dict{Any,Any}(_CrxHashBomb.K => 1)))
+        _CrxHashBomb.ARMED[] = true
+        ec2 = try GM.publish(bc2); nothing catch err; err end
+        _CrxHashBomb.ARMED[] = false
+        @test ec2 isa GM.RegistrationRefused
+        @test _errors(ec2.diagnostics) == [:REG_PROTOCOL]
+        # CW3 (A3) — UNDEFINED container elements never read raw: a resize!-widened published
+        # vector FIRES at the door (was an UndefRefError leak — probe P6-A3); an undef-slot
+        # declared vector refuses slot-named at validate (never a throw); the contained
+        # preload route refuses typed
+        bc3 = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
+        s3c = bc3.action_specs[3]
+        bc3.action_specs[3] = GM.ActionSpec(; name = s3c.name, spelling = s3c.spelling,
+            plugin = s3c.plugin, overloads = s3c.overloads, settribute = s3c.settribute,
+            default = GM.Declared(Any[1]))
+        Rc3 = GM.publish(bc3)
+        vc3 = Rc3.action_specs[3].default.value
+        resize!(vc3, 0); resize!(vc3, 1)
+        @test _codes(GM._registry_door_check(Rc3)) == [:POST_SEAL_MUTATION]
+        ec3 = try GM.RegistryBuilder(Rc3); nothing catch err; err end
+        @test ec3 isa GM.RegistrationRefused
+        bc4 = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
+        s4c = bc4.action_specs[3]
+        bc4.action_specs[3] = GM.ActionSpec(; name = s4c.name, spelling = s4c.spelling,
+            plugin = s4c.plugin, overloads = s4c.overloads, settribute = s4c.settribute,
+            default = GM.Declared(Vector{Any}(undef, 1)))
+        dc4 = GM.validate(bc4)
+        @test any(x -> x.code === :REG_PROTOCOL && occursin("UNDEFINED element", x.message), dc4)
     end
 end
