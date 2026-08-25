@@ -290,8 +290,9 @@ end
             registry::AlterantRegistry = DEFAULT_REGISTRY) -> GoMetaResult
 
 Run the GoMeta pipeline over `bytes` and return a typed `GoMetaResult` — the package's primary public entry
-(docs/public-api.md §2). PURE + DETERMINISTIC under `DEFAULT_REGISTRY` (under a custom registry,
-as far as its own callables are — the trust model): the same `(bytes, config, registry)` always yields
+(docs/public-api.md §2). PURE + DETERMINISTIC for a DEFAULT-CONFIGURED run under `DEFAULT_REGISTRY`
+(the closed interpreter; the opt-in full-eval mode and a custom registry's own callables are outside
+the guarantee — the trust model): the same `(bytes, config, registry)` always yields
 the same `GoMetaResult`, with no filesystem / clock / environment read — conditions run in the
 closed no-eval interpreter, so in a default-configured run a condition body cannot read or have
 effects (only the explicitly opt-in `:full_eval_v1` extension mode host-evaluates condition text —
@@ -660,7 +661,8 @@ in-`with` absorb-walk + apply fully mutated), so this accessor is correct OUTSID
 `STATE` scope. Total on any OK result (one documented qualification — the multi-Visib
 render guard: docs/public-api.md §2/§3.4; the render plane's string indexing is character-safe,
 docs/public-api.md §4, GUARDED); on a non-OK result the contract is
-`(tree-if-parse-succeeded-else-empty, empty render)` — for the config-time path both are empty, because the
+`(empty tree, empty render)` for EVERY current non-OK result (no post-parse error class exists at v0.4; a
+"tree-if-parse-succeeded" distinction would be a new contract row) — for the config-time path both are empty, because the
 parse never ran. The NamedTuple field order is `(blsStructure_bytes, render_bytes)`.
 """
 function outputs(result::GoMetaResult)

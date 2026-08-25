@@ -104,8 +104,10 @@ These are part of the documented public surface — declared with Julia's `publi
   deterministic order) and never throwing; `GoMeta.publish(builder) -> AlterantRegistry` — the
   SANCTIONED route to a SEALED registry for conforming callers (the only supported one; see the
   honest bound below — in-process Julia cannot make it the only POSSIBLE one): refuses with `RegistrationRefused` (carrying every
-  diagnostic) on any error, proceeds on warnings, COPIES every container (nothing mutable is
-  shared with the builder), derives the hot-path tables from the declarations, and seals.
+  diagnostic) on any error, proceeds on warnings, COPIES every container by `deepcopy` (nothing
+  mutable is shared with the builder — for the concrete containers of the closed domain; a
+  user `AbstractString` subtype is the one admitted type that could specialize copying, KNOWN
+  OPEN (iv) above), derives the hot-path tables from the declarations, and seals.
   `RegistrationRefused <: Exception` — `.diagnostics::Vector{Diagnostic}` with stable codes
   (`REG_PROTOCOL` for structural defects; `REG_UNKNOWN_SETMODE`, `REG_DUPLICATE_ALTNAME`,
   `REG_DUPLICATE_ACTION`, `REG_RESERVED_SHADOW`, `REG_SIG_MISMATCH`, `REG_VALUE_ALGEBRA`,
@@ -143,6 +145,21 @@ These are part of the documented public surface — declared with Julia's `publi
   recorded trade of the profile digest); the designated callables fold by NAME in the digest (a
   same-named swap is caught by the door's identity check, not by the seal); UnionAll/Union
   signature types fold by `string`.
+  **KNOWN OPEN at the review loop's HARD STOP (the fifth reconfirm set `crx-t2r5`, 2026-08-25 —
+  NOT cured, DISCLOSED; the owner's decision row on the encoder design is pending):** (i) a
+  function-valued TYPE PARAMETER (`Val{M.f}`) folds by name outside the data context and
+  outside the callable baseline (a same-named cross-module swap inside a signature/constructor
+  type is invisible); (ii) type-parameter CATEGORIES are untagged (`Val{M.T}` and `Val{true}`
+  both fold as `Val{T}`; a `TypeVar` named `T` vs a type `T`); (iii) a container's CONCRETE
+  parameters are not encoded (`Any[1]` ≡ `Int[1]`; `Dict{Symbol,Any}` ≡ `Dict{Any,Any}`); (iv)
+  every `AbstractString` is admitted and folds as `String` (`String` ≡ `SubString`; a user
+  string type reaches `deepcopy`); (v) the type-bearing fields (`altConstructor`, an overload's
+  `sig_types`/`return_type`) are folded by the seal but NOT probed at `validate` (a type such
+  as `Val{'c'}` passes `validate` and refuses at `publish` with a generic `REG_PROTOCOL`, not a
+  slot-named row). Until ruled, the seal's honest guarantee reads: a post-publication mutation
+  by conforming code is detected iff it changes the canonical text, a derived table, or a
+  designated callable's identity — the three disclosed collisions and the five open classes
+  above are the exceptions. No shipped declaration uses any of the five shapes.
 - `GoMeta.next_plugin_index(builder) -> Int8` — the index the next `register!` assigns (§ the
   plugin index rule below); throws `RegistrationRefused` (`REG_SLOT_EXHAUSTED`) at capacity.
 - **The record VOCABULARY (v0.4; what `register!` accepts — the Alterant registration record and
@@ -620,7 +637,7 @@ rows; **(iv) DOOR results** — `REG_UNPUBLISHED` / `POST_SEAL_MUTATION` come ba
 
 | Code | Severity | Trigger | Context |
 |---|---|---|---|
-| `REG_PROTOCOL` | error | a STRUCTURAL defect of the record (tier 1): an enum tag outside its closed set, a kinds/kind_sources mismatch, an overlong kinds vector, a `queryable` row on a getter-less plugin, the dispatch-target uniqueness law, a dangling plugin index, a declared `settribute` key the component does not carry, an empty `MutEx`, a record passed to `register!` that names another plugin; (v0.4 T2 cure batches 4–5) a declared value outside the CLOSED encodable domain — a cyclic container, a `Function` inside a data value, a non-`Vector`/`Dict` container (range, view, user container), any type without an encoder — one row per record SLOT, naming it | the action or alterant name |
+| `REG_PROTOCOL` | error | a STRUCTURAL defect of the record (tier 1): an enum tag outside its closed set, a kinds/kind_sources mismatch, an overlong kinds vector, a `queryable` row on a getter-less plugin, the dispatch-target uniqueness law, a dangling plugin index, a declared `settribute` key the component does not carry, an empty `MutEx`, a record passed to `register!` that names another plugin; (v0.4 T2 cure batches 4–5) a declared value outside the CLOSED encodable domain — a cyclic container, a `Function` inside a data value, a non-`Vector`/`Dict` container (range, view, user container), any type without an encoder — one row per record SLOT, naming it (KNOWN OPEN (v): the type-bearing fields `altConstructor` / overload `sig_types` / `return_type` are not yet probed here — an unencodable type parameter in them refuses at `publish` instead) | the action or alterant name |
 | `REG_UNKNOWN_SETMODE` | error | `setMode` outside `(:accumulate, :mutExclusive, :mutExclusivePerField, :localOnly)` | the alterant |
 | `REG_DUPLICATE_ALTNAME` | error | two records with the same `altName` | the alterant |
 | `REG_DUPLICATE_ACTION` | error (`:refuse` arm) / warning (`:warn` arm, first-writer-wins) | two action records with the same `name` | the action |

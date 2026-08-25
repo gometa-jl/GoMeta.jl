@@ -31,7 +31,10 @@
 #     T2): its Dict/Vector fields stay mutable containers, but a mutation by CONFORMING code
 #     through any of them — the declared record AS REPRESENTED by the canonical encoding (closed
 #     domain; the disclosed collisions: module-unqualified type names, name-folded designated
-#     callables), a derived table, or a callable IDENTITY — is
+#     callables, UnionAll/Union types by `string`; PLUS the five KNOWN OPEN classes of the review
+#     loop's hard stop — docs/public-api.md §1.2 "KNOWN OPEN": function-valued type parameters,
+#     untagged parameter categories, un-encoded container parameters, `AbstractString` folding
+#     as `String`, type-bearing fields unprobed at validate), a derived table, or a callable IDENTITY — is
 #     DETECTED at the entry door (`POST_SEAL_MUTATION`), never silently effective (accident-grade:
 #     a callable's BEHAVIOR is not pinned by its identity, and the door is an entry check, not a
 #     lock over the run — B-2); the former `===` alias onto its write-back Dict is retired (v0.4 T1).
@@ -921,8 +924,10 @@ and the owning plugins' declaration data (name, set mode, store type,
 getter presence) folds when `plugins` is supplied — a set-mode flip moves the fingerprint.
 The fold reads ONLY the declared record data (never live method tables — snapshot-not-live:
 a spec vector backed by NO real methods digests identically well; the purity witness in the
-profile tests). FNV-1a over the canonical serialization (deterministic across sessions and
-Julia versions).
+profile tests). FNV-1a over the canonical serialization — deterministic across sessions and
+Julia versions FOR the shipped record class (named callables; concrete DataType signatures):
+an anonymous callable's gensym name and a UnionAll/Union's `string` text are the two
+show-context-dependent inputs, both disclosed above.
 """
 function _registration_digest(action_specs::Vector{ActionSpec};
                               plugins::Vector{PlugIn} = PlugIn[])::UInt64
@@ -976,8 +981,13 @@ end
 
 ## v0.4 T2 — the canonical TEXT of a declared slot for the digest fold: deterministic, module-
 ## unqualified, callables by NAME, containers element-wise in declaration order, and BOUNDARY-
-## UNAMBIGUOUS — NOT globally injective: module-unqualified type names and the name-folded
-## designated callables (identity-checked at the door instead) are the disclosed collisions
+## UNAMBIGUOUS (no element boundary can be re-cut) — NOT globally injective: module-unqualified
+## type names, the name-folded designated callables (identity-checked at the door instead) and
+## UnionAll/Union types by `string` are the disclosed collisions, and five further classes are
+## KNOWN OPEN at the review loop's hard stop (docs/public-api.md §1.2 "KNOWN OPEN"; owner row
+## pending): function-valued type parameters; untagged parameter categories (`Val{M.T}` ≡
+## `Val{true}`); un-encoded container parameters (`Any[1]` ≡ `Int[1]`); `AbstractString` folded
+## as `String`; type-bearing fields unprobed at validate
 ## (cure batch 1: the first encoding joined elements with delimiters, so `[Symbol("a,b")]` and
 ## `[:a, :b]` folded identically — every element, every string leaf and every component is now
 ## LENGTH-PREFIXED, netstring-style `<bytes>:<text>`, so no boundary can be re-cut).
@@ -1377,7 +1387,9 @@ The SANCTIONED route to a SEALED registry — the only SUPPORTED one for conform
 only possible one in-process: the construction token and this file's helpers are reachable by any
 loaded module, the accident-grade bound recorded at `_SealToken`). Refuses (throws `RegistrationRefused` carrying every
 diagnostic) if `validate` reports any error; proceeds on warnings. Atomic COPY-publication: every
-container is copied, so no mutable container is shared between the builder and the published value
+container of the closed domain is `deepcopy`-ed, so no mutable container is shared between the
+builder and the published value (a user `AbstractString` subtype is the one admitted type that
+could specialize copying — KNOWN OPEN (iv), docs/public-api.md §1.2)
 (a later mutation of the builder cannot reach a published registry, and vice versa); the derived
 tables come from the declarations alone; the seal covers the declared record. The published value's
 containers are READ-ONLY by contract — a mutation through them is detected at the door

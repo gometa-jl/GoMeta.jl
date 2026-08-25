@@ -12,10 +12,11 @@
 #       (`POST_SEAL_MUTATION` on declared, derived, re-ordered, cyclic and callable-identity mutations by
 #       conforming code), `register!`'s binding + pool refusals, the slot encoding's distinctions
 #       (length-prefixed boundaries, concrete numeric types incl. bit-exact floats, vectors vs tuples,
-#       the CLOSED domain — data slots hold concrete data only, anything else refused at validation;
-#       NOT global injectivity: module-unqualified type names and the name-folded designated
-#       callables are the disclosed collisions — the latter door-checked by identity, witnessed
-#       below; the former NOT witnessed here), the 0.4.x contract family, warnings emitted at publish, the two
+#       the CLOSED domain — data slots hold concrete data, the refusals witnessed below; NOT global
+#       injectivity: module-unqualified type names, the name-folded designated callables (door-checked
+#       by identity, witnessed below) and UnionAll/Union by `string` are the disclosed collisions, and
+#       FIVE classes are KNOWN OPEN at the review loop's hard stop, NOT witnessed and NOT cured here
+#       (docs/public-api.md §1.2 "KNOWN OPEN"; owner row pending)), the 0.4.x contract family, warnings emitted at publish, the two
 #       exhaustion refusals (the typed registry-grain diagnostic + the stable-message per-call slot-pool
 #       guard), and full collection at the entry (config + registry diagnostics in ONE result).
 # DOES: builds registries through every route, mutates published values, drives the door, and pins

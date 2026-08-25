@@ -24,7 +24,9 @@
 #     derived table) BY CONFORMING CODE is DETECTED at the entry door (`POST_SEAL_MUTATION`, v0.4 T2 —
 #     the seal is recomputed over the canonical encoding, the tables re-derived, the callables
 #     identity-compared), never silently effective — accident-grade, within the disclosed bounds
-#     (module-unqualified type names; callable behavior ≠ identity; the entry check is not a lock);
+#     (module-unqualified type names; name-folded designated callables; UnionAll/Union by `string`;
+#     callable behavior ≠ identity; the entry check is not a lock) and the five KNOWN OPEN classes
+#     of the review loop's hard stop (docs/public-api.md §1.2 "KNOWN OPEN"; owner row pending);
 #     the construction capability is token-gated so no POSITIONAL or accidental construction by
 #     conforming code carries a seal (accident-grade: any loaded module can reach the token — B-2);
 #     `accum_alt_idxs` must stay sorted
@@ -501,7 +503,8 @@ struct AlterantRegistry
     # + policy_id; the door recomputes it — a post-publication mutation of a container BY CONFORMING
     # CODE, as represented by the canonical encoding (closed domain — concrete data only; the disclosed
     # collisions: module-unqualified type names; the designated callables fold by NAME, their identity
-    # being the door's third check; UnionAll/Union signature types by `string`), fires
+    # being the door's third check; UnionAll/Union signature types by `string`; and the five KNOWN
+    # OPEN classes at the review loop's hard stop — docs/public-api.md §1.2 "KNOWN OPEN"), fires
     # `POST_SEAL_MUTATION` (accident-grade integrity, never
     # security-grade; the entry check is not a lock).
     seal::Union{Nothing,String}
