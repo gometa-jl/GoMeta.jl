@@ -7,6 +7,7 @@
 #       exported ∪ `public` names; the EXPORTED tier (via `Base.isexported`) must equal the FOUR
 #       declared exports and the remaining tier (via `Base.ispublic`) must equal the declared
 #       package-public names (11 at v0.3.2; 36 since v0.4 T2 — the lifecycle + the record vocabulary;
+#       37 since the v0.4 `Alterant` rename — the canonical name beside the `PlugIn` alias;
 #       no accidental leak, no gap, no silent demotion) — the
 #       machine-checkable surface oracle; (2) asserts each supporting package-public name is
 #       defined, `public`, and NOT exported (the controlled surface); (3) asserts the internal
@@ -42,9 +43,11 @@ import TOML
                          # v0.4 T2 — the registration LIFECYCLE surface (Builder → validate → publish; the
                          # typed refusal) + (cure batch 1) the record VOCABULARY a third-party author
                          # constructs: 11 → 36 package-public names (a registered widening — the
-                         # sanctioned registration surface IS the intended Extension-facing seam).
+                         # sanctioned registration surface IS the intended Extension-facing seam);
+                         # 36 → 37 at the v0.4 `Alterant` rename (R-V04B-5): the canonical record
+                         # name beside the `PlugIn` 0.4.x deprecation alias.
                          :RegistryBuilder, :register!, :next_plugin_index, :validate, :publish, :RegistrationRefused,
-                         :PlugIn, :ActionSpec, :ActionOverload, :DomainRef, :CaptureDecl, :DefaultSlot,
+                         :Alterant, :PlugIn, :ActionSpec, :ActionOverload, :DomainRef, :CaptureDecl, :DefaultSlot,
                          :NoDefault, :Declared, :EffectRow, :RenderDecl, :VocabularySlot,
                          :InlineVocabulary, :VocabularyRef, :MutEx, :ConditionAtom, :SugarRow,
                          :Provenance, :SignatureRecord, :PermissionManifest]   # mirrors docs/public-api.md §1.2 EXACTLY
@@ -53,7 +56,7 @@ import TOML
         live = setdiff(Set(names(GM)), Set([:GoMeta]))     # names() on Julia ≥1.11 == exported ∪ `public` (+ the module name)
         exported = Set(filter(n -> Base.isexported(GM, n), collect(live)))
         @test exported == DECLARED_EXPORTS                        # [1] no accidental leak AND no gap (exact equality)
-        @test setdiff(live, exported) == Set(SUPPORTING_PUBLIC)   # [1b] the `public` tier is EXACTLY the declared names (36 since v0.4 T2)
+        @test setdiff(live, exported) == Set(SUPPORTING_PUBLIC)   # [1b] the `public` tier is EXACTLY the declared names (37 since the v0.4 Alterant rename)
         @test all(n -> Base.ispublic(GM, n), SUPPORTING_PUBLIC)   # [1c] every supporting name carries the `public` marking
         @test all(n -> !Base.isexported(GM, n), SUPPORTING_PUBLIC) # [1d] …and none is exported (the two-tier partition is real)
         for n in DECLARED_EXPORTS

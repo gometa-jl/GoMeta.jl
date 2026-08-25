@@ -139,13 +139,15 @@ import .WriteOutFile: render_bytes
 # the supporting types (ProcessStatus/Diagnostic/EvalStore/AlterantRegistry),
 # DEFAULT_REGISTRY, serialize_evals, outputs, content_fingerprint, EvalRecord, and the PROCESS_OK/PROCESS_ERROR values
 # — the names on the `public` lines below (eleven at 0.3.x; thirty-six since v0.4 T2: + the
-#   registration lifecycle incl. `next_plugin_index` + the record vocabulary; docs/public-api.md §1.2 is the mirror).
+#   registration lifecycle incl. `next_plugin_index` + the record vocabulary; thirty-seven since
+#   the v0.4 `Alterant` rename — `Alterant` is the record's canonical name and `PlugIn` its
+#   PUBLIC 0.4.x deprecation alias (R-V04B-5); docs/public-api.md §1.2 is the mirror).
 # Qualified import (`import GoMeta as GM`) is UNAFFECTED by these exports and remains canonical for namespace
 # hygiene + multi-implementation use; exporting serves the single-implementation `using` convenience only.
 export goMeta, altValues_evals, GoMetaConfig, GoMetaResult
 public outputs, serialize_evals, content_fingerprint, EvalRecord, EvalStore, ProcessStatus, PROCESS_OK, PROCESS_ERROR, Diagnostic, AlterantRegistry, DEFAULT_REGISTRY,
        RegistryBuilder, register!, next_plugin_index, validate, publish, RegistrationRefused,   # v0.4 T2: the registration lifecycle (docs/public-api.md §1.2)
-       PlugIn, ActionSpec, ActionOverload, DomainRef, CaptureDecl, DefaultSlot, NoDefault, Declared,   # v0.4 T2 (cure batch 1): the record
+       Alterant, PlugIn, ActionSpec, ActionOverload, DomainRef, CaptureDecl, DefaultSlot, NoDefault, Declared,   # v0.4 T2 (cure batch 1) + the rename: the record
        EffectRow, RenderDecl, VocabularySlot, InlineVocabulary, VocabularyRef, MutEx, ConditionAtom,   #   VOCABULARY a third-party author
        SugarRow, Provenance, SignatureRecord, PermissionManifest                                      #   constructs (docs/public-api.md §1.2)
 

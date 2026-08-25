@@ -312,7 +312,12 @@ Provenance(; sec_schema = v"1.0.0", sources = DomainRef[], policy_id = nothing,
 
 # --- the immutable alterant inventory ----------------------------------------------------------------
 """
-    PlugIn
+    Alterant
+
+The registration-record type for one alterant — RENAMED from `PlugIn` at v0.4 (R-V04B-5);
+`const PlugIn = Alterant` is a PUBLIC deprecation alias for the whole 0.4.x family (both
+names `public`; the record's FIELD NAMES are NOT renamed at v0.4 — keyword constructors
+are public; alias removal + field-name normalization = v0.5).
 
 The inventory unit for one alterant (`Labels` / `Visib` / `Id` / `Heading`): its name, set-mode
 (`:accumulate` — the inheritance backtrack COLLECTS every applicable value · `:mutExclusive` — the
@@ -323,7 +328,7 @@ v0) precedence tuple. A fixed-size-array-free inventory unit, built into the reg
 `build_default_registry`. `precedencesTuple` is sized by `NUM_MH_LEVELS`,
 the unified meta-hierarchy level count.
 """
-struct PlugIn
+struct Alterant
     altName::Symbol
     setMode::Symbol
     altConstructor::Type
@@ -343,6 +348,9 @@ struct PlugIn
     provenance::Provenance                         # slot (10): the schema-versioned provenance group
     permissions::Union{Nothing,PermissionManifest} # slot (10): RESERVED permissions (Rung 2, inert)
 end
+"The PUBLIC deprecation alias of the v0.4 `PlugIn` → `Alterant` rename (R-V04B-5) — stands
+for the whole 0.4.x family; removal = v0.5 (register row V05-3)."
+const PlugIn = Alterant
 "The v0.3.2 positional shape still constructs — the additive-extension law (old records admit)."
 PlugIn(altName::Symbol, setMode::Symbol, altConstructor::Type, setAltInstance::Function,
        getAltInstance::Union{Nothing,Function},

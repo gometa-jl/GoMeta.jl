@@ -52,8 +52,10 @@ by `tests/unit/public_surface_tests.jl`) and of the refusal behavior the shipped
 | `GoMetaConfig` | type | the v0 input options |
 | `GoMetaResult` | type | the typed pipeline result |
 
-`names(GoMeta)` is exactly this set plus the §1.2 public names (36 since v0.4: the eleven of 0.3.x,
-the six lifecycle names, the nineteen record-vocabulary names; and the module name) — the
+`names(GoMeta)` is exactly this set plus the §1.2 public names (37 since the v0.4 `Alterant`
+rename: the eleven of 0.3.x, the six lifecycle names, the twenty record-vocabulary names —
+`Alterant` is the record's canonical name and `PlugIn` its PUBLIC 0.4.x deprecation alias,
+R-V04B-5; and the module name) — the
 **machine-checkable surface oracle** that `tests/unit/public_surface_tests.jl` asserts against
 this document: the four exported names via `Base.isexported`, the §1.2 names via `Base.ispublic`.
 
@@ -183,7 +185,11 @@ These are part of the documented public surface — declared with Julia's `publi
 - `GoMeta.next_plugin_index(builder) -> Int8` — the index the next `register!` assigns (§ the
   plugin index rule below); throws `RegistrationRefused` (`REG_SLOT_EXHAUSTED`) at capacity.
 - **The record VOCABULARY (v0.4; what `register!` accepts — the Alterant registration record and
-  its action records; construct with the keyword forms):**
+  its action records; construct with the keyword forms). The record type's canonical name is
+  `Alterant` (renamed from `PlugIn` at v0.4, R-V04B-5); `const PlugIn = Alterant` is a PUBLIC
+  deprecation alias for the whole 0.4.x family — the examples below construct through either
+  name identically; the record's FIELD NAMES are unchanged at v0.4 (keyword constructors are
+  public); alias removal + field-name normalization land at v0.5:**
   - `PlugIn(; altName, setMode, altConstructor, setAltInstance, getAltInstance = nothing,
     precedencesTuple = nothing, capture, render, vocabulary, constraints, atoms, contract_version,
     requires, sugar, provenance, permissions)` — the Alterant registration record. Required:
