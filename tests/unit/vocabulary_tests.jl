@@ -17,12 +17,20 @@
 #       these witnesses are the only proof the declaration is LOAD-BEARING (the flip),
 #       the pin is INDEPENDENT (the stale-pin row), and the planes read ONE source.
 # PURPOSE: the T4 acceptance rows (Σ = 18 asserts here + the [11] milestone-set cure
-#       witnesses (6) = 24; +2 in snapshot_property_tests' VocabularyRef named case =
-#       the T4-DESIGN §6 Σ = 20 + the crx-t3t4 cure batch).
+#       witnesses (6) + the [12] reconfirm-cure witnesses (2) = 26; +2 in
+#       snapshot_property_tests' VocabularyRef named case = the T4-DESIGN §6 Σ = 20 +
+#       the crx-t3t4 cure batch + the crx-t3t4r hardening).
 
 using Test
 import GoMeta as GM
 import SHA
+
+# the [12] fixture: a type whose `show(::IO, ::Type)` specialization THROWS — the
+# non-dispatching renderer must never invoke it (t3t4r seat A's hostile-show class)
+@eval module _VocHostile
+    struct Hostile end
+end
+Base.show(io::IO, ::Type{_VocHostile.Hostile}) = error("hostile-show-invoked (must never render)")
 
 @testset "vocabulary (v0.4 T4)" begin
 
@@ -212,5 +220,22 @@ import SHA
             altConstructor = Union{Int,String}, setAltInstance = GM.Alterants.setVisib)
         du = GM.validate(bu)
         @test any(x -> x.code === :DEP_MISSING && occursin("Union{Int64, String}", x.message), du)
+    end
+
+    @testset "[12] the crx-t3t4r reconfirm cure — the NON-DISPATCHING ctor renderer" begin
+        # (t3t4r seat A, MAJOR) the first A3 cure's `string(::Type)` fallback dispatched
+        # `show` over a Union's member types — a member with a throwing user
+        # `show(::IO, ::Type{T})` specialization made `validate` throw AGAIN while
+        # rendering its own DEP_MISSING row (probe-confirmed). The structural renderer
+        # never dispatches: validate RETURNS the row naming the hostile member — a mere
+        # return here PROVES the user show never ran (it throws when invoked).
+        bh = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
+        bh.plugins[2] = GM.PlugIn(; altName = :Visib, setMode = :mutExclusive,
+            altConstructor = Union{_VocHostile.Hostile, Int},
+            setAltInstance = GM.Alterants.setVisib)
+        dh = GM.validate(bh)
+        @test any(x -> x.code === :DEP_MISSING && occursin("Hostile", x.message) &&
+                       occursin("Union{", x.message), dh)
+        @test GM._ctor_type_name(Union{}) == "Union{}"   # the bottom leaf, pinned total
     end
 end

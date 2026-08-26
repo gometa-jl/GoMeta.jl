@@ -1484,13 +1484,28 @@ concretely-typed `altConstructor::Type` field, so the tier-law's broken-record s
 VACUOUS here (`hasmethod` is total over `Type` — no structural defect can make this
 collector throw; disclosed at the T3 commit's adjudication).
 """
-# (the T4-milestone-set A3 cure) the TOTAL ctor-type renderer: `nameof` covers only
-# DataType/UnionAll — a Union-typed `altConstructor` made `validate` THROW a raw
-# MethodError out of the accumulator (the never-throws law) while rendering the very
-# diagnostic that refused it. `string(::Type)` is Base-owned type printing for the
-# remaining classes (Union, Union{}).
-_ctor_type_name(T::Type) =
-    (T isa DataType || T isa UnionAll) ? String(nameof(T)) : string(T)
+# (the T4-milestone-set A3 cure; HARDENED at the t3t4r reconfirm — seat A's MAJOR) the
+# TOTAL, NON-DISPATCHING ctor-type renderer: `nameof` covers only DataType/UnionAll, and
+# the first cure's `string(::Type)` fallback dispatched `show` recursively over a Union's
+# MEMBER types — a member with a throwing user `show(::IO, ::Type{T})` specialization
+# made `validate` throw AGAIN while rendering the very DEP_MISSING row that refused it
+# (probe-confirmed). This form walks the Union structurally (`.a`/`.b`) and renders every
+# leaf via `nameof` — no user method can run (the same no-dispatch law the T2-bis door
+# holds itself to).
+function _ctor_type_name(T::Type)
+    T === Union{} && return "Union{}"
+    if T isa Union
+        parts = String[]
+        U = T
+        while U isa Union
+            push!(parts, _ctor_type_name(U.a))
+            U = U.b
+        end
+        push!(parts, _ctor_type_name(U))
+        return string("Union{", join(parts, ", "), "}")
+    end
+    return String(nameof(T))                        # DataType | UnionAll — nameof total
+end
 
 function _dependency_collect!(diags::Vector{Diagnostic}, plugins::Vector{PlugIn})
     for p in plugins
