@@ -243,65 +243,92 @@ function capture_verdicts!(st::ProcessState, cell::BLS.AbstractComponent;
             _capture_floor!(st, p, :WARN_CAPTURE_UNREADABLE)
             continue
         end
-        sch = p.capture.attr_scheme
-        if sch === :per_key
-            # one row per admitted Dict entry: (handle, <stem>_<key>, value, true)
-            if inst isa Dict
-                bad = false
-                for (kk, vv) in inst
-                    if kk isa Symbol && _capture_value_leaf(vv)
-                        _put_verdict!(st, handle, Symbol(stem, :_, kk), vv, true, content)
-                    else
-                        bad = true
+        ## (the crx-t5 second cure batch, three seats convergent) every arm runs under
+        ## its OWN mini-envelope: any residual throw class from a registrable-but-exotic
+        ## store (a missing custom `keys(T)` method, a shape the static gates cannot
+        ## see) FLOORS typed instead of escaping post-latch; InterruptException and the
+        ## engine's own "GoMeta "-prefixed refusals (the multiplicity refuse) rethrow —
+        ## the uniform T3 arm order. The VALUE ALGEBRA gates EVERY arm's minted values
+        ## (`:per_key` was the only guarded arm pre-cure); `:per_field`'s element gate
+        ## narrows to the MACHINE-INT union (every Number admitted Float64/BigInt/custom
+        ## Numbers into the closed store and dispatched extensible zero/!=); the
+        ## `:single`/`:per_field` reads preflight the array/keys LENGTH parity.
+        try
+            sch = p.capture.attr_scheme
+            if sch === :per_key
+                if inst isa Dict
+                    bad = false
+                    for (kk, vv) in inst
+                        if kk isa Symbol && _capture_value_leaf(vv)
+                            _put_verdict!(st, handle, Symbol(stem, :_, kk), vv, true, content)
+                        else
+                            bad = true
+                        end
                     end
+                    bad && _capture_floor!(st, p, :WARN_CAPTURE_UNREADABLE)
+                else
+                    _capture_floor!(st, p, :WARN_CAPTURE_UNREADABLE)
                 end
-                bad && _capture_floor!(st, p, :WARN_CAPTURE_UNREADABLE)
-            else
-                _capture_floor!(st, p, :WARN_CAPTURE_UNREADABLE)
-            end
-        elseif sch === :single
-            # the NamedElements-shaped single verdict; the capability gate is STATIC on
-            # the declared type (Base.eltype is extended on the abstract root — the
-            # cross-module-safe discriminator; probe P101/P102)
-            T = p.capture.instance_type
-            if eltype(T) === Bool && hasfield(T, :array)
-                set_acts = keys(T)[getfield(inst, :array)]
-                if length(set_acts) > 1
-                    # the shipped Visib row's refuse text is a DECLARED literal (the
-                    # "(show/hide/discard)" parenthetical is not derivable — the round's
-                    # T5P-A row 10); the generic arm names the alterant
-                    p.altName === :Visib ?
-                        error("GoMeta capture: more than one Visib value set for one component — v0's Visib ",
-                            "actions (show/hide/discard) are mutually exclusive per component ",
-                            "(see docs/public-api.md §3.4)") :
-                        error("GoMeta capture: more than one ", String(p.altName), " value set for one ",
-                            "component — a :single capture row is mutually exclusive per component ",
-                            "(see docs/public-api.md §3.4)")
+            elseif sch === :single
+                # the NamedElements-shaped single verdict; the capability gate is STATIC
+                # on the declared type (Base.eltype on the abstract root — probes
+                # P101/P102), the array/keys parity preflighted, the minted value
+                # algebra-checked
+                T = p.capture.instance_type
+                ks = eltype(T) === Bool && hasfield(T, :array) ? keys(T) : nothing
+                arr = ks === nothing ? nothing : getfield(inst, :array)
+                if ks !== nothing && arr isa AbstractVector{Bool} && length(arr) == length(ks)
+                    set_acts = ks[arr]
+                    if length(set_acts) > 1
+                        # the shipped Visib row's refuse text is a DECLARED literal (the
+                        # "(show/hide/discard)" parenthetical is not derivable); the
+                        # generic arm names the alterant
+                        p.altName === :Visib ?
+                            error("GoMeta capture: more than one Visib value set for one component — v0's Visib ",
+                                "actions (show/hide/discard) are mutually exclusive per component ",
+                                "(see docs/public-api.md §3.4)") :
+                            error("GoMeta capture: more than one ", String(p.altName), " value set for one ",
+                                "component — a :single capture row is mutually exclusive per component ",
+                                "(see docs/public-api.md §3.4)")
+                    end
+                    if !isempty(set_acts)
+                        el = set_acts[1]
+                        _capture_value_leaf(el) ?
+                            _put_verdict!(st, handle, stem, el, true, content) :
+                            _capture_floor!(st, p, :WARN_CAPTURE_UNREADABLE)
+                    end
+                else
+                    _capture_floor!(st, p, :WARN_CAPTURE_UNREADABLE)
                 end
-                isempty(set_acts) || _put_verdict!(st, handle, stem, set_acts[1], true, content)
-            else
-                _capture_floor!(st, p, :WARN_CAPTURE_UNREADABLE)
-            end
-        elseif sch === :per_field
-            # one row per non-default numeric field; the field read is index-exact vs
-            # the retired per-module getElement (probe P100); the non-default zero is
-            # computed ONCE from the DECLARED element type — no per-value dispatch
-            T = p.capture.instance_type
-            if eltype(T) <: Number && hasfield(T, :array)
-                z = zero(eltype(T))
-                arr = getfield(inst, :array)
-                for (fi, name) in enumerate(keys(T))
-                    v = arr[fi]
-                    v != z && _put_verdict!(st, handle, Symbol(stem, :_, name), v, true, content)
+            elseif sch === :per_field
+                # one row per non-default MACHINE-INT field (the crx-t5 narrowing); the
+                # field read is index-exact vs the retired per-module getElement (P100);
+                # zero computed ONCE from the DECLARED element type
+                T = p.capture.instance_type
+                ET = eltype(T)
+                ks = (ET isa Type &&
+                      ET <: Union{Int8,Int16,Int32,Int64,Int128,UInt8,UInt16,UInt32,UInt64,UInt128} &&
+                      hasfield(T, :array)) ? keys(T) : nothing
+                arr = ks === nothing ? nothing : getfield(inst, :array)
+                if ks !== nothing && arr isa AbstractVector && length(arr) == length(ks)
+                    z = zero(ET)
+                    for (fi, name) in enumerate(ks)
+                        v = arr[fi]
+                        (v isa ET && v != z) &&
+                            _put_verdict!(st, handle, Symbol(stem, :_, name), v, true, content)
+                    end
+                else
+                    _capture_floor!(st, p, :WARN_CAPTURE_UNREADABLE)
                 end
-            else
-                _capture_floor!(st, p, :WARN_CAPTURE_UNREADABLE)
+            elseif sch === :per_occurrence
+                # the ungated fifth arm: one presence row per governed cell — the
+                # occurrence handle IS the locus (the value = `true` at v0.4; T11's row)
+                _put_verdict!(st, handle, stem, true, true, content)
             end
-        elseif sch === :per_occurrence
-            # the ungated fifth arm (T5-DESIGN §2): one presence row per governed cell —
-            # the occurrence handle IS the locus (the value is the constant `true` at
-            # v0.4; a richer value shape is T11's)
-            _put_verdict!(st, handle, stem, true, true, content)
+        catch e
+            e isa InterruptException && rethrow()
+            (e isa ErrorException && startswith(e.msg, "GoMeta ")) && rethrow()
+            _capture_floor!(st, p, :WARN_CAPTURE_UNREADABLE)
         end
         # `multiplicity` is CARRIED, not consumed, at v0.4 (its consumer = the T11
         # catalogue); every other (scheme, gate) cell is refused at tier 1.
@@ -336,7 +363,8 @@ function _capture_floor!(st::ProcessState, p, code::Symbol)
             "declares no capture row — its verdicts mint NO evals rows (the capture floor; ",
             "declare a CaptureDecl to lift it)") :
         string("GoMeta capture: alterant ", repr(p.altName), " declares scheme ",
-            repr(p.capture.attr_scheme), " but the live instance/value is outside the ",
+            repr(p.capture === nothing ? :none : p.capture.attr_scheme),   # (crx-t5 A1) defensive — the UNREADABLE arm must never itself throw
+            " but the live instance/value is outside the ",
             "scheme's readable shape — the affected rows are not minted (the capture ",
             "floor's second arm)")
     push!(st.diagnostics, Diagnostic(code, :warning, msg, p.altName))
@@ -387,7 +415,7 @@ function capture_heading!(st::ProcessState, heading, stem::Symbol)
     # source-order ordinal (`head_<level>_2`, …) — distinct rows, no supersede, no
     # spurious WARN_VERDICT_COLLISION, deterministic.
     lvlseen = Dict{Union{Nothing,Int},Int}()
-    for (text, lvl) in heading.entries
+    for (text, lvl) in getfield(heading, :entries)   # (crx-t5 A4) getfield — the flush's concrete-Vector gate makes this iteration Base-concrete
         k = (lvlseen[lvl] = get(lvlseen, lvl, 0) + 1)
         # the nothing-level arm (dead on live paths — every metaLine path
         # materializes a level; kept defensive) spells its repeats :head_u<k>, NOT

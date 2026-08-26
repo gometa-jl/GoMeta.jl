@@ -704,8 +704,20 @@ function absorbMeta(
         inst = pendingLocal[pidx]
         p = st.registry.plugins[pidx]
         cap = p.capture
-        if cap !== nothing && cap.mode_gate === :localOnly &&
-           inst isa cap.instance_type && hasfield(typeof(inst), :entries)
+        ## (the crx-t5 A1 cure) `capture === nothing` branches FIRST to the FLOOR arm —
+        ## the old else-route sent it to UNREADABLE, whose message reads
+        ## `p.capture.attr_scheme` on nothing: a raw post-latch throw.
+        if cap === nothing
+            GMX._capture_floor!(st, p, :WARN_CAPTURE_FLOOR)
+        ## (the crx-t5 A4/A5 cures) the scheme IS consulted (`:per_occurrence` — the one
+        ## implemented localOnly scheme; tier 1 refuses other localOnly schemes) and the
+        ## entries protocol is the CONCRETE type via getfield — `hasfield` alone admitted
+        ## a wrong-shaped `entries` that threw inside `capture_heading!`, and property
+        ## syntax dispatched an extensible getproperty. The Vector type makes iteration
+        ## Base-concrete and every text a String — inside the capture value algebra.
+        elseif cap.mode_gate === :localOnly && cap.attr_scheme === :per_occurrence &&
+               inst isa cap.instance_type &&
+               getfield(inst, :entries) isa Vector{Tuple{String,Union{Nothing,Int}}}
             stem = cap.attr_stem === nothing ?
                 Symbol(lowercase(String(p.altName))) : cap.attr_stem
             GMX.capture_heading!(st, inst, stem)
@@ -762,8 +774,10 @@ end
 ## function's own bytes: the arity-keyed deriving-form APPLICABILITY refusal and
 ## the ladder−1 LEVEL MATERIALIZATION (the record's applicability/phase fields
 ## DOCUMENT them; their runtime consult is deferred), plus the
-## wall message's naming of the head action. The store type and
-## `capture_heading!` remain Heading-typed. (v0.4 T3 sweep: the former "custom
+## wall message's naming of the head action. (v0.4 T5: the pending store is the
+## PER-PLUGIN `Dict{Int8,Any}` and `capture_heading!` is widened to the declared-row
+## drive `(st, heading, stem)` — the flush's concrete entries-Vector gate is the
+## runtime shape law.) (v0.4 T3 sweep: the former "custom
 ## localOnly is OUTSIDE the v0.2 envelope / registry reserved" posture note was
 ## STALE — T2 made published custom registries RUN at the seam; the mint below
 ## is envelope-wrapped (`_mint_instance`) and the store check rides `_invoke_set`;

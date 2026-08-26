@@ -47,6 +47,18 @@ import GoMeta as GM
         @test GM.CaptureDecl(Dict{Symbol,Bool}, :per_key, :many, nothing, :st5).attr_stem === :st5
         @test GM._slot_text(cap) !=
               GM._slot_text(GM.CaptureDecl(Dict{Symbol,Bool}, :per_key, :many, nothing, :st5))
+        # (the crx-t5 B8 strengthening) SEAL participation proper: two published
+        # registries differing ONLY in a capture stem carry different seals — the fold
+        # provably covers the slot (encoder inequality alone would stay green if the
+        # fold dropped capture).
+        _bstem(s) = begin
+            b = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
+            b.plugins[2] = GM.PlugIn(; altName = :Visib, setMode = :mutExclusive,
+                altConstructor = GM.Alterants.Visib, setAltInstance = GM.Alterants.setVisib,
+                capture = GM.CaptureDecl(GM.Alterants.Visib, :single, :one, nothing; attr_stem = s))
+            GM.publish(b)
+        end
+        @test _bstem(:sa1).seal != _bstem(:sa2).seal
         rd  = GM.RenderDecl([:hide => GM.EffectRow(:drop, nothing),
                              :show => GM.EffectRow(:pass, nothing)], [:Line, :Block], true)
         p = GM.PlugIn(; altName = :zz, setMode = :accumulate, altConstructor = Dict{Symbol,Bool},

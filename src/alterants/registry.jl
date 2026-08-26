@@ -888,6 +888,26 @@ function _record_wellformed_plugins_collect!(diags::Vector{Diagnostic}, plugins:
                     repr(p.altName), " — a :localOnly record captures at the absorb seam and",
                     " MUST gate :localOnly; a queued record must not (either mismatch is a",
                     " silent zero-rows class — the capture coherence law)"), p.altName)
+            ## (the crx-t5 A5 cure) the localOnly seam implements ONE scheme — a gated
+            ## row declaring any other scheme would be heading-folded against its own
+            ## declaration (or falsely floored): refuse at publish.
+            (p.capture.mode_gate !== :localOnly || p.capture.attr_scheme === :per_occurrence) ||
+                proto(string("GoMeta registry: a :localOnly capture row on alterant ",
+                    repr(p.altName), " declares scheme ", repr(p.capture.attr_scheme),
+                    " — the absorb-seam delivery implements :per_occurrence only at v0.4",
+                    " (the localOnly scheme law)"), p.altName)
+            ## (the crx-t5 A4/C3 cure — STATIC) a localOnly store must carry the
+            ## CONCRETE entries protocol the seam folds; anything else would be
+            ## registrable-then-floored, and the relay's "any lane" claim narrows to
+            ## exactly this protocol (the correction relayed).
+            (p.capture.mode_gate !== :localOnly ||
+             (hasfield(p.capture.instance_type, :entries) &&
+              fieldtype(p.capture.instance_type, :entries) === Vector{Tuple{String,Union{Nothing,Int}}})) ||
+                proto(string("GoMeta registry: a :localOnly capture row on alterant ",
+                    repr(p.altName), " declares instance type ",
+                    _ctor_type_name(p.capture.instance_type), " without the entries",
+                    " protocol (`entries::Vector{Tuple{String,Union{Nothing,Int}}}`) — the",
+                    " absorb-seam fold reads exactly that shape (the localOnly store law)"), p.altName)
             p.capture.instance_type === p.altConstructor ||
                 proto(string("GoMeta registry: capture instance_type ",
                     _ctor_type_name(p.capture.instance_type), " differs from altConstructor ",
@@ -900,14 +920,22 @@ function _record_wellformed_plugins_collect!(diags::Vector{Diagnostic}, plugins:
                     " is empty — a stem must be a non-empty Symbol or nothing (the record",
                     " shape law)"), p.altName)
             let s = _stem(p)
-                if haskey(seen_stems, s)
-                    proto(string("GoMeta registry: capture attr stem ", repr(s),
-                        " is declared by BOTH ", repr(seen_stems[s]), " and ", repr(p.altName),
-                        " — same-stem rows collide at (handle, attr) and silently supersede",
-                        " across plugins (the stem-clash law)"), p.altName)
-                else
-                    seen_stems[s] = p.altName
+                ## (the crx-t5 A6 cure) the clash law covers the PREFIX FAMILY, not just
+                ## exact stems: stem `:a` with key `:b_c` and stem `:a_b` with key `:c`
+                ## both mint `:a_b_c` — an underscore-prefix relationship either way is a
+                ## cross-plugin attr-namespace overlap (full structural namespacing is
+                ## T11's row; this refusal closes the constructible collision class).
+                for (s2, owner) in seen_stems
+                    clash = s === s2 ||
+                        startswith(String(s), String(s2) * "_") ||
+                        startswith(String(s2), String(s) * "_")
+                    clash && proto(string("GoMeta registry: capture attr stem ", repr(s),
+                        " on ", repr(p.altName), " overlaps the stem family of ", repr(s2),
+                        " on ", repr(owner),
+                        " — overlapping families mint colliding (handle, attr) rows and",
+                        " silently supersede across plugins (the stem-clash law)"), p.altName)
                 end
+                haskey(seen_stems, s) || (seen_stems[s] = p.altName)
             end
         end
         if p.render !== nothing
