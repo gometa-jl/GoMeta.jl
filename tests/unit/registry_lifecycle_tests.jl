@@ -598,6 +598,12 @@ import GoMeta as GM
         @eval module _CrxPoison
             struct Poison{T} end
             Base.show(io::IO, ::Type{Poison}) = error("A1-BOOM")
+            # (v0.4 T3, the round's T3P-C3 cure — an append-only line, disclosed §S2.15):
+            # the UnionAll `Poison` had no zero-argument method and would trip T3's eager
+            # DEP_MISSING gate; this ctor keeps `altConstructor = Poison` — and with it the
+            # only UnionAll-at-altConstructor fold coverage — while the witness itself
+            # never calls the constructor (publish + door only).
+            Poison() = Poison{Int}()
         end
         bc1 = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
         bc1.plugins[2] = GM.PlugIn(; altName = :Visib, setMode = :mutExclusive,

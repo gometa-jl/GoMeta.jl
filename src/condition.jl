@@ -733,11 +733,32 @@ function _eval_node(st::ProcessState, n::CondQueryAtom)
                 "(see docs/public-api.md §3.4)")
     end
     if n.plugin ∈ keys(st.working)
-        return st.registry.plugins[n.plugin].getAltInstance(
-            st.working[n.plugin],
-            n.action,
-            n.args...
-        )
+        ## v0.4 T3 — the SYMMETRIC QUERY-SEAM ENVELOPE (T3-DESIGN §2; FM-CB-2/FM-RES-2).
+        ## The engine lookups are HOISTED above the try so the wrapped region is user-only;
+        ## the envelope contains EVERY class typed — no getter pre-check exists at
+        ## registration (unlike the reflection-verified setters), so a query MethodError is
+        ## closure material, never internal drift. The engine's own "GoMeta "-prefixed
+        ## typed-prose refusals pass through VERBATIM (the T3 pass-through law); the
+        ## containment guarantee is scoped to exceptions DELIVERED to the handler
+        ## (StackOverflowError catchability is shape-dependent — the T2-bis probe lesson).
+        plug = st.registry.plugins[n.plugin]
+        inst = st.working[n.plugin]
+        ret = try
+            plug.getAltInstance(inst, n.action, n.args...)
+        catch e
+            e isa InterruptException && rethrow()
+            (e isa ErrorException && startswith(e.msg, "GoMeta ")) && rethrow()
+            error("GoMeta apply: alterant query checker threw (CB_QUERY_THROW): ",
+                String(nameof(typeof(e))), " on action ", repr(first(String(n.action), 40)),
+                " — the checker contract is total over its declared signature ",
+                "(see docs/public-api.md §3.4)")
+        end
+        ret isa Bool || error("GoMeta apply: alterant query checker returned ",
+            String(nameof(typeof(ret))), " (RES_RETURN_TYPE) on action ",
+            repr(first(String(n.action), 40)),
+            " — the getter contract is `(instance, actionName, args...) -> Bool` ",
+            "(see docs/public-api.md §3.4)")
+        return ret
     else
         return false
     end

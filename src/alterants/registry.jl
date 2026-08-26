@@ -198,10 +198,18 @@ Heading() = Heading(Tuple{String,Union{Nothing,Int}}[])
 ## validation-owned: an EXPLICIT level must land in the level vocabulary
 ## (`_heading_validate_level` below); DERIVED levels are in-vocabulary by
 ## construction.
-_heading_validate_text(t) =
+## v0.4 T3 (T3-DESIGN §3's companion cure): the validator now honors the documented
+## handover contract `(text) -> Bool` — `return true` on acceptance (the former `&&`
+## one-liner RETURNED `false` on every non-empty text, the short-circuit value, harmless
+## only while the result was discarded); the ratified empty-text refusal keeps its
+## byte-exact engine-prefixed message and passes through the T3 validate envelope
+## verbatim (the pass-through law). `setHead`'s own calls ignore the return.
+function _heading_validate_text(t)
     isempty(String(t)) && error("GoMeta absorb: empty heading text — an empty ",
         "heading is refused at v0.2 (a ratified standing decision; ",
         "see docs/public-api.md §3.4)")
+    return true
+end
 
 ## Explicit-level window guard: an EXPLICIT heading level must land in the
 ## level vocabulary — the structural `#~`-digit window 0..8 or the documented
@@ -382,11 +390,30 @@ function getAltState(
     # the apply phase constructed under that SAME index, so the lookup is internally consistent.
     local st = ctx()
     if altInd ∈ keys(st.working)
-        return st.registry.plugins[altInd].getAltInstance(
-            st.working[altInd],
-            altActionName,
-            args...
-        )
+        ## v0.4 T3 — the SAME query-seam envelope as the closed interpreter's
+        ## (`_eval_node(::CondQueryAtom)`): the query CROSSING is the cure unit, and this
+        ## is its second live call site (the opt-in modes' host-evaluated bare name).
+        ## Engine lookups hoisted; contain-all-typed; the "GoMeta "-prefix pass-through;
+        ## the `-> Bool` return guard (T3-DESIGN §2).
+        local plug = st.registry.plugins[altInd]
+        local inst = st.working[altInd]
+        local ret = try
+            plug.getAltInstance(inst, altActionName, args...)
+        catch e
+            e isa InterruptException && rethrow()
+            (e isa ErrorException && startswith(e.msg, "GoMeta ")) && rethrow()
+            error("GoMeta apply: alterant query checker threw (CB_QUERY_THROW): ",
+                String(nameof(typeof(e))), " on action ",
+                repr(first(String(altActionName), 40)),
+                " — the checker contract is total over its declared signature ",
+                "(see docs/public-api.md §3.4)")
+        end
+        ret isa Bool || error("GoMeta apply: alterant query checker returned ",
+            String(nameof(typeof(ret))), " (RES_RETURN_TYPE) on action ",
+            repr(first(String(altActionName), 40)),
+            " — the getter contract is `(instance, actionName, args...) -> Bool` ",
+            "(see docs/public-api.md §3.4)")
+        return ret
     else
         return false
     end
@@ -1417,6 +1444,30 @@ function _domain_slot_probe!(diags::Vector{Diagnostic}, label::String, ctx, slot
 end
 
 """
+    _dependency_collect!(diags, plugins)
+
+(v0.4 T3 — T3-DESIGN §4; FM-DEP-1's eager closure; CE 2.g class C) every plugin's
+`altConstructor` must be ZERO-ARG CONSTRUCTIBLE at the gate — the instance mint calls it
+bare at the three mint sites, and an absent method was a RAW `MethodError` at first apply.
+ONE `:DEP_MISSING` error row per offending plugin (record grain; the type name via
+`nameof`, non-dispatching). A plugin-grain tier-2 collector; its one read is the
+concretely-typed `altConstructor::Type` field, so the tier-law's broken-record skip is
+VACUOUS here (`hasmethod` is total over `Type` — no structural defect can make this
+collector throw; disclosed at the T3 commit's adjudication).
+"""
+function _dependency_collect!(diags::Vector{Diagnostic}, plugins::Vector{PlugIn})
+    for p in plugins
+        hasmethod(p.altConstructor, Tuple{}) ||
+            push!(diags, Diagnostic(:DEP_MISSING, :error, string(
+                "GoMeta registry: alterant ", repr(p.altName), " declares altConstructor ",
+                String(nameof(p.altConstructor)), " with no zero-argument method — the ",
+                "instance mint's dependency (DEP_MISSING; eager dependency closure at ",
+                "publication)"), p.altName))
+    end
+    return nothing
+end
+
+"""
     _encodability_collect!(diags, plugins, action_specs)
 
 (T2-bis, replacing the cure-batch-4/5 `_slot_text` probe) tier 1's DOMAIN row — the ONE
@@ -2300,6 +2351,7 @@ function _validate_registration(plugins::Vector{PlugIn}, action_specs::Vector{Ac
     n0 = length(diags)
     _record_wellformed_collect!(diags, action_specs, plugins)
     _encodability_collect!(diags, plugins, action_specs)   # (cure batch 4) the seal must be mintable
+    _dependency_collect!(diags, plugins)                   # (T3) the mint's eager dependency closure
     # (cure batch 1) tier 2 SKIPS every action record tier 1 found structurally broken: the semantic
     # collectors index and consult closed maps on the record's own data, and a malformed row would
     # otherwise THROW out of the accumulator (the CRX after-T2 set: `vararg_kind = :bogus` reached

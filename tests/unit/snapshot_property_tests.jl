@@ -505,6 +505,16 @@ end
     end
     _swap_ctor!(R, T) = (R.plugins[2] = GM.PlugIn(; altName = :Visib, setMode = :mutExclusive,
         altConstructor = T, setAltInstance = GM.Alterants.setVisib); R)
+    # (v0.4 T3 — the case-(iv) migration, T3-DESIGN §4: `SubString{String}` and its swap
+    # target `String` are the ONLY named-case types without a zero-argument method, so
+    # under the eager DEP_MISSING gate case (iv)'s TYPE half rides `capture.instance_type`
+    # — the same Type-leaf `===` compare at the door; cases (i)-(iii) keep the ctor slot.)
+    _with_cap(b, T) = (b.plugins[2] = GM.PlugIn(; altName = :Visib, setMode = :mutExclusive,
+        altConstructor = GM.Alterants.Visib, setAltInstance = GM.Alterants.setVisib,
+        capture = GM.CaptureDecl(T, :single, :one, nothing)); b)
+    _swap_cap!(R, T) = (R.plugins[2] = GM.PlugIn(; altName = :Visib, setMode = :mutExclusive,
+        altConstructor = GM.Alterants.Visib, setAltInstance = GM.Alterants.setVisib,
+        capture = GM.CaptureDecl(T, :single, :one, nothing)); R)
 
     # (i) `Val{M.f}` swapped to a same-named foreign function's Val — silent pre, fires post (2)
     let R = GM.publish(_with_ctor(_mk_prop_builder(), Val{_PropTypes.M1.f}))
@@ -524,11 +534,12 @@ end
         _swap_ctor!(R, Vector{Int})
         @test _codesp(GM._registry_door_check(R)) == [:POST_SEAL_MUTATION]
     end
-    # (iv) SPLIT — the TYPE case SubString{String} → String fires by Type identity (2) + the
-    # VALUE form refuses at validate (1)
-    let R = GM.publish(_with_ctor(_mk_prop_builder(), SubString{String}))
+    # (iv) SPLIT — the TYPE case SubString{String} → String fires by Type identity (2; at
+    # `capture.instance_type` since T3 — see the _with_cap comment) + the VALUE form
+    # refuses at validate (1)
+    let R = GM.publish(_with_cap(_mk_prop_builder(), SubString{String}))
         @test isempty(GM._registry_door_check(R))
-        _swap_ctor!(R, String)
+        _swap_cap!(R, String)
         @test _codesp(GM._registry_door_check(R)) == [:POST_SEAL_MUTATION]
     end
     let d = GM.validate(_with_default(_mk_prop_builder(), 4, SubString("ab", 1, 1)))

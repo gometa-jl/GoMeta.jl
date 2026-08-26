@@ -748,9 +748,11 @@ end
 ## the ladder−1 LEVEL MATERIALIZATION (the record's applicability/phase fields
 ## DOCUMENT them; their runtime consult is deferred), plus the
 ## wall message's naming of the head action. The store type and
-## `capture_heading!` remain Heading-typed — a custom registry declaring a
-## NON-Heading `:localOnly` plugin is OUTSIDE the v0.2 envelope (the registry
-## parameter is reserved/default-only, the established posture).
+## `capture_heading!` remain Heading-typed. (v0.4 T3 sweep: the former "custom
+## localOnly is OUTSIDE the v0.2 envelope / registry reserved" posture note was
+## STALE — T2 made published custom registries RUN at the seam; the mint below
+## is envelope-wrapped (`_mint_instance`) and the store check rides `_invoke_set`;
+## `capture_heading!`'s Heading-typing is the T5 capture re-home's row.)
 function _absorb_local_only!(
     st, metaSS::SubString{String}, actionName::Symbol,
     argsSSVec::Vector{SubString{String}},
@@ -778,9 +780,33 @@ function _absorb_local_only!(
         end
         # the declared validation runs on the STRING text (a bare-word text in
         # the accepting slot rides to the typed arity/type refusals at the setter
-        # guard — never the wrong-class validation message)
+        # guard — never the wrong-class validation message).
+        # v0.4 T3 (T3-DESIGN §3; FM-CB-5) — the result is CONSUMED: `true` accepts;
+        # `false` refuses typed (REG_VALIDATE_FALSE); a non-Bool refuses typed
+        # (RES_RETURN_TYPE — the `-> Bool` contract); a FOREIGN throw wraps typed
+        # (CB_VALIDATE_THROW); the engine's own "GoMeta "-prefixed refusals (the
+        # ratified empty-heading class) pass through VERBATIM (the pass-through law).
         if spec.validate !== nothing && argsTup[spec.accepts_string_slot] isa String
-            spec.validate(argsTup[spec.accepts_string_slot])
+            ok = try
+                spec.validate(argsTup[spec.accepts_string_slot])
+            catch e
+                e isa InterruptException && rethrow()
+                (e isa ErrorException && startswith(e.msg, "GoMeta ")) && rethrow()
+                error("GoMeta absorb: the declared handover validation of action ",
+                    repr(first(String(actionName), 40)), " threw (CB_VALIDATE_THROW): ",
+                    String(nameof(typeof(e))),
+                    " — the validate contract is `(text::String) -> Bool` ",
+                    "(see docs/public-api.md §3.4)")
+            end
+            ok === true || (ok === false ?
+                error("GoMeta absorb: the declared handover validation of action ",
+                    repr(first(String(actionName), 40)), " REFUSED this text ",
+                    "(REG_VALIDATE_FALSE) in the meta region ", repr(first(metaSS, 40)),
+                    " (see docs/public-api.md §3.4)") :
+                error("GoMeta absorb: the declared handover validation of action ",
+                    repr(first(String(actionName), 40)), " returned ",
+                    String(nameof(typeof(ok))), " (RES_RETURN_TYPE) — the validate ",
+                    "contract is `(text::String) -> Bool` (see docs/public-api.md §3.4)"))
         end
         if length(argsTup) == 1
             st.meta_context === nothing &&
@@ -837,7 +863,7 @@ function _absorb_local_only!(
     end
     local _verdict = conditionExpr === nothing ? nothing : GMX.evaluate(st, conditionExpr)
     if conditionExpr === nothing || _verdict
-        store = pendingHeading === nothing ? plug.altConstructor() : pendingHeading
+        store = pendingHeading === nothing ? GMX._mint_instance(plug) : pendingHeading   # T3: the wrapped THIRD mint
         GMX._invoke_set(st.registry, plug.setAltInstance, store, actionName, argsTup)
         return store
     end

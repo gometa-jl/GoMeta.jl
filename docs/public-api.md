@@ -130,7 +130,26 @@ These are part of the documented public surface — declared with Julia's `publi
   first divergent path is named in the message; `POST_SEAL_MUTATION`), and the
   package-internal callable seam `run_absorb_apply!` (NOT a
   `public` name; consumed by adapters at their own risk, documented in its source) runs the
-  same door. *The T2-bis honest bound, stated exactly: the snapshot's own members are mutable
+  same door. **The seam's STATE LEDGER (v0.4 T3):** each injected parse state is
+  identity-keyed (weakly — a poisoned entry can vanish only when the state itself is
+  unreachable, i.e. nothing can ever re-inject it; a finalizer rides every stamped state) to a
+  lifecycle entry. At entry, after the door (refusal precedence in-flight > poisoned >
+  identity): a state already IN FLIGHT refuses `STATE_REUSE_REFUSED` (two calls must never
+  share one parse state — the caller obligation, now ENFORCED, nested re-injection included);
+  a state POISONED by an earlier call that aborted AFTER it began writing back refuses
+  `STATE_REUSE_REFUSED` (recovery: re-parse the source into a fresh state); a state whose
+  write-backs were produced under a DIFFERENT published registry refuses
+  `STATE_SEAL_MISMATCH` — the REGISTRY-IDENTITY check (`===` on the published object, never a
+  fingerprint compare). A call that WROTE binds the state to its registry at exit; a completed
+  meta-free call leaves no binding; an abort before any write-back leaves the state clean and
+  re-injectable under any registry. This is NOT re-validation (the seam's no-re-validation
+  guarantee stands — an identity/lifecycle check, never the config/registration chain). The
+  seam's guarantee rows (the fodt lane's five, restated): fresh per-call process state ·
+  caller-owned mutated parse state (NARROWED as above — poisoned/in-flight states refuse) ·
+  no re-validation at the entry · a meta-free store ⇒ `PROCESS_OK` with zero evals rows · the
+  seam parses and renders nothing. A COPY of a poisoned state is a NEW unstamped object
+  possibly carrying partial write-backs — the ledger tracks identities, not content lineage
+  (the caller obligation extends to copies). *The T2-bis honest bound, stated exactly: the snapshot's own members are mutable
   and reachable through the published value, so a mutation through a published container is
   refused UNLESS the same actor also rewrites the corresponding snapshot container — a MIXED
   case (the live half accident-grade, the snapshot half a B-2 reach into an underscored
@@ -221,12 +240,29 @@ These are part of the documented public surface — declared with Julia's `publi
     `:context_required` for rows that derive from placement (the heading sugar); `phase` =
     `:absorb` for `:localOnly` delivery; `grammar = false` marks an INTERNAL row.
   - **The getter contract** (`PlugIn.getAltInstance`, required iff any overload is `queryable`):
-    called as `getter(instance, actionName::Symbol, args::Symbol...) -> Bool` — at this build
-    state the query plane passes the action name and SYMBOL literals only (the argument floor of
-    `getAltState`); a queryable `:string` overload is admitted by registration but its getter is
-    not reached with a String until T3's query-seam envelope, which also verifies each queryable
-    overload's getter signature at registration. A getter of another shape is a `MethodError`
-    at query time until then.
+    called as `getter(instance, actionName::Symbol, args::Symbol...) -> Bool` — the query plane
+    passes the action name and SYMBOL literals only (the argument floor of `getAltState`). The
+    getter's signature is not yet verified at registration (the existence check is — a queryable
+    overload without a getter refuses); **the runtime envelope guards the call since T3**: a
+    getter throw of any class converts to the stable `CB_QUERY_THROW` refusal (the engine's own
+    `GoMeta `-prefixed refusals and `InterruptException` pass through verbatim), and a non-`Bool`
+    return refuses `RES_RETURN_TYPE` — at BOTH query call sites (the closed interpreter's atoms
+    and `getAltState`). The registration-time signature reflection for getters is a deferred row
+    (T11's catalogue sitting).
+  - **The validate contract** (`ActionSpec.validate`, the handover validation of the accepting
+    String slot): called as `validate(text::String) -> Bool` — `true` accepts; `false` refuses
+    typed (`REG_VALIDATE_FALSE`); a non-`Bool` return refuses (`RES_RETURN_TYPE`); a throw of
+    any other class wraps (`CB_VALIDATE_THROW`, the class named via `nameof`, never its text).
+    A validator may refuse with its OWN complete stable message by throwing an `ErrorException`
+    whose message begins `"GoMeta "` — the engine's typed-prose refusal vocabulary, passed
+    through the envelope verbatim (the shipped heading validator's ratified empty-text refusal
+    is exactly this class); any other throw is a validator DEFECT.
+  - **The constructor dependency** (`PlugIn.altConstructor`): must be ZERO-ARG constructible —
+    `validate` refuses `DEP_MISSING` at the gate (eager dependency closure; previously a raw
+    `MethodError` at first apply). A ctor whose zero-arg method exists but THROWS converts at
+    the mint to the stable `CB_CTOR_THROW` refusal naming the alterant; a minted instance
+    foreign to the matched overload's declared store type refuses `RES_FOREIGN_STORE` at every
+    set-invocation.
   - **The plugin index rule:** `ActionSpec.plugin` is the declaration-order index of the owning
     Alterant, an `Int8` you supply — `GoMeta.next_plugin_index(builder)` returns the index the
     NEXT `register!` call will assign (1 on an empty builder; 5 after the four built-ins), and
@@ -648,6 +684,30 @@ Additionally, a non-fatal `:warning` `Diagnostic` — `WARN_VERDICT_COLLISION` �
 continues) when two byte-identical cells receive conflicting verdicts; cell-id disambiguation is
 deferred.
 
+- **The T3 SEAM-ENVELOPE family — GUARDED (v0.4 T3; catalogue-NAMED stable-message refusals,
+  their typed `Diagnostic` conversion = the T11 catalogue):** each fires as an
+  `ErrorException` whose message carries the catalogue name as a literal token; the engine's
+  own `"GoMeta "`-prefixed refusals and `InterruptException` always pass through the
+  envelopes verbatim; the containment guarantee is scoped to exceptions delivered to the
+  handler (`StackOverflowError` catchability is shape-dependent; resource exhaustion may not
+  allocate a refusal).
+  - `CB_QUERY_THROW` — an alterant query checker (getter) threw, either query site; the class
+    named via `nameof`, the action named. Trigger: any getter throw outside the pass-through
+    classes. Recovery: fix the checker (its contract is total over its declared signature).
+  - `RES_RETURN_TYPE` — a declared-return-type breach: the query getter returned non-`Bool`
+    (either site); the setter's live return guard (the pre-existing wall, now named); or the
+    handover validator returned non-`Bool`.
+  - `REG_VALIDATE_FALSE` — the declared handover validation returned `false` for the presented
+    String-slot text; first-offender-wins at the absorb site (the catalogue's refuse-at-gate
+    shape is unreachable at this callable's only call site — full collection rides T11).
+  - `CB_VALIDATE_THROW` — the handover validator threw a foreign class.
+  - `CB_SET_THROW` — the set seam's malformed-argument crash conversion (the pre-existing
+    "invalid arguments" wall) now carries the name + the alterant.
+  - `CB_CTOR_THROW` — an `altConstructor` whose zero-arg method exists threw at any of the
+    three instance-mint sites; the alterant named.
+  - `RES_FOREIGN_STORE` — the store instance is foreign to the MATCHED overload's declared
+    store type, checked on every set-invocation at the post-dispatch point.
+
 ### §3.5 — Registration + door codes (v0.4; typed `Diagnostic`s)
 
 Every row below is a `Diagnostic{code, severity, message, context}`. FOUR delivery channels (a
@@ -681,6 +741,9 @@ rows; **(iv) DOOR results** — `REG_UNPUBLISHED` / `POST_SEAL_MUTATION` come ba
 | `REG_DERIVED_TABLES` | error | positional (route-U) construction whose hand-built tables differ from the tables derived from the declarations | `nothing` |
 | `REG_UNPUBLISHED` (door) | error | an unsealed registry reached `goMeta` or `run_absorb_apply!` — the message names `RegistryBuilder → validate → publish` | `nothing` |
 | `POST_SEAL_MUTATION` (door) | error | a published registry whose live fields no longer match the publish-time snapshot — the message carries "at <path>", the first divergent path; re-publication is the change path | the rendered path |
+| `DEP_MISSING` (v0.4 T3) | error | an `altConstructor` with no zero-argument method — the instance mint's eager dependency closure at publication (was a raw `MethodError` at first apply) | the alterant |
+| `STATE_REUSE_REFUSED` (T3 seam) | error | the injected parse state is refused: POISONED by an earlier aborted call that had begun writing back (the message names `STATE_POISONED`), or already IN FLIGHT in another call (one code, two message variants); recovery: re-parse into a fresh state | `nothing` |
+| `STATE_SEAL_MISMATCH` (T3 seam) | error | the injected parse state's write-backs were produced under a DIFFERENT published registry — the registry-identity check (`===` on the published object, never a fingerprint) | `nothing` |
 
 Stable-message refusals (NOT typed codes; the §3.4 class): `"GoMeta absorb: meta-hierarchy slot pool
 exhausted"` — the per-call slot pool (`NUM_MH_LEVELS` = 12 slots) fully occupied at an

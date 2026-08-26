@@ -439,6 +439,25 @@ THE CONTRACT (normative rows):
 6. The seam parses NOTHING and renders NOTHING; `outputs(result)` stays the sole
    output surface.
 """
+## v0.4 T3 — THE SEAM LEDGER (T3-DESIGN §7; M-AC-11 + HC-9 under the §12 re-basing).
+## One weak-keyed side table maps each CALLER-OWNED parse state (identity-keyed — a
+## mutable struct; BLS defines no `hash`/`isequal`/`==` on it, pinned by the seam tests)
+## to its lifecycle entry. GC-transparency is NOT a lapsing refusal: a poisoned entry can
+## vanish only when the state itself is unreachable — nothing can re-inject it. The
+## `WeakKeyDict` attaches a finalizer to every stamped state (disclosed). Every access
+## runs under the ONE lock; the hot loop never touches the ledger (the write LATCH is a
+## plain per-call Bool on `ProcessState`). `goMeta` routes through this seam and STAMPS
+## like any caller (the uniform law — it also preserves the identity semantics for states
+## a consumer extracts via `result.state.parse`); the per-call cost is measured and
+## banked at the T3 receipts, never claimed away.
+mutable struct _SeamEntry
+    registry::Union{Nothing,AlterantRegistry}   # bound at EXIT of the first call that WROTE
+    poisoned::Bool                              # an abort escaped after the write latch rose
+    in_flight::Bool                             # a call is currently running on this state
+end
+const _SEAM_LEDGER = WeakKeyDict{Any,_SeamEntry}()
+const _SEAM_LEDGER_LOCK = ReentrantLock()
+
 function run_absorb_apply!(parse_state::BLS.ParseState;
                            config::GoMetaConfig = GoMetaConfig(),
                            registry::AlterantRegistry = DEFAULT_REGISTRY)::GoMetaResult
@@ -451,12 +470,59 @@ function run_absorb_apply!(parse_state::BLS.ParseState;
     reg_diags = _registry_door_check(registry)
     isempty(reg_diags) ||
         return _config_error_result(BLS.setUpToProcessFromBytes(UInt8[]), config, registry, reg_diags)
+    ## v0.4 T3 — the LEDGER at seam entry (AFTER the door; T3-DESIGN §7's fixed order).
+    ## Checks + the in-flight flip only — the registry BINDING happens at exit, and only
+    ## for a call that WROTE (so a clean abort leaves the state unbound and re-injectable
+    ## under any registry, and a completed meta-free call leaves no binding). Refusal
+    ## precedence: in-flight > poisoned > identity. The identity check is `===` on the
+    ## published registry OBJECT (T2BIS-DESIGN §12's two-nouns rule — NEVER a fingerprint
+    ## compare). This is NOT re-validation (contract row 3 stands) — an identity/lifecycle
+    ## check, never the config/registration chain.
+    entry = lock(_SEAM_LEDGER_LOCK) do
+        e = get(_SEAM_LEDGER, parse_state, nothing)
+        if e !== nothing
+            e.in_flight && return :in_flight
+            e.poisoned && return :poisoned
+            (e.registry !== nothing && e.registry !== registry) && return :mismatch
+            e.in_flight = true
+            return e
+        end
+        e2 = _SeamEntry(nothing, false, true)
+        _SEAM_LEDGER[parse_state] = e2
+        return e2
+    end
+    entry === :in_flight && return _config_error_result(
+        BLS.setUpToProcessFromBytes(UInt8[]), config, registry,
+        [Diagnostic(:STATE_REUSE_REFUSED, :error, string("GoMeta seam: the injected parse ",
+            "state is already IN FLIGHT in another `run_absorb_apply!` call ",
+            "(STATE_REUSE_REFUSED) — two calls must never share one parse state (the seam ",
+            "contract's caller obligation, row 4; nested re-injection included); re-parse ",
+            "the source into a fresh state (see docs/public-api.md §3.4)"), nothing)])
+    entry === :poisoned && return _config_error_result(
+        BLS.setUpToProcessFromBytes(UInt8[]), config, registry,
+        [Diagnostic(:STATE_REUSE_REFUSED, :error, string("GoMeta seam: the injected parse ",
+            "state was POISONED (STATE_POISONED) by an earlier aborted call that had begun ",
+            "writing back (STATE_REUSE_REFUSED) — its settributes may be partially ",
+            "mutated; re-parse the source into a fresh state ",
+            "(see docs/public-api.md §3.4)"), nothing)])
+    entry === :mismatch && return _config_error_result(
+        BLS.setUpToProcessFromBytes(UInt8[]), config, registry,
+        [Diagnostic(:STATE_SEAL_MISMATCH, :error, string("GoMeta seam: the injected parse ",
+            "state is bound to a DIFFERENT published registry than the one injected ",
+            "(STATE_SEAL_MISMATCH — the registry-identity check: its write-backs were ",
+            "produced under another publication; identity is the published OBJECT, never ",
+            "a fingerprint) — re-parse the source into a fresh state, or inject the same ",
+            "published registry object (see docs/public-api.md §3.4)"), nothing)])
     ## Build the FRESH per-call `ProcessState` (`init_state` is reset-safe, so neither the slot
     ## tensors nor the cursors leak between calls) + open the per-call
     ## dynamic scope. `STATE => st` carries the per-call state so the eval'd bare-name `getState`/`getAltState`
     ## reach it (`ctx() = STATE[]`). The whole absorb-walk
-    ## + apply runs INSIDE this scope.
+    ## + apply runs INSIDE this scope — under the T3 seam bracket: an escape AFTER the
+    ## write latch rose POISONS the entry (M-AC-11's E-row, any unit, either grain);
+    ## a completed call that WROTE binds the registry identity; `in_flight` clears on
+    ## every path.
     st = init_state(parse_state, config, registry)
+    try
     with(STATE => st) do
         ## Seed the reserved user slot of the meta-hierarchy BEFORE the walk iff configured — the
         ## default-`nothing` no-feed path takes one `isnothing` branch and is otherwise untouched.
@@ -503,7 +569,9 @@ function run_absorb_apply!(parse_state::BLS.ParseState;
                     ## nothing` is schema-legal) — an absent mapping = no write-back, never a KeyError
                     let act = keys(Alterants.Visib)[st.working[st.registry.alt_index[:Visib]].array][1],
                         key = get(st.registry.action_to_settribute, act, nothing)
-                        key === nothing || BLS.setElement(childComponent.componentSettribute, key => true)
+                        ## v0.4 T3 — the write LATCH raises before the block-grain caller-state write too
+                        key === nothing || (st.wrote_back = true;
+                                            BLS.setElement(childComponent.componentSettribute, key => true))
                     end
                 end
                 # Capture this Block's FINAL verdicts (Labels + Visib + Id) into st.verdicts BEFORE the
@@ -511,6 +579,22 @@ function run_absorb_apply!(parse_state::BLS.ParseState;
                 #   st.working + appends to st.verdicts (no parse-tree or render mutation).
                 capture_verdicts!(st, childComponent)
             end
+        end
+    end
+    lock(_SEAM_LEDGER_LOCK) do                      # normal return: bind iff the call WROTE
+        st.wrote_back && (entry.registry = registry)
+    end
+    catch
+        lock(_SEAM_LEDGER_LOCK) do                  # an escape after the latch rose POISONS
+            if st.wrote_back
+                entry.registry = registry
+                entry.poisoned = true
+            end
+        end
+        rethrow()
+    finally
+        lock(_SEAM_LEDGER_LOCK) do
+            entry.in_flight = false
         end
     end
 

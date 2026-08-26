@@ -93,7 +93,7 @@ function detAltValuesForSetOfSlots(
                 if _cond === nothing || _verdict
                     if crntAltIdx ∉ keys(st.working)
                         st.working[crntAltIdx] =
-                            st.registry.plugins[crntAltIdx].altConstructor()
+                            _mint_instance(st.registry.plugins[crntAltIdx])   # T3: the wrapped mint
                     end
                     if st.queue.args[row, crntSlot] === nothing
                         _invoke_set(st.registry,
@@ -173,7 +173,7 @@ function detAltValuesForSetOfSlots(
 
                     if crntAltIdx ∉ keys(st.working)
                         st.working[crntAltIdx] =
-                            st.registry.plugins[crntAltIdx].altConstructor()
+                            _mint_instance(st.registry.plugins[crntAltIdx])   # T3: the wrapped mint
                     end
                     if st.queue.args[idx, crntSlot] === nothing
                         _invoke_set(st.registry,
@@ -360,6 +360,31 @@ function _args_match(ov::ActionOverload, args::Tuple)::Bool
     return true
 end
 
+"""
+    _mint_instance(plug) -> the alterant instance   (v0.4 T3 — T3-DESIGN §4)
+
+THE ONE instance-mint wrap, used at all THREE bare-`altConstructor()` sites (the two
+apply-loop mints + the absorb-seam localOnly heading mint): a THROW from a user ctor
+whose zero-arg method exists (the absent-method arm is refused at the gate by
+`DEP_MISSING`; this wrap covers it only as defense-in-depth for door-bypassing values)
+converts to the typed refusal naming `CB_CTOR_THROW` with record attribution via
+`altName`. `InterruptException` and the engine's own `"GoMeta "`-prefixed refusals
+rethrow (the T3 pass-through law); the guarantee is scoped to exceptions delivered to
+the handler.
+"""
+function _mint_instance(plug)
+    try
+        return plug.altConstructor()
+    catch e
+        e isa InterruptException && rethrow()
+        (e isa ErrorException && startswith(e.msg, "GoMeta ")) && rethrow()
+        error("GoMeta apply: alterant instance constructor threw (CB_CTOR_THROW): ",
+            String(nameof(typeof(e))), " for alterant ", repr(plug.altName),
+            " — the declared altConstructor must construct with zero arguments ",
+            "(see docs/public-api.md §3.4)")
+    end
+end
+
 function _invoke_set(registry::AlterantRegistry, setfn::Function, alterant,
                      actionName::Symbol, args::Tuple)
     si = get(registry.spec_index, actionName, 0)
@@ -370,8 +395,9 @@ function _invoke_set(registry::AlterantRegistry, setfn::Function, alterant,
         "declare the action (see docs/public-api.md §3.4)")
     spec = registry.action_specs[si]
     matched = false
+    local mov = nothing              # T3: the MATCHED overload, captured for the store check
     for ov in spec.overloads
-        _args_match(ov, args) && (matched = true; break)
+        _args_match(ov, args) && (matched = true; mov = ov; break)
     end
     matched || error("GoMeta apply: invalid arguments for alterant action ",
         repr(first(String(actionName), 40)), " (no declared form accepts ",
@@ -380,6 +406,17 @@ function _invoke_set(registry::AlterantRegistry, setfn::Function, alterant,
         any(ov.vararg_kind !== nothing && Symbol <: ov.sig_types[2]
             for ov in spec.overloads) ? " + a vararg tail" : "",
         ") — v0's documented argument forms: see docs/public-api.md §3.4")
+    ## v0.4 T3 (T3-DESIGN §4; FM-RES-1) — the STORE-IDENTITY check at the post-dispatch
+    ## point, PER INVOKE (the matched overload is known only here; a persisted instance is
+    ## re-checked on every set-call — strictly stronger than a per-mint check, and it
+    ## covers the absorb seam's `_invoke_set` call for free). The no-match refusal above
+    ## fires FIRST (the ruled precedence). `sig_types[1]` gains its first reader; nothing
+    ## constrains store-type consistency ACROSS one action's overloads — the check binds
+    ## to the MATCHED overload, well-defined per invocation (disclosed).
+    alterant isa mov.sig_types[1] || error("GoMeta apply: alterant store of type ",
+        String(nameof(typeof(alterant))),
+        " is FOREIGN to the declared overload's store type (RES_FOREIGN_STORE) on action ",
+        repr(first(String(actionName), 40)), " (see docs/public-api.md §3.4)")
     failed_as = nothing
     ret = nothing
     try
@@ -397,6 +434,7 @@ function _invoke_set(registry::AlterantRegistry, setfn::Function, alterant,
     end
     failed_as === nothing || error("GoMeta apply: invalid arguments for alterant action ",
         repr(first(String(actionName), 40)), " (", failed_as,
+        "; CB_SET_THROW; alterant ", repr(registry.plugins[spec.plugin].altName),
         ") — v0's documented argument forms: see docs/public-api.md §3.4")
     ret_ok = false
     for ov in spec.overloads
@@ -404,7 +442,7 @@ function _invoke_set(registry::AlterantRegistry, setfn::Function, alterant,
     end
     ret_ok || error("GoMeta internal invariant violated: alterant action ",
         repr(first(String(actionName), 40)), " returned ", typeof(ret),
-        " — off its DECLARED return type (the value-algebra guard at the live seam) — ",
-        "please report this")
+        " — off its DECLARED return type (RES_RETURN_TYPE; the value-algebra guard at ",
+        "the live seam) — please report this")
     return nothing
 end

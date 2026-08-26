@@ -296,7 +296,10 @@ function absorbWalk(
                     ## (cure batch 3) an absent write-back mapping (`settribute = nothing`) = no write-back
                     let act = keys(Alterants.Visib)[st.working[st.registry.alt_index[:Visib]].array][1],
                         key = get(st.registry.action_to_settribute, act, nothing)
-                        key === nothing || BLS.setElement(crntComponent.componentSettribute, key => true)
+                        ## v0.4 T3 — the write LATCH raises IMMEDIATELY BEFORE the first caller-owned
+                        ## parse-state write (segment grain; T3-DESIGN §7); never lowered in-call
+                        key === nothing || (st.wrote_back = true;
+                                            BLS.setElement(crntComponent.componentSettribute, key => true))
                     end
                 end
                 # Capture the Segment-grain FINAL verdicts before the next apply wipes `st.working`;
