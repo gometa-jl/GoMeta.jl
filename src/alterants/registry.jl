@@ -1063,7 +1063,13 @@ _ns(s::String)::String = string(sizeof(s), ":", s)
 _nsv(parts)::String = join((_ns(String(p)) for p in parts), ",")
 _slot_text(x::Nothing)::String = "-"
 _slot_text(x::Symbol)::String = string("y", _ns(String(x)))
-_slot_text(x::AbstractString)::String = string("s", _ns(String(x)))
+# (the t3t4r5 cure — three seats convergent) CONCRETE `String` ONLY, matching
+# `_domain_leaf`'s own String-only law: the former `::AbstractString` arm ran the
+# EXTENSIBLE `String(x)` on a caller-owned string subtype (probe P80: a stateful
+# specialization threw at validate, raw, through the ordering prepass). A non-String
+# AbstractString value now falls to the `_UnencodableSlot` fallback — the typed
+# refusal, zero caller code run — exactly where the domain law always placed it.
+_slot_text(x::String)::String = string("s", _ns(x))
 _slot_text(x::Bool)::String = x ? "T" : "F"
 # (cure batch 2) the CONCRETE numeric type is part of the value (`Int8(1)` ≠ `Int64(1)`), and a
 # vector is not a tuple — distinct tags, so a same-display substitution moves the seal.
@@ -1571,6 +1577,25 @@ end
 function _callable_text(@nospecialize f)
     nm = String(getfield(getfield(typeof(f), :name), :name))
     return startswith(nm, "#") ? nm[2:end] : nm
+end
+
+# (the t3t4r5-A2 cure) the executable METHOD TABLE is caller-owned: an UNDECLARED
+# method's signature can carry parameters outside the encodable domain (`Val{'x'}` —
+# probe P81: the render threw a raw engine-internal `_UnencodableSlot(Char)` out of
+# validate) or past the type budget. The guarded text buckets both classes to CONSTANT
+# strings — the row still mints (implemented-but-undeclared is the CORRECT outcome),
+# the render never throws, and the sort stays deterministic (equal-key methods keep
+# the method-table's stable definition order within a run).
+function _sig_guarded_text(@nospecialize msig)
+    verdict = _type_budget_check(msig)[1]
+    verdict === :over_budget && return "(an over-budget signature)"
+    verdict === :bad_param && return "(a signature outside the encodable domain)"
+    try
+        return _type_text(msig)
+    catch e
+        (e isa _UnencodableSlot || e isa _CyclicSlot) || rethrow()
+        return "(a signature outside the encodable domain)"
+    end
 end
 
 function _dependency_collect!(diags::Vector{Diagnostic}, plugins::Vector{PlugIn})
@@ -2539,7 +2564,7 @@ function _reflection_collect!(diags::Vector{Diagnostic}, action_specs::Vector{Ac
         # text (`string(m.sig)` ran `show` over caller-owned sig types during the SORT —
         # a throwing display specialization broke validate before any row was built);
         # `methods` invoke-pinned; the message + context render structurally.
-        for m in sort!(collect(invoke(methods, Tuple{Any}, setter)); by = m -> _type_text(m.sig))
+        for m in sort!(collect(invoke(methods, Tuple{Any}, setter)); by = m -> _sig_guarded_text(m.sig))   # (t3t4r5-A2) guarded
             # (cure batch 2) a `where`-parametric method's `sig` is a UnionAll — unwrap it, never
             # index `.parameters` on it (validate must not throw on a parametric setter)
             # (the t3t4r3 A5 cure) the unwrap is LOCAL and structural — Base's unwrap
@@ -2555,7 +2580,7 @@ function _reflection_collect!(diags::Vector{Diagnostic}, action_specs::Vector{Ac
                     all(a === b for (a, b) in zip(full, m_argtypes))
             end
             matched || sigm(string("GoMeta registry: executable method matches no ",
-                "declared overload — ", _type_text(m.sig), " on ", _callable_text(setter),
+                "declared overload — ", _sig_guarded_text(m.sig), " on ", _callable_text(setter),   # (t3t4r5-A2) guarded
                 " (implemented-but-undeclared: declare it — as an internal ",
                 "grammar=false row if it is not action grammar; the loud ",
                 "drift diagnostic)"), Symbol(_callable_text(setter)))

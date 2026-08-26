@@ -19,7 +19,8 @@
 # PURPOSE: the T4 acceptance rows (Σ = 18 asserts here + the [11] milestone-set cure
 #       witnesses (6) + the [12] reconfirm/closure-cure witnesses (4) + the [13] family-
 #       cure witnesses (6) + the [14] s-wave cure witness (1) + the [15] r3 identity/
-#       getfield witnesses (6) + the [16] r4 structural-callable witnesses (3) = 44; +2 in
+#       getfield witnesses (6) + the [16] r4 structural-callable witnesses (3) + the
+#       [17] r5 String-only/guarded-render witnesses (2) = 46; +2 in
 #       snapshot_property_tests' VocabularyRef named case + the 3 appended collector
 #       names in registration_tests' atomicity loop = the T4-DESIGN §6 Σ = 20 + the
 #       crx-t3t4 cure batch + the crx-t3t4r/r2 hardenings + the zero-dispatch family +
@@ -92,6 +93,31 @@ Base.:(==)(::Type{Tuple{typeof(_VocR3.heq), Dict{Symbol,Bool}, Symbol}}, ::Type)
 end
 Base.nameof(::typeof(_VocR4.tag)) = (_VocR4.TCALLS[] += 1;
     error("tag-nameof-pirated (must never dispatch)"))
+
+# the [17] fixtures (the t3t4r5 rows): a caller-owned AbstractString with a REAL string
+# interface whose String() conversion COUNTS and, once POST-armed, throws (the stateful
+# decay is the only constructible form — Base's AbstractString hash itself converts, so
+# a permanently-throwing String() could never even enter the registrant's Dict); and a
+# setter carrying an UNDECLARED method whose sig parameter is outside the encodable
+# domain (Val{'x'} — a Char has no encoder).
+@eval module _VocR5
+    struct BadString <: AbstractString end
+    const SCALLS = Base.RefValue{Int}(0)
+    const POST = Base.RefValue{Bool}(false)
+    vset(d::Dict{Symbol,Bool}, s::Symbol) = (d[s] = true; nothing)
+    vset(::Val{'x'}) = nothing
+end
+Base.String(::_VocR5.BadString) = begin
+    _VocR5.SCALLS[] += 1
+    _VocR5.POST[] && error("String-pirated-at-validate (must never run)")
+    "abc"
+end
+Base.ncodeunits(::_VocR5.BadString) = 3
+Base.codeunit(::_VocR5.BadString, i::Int) = (0x61, 0x62, 0x63)[i]
+Base.codeunit(::_VocR5.BadString) = UInt8
+Base.isvalid(::_VocR5.BadString, i::Int) = 1 <= i <= 3
+Base.iterate(::_VocR5.BadString, i::Int = 1) = i > 3 ? nothing : (Char(0x60 + i), i + 1)
+Base.length(::_VocR5.BadString) = 3
 
 @testset "vocabulary (v0.4 T4)" begin
 
@@ -503,5 +529,46 @@ Base.nameof(::typeof(_VocR4.tag)) = (_VocR4.TCALLS[] += 1;
         # equals the old `nameof` text (the seal did not move for the shipped class —
         # the profile_snapshot pins assert the DEFAULT; this pins the mechanism).
         @test GM._callable_text(sin) == String(nameof(sin))
+    end
+
+    @testset "[17] the crx-t3t4r5 cures — the String-only encoder + the guarded sig render" begin
+        # (three seats convergent, probe P80) a caller-owned non-String AbstractString
+        # as a declared Dict KEY: the encoder is now String-only (matching
+        # _domain_leaf's own law), so validate REFUSES typed with ZERO validate-time
+        # String() conversions (pre-cure: one call, its stateful throw escaping raw).
+        bs5 = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
+        ss = bs5.action_specs[4]
+        bs5.action_specs[4] = GM.ActionSpec(; name = ss.name, spelling = ss.spelling,
+            plugin = ss.plugin, overloads = ss.overloads,
+            accepts_string_slot = ss.accepts_string_slot,
+            sugar_candidacy = ss.sugar_candidacy, validate = ss.validate,
+            keyed_slot = ss.keyed_slot,
+            default = GM.Declared(Dict{Any,Any}(_VocR5.BadString() => 1)),
+            settribute = ss.settribute)
+        _VocR5.POST[] = true
+        c0 = _VocR5.SCALLS[]
+        d5 = GM.validate(bs5)
+        @test d5 isa Vector && any(x -> x.code === :REG_PROTOCOL, d5) &&
+              _VocR5.SCALLS[] == c0     # zero validate-time conversions
+        # (seat A row 2, probe P81) an UNDECLARED executable method whose sig carries a
+        # Char parameter: the guarded render buckets it and the SIG_MISMATCH row MINTS
+        # (pre-cure: a raw engine-internal _UnencodableSlot(Char) escaped validate).
+        bu5 = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
+        su = bu5.action_specs[1]
+        uov = GM.ActionOverload(; sig_types = Type[Dict{Symbol,Bool}, Symbol],
+            kinds = Symbol[], kind_sources = Symbol[], vararg_kind = nothing,
+            return_type = Nothing, effect = :set, queryable = false,
+            applicability = :context_free, phase = :apply, grammar = false)
+        bu5.plugins[1] = GM.PlugIn(; altName = :labels, setMode = :accumulate,
+            altConstructor = Dict{Symbol,Bool}, setAltInstance = _VocR5.vset,
+            getAltInstance = GM.Alterants.checkLabels)
+        bu5.action_specs[1] = GM.ActionSpec(; name = su.name, spelling = su.spelling,
+            plugin = su.plugin, overloads = [uov],
+            accepts_string_slot = su.accepts_string_slot,
+            sugar_candidacy = su.sugar_candidacy, validate = su.validate,
+            keyed_slot = su.keyed_slot, default = su.default, settribute = su.settribute)
+        du5 = GM.validate(bu5)
+        @test du5 isa Vector && any(x -> x.code === :REG_SIG_MISMATCH &&
+              occursin("outside the encodable domain", x.message), du5)
     end
 end
