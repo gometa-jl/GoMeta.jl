@@ -216,58 +216,143 @@ function capture_verdicts!(st::ProcessState, cell::BLS.AbstractComponent;
             copy(content)))
     end
     handle = key_bytes(k)
-    idx    = st.registry.alt_index
 
-    # Labels — accumulate (Dict{Symbol,Bool}); one row per set label.
-    li = get(idx, :labels, Int8(0))
-    if li != 0 && haskey(st.working, li)
-        labeldict = st.working[li]::Dict{Symbol,Bool}
-        for (name, on) in labeldict
-            on && _put_verdict!(st, handle, Symbol(:label_, name), true, true, content)
+    ## v0.4 T5 — THE REGISTRATION-DRIVEN WALK (T5-DESIGN §2; [C-W6-CE-6]: "keyed on
+    ## declared instance type, never an alt-name ladder"). The retired 3-name ladder's
+    ## rows re-derive byte-for-byte from the DEFAULT's declared rows (probe P100: the
+    ## enumerate(keys)+array read reproduces the old getElement index-for-index;
+    ## "setLabels only sets true" verified at the bytes — registry.jl:89 is the sole
+    ## write). Byte-identity is the ROW SET plus the surface's own sort — the
+    ## plugin-index order coinciding with the ladder's literal order is incidental.
+    ## The CAPTURE-SIDE VALUE ALGEBRA (the round's A2=B6=C2 BLOCKER cure): only the
+    ## closed leaf set enters the store, so the accessor's string-sort / repr-serialize
+    ## / isequal-dedupe stay inside the pre-T5 value universe — no caller method can
+    ## dispatch downstream. Out-of-shape/out-of-algebra ⇒ the typed capture floor
+    ## (WARN, once per call per alterant), NEVER a raw throw and NEVER a silent skip.
+    for (i, p) in pairs(st.registry.plugins)
+        idx8 = Int8(i)
+        p.capture === nothing && continue
+        p.capture.mode_gate === nothing || continue      # :localOnly delivers at the absorb seam
+        haskey(st.working, idx8) || continue
+        inst = st.working[idx8]
+        stem = p.capture.attr_stem === nothing ?
+            Symbol(lowercase(String(p.altName))) : p.capture.attr_stem
+        ## defense-in-depth (tier 1's identity law makes a mismatch lifecycle-unreachable;
+        ## a post-publication mutation still floor-routes rather than mis-reads)
+        if !(inst isa p.capture.instance_type)
+            _capture_floor!(st, p, :WARN_CAPTURE_UNREADABLE)
+            continue
+        end
+        sch = p.capture.attr_scheme
+        if sch === :per_key
+            # one row per admitted Dict entry: (handle, <stem>_<key>, value, true)
+            if inst isa Dict
+                bad = false
+                for (kk, vv) in inst
+                    if kk isa Symbol && _capture_value_leaf(vv)
+                        _put_verdict!(st, handle, Symbol(stem, :_, kk), vv, true, content)
+                    else
+                        bad = true
+                    end
+                end
+                bad && _capture_floor!(st, p, :WARN_CAPTURE_UNREADABLE)
+            else
+                _capture_floor!(st, p, :WARN_CAPTURE_UNREADABLE)
+            end
+        elseif sch === :single
+            # the NamedElements-shaped single verdict; the capability gate is STATIC on
+            # the declared type (Base.eltype is extended on the abstract root — the
+            # cross-module-safe discriminator; probe P101/P102)
+            T = p.capture.instance_type
+            if eltype(T) === Bool && hasfield(T, :array)
+                set_acts = keys(T)[getfield(inst, :array)]
+                if length(set_acts) > 1
+                    # the shipped Visib row's refuse text is a DECLARED literal (the
+                    # "(show/hide/discard)" parenthetical is not derivable — the round's
+                    # T5P-A row 10); the generic arm names the alterant
+                    p.altName === :Visib ?
+                        error("GoMeta capture: more than one Visib value set for one component — v0's Visib ",
+                            "actions (show/hide/discard) are mutually exclusive per component ",
+                            "(see docs/public-api.md §3.4)") :
+                        error("GoMeta capture: more than one ", String(p.altName), " value set for one ",
+                            "component — a :single capture row is mutually exclusive per component ",
+                            "(see docs/public-api.md §3.4)")
+                end
+                isempty(set_acts) || _put_verdict!(st, handle, stem, set_acts[1], true, content)
+            else
+                _capture_floor!(st, p, :WARN_CAPTURE_UNREADABLE)
+            end
+        elseif sch === :per_field
+            # one row per non-default numeric field; the field read is index-exact vs
+            # the retired per-module getElement (probe P100); the non-default zero is
+            # computed ONCE from the DECLARED element type — no per-value dispatch
+            T = p.capture.instance_type
+            if eltype(T) <: Number && hasfield(T, :array)
+                z = zero(eltype(T))
+                arr = getfield(inst, :array)
+                for (fi, name) in enumerate(keys(T))
+                    v = arr[fi]
+                    v != z && _put_verdict!(st, handle, Symbol(stem, :_, name), v, true, content)
+                end
+            else
+                _capture_floor!(st, p, :WARN_CAPTURE_UNREADABLE)
+            end
+        elseif sch === :per_occurrence
+            # the ungated fifth arm (T5-DESIGN §2): one presence row per governed cell —
+            # the occurrence handle IS the locus (the value is the constant `true` at
+            # v0.4; a richer value shape is T11's)
+            _put_verdict!(st, handle, stem, true, true, content)
+        end
+        # `multiplicity` is CARRIED, not consumed, at v0.4 (its consumer = the T11
+        # catalogue); every other (scheme, gate) cell is refused at tier 1.
+    end
+    # the FIRST floor arm: applied state whose plugin declares NO capture row — the
+    # registration is legal, its evals-invisibility must be DISCLOSED (the anti-T1 cure)
+    for (i, p) in pairs(st.registry.plugins)
+        if p.capture === nothing && haskey(st.working, Int8(i))
+            _capture_floor!(st, p, :WARN_CAPTURE_FLOOR)
         end
     end
+    return nothing
+end
 
-    # Visib — mutually exclusive; one row for the single set action (guarded vs the flagless E-04 case).
-    # Visib multiplicity REFUSES EVERYWHERE: a component carrying more than one Visib
-    # verdict fail-closes HERE exactly as it does at the render's checkVisib; a silent
-    # first-wins (`set_acts[1]`) is deliberately NOT performed. The state is input-unreachable today (the
-    # first-applicable law consumes within-mark multiplicity; grains resolve by cascade — probed empirically), so this is the defensive-invariant half of
-    # the single refuse-everywhere policy; the TYPED
-    # conversion of this stable-message family is deferred with E-04 (docs/public-api.md §3.4).
-    vi = get(idx, :Visib, Int8(0))
-    if vi != 0 && haskey(st.working, vi)
-        visib    = st.working[vi]::Alterants.Visib
-        set_acts = keys(Alterants.Visib)[visib.array]   # the `true` fields (Tuple logical-index)
-        if length(set_acts) > 1
-            error("GoMeta capture: more than one Visib value set for one component — v0's Visib ",
-                "actions (show/hide/discard) are mutually exclusive per component ",
-                "(see docs/public-api.md §3.4)")
-        end
-        isempty(set_acts) || _put_verdict!(st, handle, :visib, set_acts[1], true, content)
-    end
+"the closed CAPTURE-SIDE VALUE ALGEBRA (T5-DESIGN §1): the leaf set the evals surface renders deterministically"
+_capture_value_leaf(@nospecialize v) =
+    v isa Bool || v isa Symbol || v isa String ||
+    v isa Union{Int8,Int16,Int32,Int64,Int128,UInt8,UInt16,UInt32,UInt64,UInt128}
 
-    # Id — mutually exclusive Int16; one row per non-default field (corpus-inert per §13).
-    ii = get(idx, :id, Int8(0))
-    if ii != 0 && haskey(st.working, ii)
-        idinst = st.working[ii]::Alterants.Id
-        for name in keys(Alterants.Id)
-            v = Alterants.getElement(idinst, name)
-            v != zero(v) && _put_verdict!(st, handle, Symbol(:id_, name), v, true, content)
-        end
-    end
+"""
+    _capture_floor!(st, p, code) -> nothing
 
-    # Heading — DELIBERATELY ABSENT here: a `:localOnly` alterant never enters the queue or
-    # the working set, so this per-governed-cell walk can never see one — heading
-    # rows mint ONCE per heading occurrence at the ABSORB seam instead
-    # (`capture_heading!` below, keyed to the metaLine's own occurrence handle).
+The typed capture-floor diagnostic (T5-DESIGN §3; the silent skip retires). Both arms
+WARNING-severity (non-fatal — totality) and deduped ONCE PER CALL per (alterant, code)
+by scanning `st.diagnostics` — the O(n) linear-scan policy `_put_verdict!` already
+ratifies; ZERO state-shape change.
+"""
+function _capture_floor!(st::ProcessState, p, code::Symbol)
+    any(d -> d.code === code && d.context === p.altName, st.diagnostics) && return nothing
+    msg = code === :WARN_CAPTURE_FLOOR ?
+        string("GoMeta capture: alterant ", repr(p.altName), " produced applied state but ",
+            "declares no capture row — its verdicts mint NO evals rows (the capture floor; ",
+            "declare a CaptureDecl to lift it)") :
+        string("GoMeta capture: alterant ", repr(p.altName), " declares scheme ",
+            repr(p.capture.attr_scheme), " but the live instance/value is outside the ",
+            "scheme's readable shape — the affected rows are not minted (the capture ",
+            "floor's second arm)")
+    push!(st.diagnostics, Diagnostic(code, :warning, msg, p.altName))
     return nothing
 end
 
 """
-    capture_heading!(st::ProcessState, heading::Alterants.Heading) -> nothing
+    capture_heading!(st::ProcessState, heading, stem::Symbol) -> nothing
 
-The localOnly delivery's capture (the outline model): called ONCE per meta region from the absorb seam, minting one row per
-captured heading entry, keyed to the region's OWN identity. TWO (handle, content) sources: the DOCUMENT surface supplies the metaLine's own
+The localOnly delivery's capture (the outline model): called ONCE per (meta region ×
+localOnly plugin) from the absorb seam's REGISTRY-DRIVEN flush (v0.4 T5 — the flush
+checks the declared row's gate, the instance shape, and the entries protocol BEFORE
+this call; the Heading typing retired with the re-home, and the four attr spellings
+re-derive from the DECLARED `stem` — byte-identical for the shipped `:head`), minting
+one row per captured entry, keyed to the region's OWN identity. TWO (handle, content)
+sources: the DOCUMENT surface supplies the metaLine's own
 occurrence handle (`st.meta_context.handle`) + its verbatim bytes
 (`st.meta_content`); the userMH FEED supplies the minted user-context handle +
 the fed profile's verbatim bytes (`st.user_context`). One shared fold/dedup body serves both sources, so the evals
@@ -278,7 +363,7 @@ defect that made it reachable gets the loud rejection, never a silent pick).
 Neither source ⇒ no row. The attr is the ATTR-FOLD: the level rides the attr
 NAME; a `:depth` record column is deliberately deferred.
 """
-function capture_heading!(st::ProcessState, heading::Alterants.Heading)
+function capture_heading!(st::ProcessState, heading, stem::Symbol)
     if st.meta_context !== nothing && st.user_context !== nothing
         error("GoMeta internal invariant violated: document context AND user context ",
             "both populated at a heading capture — please report this ",
@@ -310,8 +395,8 @@ function capture_heading!(st::ProcessState, heading::Alterants.Heading)
         # (delta-review latent-collision cure). Leveled repeats stay :head_<lvl>_<k>
         # — collision-free among leveled attrs since levels are Ints and k ≥ 2.
         attr = lvl === nothing ?
-            (k == 1 ? :head : Symbol(:head_u, k)) :
-            (k == 1 ? Symbol(:head_, lvl) : Symbol(:head_, lvl, :_, k))
+            (k == 1 ? stem : Symbol(stem, :_u, k)) :
+            (k == 1 ? Symbol(stem, :_, lvl) : Symbol(stem, :_, lvl, :_, k))
         _put_verdict!(st, handle, attr, text, true, content)
     end
     return nothing
@@ -336,7 +421,7 @@ Pure + read-only on `result` (it sorts the already-final store without mutating 
 `cell_handle` is a COPY of the store's bytes — mutating a returned handle never perturbs a later accessor
 or serializer call on the same result), so it is safe to call any number of times and
 outside the per-call `STATE` scope — `result.verdicts` was fully populated by the in-`with` apply. The sort key stringifies `attr`/`value` for a total order over the
-heterogeneous `value::Any` (Bool for Labels, Symbol for Visib, Int16 for Id); `cell_handle::Vector{UInt8}`
+heterogeneous `value::Any` within the CLOSED capture value set (Bool for Labels, Symbol for Visib, Int16 for Id, String for heading text — the v0.4 T5 capture value algebra: Bool · Symbol · the machine ints · String); `cell_handle::Vector{UInt8}`
 sorts lexicographically.
 
 **Cross-surface note (the discard component-skip divergence).** On an input exercising the discard

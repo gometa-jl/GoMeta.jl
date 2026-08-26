@@ -576,12 +576,15 @@ function absorbMeta(
     local altActionOnRow::Int8
     firstTok::Bool = true   # the quoted-first recognizer fires only for the FIRST
                             # metaComponent of the meta region (hd-2/hd-3)
-    ## localOnly delivery (the third inheritance mode): ONE pending
-    ## Heading store per meta region — every localOnly action on this metaLine sets
-    ## into the SAME store (preserving the entry order the per-region fold's
-    ## injectivity ordinals key on), and the region flushes ONCE after the component
-    ## loop (capture_heading! — keyed to the metaLine's own occurrence handle).
-    local pendingHeading::Union{Nothing,Alterants.Heading} = nothing
+    ## localOnly delivery (the third inheritance mode): ONE pending store PER localOnly
+    ## PLUGIN per meta region (v0.4 T5 — the round's T5P-C row-1 cure: the former single
+    ## Heading-typed local made a second localOnly plugin either raw-TypeError
+    ## post-latch or non-injective over the shared store) — every localOnly action sets
+    ## into ITS OWNING PLUGIN's store (entry order preserved per store, so the
+    ## per-region fold's injectivity ordinals keep their key), and the region flushes
+    ## ONCE after the component loop via the REGISTRY-DRIVEN loop below (keyed to the
+    ## metaLine's own occurrence handle).
+    local pendingLocal::Dict{Int8,Any} = Dict{Int8,Any}()
     local isLocalOnly::Bool = false
     while (thisInd = nextind(metaSS, thisInd)) < ncodeunits(metaSS) + 1
 
@@ -609,12 +612,12 @@ function absorbMeta(
                 ## it stands". The whole head path (wall, validation, applicability,
                 ## materialization, the ONE condition evaluation, the setter guard)
                 ## lives in `_absorb_local_only!` below.
-                isLocalOnly = st.registry.plugins[
-                    st.registry.action_to_plugin[crntAltActionIdx]].setMode === :localOnly
+                local loPlugIdx = st.registry.action_to_plugin[crntAltActionIdx]
+                isLocalOnly = st.registry.plugins[loPlugIdx].setMode === :localOnly
                 if isLocalOnly
-                    pendingHeading = _absorb_local_only!(
+                    _absorb_local_only!(
                         st, metaSS, Symbol(altActionName), argsSSVec, conditionExpr,
-                        pendingHeading)
+                        pendingLocal, loPlugIdx)
                 else
                 ## Guarded refusal (docs/public-api.md §3.4): the queue tensors hold size(queued,2) actions per MH
                 ## slot; the guard fires BEFORE the counter increment so state stays in-bounds for every
@@ -687,16 +690,28 @@ function absorbMeta(
             end
         end
     end
-    ## v0.2 localOnly delivery — the ONCE-per-region FLUSH: the pending Heading store
-    ## (every condition-passing localOnly action of this meta region, in source order)
-    ## mints its rows keyed to the region's OWN identity + content (capture_heading!):
-    ## on the document surface that is the metaLine's occurrence handle + its verbatim
-    ## bytes; on the userMH feed it is the minted USER-CONTEXT handle + the profile's
-    ## verbatim bytes (the user-context build — the former no-row fate is REVERSED;
-    ## witnessed). Delivery is COMPLETE here: nothing was queued, so the apply plane
-    ## never revisits headings.
-    if pendingHeading !== nothing
-        GMX.capture_heading!(st, pendingHeading)
+    ## v0.2 localOnly delivery — the ONCE-per-region FLUSH (v0.4 T5: REGISTRY-DRIVEN,
+    ## per-plugin, deterministic order): each pending store (every condition-passing
+    ## localOnly action of this meta region, in source order per store) mints its rows
+    ## keyed to the region's OWN identity + content: on the document surface that is
+    ## the metaLine's occurrence handle + its verbatim bytes; on the userMH feed it is
+    ## the minted USER-CONTEXT handle + the profile's verbatim bytes. The WRONG-SHAPE
+    ## check runs HERE, BEFORE any typed conversion (the T5 floor law — a mismatched or
+    ## entries-less store takes the typed WARNING, never a raw TypeError in the poison
+    ## window); the attr stem comes from the DECLARED row. Delivery is COMPLETE here:
+    ## nothing was queued, so the apply plane never revisits localOnly values.
+    for pidx in sort!(collect(keys(pendingLocal)))
+        inst = pendingLocal[pidx]
+        p = st.registry.plugins[pidx]
+        cap = p.capture
+        if cap !== nothing && cap.mode_gate === :localOnly &&
+           inst isa cap.instance_type && hasfield(typeof(inst), :entries)
+            stem = cap.attr_stem === nothing ?
+                Symbol(lowercase(String(p.altName))) : cap.attr_stem
+            GMX.capture_heading!(st, inst, stem)
+        else
+            GMX._capture_floor!(st, p, :WARN_CAPTURE_UNREADABLE)
+        end
     end
 end
 
@@ -757,10 +772,9 @@ function _absorb_local_only!(
     st, metaSS::SubString{String}, actionName::Symbol,
     argsSSVec::Vector{SubString{String}},
     conditionExpr::Union{Nothing,ConditionT},
-    pendingHeading
+    pendingLocal::Dict{Int8,Any}, plugIdx::Int8
 )
-    plug = st.registry.plugins[
-        st.registry.action_to_plugin[st.registry.action_index[actionName]]]
+    plug = st.registry.plugins[plugIdx]
     ## The String slot law and the validation seam consult the DECLARED registration
     ## record — the spec's `accepts_string_slot` capability and `validate` slot (no
     ## hard-coded slot position or validator call). (What still rides grammar-level head
@@ -863,11 +877,13 @@ function _absorb_local_only!(
     end
     local _verdict = conditionExpr === nothing ? nothing : GMX.evaluate(st, conditionExpr)
     if conditionExpr === nothing || _verdict
-        store = pendingHeading === nothing ? GMX._mint_instance(plug) : pendingHeading   # T3: the wrapped THIRD mint
+        # v0.4 T5: the store is the OWNING PLUGIN's pending entry (per-plugin injective)
+        store = get(pendingLocal, plugIdx, nothing)
+        store === nothing && (store = GMX._mint_instance(plug))   # T3: the wrapped THIRD mint
         GMX._invoke_set(st.registry, plug.setAltInstance, store, actionName, argsTup)
-        return store
+        pendingLocal[plugIdx] = store
     end
-    return pendingHeading
+    return nothing
 end
 
 ## Character predicates over possibly-invalid UTF-8: an invalid byte sequence is CONTENT — never

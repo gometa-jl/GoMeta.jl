@@ -39,6 +39,14 @@ import GoMeta as GM
     @testset "keyword shapes round-trip every slot" begin
         ref = GM.DomainRef("labels/vocab.toml", "sha256:" * "0"^64)
         cap = GM.CaptureDecl(Dict{Symbol,Bool}, :per_key, :many, nothing)
+        # v0.4 T5 (T5-DESIGN §6, the +3 declared movements): the attr_stem default
+        # admits through the 4-positional outer method; the 5-positional round-trips;
+        # the stem participates in the SEAL fold (two rows differing only in stem
+        # encode differently — the SEVENTH re-mint's mechanism).
+        @test cap.attr_stem === nothing
+        @test GM.CaptureDecl(Dict{Symbol,Bool}, :per_key, :many, nothing, :st5).attr_stem === :st5
+        @test GM._slot_text(cap) !=
+              GM._slot_text(GM.CaptureDecl(Dict{Symbol,Bool}, :per_key, :many, nothing, :st5))
         rd  = GM.RenderDecl([:hide => GM.EffectRow(:drop, nothing),
                              :show => GM.EffectRow(:pass, nothing)], [:Line, :Block], true)
         p = GM.PlugIn(; altName = :zz, setMode = :accumulate, altConstructor = Dict{Symbol,Bool},

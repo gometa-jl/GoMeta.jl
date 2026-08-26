@@ -209,6 +209,7 @@ end
         pT === GM.ActionOverload && pf === :vararg_kind && return :symbol
         pT === GM.EffectRow && pf === :payload && return "px"
         pT === GM.CaptureDecl && pf === :mode_gate && return :localOnly
+        pT === GM.CaptureDecl && pf === :attr_stem && return :zz   # v0.4 T5 (the round's B-3 cure — the raw error() fault otherwise)
         pT === GM.SugarRow && pf === :mode_gate && return :localOnly
         pT === GM.ConditionAtom && pf === :evaluate && return _swap_fn_a
         pT === GM.RenderDecl && pf === :resolve_order && return [:Line]
@@ -465,8 +466,8 @@ end
     end
     let R = GM.publish(_mk_prop_builder())                       # (6) slot struct rebuilt
         cd = R.plugins[1].capture
-        _set_at!(R, Any[:plugins, 1, :capture],
-                 GM.CaptureDecl(cd.instance_type, cd.attr_scheme, cd.multiplicity, cd.mode_gate))
+        _set_at!(R, Any[:plugins, 1, :capture],                  # v0.4 T5: the 5th field carried (B-3 — a dropped field made this a NON-faithful rebuild)
+                 GM.CaptureDecl(cd.instance_type, cd.attr_scheme, cd.multiplicity, cd.mode_gate, cd.attr_stem))
         @test isempty(GM._registry_door_check(R))
     end
     let                                                          # (7) DAG SPLIT: shared → unshared
@@ -506,16 +507,14 @@ end
     end
     _swap_ctor!(R, T) = (R.plugins[2] = GM.PlugIn(; altName = :Visib, setMode = :mutExclusive,
         altConstructor = T, setAltInstance = GM.Alterants.setVisib); R)
-    # (v0.4 T3 — the case-(iv) migration, T3-DESIGN §4: `SubString{String}` and its swap
-    # target `String` are the ONLY named-case types without a zero-argument method, so
-    # under the eager DEP_MISSING gate case (iv)'s TYPE half rides `capture.instance_type`
-    # — the same Type-leaf `===` compare at the door; cases (i)-(iii) keep the ctor slot.)
-    _with_cap(b, T) = (b.plugins[2] = GM.PlugIn(; altName = :Visib, setMode = :mutExclusive,
-        altConstructor = GM.Alterants.Visib, setAltInstance = GM.Alterants.setVisib,
-        capture = GM.CaptureDecl(T, :single, :one, nothing)); b)
-    _swap_cap!(R, T) = (R.plugins[2] = GM.PlugIn(; altName = :Visib, setMode = :mutExclusive,
-        altConstructor = GM.Alterants.Visib, setAltInstance = GM.Alterants.setVisib,
-        capture = GM.CaptureDecl(T, :single, :one, nothing)); R)
+    # (v0.4 T3 — the case-(iv) migration; RE-HOMED at T5: `SubString{String}` and its
+    # swap target `String` are the ONLY named-case types without a zero-argument method,
+    # so under the eager DEP_MISSING gate case (iv)'s TYPE half cannot ride the ctor
+    # slot. T3 parked it on `capture.instance_type` while that slot was CARRIED; T5
+    # CONSUMES the slot and its identity law (`instance_type === altConstructor`)
+    # correctly refuses the old vehicle — the Type half now rides a DECLARED default
+    # VALUE (a `Type` is an admitted domain leaf, compared `===` at the door — the same
+    # Type-leaf compare the case exists to pin); cases (i)-(iii) keep the ctor slot.)
 
     # (i) `Val{M.f}` swapped to a same-named foreign function's Val — silent pre, fires post (2)
     let R = GM.publish(_with_ctor(_mk_prop_builder(), Val{_PropTypes.M1.f}))
@@ -535,12 +534,12 @@ end
         _swap_ctor!(R, Vector{Int})
         @test _codesp(GM._registry_door_check(R)) == [:POST_SEAL_MUTATION]
     end
-    # (iv) SPLIT — the TYPE case SubString{String} → String fires by Type identity (2; at
-    # `capture.instance_type` since T3 — see the _with_cap comment) + the VALUE form
-    # refuses at validate (1)
-    let R = GM.publish(_with_cap(_mk_prop_builder(), SubString{String}))
+    # (iv) SPLIT — the TYPE case SubString{String} → String fires by Type identity (2;
+    # riding a DECLARED default value since T5 — see the migration comment above) + the
+    # VALUE form refuses at validate (1)
+    let R = GM.publish(_with_default(_mk_prop_builder(), 4, SubString{String}))
         @test isempty(GM._registry_door_check(R))
-        _swap_cap!(R, String)
+        _set_at!(R, Any[:action_specs, 4, :default, :value], String)
         @test _codesp(GM._registry_door_check(R)) == [:POST_SEAL_MUTATION]
     end
     let d = GM.validate(_with_default(_mk_prop_builder(), 4, SubString("ab", 1, 1)))

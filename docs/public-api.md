@@ -271,7 +271,15 @@ These are part of the documented public surface — declared with Julia's `publi
     whose index is not that one. Immutable records are never re-stamped silently.
   - The declared SLOTS: `DomainRef(artifact, "sha256:<64 LOWERCASE hex digits>")` · `CaptureDecl(instance_type,
     attr_scheme ∈ (:per_key, :single, :per_field, :per_occurrence), multiplicity ∈ (:many, :one,
-    :per_field), mode_gate)` · `DefaultSlot` = `NoDefault()` | `Declared(v)` · `EffectRow(kind ∈
+    :per_field), mode_gate ∈ (nothing, :localOnly)[, attr_stem]; attr_stem = nothing)` — CONSUMED
+    since v0.4 T5: the capture walk is REGISTRATION-DRIVEN (the declared row is what makes an
+    Alterant's applied state mint evals rows; a record WITHOUT one is disclosed by the typed
+    `WARN_CAPTURE_FLOOR` warning, never silently evals-invisible; a declared row whose live
+    instance/value falls outside the scheme's readable shape or the closed capture value set
+    {Bool, Symbol, machine ints, String} meets `WARN_CAPTURE_UNREADABLE`); tier 1 enforces the
+    capture laws (the gate's closed set · the bidirectional setMode⟺gate coherence ·
+    `instance_type === altConstructor` · the stem shape and the cross-plugin stem-clash law) ·
+    `DefaultSlot` = `NoDefault()` | `Declared(v)` · `EffectRow(kind ∈
     (:drop, :mark, :pass), payload)` + `RenderDecl(effects::Vector{Pair{Symbol,EffectRow}},
     resolve_order, materialize::Bool)` · `VocabularySlot` = `InlineVocabulary(names, flags)` |
     `VocabularyRef(ref::DomainRef)` · `MutEx(actions)` · `ConditionAtom(name, print_spelling,
@@ -671,6 +679,14 @@ fabricated typed code:
   — for the shipped artifact that means `using GoMeta` itself fails (fail-closed; a digest
   mismatch is the SEPARATE publication-time `SRC_DIGEST_MISMATCH` row, §3.5). Recovery: restore
   the artifact bytes (the grammar is fixed; regenerate from the lane's source).
+- **The capture-floor warnings (v0.4 T5; typed, NON-fatal):** `WARN_CAPTURE_FLOOR` — an
+  alterant produced applied state but declares NO capture row: its verdicts mint no evals
+  rows; the run stays `PROCESS_OK` with the warning ONCE per call per alterant (recovery:
+  declare a `CaptureDecl`). `WARN_CAPTURE_UNREADABLE` — a DECLARED row whose live
+  instance, key, or value falls outside the scheme's readable shape or the closed capture
+  value set: the affected rows are not minted, disclosed the same way (recovery: conform
+  the store/values to the declared scheme, or re-declare the scheme). Channel: warning
+  `Diagnostic`s on the result. Witnesses: `tests/unit/capture_tests.jl`.
 - **The unresolvable-vocabulary refusal (v0.4 T4):** a G-VOC read (or a plane's scope-law read)
   over a record whose `VocabularyRef` digest matches no loaded artifact raises `"GoMeta apply:
   the declared vocabulary of alterant … is UNRESOLVABLE"`. Unreachable through the sanctioned

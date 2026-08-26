@@ -145,22 +145,38 @@ end
 ## Slot (2): the capture declaration — HOW an Alterant's applied value becomes evals rows.
 const _CAPTURE_SCHEMES        = (:per_key, :single, :per_field, :per_occurrence)
 const _CAPTURE_MULTIPLICITIES = (:many, :one, :per_field)
+const _CAPTURE_MODE_GATES     = (nothing, :localOnly)   # v0.4 T5: the closed gate set
 """
-    CaptureDecl(instance_type, attr_scheme, multiplicity, mode_gate)
+    CaptureDecl(instance_type, attr_scheme, multiplicity, mode_gate[, attr_stem]; attr_stem = nothing)
 
-The declared capture row: `instance_type` = the Alterant instance type the capture walk keys on
-(DECLARED, so the walk never hard-codes a store type); `attr_scheme` ∈ `(:per_key, :single,
-:per_field, :per_occurrence)` = how attr names mint (`label_<key>` per set key · one `visib`-style
-row · `id_<field>` per non-default field · one row per occurrence handle); `multiplicity` ∈
-`(:many, :one, :per_field)`; `mode_gate` = the set mode that gates delivery (`:localOnly` for the
-occurrence-keyed absorb-seam capture) or `nothing`.
+The declared capture row (CONSUMED by the capture walk since v0.4 T5 — the registration-
+driven re-home of the retired alt-name ladder): `instance_type` = the Alterant instance
+type the walk keys on (tier 1 requires it `===` the record's own `altConstructor`);
+`attr_scheme` ∈ `(:per_key, :single, :per_field, :per_occurrence)` = how attr names mint
+(`<stem>_<key>` per admitted Dict entry · one `<stem>` row for a NamedElements-shaped
+single verdict · `<stem>_<field>` per non-default numeric field · one presence row per
+occurrence handle); `multiplicity` ∈ `(:many, :one, :per_field)` (CARRIED at v0.4 —
+its consumer is the T11 catalogue); `mode_gate` ∈ `(nothing, :localOnly)` — `:localOnly`
+delivers at the absorb seam keyed to the metaLine's own occurrence handle, and tier 1
+enforces the BIDIRECTIONAL coherence with the record's `setMode`; `attr_stem` = the
+declared attr name stem (`nothing` ⇒ the derived fallback `lowercase(String(altName))`
+— the shipped four DECLARE theirs explicitly; byte-compatibility never rides a
+derivation). A PLAIN 5-field struct — NO inner constructor and NO `@kwdef` (the domain
+copier rebuilds slot structs POSITIONALLY over all fields; an inner ctor or `@kwdef`
+would break `DEFAULT_REGISTRY` at module load) — with ONE outer compatibility method
+(the PlugIn precedent below).
 """
 struct CaptureDecl
     instance_type::Type
     attr_scheme::Symbol
     multiplicity::Symbol
     mode_gate::Union{Nothing,Symbol}
+    attr_stem::Union{Nothing,Symbol}    # v0.4 T5 (additive; LAST — the positional law)
 end
+CaptureDecl(instance_type::Type, attr_scheme::Symbol, multiplicity::Symbol,
+            mode_gate::Union{Nothing,Symbol};
+            attr_stem::Union{Nothing,Symbol} = nothing) =
+    CaptureDecl(instance_type, attr_scheme, multiplicity, mode_gate, attr_stem)
 
 ## Slot (3): the presence-typed explicit default — undeclared is a TYPE, never a sentinel value.
 "The explicit-default slot's abstract root: `NoDefault()` (undeclared) | `Declared(v)`."

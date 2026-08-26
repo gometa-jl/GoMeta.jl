@@ -481,13 +481,22 @@ function default_registry_builder()
         ## — the DECLARED literal, never the captured value; `_vocabulary_collect!` makes
         ## them agree or refuses at publication) + the POLICY identity (independent of the
         ## content digest — the R-FODT-17 referent PAIR; the lane bumps it on a policy move)
+        ## v0.4 T5: every DEFAULT record DECLARES its capture row (the registration-driven
+        ## capture plane; the stems are DECLARED — byte-compatibility never rides the
+        ## derived fallback) — the three former legacy 6-positional declarations migrated
+        ## to the keyword form to carry `capture =`.
         PlugIn(; altName = :labels, setMode = :accumulate, altConstructor = Dict{Symbol,Bool},
                  setAltInstance = Alterants.setLabels, getAltInstance = Alterants.checkLabels,
+                 capture = CaptureDecl(Dict{Symbol,Bool}, :per_key, :many, nothing; attr_stem = :label),
                  vocabulary = VocabularyRef(DomainRef("alterants-std/labels_vocabulary.txt",
                                                       Alterants.LABELS_VOCABULARY_DECLARED_DIGEST)),
                  provenance = Provenance(; policy_id = "gometa-labels/v0-closed@1")),
-        PlugIn(:Visib,  :mutExclusive, Alterants.Visib,   Alterants.setVisib,  nothing,               nothing),
-        PlugIn(:id,     :mutExclusivePerField, Alterants.Id, Alterants.setId,  nothing,               nothing),
+        PlugIn(; altName = :Visib, setMode = :mutExclusive, altConstructor = Alterants.Visib,
+                 setAltInstance = Alterants.setVisib,
+                 capture = CaptureDecl(Alterants.Visib, :single, :one, nothing; attr_stem = :visib)),
+        PlugIn(; altName = :id, setMode = :mutExclusivePerField, altConstructor = Alterants.Id,
+                 setAltInstance = Alterants.setId,
+                 capture = CaptureDecl(Alterants.Id, :per_field, :per_field, nothing; attr_stem = :id)),
         # The Heading plugin. setMode `:localOnly` — the THIRD inheritance mode:
         # a localOnly alterant's value applies ONCE, WHERE IT STANDS — its
         # actions NEVER ENQUEUE into the slot tensors, so the inheritance
@@ -495,7 +504,9 @@ function default_registry_builder()
         # the absorb seam, keyed to the metaLine's own occurrence handle (the
         # outline model: one row per heading occurrence, document order
         # recoverable from handles). Deliberately in NEITHER derived set below.
-        PlugIn(:heading, :localOnly, Alterants.Heading, Alterants.setHead, nothing, nothing),
+        PlugIn(; altName = :heading, setMode = :localOnly, altConstructor = Alterants.Heading,
+                 setAltInstance = Alterants.setHead,
+                 capture = CaptureDecl(Alterants.Heading, :per_occurrence, :many, :localOnly; attr_stem = :head)),
     ]
 
     # v0.2 registration build: THE DECLARED REGISTRATION RECORD — one ActionSpec per action,
@@ -846,6 +857,10 @@ function _record_wellformed_plugins_collect!(diags::Vector{Diagnostic}, plugins:
     proto(msg, ctx) = push!(diags, Diagnostic(:REG_PROTOCOL, :error, msg, ctx))
     # v0.4 T1 — the per-Alterant slots' shape (additive): every enum-tagged member of the new
     # slots sits in its closed set; a mis-spelled tag registers LOUDLY, never silently.
+    # (v0.4 T5) the effective stem, shared with the walk: declared, else the derived fallback
+    _stem(p) = p.capture.attr_stem === nothing ?
+        Symbol(lowercase(String(p.altName))) : p.capture.attr_stem
+    seen_stems = Dict{Symbol,Symbol}()   # stem => first-declaring altName (the clash law)
     for p in plugins
         if p.capture !== nothing
             p.capture.attr_scheme in _CAPTURE_SCHEMES ||
@@ -856,6 +871,44 @@ function _record_wellformed_plugins_collect!(diags::Vector{Diagnostic}, plugins:
                 proto(string("GoMeta registry: unknown capture multiplicity ", repr(p.capture.multiplicity),
                     " on alterant ", repr(p.altName), " (the record shape law; the closed set is ",
                     _CAPTURE_MULTIPLICITIES, ")"), p.altName)
+            ## v0.4 T5 (the T5-round tier-1 family — every row free under the SEVENTH
+            ## re-mint): the gate's closed set; the BIDIRECTIONAL setMode⟺gate coherence
+            ## (either one-way hole was a NEW silent-no-rows class — the anti-T1 disease);
+            ## the instance_type≡altConstructor law (the mint IS `altConstructor()`, so a
+            ## mismatch would read one type's store through another's name table); the
+            ## stem's shape; the cross-plugin stem-clash law (same stem ⇒ same
+            ## `(handle, attr)` families ⇒ silent cross-plugin supersede).
+            p.capture.mode_gate in _CAPTURE_MODE_GATES ||
+                proto(string("GoMeta registry: unknown capture mode gate ", repr(p.capture.mode_gate),
+                    " on alterant ", repr(p.altName), " (the record shape law; the closed set is ",
+                    _CAPTURE_MODE_GATES, ")"), p.altName)
+            ((p.setMode === :localOnly) == (p.capture.mode_gate === :localOnly)) ||
+                proto(string("GoMeta registry: capture mode gate ", repr(p.capture.mode_gate),
+                    " is INCOHERENT with setMode ", repr(p.setMode), " on alterant ",
+                    repr(p.altName), " — a :localOnly record captures at the absorb seam and",
+                    " MUST gate :localOnly; a queued record must not (either mismatch is a",
+                    " silent zero-rows class — the capture coherence law)"), p.altName)
+            p.capture.instance_type === p.altConstructor ||
+                proto(string("GoMeta registry: capture instance_type ",
+                    _ctor_type_name(p.capture.instance_type), " differs from altConstructor ",
+                    _ctor_type_name(p.altConstructor), " on alterant ", repr(p.altName),
+                    " — the walk would read one type's store through another's name table",
+                    " (the capture identity law)"), p.altName)
+            (p.capture.attr_stem === nothing ||
+             (p.capture.attr_stem isa Symbol && !isempty(String(p.capture.attr_stem)))) ||
+                proto(string("GoMeta registry: capture attr_stem on alterant ", repr(p.altName),
+                    " is empty — a stem must be a non-empty Symbol or nothing (the record",
+                    " shape law)"), p.altName)
+            let s = _stem(p)
+                if haskey(seen_stems, s)
+                    proto(string("GoMeta registry: capture attr stem ", repr(s),
+                        " is declared by BOTH ", repr(seen_stems[s]), " and ", repr(p.altName),
+                        " — same-stem rows collide at (handle, attr) and silently supersede",
+                        " across plugins (the stem-clash law)"), p.altName)
+                else
+                    seen_stems[s] = p.altName
+                end
+            end
         end
         if p.render !== nothing
             for (act, row) in p.render.effects
@@ -1159,8 +1212,8 @@ _slot_text(x::NoDefault)::String = "NoDefault"
 _slot_text(x::Declared)::String =
     Base.ScopedValues.with(_IN_DATA => true) do; string("Declared", _ns(_slot_text(x.value))) end
 _slot_text(x::DomainRef)::String = string("DomainRef", _nsv((_slot_text(x.artifact), x.digest)))
-_slot_text(x::CaptureDecl)::String =
-    string("Capture", _nsv((_type_text(x.instance_type), String(x.attr_scheme), String(x.multiplicity), _slot_text(x.mode_gate))))
+_slot_text(x::CaptureDecl)::String =   # v0.4 T5: the stem joins the seal (the SEVENTH re-mint's locus — without it two registries differing only in stem would seal identically)
+    string("Capture", _nsv((_type_text(x.instance_type), String(x.attr_scheme), String(x.multiplicity), _slot_text(x.mode_gate), _slot_text(x.attr_stem))))
 _slot_text(x::EffectRow)::String =
     Base.ScopedValues.with(_IN_DATA => true) do; string("Effect", _nsv((String(x.kind), _slot_text(x.payload)))) end
 _slot_text(x::RenderDecl)::String =

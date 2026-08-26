@@ -144,11 +144,17 @@ import GoMeta as GM
         # slots, so the record change re-mints — 0x33c214cef7ea13d3 → 0x10720f0a578f8d6b, at
         # exactly TWO loci (this pin + the cache_key r-component below); the grammar pin
         # asserted UNMOVED — a move there is STOP-and-diagnose, the fold touched what it must not)
+        # (the SEVENTH re-mint at v0.4 T5 — DECLARED in T5-DESIGN §1 BEFORE the run that
+        # learned it: every DEFAULT record's capture slot moved from `nothing` to its
+        # declared CaptureDecl row, the CaptureDecl schema gained the attr_stem field,
+        # and `_slot_text(::CaptureDecl)` gained the stem as a FIFTH seal component —
+        # 0x10720f0a578f8d6b → 0x014a5cb7a2c21a4e, at the SAME two loci; the grammar
+        # pin asserted UNMOVED as always)
         p = GM.resolve_profile(GM.GoMetaConfig())
         @test p.grammar_digest      == 0x12972c9924c2bf2b
-        @test p.registration_digest == 0x10720f0a578f8d6b
+        @test p.registration_digest == 0x014a5cb7a2c21a4e
         @test GM.cache_key(p) == string("gometa/v", GM._ENGINE_VERSION,
-            "/jl_share_v1/closed_v1/s3/g12972c9924c2bf2b/r10720f0a578f8d6b")   # the r-component re-minted with the pin above (v0.4 T4 = the sixth)
+            "/jl_share_v1/closed_v1/s3/g12972c9924c2bf2b/r14a5cb7a2c21a4e")   # the r-component re-minted with the pin above (v0.4 T5 = the seventh)
     end
 
     @testset "test_error_oracle_corrupt_and_incompatible" begin
