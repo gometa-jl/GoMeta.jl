@@ -1084,8 +1084,10 @@ _slot_text(x::Union{Int8,Int16,Int32,Int64,Int128,UInt8,UInt16,UInt32,UInt64,UIn
 _slot_text(x::Float64)::String = string("n", _nsv((_type_text(typeof(x)), string(reinterpret(UInt64, x); base = 16))))
 _slot_text(x::Float32)::String = string("n", _nsv((_type_text(typeof(x)), string(reinterpret(UInt32, x); base = 16))))
 _slot_text(x::Float16)::String = string("n", _nsv((_type_text(typeof(x)), string(reinterpret(UInt16, x); base = 16))))
-_slot_text(x::Complex)::String = string("c", _nsv((_type_text(typeof(x)), _slot_text(real(x)), _slot_text(imag(x)))))
-_slot_text(x::Rational)::String = string("r", _nsv((_type_text(typeof(x)), _slot_text(numerator(x)), _slot_text(denominator(x)))))
+# (the t3t4r6-A1 cure) getfield parts here too — the encoder repeated the extensible
+# real/imag/numerator/denominator dispatches; output byte-identical for legal values
+_slot_text(x::Complex)::String = string("c", _nsv((_type_text(typeof(x)), _slot_text(getfield(x, :re)), _slot_text(getfield(x, :im)))))
+_slot_text(x::Rational)::String = string("r", _nsv((_type_text(typeof(x)), _slot_text(getfield(x, :num)), _slot_text(getfield(x, :den)))))
 _slot_text(x::Number)::String = throw(_UnencodableSlot(typeof(x)))
 _slot_text(x::VersionNumber)::String = string("v", _ns(string(x)))
 _slot_text(x::Type)::String = string("t", _ns(_type_text(x)))
@@ -1200,9 +1202,14 @@ const _MACHINE_INT = Union{Bool, Int8, Int16, Int32, Int64, Int128,
 # `Complex`/`Rational` OF the machine run, parts-recursively — `Complex{Rational{Int64}}`,
 # `Complex{Bool}` and `Rational{Bool}` admit; `BigInt` parts fall to the else-arm exactly
 # as today. Bounded: Complex parts are `<:Real`, so the recursion depth is ≤ 2.
+# (the t3t4r6-A1 cure) the Complex/Rational PARTS read via `getfield` — `real`/`imag`/
+# `numerator` are EXTENSIBLE generics, and a legitimate specialization on
+# `Complex{TheirReal}` executed (and threw) from the domain predicate BEFORE any guard
+# (probe P90). Field reads are byte-identical for every legal value (`real(z)` IS
+# `z.re`), so nothing legal moves.
 _numeric_leaf(x)::Bool = x isa _MACHINE_REAL ||
-    (x isa Rational && numerator(x) isa _MACHINE_INT) ||
-    (x isa Complex && _numeric_leaf(real(x)) && _numeric_leaf(imag(x)))
+    (x isa Rational && getfield(x, :num) isa _MACHINE_INT) ||
+    (x isa Complex && _numeric_leaf(getfield(x, :re)) && _numeric_leaf(getfield(x, :im)))
 
 """
     _domain_leaf(x) -> Bool
@@ -2526,7 +2533,7 @@ function _reflection_collect!(diags::Vector{Diagnostic}, action_specs::Vector{Ac
             # objects, so `===` IS the exact-match semantics the (a) direction ruled.
             any(m.sig === sig_tuple for m in invoke(methods, Tuple{Any}, setter)) ||
                 sigm(string("GoMeta registry: declared overload has no executable ",
-                    "method — action ", repr(spec.name), " declared ", _type_text(sig_tuple),
+                    "method — action ", repr(spec.name), " declared ", _sig_guarded_text(sig_tuple),   # (t3t4r6-A2) guarded: typeof(setter) can carry out-of-domain parameters (Setter{'x'} — P91)
                     " on ", _callable_text(setter), " (declared-but-unimplemented refuses at ",
                     "load; the reflection cross-check; the match is EXACT ",
                     "per-signature, never subtype dispatch)"), spec.name)

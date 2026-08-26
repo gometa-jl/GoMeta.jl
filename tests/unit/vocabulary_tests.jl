@@ -20,7 +20,8 @@
 #       witnesses (6) + the [12] reconfirm/closure-cure witnesses (4) + the [13] family-
 #       cure witnesses (6) + the [14] s-wave cure witness (1) + the [15] r3 identity/
 #       getfield witnesses (6) + the [16] r4 structural-callable witnesses (3) + the
-#       [17] r5 String-only/guarded-render witnesses (2) = 46; +2 in
+#       [17] r5 String-only/guarded-render witnesses (2) + the [18] r6 numeric-leaf/
+#       declared-render witnesses (2) = 48; +2 in
 #       snapshot_property_tests' VocabularyRef named case + the 3 appended collector
 #       names in registration_tests' atomicity loop = the T4-DESIGN §6 Σ = 20 + the
 #       crx-t3t4 cure batch + the crx-t3t4r/r2 hardenings + the zero-dispatch family +
@@ -118,6 +119,19 @@ Base.codeunit(::_VocR5.BadString) = UInt8
 Base.isvalid(::_VocR5.BadString, i::Int) = 1 <= i <= 3
 Base.iterate(::_VocR5.BadString, i::Int = 1) = i > 3 ? nothing : (Char(0x60 + i), i + 1)
 Base.length(::_VocR5.BadString) = 3
+
+# the [18] fixtures (the t3t4r6 rows): a caller Real inside Complex whose extensible
+# `real` specialization COUNTS and throws (the numeric leaf must read fields, never
+# dispatch); a parameterized Function SUBTYPE whose self-type carries an out-of-domain
+# Char parameter (the declared-sig render must bucket, never throw).
+@eval module _VocR6
+    struct MyReal <: Real; v::Int; end
+    struct SetterX{C} <: Function end
+    (f::SetterX)(d::Dict{Symbol,Bool}, s::Symbol) = (d[s] = true; nothing)
+    const RCALLS = Base.RefValue{Int}(0)
+end
+Base.real(::Complex{_VocR6.MyReal}) = (_VocR6.RCALLS[] += 1;
+    error("real-pirated (must never dispatch)"))
 
 @testset "vocabulary (v0.4 T4)" begin
 
@@ -570,5 +584,37 @@ Base.length(::_VocR5.BadString) = 3
         du5 = GM.validate(bu5)
         @test du5 isa Vector && any(x -> x.code === :REG_SIG_MISMATCH &&
               occursin("outside the encodable domain", x.message), du5)
+    end
+
+    @testset "[18] the crx-t3t4r6 cures — the getfield numeric leaf + the guarded declared render" begin
+        # (r6-A1, probe P90) the domain predicate reads Complex/Rational PARTS via
+        # getfield — a caller's `Base.real(::Complex{MyReal})` specialization never
+        # dispatches (pre-cure it executed and threw from `_domain_leaf` itself).
+        z = Complex(_VocR6.MyReal(1), _VocR6.MyReal(2))
+        r0 = _VocR6.RCALLS[]
+        @test GM._domain_leaf(z) === false &&
+              GM._type_budget_check(Val{z})[1] === :bad_param &&
+              _VocR6.RCALLS[] == r0     # zero dispatches through both walkers
+        # (r6-A2, probe P91) a parameterized Function-SUBTYPE setter (`SetterX{'x'}`)
+        # with a declared-but-unimplemented overload: the (a)-side render buckets the
+        # signature and the SIG_MISMATCH row MINTS (pre-cure: a raw engine-internal
+        # _UnencodableSlot(Char) escaped validate).
+        b6 = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
+        s6 = b6.action_specs[1]
+        xov = GM.ActionOverload(; sig_types = Type[Dict{Symbol,Bool}, Symbol, Float64],
+            kinds = Symbol[], kind_sources = Symbol[], vararg_kind = nothing,
+            return_type = Nothing, effect = :set, queryable = false,
+            applicability = :context_free, phase = :apply, grammar = false)
+        b6.plugins[1] = GM.PlugIn(; altName = :labels, setMode = :accumulate,
+            altConstructor = Dict{Symbol,Bool}, setAltInstance = _VocR6.SetterX{'x'}(),
+            getAltInstance = GM.Alterants.checkLabels)
+        b6.action_specs[1] = GM.ActionSpec(; name = s6.name, spelling = s6.spelling,
+            plugin = s6.plugin, overloads = [xov],
+            accepts_string_slot = s6.accepts_string_slot,
+            sugar_candidacy = s6.sugar_candidacy, validate = s6.validate,
+            keyed_slot = s6.keyed_slot, default = s6.default, settribute = s6.settribute)
+        d6 = GM.validate(b6)
+        @test d6 isa Vector && any(x -> x.code === :REG_SIG_MISMATCH &&
+              occursin("outside the encodable domain", x.message), d6)
     end
 end
