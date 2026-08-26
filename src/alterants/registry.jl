@@ -1364,8 +1364,13 @@ function _emit_cyclic!(diags, label, ctx, slot)
     return nothing
 end
 function _emit_unencodable!(diags, label, ctx, slot, T)
+    # (the t3t4r2 family cure, seat A row 6) the offending TYPE renders through the
+    # structural zero-dispatch helper — interpolating `T` ran `show`, and a throwing
+    # user `show(::IO, ::Type{Theirs})` broke the never-throws chain at the very row
+    # refusing their value (probe P54).
     push!(diags, Diagnostic(:REG_PROTOCOL, :error, string(
-        "GoMeta registry: ", label, " ", repr(ctx), " slot ", slot, " declares a value of type ", T,
+        "GoMeta registry: ", label, " ", repr(ctx), " slot ", slot, " declares a value of type ",
+        _ctor_type_name(T),
         " which has no canonical encoder — outside the closed encodable domain (the record shape law: ",
         "concrete data only; a Function belongs in a designated callable field, never in a value)"), ctx))
     return nothing
@@ -1478,41 +1483,87 @@ end
 (v0.4 T3 — T3-DESIGN §4; FM-DEP-1's eager closure; CE 2.g class C) every plugin's
 `altConstructor` must be ZERO-ARG CONSTRUCTIBLE at the gate — the instance mint calls it
 bare at the three mint sites, and an absent method was a RAW `MethodError` at first apply.
-ONE `:DEP_MISSING` error row per offending plugin (record grain; the type name via
-`nameof`, non-dispatching). A plugin-grain tier-2 collector; its one read is the
-concretely-typed `altConstructor::Type` field, so the tier-law's broken-record skip is
-VACUOUS here (`hasmethod` is total over `Type` — no structural defect can make this
-collector throw; disclosed at the T3 commit's adjudication).
+ONE `:DEP_MISSING` error row per offending plugin (record grain; the type name via the
+structural zero-dispatch renderer). Hardened at the t3t4r2 closure set (the T3-era claim
+"`hasmethod` is total over `Type`" was REFUTED three ways, each probe-confirmed):
+`Union{}` refuses eagerly (its `hasmethod` is a FALSE true — probe P52); a
+budget-refused ctor type SKIPS the lookup (the unbounded-`hasmethod` class — the
+encodability row already refuses the registration); the lookup itself is
+`invoke`-pinned to the Base `(Any, Any)` fallback (a registered
+`Base.hasmethod(::Type{Theirs}, ::Type{Tuple{}})` specialization threw through the
+gate — probes P51/P53).
 """
-# (the T4-milestone-set A3 cure; HARDENED at the t3t4r reconfirm — seat A's MAJOR) the
-# TOTAL, NON-DISPATCHING ctor-type renderer: `nameof` covers only DataType/UnionAll, and
-# the first cure's `string(::Type)` fallback dispatched `show` recursively over a Union's
-# MEMBER types — a member with a throwing user `show(::IO, ::Type{T})` specialization
-# made `validate` throw AGAIN while rendering the very DEP_MISSING row that refused it
-# (probe-confirmed). This form walks the Union structurally (`.a`/`.b`) and renders every
-# leaf via `nameof` — no user method can run (the same no-dispatch law the T2-bis door
-# holds itself to).
-function _ctor_type_name(T::Type)
+# (the T4-milestone-set A3 cure; hardened at t3t4r; STRUCTURAL-TOTAL at the t3t4r2
+# closure set — seats B + C) the TOTAL, ZERO-DISPATCH ctor-type renderer. The onion,
+# each layer probe-confirmed: `nameof` covers only DataType/UnionAll (the raw
+# MethodError); `string(::Type)` dispatches `show` over Union members (the hostile-show
+# class); `nameof` is ITSELF an extensible generic (`Base.nameof(::Type{T})` piracy —
+# t3t4r2-B) and throws on a UnionAll whose body is a Union (t3t4r2-C). This form uses
+# ONLY builtins — `===`/`isa`/`getfield` — plus Base string ops on concrete Base types:
+# the Union walk over `.a`/`.b`, the UnionAll unwrap over `.body`, TypeVar leaves by
+# their `.name`, DataType leaves via `.name.name` (TypeName field reads). NO generic a
+# registrant can extend runs (the T2-bis door's own no-dispatch law). `@nospecialize` +
+# the untyped signature: a Union member can BE a TypeVar (the t3t4r2-C example), which
+# is not a `Type`.
+function _ctor_type_name(@nospecialize T)
     T === Union{} && return "Union{}"
+    T isa Core.TypeVar && return String(getfield(T, :name))
     if T isa Union
         parts = String[]
         U = T
         while U isa Union
-            push!(parts, _ctor_type_name(U.a))
-            U = U.b
+            push!(parts, _ctor_type_name(getfield(U, :a)))
+            U = getfield(U, :b)
         end
         push!(parts, _ctor_type_name(U))
         return string("Union{", join(parts, ", "), "}")
     end
-    return String(nameof(T))                        # DataType | UnionAll — nameof total
+    U = T
+    while U isa UnionAll
+        U = getfield(U, :body)                      # structural unwrap — never nameof
+    end
+    U isa Union && return _ctor_type_name(U)        # a UnionAll wrapping a Union body
+    U isa Core.TypeVar && return String(getfield(U, :name))
+    return String(getfield(getfield(U, :name), :name))   # DataType: TypeName reads
+end
+
+# (the t3t4r2 family cure) the zero-dispatch CALLABLE display: interpolating a
+# caller-supplied function value runs `show` on its own singleton type, and `nameof` is
+# extensible (a legitimate specialization can throw through a diagnostic). TypeName
+# field reads only; the leading `#` of a function's singleton-type name is stripped so
+# an ordinary function displays as before (`boom_set`, not `#boom_set`).
+function _callable_text(@nospecialize f)
+    nm = String(getfield(getfield(typeof(f), :name), :name))
+    return startswith(nm, "#") ? nm[2:end] : nm
 end
 
 function _dependency_collect!(diags::Vector{Diagnostic}, plugins::Vector{PlugIn})
     for p in plugins
-        hasmethod(p.altConstructor, Tuple{}) ||
+        C = p.altConstructor
+        # (the t3t4r2 family cure, seat A row 4 — probe P52) `Union{}` is storable and
+        # `hasmethod(Union{}, Tuple{})` is TRUE (Core's vararg ctor), yet `Union{}()`
+        # ALWAYS throws — the eager gate refuses the false admission here, not at the
+        # first apply's guarded mint.
+        if C === Union{}
             push!(diags, Diagnostic(:DEP_MISSING, :error, string(
                 "GoMeta registry: alterant ", repr(p.altName), " declares altConstructor ",
-                _ctor_type_name(p.altConstructor), " with no zero-argument method — the ",
+                "Union{} — the bottom type has NO instances, so the mint can never ",
+                "succeed (DEP_MISSING; eager dependency closure at publication)"), p.altName))
+            continue
+        end
+        # (row 5) a ctor type past the encoder budget already refuses the WHOLE
+        # registration at the encodability collector — running an UNBOUNDED method
+        # lookup on it here is pure exposure (a 10^4-member Union stalls `hasmethod`);
+        # the budget walk is the bound.
+        _type_budget_check(C)[1] === :ok || continue
+        # (row 3 — probe P51/P53) `hasmethod` is an EXTENSIBLE generic: a registered
+        # `Base.hasmethod(::Type{Theirs}, ::Type{Tuple{}})` specialization threw through
+        # the gate. `invoke` pins the Base `(Any, Any)` fallback — the specialization
+        # cannot run.
+        invoke(hasmethod, Tuple{Any,Any}, C, Tuple{}) ||
+            push!(diags, Diagnostic(:DEP_MISSING, :error, string(
+                "GoMeta registry: alterant ", repr(p.altName), " declares altConstructor ",
+                _ctor_type_name(C), " with no zero-argument method — the ",
                 "instance mint's dependency (DEP_MISSING; eager dependency closure at ",
                 "publication)"), p.altName))
     end
@@ -2316,8 +2367,15 @@ _overload_text(ov::ActionOverload)::String =
 function _type_text(t)::String
     t === Any && return "Any"
     if t isa DataType
-        isempty(t.parameters) && return String(nameof(t))
-        return string(nameof(t), "{", join((_type_param_text(p) for p in t.parameters), ","), "}")
+        # (the t3t4r2 family cure) `nameof` is an EXTENSIBLE generic — a legitimate
+        # `Base.nameof(::Type{Theirs})` specialization could throw through the seal
+        # encoder. The getfield form is OUTPUT-IDENTICAL (`nameof(t::DataType)` IS
+        # `t.name.name` — probe P50 across the type ladder, incl. function types), so
+        # the registration pin does NOT move; `getfield` is a builtin — no user method
+        # can run.
+        nm = getfield(getfield(t, :name), :name)
+        isempty(getfield(t, :parameters)) && return String(nm)
+        return string(nm, "{", join((_type_param_text(p) for p in getfield(t, :parameters)), ","), "}")
     end
     # (T2-bis crx cure A1) non-DataType type nodes encode STRUCTURALLY — `string()` on a
     # UnionAll/Union/TypeVar dispatches `show`, and a user's own display method on its own
@@ -2386,10 +2444,15 @@ function _reflection_collect!(diags::Vector{Diagnostic}, action_specs::Vector{Ac
             # on a shared setter could ride a sibling's method through subtype dispatch
             # while the pooled (b) walk stayed green)
             sig_tuple = Tuple{typeof(setter), full...}
-            any(m.sig == sig_tuple for m in methods(setter)) ||
+            # (the t3t4r2 family cure, seat A row 7) `methods` is invoke-pinned to the
+            # Base fallback, and the diagnostic renders the signature + the setter
+            # STRUCTURALLY — interpolating `sig_tuple`/`setter` ran `show` over
+            # caller-owned types, so a legitimate throwing display specialization broke
+            # the never-throws chain inside this very refusal.
+            any(m.sig == sig_tuple for m in invoke(methods, Tuple{Any}, setter)) ||
                 sigm(string("GoMeta registry: declared overload has no executable ",
-                    "method — action ", repr(spec.name), " declared ", sig_tuple,
-                    " on ", setter, " (declared-but-unimplemented refuses at ",
+                    "method — action ", repr(spec.name), " declared ", _type_text(sig_tuple),
+                    " on ", _callable_text(setter), " (declared-but-unimplemented refuses at ",
                     "load; the reflection cross-check; the match is EXACT ",
                     "per-signature, never subtype dispatch)"), spec.name)
             push!(sigs, full)
@@ -2403,7 +2466,7 @@ function _reflection_collect!(diags::Vector{Diagnostic}, action_specs::Vector{Ac
                      k === :raw
                 ok || sigm(string("GoMeta registry: literal-kind/type disagreement — ",
                     "action ", repr(spec.name), " kind ", repr(k),
-                    " vs signature slot type ", t,
+                    " vs signature slot type ", _type_text(t),   # (t3t4r2) structural render
                     " (the reflection cross-check)"), spec.name)
             end
         end
@@ -2420,7 +2483,11 @@ function _reflection_collect!(diags::Vector{Diagnostic}, action_specs::Vector{Ac
     end
     for setter in order
         sigs = declared_by_setter[setter]
-        for m in sort!(collect(methods(setter)); by = m -> string(m.sig))
+        # (the t3t4r2 family cure) the stable ordering key is the STRUCTURAL signature
+        # text (`string(m.sig)` ran `show` over caller-owned sig types during the SORT —
+        # a throwing display specialization broke validate before any row was built);
+        # `methods` invoke-pinned; the message + context render structurally.
+        for m in sort!(collect(invoke(methods, Tuple{Any}, setter)); by = m -> _type_text(m.sig))
             # (cure batch 2) a `where`-parametric method's `sig` is a UnionAll — unwrap it, never
             # index `.parameters` on it (validate must not throw on a parametric setter)
             m_argtypes = collect(Base.unwrap_unionall(m.sig).parameters[2:end])
@@ -2429,10 +2496,10 @@ function _reflection_collect!(diags::Vector{Diagnostic}, action_specs::Vector{Ac
                     all(a === b for (a, b) in zip(full, m_argtypes))
             end
             matched || sigm(string("GoMeta registry: executable method matches no ",
-                "declared overload — ", m.sig, " on ", setter,
+                "declared overload — ", _type_text(m.sig), " on ", _callable_text(setter),
                 " (implemented-but-undeclared: declare it — as an internal ",
                 "grammar=false row if it is not action grammar; the loud ",
-                "drift diagnostic)"), nameof(setter))
+                "drift diagnostic)"), Symbol(_callable_text(setter)))
         end
     end
     return nothing
@@ -2449,7 +2516,7 @@ function _value_algebra_collect!(diags::Vector{Diagnostic}, action_specs::Vector
     for spec in action_specs, ov in spec.overloads
         any(ov.return_type === t for t in _CLOSED_RETURN_TYPES) ||
             push!(diags, Diagnostic(:REG_VALUE_ALGEBRA, :error, string(
-                "GoMeta registry: declared return type ", ov.return_type,
+                "GoMeta registry: declared return type ", _ctor_type_name(ov.return_type),   # (t3t4r2) structural render
                 " of action ", repr(spec.name), " is outside the closed ",
                 "serializable set ", _CLOSED_RETURN_TYPES,
                 " (the value-algebra refusal, id-5)"), spec.name))

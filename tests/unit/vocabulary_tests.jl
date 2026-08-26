@@ -17,20 +17,31 @@
 #       these witnesses are the only proof the declaration is LOAD-BEARING (the flip),
 #       the pin is INDEPENDENT (the stale-pin row), and the planes read ONE source.
 # PURPOSE: the T4 acceptance rows (Σ = 18 asserts here + the [11] milestone-set cure
-#       witnesses (6) + the [12] reconfirm-cure witnesses (2) = 26; +2 in
-#       snapshot_property_tests' VocabularyRef named case = the T4-DESIGN §6 Σ = 20 +
-#       the crx-t3t4 cure batch + the crx-t3t4r hardening).
+#       witnesses (6) + the [12] reconfirm/closure-cure witnesses (4) + the [13] family-
+#       cure witnesses (6) = 34; +2 in snapshot_property_tests' VocabularyRef named case
+#       = the T4-DESIGN §6 Σ = 20 + the crx-t3t4 cure batch + the crx-t3t4r/r2
+#       hardenings + the zero-dispatch family).
 
 using Test
 import GoMeta as GM
 import SHA
 
-# the [12] fixture: a type whose `show(::IO, ::Type)` specialization THROWS — the
-# non-dispatching renderer must never invoke it (t3t4r seat A's hostile-show class)
+# the [12]/[13] fixtures: types whose `show(::IO, ::Type)` / `nameof(::Type)` /
+# `hasmethod(::Type, ...)` specializations THROW — the zero-dispatch validate chain must
+# never invoke any of them (t3t4r seat A's hostile-show class; t3t4r2's pirated-nameof /
+# pirated-hasmethod / hostile-payload / hostile-sig classes)
 @eval module _VocHostile
     struct Hostile end
+    struct Hostile2 end
+    struct Hostile3 end     # [13] pirated hasmethod (a no-field struct — a REAL zero-arg ctor exists)
+    struct HostileP end     # [13] a declared VALUE whose type's show throws (the emit render)
+    struct HostileS end     # [13] a sig-slot / return_type whose show throws (the reflection + algebra renders)
 end
 Base.show(io::IO, ::Type{_VocHostile.Hostile}) = error("hostile-show-invoked (must never render)")
+Base.nameof(::Type{_VocHostile.Hostile2}) = error("hostile-nameof-invoked (must never render)")
+Base.hasmethod(::Type{_VocHostile.Hostile3}, ::Type{Tuple{}}) = error("hostile-hasmethod-invoked (must never dispatch)")
+Base.show(io::IO, ::Type{_VocHostile.HostileP}) = error("hostileP-show-invoked (must never render)")
+Base.show(io::IO, ::Type{_VocHostile.HostileS}) = error("hostileS-show-invoked (must never render)")
 
 @testset "vocabulary (v0.4 T4)" begin
 
@@ -237,5 +248,95 @@ Base.show(io::IO, ::Type{_VocHostile.Hostile}) = error("hostile-show-invoked (mu
         @test any(x -> x.code === :DEP_MISSING && occursin("Hostile", x.message) &&
                        occursin("Union{", x.message), dh)
         @test GM._ctor_type_name(Union{}) == "Union{}"   # the bottom leaf, pinned total
+        # (t3t4r2 seat B) `nameof` is itself an extensible generic — a pirated
+        # `Base.nameof(::Type{Hostile2})` must never run either (the zero-dispatch law;
+        # pre-cure validate threw "nameof-pirated" through the render).
+        bn = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
+        bn.plugins[2] = GM.PlugIn(; altName = :Visib, setMode = :mutExclusive,
+            altConstructor = Union{_VocHostile.Hostile2, Int},
+            setAltInstance = GM.Alterants.setVisib)
+        dn = GM.validate(bn)
+        @test any(x -> x.code === :DEP_MISSING && occursin("Hostile2", x.message), dn)
+        # (t3t4r2 seat C) a UnionAll whose BODY is a Union (with a TypeVar member) broke
+        # `nameof(::UnionAll)` — the structural unwrap renders it (pre-cure validate
+        # threw a raw MethodError).
+        bu2 = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
+        bu2.plugins[2] = GM.PlugIn(; altName = :Visib, setMode = :mutExclusive,
+            altConstructor = (Union{S, AbstractMatrix{Int}} where S <: AbstractMatrix),
+            setAltInstance = GM.Alterants.setVisib)
+        du2 = GM.validate(bu2)
+        @test any(x -> x.code === :DEP_MISSING && occursin("Union{", x.message) &&
+                       occursin("AbstractArray", x.message), du2)
+    end
+
+    @testset "[13] the t3t4r2 FAMILY cures — the zero-dispatch validate chain" begin
+        _vis(alt) = GM.PlugIn(; altName = :Visib, setMode = :mutExclusive,
+            altConstructor = alt, setAltInstance = GM.Alterants.setVisib)
+        # (A3, probes P51/P53) a registered `Base.hasmethod(::Type{T}, ::Type{Tuple{}})`
+        # specialization must never dispatch — the gate is invoke-pinned to the Base
+        # fallback (pre-cure validate threw "hostile-hasmethod-invoked"). Hostile3 has a
+        # REAL zero-arg ctor, so the pinned lookup passes and NO DEP row mints.
+        b3 = GM.RegistryBuilder(GM.DEFAULT_REGISTRY); b3.plugins[2] = _vis(_VocHostile.Hostile3)
+        @test !any(x -> x.code === :DEP_MISSING && x.context === :Visib, GM.validate(b3))
+        # (A4, probe P52) `Union{}`'s `hasmethod` is a FALSE true (the Core vararg ctor)
+        # while `Union{}()` always throws — pre-cure validate returned ZERO rows and the
+        # registry PUBLISHED with an unmintable ctor; the eager gate now refuses.
+        b4 = GM.RegistryBuilder(GM.DEFAULT_REGISTRY); b4.plugins[2] = _vis(Union{})
+        @test any(x -> x.code === :DEP_MISSING && occursin("Union{}", x.message) &&
+                       occursin("NO instances", x.message), GM.validate(b4))
+        # (A5) a budget-refused ctor type SKIPS the method lookup (the unbounded-
+        # `hasmethod` class): the 300-member Union is over the 256-node budget — the
+        # registration refuses on the encodability row, with NO DEP row and NO lookup.
+        bigU = reduce((a, i) -> Union{a, Val{i}}, 1:300; init = Union{})
+        b5 = GM.RegistryBuilder(GM.DEFAULT_REGISTRY); b5.plugins[2] = _vis(bigU)
+        d5 = GM.validate(b5)
+        @test any(x -> x.code === :REG_PROTOCOL, d5) && !any(x -> x.code === :DEP_MISSING, d5)
+        # (A6, probe P54) a declared VALUE outside the encodable domain renders its type
+        # STRUCTURALLY — pre-cure the REG_PROTOCOL row's own interpolation ran the
+        # hostile `show` and validate threw "hostileP-show".
+        b6 = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
+        s6 = b6.action_specs[4]
+        b6.action_specs[4] = GM.ActionSpec(; name = s6.name, spelling = s6.spelling,
+            plugin = s6.plugin, overloads = s6.overloads,
+            accepts_string_slot = s6.accepts_string_slot,
+            sugar_candidacy = s6.sugar_candidacy, validate = s6.validate,
+            keyed_slot = s6.keyed_slot, default = GM.Declared(_VocHostile.HostileP()),
+            settribute = s6.settribute)
+        d6 = GM.validate(b6)
+        @test any(x -> x.code === :REG_PROTOCOL && occursin("HostileP", x.message), d6)
+        # (A7) the reflection cross-check renders a hostile-typed DECLARED signature
+        # structurally (a well-formed no-literal overload with no executable method):
+        # REG_SIG_MISMATCH returns naming HostileS — the render never dispatches.
+        b7 = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
+        s7 = b7.action_specs[1]
+        hov = GM.ActionOverload(; sig_types = Type[Dict{Symbol,Bool}, _VocHostile.HostileS],
+            kinds = Symbol[], kind_sources = Symbol[], vararg_kind = nothing,
+            return_type = Nothing, effect = :set, queryable = false,
+            applicability = :context_free, phase = :apply, grammar = false)
+        b7.action_specs[1] = GM.ActionSpec(; name = s7.name, spelling = s7.spelling,
+            plugin = s7.plugin, overloads = [s7.overloads..., hov],
+            accepts_string_slot = s7.accepts_string_slot,
+            sugar_candidacy = s7.sugar_candidacy, validate = s7.validate,
+            keyed_slot = s7.keyed_slot, default = s7.default, settribute = s7.settribute)
+        d7 = GM.validate(b7)
+        @test any(x -> x.code === :REG_SIG_MISMATCH && occursin("HostileS", x.message), d7)
+        # (A8) the value-algebra refusal renders a hostile declared return_type
+        # structurally: REG_VALUE_ALGEBRA returns naming HostileS.
+        b8 = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
+        # a DISTINCT no-literal sig (a duplicate of an existing overload's sig trips the
+        # tier-1 dispatch-target uniqueness law, and the BROKEN spec would then be
+        # SKIPPED by the tier-2 algebra collector — the broken-record law)
+        rov = GM.ActionOverload(; sig_types = Type[Dict{Symbol,Bool}, Float32],
+            kinds = Symbol[], kind_sources = Symbol[], vararg_kind = nothing,
+            return_type = _VocHostile.HostileS,
+            effect = :set, queryable = false, applicability = :context_free,
+            phase = :apply, grammar = false)
+        b8.action_specs[1] = GM.ActionSpec(; name = s7.name, spelling = s7.spelling,
+            plugin = s7.plugin, overloads = [s7.overloads..., rov],
+            accepts_string_slot = s7.accepts_string_slot,
+            sugar_candidacy = s7.sugar_candidacy, validate = s7.validate,
+            keyed_slot = s7.keyed_slot, default = s7.default, settribute = s7.settribute)
+        d8 = GM.validate(b8)
+        @test any(x -> x.code === :REG_VALUE_ALGEBRA && occursin("HostileS", x.message), d8)
     end
 end
