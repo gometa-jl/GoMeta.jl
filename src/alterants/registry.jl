@@ -1,8 +1,9 @@
-# registry.jl — the alterant inventory: label whitelist + toy setters, state accessors, the default registry
+# registry.jl — the alterant inventory: the vocabulary-gated setters, state accessors, the default registry
 #
 # IS: the register file of the alterant layer — two nested sub-modules plus a top-level tail. `module
-#     Alterants`: the closed label whitelist `sortedSetOfLabelsSVec` + the toy setters `setLabels`/
-#     `checkLabels`/`setVisib`/`setId` over the `@namedElement` types `Visib` (Bool: hide/show/discard)
+#     Alterants`: the std vocabulary loader include (v0.4 T4 — the closed label whitelist now lives as
+#     the `alterants-std/labels_vocabulary.txt` ARTIFACT, digest-pinned on the labels record) + the toy
+#     setters `setLabels`/`checkLabels`/`setVisib`/`setId` over the `@namedElement` types `Visib` (Bool: hide/show/discard)
 #     and `Id` (Int16: cell/parent/file). `module CnS`: the per-call state accessors `wipeAltActionSlots`/
 #     `updateMetaHierarchy`/`getState`/`getAltState`. The tail builds the immutable `AlterantRegistry`
 #     (type: src/state.jl) — `build_default_registry()` → `const DEFAULT_REGISTRY` (v0.4 T1: the former
@@ -51,19 +52,15 @@ using StaticArrays: SVector
 #########################################################################################
 ## Labels.jl for `alterant` `Labels`:
 
-## The label whitelist: the corpus-documented labels `:label1`..`:label5` plus (since 0.3.0)
-## the fixed pictograph vocabulary (byte-exact names, no normalization — an emoji variant with
-## different bytes is a different, unknown name). The whitelist is
-## PURELY a membership test: `sortedSetOfLabelsSVec` is consumed only by `insorted` in `setLabels`
-## below, and any label outside it raises the stable "GoMeta apply: unknown label" refusal, which
-## names the accepted set (docs/public-api.md §3.4).
-goMetaLabels = [:label1, :label2, :label3, :label4, :label5]
-append!(goMetaLabels, Symbol.(["⛔", "💯", "🇨🇭", "🏔️", "🍒", "🫕", "💡", "💣", "🧮", "📝",
-    "💕", "⌛", "💸", "💾", "⛓️‍💥", "⛓️", "📸", "🎨", "🍻", "🔥", "🐣", "😘", "🎿",
-    "🚀", "🌍", "🌳", "🌛", "🌷", "🌹", "🌼", "🍀", "🌞", "💫"]))
-
-const sortedSetOfLabelsSVec = SVector{length(goMetaLabels),Symbol}(
-    sort(goMetaLabels))
+## v0.4 T4 (R-V04B-6 (a); the ruled BUG-FIX, R-V04-20/29): the label vocabulary is NO
+## LONGER a Core literal — it is the CONTENT of the Labels record's declared vocabulary
+## artifact under `src/alterants-std/` (custody = the Labels lane's, R-LBL-4), loaded by
+## the std file below (capture at load; the declared-vs-captured digest re-verify is
+## `_vocabulary_collect!`'s publication act, R-V04-37). The former `goMetaLabels` +
+## `sortedSetOfLabelsSVec` literals are DELETED; membership reads ride the SCOPE LAW
+## (`_vocabulary_for_action` — the invoked action's owning record's declared vocabulary
+## inside an engine scope; the shipped vocabulary outside any scope).
+include(joinpath(@__DIR__, "..", "alterants-std", "labels_vocabulary.jl"))
 
 function setLabels(
     crntLabels::Dict{Symbol,Bool}, # The Alterant here.
@@ -82,13 +79,18 @@ function setLabels(
         isempty(labels) && error("GoMeta apply: empty label list — the labels action ':' ",
             "names no label; v0 requires at least one label (e.g. ':label1'); ",
             "see docs/public-api.md §3.4")
+        ## v0.4 T4: membership via the SCOPE LAW; the ∈-scan over `names` is
+        ## ORDER-INDEPENDENT (the C4E-4 law — never `insorted` over declaration order);
+        ## a record declaring NO vocabulary has NO membership gate (T4-DESIGN §9-4);
+        ## the refusal renders a SORTED display copy
+        local vocab = _vocabulary_for_action(actionName)
         for label ∈ labels
-            if insorted(label, sortedSetOfLabelsSVec)
+            if vocab === nothing || label ∈ vocab.names
                 crntLabels[label] = true
             else
                 error("GoMeta apply: unknown label ", repr(first(String(label), 40)),
-                    " — not in v0's closed label whitelist (sortedSetOfLabelsSVec = ",
-                    sortedSetOfLabelsSVec, "); see docs/public-api.md §3.4")
+                    " — not in v0's closed label whitelist (the declared vocabulary = ",
+                    sort(copy(vocab.names)), "); see docs/public-api.md §3.4")
             end
         end
     else
@@ -110,14 +112,27 @@ function checkLabels(
     isempty(labels) && error("GoMeta apply: empty label query — ':()' names no label to ",
         "check; v0 requires at least one label (e.g. ':(:label1)'); ",
         "see docs/public-api.md §3.4")
+    ## v0.4 T4: the condition-side guards ride the SCOPE LAW, in the FIXED branch order
+    ## (crx C9): membership (unknown-label) FIRST, then the R-V04-36 write-only valve,
+    ## then the store lookup. A record declaring NO vocabulary has neither guard.
+    local vocab = _vocabulary_for_action(actionName)
     for label ∈ labels
-        ## Condition-side whitelist guard: a label outside the closed v0 whitelist refuses loudly
-        ## (the SAME contract as setLabels' guard above), never a silent `false` — a query for an
-        ## unknown label is a vocabulary error, not an unset label.
-        if !insorted(label, sortedSetOfLabelsSVec)
-            error("GoMeta apply: unknown label ", repr(first(String(label), 40)),
-                " — not in v0's closed label whitelist (sortedSetOfLabelsSVec = ",
-                sortedSetOfLabelsSVec, "); see docs/public-api.md §3.4")
+        if vocab !== nothing
+            ## a label outside the declared vocabulary refuses loudly (the SAME contract
+            ## as setLabels' guard), never a silent `false` — a query for an unknown
+            ## label is a vocabulary error, not an unset label
+            if label ∉ vocab.names
+                error("GoMeta apply: unknown label ", repr(first(String(label), 40)),
+                    " — not in v0's closed label whitelist (the declared vocabulary = ",
+                    sort(copy(vocab.names)), "); see docs/public-api.md §3.4")
+            end
+            ## the declared write-only valve (R-V04-36): a member flagged `query = false`
+            ## is set-only — the query plane refuses it typed-prose
+            if !get(vocab.flags, label, (query = true,)).query
+                error("GoMeta apply: label ", repr(first(String(label), 40)),
+                    " is declared write-only (query = false) — set-only in this ",
+                    "vocabulary (the declared valve; see docs/public-api.md §3.4)")
+            end
         end
         if label ∉ keys(crntLabels)
             return false
@@ -456,7 +471,15 @@ function default_registry_builder()
     # The closed v0 inventory, in DECLARATION order (deterministic, unlike Dict-iteration
     # order). Plugin index = position here.
     plugins = PlugIn[
-        PlugIn(:labels, :accumulate,   Dict{Symbol,Bool}, Alterants.setLabels, Alterants.checkLabels, nothing),
+        ## v0.4 T4: the labels record DECLARES its vocabulary (the digest-pinned artifact
+        ## — the DECLARED literal, never the captured value; `_vocabulary_collect!` makes
+        ## them agree or refuses at publication) + the POLICY identity (independent of the
+        ## content digest — the R-FODT-17 referent PAIR; the lane bumps it on a policy move)
+        PlugIn(; altName = :labels, setMode = :accumulate, altConstructor = Dict{Symbol,Bool},
+                 setAltInstance = Alterants.setLabels, getAltInstance = Alterants.checkLabels,
+                 vocabulary = VocabularyRef(DomainRef("alterants-std/labels_vocabulary.txt",
+                                                      Alterants.LABELS_VOCABULARY_DECLARED_DIGEST)),
+                 provenance = Provenance(; policy_id = "gometa-labels/v0-closed@1")),
         PlugIn(:Visib,  :mutExclusive, Alterants.Visib,   Alterants.setVisib,  nothing,               nothing),
         PlugIn(:id,     :mutExclusivePerField, Alterants.Id, Alterants.setId,  nothing,               nothing),
         # The Heading plugin. setMode `:localOnly` — the THIRD inheritance mode:
@@ -1468,6 +1491,111 @@ function _dependency_collect!(diags::Vector{Diagnostic}, plugins::Vector{PlugIn}
 end
 
 """
+    _vocabulary_collect!(diags, plugins)
+
+(v0.4 T4 — T4-DESIGN §2; the R-V04-37 PUBLICATION-ONLY RE-VERIFY) the vocabulary law at
+the gate: a `VocabularyRef` whose DECLARED digest matches no CAPTURED artifact refuses
+`:SRC_DIGEST_MISMATCH` (the fail-closed pre-flight — the DEFAULT publishes at module
+load, so a tampered shipped artifact fails `using GoMeta` here); an `InlineVocabulary`
+with a duplicate name or a flag key outside its name set refuses (`REG_PROTOCOL` family;
+an ABSENT flag key defaults `query = true`, documented).
+"""
+function _vocabulary_collect!(diags::Vector{Diagnostic}, plugins::Vector{PlugIn})
+    for p in plugins
+        v = p.vocabulary
+        v === nothing && continue
+        if v isa VocabularyRef
+            haskey(Alterants._VOCAB_CACHE, v.ref.digest) ||
+                push!(diags, Diagnostic(:SRC_DIGEST_MISMATCH, :error, string(
+                    "GoMeta registry: alterant ", repr(p.altName), " declares vocabulary ",
+                    "digest ", v.ref.digest, " which matches NO loaded artifact — the ",
+                    "artifact bytes moved without a declaration update, or the artifact ",
+                    "was never loaded (verify-and-capture; publication-only ",
+                    "re-verification per R-V04-37)"), p.altName))
+        elseif v isa InlineVocabulary
+            seen = Set{Symbol}()
+            for n in v.names
+                n in seen ? push!(diags, Diagnostic(:REG_PROTOCOL, :error, string(
+                    "GoMeta registry: alterant ", repr(p.altName), " declares a DUPLICATE ",
+                    "vocabulary name ", repr(n), " (the vocabulary law)"), p.altName)) :
+                    push!(seen, n)
+            end
+            for k in keys(v.flags)
+                k in seen || push!(diags, Diagnostic(:REG_PROTOCOL, :error, string(
+                    "GoMeta registry: alterant ", repr(p.altName), " declares a vocabulary ",
+                    "flag for ", repr(k), " which is not a declared name (the vocabulary ",
+                    "law; an absent flag defaults query = true)"), p.altName))
+            end
+        end
+    end
+    return nothing
+end
+
+# the INTERNAL resolver (no copy — the membership helpers and the scope law read this;
+# the PUBLIC `vocabulary` wraps it in a defensive copy)
+function _resolve_vocabulary_by_index(registry::AlterantRegistry, i::Integer)
+    slot = registry.plugins[i].vocabulary
+    slot === nothing && return nothing
+    slot isa InlineVocabulary && return slot
+    v = get(Alterants._VOCAB_CACHE, slot.ref.digest, nothing)
+    v === nothing && error("GoMeta apply: the declared vocabulary of alterant ",
+        repr(registry.plugins[i].altName), " is UNRESOLVABLE (declared digest ",
+        slot.ref.digest, " has no loaded artifact) — see docs/public-api.md §3.4")
+    return v
+end
+
+"""
+    vocabulary(registry, altName) -> Union{Nothing,InlineVocabulary}
+
+G-VOC (v0.4 T4; package-public — the ONE vocabulary query surface the three planes read;
+consumers adopt at T9): the named record's DECLARED vocabulary, resolved — an
+`InlineVocabulary` slot verbatim, a `VocabularyRef` through the load-time capture cache
+by its declared digest — and returned as a DEFENSIVE COPY (mutating the return changes
+nothing; the membership helpers read only the private representation). `nothing` when
+the record declares no vocabulary (no membership gate — the declared-content law) or the
+alterant is unknown. An unresolvable `VocabularyRef` refuses LOUDLY.
+"""
+function vocabulary(registry::AlterantRegistry, altName::Symbol)
+    i = get(registry.alt_index, altName, nothing)
+    i === nothing && return nothing
+    v = _resolve_vocabulary_by_index(registry, i)
+    v === nothing && return nothing
+    return InlineVocabulary(copy(v.names), copy(v.flags))
+end
+
+"""
+    vocabulary_member(registry, altName, name) -> Bool
+
+G-VOC membership: `true` iff the named record declares a vocabulary containing `name`,
+OR declares none (no gate). Order-independent (an `∈`-scan over the declared names —
+never a sorted-order assumption).
+"""
+function vocabulary_member(registry::AlterantRegistry, altName::Symbol, name::Symbol)
+    i = get(registry.alt_index, altName, nothing)
+    i === nothing && return true
+    v = _resolve_vocabulary_by_index(registry, i)
+    v === nothing && return true
+    return name ∈ v.names
+end
+
+"""
+    vocabulary_queryable(registry, altName, name) -> Bool
+
+G-VOC queryability: `true` iff `name` is a declared member whose flag is `query = true`
+(an absent flag defaults `true`); `false` for a non-member (membership is checked FIRST
+by every conforming caller — the branch order law); `true` when no vocabulary is
+declared (no gate).
+"""
+function vocabulary_queryable(registry::AlterantRegistry, altName::Symbol, name::Symbol)
+    i = get(registry.alt_index, altName, nothing)
+    i === nothing && return true
+    v = _resolve_vocabulary_by_index(registry, i)
+    v === nothing && return true
+    name ∈ v.names || return false
+    return get(v.flags, name, (query = true,)).query
+end
+
+"""
     _encodability_collect!(diags, plugins, action_specs)
 
 (T2-bis, replacing the cure-batch-4/5 `_slot_text` probe) tier 1's DOMAIN row — the ONE
@@ -2352,6 +2480,7 @@ function _validate_registration(plugins::Vector{PlugIn}, action_specs::Vector{Ac
     _record_wellformed_collect!(diags, action_specs, plugins)
     _encodability_collect!(diags, plugins, action_specs)   # (cure batch 4) the seal must be mintable
     _dependency_collect!(diags, plugins)                   # (T3) the mint's eager dependency closure
+    _vocabulary_collect!(diags, plugins)                   # (T4) the vocabulary law + the R-V04-37 re-verify
     # (cure batch 1) tier 2 SKIPS every action record tier 1 found structurally broken: the semantic
     # collectors index and consult closed maps on the record's own data, and a malformed row would
     # otherwise THROW out of the accumulator (the CRX after-T2 set: `vararg_kind = :bogus` reached

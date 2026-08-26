@@ -9,7 +9,8 @@
 # DOES: N = 1024 iterations — each takes a FRESH publish of the fixed generator builder, checks
 #       the door EMPTY, applies one site mutation (sites cycle deterministically; the rng picks
 #       only replacement values), and checks ONE fire at a segment-prefix-comparable path — plus
-#       the 8 false-positive rebuild cases, the named cases (Σ = 44 asserts), and 5 aggregate
+#       the 8 false-positive rebuild cases, the named cases (Σ = 46 asserts since the v0.4 T4
+#       VocabularyRef case), and 5 aggregate
 #       coverage asserts. P = 1024×3 + 8 + 44 + 5 = 3129 (T2BIS-DESIGN §9's closed arithmetic).
 # REASONING: the enumerated door witnesses cannot prove coverage over the whole walked domain;
 #       the site-cycling property can — full site coverage is guaranteed by |sites| ≤ N.
@@ -494,7 +495,7 @@ end
         push!(dagseen, :join)
     end
 
-    # ═══ the NAMED cases (§9): Σ = 44 asserts ═══
+    # ═══ the NAMED cases (§9): Σ = 46 asserts (44 at T2-bis + the T4 VocabularyRef case) ═══
     _with_ctor(b, T) = (b.plugins[2] = GM.PlugIn(; altName = :Visib, setMode = :mutExclusive,
         altConstructor = T, setAltInstance = GM.Alterants.setVisib); b)
     _with_default(b, i, v) = begin
@@ -544,6 +545,25 @@ end
     end
     let d = GM.validate(_with_default(_mk_prop_builder(), 4, SubString("ab", 1, 1)))
         @test any(x -> x.code === :REG_PROTOCOL && occursin("slot default", x.message), d)
+    end
+    # (v0.4 T4 — the VocabularyRef case, T4-DESIGN §6-11: the declared digest is a String
+    # LEAF inside the vocabulary slot — an equal-content REBUILD of the whole slot is
+    # SILENT (the FP law over immutable-struct chains), and a digest swap fires at the
+    # ELEMENT path `plugins[2].vocabulary.ref.digest` (probe-measured). The digest must be
+    # a CAPTURED one — `_vocabulary_collect!` refuses any pin absent from the cache.) (2)
+    _with_vocab!(R, dig) = (R.plugins[2] = GM.PlugIn(; altName = :Visib,
+        setMode = :mutExclusive, altConstructor = GM.Alterants.Visib,
+        setAltInstance = GM.Alterants.setVisib,
+        vocabulary = GM.VocabularyRef(GM.DomainRef("labels_vocabulary.txt", dig))); R)
+    let b = _mk_prop_builder()
+        _with_vocab!(b, GM.Alterants.LABELS_VOCABULARY_DECLARED_DIGEST)
+        R = GM.publish(b)
+        _with_vocab!(R, GM.Alterants.LABELS_VOCABULARY_DECLARED_DIGEST)   # equal-content rebuild
+        @test isempty(GM._registry_door_check(R))
+        _with_vocab!(R, "sha256:" * "0"^64)                               # the digest-leaf swap
+        ds = GM._registry_door_check(R)
+        @test _codesp(ds) == [:POST_SEAL_MUTATION] &&
+              occursin("plugins[2].vocabulary.ref.digest", ds[1].message)
     end
     # Dict ops with their path classes: key added (2) · deleted (2) · type-swapped 1 → 1.0
     # (2, CONTAINER) · -0.0 ↔ 0.0 (2, CONTAINER) · element appended (2) · removed (2)

@@ -138,11 +138,17 @@ import GoMeta as GM
         # (a FIFTH re-mint at cure batch 2: the encoding now tags the concrete numeric type and
         # distinguishes tuples from vectors — 0xd9356f388ea12597 → 0x33c214cef7ea13d3; grammar
         # pin unmoved)
+        # (the SIXTH re-mint at v0.4 T4 — DECLARED in T4-DESIGN §7 BEFORE the run that learned
+        # it: the labels record's vocabulary slot moved from `nothing` to the VocabularyRef pin
+        # + its provenance gained the independent policy_id — the registration fold covers both
+        # slots, so the record change re-mints — 0x33c214cef7ea13d3 → 0x10720f0a578f8d6b, at
+        # exactly TWO loci (this pin + the cache_key r-component below); the grammar pin
+        # asserted UNMOVED — a move there is STOP-and-diagnose, the fold touched what it must not)
         p = GM.resolve_profile(GM.GoMetaConfig())
         @test p.grammar_digest      == 0x12972c9924c2bf2b
-        @test p.registration_digest == 0x33c214cef7ea13d3
+        @test p.registration_digest == 0x10720f0a578f8d6b
         @test GM.cache_key(p) == string("gometa/v", GM._ENGINE_VERSION,
-            "/jl_share_v1/closed_v1/s3/g12972c9924c2bf2b/r33c214cef7ea13d3")   # the r-component re-minted with the pin above (v0.4 T2 + cure batches 1-2)
+            "/jl_share_v1/closed_v1/s3/g12972c9924c2bf2b/r10720f0a578f8d6b")   # the r-component re-minted with the pin above (v0.4 T4 = the sixth)
     end
 
     @testset "test_error_oracle_corrupt_and_incompatible" begin

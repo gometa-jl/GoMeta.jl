@@ -49,4 +49,5 @@ using Test
     include(joinpath(@__DIR__, "registry_lifecycle_tests.jl"))      # v0.4 T2: Builder → validate → publish, the one chain, the STRICT door, the seal gate, the exhaustion refusals (APPEND-ONLY)
     include(joinpath(@__DIR__, "snapshot_property_tests.jl"))       # v0.4 T2-bis: the snapshot door's PROPERTY proof (N=1024 site mutations + FP rebuilds + named cases; T2BIS-DESIGN §9)
     include(joinpath(@__DIR__, "seam_envelope_tests.jl"))           # v0.4 T3: the seams — query/validate/ctor envelopes, DEP_MISSING, store identity, the state-seam ledger (T3-DESIGN §8)
+    include(joinpath(@__DIR__, "vocabulary_tests.jl"))              # v0.4 T4: the whitelist relocation — the digest-pinned artifact, the registration-surface flip, G-VOC, the valve, the zero-literal law (T4-DESIGN §6)
 end

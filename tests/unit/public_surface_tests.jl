@@ -46,17 +46,20 @@ import TOML
                          # sanctioned registration surface IS the intended Extension-facing seam);
                          # 36 → 37 at the v0.4 `Alterant` rename (R-V04B-5): the canonical record
                          # name beside the `PlugIn` 0.4.x deprecation alias.
+                         # 37 → 40 at v0.4 T4: the G-VOC query triple — the ONE vocabulary
+                         # read surface the three planes share (T4-DESIGN §4).
                          :RegistryBuilder, :register!, :next_plugin_index, :validate, :publish, :RegistrationRefused,
                          :Alterant, :PlugIn, :ActionSpec, :ActionOverload, :DomainRef, :CaptureDecl, :DefaultSlot,
                          :NoDefault, :Declared, :EffectRow, :RenderDecl, :VocabularySlot,
                          :InlineVocabulary, :VocabularyRef, :MutEx, :ConditionAtom, :SugarRow,
-                         :Provenance, :SignatureRecord, :PermissionManifest]   # mirrors docs/public-api.md §1.2 EXACTLY
+                         :Provenance, :SignatureRecord, :PermissionManifest,
+                         :vocabulary, :vocabulary_member, :vocabulary_queryable]   # mirrors docs/public-api.md §1.2 EXACTLY
 
     @testset "export set is EXACTLY the declared semver surface" begin
         live = setdiff(Set(names(GM)), Set([:GoMeta]))     # names() on Julia ≥1.11 == exported ∪ `public` (+ the module name)
         exported = Set(filter(n -> Base.isexported(GM, n), collect(live)))
         @test exported == DECLARED_EXPORTS                        # [1] no accidental leak AND no gap (exact equality)
-        @test setdiff(live, exported) == Set(SUPPORTING_PUBLIC)   # [1b] the `public` tier is EXACTLY the declared names (37 since the v0.4 Alterant rename)
+        @test setdiff(live, exported) == Set(SUPPORTING_PUBLIC)   # [1b] the `public` tier is EXACTLY the declared names (40 since the v0.4 T4 G-VOC triple)
         @test all(n -> Base.ispublic(GM, n), SUPPORTING_PUBLIC)   # [1c] every supporting name carries the `public` marking
         @test all(n -> !Base.isexported(GM, n), SUPPORTING_PUBLIC) # [1d] …and none is exported (the two-tier partition is real)
         for n in DECLARED_EXPORTS

@@ -6,6 +6,10 @@
 # multibyte final character whole in the verdict store.
 # Every assertion below pins a MEASURED value. GENERATED file:
 # exotic characters are REAL codepoints, byte-verified at authoring.
+# v0.4 T4 HAND-EDIT (declared per T4-DESIGN §6-12; T4B-3): testset [7]'s membership
+# probes now read through the public G-VOC surface (`vocabulary_member`) — the former
+# `sortedSetOfLabelsSVec` const is DELETED with the whitelist relocation. Assert-count
+# neutral. A regeneration of this file must re-apply the [7] G-VOC form.
 
 using Test
 import GoMeta as GM
@@ -87,11 +91,11 @@ _uc_err(s)     = try _uc_full(s); nothing catch e sprint(showerror, e) end
         # regional-indicator pair and a ZWJ sequence; a variation-selector-less base
         # char is a DIFFERENT byte sequence and refuses like any unknown name.
         for name in ("⛔", "💯", "🇨🇭", "⛓️‍💥", "🌛", "💫")
-            @test insorted(Symbol(name), GM.Alterants.sortedSetOfLabelsSVec)
+            @test GM.vocabulary_member(GM.DEFAULT_REGISTRY, :labels, Symbol(name))   # v0.4 T4: through G-VOC
         end
         r = _uc_full("#~ :⛔ hide{ :⛔ }\n# content\n")
         @test r.status == GM.PROCESS_OK           # set role + condition role, end-to-end
-        @test !insorted(Symbol("⛓"), GM.Alterants.sortedSetOfLabelsSVec)   # no VS16 ⇒ unknown
+        @test !GM.vocabulary_member(GM.DEFAULT_REGISTRY, :labels, Symbol("⛓"))   # no VS16 ⇒ unknown
         m = _uc_err("#~ :⛓\n# content\n")
         @test m !== nothing && occursin("unknown label", m)
     end

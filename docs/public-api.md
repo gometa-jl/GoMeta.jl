@@ -52,10 +52,11 @@ by `tests/unit/public_surface_tests.jl`) and of the refusal behavior the shipped
 | `GoMetaConfig` | type | the v0 input options |
 | `GoMetaResult` | type | the typed pipeline result |
 
-`names(GoMeta)` is exactly this set plus the §1.2 public names (37 since the v0.4 `Alterant`
-rename: the eleven of 0.3.x, the six lifecycle names, the twenty record-vocabulary names —
-`Alterant` is the record's canonical name and `PlugIn` its PUBLIC 0.4.x deprecation alias,
-R-V04B-5; and the module name) — the
+`names(GoMeta)` is exactly this set plus the §1.2 public names (40 since v0.4 T4: the eleven
+of 0.3.x, the six lifecycle names, the twenty record-vocabulary names — `Alterant` is the
+record's canonical name and `PlugIn` its PUBLIC 0.4.x deprecation alias, R-V04B-5 — and the
+T4 G-VOC query triple `vocabulary`/`vocabulary_member`/`vocabulary_queryable`; and the module
+name) — the
 **machine-checkable surface oracle** that `tests/unit/public_surface_tests.jl` asserts against
 this document: the four exported names via `Base.isexported`, the §1.2 names via `Base.ispublic`.
 
@@ -287,6 +288,27 @@ These are part of the documented public surface — declared with Julia's `publi
     `provenance = Provenance()`, `permissions = nothing`). At v0.4.0 the slots are CARRIED (validated for shape, sealed);
     their consumers land with the per-plane cures — a slot the engine does not yet consume has no
     effect on a run (the contract page of the release states, per slot, which cure consumes it).
+    **Since v0.4 T4 the `vocabulary` slot is CONSUMED** (the first slot with a live consumer):
+    see the vocabulary law below.
+  - **The VOCABULARY law (v0.4 T4 — the whitelist relocation, R-V04B-6 (a)):** the closed label
+    whitelist is no longer a Core literal — it is the CONTENT of the labels record's declared
+    `vocabulary` slot. The shipped declaration is a `VocabularyRef` onto the digest-pinned
+    artifact `src/alterants-std/labels_vocabulary.txt` (38 names in declaration order; one
+    `<name><TAB>query=false` line — the write-only VALVE); the DECLARED digest is an independent
+    literal, and the loader CAPTURES the bytes as read while the declared-vs-captured comparison
+    is a PUBLICATION act (`SRC_DIGEST_MISMATCH` at `validate`, per the standing R-V04-37 shape) —
+    the DEFAULT registry publishes at module load, so a tampered shipped artifact fails
+    `using GoMeta` (fail-closed). The membership planes read the INVOKED action's owning record's
+    declared vocabulary inside an engine scope (the SCOPE LAW; a record declaring NO vocabulary
+    has NO membership gate — the declaration is load-bearing) and the shipped vocabulary outside
+    any scope. The public read surface is the G-VOC triple — `vocabulary(registry, altName)`
+    (the resolved declaration as a DEFENSIVE COPY, or `nothing`), `vocabulary_member(registry,
+    altName, name)`, `vocabulary_queryable(registry, altName, name)` (membership first, then the
+    `query` flag; an absent flag defaults `true`) — mutating a returned copy changes nothing.
+    An `InlineVocabulary` declaration refuses duplicate names and flag keys outside its name set
+    at `validate` (`REG_PROTOCOL`). The labels record's `provenance.policy_id` is the INDEPENDENT
+    policy identity `"gometa-labels/v0-closed@1"` (a content swap moves the artifact digest; a
+    policy change moves this name).
 
 They are not exported; reach them qualified. `tests/unit/public_surface_tests.jl` asserts every
 §1.2 name is `public` and NOT exported (no accidental leak, no silent demotion).
@@ -613,17 +635,43 @@ fabricated typed code:
 - **The unknown-alterant refusal:** an out-of-registry alterant name throws a stable, stage-honest,
   bounded `ErrorException` ("GoMeta absorb: unknown alterant action …"). Its typed-`Diagnostic`
   conversion is deferred (the E-01 family).
-- **The unknown-label refusal:** **label names are validated in BOTH roles** against the engine's
-  closed whitelist — a name APPLIED as a label (`#~ :labelX`, including the conditional form
+- **The unknown-label refusal:** **label names are validated in BOTH roles** against the
+  governing record's DECLARED vocabulary (since v0.4 T4 — the §1.2 vocabulary law; the shipped
+  content is unchanged: `:label1`..`:label5` plus, since `0.3.0`, the fixed pictograph
+  vocabulary, now carried by the `alterants-std/labels_vocabulary.txt` artifact) — a name
+  APPLIED as a label (`#~ :labelX`, including the conditional form
   `:labelX{ … }`) and a label QUERIED in a condition (`{ :labelX }`) each raise the stable
-  `ErrorException` `"GoMeta apply: unknown label …"`, which names the accepted set — the
-  corpus-documented `:label1`..`:label5` plus, since `0.3.0`, the fixed pictograph vocabulary
-  (the §2 argument-forms contract). One evaluation-scope
+  `ErrorException` `"GoMeta apply: unknown label …"`, which names the accepted set SORTED
+  (the §2 argument-forms contract). A record declaring NO vocabulary has no membership gate.
+  One evaluation-scope
   note: the condition-role refusal fires where the query is actually consulted — in a region that
   carries no labels at all (no valid label was ever set there), the query is never consulted and
   the atom simply evaluates false; likewise a condition-side label after an already-winning true
   atom in a `,`/`||` chain is not queried (short-circuit), so it is not reached to refuse.
   Witnesses: `tests/unit/error_message_tests.jl` (both roles).
+- **The write-only-label refusal (v0.4 T4 — the declared VALVE):** querying a vocabulary member
+  whose flag is `query = false` raises the stable `ErrorException` `"GoMeta apply: label … is
+  declared write-only (query = false) — set-only in this vocabulary"`. Trigger: the query plane's
+  `checkLabels` on a valve name (membership is checked FIRST — an unknown name meets the
+  unknown-label refusal above, never this one). Channel: a thrown `ErrorException` out of
+  `goMeta` / the direct package-internal drive. At v0 the shipped valve name (a ZWJ pictograph
+  sequence) cannot ride a DOCUMENT condition — the absorb-plane condition scan refuses its
+  joiner first (`"GoMeta absorb: unparsable condition"`) — so the direct drive is the valve's
+  only reachable seam. Recovery: query a `query = true` member, or set the name instead.
+  Witnesses: `tests/unit/vocabulary_tests.jl` [5].
+- **The malformed-vocabulary-artifact load refusal (v0.4 T4):** a vocabulary artifact violating
+  the fixed byte grammar (UTF-8 no BOM · LF-only · no blank/comment lines · no padding · one
+  final LF · `<name>` or `<name><TAB>query=false` lines · no duplicates) raises `"GoMeta
+  registry: labels vocabulary artifact is MALFORMED (<class>) at line <n> of <origin>"` AT LOAD
+  — for the shipped artifact that means `using GoMeta` itself fails (fail-closed; a digest
+  mismatch is the SEPARATE publication-time `SRC_DIGEST_MISMATCH` row, §3.5). Recovery: restore
+  the artifact bytes (the grammar is fixed; regenerate from the lane's source).
+- **The unresolvable-vocabulary refusal (v0.4 T4):** a G-VOC read (or a plane's scope-law read)
+  over a record whose `VocabularyRef` digest matches no loaded artifact raises `"GoMeta apply:
+  the declared vocabulary of alterant … is UNRESOLVABLE"`. Unreachable through the sanctioned
+  lifecycle (`validate` refuses the same condition as `SRC_DIGEST_MISMATCH` before publication);
+  reachable only by post-publication mutation (a B-2-class act the door reports). Recovery:
+  re-publish through the lifecycle.
 - **The store-`[2]` insertion path** — a latent insertion path not exercised by any v0 input.
 - **The absorb-plane grammar refusals (the same stable-message family):** beyond the entries
   above, the metaLine/condition grammar refuses with stable `GoMeta absorb:` messages on: an
@@ -744,6 +792,7 @@ rows; **(iv) DOOR results** — `REG_UNPUBLISHED` / `POST_SEAL_MUTATION` come ba
 | `DEP_MISSING` (v0.4 T3) | error | an `altConstructor` with no zero-argument method — the instance mint's eager dependency closure at publication (was a raw `MethodError` at first apply) | the alterant |
 | `STATE_REUSE_REFUSED` (T3 seam) | error | the injected parse state is refused: POISONED by an earlier aborted call that had begun writing back (the message names `STATE_POISONED`), or already IN FLIGHT in another call (one code, two message variants); recovery: re-parse into a fresh state | `nothing` |
 | `STATE_SEAL_MISMATCH` (T3 seam) | error | the injected parse state's write-backs were produced under a DIFFERENT published registry — the registry-identity check (`===` on the published object, never a fingerprint) | `nothing` |
+| `SRC_DIGEST_MISMATCH` (v0.4 T4) | error | a record's `VocabularyRef` digest matches NO loaded artifact — the artifact bytes moved without a declaration update, or the artifact was never loaded (the R-V04-37 publication-time re-verify of the load-time capture; the DEFAULT publishes at module load, so a tampered shipped artifact fails `using GoMeta` here) | the alterant |
 
 Stable-message refusals (NOT typed codes; the §3.4 class): `"GoMeta absorb: meta-hierarchy slot pool
 exhausted"` — the per-call slot pool (`NUM_MH_LEVELS` = 12 slots) fully occupied at an
