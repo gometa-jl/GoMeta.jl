@@ -18,9 +18,11 @@
 #       the pin is INDEPENDENT (the stale-pin row), and the planes read ONE source.
 # PURPOSE: the T4 acceptance rows (Σ = 18 asserts here + the [11] milestone-set cure
 #       witnesses (6) + the [12] reconfirm/closure-cure witnesses (4) + the [13] family-
-#       cure witnesses (6) = 34; +2 in snapshot_property_tests' VocabularyRef named case
-#       = the T4-DESIGN §6 Σ = 20 + the crx-t3t4 cure batch + the crx-t3t4r/r2
-#       hardenings + the zero-dispatch family).
+#       cure witnesses (6) + the [14] s-wave cure witness (1) = 35; +2 in
+#       snapshot_property_tests' VocabularyRef named case + the 3 appended collector
+#       names in registration_tests' atomicity loop = the T4-DESIGN §6 Σ = 20 + the
+#       crx-t3t4 cure batch + the crx-t3t4r/r2 hardenings + the zero-dispatch family +
+#       the s-wave cures).
 
 using Test
 import GoMeta as GM
@@ -42,6 +44,16 @@ Base.nameof(::Type{_VocHostile.Hostile2}) = error("hostile-nameof-invoked (must 
 Base.hasmethod(::Type{_VocHostile.Hostile3}, ::Type{Tuple{}}) = error("hostile-hasmethod-invoked (must never dispatch)")
 Base.show(io::IO, ::Type{_VocHostile.HostileP}) = error("hostileP-show-invoked (must never render)")
 Base.show(io::IO, ::Type{_VocHostile.HostileS}) = error("hostileS-show-invoked (must never render)")
+
+# the [14] fixture: an AbstractString whose String() conversion COUNTS calls and decays —
+# read 1 yields a VALID digest, any later read garbage (the s-wave read-once law)
+@eval module _VocFlip
+    struct FlipStr <: AbstractString end
+    const CALLS = Base.RefValue{Int}(0)
+    const VALID = "sha256:" * "ab"^32
+end
+Base.String(::_VocFlip.FlipStr) = (_VocFlip.CALLS[] += 1;
+    _VocFlip.CALLS[] == 1 ? _VocFlip.VALID : "GARBAGE-second-read")
 
 @testset "vocabulary (v0.4 T4)" begin
 
@@ -338,5 +350,18 @@ Base.show(io::IO, ::Type{_VocHostile.HostileS}) = error("hostileS-show-invoked (
             keyed_slot = s7.keyed_slot, default = s7.default, settribute = s7.settribute)
         d8 = GM.validate(b8)
         @test any(x -> x.code === :REG_VALUE_ALGEBRA && occursin("HostileS", x.message), d8)
+    end
+
+    @testset "[14] the crx-t3t4s cures — the DomainRef read-once law" begin
+        # (s-wave seat A, MINOR) validating the SUPPLIED AbstractString and converting
+        # it separately for storage let a stateful string validate one content and
+        # store another. The cure reads each input ONCE (`String(...)` first; the same
+        # `d` is validated and stored) — pinned by a call-counting conversion fixture:
+        # exactly ONE String() read, and the stored digest IS that read's content (a
+        # second read would have returned garbage).
+        f = _VocFlip.FlipStr()
+        dr = GM.DomainRef("art.txt", f)
+        @test _VocFlip.CALLS[] == 1 && dr.digest == _VocFlip.VALID &&
+              occursin(r"\Asha256:[0-9a-f]{64}\z", dr.digest)
     end
 end

@@ -154,7 +154,14 @@ import GoMeta as GM
         # derives its tables through `_derive_tables` (which pins `_first_wins_spec_index`).
         chain = src[findfirst("function _validate_registration", src)[1]:end]
         chain = chain[1:findfirst("return diags", chain)[1]]
-        for checkname in ("_record_wellformed_collect!", "_inventory_collect!",
+        # (the crx-t3t4s C1 cure — a DECLARED amendment to this APPEND-ONLY file's
+        # existing witness: the hardcoded list had drifted three collectors behind the
+        # chain — `_encodability_collect!` (T2 cure batch 4), `_dependency_collect!`
+        # (T3), `_vocabulary_collect!` (T4) — so unwiring a NEW correctness gate would
+        # have left this "whole-chain" assertion green.)
+        for checkname in ("_record_wellformed_collect!", "_encodability_collect!",
+                          "_dependency_collect!", "_vocabulary_collect!",
+                          "_inventory_collect!",
                           "_register_actions_collect!", "_reflection_collect!",
                           "_value_algebra_collect!", "_reachability_collect!",
                           "_candidacy_collect!")

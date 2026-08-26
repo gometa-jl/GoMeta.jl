@@ -127,11 +127,18 @@ struct DomainRef
     artifact::String
     digest::String
     function DomainRef(artifact::AbstractString, digest::AbstractString)
-        occursin(r"\Asha256:[0-9a-f]{64}\z", digest) ||   # absolute anchors: `$` would admit a trailing newline (cure batch 3)
-            error("GoMeta registry: DomainRef digest ", repr(first(String(digest), 80)),
+        # (the crx-t3t4s A1 cure) each input is READ ONCE — validating the supplied
+        # AbstractString and converting it SEPARATELY for storage let a stateful
+        # user string validate one content and store another (a stored digest could
+        # then violate the anchored grammar). The converted `d` is what the regex
+        # sees AND what `new` stores.
+        a = String(artifact)
+        d = String(digest)
+        occursin(r"\Asha256:[0-9a-f]{64}\z", d) ||   # absolute anchors: `$` would admit a trailing newline (cure batch 3)
+            error("GoMeta registry: DomainRef digest ", repr(first(d, 80)),
                 " is not algorithm-tagged — the required form is \"sha256:<64 lowercase hex>\" ",
                 "(the record shape law)")
-        new(String(artifact), String(digest))
+        new(a, d)
     end
 end
 
