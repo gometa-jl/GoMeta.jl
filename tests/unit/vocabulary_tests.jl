@@ -21,7 +21,7 @@
 #       cure witnesses (6) + the [14] s-wave cure witness (1) + the [15] r3 identity/
 #       getfield witnesses (6) + the [16] r4 structural-callable witnesses (3) + the
 #       [17] r5 String-only/guarded-render witnesses (2) + the [18] r6 numeric-leaf/
-#       declared-render witnesses (2) = 48; +2 in
+#       declared-render witnesses (2 + the r7-C1 strengthening 1 = 3) = 49; +2 in
 #       snapshot_property_tests' VocabularyRef named case + the 3 appended collector
 #       names in registration_tests' atomicity loop = the T4-DESIGN §6 Σ = 20 + the
 #       crx-t3t4 cure batch + the crx-t3t4r/r2 hardenings + the zero-dispatch family +
@@ -126,12 +126,15 @@ Base.length(::_VocR5.BadString) = 3
 # Char parameter (the declared-sig render must bucket, never throw).
 @eval module _VocR6
     struct MyReal <: Real; v::Int; end
+    struct MyIntB <: Integer; v::Int; end
     struct SetterX{C} <: Function end
     (f::SetterX)(d::Dict{Symbol,Bool}, s::Symbol) = (d[s] = true; nothing)
     const RCALLS = Base.RefValue{Int}(0)
 end
 Base.real(::Complex{_VocR6.MyReal}) = (_VocR6.RCALLS[] += 1;
     error("real-pirated (must never dispatch)"))
+Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
+    error("numerator-pirated (must never dispatch)"))
 
 @testset "vocabulary (v0.4 T4)" begin
 
@@ -595,6 +598,17 @@ Base.real(::Complex{_VocR6.MyReal}) = (_VocR6.RCALLS[] += 1;
         @test GM._domain_leaf(z) === false &&
               GM._type_budget_check(Val{z})[1] === :bad_param &&
               _VocR6.RCALLS[] == r0     # zero dispatches through both walkers
+        # (the r7-C1 witness strengthening) the ENCODER arms too, plus the Rational
+        # accessor: reverting either encoder hunk or either numeric-domain hunk now
+        # fails a counter — `_slot_text` on the hostile Complex refuses TYPED with zero
+        # `real` dispatches, and the Rational{MyIntB} (built via unsafe_rational, which
+        # skips gcd) drives `_numeric_leaf` + the encoder with zero `numerator`
+        # dispatches.
+        ec = try GM._slot_text(z); nothing catch err; err end
+        rq = Base.unsafe_rational(_VocR6.MyIntB(1), _VocR6.MyIntB(2))
+        er = try GM._slot_text(rq); nothing catch err; err end
+        @test ec isa GM._UnencodableSlot && er isa GM._UnencodableSlot &&
+              GM._numeric_leaf(rq) === false && _VocR6.RCALLS[] == r0
         # (r6-A2, probe P91) a parameterized Function-SUBTYPE setter (`SetterX{'x'}`)
         # with a declared-but-unimplemented overload: the (a)-side render buckets the
         # signature and the SIG_MISMATCH row MINTS (pre-cure: a raw engine-internal
