@@ -18,7 +18,8 @@
 #       the pin is INDEPENDENT (the stale-pin row), and the planes read ONE source.
 # PURPOSE: the T4 acceptance rows (Σ = 18 asserts here + the [11] milestone-set cure
 #       witnesses (6) + the [12] reconfirm/closure-cure witnesses (4) + the [13] family-
-#       cure witnesses (6) + the [14] s-wave cure witness (1) = 35; +2 in
+#       cure witnesses (6) + the [14] s-wave cure witness (1) + the [15] r3 identity/
+#       getfield witnesses (6) = 41; +2 in
 #       snapshot_property_tests' VocabularyRef named case + the 3 appended collector
 #       names in registration_tests' atomicity loop = the T4-DESIGN §6 Σ = 20 + the
 #       crx-t3t4 cure batch + the crx-t3t4r/r2 hardenings + the zero-dispatch family +
@@ -54,6 +55,25 @@ Base.show(io::IO, ::Type{_VocHostile.HostileS}) = error("hostileS-show-invoked (
 end
 Base.String(::_VocFlip.FlipStr) = (_VocFlip.CALLS[] += 1;
     _VocFlip.CALLS[] == 1 ? _VocFlip.VALID : "GARBAGE-second-read")
+
+# the [15] fixtures (the t3t4r3 in-model rows): a Function-subtype setter whose
+# hash/isequal/== throw; a type whose getproperty throws; a function whose nameof throws
+# (as a to-be-refused Dict KEY); a setter whose exact signature-tuple type carries a
+# throwing == specialization. None of these methods may ever dispatch from validate.
+@eval module _VocR3
+    struct HFn <: Function end
+    (f::HFn)(d::Dict{Symbol,Bool}, s::Symbol, r::Symbol...) = (d[s] = true; nothing)
+    struct HG end
+    hkey(x...) = true
+    heq(d::Dict{Symbol,Bool}, s::Symbol) = (d[s] = true; nothing)
+end
+Base.hash(::_VocR3.HFn, ::UInt) = error("hash-pirated (must never dispatch)")
+Base.isequal(::_VocR3.HFn, ::Any) = error("isequal-pirated (must never dispatch)")
+Base.:(==)(::_VocR3.HFn, ::Any) = error("eq-pirated (must never dispatch)")
+Base.getproperty(::Type{_VocR3.HG}, ::Symbol) = error("getproperty-pirated (must never dispatch)")
+Base.nameof(::typeof(_VocR3.hkey)) = error("nameof-pirated-key (must never dispatch)")
+Base.:(==)(::Type{Tuple{typeof(_VocR3.heq), Dict{Symbol,Bool}, Symbol}}, ::Any) =
+    error("sig-eq-pirated (must never dispatch)")
 
 @testset "vocabulary (v0.4 T4)" begin
 
@@ -363,5 +383,83 @@ Base.String(::_VocFlip.FlipStr) = (_VocFlip.CALLS[] += 1;
         dr = GM.DomainRef("art.txt", f)
         @test _VocFlip.CALLS[] == 1 && dr.digest == _VocFlip.VALID &&
               occursin(r"\Asha256:[0-9a-f]{64}\z", dr.digest)
+    end
+
+    @testset "[15] the crx-t3t4r3 cures — the identity/getfield hardening of the chain" begin
+        _vset(setter) = begin
+            b = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
+            b.plugins[2] = GM.PlugIn(; altName = :Visib, setMode = :mutExclusive,
+                altConstructor = GM.Alterants.Visib, setAltInstance = setter)
+            b
+        end
+        # (A3=B1=C2, probe P60) the reflection pooling is IDENTITY-keyed: a setter whose
+        # hash/isequal/== all throw pools and dedupes without dispatching (pre-cure the
+        # first get! threw "hash-pirated"). validate RETURNS rows (SIG_MISMATCH ones —
+        # the swapped setter mismatches Visib's declared overloads — never a raw throw).
+        d60 = GM.validate(_vset(_VocR3.HFn()))
+        @test d60 isa Vector && any(x -> x.code === :REG_SIG_MISMATCH, d60)
+        # (A4=B2) the exact-signature match is `===`: a throwing == specialization on
+        # the setter's OWN signature-tuple type never dispatches; the matching overload
+        # is found by identity and validate returns WITHOUT a sig row for it.
+        bq = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
+        sq = bq.action_specs[1]
+        qov = GM.ActionOverload(; sig_types = Type[Dict{Symbol,Bool}, Symbol],
+            kinds = Symbol[], kind_sources = Symbol[], vararg_kind = nothing,
+            return_type = Nothing, effect = :set, queryable = false,
+            applicability = :context_free, phase = :apply, grammar = false)
+        bq.plugins[1] = GM.PlugIn(; altName = :labels, setMode = :accumulate,
+            altConstructor = Dict{Symbol,Bool}, setAltInstance = _VocR3.heq,
+            getAltInstance = GM.Alterants.checkLabels)
+        bq.action_specs[1] = GM.ActionSpec(; name = sq.name, spelling = sq.spelling,
+            plugin = sq.plugin, overloads = [qov],
+            accepts_string_slot = sq.accepts_string_slot,
+            sugar_candidacy = sq.sugar_candidacy, validate = sq.validate,
+            keyed_slot = sq.keyed_slot, default = sq.default, settribute = sq.settribute)
+        dq = GM.validate(bq)
+        @test dq isa Vector && !any(x -> x.code === :REG_SIG_MISMATCH &&
+                                         occursin("declared overload has no", x.message), dq)
+        # (A2, probe P62) the budget walkers read the type graph via getfield only: a
+        # type whose getproperty throws walks clean (pre-cure the walk itself threw).
+        @test GM._type_budget_check(_VocR3.HG)[1] === :ok &&
+              GM._key_order_budget(_VocR3.HG)
+        # (C1, probe P63) a to-be-refused Function KEY inside a declared Dict: the
+        # ordering prepass falls back to iteration order on ANY key-encode throw (the
+        # pirated nameof never escapes) and the WALK refuses the key typed.
+        bk = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
+        sk = bk.action_specs[4]
+        bk.action_specs[4] = GM.ActionSpec(; name = sk.name, spelling = sk.spelling,
+            plugin = sk.plugin, overloads = sk.overloads,
+            accepts_string_slot = sk.accepts_string_slot,
+            sugar_candidacy = sk.sugar_candidacy, validate = sk.validate,
+            keyed_slot = sk.keyed_slot,
+            default = GM.Declared(Dict{Any,Any}(_VocR3.hkey => 1)),
+            settribute = sk.settribute)
+        dk = GM.validate(bk)
+        @test dk isa Vector && any(x -> x.code === :REG_PROTOCOL, dk)
+        # (A6, probe P64) an encodability-refused record is BROKEN for tier 2: the
+        # over-budget sig gets its REG_PROTOCOL row and the reflection SKIPS the spec
+        # (pre-cure: a SIG_MISMATCH row minted on the very overload the budget refused).
+        bigU2 = reduce((a, i) -> Union{a, Val{i}}, 1:300; init = Union{})
+        bb = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
+        sb = bb.action_specs[1]
+        bov2 = GM.ActionOverload(; sig_types = Type[Dict{Symbol,Bool}, bigU2],
+            kinds = Symbol[], kind_sources = Symbol[], vararg_kind = nothing,
+            return_type = Nothing, effect = :set, queryable = false,
+            applicability = :context_free, phase = :apply, grammar = false)
+        bb.action_specs[1] = GM.ActionSpec(; name = sb.name, spelling = sb.spelling,
+            plugin = sb.plugin, overloads = [sb.overloads..., bov2],
+            accepts_string_slot = sb.accepts_string_slot,
+            sugar_candidacy = sb.sugar_candidacy, validate = sb.validate,
+            keyed_slot = sb.keyed_slot, default = sb.default, settribute = sb.settribute)
+        db = GM.validate(bb)
+        @test any(x -> x.code === :REG_PROTOCOL, db) &&
+              !any(x -> x.code === :REG_SIG_MISMATCH, db)
+        # (A5) the reflection unwrap is LOCAL: the extensible Base unwrap generic no
+        # longer appears ANYWHERE in registry.jl (a decidable source scan, the [10]
+        # pattern; the identifier is assembled here so this file's own scan of itself
+        # can never trip).
+        srcreg = read(joinpath(dirname(dirname(@__DIR__)), "src", "alterants",
+            "registry.jl"), String)
+        @test !occursin("Base." * "unwrap_unionall", srcreg)
     end
 end

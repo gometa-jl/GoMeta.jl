@@ -730,6 +730,18 @@ function _broken_record_indices(action_specs::Vector{ActionSpec}, plugins::Vecto
     for (i, spec) in enumerate(action_specs)
         d = Diagnostic[]
         _record_wellformed_actions_collect!(d, [spec], plugins)
+        # (the t3t4r3 A6 cure) an ENCODABILITY-refused record is BROKEN for tier 2 too:
+        # a well-shaped overload carrying an over-budget/unencodable type got its
+        # REG_PROTOCOL row yet stayed in `sound`, so the reflection collector re-walked
+        # the very type the budget had refused (probe P64: a SIG_MISMATCH row minted on
+        # the refused overload — unbounded at pathological depth). The per-spec probe
+        # re-runs the same bounded domain walk the chain runs.
+        if isempty(d)
+            for slot in _WALK_ACTION_FIELDS
+                _domain_slot_probe!(d, "action", spec.name, slot, getfield(spec, slot),
+                                    slot === :validate, slot === :overloads)
+            end
+        end
         any(x -> x.code === :REG_PROTOCOL, d) && push!(broken, i)
     end
     return broken
@@ -1241,6 +1253,10 @@ const _TYPE_BUDGET = 256
 # descended reading, yet `string()` on it recurses to a StackOverflowError at the mint —
 # so the walk descends everything). A NON-type value parameter is leaf-checked (the
 # `Val{'c'}` refusal — KNOWN OPEN (v) closes, witnessed by W5).
+# (the t3t4r3 A2 cure) EVERY type-graph read below is `getfield` — property syntax
+# lowers through the EXTENSIBLE `getproperty`, and a registered
+# `Base.getproperty(::Type{Theirs}, ::Symbol)` specialization threw out of the budget
+# walk BEFORE any gate it feeds (probe P62). `getfield`/`isa`/`isdefined` are builtins.
 function _type_budget_check(t)
     stack = Any[t]
     seen = 0
@@ -1249,21 +1265,21 @@ function _type_budget_check(t)
         seen += 1
         seen > _TYPE_BUDGET && return (:over_budget, Nothing)
         if x isa DataType
-            for p in x.parameters
+            for p in getfield(x, :parameters)
                 push!(stack, p)
             end
         elseif x isa UnionAll
-            push!(stack, x.var)
-            push!(stack, x.body)
+            push!(stack, getfield(x, :var))
+            push!(stack, getfield(x, :body))
         elseif x isa Union
-            push!(stack, x.a)
-            push!(stack, x.b)
+            push!(stack, getfield(x, :a))
+            push!(stack, getfield(x, :b))
         elseif x isa TypeVar
-            push!(stack, x.lb)
-            push!(stack, x.ub)
+            push!(stack, getfield(x, :lb))
+            push!(stack, getfield(x, :ub))
         elseif x isa Core.TypeofVararg
-            isdefined(x, :T) && push!(stack, x.T)
-            isdefined(x, :N) && push!(stack, x.N)
+            isdefined(x, :T) && push!(stack, getfield(x, :T))
+            isdefined(x, :N) && push!(stack, getfield(x, :N))
         elseif !(x isa Type) && !_domain_leaf(x)
             return (:bad_param, typeof(x))
         end
@@ -1286,22 +1302,23 @@ function _key_order_budget(k)::Bool
         seen += 1
         seen > _TYPE_BUDGET && return false
         if x isa Type || x isa TypeVar || x isa Core.TypeofVararg
+            # (the t3t4r3 A2 cure) getfield-only type-graph reads — see _type_budget_check
             if x isa DataType
-                for p in x.parameters
+                for p in getfield(x, :parameters)
                     push!(stack, p)
                 end
             elseif x isa UnionAll
-                push!(stack, x.var)
-                push!(stack, x.body)
+                push!(stack, getfield(x, :var))
+                push!(stack, getfield(x, :body))
             elseif x isa Union
-                push!(stack, x.a)
-                push!(stack, x.b)
+                push!(stack, getfield(x, :a))
+                push!(stack, getfield(x, :b))
             elseif x isa TypeVar
-                push!(stack, x.lb)
-                push!(stack, x.ub)
+                push!(stack, getfield(x, :lb))
+                push!(stack, getfield(x, :ub))
             elseif x isa Core.TypeofVararg
-                isdefined(x, :T) && push!(stack, x.T)
-                isdefined(x, :N) && push!(stack, x.N)
+                isdefined(x, :T) && push!(stack, getfield(x, :T))
+                isdefined(x, :N) && push!(stack, getfield(x, :N))
             end
         elseif x isa Vector
             for i in 1:length(x)
@@ -1343,7 +1360,12 @@ function _walk_dict_entries(d::Dict)
             texts[i] = try
                 _slot_text(k)
             catch e
-                (e isa _UnencodableSlot || e isa _CyclicSlot) || rethrow()
+                # (the t3t4r3 C1 cure) the prepass is an ORDERING optimization — ANY
+                # key-encode throw (incl. a user method dispatched by a to-be-refused
+                # key class, e.g. `nameof` on a Function key — probe P63) falls back to
+                # the live iteration order; the WALK then refuses the key properly.
+                # Only InterruptException keeps the uniform rethrow law.
+                e isa InterruptException && rethrow()
                 nothing
             end
         end
@@ -2384,16 +2406,21 @@ function _type_text(t)::String
     # module-unqualified. Recursion is bounded: every minted type passed predicate 2's
     # descending node budget, so the tree has ≤ `_TYPE_BUDGET` nodes.
     t === Union{} && return "Bottom"
-    t isa UnionAll && return string("where(", _typevar_text(t.var), ",", _type_text(t.body), ")")
-    t isa Union && return string("union(", _type_text(t.a), ",", _type_text(t.b), ")")
+    # (the t3t4r3 A2 cure) getfield-only reads here too — property syntax on a
+    # caller-owned type object dispatches the extensible `getproperty`
+    t isa UnionAll && return string("where(", _typevar_text(getfield(t, :var)), ",",
+                                    _type_text(getfield(t, :body)), ")")
+    t isa Union && return string("union(", _type_text(getfield(t, :a)), ",",
+                                 _type_text(getfield(t, :b)), ")")
     throw(_UnencodableSlot(typeof(t)))   # unreachable for an admitted `Type` leaf
 end
 _typevar_text(v::TypeVar)::String =
-    string("tv(", String(v.name), ",", _type_text(v.lb), ",", _type_text(v.ub), ")")
+    string("tv(", String(getfield(v, :name)), ",", _type_text(getfield(v, :lb)), ",",
+           _type_text(getfield(v, :ub)), ")")
 _type_param_text(p)::String =
     p isa TypeVar ? _typevar_text(p) :
-    p isa Core.TypeofVararg ? string("va(", isdefined(p, :T) ? _type_text(p.T) : "-", ",",
-                                     isdefined(p, :N) ? _type_param_text(p.N) : "-", ")") :
+    p isa Core.TypeofVararg ? string("va(", isdefined(p, :T) ? _type_text(getfield(p, :T)) : "-", ",",
+                                     isdefined(p, :N) ? _type_param_text(getfield(p, :N)) : "-", ")") :
     p isa Type ? _type_text(p) : _slot_text(p)
 
 """
@@ -2422,7 +2449,11 @@ end
 function _reflection_collect!(diags::Vector{Diagnostic}, action_specs::Vector{ActionSpec},
                               plugins::Vector{PlugIn})
     sigm(msg, ctx) = push!(diags, Diagnostic(:REG_SIG_MISMATCH, :error, msg, ctx))
-    declared_by_setter = Dict{Function,Vector{Vector{Any}}}()
+    # (the t3t4r3 A3=B1=C2 cure) IDENTITY pooling: a plain Dict{Function} dispatched
+    # `hash`/`isequal` on the caller-owned setter — a legitimate throwing specialization
+    # broke validate at the very first `get!` (probe P60). IdDict keys by `objectid`
+    # (builtin) — no user method can run.
+    declared_by_setter = IdDict{Any,Vector{Vector{Any}}}()
     for spec in action_specs
         1 <= spec.plugin <= length(plugins) || continue
         setter = plugins[spec.plugin].setAltInstance
@@ -2449,7 +2480,12 @@ function _reflection_collect!(diags::Vector{Diagnostic}, action_specs::Vector{Ac
             # STRUCTURALLY — interpolating `sig_tuple`/`setter` ran `show` over
             # caller-owned types, so a legitimate throwing display specialization broke
             # the never-throws chain inside this very refusal.
-            any(m.sig == sig_tuple for m in invoke(methods, Tuple{Any}, setter)) ||
+            # (the t3t4r3 A4=B2 cure) the exact match is IDENTITY (`===`): `==` on Types
+            # is the extensible subtype-equivalence generic, interceptable through a
+            # specialization on the caller's own signature tuple type; the constructed
+            # tuple and a normally-defined method's `sig` are both interned canonical
+            # objects, so `===` IS the exact-match semantics the (a) direction ruled.
+            any(m.sig === sig_tuple for m in invoke(methods, Tuple{Any}, setter)) ||
                 sigm(string("GoMeta registry: declared overload has no executable ",
                     "method — action ", repr(spec.name), " declared ", _type_text(sig_tuple),
                     " on ", _callable_text(setter), " (declared-but-unimplemented refuses at ",
@@ -2479,7 +2515,9 @@ function _reflection_collect!(diags::Vector{Diagnostic}, action_specs::Vector{Ac
     for spec in action_specs
         1 <= spec.plugin <= length(plugins) || continue
         f = plugins[spec.plugin].setAltInstance
-        f in order || push!(order, f)
+        # (the t3t4r3 A3=B1=C2 cure) `f in order` dispatched `==` on the caller-owned
+        # setter — the identity search dispatches nothing
+        any(x -> x === f, order) || push!(order, f)
     end
     for setter in order
         sigs = declared_by_setter[setter]
@@ -2490,7 +2528,14 @@ function _reflection_collect!(diags::Vector{Diagnostic}, action_specs::Vector{Ac
         for m in sort!(collect(invoke(methods, Tuple{Any}, setter)); by = m -> _type_text(m.sig))
             # (cure batch 2) a `where`-parametric method's `sig` is a UnionAll — unwrap it, never
             # index `.parameters` on it (validate must not throw on a parametric setter)
-            m_argtypes = collect(Base.unwrap_unionall(m.sig).parameters[2:end])
+            # (the t3t4r3 A5 cure) the unwrap is LOCAL and structural — Base's unwrap
+            # helper is an extensible generic on the caller-influenced signature;
+            # getfield-only reads instead (the [15] source scan pins its absence)
+            msig = m.sig
+            while msig isa UnionAll
+                msig = getfield(msig, :body)
+            end
+            m_argtypes = collect(getfield(msig, :parameters)[2:end])
             matched = any(sigs) do full
                 length(full) == length(m_argtypes) &&
                     all(a === b for (a, b) in zip(full, m_argtypes))
