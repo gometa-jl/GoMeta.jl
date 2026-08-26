@@ -305,6 +305,11 @@ These are part of the documented public surface — declared with Julia's `publi
     (the resolved declaration as a DEFENSIVE COPY, or `nothing`), `vocabulary_member(registry,
     altName, name)`, `vocabulary_queryable(registry, altName, name)` (membership first, then the
     `query` flag; an absent flag defaults `true`) — mutating a returned copy changes nothing.
+    Both predicates FAIL CLOSED on an UNKNOWN alterant name (`false` — a misspelled or
+    attacker-chosen `altName` must not read as "no gate"); only a KNOWN record's absent
+    vocabulary slot means no gate (`true`). The query plane validates EVERY supplied label
+    (membership, then the valve) BEFORE any presence verdict — a multi-label query refuses
+    on any unknown or write-only member regardless of the other labels' set state.
     An `InlineVocabulary` declaration refuses duplicate names and flag keys outside its name set
     at `validate` (`REG_PROTOCOL`). The labels record's `provenance.policy_id` is the INDEPENDENT
     policy identity `"gometa-labels/v0-closed@1"` (a content swap moves the artifact digest; a
@@ -671,7 +676,10 @@ fabricated typed code:
   the declared vocabulary of alterant … is UNRESOLVABLE"`. Unreachable through the sanctioned
   lifecycle (`validate` refuses the same condition as `SRC_DIGEST_MISMATCH` before publication);
   reachable only by post-publication mutation (a B-2-class act the door reports). Recovery:
-  re-publish through the lifecycle.
+  restore the captured artifact (a fresh `using GoMeta` re-runs the load-time capture), or
+  publish a declaration whose vocabulary is resolvable — an `InlineVocabulary`, or a
+  `VocabularyRef` whose digest has a live capture (re-publication ALONE cannot resolve a
+  missing capture: `validate` refuses it `SRC_DIGEST_MISMATCH` first — the same gate).
 - **The store-`[2]` insertion path** — a latent insertion path not exercised by any v0 input.
 - **The absorb-plane grammar refusals (the same stable-message family):** beyond the entries
   above, the metaLine/condition grammar refuses with stable `GoMeta absorb:` messages on: an

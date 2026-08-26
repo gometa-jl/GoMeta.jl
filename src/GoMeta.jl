@@ -434,8 +434,10 @@ THE CONTRACT (normative rows):
    PER-CALL state is never shared across concurrent calls. The `parse_state` INPUT,
    by contrast, is caller-owned and MUTATED by the seam (the resolved Visib
    write-backs land on its component settributes at both grains): two concurrent
-   calls must never share ONE parse_state — that ownership is row 1's caller
-   obligation, not something the seam re-checks.
+   calls must never share ONE parse_state — sharing stays FORBIDDEN, and since v0.4 T3
+   the seam ledger ENFORCES it: an in-flight re-injection (nested included) is refused
+   `STATE_REUSE_REFUSED`; ownership of the state's lifetime stays the caller's
+   (the T4-milestone-set A5/C6 cure — this row previously said "not re-checked").
 5. A meta-free store ⇒ `PROCESS_OK` with ZERO evals rows (the E-05 class — the
    Office pilot's first gate).
 6. The seam parses NOTHING and renders NOTHING; `outputs(result)` stays the sole
@@ -523,8 +525,14 @@ function run_absorb_apply!(parse_state::BLS.ParseState;
     ## write latch rose POISONS the entry (M-AC-11's E-row, any unit, either grain);
     ## a completed call that WROTE binds the registry identity; `in_flight` clears on
     ## every path.
-    st = init_state(parse_state, config, registry)
+    ## (the T4-milestone-set A2/B3 cure) `init_state` runs INSIDE the seam bracket: a
+    ## throw or InterruptException during initialization must still clear `in_flight` in
+    ## the `finally` — outside it, the still-reachable state stayed in-flight FOREVER and
+    ## every later injection was wrongly refused. The catch arm guards `@isdefined(st)`
+    ## (an init-time escape has no state and can have written nothing).
+    local st
     try
+    st = init_state(parse_state, config, registry)
     with(STATE => st) do
         ## Seed the reserved user slot of the meta-hierarchy BEFORE the walk iff configured — the
         ## default-`nothing` no-feed path takes one `isnothing` branch and is otherwise untouched.
@@ -588,7 +596,7 @@ function run_absorb_apply!(parse_state::BLS.ParseState;
     end
     catch
         lock(_SEAM_LEDGER_LOCK) do                  # an escape after the latch rose POISONS
-            if st.wrote_back
+            if @isdefined(st) && st.wrote_back
                 entry.registry = registry
                 entry.poisoned = true
             end

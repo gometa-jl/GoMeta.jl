@@ -16,8 +16,9 @@
 #       golden or corpus path can distinguish a Core literal from a declared artifact, so
 #       these witnesses are the only proof the declaration is LOAD-BEARING (the flip),
 #       the pin is INDEPENDENT (the stale-pin row), and the planes read ONE source.
-# PURPOSE: the T4 acceptance rows (Σ = 18 asserts here; +2 in snapshot_property_tests'
-#       VocabularyRef named case = the T4-DESIGN §6 Σ = 20).
+# PURPOSE: the T4 acceptance rows (Σ = 18 asserts here + the [11] milestone-set cure
+#       witnesses (6) = 24; +2 in snapshot_property_tests' VocabularyRef named case =
+#       the T4-DESIGN §6 Σ = 20 + the crx-t3t4 cure batch).
 
 using Test
 import GoMeta as GM
@@ -175,6 +176,41 @@ import SHA
                          "GoMeta.jl" => 1,                    # the profile-feed docstring example
                          "alterants/apply.jl" => 1,           # the condition-side-atoms comment
                          "alterants/registry.jl" => 3)        # the header note + the TWO kept empty-list messages
+        # DISCLOSED LIMIT (the crx-t3t4 C3 row): this is a SOURCE-TEXT tripwire, not a
+        # semantic guarantee — a computed enumeration (names built from strings or
+        # codepoints, or a literal subset avoiding both sentinel patterns) passes both
+        # prongs. Its real coverage: the two retired identifiers can never return, and
+        # any prose/code re-using the sentinel names trips the census comparison.
         @test isempty(id_offenders) && census == survivors
+    end
+
+    @testset "[11] the crx-t3t4 milestone-set cure witnesses" begin
+        # (A4/B4/C2) the written grammar now ENFORCED beyond ASCII: a comment-form line,
+        # a Unicode-whitespace-padded name, and a U+FEFF past the leading-BOM bytes each
+        # refuse the fail-closed load class (all three ACCEPTED pre-cure; probe-measured).
+        for (frag, s) in (("comment line", "#c\nok\n"),
+                          ("whitespace-padded", string(Char(0x00A0)) * "x\n"),
+                          ("U+FEFF byte", "ok\n" * string(Char(0xFEFF)) * "x\n"))
+            e = try GM.Alterants._parse_labels_vocabulary(_doc(s), "tmp-cure"); nothing
+            catch err; err end
+            @test e isa ErrorException && occursin("MALFORMED", e.msg) && occursin(frag, e.msg)
+        end
+        # (C1) the CALL-grain two-pass law: every supplied label is validated BEFORE any
+        # presence verdict — an earlier unset member no longer masks a later write-only
+        # (pre-cure this returned `false` without refusing the valve).
+        ec = try GM.Alterants.checkLabels(Dict{Symbol,Bool}(), :(:), :label1, _zwj); nothing
+        catch err; err end
+        @test ec isa ErrorException && occursin("write-only", ec.msg)
+        # (B2) the G-VOC predicates FAIL CLOSED on an unknown alterant (pre-cure: true).
+        @test !GM.vocabulary_member(GM.DEFAULT_REGISTRY, :noSuchAlt, :label1) &&
+              !GM.vocabulary_queryable(GM.DEFAULT_REGISTRY, :noSuchAlt, :label1)
+        # (A3) `validate` is total over a Union-typed altConstructor: the DEP_MISSING row
+        # RETURNS (pre-cure the diagnostic's own `nameof` render threw a raw MethodError
+        # out of the never-throws chain).
+        bu = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
+        bu.plugins[2] = GM.PlugIn(; altName = :Visib, setMode = :mutExclusive,
+            altConstructor = Union{Int,String}, setAltInstance = GM.Alterants.setVisib)
+        du = GM.validate(bu)
+        @test any(x -> x.code === :DEP_MISSING && occursin("Union{Int64, String}", x.message), du)
     end
 end

@@ -58,16 +58,23 @@ function _parse_labels_vocabulary(bytes::Vector{UInt8}, origin::AbstractString)
     isvalid(text) || fail("invalid UTF-8", 0)
     isempty(text) && fail("empty artifact", 0)
     occursin("\r", text) && fail("CR byte", 0)
+    ## (the T4-milestone-set A4/B4/C2 cure) the written grammar UNDER-ENFORCED: a U+FEFF
+    ## anywhere past bytes 1-3 slipped the leading-BOM byte check
+    occursin(Char(0xFEFF), text) && fail("U+FEFF byte", 0)
     endswith(text, "\n") || fail("missing final newline", 0)
     names = Symbol[]
     flags = Dict{Symbol,NamedTuple{(:query,),Tuple{Bool}}}()
     for (n, line) in enumerate(split(chop(text), "\n"; keepempty = true))
         isempty(line) && fail("blank line", n)
+        ## (the same cure) "no comment lines" is the written grammar — enforce it
+        startswith(line, "#") && fail("comment line", n)
         parts = split(line, "\t"; keepempty = true)
         length(parts) > 2 && fail("extra field", n)
         name = parts[1]
         isempty(name) && fail("empty name", n)
-        (startswith(name, " ") || endswith(name, " ")) && fail("whitespace-padded name", n)
+        ## (the same cure) padding is judged by the UNICODE whitespace predicate — the
+        ## ASCII-space-only check admitted NBSP-class padded names
+        (isspace(first(name)) || isspace(last(name))) && fail("whitespace-padded name", n)
         q = true
         if length(parts) == 2
             parts[2] == "query=false" || fail("unknown flag token", n)

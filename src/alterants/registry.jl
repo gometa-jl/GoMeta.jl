@@ -115,9 +115,13 @@ function checkLabels(
     ## v0.4 T4: the condition-side guards ride the SCOPE LAW, in the FIXED branch order
     ## (crx C9): membership (unknown-label) FIRST, then the R-V04-36 write-only valve,
     ## then the store lookup. A record declaring NO vocabulary has neither guard.
+    ## (the T4-milestone-set C1 cure) TWO PASSES at the CALL grain: EVERY supplied label
+    ## is validated (membership + valve) BEFORE any presence verdict — the interleaved
+    ## per-label form returned `false` on an earlier unset member without ever validating
+    ## a later write-only (or unknown) label, bypassing both refusal contracts.
     local vocab = _vocabulary_for_action(actionName)
-    for label ∈ labels
-        if vocab !== nothing
+    if vocab !== nothing
+        for label ∈ labels
             ## a label outside the declared vocabulary refuses loudly (the SAME contract
             ## as setLabels' guard), never a silent `false` — a query for an unknown
             ## label is a vocabulary error, not an unset label
@@ -134,6 +138,8 @@ function checkLabels(
                     "vocabulary (the declared valve; see docs/public-api.md §3.4)")
             end
         end
+    end
+    for label ∈ labels
         if label ∉ keys(crntLabels)
             return false
         end
@@ -1478,12 +1484,20 @@ concretely-typed `altConstructor::Type` field, so the tier-law's broken-record s
 VACUOUS here (`hasmethod` is total over `Type` — no structural defect can make this
 collector throw; disclosed at the T3 commit's adjudication).
 """
+# (the T4-milestone-set A3 cure) the TOTAL ctor-type renderer: `nameof` covers only
+# DataType/UnionAll — a Union-typed `altConstructor` made `validate` THROW a raw
+# MethodError out of the accumulator (the never-throws law) while rendering the very
+# diagnostic that refused it. `string(::Type)` is Base-owned type printing for the
+# remaining classes (Union, Union{}).
+_ctor_type_name(T::Type) =
+    (T isa DataType || T isa UnionAll) ? String(nameof(T)) : string(T)
+
 function _dependency_collect!(diags::Vector{Diagnostic}, plugins::Vector{PlugIn})
     for p in plugins
         hasmethod(p.altConstructor, Tuple{}) ||
             push!(diags, Diagnostic(:DEP_MISSING, :error, string(
                 "GoMeta registry: alterant ", repr(p.altName), " declares altConstructor ",
-                String(nameof(p.altConstructor)), " with no zero-argument method — the ",
+                _ctor_type_name(p.altConstructor), " with no zero-argument method — the ",
                 "instance mint's dependency (DEP_MISSING; eager dependency closure at ",
                 "publication)"), p.altName))
     end
@@ -1567,12 +1581,15 @@ end
     vocabulary_member(registry, altName, name) -> Bool
 
 G-VOC membership: `true` iff the named record declares a vocabulary containing `name`,
-OR declares none (no gate). Order-independent (an `∈`-scan over the declared names —
-never a sorted-order assumption).
+OR declares none (no gate). An UNKNOWN alterant returns `false` — FAIL-CLOSED (the
+T4-milestone-set B2 cure: a consumer using this as an allow-gate must not admit
+everything on a misspelled or attacker-chosen alterant name; only a KNOWN record's
+absent vocabulary slot means "no gate"). Order-independent (an `∈`-scan over the
+declared names — never a sorted-order assumption).
 """
 function vocabulary_member(registry::AlterantRegistry, altName::Symbol, name::Symbol)
     i = get(registry.alt_index, altName, nothing)
-    i === nothing && return true
+    i === nothing && return false           # unknown alterant: fail CLOSED (B2)
     v = _resolve_vocabulary_by_index(registry, i)
     v === nothing && return true
     return name ∈ v.names
@@ -1583,12 +1600,13 @@ end
 
 G-VOC queryability: `true` iff `name` is a declared member whose flag is `query = true`
 (an absent flag defaults `true`); `false` for a non-member (membership is checked FIRST
-by every conforming caller — the branch order law); `true` when no vocabulary is
-declared (no gate).
+by every conforming caller — the branch order law); `true` when a KNOWN record declares
+no vocabulary (no gate); `false` for an UNKNOWN alterant — FAIL-CLOSED (the B2 cure,
+as `vocabulary_member`).
 """
 function vocabulary_queryable(registry::AlterantRegistry, altName::Symbol, name::Symbol)
     i = get(registry.alt_index, altName, nothing)
-    i === nothing && return true
+    i === nothing && return false           # unknown alterant: fail CLOSED (B2)
     v = _resolve_vocabulary_by_index(registry, i)
     v === nothing && return true
     name ∈ v.names || return false
