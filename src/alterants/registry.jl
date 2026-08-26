@@ -1090,8 +1090,16 @@ _slot_text(x::Type)::String = string("t", _ns(_type_text(x)))
 # refused, indistinguishable in the fold, so a function there is UNENCODABLE (refused at
 # validation; the snapshot door would separately fire on the identity move).
 const _IN_DATA = Base.ScopedValues.ScopedValue{Bool}(false)
+# (the t3t4r4 A1=B1 cure) the STRUCTURAL callable name — `nameof` is extensible, and a
+# Function can legitimately appear as an isbits TYPE PARAMETER of a declared signature
+# (`Store{tag}` — probe P70: reflection's param render dispatched a pirated `nameof`
+# raw out of validate). `_callable_text` reads TypeName fields only; for an ordinary
+# named function the text is IDENTICAL to the old `nameof` render (the P50 ladder), so
+# the seal fold does not move for the shipped/Base-fallback class (suite-asserted);
+# a closure's text differs — the same benign exotic-registrant seal-text class already
+# disclosed at the r3-C4 scoping.
 _slot_text(f::Function)::String =
-    _IN_DATA[] ? throw(_UnencodableSlot(typeof(f))) : string("f", _ns(String(nameof(f))))
+    _IN_DATA[] ? throw(_UnencodableSlot(typeof(f))) : string("f", _ns(_callable_text(f)))
 # (cure batch 3) CYCLE-aware container encoding: a published mutable container mutated into a
 # cycle (`push!(v, v)`) must be REFUSED at the door as a mutation, never recursed into a
 # StackOverflowError. The visiting set is task-local per top-level encode.
@@ -1301,7 +1309,13 @@ function _key_order_budget(k)::Bool
         x = pop!(stack)
         seen += 1
         seen > _TYPE_BUDGET && return false
-        if x isa Type || x isa TypeVar || x isa Core.TypeofVararg
+        if x isa Function
+            # (the t3t4r4 B1 cure) a Function ANYWHERE in a key graph fails the order
+            # budget outright — the prepass then never encodes the key (live iteration
+            # order; the WALK refuses it typed), so no user method executes even
+            # contained (probe P71: the pirated nameof ran TWICE under the old catch)
+            return false
+        elseif x isa Type || x isa TypeVar || x isa Core.TypeofVararg
             # (the t3t4r3 A2 cure) getfield-only type-graph reads — see _type_budget_check
             if x isa DataType
                 for p in getfield(x, :parameters)
@@ -1360,12 +1374,12 @@ function _walk_dict_entries(d::Dict)
             texts[i] = try
                 _slot_text(k)
             catch e
-                # (the t3t4r3 C1 cure) the prepass is an ORDERING optimization — ANY
-                # key-encode throw (incl. a user method dispatched by a to-be-refused
-                # key class, e.g. `nameof` on a Function key — probe P63) falls back to
-                # the live iteration order; the WALK then refuses the key properly.
-                # Only InterruptException keeps the uniform rethrow law.
-                e isa InterruptException && rethrow()
+                # (t3t4r3 C1, RE-NARROWED at t3t4r4) with Function keys blocked at the
+                # ORDER BUDGET (no user method can execute) and the encoder family
+                # structural, the only expected throw classes here are the encoder's
+                # own — anything else is an ENGINE defect and rethrows loudly (the
+                # r4-C1 residue concern dissolves with the narrow catch).
+                (e isa _UnencodableSlot || e isa _CyclicSlot) || rethrow()
                 nothing
             end
         end

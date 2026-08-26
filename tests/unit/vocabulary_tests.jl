@@ -19,7 +19,7 @@
 # PURPOSE: the T4 acceptance rows (Σ = 18 asserts here + the [11] milestone-set cure
 #       witnesses (6) + the [12] reconfirm/closure-cure witnesses (4) + the [13] family-
 #       cure witnesses (6) + the [14] s-wave cure witness (1) + the [15] r3 identity/
-#       getfield witnesses (6) = 41; +2 in
+#       getfield witnesses (6) + the [16] r4 structural-callable witnesses (3) = 44; +2 in
 #       snapshot_property_tests' VocabularyRef named case + the 3 appended collector
 #       names in registration_tests' atomicity loop = the T4-DESIGN §6 Σ = 20 + the
 #       crx-t3t4 cure batch + the crx-t3t4r/r2 hardenings + the zero-dispatch family +
@@ -66,14 +66,32 @@ Base.String(::_VocFlip.FlipStr) = (_VocFlip.CALLS[] += 1;
     struct HG end
     hkey(x...) = true
     heq(d::Dict{Symbol,Bool}, s::Symbol) = (d[s] = true; nothing)
+    const EQCALLS = Base.RefValue{Int}(0)   # (r4-B2) proves the piracy is never SELECTED
+    const KCALLS = Base.RefValue{Int}(0)    # (r4-B1) proves the key nameof never EXECUTES
 end
 Base.hash(::_VocR3.HFn, ::UInt) = error("hash-pirated (must never dispatch)")
 Base.isequal(::_VocR3.HFn, ::Any) = error("isequal-pirated (must never dispatch)")
 Base.:(==)(::_VocR3.HFn, ::Any) = error("eq-pirated (must never dispatch)")
 Base.getproperty(::Type{_VocR3.HG}, ::Symbol) = error("getproperty-pirated (must never dispatch)")
-Base.nameof(::typeof(_VocR3.hkey)) = error("nameof-pirated-key (must never dispatch)")
-Base.:(==)(::Type{Tuple{typeof(_VocR3.heq), Dict{Symbol,Bool}, Symbol}}, ::Any) =
-    error("sig-eq-pirated (must never dispatch)")
+Base.nameof(::typeof(_VocR3.hkey)) = (_VocR3.KCALLS[] += 1;
+    error("nameof-pirated-key (must never dispatch)"))
+# (r4-B2 cure of the witness) BOTH operands typed — `(::Type{X}, ::Any)` was AMBIGUOUS
+# with Base's `==(::Type, ::Type)` on the exact comparison (an ambiguity MethodError,
+# not a selection); `(::Type{X}, ::Type)` is strictly more specific and WOULD be
+# selected pre-cure — the counter proves the cured `===` never selects it.
+Base.:(==)(::Type{Tuple{typeof(_VocR3.heq), Dict{Symbol,Bool}, Symbol}}, ::Type) =
+    (_VocR3.EQCALLS[] += 1; error("sig-eq-pirated (must never dispatch)"))
+
+# the [16] fixtures (the t3t4r4 root): a Function as a legit isbits TYPE PARAMETER whose
+# nameof throws-and-counts — the structural callable render must never invoke it
+@eval module _VocR4
+    tag() = nothing
+    struct Store{F} end
+    setS(s::Store{tag}, a::Symbol) = nothing
+    const TCALLS = Base.RefValue{Int}(0)
+end
+Base.nameof(::typeof(_VocR4.tag)) = (_VocR4.TCALLS[] += 1;
+    error("tag-nameof-pirated (must never dispatch)"))
 
 @testset "vocabulary (v0.4 T4)" begin
 
@@ -417,7 +435,8 @@ Base.:(==)(::Type{Tuple{typeof(_VocR3.heq), Dict{Symbol,Bool}, Symbol}}, ::Any) 
             keyed_slot = sq.keyed_slot, default = sq.default, settribute = sq.settribute)
         dq = GM.validate(bq)
         @test dq isa Vector && !any(x -> x.code === :REG_SIG_MISMATCH &&
-                                         occursin("declared overload has no", x.message), dq)
+                                         occursin("declared overload has no", x.message), dq) &&
+              _VocR3.EQCALLS[] == 0     # (r4-B2) the piracy was never SELECTED under ===
         # (A2, probe P62) the budget walkers read the type graph via getfield only: a
         # type whose getproperty throws walks clean (pre-cure the walk itself threw).
         @test GM._type_budget_check(_VocR3.HG)[1] === :ok &&
@@ -435,7 +454,9 @@ Base.:(==)(::Type{Tuple{typeof(_VocR3.heq), Dict{Symbol,Bool}, Symbol}}, ::Any) 
             default = GM.Declared(Dict{Any,Any}(_VocR3.hkey => 1)),
             settribute = sk.settribute)
         dk = GM.validate(bk)
-        @test dk isa Vector && any(x -> x.code === :REG_PROTOCOL, dk)
+        @test dk isa Vector && any(x -> x.code === :REG_PROTOCOL, dk) &&
+              _VocR3.KCALLS[] == 0      # (r4-B1) the key's nameof never EXECUTED (the
+                                        # order budget blocks Function keys outright)
         # (A6, probe P64) an encodability-refused record is BROKEN for tier 2: the
         # over-budget sig gets its REG_PROTOCOL row and the reflection SKIPS the spec
         # (pre-cure: a SIG_MISMATCH row minted on the very overload the budget refused).
@@ -454,12 +475,33 @@ Base.:(==)(::Type{Tuple{typeof(_VocR3.heq), Dict{Symbol,Bool}, Symbol}}, ::Any) 
         db = GM.validate(bb)
         @test any(x -> x.code === :REG_PROTOCOL, db) &&
               !any(x -> x.code === :REG_SIG_MISMATCH, db)
-        # (A5) the reflection unwrap is LOCAL: the extensible Base unwrap generic no
-        # longer appears ANYWHERE in registry.jl (a decidable source scan, the [10]
-        # pattern; the identifier is assembled here so this file's own scan of itself
-        # can never trip).
+        # (A5; the r4-B3 cure of this scan) the reflection unwrap is LOCAL: the
+        # IDENTIFIER itself — under ANY qualification or bare import — no longer
+        # appears in registry.jl (a decidable source scan, the [10] pattern).
         srcreg = read(joinpath(dirname(dirname(@__DIR__)), "src", "alterants",
             "registry.jl"), String)
-        @test !occursin("Base." * "unwrap_unionall", srcreg)
+        @test !occursin(r"\bunwrap_unionall\b", srcreg)
+    end
+
+    @testset "[16] the crx-t3t4r4 cures — the structural callable name" begin
+        # (r4-A1, probe P70) a Function is a LEGITIMATE isbits type parameter of a
+        # declared signature (`Store{tag}`): reflection's param render reached
+        # `_slot_text(::Function)` whose nameof dispatched a pirated specialization
+        # raw out of validate. The structural `_callable_text` render cures the whole
+        # route: validate RETURNS rows.
+        bs = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
+        bs.plugins[2] = GM.PlugIn(; altName = :Visib, setMode = :mutExclusive,
+            altConstructor = _VocR4.Store{_VocR4.tag}, setAltInstance = _VocR4.setS)
+        ds = GM.validate(bs)
+        @test ds isa Vector && !isempty(ds) && _VocR4.TCALLS[] == 0
+        # (r4-B1) the order budget BLOCKS a Function anywhere in a key graph — the
+        # direct predicate pin (the prepass never encodes such a key).
+        @test !GM._key_order_budget(_VocR4.tag) &&
+              !GM._key_order_budget((1, _VocR4.tag)) &&
+              GM._key_order_budget((1, :a))
+        # the fold-parity pin: for an ordinary NAMED function the structural render
+        # equals the old `nameof` text (the seal did not move for the shipped class —
+        # the profile_snapshot pins assert the DEFAULT; this pins the mechanism).
+        @test GM._callable_text(sin) == String(nameof(sin))
     end
 end
