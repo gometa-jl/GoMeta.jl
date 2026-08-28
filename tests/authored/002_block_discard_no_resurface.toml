@@ -1,0 +1,33 @@
+schema = 1
+stem = "002_block_discard_no_resurface"
+status = "draft"
+drafted_by = "session S3B, 2026-08-28"
+confirmed_by = ""
+scenario = "The outer Block (line 1) discards. A nested Block (line 3) says show. The VALUES: the outer Block's Visib is discard, the nested Block's own Visib is show. The EFFECT (the render): nothing inside a discarded Block appears — a show inside a discard does not resurface it (your ruling R-1 of 2026-08-07, shipped in v0.3.0). This scenario states the values; the effect is the consumer's (the basic renderer's) test."
+
+[[expect]]
+component = "block@1"
+alterant = "Visib"
+value = "discard"
+decided_by = "block@1"
+
+[[expect]]
+component = "line@2"
+alterant = "Visib"
+value = "discard"
+decided_by = "block@1"
+note = "inherited — expected once D-1 lands"
+
+[[expect]]
+component = "block@3"
+alterant = "Visib"
+value = "show"
+decided_by = "block@3"
+note = "the nested Block's OWN value is show; its EFFECT is absent because it sits inside a discarded Block (R-1). Owner to confirm that the Engine records the own value, not the effect."
+
+[[expect]]
+component = "line@4"
+alterant = "Visib"
+value = "show"
+decided_by = "block@3"
+note = "inherited from the nested Block — expected once D-1 lands; effect absent (R-1)"

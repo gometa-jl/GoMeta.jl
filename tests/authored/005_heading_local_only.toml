@@ -1,0 +1,27 @@
+schema = 1
+stem = "005_heading_local_only"
+status = "draft"
+drafted_by = "session S3B, 2026-08-28"
+confirmed_by = ""
+scenario = "A Heading (the quoted-first form on line 1) applies ONCE, where it stands (the :localOnly set mode): the Block opened on line 1 carries the heading; the nested Block (line 3) and the Lines inside carry NO heading — headings are never inherited."
+
+[[expect]]
+component = "block@1"
+alterant = "Heading"
+value = "Chapter one"
+decided_by = "block@1"
+note = "recorded today as the head_1 row keyed to the metaLine's own occurrence"
+
+[[expect]]
+component = "block@3"
+alterant = "Heading"
+value = "none"
+decided_by = "—"
+note = "not inherited (localOnly); no row expected, now or after D-1"
+
+[[expect]]
+component = "line@2"
+alterant = "Heading"
+value = "none"
+decided_by = "—"
+note = "not inherited (localOnly)"

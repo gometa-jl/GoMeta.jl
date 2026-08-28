@@ -227,3 +227,53 @@ input_path = "tests/golden/constructed/InFileFolder/rr48_3_containment_fallback.
 input_sha256 = "35516d5df941e986b8a19359cd37ecd73e212669b131c5ee71314add5b5be59f"
 annotations_golden_path = "tests/golden/corpus/annotations/rr48_3_containment_fallback.jl.ann.txt"
 annotations_golden_sha256 = "5888faa06c4f4b96a7d4498bc7611bd8291ffb8d56ddb80c2202110143c7cdd9"
+[[fixture]]
+id = "annotations@feature_contiguous_metablock.jl"
+partition = "net_new_surface"
+source = "captured"   # R-V04B-15 (b), 2026-08-28: the evaluated values pinned for every golden input (the owner:
+                      #   "THE MOST IMPORTANT, DEFINING measures of GoMeta"); minted at code 7009ec3 from this engine's own
+                      #   output — a regression pin, not an authored expectation (the authored-truth set is tests/authored/).
+input_path = "tests/golden/corpus/InFileFolder/feature_contiguous_metablock.jl"
+input_sha256 = "3755a79ae17cc68f4c9e2d74fe4a5ff0a722c714cc386ab0665be00db999280e"
+annotations_golden_path = "tests/golden/corpus/annotations/feature_contiguous_metablock.jl.ann.txt"
+annotations_golden_sha256 = "e5d32746939c1a8efab0ad9760813a012033949c00a7535002cca6269b3c8244"
+[[fixture]]
+id = "annotations@feature_contiguous_metablock_blankline.jl"
+partition = "net_new_surface"
+source = "captured"   # R-V04B-15 (b), 2026-08-28: the evaluated values pinned for every golden input (the owner:
+                      #   "THE MOST IMPORTANT, DEFINING measures of GoMeta"); minted at code 7009ec3 from this engine's own
+                      #   output — a regression pin, not an authored expectation (the authored-truth set is tests/authored/).
+input_path = "tests/golden/corpus/InFileFolder/feature_contiguous_metablock_blankline.jl"
+input_sha256 = "6dd334dadcb95669e7cce3bc101c4d255c719cc519af9a34a384008cf66e5c95"
+annotations_golden_path = "tests/golden/corpus/annotations/feature_contiguous_metablock_blankline.jl.ann.txt"
+annotations_golden_sha256 = "3fac9f3051dcd397fb13a8f4dab9902dfd7ca6ac0b37010a4548733b4705f61f"
+[[fixture]]
+id = "annotations@feature_explicit_close.jl"
+partition = "net_new_surface"
+source = "captured"   # R-V04B-15 (b), 2026-08-28: the evaluated values pinned for every golden input (the owner:
+                      #   "THE MOST IMPORTANT, DEFINING measures of GoMeta"); minted at code 7009ec3 from this engine's own
+                      #   output — a regression pin, not an authored expectation (the authored-truth set is tests/authored/).
+input_path = "tests/golden/corpus/InFileFolder/feature_explicit_close.jl"
+input_sha256 = "3d414179fcb27b3947425a977513f053789768f0b506a2887c1cf1f17218f810"
+annotations_golden_path = "tests/golden/corpus/annotations/feature_explicit_close.jl.ann.txt"
+annotations_golden_sha256 = "3c26933a88edc1b0810f7e869b3e48c4d0875a5952f812190cf74b1599d801b1"
+[[fixture]]
+id = "annotations@feature_order_of_application.jl"
+partition = "net_new_surface"
+source = "captured"   # R-V04B-15 (b), 2026-08-28: the evaluated values pinned for every golden input (the owner:
+                      #   "THE MOST IMPORTANT, DEFINING measures of GoMeta"); minted at code 7009ec3 from this engine's own
+                      #   output — a regression pin, not an authored expectation (the authored-truth set is tests/authored/).
+input_path = "tests/golden/corpus/InFileFolder/feature_order_of_application.jl"
+input_sha256 = "2d7024a1208ad69e356a8f166cbb878523840c2971aa28cea312cf12b5116418"
+annotations_golden_path = "tests/golden/corpus/annotations/feature_order_of_application.jl.ann.txt"
+annotations_golden_sha256 = "6e212e5380a66fe06f737a46da8e7a33c6f639b42a69967f8327242f0424103f"
+[[fixture]]
+id = "annotations@feature_triple_tilde.jl"
+partition = "net_new_surface"
+source = "captured"   # R-V04B-15 (b), 2026-08-28: the evaluated values pinned for every golden input (the owner:
+                      #   "THE MOST IMPORTANT, DEFINING measures of GoMeta"); minted at code 7009ec3 from this engine's own
+                      #   output — a regression pin, not an authored expectation (the authored-truth set is tests/authored/).
+input_path = "tests/golden/corpus/InFileFolder/feature_triple_tilde.jl"
+input_sha256 = "436042dfa8a45e7bb65e0784f847bf6dcc182f1b65aa0793a23554f41d437514"
+annotations_golden_path = "tests/golden/corpus/annotations/feature_triple_tilde.jl.ann.txt"
+annotations_golden_sha256 = "613b22c362ab8c8e39eeec624eabc8ad175234e8bbcf1da3d94c7d33d8859a42"

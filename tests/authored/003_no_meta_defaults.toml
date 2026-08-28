@@ -1,0 +1,13 @@
+schema = 1
+stem = "003_no_meta_defaults"
+status = "draft"
+drafted_by = "session S3B, 2026-08-28"
+confirmed_by = ""
+scenario = "No metaLine at all. Today the evaluated values are EMPTY (no Component carries meta). Whether the finished evaluation (D-1) records the DEFAULT (show) for every Component, or records nothing and leaves the default to the consumer, is for the owner to rule — this draft states the rule the builder recommends: record nothing; the default is data in the registry (DefaultSlot), read by consumers."
+
+[[expect]]
+component = "file"
+alterant = "Visib"
+value = "show"
+decided_by = "default"
+note = "TO BE RULED: recorded as a row, or implied by the registry's declared default? The render shows every line either way."

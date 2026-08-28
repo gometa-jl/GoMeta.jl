@@ -1,0 +1,33 @@
+schema = 1
+stem = "004_labels_accumulate"
+status = "draft"
+drafted_by = "session S3B, 2026-08-28"
+confirmed_by = ""
+scenario = "Labels ACCUMULATE (the :accumulate set mode): the outer Block (line 1) adds :label1; the nested Block (line 3) adds :label2 and inherits :label1, so it carries both. Line 2 inherits {label1}; line 4 inherits {label1, label2}."
+
+[[expect]]
+component = "block@1"
+alterant = "Labels"
+value = ["label1"]
+decided_by = "block@1"
+
+[[expect]]
+component = "block@3"
+alterant = "Labels"
+value = ["label1", "label2"]
+decided_by = "block@1 + block@3"
+note = "the accumulated set; the evaluated values today carry label_label1 and label_label2 rows for this Block (owner to confirm that both appear)"
+
+[[expect]]
+component = "line@2"
+alterant = "Labels"
+value = ["label1"]
+decided_by = "block@1"
+note = "inherited — expected once D-1 lands"
+
+[[expect]]
+component = "line@4"
+alterant = "Labels"
+value = ["label1", "label2"]
+decided_by = "block@1 + block@3"
+note = "inherited — expected once D-1 lands"
