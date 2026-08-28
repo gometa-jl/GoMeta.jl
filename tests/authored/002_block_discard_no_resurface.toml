@@ -1,33 +1,34 @@
 schema = 1
 stem = "002_block_discard_no_resurface"
 status = "draft"
-drafted_by = "session S3B, 2026-08-28"
+drafted_by = "session S3B, 2026-08-28 (corrected 21:50 after running the input)"
 confirmed_by = ""
-scenario = "The outer Block (line 1) discards. A nested Block (line 3) says show. The VALUES: the outer Block's Visib is discard, the nested Block's own Visib is show. The EFFECT (the render): nothing inside a discarded Block appears — a show inside a discard does not resurface it (your ruling R-1 of 2026-08-07, shipped in v0.3.0). This scenario states the values; the effect is the consumer's (the basic renderer's) test."
+scenario = "A depth-1 metaLine (line 1) discards. A depth-2 metaLine (line 3) says show. In the BLS tree these are four sibling Blocks under the File: Meta[#~ discard] · Code[a = 1] · Meta[#~2 show] · Code[b = 2]; the nesting is in the meta hierarchy (depth), not in the tree. The Engine records a Visib row for EVERY Block (the Code blocks inherit from the meta block above them): discard, discard, show, show. The render at 85576bf is '#~2 show\\nb = 2\\n' — the depth-2 show RESURFACES its own block and the Code block under it (nearest wins). OWNER TO CONFIRM that this is the intended law (your R-1 ruling of 2026-08-07: discard joins the cascade — nearest wins); the earlier draft of this file claimed 'no resurface', which the engine contradicts."
 
 [[expect]]
 component = "block@1"
 alterant = "Visib"
 value = "discard"
 decided_by = "block@1"
+note = "the Meta block of line 1 (its own value)"
 
 [[expect]]
-component = "line@2"
+component = "block@2"
 alterant = "Visib"
 value = "discard"
 decided_by = "block@1"
-note = "inherited — expected once D-1 lands"
+note = "the Code block holding line 2 (a = 1): inherited from the depth-1 meta block — RECORDED today as a Block-grain row"
 
 [[expect]]
 component = "block@3"
 alterant = "Visib"
 value = "show"
 decided_by = "block@3"
-note = "the nested Block's OWN value is show; its EFFECT is absent because it sits inside a discarded Block (R-1). Owner to confirm that the Engine records the own value, not the effect."
+note = "the depth-2 Meta block (its own value)"
 
 [[expect]]
-component = "line@4"
+component = "block@4"
 alterant = "Visib"
 value = "show"
 decided_by = "block@3"
-note = "inherited from the nested Block — expected once D-1 lands; effect absent (R-1)"
+note = "the Code block holding line 4 (b = 2): inherited from the depth-2 meta block — recorded today; rendered (resurfaced) at 85576bf"

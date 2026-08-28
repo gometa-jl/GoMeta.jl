@@ -1,9 +1,9 @@
 schema = 1
 stem = "001_block_hide_inherits"
 status = "draft"
-drafted_by = "session S3B, 2026-08-28"
+drafted_by = "session S3B, 2026-08-28 (corrected 21:50 after running the input)"
 confirmed_by = ""
-scenario = "One Block (opened by the #~ hide on line 1) hides. Line 2 carries no meta and inherits hide. Line 3 carries an inline #~ show of its own, which wins over the Block (Line over Block)."
+scenario = "The metaLine on line 1 hides. In the BLS tree: Block 1 = Meta[#~ hide]; Block 2 = Code with two Lines — line 2 (a = 1, no meta) and line 3 (b = 2 with the inline Segment #~ show). The Engine at 85576bf records: Block 1 Visib = hide (own); Block 2 Visib = hide (inherited — a Block-grain row); line 3 Visib = show (its own inline verdict, written to the LINE); NO row for line 2 (a plain Line carries no row; its value is its Block's). Render: '## #~ hide\\n## a = 1\\nb = 2  #~ show\\n' — line 3 shown (Line over Block), line 2 hidden."
 
 [[expect]]
 component = "block@1"
@@ -12,15 +12,22 @@ value = "hide"
 decided_by = "block@1"
 
 [[expect]]
+component = "block@2"
+alterant = "Visib"
+value = "hide"
+decided_by = "block@1"
+note = "the Code block holding lines 2-3: inherited; recorded today"
+
+[[expect]]
 component = "line@2"
 alterant = "Visib"
 value = "hide"
 decided_by = "block@1"
-note = "inherited — not recorded by the Engine at 85576bf (the boundary finding: only Components that carry meta get a row); expected once D-1 lands"
+note = "no per-Line row today (a plain Line has none); the value is its Block's. Whether the finished evaluation (D-1) records per-Line rows or leaves plain Lines to their Block is for the owner to rule."
 
 [[expect]]
 component = "line@3"
 alterant = "Visib"
 value = "show"
 decided_by = "line@3"
-note = "the Line's own inline verdict wins over the enclosing Block's hide"
+note = "the Line's own inline verdict (a Line-grain row) wins over its Block's hide — TODAY both rows exist (Block hide, Line show) and the renderer picks; the finished evaluation should mark the resolved value"

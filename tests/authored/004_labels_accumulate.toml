@@ -1,9 +1,9 @@
 schema = 1
 stem = "004_labels_accumulate"
 status = "draft"
-drafted_by = "session S3B, 2026-08-28"
+drafted_by = "session S3B, 2026-08-28 (corrected 21:55 after running the input)"
 confirmed_by = ""
-scenario = "Labels ACCUMULATE (the :accumulate set mode): the outer Block (line 1) adds :label1; the nested Block (line 3) adds :label2 and inherits :label1, so it carries both. Line 2 inherits {label1}; line 4 inherits {label1, label2}."
+scenario = "Labels ACCUMULATE (the :accumulate set mode). BLS tree: four sibling Blocks — Meta[#~ :label1] · Code[a = 1] · Meta[#~2 :label2] · Code[b = 2]. The Engine at 85576bf records label rows per BLOCK: Blocks 1-4 carry label1 (the Code blocks inherit it); Blocks 3-4 additionally carry label2. Plain Lines carry no rows of their own (their labels are their Block's)."
 
 [[expect]]
 component = "block@1"
@@ -12,22 +12,22 @@ value = ["label1"]
 decided_by = "block@1"
 
 [[expect]]
+component = "block@2"
+alterant = "Labels"
+value = ["label1"]
+decided_by = "block@1"
+note = "the Code block holding line 2: inherited; recorded today"
+
+[[expect]]
 component = "block@3"
 alterant = "Labels"
 value = ["label1", "label2"]
 decided_by = "block@1 + block@3"
-note = "the accumulated set; the evaluated values today carry label_label1 and label_label2 rows for this Block (owner to confirm that both appear)"
+note = "the accumulated set on the depth-2 meta block; recorded today as two rows (label_label1, label_label2)"
 
 [[expect]]
-component = "line@2"
-alterant = "Labels"
-value = ["label1"]
-decided_by = "block@1"
-note = "inherited — expected once D-1 lands"
-
-[[expect]]
-component = "line@4"
+component = "block@4"
 alterant = "Labels"
 value = ["label1", "label2"]
 decided_by = "block@1 + block@3"
-note = "inherited — expected once D-1 lands"
+note = "the Code block holding line 4: inherited; recorded today"
