@@ -187,7 +187,7 @@ remain: metaLine names intern as Julia `Symbol`s, which persist for the session 
 table only grows as new names arrive, so a long session over many untrusted files accretes
 entries; and the separate opt-in modes below.)
 
-**The opt-in exception:** the `extensions/condition_modes_opt_in.jl` extension registers the
+**The opt-in exception:** the `optin/condition_modes_opt_in.jl` extension registers the
 `:jl_share_v1_full_eval` profile, in which condition text beyond the safe grammar **is**
 host-evaluated. Activation takes **two explicit operator acts** — `include`-ing that file AND
 naming the profile in your config; neither act alone evaluates anything, neither is reachable

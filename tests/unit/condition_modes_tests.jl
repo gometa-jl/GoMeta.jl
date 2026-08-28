@@ -56,7 +56,7 @@ _mode_run(cfg) = redirect_stdout(
         # (':(:label1)', ':()') the closed default accepts — surfaced at the K6-retirement
         # reconfirm, pinned at its current fate in M6's boundary rows. This corpus
         # contains neither class.
-        ext = joinpath(@__DIR__, "..", "..", "extensions", "condition_modes_opt_in.jl")
+        ext = joinpath(@__DIR__, "..", "..", "optin", "condition_modes_opt_in.jl")
         @test isfile(ext)                       # the opt-in ships (the ruling: BOTH available)
         redirect_stdout(() -> Base.include(Main, abspath(ext)), devnull)
         base = _mode_run(GM.GoMetaConfig())

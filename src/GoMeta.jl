@@ -197,7 +197,7 @@ function validate_config(config::GoMetaConfig)
             "unknown profile $(repr(config.profile)); the v0.2 profiles are :jl_share_v1 " *
             "(the closed default), :jl_share_v1_full_parse and :jl_share_v1_full_eval " *
             "(both OPT-IN — they additionally require including " *
-            "\"extensions/condition_modes_opt_in.jl\" explicitly)"))
+            "\"optin/condition_modes_opt_in.jl\" explicitly)"))
     end
     if !isnothing(config.parse_range) && (first(config.parse_range) != 1 || isempty(config.parse_range))
         push!(diags, Diagnostic(:ERR_RANGE_INVALID, :error,

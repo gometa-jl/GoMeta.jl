@@ -529,7 +529,7 @@ at v0.
 `:jl_share_v1_full_parse` (full Julia grammar accepted, still nothing executed) and
 `:jl_share_v1_full_eval` (a strict superset of the safe grammar: everything the safe grammar
 accepts behaves identically, and only text beyond it is parsed as Julia and EVALUATED) — require
-TWO explicit operator acts: `include`-ing `extensions/condition_modes_opt_in.jl` and then naming
+TWO explicit operator acts: `include`-ing `optin/condition_modes_opt_in.jl` and then naming
 the profile. Neither act is reachable from document content, so no document can widen its own
 intake (README SECURITY).
 

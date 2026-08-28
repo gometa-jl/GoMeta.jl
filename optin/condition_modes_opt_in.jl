@@ -1,11 +1,11 @@
-# extensions/condition_modes_opt_in.jl — THE OPT-IN CONDITION-INTAKE MODES (the dual-mode ruling).
+# optin/condition_modes_opt_in.jl — THE OPT-IN CONDITION-INTAKE MODES (the dual-mode ruling).
 #
 # ┌─ READ THIS BEFORE INCLUDING ────────────────────────────────────────────────────────────┐
 # │ Including this file OPTS YOU OUT of the closed condition interpreter's safety envelope   │
 # │ for documents you then process under an opt-in profile. It is deliberately NOT part of   │
 # │ the package: `using GoMeta` alone can never reach these modes. Opting in takes TWO        │
 # │ explicit acts by the OPERATOR (never by a document, never by metaLine content):          │
-# │   1. `include(joinpath(pkgdir(GoMeta), "extensions", "condition_modes_opt_in.jl"))`      │
+# │   1. `include(joinpath(pkgdir(GoMeta), "optin", "condition_modes_opt_in.jl"))`      │
 # │   2. `GoMetaConfig(profile = :jl_share_v1_full_parse)`  (or `:jl_share_v1_full_eval`) │
 # │ Neither act is reachable from processed content, so no document can widen its own        │
 # │ intake. Without both, every condition parses under `:closed_v1` — the safe default.      │

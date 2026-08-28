@@ -241,7 +241,7 @@ end
 
 # ── the dual-mode OPT-IN mode registry (DATA + plumbing ONLY — no mode implementation, no
 # parser, no evaluator lives in src/). The two opt-in modes ship OUTSIDE the package source,
-# in `extensions/condition_modes_opt_in.jl`, which the OPERATOR must `include` explicitly
+# in `optin/condition_modes_opt_in.jl`, which the OPERATOR must `include` explicitly
 # after loading the package (the first explicit act); selecting an opt-in profile in the
 # GoMetaConfig is the second. Without BOTH acts every document parses under the closed
 # default — the engine is never unconditionally restricted (the ruling), and the default is
@@ -270,7 +270,7 @@ so reaching here means a mis-wired opt-in — it fails LOUD, never silently clos
 function condition_mode_fn(mode::Symbol)
     haskey(_CONDITION_MODES, mode) ||
         error("GoMeta absorb: the condition mode ", repr(mode), " is not registered — ",
-            "include \"extensions/condition_modes_opt_in.jl\" explicitly to opt in ",
+            "include \"optin/condition_modes_opt_in.jl\" explicitly to opt in ",
             "(see docs/public-api.md §2; the dual-mode ruling)")
     return _CONDITION_MODES[mode]
 end
@@ -302,7 +302,7 @@ function resolve_profile(config::GoMetaConfig)::GrammarProfile
         haskey(_CONDITION_MODES, mode) ||
             error("GoMeta config: the profile ", repr(config.profile), " is an OPT-IN mode ",
                 "and its implementation is not loaded — include ",
-                "\"extensions/condition_modes_opt_in.jl\" explicitly AFTER loading the ",
+                "\"optin/condition_modes_opt_in.jl\" explicitly AFTER loading the ",
                 "package to opt in (see docs/public-api.md §2; the dual-mode ruling)")
         # the opt-in profile shares the default REGISTRATION digest (the registry is the
         # default one; a custom-registry profile story is a later-version concern) — the

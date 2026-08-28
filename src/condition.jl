@@ -201,7 +201,7 @@ function _scan_args(text::String, thisInd::Int)
 end
 
 # ── the dual-mode OPT-IN seams (DATA + dispatch only; every opt-in mode's parser and
-# evaluator lives OUTSIDE this package, in extensions/condition_modes_opt_in.jl, so `src/`
+# evaluator lives OUTSIDE this package, in optin/condition_modes_opt_in.jl, so `src/`
 # never gains a code-evaluation path and its purity/no-eval gates stay armed for everyone).
 
 """
@@ -719,7 +719,7 @@ function evaluate(st::ProcessState, marker::FullEvalCondition)::Bool
     h = _FULL_EVAL_HANDLER[]
     h === nothing && error("GoMeta apply: a full-eval condition marker was reached but the ",
         ":full_eval_v1 handler is not registered — include ",
-        "\"extensions/condition_modes_opt_in.jl\" before selecting that profile (the dual-mode ruling)")
+        "\"optin/condition_modes_opt_in.jl\" before selecting that profile (the dual-mode ruling)")
     return h(st, marker.text)::Bool
 end
 
