@@ -4,8 +4,8 @@
 #   devtools/ since 2026-08-29 (owner ruling R-V04B-17); the Play's gometa.jl forwards here.
 #
 # usage (works from ANY directory; --project selects WHICH GoMeta runs):
-#   HOME=/home/fido/Dropbox/_01_Crypto_Dropbox/07_Claude/GoMetaEcosystem/GoMeta
-#   julia --startup-file=no --project=$HOME/tests $HOME/devtools/gometa.jl <verb> <file>
+#   GM=/home/fido/Dropbox/_01_Crypto_Dropbox/07_Claude/GoMetaEcosystem/GoMeta
+#   julia --startup-file=no --project=$GM/tests $GM/devtools/gometa.jl <verb> <file>
 #
 #   tree       — the BLS component tree, line-mapped 1:1 (the R1 component data, raw)
 #   segments   — the same tree with line numbers (the "what is line N?" answer)

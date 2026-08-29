@@ -12,11 +12,11 @@ project memory, this one does not). The build record: `plan/2026-08-24-gometa-v0
 `devtools/README.md` documents them; the canon is `../agent-doc/AGENT-RULES_GoMeta.md` §R4/§R4b.
 
 ```
-HOME=/home/fido/Dropbox/_01_Crypto_Dropbox/07_Claude/GoMetaEcosystem/GoMeta
-julia --startup-file=no --project=$HOME/tests $HOME/devtools/gometa.jl evals-tree <file>   # print_altValues_evals, FULL form
-julia --startup-file=no --project=$HOME/tests $HOME/devtools/gometa.jl bls-tree   <file>   # print_BLS_Component_Tree (:mix)
-julia --startup-file=no --project=$HOME/tests $HOME/devtools/gometa.jl segments   <file>   # the tree with line numbers
-julia --startup-file=no --project=$HOME/tests $HOME/devtools/gometa.jl trace      <file>   # evals rows + decoded keys
+GM=/home/fido/Dropbox/_01_Crypto_Dropbox/07_Claude/GoMetaEcosystem/GoMeta
+julia --startup-file=no --project=$GM/tests $GM/devtools/gometa.jl evals-tree <file>   # print_altValues_evals, FULL form
+julia --startup-file=no --project=$GM/tests $GM/devtools/gometa.jl bls-tree   <file>   # print_BLS_Component_Tree (:mix)
+julia --startup-file=no --project=$GM/tests $GM/devtools/gometa.jl segments   <file>   # the tree with line numbers
+julia --startup-file=no --project=$GM/tests $GM/devtools/gometa.jl trace      <file>   # evals rows + decoded keys
 ```
 From Julia: `include(joinpath(pkgdir(GoMeta), "devtools", "devtools.jl"))` then
 `print_altValues_evals(result; include_empty = true, show_handles = true)` /

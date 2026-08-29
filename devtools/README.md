@@ -18,10 +18,10 @@ say.
 ## One-liners from a shell
 
 ```
-HOME=/home/fido/Dropbox/_01_Crypto_Dropbox/07_Claude/GoMetaEcosystem/GoMeta
-julia --startup-file=no --project=$HOME/tests $HOME/devtools/gometa.jl <verb> <file>
+GM=/home/fido/Dropbox/_01_Crypto_Dropbox/07_Claude/GoMetaEcosystem/GoMeta
+julia --startup-file=no --project=$GM/tests $GM/devtools/gometa.jl <verb> <file>
 ```
-`--project` selects WHICH GoMeta runs (`$HOME/tests` = this v0.4 build; the Play project = its
+`--project` selects WHICH GoMeta runs (`$GM/tests` = this v0.4 build; the Play project = its
 0.3.0 snapshot). Status and diagnostics go to stderr, the printout to stdout. Verbs:
 
 | verb | prints |
