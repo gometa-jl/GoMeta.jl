@@ -1,27 +1,57 @@
 schema = 1
 stem = "005_heading_local_only"
-status = "draft"
-drafted_by = "session S3B, 2026-08-28"
-confirmed_by = ""
-scenario = "A Heading (the quoted-first form on line 1) applies ONCE, where it stands (the :localOnly set mode): the Block opened on line 1 carries the heading; the nested Block (line 3) and the Lines inside carry NO heading — headings are never inherited."
+status = "confirmed"
+drafted_by = "session S3B, 2026-08-28; restated by session S5, 2026-09-10, as positions and values in the owner's terms"
+confirmed_by = "owner, 2026-09-10"
+scenario = "A metaLine on line 1 states the heading 'Chapter one'. Line 2 (a = 1) carries no meta of its own. A metaLine on line 3, at depth 2, adds a label (not stated in this scenario; labels are scenario 004's). Line 4 (b = 2) carries no meta of its own. Block 1 (the metaBlock of line 1) carries 'Chapter one', by its own metaLine, and the heading applies indirectly to line 1 as Block 1's child. No other Block or Line carries a heading: Block 2 (the Code Block attached to that meta), line 2, Blocks 3 and 4 and lines 3 and 4 carry none. The File is not stated in this scenario."
+history = ["2026-09-10: confirmed by the owner on these exact bytes (transaction S5-CONFIRM-005). The truth: his words of 2026-09-10 (OWNER-WORDS §12): 'Chapter one' is applied to the first Block only, that is it — the offered alternative 'The Block the metaLine forms only, no attached or nested Block: block@1 carries the heading; line@1 indirectly; block@2 absent' in substance (the RULINGS row of that date quotes his sentence); the line 1 statement is the session's application of his indirect-application principle (OWNER-WORDS §8 item 3, whose own example is a heading applied to a Block), confirmed by his word on these bytes; that the attached Code Block and the nested Block carry no heading is his 'that is it', which also agrees with the Engine's registered :localOnly set-mode as put to him. At ac29037 the Engine records the heading on the metaLine's own Line (one head_1 row, Line-level); a Block-level heading entry must be ADDED by the Engine for this scenario to pass — an Engine change outside the branch's ruled scope, to be ordered at D-4 or by extending the branch (R-V04B-16 (1)'s proof clause 'the authored scenarios green' then needs the scope extended or the clause amended) — and until then this scenario is expected to FAIL against the Engine. Whether a consumer is told own/direct versus indirect for line 1 is OPEN (D-4); whether the File is a governed Component is OPEN (D-4, catalogue row 21a)."]
 
 [[expect]]
 component = "block@1"
 alterant = "Heading"
 value = "Chapter one"
 decided_by = "block@1"
-note = "recorded today as the head_1 row keyed to the metaLine's own occurrence"
+note = "the metaBlock opened by the line-1 metaLine; its own heading. Provenance: at ac29037 the one head_1 row is keyed to the metaLine's own Line, not to this Block (observed 2026-09-10); this statement requires a Block-level entry the Engine does not yet deliver"
 
 [[expect]]
-component = "block@3"
+component = "line@1"
 alterant = "Heading"
-value = "none"
-decided_by = "—"
-note = "not inherited (localOnly); no row expected, now or after D-1"
+value = "Chapter one"
+decided_by = "block@1"
+note = "the metaLine's own Line: a child of block@1; the heading applies to it indirectly — it did not explicitly inherit the heading and is not explicitly issued it (the owner's principle, OWNER-WORDS §8 item 3); the session's application of the principle. Provenance: at ac29037 the head_1 row is recorded on this Line, addressing the cell itself (observed 2026-09-10); that the row is then read as indirect via block@1 is the resolved surface's business (D-4)"
+
+[[expect]]
+component = "block@2"
+alterant = "Heading"
+present = false
+note = "the Code Block holding line 2, attached to block@1's meta: no heading applies, directly or indirectly — the ground put to the owner for this absence is the Engine's registered :localOnly set-mode (a value never carried to another Component, registry.jl:500-509 at ac29037), the code's ground; the registration is used for the attach relation only — block@1 and line@1 above depart from it on his word. Provenance: no heading row at ac29037 (observed 2026-09-10)"
 
 [[expect]]
 component = "line@2"
 alterant = "Heading"
-value = "none"
-decided_by = "—"
-note = "not inherited (localOnly)"
+present = false
+note = "a plain Line inside block@2: no heading applies, directly or indirectly. Provenance: no heading row at ac29037 (observed 2026-09-10)"
+
+[[expect]]
+component = "block@3"
+alterant = "Heading"
+present = false
+note = "the metaBlock of the depth-2 metaLine (line 3): no heading applies, directly or indirectly. Provenance: no heading row at ac29037 (observed 2026-09-10)"
+
+[[expect]]
+component = "line@3"
+alterant = "Heading"
+present = false
+note = "the depth-2 metaLine's own Line: no heading applies, directly or indirectly. Provenance: no heading row at ac29037 (observed 2026-09-10)"
+
+[[expect]]
+component = "block@4"
+alterant = "Heading"
+present = false
+note = "the Code Block holding line 4, attached to block@3's meta: no heading applies, directly or indirectly. Provenance: no heading row at ac29037 (observed 2026-09-10)"
+
+[[expect]]
+component = "line@4"
+alterant = "Heading"
+present = false
+note = "a plain Line inside block@4: no heading applies, directly or indirectly. Provenance: no heading row at ac29037 (observed 2026-09-10)"
