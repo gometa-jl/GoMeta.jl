@@ -1,33 +1,63 @@
 schema = 1
 stem = "004_labels_accumulate"
-status = "draft"
-drafted_by = "session S3B, 2026-08-28 (corrected 21:55 after running the input)"
-confirmed_by = ""
-scenario = "Labels ACCUMULATE (the :accumulate set mode). BLS tree: four sibling Blocks — Meta[#~ :label1] · Code[a = 1] · Meta[#~2 :label2] · Code[b = 2]. The Engine at 85576bf records label rows per BLOCK: Blocks 1-4 carry label1 (the Code blocks inherit it); Blocks 3-4 additionally carry label2. Plain Lines carry no rows of their own (their labels are their Block's)."
+status = "confirmed"
+drafted_by = "session S3B, 2026-08-28 (corrected 21:55 after running the input at 85576bf); restated by session S5, 2026-09-10, as positions and values in the owner's terms"
+confirmed_by = "owner, 2026-09-10"
+scenario = "A metaLine on line 1 adds the label label1. Line 2 (a = 1) carries no meta of its own. A metaLine on line 3, at depth 2 under the depth-1 metaLine, adds the label label2. Line 4 (b = 2) carries no meta of its own. Labels accumulate: Block 1 (the metaBlock of line 1) carries {label1}, by its own metaLine. Block 2 (the Code Block holding line 2) is attached to that meta and therefore inherits {label1}. Block 3 (the metaBlock of line 3) carries {label1, label2}: label1 from the depth-1 metaLine above it in the meta hierarchy, label2 by its own metaLine. Block 4 (the Code Block holding line 4) is attached to that meta and therefore inherits {label1, label2}. Each set applies to its Block and indirectly to that Block's child Line — line 1 {label1}, line 2 {label1}, line 3 {label1, label2}, line 4 {label1, label2}; the Lines are not explicitly issued the labels and did not explicitly inherit them. The File is not stated in this scenario."
+history = ["2026-09-10: confirmed by the owner on these exact bytes (transaction S5-CONFIRM-004). The truth: his word of 2026-09-10 on the eight statements (the RULINGS row of that date); the Line statements are the session's application of his indirect-application principle (OWNER-WORDS §8), confirmed by his word on these bytes. The typed form of an accumulating value (a list of label names with a list of contributors) is the README's PROVISIONAL form until the shape of an accumulating answer is ruled (4b, a D-4 matter): at ac29037 a label can only be true in the Engine's store (the registered setter writes true only; no other writer found), so the list form loses no label value at ac29037 — it does not say which Component contributed which label, which is 4b's question. How the Engine delivers an entry for a child Component is OPEN (D-4); whether the File is a governed Component is OPEN (D-4, catalogue row 21a)."]
 
 [[expect]]
 component = "block@1"
 alterant = "Labels"
 value = ["label1"]
-decided_by = "block@1"
+decided_by = ["block@1"]
+note = "the metaBlock opened by the line-1 metaLine; its own label. Provenance: one Block-grain row (label_label1) at ac29037 (observed 2026-09-10)"
 
 [[expect]]
 component = "block@2"
 alterant = "Labels"
 value = ["label1"]
-decided_by = "block@1"
-note = "the Code block holding line 2: inherited; recorded today"
+decided_by = ["block@1"]
+note = "the Code Block holding line 2: attached to that meta and therefore inherits label1. Provenance: one Block-grain row at ac29037 (observed 2026-09-10)"
 
 [[expect]]
 component = "block@3"
 alterant = "Labels"
 value = ["label1", "label2"]
-decided_by = "block@1 + block@3"
-note = "the accumulated set on the depth-2 meta block; recorded today as two rows (label_label1, label_label2)"
+decided_by = ["block@1", "block@3"]
+note = "the metaBlock opened by the line-3 metaLine (depth 2): label1 accumulated from the depth-1 metaLine above it in the meta hierarchy, label2 its own. Provenance: two Block-grain rows (label_label1, label_label2) at ac29037 (observed 2026-09-10)"
 
 [[expect]]
 component = "block@4"
 alterant = "Labels"
 value = ["label1", "label2"]
-decided_by = "block@1 + block@3"
-note = "the Code block holding line 4: inherited; recorded today"
+decided_by = ["block@1", "block@3"]
+note = "the Code Block holding line 4: attached to that meta and therefore inherits both labels. Provenance: two Block-grain rows at ac29037 (observed 2026-09-10)"
+
+[[expect]]
+component = "line@1"
+alterant = "Labels"
+value = ["label1"]
+decided_by = ["block@1"]
+note = "the metaLine's own Line: a child of block@1; the set applies to it indirectly (the owner's principle, OWNER-WORDS §8 item 3); the session's application of the principle. Provenance: no per-Line row at ac29037 (observed 2026-09-10)"
+
+[[expect]]
+component = "line@2"
+alterant = "Labels"
+value = ["label1"]
+decided_by = ["block@1"]
+note = "a plain Line: a child of block@2, which is attached to block@1's meta; the set applies to it indirectly (OWNER-WORDS §8 item 3); the session's application of the principle. Provenance: no per-Line row at ac29037 (observed 2026-09-10)"
+
+[[expect]]
+component = "line@3"
+alterant = "Labels"
+value = ["label1", "label2"]
+decided_by = ["block@1", "block@3"]
+note = "the depth-2 metaLine's own Line: a child of block@3; the set applies to it indirectly (OWNER-WORDS §8 item 3); the session's application of the principle. Provenance: no per-Line row at ac29037 (observed 2026-09-10)"
+
+[[expect]]
+component = "line@4"
+alterant = "Labels"
+value = ["label1", "label2"]
+decided_by = ["block@1", "block@3"]
+note = "a plain Line: a child of block@4, which is attached to block@3's meta; the set applies to it indirectly (OWNER-WORDS §8 item 3); the session's application of the principle. Provenance: no per-Line row at ac29037 (observed 2026-09-10)"
