@@ -85,12 +85,15 @@ const GRAIN_BLOCK = 0x46
 
 ## --- the tree: positions → Components; Components → (grain, ordinal) ---
 _ni(c, k) = GB.getElement(c.cmpntNamedInt, k)
+## The parser's Component vectors carry UNASSIGNED slots (pre-sized storage; seen on the two legacy example files,
+## 2026-09-11 — never on the five small confirmed inputs): iterate the assigned slots only, never the raw vector.
+_assigned(v) = (v[i] for i in eachindex(v) if isassigned(v, i))
 
 function _components(ps)
     file   = ps.componentsPDict[GB.File][1][1]
     blocks = ps.componentsPDict[GB.Block][1]
     lines  = ps.componentsPDict[GB.Line][1]
-    for c in Iterators.flatten((blocks, lines))
+    for c in Iterators.flatten((_assigned(blocks), _assigned(lines)))
         (_ni(c, :idExtension) == 0 && _ni(c, :idExtended) == 0) ||
             error("authored: an extension chain exists in this input (idExtension/idExtended ≠ 0) — " *
                   "chain normalization is not implemented here; see src/occurrence.jl")
@@ -100,14 +103,14 @@ end
 
 ## line@N → the Line whose input line number is N
 function _line_at(t, n::Int)
-    hits = [l for l in t.lines if _ni(l, :idComponent) != 0 && _ni(l, :inputLineNum) == n]
+    hits = [l for l in _assigned(t.lines) if _ni(l, :idComponent) != 0 && _ni(l, :inputLineNum) == n]
     length(hits) == 1 || error("authored: line@$n — expected exactly one Line with input line number $n, found $(length(hits))")
     return hits[1]
 end
 ## block@N → the Block whose FIRST Line is line N
 function _block_at(t, n::Int)
     hits = GB.Block[]
-    for b in t.blocks
+    for b in _assigned(t.blocks)
         _ni(b, :idComponent) == 0 && continue
         kids = collect(GB.eachchildid(b, t.blocks))
         isempty(kids) && continue
