@@ -1,9 +1,9 @@
 schema = 1
 stem = "026_example_proposal_juliacon"
 status = "draft"
-drafted_by = "session S5, 2026-09-11 — a DRAFT from the owner's legacy example file file_for_Example_Proposal_JuliaCon.jl (his order, OWNER-WORDS §20; the file confirmed as his, §22): every value below is what the file's OWN narration states (its ## comments), checked against the Engine at bbe6ec5 (every statement agrees — the receipt is the build record's receipts/authored-drafts-026-027-bbe6ec5.txt); the Block and Line positions are the parser's tree as printed by the development tools (receipts/s5-examples-bbe6ec5/). NOTHING here is confirmed: the owner puts each statement at a sitting (the material: the build record's SITTING-PACK_2026-09-11_legacy-examples.md)"
+drafted_by = "session S5, 2026-09-11 — a DRAFT from the owner's legacy example file file_for_Example_Proposal_JuliaCon.jl (his order, OWNER-WORDS §20; the file confirmed as his, §22): 10 of the 22 statements below are what the file's OWN narration states (its ## comments; basis = narration) and 12 are the SESSION's derivation from the rules the narration states — the metaBlocks' own values, the markdown Block the narration does not describe, the label sets carried by the inline Lines (basis = derived); every one checked against the Engine at bbe6ec5 (all agree — the receipt is the build record's receipts/authored-drafts-026-027-bbe6ec5.txt); the Block and Line positions are the parser's tree as printed by the development tools (receipts/s5-examples-bbe6ec5/). NOTHING here is confirmed: the owner puts each statement at a sitting (the material: the build record's SITTING-PACK_2026-09-11_legacy-examples.md)"
 confirmed_by = ""
-scenario = "The owner's legacy example (35 lines; no terminal newline). Line 1 is a metaLine saying hide for anything carrying label4 or being code (hide{ :label4 , isCode }); line 3, in the same metaBlock, adds label1 to anything that is text containing meta, or is meta (:label1{ (isText && containsMeta), isMeta }). Lines 5-7 are a Text Block after a blank line — attached to nothing; line 7 carries an inline metaSegment saying discard. Line 9 is a depth-2 metaLine adding label5 and saying show only if label5 is not present (show{ !:label5 }) — label5 is applied first, so show is not. Lines 10-20 are a Code Block attached to that meta. Line 22 is a depth-3 metaLine adding label4, saying discard if label3 is present, then adding label3 (discard{:label3} is evaluated before label3 is applied, so nothing is discarded by it). Lines 23-30 are a Text Block attached to that meta; line 30 carries an inline metaSegment saying show. Line 32 is a depth-2 metaLine adding label5: it supersedes the earlier depth-2 metaBlock and closes the depth-3 one, so their labels and standing rules no longer reach what follows. Lines 33-35 are a Text Block (a markdown string) attached to that meta; line 34 carries an inline metaSegment saying hide. CONVENTIONS OF THIS DRAFT (to be confirmed with the statements): (i) a Block is named by its FIRST Line as the parser's tree gives it — four metaBlocks here begin with the blank line before their metaLine (block@8 is the metaBlock whose metaLine is line 9; block@21 that of line 22; block@31 that of line 32; block@4 is the Text Block whose first content line is 5); (ii) only the Blocks, and the Lines carrying an inline metaStatement of their own, are stated — every other Line falls under its Block's values indirectly, as the Block's child (the owner's principle, OWNER-WORDS §8), and is not stated separately; (iii) Visib and Labels are stated; Heading and Id are not (no such statement in the file). The File is not stated."
+scenario = "The owner's legacy example (35 lines; no terminal newline). Line 1 is a metaLine saying hide for anything carrying label4 or being code (hide{ :label4 , isCode }); line 3, in the same metaBlock, adds label1 to anything that is text containing meta, or is meta (:label1{ (isText && containsMeta), isMeta }). Lines 5-7 are a Text Block after a blank line — attached to nothing; line 7 carries an inline metaSegment saying discard. Line 9 is a depth-2 metaLine adding label5 and saying show only if label5 is not present (show{ !:label5 }) — label5 is applied first, so show is not. Lines 10-20 are a Code Block attached to that meta. Line 22 is a depth-3 metaLine adding label4, saying discard if label3 is present, then adding label3 (discard{:label3} is evaluated before label3 is applied, so nothing is discarded by it). Lines 23-30 are a Text Block attached to that meta; line 30 carries an inline metaSegment saying show. Line 32 is a depth-2 metaLine adding label5: it supersedes the earlier depth-2 metaBlock and closes the depth-3 one, so their labels and standing rules no longer reach what follows. Lines 33-35 are a Text Block (a markdown string) attached to that meta; line 34 carries an inline metaSegment saying hide. CONVENTIONS OF THIS DRAFT (to be confirmed with the statements): (i) a Block is named by its FIRST Line as the parser's tree gives it — four metaBlocks here begin with the blank line before their metaLine (block@8 is the metaBlock whose metaLine is line 9; block@21 that of line 22; block@31 that of line 32; block@4 is the Text Block whose first content line is 5); (ii) only the Blocks, and the Lines carrying an inline metaStatement of their own, are stated — every other Line falls under its Block's values indirectly, as the Block's child (the owner's principle, OWNER-WORDS §8), and is not stated separately; (iii) Visib and Labels are stated; Heading and Id are not (no such statement in the file); (iv) every statement carries a PROVISIONAL field basis = narration (the file's own comment states the value; the note cites the line) or basis = derived (the session applied the rules the narration states, or the owner's principle; the Engine agrees) — the runner ignores the field; it exists so the sitting puts each statement under its true source. The File is not stated."
 history = []
 
 # ---- block@1: the metaBlock of lines 1-3 (the metaLines on lines 1 and 3; the comment line 2) ----
@@ -11,6 +11,7 @@ history = []
 [[expect]]
 component = "block@1"
 alterant = "Visib"
+basis = "derived"
 value = "show"
 decided_by = "default"
 note = "the depth-1 metaBlock: no Visib decides it — its own hide{ :label4 , isCode } does not fire on it (it carries no label4 and is not code). Provenance: no Visib row on this Block at bbe6ec5 (observed 2026-09-11); the file's narration states nothing for the metaBlock itself"
@@ -18,6 +19,7 @@ note = "the depth-1 metaBlock: no Visib decides it — its own hide{ :label4 , i
 [[expect]]
 component = "block@1"
 alterant = "Labels"
+basis = "derived"
 value = ["label1"]
 decided_by = ["block@1"]
 note = "label1 by its own line-3 statement :label1{ (isText && containsMeta), isMeta } — the metaBlock is meta (isMeta). Provenance: one Block-grain row label_label1 at bbe6ec5 (observed 2026-09-11)"
@@ -27,6 +29,7 @@ note = "label1 by its own line-3 statement :label1{ (isText && containsMeta), is
 [[expect]]
 component = "block@4"
 alterant = "Visib"
+basis = "narration"
 value = "show"
 decided_by = "default"
 note = "the Text Block after the blank line: attached to nothing (the file's line 6: NOT attached to metadata - it does NOT INHERIT metadata). Provenance: no rows on this Block at bbe6ec5 (observed 2026-09-11)"
@@ -34,12 +37,14 @@ note = "the Text Block after the blank line: attached to nothing (the file's lin
 [[expect]]
 component = "block@4"
 alterant = "Labels"
+basis = "narration"
 present = false
 note = "no label applies: the Block is attached to nothing, so no standing rule reaches it. Provenance: no rows on this Block at bbe6ec5 (observed 2026-09-11)"
 
 [[expect]]
 component = "line@7"
 alterant = "Visib"
+basis = "narration"
 value = "discard"
 decided_by = "line@7"
 note = "its own: the inline metaSegment #~ discard at the end of line 7 (the file's line 7: this Line will get discarded due to: #~ discard). Provenance: one Line-grain row visib => :discard at bbe6ec5, carried by the Segment (observed 2026-09-11)"
@@ -47,6 +52,7 @@ note = "its own: the inline metaSegment #~ discard at the end of line 7 (the fil
 [[expect]]
 component = "line@7"
 alterant = "Labels"
+basis = "narration"
 present = false
 note = "no label applies (none on the Line, none on its Block). Provenance: no label row at bbe6ec5 (observed 2026-09-11)"
 
@@ -55,6 +61,7 @@ note = "no label applies (none on the Line, none on its Block). Provenance: no l
 [[expect]]
 component = "block@8"
 alterant = "Visib"
+basis = "derived"
 value = "show"
 decided_by = "default"
 note = "the depth-2 metaBlock: its own show{ !:label5} is not applied because label5 was applied first in the same statement (the file's lines 13-15); hide{ :label4 , isCode } does not fire (no label4, not code). Provenance: no Visib row on this Block at bbe6ec5 (observed 2026-09-11)"
@@ -62,6 +69,7 @@ note = "the depth-2 metaBlock: its own show{ !:label5} is not applied because la
 [[expect]]
 component = "block@8"
 alterant = "Labels"
+basis = "derived"
 value = ["label1", "label5"]
 decided_by = ["block@1", "block@8"]
 note = "label5 by its own metaLine (line 9); label1 by block@1's standing statement (line 3: isMeta — this metaBlock is meta and nests under the depth-1 metaBlock). Provenance: two Block-grain rows label_label1, label_label5 at bbe6ec5 (observed 2026-09-11)"
@@ -71,6 +79,7 @@ note = "label5 by its own metaLine (line 9); label1 by block@1's standing statem
 [[expect]]
 component = "block@10"
 alterant = "Visib"
+basis = "narration"
 value = "hide"
 decided_by = "block@1"
 note = "hide by block@1's line-1 statement hide{ :label4 , isCode }: this Block is code (the file's lines 16-17: inherits hide from line 1 above since this is a code Block and due to {isCode}). The depth-2 show{ !:label5} was not applied (the file's lines 13-15). Provenance: one Block-grain row visib => :hide at bbe6ec5 (observed 2026-09-11)"
@@ -78,6 +87,7 @@ note = "hide by block@1's line-1 statement hide{ :label4 , isCode }: this Block 
 [[expect]]
 component = "block@10"
 alterant = "Labels"
+basis = "narration"
 value = ["label5"]
 decided_by = ["block@8"]
 note = "label5: attached to block@8's meta and therefore inherits it (the file's lines 11-12). No label1: the Block is code, neither text nor meta. Provenance: one Block-grain row label_label5 at bbe6ec5 (observed 2026-09-11)"
@@ -87,6 +97,7 @@ note = "label5: attached to block@8's meta and therefore inherits it (the file's
 [[expect]]
 component = "block@21"
 alterant = "Visib"
+basis = "derived"
 value = "hide"
 decided_by = "block@1"
 note = "hide by block@1's hide{ :label4 , isCode }: label4 applies to this metaBlock (its own line-22 statement). NOT discarded: its own discard{:label3} is evaluated before :label3 is applied (the order of application). Provenance: one Block-grain row visib => :hide at bbe6ec5 (observed 2026-09-11); the file's narration states this for the Text Block attached below (lines 26-29), the metaBlock itself carries the same values"
@@ -94,6 +105,7 @@ note = "hide by block@1's hide{ :label4 , isCode }: label4 applies to this metaB
 [[expect]]
 component = "block@21"
 alterant = "Labels"
+basis = "derived"
 value = ["label1", "label3", "label4", "label5"]
 decided_by = ["block@1", "block@8", "block@21"]
 note = "label4 and label3 by its own metaLine (line 22; label3 after the discard{:label3} check); label5 by the depth-2 metaBlock above it in the meta hierarchy (block@8); label1 by block@1's standing statement (isMeta). Provenance: four Block-grain rows at bbe6ec5 (observed 2026-09-11)"
@@ -103,6 +115,7 @@ note = "label4 and label3 by its own metaLine (line 22; label3 after the discard
 [[expect]]
 component = "block@23"
 alterant = "Visib"
+basis = "narration"
 value = "hide"
 decided_by = "block@1"
 note = "hide by block@1's hide{ :label4 , isCode }: label4 applies (the file's line 29: it gets hidden due to label4 and hide{:label4} on line 1). NOT discarded: discard{:label3} (line 22) was evaluated before label3 was applied (the file's lines 26-28). Provenance: one Block-grain row visib => :hide at bbe6ec5 (observed 2026-09-11)"
@@ -110,6 +123,7 @@ note = "hide by block@1's hide{ :label4 , isCode }: label4 applies (the file's l
 [[expect]]
 component = "block@23"
 alterant = "Labels"
+basis = "narration"
 value = ["label1", "label3", "label4", "label5"]
 decided_by = ["block@1", "block@8", "block@21"]
 note = "label4 and label3 from block@21 (attached to that meta), label5 from block@8 (the file's lines 23-24), label1 by block@1's statement isText && containsMeta — the Block is text and contains meta, the inline #~ show on line 30 (the file's line 25). Provenance: four Block-grain rows at bbe6ec5 (observed 2026-09-11)"
@@ -117,6 +131,7 @@ note = "label4 and label3 from block@21 (attached to that meta), label5 from blo
 [[expect]]
 component = "line@30"
 alterant = "Visib"
+basis = "narration"
 value = "show"
 decided_by = "line@30"
 note = "its own: the inline metaSegment #~ show at the end of line 30 — the closest metaStatement wins (the file's line 30: This Line, however, will NOT get hidden). Provenance: one Line-grain row visib => :show at bbe6ec5, carried by the Segment (observed 2026-09-11)"
@@ -124,6 +139,7 @@ note = "its own: the inline metaSegment #~ show at the end of line 30 — the cl
 [[expect]]
 component = "line@30"
 alterant = "Labels"
+basis = "derived"
 value = ["label1", "label3", "label4", "label5"]
 decided_by = ["block@1", "block@8", "block@21"]
 note = "the same four labels apply to the Line as to its Block. Provenance: at bbe6ec5 the Engine records the four label rows on this Line itself (Line-grain, carried by the Segment) because the inline metaSegment makes the Line a cell (observed 2026-09-11)"
@@ -133,6 +149,7 @@ note = "the same four labels apply to the Line as to its Block. Provenance: at b
 [[expect]]
 component = "block@31"
 alterant = "Visib"
+basis = "derived"
 value = "show"
 decided_by = "default"
 note = "the later depth-2 metaBlock: it supersedes block@8 and closes block@21, so label4 and the standing discard{:label3} no longer apply; hide{ :label4 , isCode } does not fire (no label4, not code). Provenance: no Visib row on this Block at bbe6ec5 (observed 2026-09-11)"
@@ -140,6 +157,7 @@ note = "the later depth-2 metaBlock: it supersedes block@8 and closes block@21, 
 [[expect]]
 component = "block@31"
 alterant = "Labels"
+basis = "derived"
 value = ["label1", "label5"]
 decided_by = ["block@1", "block@31"]
 note = "label5 by its own metaLine (line 32); label1 by block@1's standing statement (isMeta). No label3, no label4: the superseded depth-2 and the closed depth-3 metaBlocks no longer reach it. Provenance: two Block-grain rows at bbe6ec5 (observed 2026-09-11)"
@@ -149,6 +167,7 @@ note = "label5 by its own metaLine (line 32); label1 by block@1's standing state
 [[expect]]
 component = "block@33"
 alterant = "Visib"
+basis = "derived"
 value = "show"
 decided_by = "default"
 note = "no Visib decides the Block: hide{ :label4 , isCode } does not fire (no label4 — the depth-3 metaBlock that added it is closed; not code). Provenance: no Visib row on this Block at bbe6ec5 (observed 2026-09-11)"
@@ -156,6 +175,7 @@ note = "no Visib decides the Block: hide{ :label4 , isCode } does not fire (no l
 [[expect]]
 component = "block@33"
 alterant = "Labels"
+basis = "derived"
 value = ["label1", "label5"]
 decided_by = ["block@1", "block@31"]
 note = "label5 from block@31 (attached to that meta); label1 by block@1's statement isText && containsMeta — the Block is text and contains meta (the inline #~ hide on line 34). Provenance: two Block-grain rows at bbe6ec5 (observed 2026-09-11)"
@@ -163,6 +183,7 @@ note = "label5 from block@31 (attached to that meta); label1 by block@1's statem
 [[expect]]
 component = "line@34"
 alterant = "Visib"
+basis = "narration"
 value = "hide"
 decided_by = "line@34"
 note = "its own: the inline metaSegment #~ hide at the end of line 34. Provenance: one Line-grain row visib => :hide at bbe6ec5, carried by the Segment (observed 2026-09-11)"
@@ -170,6 +191,7 @@ note = "its own: the inline metaSegment #~ hide at the end of line 34. Provenanc
 [[expect]]
 component = "line@34"
 alterant = "Labels"
+basis = "derived"
 value = ["label1", "label5"]
 decided_by = ["block@1", "block@31"]
 note = "the same two labels apply to the Line as to its Block. Provenance: at bbe6ec5 the Engine records the two label rows on this Line itself (Line-grain, carried by the Segment) (observed 2026-09-11)"
