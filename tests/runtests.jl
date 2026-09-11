@@ -26,11 +26,12 @@ using Test
 include(joinpath(@__DIR__, "support", "_support.jl"))   # the shared support hub (module TestSupport) — loaded ONCE before the layers
 
 # === LAYER FENCE ==============================================================================
-# ARMED (dispatched below): golden · unit.
+# ARMED (dispatched below): golden · unit · authored (the owner's confirmed statements —
+#   tests/authored/README.md; R-V04B-15 (c); landed 2026-09-11 under R-V04B-24 (R)).
 # FENCED (NOT dispatched): no further layers ship in this repository.
 # ==============================================================================================
 
-const LAYERS = ("golden", "unit")
+const LAYERS = ("golden", "unit", "authored")
 if !isempty(ARGS)
     bad = setdiff(ARGS, collect(LAYERS))
     isempty(bad) || error("runtests: unknown layer arg(s) $(bad); known layers: $(join(LAYERS, ", "))")
@@ -40,4 +41,5 @@ const SEL = isempty(ARGS) ? LAYERS : Tuple(l for l in LAYERS if l in ARGS)
 @testset "GoMeta" begin
     "golden"      in SEL && include(joinpath(@__DIR__, "golden",      "golden_tests.jl"))
     "unit"        in SEL && include(joinpath(@__DIR__, "unit",        "unit_tests.jl"))
+    "authored"    in SEL && include(joinpath(@__DIR__, "authored",    "authored_tests.jl"))
 end
