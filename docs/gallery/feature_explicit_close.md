@@ -7,7 +7,7 @@
 
 Committed pair: `examples/InFileFolder/feature_explicit_close.jl` → `examples/OutFileFolder/feature_explicit_close.jl` — the same
 bytes the golden test layer pins. Verify locally from the repository root:
-`julia --startup-file=no --project=. run_examples.jl`.
+`julia --startup-file=no --project=. devtools/run_examples.jl`.
 
 ## Input
 

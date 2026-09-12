@@ -20,7 +20,7 @@ using Test
 import GoMeta as GM
 
 _is(s) = GM.goMeta(Vector{UInt8}(codeunits(s)))
-_is_render(s) = String(copy(GM.outputs(_is(s)).render_bytes))
+_is_render(s) = String(copy(Main.BasicRenderer.outputs(_is(s)).render_bytes))
 _is_rows(s) = [(a, v, p) for (h, a, v, p) in GM.altValues_evals(_is(s))]
 _is_msg(s) = try
     TestSupport.quiet_io(() -> _is(s))
@@ -64,13 +64,13 @@ _liveempty(text) = join(
             @test string(r_i.status) == string(r_l.status)
             @test [(a, v, p) for (h, a, v, p) in GM.altValues_evals(r_i)] ==
                   [(a, v, p) for (h, a, v, p) in GM.altValues_evals(r_l)]
-            @test _liveempty(String(copy(GM.outputs(r_i).render_bytes))) ==
-                  _liveempty(String(copy(GM.outputs(r_l).render_bytes)))
+            @test _liveempty(String(copy(Main.BasicRenderer.outputs(r_i).render_bytes))) ==
+                  _liveempty(String(copy(Main.BasicRenderer.outputs(r_l).render_bytes)))
             # §4.4: the inert metaLine's OWN bytes travel VERBATIM in the render ('!' and
             # content included; a standing hide may `## `-prefix the line — substring holds).
             # Asserted RAW, before _liveempty, so the normalizer stays a comparison aid,
             # never a blind spot.
-            ren_raw = String(copy(GM.outputs(r_i).render_bytes))
+            ren_raw = String(copy(Main.BasicRenderer.outputs(r_i).render_bytes))
             for l in split(src, '\n')
                 if match(_INERT_LINE_RE, l) !== nothing
                     @test occursin(l, ren_raw)
@@ -134,7 +134,7 @@ _liveempty(text) = join(
             r = _is(s)
             @test r.status == GM.PROCESS_OK
             @test isempty(GM.altValues_evals(r))
-            @test String(copy(GM.outputs(r).render_bytes)) == s
+            @test String(copy(Main.BasicRenderer.outputs(r).render_bytes)) == s
         end
     end
 
@@ -142,7 +142,7 @@ _liveempty(text) = join(
         # supersession: the inert depth-2 sibling retires the earlier depth-2 rule — B SHOWN:
         r = _is("#~2 hide{ isText }\n# A\n\n#~2! hide{ isText }\n# B\n")
         @test [(a, v) for (h, a, v, p) in GM.altValues_evals(r)] == [(:visib, :hide)]
-        @test occursin("\n# B", String(copy(GM.outputs(r).render_bytes)))
+        @test occursin("\n# B", String(copy(Main.BasicRenderer.outputs(r).render_bytes)))
         # the cured swallow: a live metaLine after an inert first line ABSORBS:
         r2 = _is("#~2! :label2\n#~2 :label1\n# B\n")
         @test any(a == :label_label1 for (h, a, v, p) in GM.altValues_evals(r2))
@@ -150,12 +150,12 @@ _liveempty(text) = join(
         # security hand-pin: a standing discard still discards THROUGH an inert head
         # (the rejected L3 design's travel hole can never open):
         rd = _is("#~ discard{ isText }\n\n#~2! x\n# B\n")
-        @test !occursin("# B", String(copy(GM.outputs(rd).render_bytes)))
+        @test !occursin("# B", String(copy(Main.BasicRenderer.outputs(rd).render_bytes)))
         @test any(a == :visib && v == :discard for (h, a, v, p) in GM.altValues_evals(rd))
         # t_P6: the inert metaLine itself stays governable (altValue ON it, never FROM it):
         r3 = _is("#~ hide{ isMeta }\n\n#~2! show{ isMeta }\n# T\n")
-        @test occursin("## #~2! show{ isMeta }", String(copy(GM.outputs(r3).render_bytes)))
-        @test occursin("\n# T", String(copy(GM.outputs(r3).render_bytes)))
+        @test occursin("## #~2! show{ isMeta }", String(copy(Main.BasicRenderer.outputs(r3).render_bytes)))
+        @test occursin("\n# T", String(copy(Main.BasicRenderer.outputs(r3).render_bytes)))
     end
 
     @testset "[G] the Labels Alterant guards (§4.8: in-Alterant, seam-verbatim)" begin

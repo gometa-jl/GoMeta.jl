@@ -16,8 +16,9 @@ as `Diagnostic`s) and the honest partition of which codes are armed, which are d
 crashes remain latent or are guarded by a stable refusal.
 
 **DOES.** (1) names the **exported** surface (§1.1) and the **package-public** supporting names
-(§1.2); (2) names the **two output surfaces** through which every observable byte flows (§1.3 —
-the sole-surface invariant); (3) restates each public signature + its contract (§2); (4) enumerates
+(§1.2); (2) names the Engine's output surface — `altValues_evals` (+ `serialize_evals`, `content_fingerprint`),
+the Engine's delivered surface after the move — and the development tool's (tree, render) pair, obtained only
+through `Main.BasicRenderer.outputs` loaded by the one loader and pinned byte-exact by the test layer (§1.3); (3) restates each public signature + its contract (§2); (4) enumerates
 the typed error catalogue with its honest partition (§3 — the 0.3.x rows as the tables list them, plus the v0.4
 registration/door rows of §3.5); (5) records the
 CRLF-normalization convention (§4), the explicitly **deferred / not-v0** surfaces (§5), and the
@@ -52,8 +53,8 @@ by `tests/unit/public_surface_tests.jl`) and of the refusal behavior the shipped
 | `GoMetaConfig` | type | the v0 input options |
 | `GoMetaResult` | type | the typed pipeline result |
 
-`names(GoMeta)` is exactly this set plus the §1.2 public names (40 since v0.4 T4: the eleven
-of 0.3.x, the six lifecycle names, the twenty record-vocabulary names — `Alterant` is the
+`names(GoMeta)` is exactly this set plus the §1.2 public names (39 since R-V04B-24 (2026-09-12): the
+ten of 0.3.x that remain — `outputs` REMOVED, §6 —, the six lifecycle names, the twenty record-vocabulary names — `Alterant` is the
 record's canonical name and `PlugIn` its PUBLIC 0.4.x deprecation alias, R-V04B-5 — and the
 T4 G-VOC query triple `vocabulary`/`vocabulary_member`/`vocabulary_queryable`; and the module
 name) — the
@@ -73,8 +74,6 @@ These are part of the documented public surface — declared with Julia's `publi
 `names(GoMeta)` and tooling see them — but are **not** exported: reach them qualified
 (`GoMeta.<name>`):
 
-- `GoMeta.outputs(result) -> (blsStructure_bytes, render_bytes)` — the native structural-tree +
-  reference-render pair (the verification surface; §1.3 and `docs/CANONICAL-OUTPUT.md`).
 - `GoMeta.serialize_evals(altValues_evals(result)) -> Vector{UInt8}` — the canonical,
   deterministic, binary-safe serialization of the evals surface.
 - `GoMeta.content_fingerprint(result) -> Vector{Tuple{Vector{UInt8},Vector{UInt8}}}` — the
@@ -326,18 +325,20 @@ These are part of the documented public surface — declared with Julia's `publi
 They are not exported; reach them qualified. `tests/unit/public_surface_tests.jl` asserts every
 §1.2 name is `public` and NOT exported (no accidental leak, no silent demotion).
 
-### §1.3 — The two output surfaces (the sole-surface invariant)
+### §1.3 — The Engine's output surface, and the development tool's pair (since 0.4.0, R-V04B-24)
 
-Every byte a consumer obtains from the engine comes through exactly one of two surfaces; no
-internal module (`emit`, `walk`, `BLS`) ever needs importing for output:
-
-1. **`altValues_evals(result)`** — the evaluated Alterant values, per piece of the file: the
-   deterministic, final-verdicts-only per-cell map `(cell_handle, attr, value, polarity)` — the
-   query-facing write payload (GoMeta's semantic deliverable; the production surface).
-2. **`GoMeta.outputs(result) -> (blsStructure_bytes, render_bytes)`** — the verdict-free structural tree
-   half + the `jl-share-v1` reference render (the verification surface). `render_bytes` is
-   produced by the package-**internal** emit; it is reached **only** through `GoMeta.outputs`,
-   never exported.
+1. **In R-V04B-24's own words: "the package's canonical observable output = `altValues_evals` (+
+   `serialize_evals`, `content_fingerprint`)" and "the Engine's delivered surface after the move = the run
+   and the evaluated values".** `altValues_evals(result)` is the evaluated Alterant values, per piece of the
+   file: the deterministic, final-verdicts-only per-cell map `(cell_handle, attr, value, polarity)`;
+   `GoMeta.serialize_evals` its byte form, `GoMeta.content_fingerprint` the cell bytes. No internal module
+   (`walk`, `BLS`) ever needs importing for it.
+2. **The (tree, render) pair is the development tool's**, not the Engine's: `Main.BasicRenderer.outputs(result)
+   -> (blsStructure_bytes, render_bytes)` — the verdict-free tree print + the `jl-share-v1` share render — is
+   obtained ONLY through the basic renderer (`devtools/basic_renderer.jl`) loaded by its one loader,
+   `include("devtools/load_basic_renderer.jl")` at the caller's top level; `devtools/README.md` documents it.
+3. **The test layer pins that pair byte-exact** against the corpus golden (`tests/golden/`) — the test
+   layer's property, beside the twelve annotation pins of the Engine's values.
 
 ## §2 — Signatures + contracts
 
@@ -355,8 +356,8 @@ throws uncaught; absorb/apply-plane catalogued failures can still throw at v0 �
 partition). `GoMetaResult` carries the run's cargo: `status::ProcessStatus` ·
 `diagnostics::Vector{Diagnostic}` (the invariant is **non-OK ⇒ non-empty diagnostics**) ·
 `verdicts::EvalStore` (the store behind `altValues_evals`) · `state::ProcessState` — INTERNAL and
-semver-UNSTABLE at v0: depend only on `status`, `diagnostics`, `altValues_evals(result)`, and
-`GoMeta.outputs(result)`. No filesystem / clock / environment read. **These three guarantees —
+semver-UNSTABLE at v0: depend only on `status`, `diagnostics` and `altValues_evals(result)` (the (tree, render)
+pair is the development tool's `Main.BasicRenderer.outputs(result)`, loaded through `devtools/load_basic_renderer.jl` — not an Engine surface). No filesystem / clock / environment read. **These three guarantees —
 purity, determinism, isolation — cover the whole default-configured run under `DEFAULT_REGISTRY`
 (under a CUSTOM registry they hold exactly as far as its own setters/getters/validators do: a
 callable closing over mutable state or performing I/O is that Alterant's act, outside the
@@ -430,17 +431,14 @@ families as opaque — skip them, never error: the enumeration lists the v0 fami
 families may arrive as additive evolution within the documented versioning policy (§6). `GoMeta.serialize_evals(altValues_evals(result))` is its canonical
 byte form.
 
-### `GoMeta.outputs(result::GoMetaResult) -> (blsStructure_bytes::Vector{UInt8}, render_bytes::Vector{UInt8})`
+### The (tree, render) pair — a development tool's, since 0.4.0 (R-V04B-24)
 
-The native, always-available verification surface (§1.3) — package-public, reached qualified.
-`blsStructure_bytes` = the verdict-free structural
-serialization of the final parse tree; `render_bytes` = the `jl-share-v1` reference render. Total
-on any OK result, with one documented qualification: more than one surviving Visib verdict on a
-single cell meets the render plane's stable guard error (§3.4). The render plane's string
-indexing is character-safe — including a multibyte-whitespace indent — and is witnessed
-(a GUARDED edge). On a non-OK (any pre-parse `PROCESS_ERROR` — config-time or registry-door) result it yields the
-**empty** `(tree, render)` ("no render attempted"). The NamedTuple field order is
-`(blsStructure_bytes, render_bytes)`. See `docs/CANONICAL-OUTPUT.md` for the full surface definition.
+`GoMeta.outputs` left the Engine at 0.4.0 (the breaking-change register row in §6). The pair `(blsStructure_bytes, render_bytes)` —
+the verdict-free tree print + the `jl-share-v1` share render, the SAME field names and order, the same non-OK
+contract (a pre-parse `PROCESS_ERROR` result yields the **empty** pair) — is the basic renderer's own function
+`Main.BasicRenderer.outputs(result)`, obtained ONLY after `include("devtools/load_basic_renderer.jl")` at the
+caller's top level. Its render-plane qualifications (the multi-Visib guard, §3.4; the character-safe string
+indexing, §4) are the tool's. See `devtools/README.md` and `docs/CANONICAL-OUTPUT.md`.
 
 ### The metaLine argument forms (v0)
 
@@ -515,7 +513,7 @@ are not catalogued typed codes.
 | `ERR_DEPTH_OUT_OF_WINDOW` (E-06) | **GUARDED** — stable untyped refusal; typed conversion deferred | a `#~9`-style **digit** depth beyond the meta-hierarchy's depth window raises the stable-message `ErrorException` "meta depth out of range …" at the depth lookup (§3.4) |
 
 E-03 / E-08 / `ERR_UNKNOWN_FLAVOR` are armed (the three config-time rows): a bad profile/range/flavor returns a `PROCESS_ERROR` `GoMetaResult` carrying the
-typed code, with `GoMeta.outputs` yielding empty `(tree, render)`. E-04 (apply-path) is the
+typed code, with the development tool's `Main.BasicRenderer.outputs` yielding the empty `(tree, render)` pair (its non-OK contract). E-04 (apply-path) is the
 remaining crash-origin whose **typed conversion is deferred at v0**:
 its current crash-reachability is a documented v0 edge.
 E-06 is **GUARDED**: for a digit depth outside the window the depth lookup refuses with the stable
@@ -705,8 +703,8 @@ fabricated typed code:
   state-ref nor a registered action name) · a duplicate argument list or condition block on one
   alterant clause · a misplaced label token · stray punctuation at the action-name position · a
   token glued to a closing `)` or `}` · the over-cap condition (the dedicated entry above).
-  At the render plane, more than one surviving Visib verdict on a single cell meets the stable
-  `GoMeta emit:` guard error (see `docs/SYNTAX-AND-SEMANTICS.md` §13 on the multi-Visib surface).
+  In the basic renderer (a development tool, `devtools/basic_renderer.jl`), more than one surviving Visib verdict on
+  a single cell meets its stable `GoMeta emit:` guard error (see `docs/SYNTAX-AND-SEMANTICS.md` §13 on the multi-Visib surface).
   Each refusal is stable and points at this section; most name the offending token, region, or
   bracket count.
 - **The action-args walls — GUARDED:** malformed alterant-action ARGUMENTS — non-parsable or
@@ -850,3 +848,20 @@ fields are added; a published exported name is never silently removed or repurpo
 removal/rename is a breaking change handled with a deprecation under full re-validation). No
 deprecation debt exists at this release. `Project.toml` carries the version; the alpha maturity states
 the surface honestly — it may still move before `1.0`, additively wherever possible.
+
+**The breaking-change register (the policy's letter protects EXPORTED names; every public-tier change is
+written here — R-V04B-24 (P)).**
+
+- **`GoMeta.outputs` — §1.2 public-not-exported since 0.3.0 — REMOVED at 0.4.0** (no deprecation stub; the
+  owner's "as clean as possible NOW"); ground: the renderer and the tree print are development tools
+  (R-V04B-13); replacement: the tool's `outputs` after `include("devtools/load_basic_renderer.jl")` at the
+  caller's top level; a 0.3.0 caller sees `UndefVarError`; the same-commit triple (code + the document's
+  §1.2/§1.3/§2/§3.4/§6 + the surface oracle); the policy's protection read as covering exported names only (P);
+  `docs/CANONICAL-OUTPUT.md` re-scoped (the package's canonical observable output = `altValues_evals` (+
+  `serialize_evals`, `content_fingerprint`); the pair = the tool's output pinned by the golden layer); the Engine's
+  delivered surface after the move = the run and the evaluated values. (i) Of R-V04B-5's practice (the
+  `PlugIn` → `Alterant` rename: a PUBLIC 0.4.x alias, removal at v0.5, and a register row with the same-commit
+  triple) the REGISTER-ROW-WITH-TRIPLE half is borrowed — code + this document + the surface oracle
+  `tests/unit/public_surface_tests.jl` in one commit; the ALIAS half is NOT (B1: a hard removal, no stub).
+  (ii) The unified documentation's corrections-ledger row `AU-7` (`GoMetaEcosystem/unified-doc/corrections-ledger.md`)
+  records the re-scoping of `U0-orientation.md:35`. Minted 2026-09-11 (R-V04B-24); landed 2026-09-12.

@@ -497,7 +497,7 @@ function default_registry_builder()
         PlugIn(; altName = :id, setMode = :mutExclusivePerField, altConstructor = Alterants.Id,
                  setAltInstance = Alterants.setId,
                  capture = CaptureDecl(Alterants.Id, :per_field, :per_field, nothing; attr_stem = :id)),
-        # The Heading plugin. setMode `:localOnly` — the THIRD inheritance mode:
+        # The Heading plugin. setMode `:localOnly` — the `:localOnly` set mode:
         # a localOnly alterant's value applies ONCE, WHERE IT STANDS — its
         # actions NEVER ENQUEUE into the slot tensors, so the inheritance
         # backtrack (both apply passes) never visits them; delivery happens at

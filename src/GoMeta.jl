@@ -2,16 +2,16 @@
 #
 # IS: the GoMeta package top module. It holds the ordered include spine — config.jl, result.jl,
 #     bls/BLS.jl, state.jl, alterants/registry.jl, annotations.jl,
-#     absorb/absorb_meta.jl, absorb/walk.jl, alterants/apply.jl, emit/emit.jl — and declares the
+#     absorb/absorb_meta.jl, absorb/walk.jl, alterants/apply.jl — and declares the
 #     exported semver surface: `goMeta`, `altValues_evals`, `GoMetaConfig`, `GoMetaResult`
 #     (docs/public-api.md §1.1; asserted by tests/unit/public_surface_tests.jl), plus the
-#     declared `public` tier of qualified names (docs/public-api.md §1.2 — e.g. `GoMeta.outputs`,
+#     declared `public` tier of qualified names (docs/public-api.md §1.2 — e.g. `GoMeta.serialize_evals`,
 #     `GoMeta.PROCESS_OK`).
 # DOES: `goMeta(bytes; config::GoMetaConfig = GoMetaConfig(), registry::AlterantRegistry =
 #     DEFAULT_REGISTRY) -> GoMetaResult` runs the pipeline parse -> Absorb-walk (enqueue alterant
-#     actions) -> Apply (evaluate conditions + apply) -> lazy render. `validate_config` fail-closes
+#     actions) -> Apply (evaluate conditions + apply); the evaluated values are the product. `validate_config` fail-closes
 #     an invalid config into a `PROCESS_ERROR` `GoMetaResult` carrying typed `Diagnostic`s BEFORE any
-#     parse or render work (the input bytes are never touched): `ERR_UNKNOWN_PROFILE` (E-03 — the
+#     parse work (the input bytes are never touched): `ERR_UNKNOWN_PROFILE` (E-03 — the
 #     three profile names are `:jl_share_v1` + the two opt-in names, docs/public-api.md §3.1),
 #     `ERR_UNKNOWN_FLAVOR` (the closed three-flavor set `:julia`/`:c`/`:latex`, selected never
 #     inferred) and `ERR_RANGE_INVALID` (E-08 — a given `parse_range` requires `first == 1` and a non-empty
@@ -19,9 +19,9 @@
 #     init_state(parse_state, config, registry))`, so two
 #     concurrent calls never share state; the driver walk enters each file-level Block, absorbs its
 #     metaLines, applies the queued alterant actions, writes back the Block-grain Visib verdict,
-#     and captures per-cell verdicts for `altValues_evals(result)`. `outputs(result)` yields
-#     `(blsStructure_bytes, render_bytes)` — the verdict-free structural tree + the jl-share-v1 render —
-#     and yields the EMPTY pair on a non-OK result ("no render attempted"). The optional
+#     and captures per-cell verdicts for `altValues_evals(result)`. The (tree, render) pair is the
+#     development tool's — `devtools/basic_renderer.jl`, loaded through `devtools/load_basic_renderer.jl`,
+#     never by the Engine (R-V04B-24, 2026-09-12). The optional
 #     `config.user_mh_profile` seeds the reserved user slot of the meta-hierarchy before the walk
 #     (`feed_user_mh!`; a fed explicit `head` records one row against the minted user-context
 #     handle — docs/public-api.md §1.4/§2; experimental).
@@ -35,8 +35,10 @@
 #     not yet typed (conversion deferred); the condition-path refusals are TYPED since the
 #     closed-interpreter flip, with E-07's mint PENDING (the unqueryable-alt shape still aborts
 #     raw). The full honest-edges catalogue: docs/public-api.md §3.
-# PURPOSE: the single auditable entry point — bytes in, a typed `GoMetaResult` out, with all observable
-#     output flowing through `outputs` / `altValues_evals`.
+# PURPOSE: the single auditable entry point — bytes in, a typed `GoMetaResult` out, with the package's
+#     canonical observable output = `altValues_evals` (+ `serialize_evals`, `content_fingerprint`); the Engine's
+#     delivered surface = the run and the evaluated values (R-V04B-24); the (tree, render) pair is the
+#     development tool's.
 module GoMeta
 
 """
@@ -44,8 +46,8 @@ module GoMeta
 
 Interpretable `#~` metadata for source files: `goMeta(bytes)` parses the input into the
 BLS tree (File → Block → Line → Segment), absorbs the metadata, applies the registered
-Alterants, and renders the share view — bytes in, bytes out; it **evaluates, never
-executes**.
+Alterants and records the evaluated values as data (`altValues_evals`); it **evaluates, never
+executes** — and never renders (the share view is a development tool's, `devtools/basic_renderer.jl`).
 
 # The metaLine marker family
 
@@ -125,8 +127,6 @@ include("absorb/absorb_meta.jl")
 using .AbsorbMeta
 include("absorb/walk.jl")           # goMetaAddOns absorb-half — absorbMeta (above) must precede it
 include("alterants/apply.jl")       # goMetaAddOns apply-half — late-bound from walk, so OK after walk
-include("emit/emit.jl")
-import .WriteOutFile: render_bytes
 
 
 #########################################################################################
@@ -137,16 +137,18 @@ import .WriteOutFile: render_bytes
 # `names(GoMeta)` IS the machine-checkable semver surface (asserted by tests/unit/public_surface_tests.jl).
 # EVERYTHING else stays PACKAGE-PUBLIC (reached qualified, e.g. GoMeta.PROCESS_OK / .Diagnostic):
 # the supporting types (ProcessStatus/Diagnostic/EvalStore/AlterantRegistry),
-# DEFAULT_REGISTRY, serialize_evals, outputs, content_fingerprint, EvalRecord, and the PROCESS_OK/PROCESS_ERROR values
+# DEFAULT_REGISTRY, serialize_evals, content_fingerprint, EvalRecord, and the PROCESS_OK/PROCESS_ERROR values
 # — the names on the `public` lines below (eleven at 0.3.x; thirty-six since v0.4 T2: + the
 #   registration lifecycle incl. `next_plugin_index` + the record vocabulary; thirty-seven since
 #   the v0.4 `Alterant` rename — `Alterant` is the record's canonical name and `PlugIn` its
 #   PUBLIC 0.4.x deprecation alias (R-V04B-5); FORTY since v0.4 T4: + the G-VOC query triple
-#   `vocabulary`/`vocabulary_member`/`vocabulary_queryable`; docs/public-api.md §1.2 is the mirror).
+#   `vocabulary`/`vocabulary_member`/`vocabulary_queryable`; THIRTY-NINE since R-V04B-24 (2026-09-12):
+#   `outputs` REMOVED with the basic renderer — a development tool; the register row in docs/public-api.md §6;
+#   docs/public-api.md §1.2 is the mirror).
 # Qualified import (`import GoMeta as GM`) is UNAFFECTED by these exports and remains canonical for namespace
 # hygiene + multi-implementation use; exporting serves the single-implementation `using` convenience only.
 export goMeta, altValues_evals, GoMetaConfig, GoMetaResult
-public outputs, serialize_evals, content_fingerprint, EvalRecord, EvalStore, ProcessStatus, PROCESS_OK, PROCESS_ERROR, Diagnostic, AlterantRegistry, DEFAULT_REGISTRY,
+public serialize_evals, content_fingerprint, EvalRecord, EvalStore, ProcessStatus, PROCESS_OK, PROCESS_ERROR, Diagnostic, AlterantRegistry, DEFAULT_REGISTRY,
        RegistryBuilder, register!, next_plugin_index, validate, publish, RegistrationRefused,   # v0.4 T2: the registration lifecycle (docs/public-api.md §1.2)
        Alterant, PlugIn, ActionSpec, ActionOverload, DomainRef, CaptureDecl, DefaultSlot, NoDefault, Declared,   # v0.4 T2 (cure batch 1) + the rename: the record
        EffectRow, RenderDecl, VocabularySlot, InlineVocabulary, VocabularyRef, MutEx, ConditionAtom,   #   VOCABULARY a third-party author
@@ -161,8 +163,8 @@ public outputs, serialize_evals, content_fingerprint, EvalRecord, EvalStore, Pro
 
 Config-time validation of the public `GoMetaConfig`, returning the (possibly empty) typed
 diagnostics that `goMeta` fail-closes on. A non-empty result means `goMeta` returns a `PROCESS_ERROR`
-`GoMetaResult` BEFORE any parse or render work is attempted (the input bytes are never touched;
-the docs/public-api.md §2 "no render attempted" contract).
+`GoMetaResult` BEFORE any parse work is attempted (the input bytes are never touched; the
+docs/public-api.md §2 fail-closed contract — downstream, the development tool's `outputs` yields its empty non-OK pair).
 
 The three v0 config-time error rows of the documented error catalogue (docs/public-api.md §3):
 
@@ -227,10 +229,10 @@ Build the fail-closed `PROCESS_ERROR` `GoMetaResult` for an invalid `GoMetaConfi
 it is reached ONLY on a PRE-PARSE refusal — a non-empty `validate_config` vector, or (v0.4) the registry
 door's diagnostics at `goMeta` / `run_absorb_apply!` — so its `init_state` +
 `GoMetaResult` construction never perturb the byte-exact, low-allocation main `goMeta` path. A per-call
-`ProcessState` is built (container SIZING only — no parse content is read, no `parseBLS`/absorb-walk/render
+`ProcessState` is built (container SIZING only — no parse content is read, no `parseBLS`/absorb-walk
 runs) so the `GoMetaResult` carries the standard state shape; the typed `config_diags` are appended; the unparsed
 `parse_state` — the caller passes one built from EMPTY bytes, since validation now pre-empts touching the
-input — then makes `outputs` yield the empty non-OK output ("no render attempted").
+input — the development tool's `outputs` (`devtools/basic_renderer.jl`) then yields its empty non-OK pair.
 """
 @noinline function _config_error_result(parse_state::BLS.ParseState, config::GoMetaConfig,
                                         registry::AlterantRegistry, config_diags::Vector{Diagnostic})
@@ -301,7 +303,7 @@ the same `GoMetaResult`, with no filesystem / clock / environment read — condi
 closed no-eval interpreter, so in a default-configured run a condition body cannot read or have
 effects (only the explicitly opt-in `:full_eval_v1` extension mode host-evaluates condition text —
 README SECURITY). The pipeline is parse -> Absorb-walk (enqueue alterant
-actions) -> Apply (evaluate conditions + apply) -> lazy render, run inside one per-call dynamic scope
+actions) -> Apply (evaluate conditions + apply), run inside one per-call dynamic scope
 (`STATE`), so two concurrent calls never share state.
 
 Arguments:
@@ -309,16 +311,18 @@ Arguments:
   error; see `docs/CANONICAL-OUTPUT.md`); content bytes are preserved faithfully for arbitrary bytes, including invalid UTF-8; non-ASCII inside a META line parses character-safely, a non-ASCII label or action meeting the stable unknown-label/unknown-action refusal (docs/public-api.md §4).
 - `config::GoMetaConfig` — the v0 input options (profile / flavor_tag / parse_range / user_mh_profile; see `GoMetaConfig`).
   An invalid profile, flavor_tag, or parse_range fail-closes into a `PROCESS_ERROR` `GoMetaResult` carrying typed
-  `Diagnostic`s BEFORE any parse or render — the input bytes are never touched (`ERR_UNKNOWN_PROFILE` /
+  `Diagnostic`s BEFORE any parse — the input bytes are never touched (`ERR_UNKNOWN_PROFILE` /
   `ERR_UNKNOWN_FLAVOR` / `ERR_RANGE_INVALID`).
 - `registry::AlterantRegistry` — the alterant inventory; defaults to the deterministic `DEFAULT_REGISTRY`.
 
 The `GoMetaResult` is `{state, status::ProcessStatus, diagnostics::Vector{Diagnostic}, verdicts::EvalStore}` and is
 TOTAL over the CONFIG-TIME catalogued surface (an invalid profile or parse_range never throws uncaught); absorb/apply-plane catalogued failures can still throw at v0 (see below): `status` is
 `PROCESS_OK` (no error diagnostics) or `PROCESS_ERROR` (>=1 error `Diagnostic`; non-OK => non-empty diagnostics).
-Obtain output via `outputs(result)` (tree + render bytes) and `altValues_evals(result)` (the per-cell
-verdict map). These are
-the SOLE output surfaces. The config-time error rows are armed + typed; the condition-path refusals
+Obtain the Engine's output via `altValues_evals(result)` (the per-cell verdict map; its byte form
+`serialize_evals`, the cell bytes `content_fingerprint`) — with the run itself, the Engine's delivered surface
+after the move (R-V04B-24: "the run and the evaluated values"). The (tree, render) pair is the development
+tool's: `Main.BasicRenderer.outputs`, applied to the result after `include("devtools/load_basic_renderer.jl")`
+at the caller's top level. The config-time error rows are armed + typed; the condition-path refusals
 (the unknown-key, cap, argument-domain and grammar rows) are typed at their own origins in the closed
 condition interpreter — E-07's typed mint is PENDING (the unqueryable-alt shape still aborts raw) —
 and the E-04 apply-path crash-origin and the E-06 absorb-path guarded depth refusal stay un-typed for
@@ -337,9 +341,9 @@ function goMeta(
     registry::AlterantRegistry = DEFAULT_REGISTRY,
 )
 
-    ## Config-time fail-closed validation — typed Diagnostics BEFORE any parse or render
-    ## work (docs/public-api.md §2: ERR_UNKNOWN_PROFILE / ERR_UNKNOWN_FLAVOR / ERR_RANGE_INVALID,
-    ## "no render attempted"); on an invalid config the input bytes are never touched — the error-path
+    ## Config-time fail-closed validation — typed Diagnostics BEFORE any parse
+    ## work (docs/public-api.md §2: ERR_UNKNOWN_PROFILE / ERR_UNKNOWN_FLAVOR / ERR_RANGE_INVALID;
+    ## the development tool's `outputs` then yields its empty non-OK pair); on an invalid config the input bytes are never touched — the error-path
     ## GoMetaResult carries a parse state built from EMPTY bytes (container sizing only). A VALID
     ## config ⇒ an empty vector ⇒ the pipeline below runs unchanged; an INVALID config ⇒ a fail-closed
     ## PROCESS_ERROR GoMetaResult built in the `@noinline` cold `_config_error_result` helper (its `init_state` +
@@ -371,7 +375,7 @@ function goMeta(
     ## (docs/SYNTAX-AND-SEMANTICS.md), so a non-positive `to` parses the whole file. (`config.parse_range`
     ## REQUIRES `first == 1`; `validate_config` above fail-closes an invalid profile/flavor/range BEFORE this
     ## point, so the code here always sees a valid config.)
-    ## Sub-range note: for a `parse_range = 1:N` run the render is an exact PREFIX of the whole-file render
+    ## Sub-range note: for a `parse_range = 1:N` run the development tool's render is an exact PREFIX of its whole-file render
     ## for the same input — the divergence is purely the parse range, not the caps. The parse store is read
     ## off `parse_state` below; `parseBLS` is called for its parse SIDE-EFFECT (its return is discarded).
     to = isnothing(config.parse_range) ? -1 : last(config.parse_range)
@@ -385,9 +389,9 @@ function goMeta(
     ## parse-site branch (the table-only law).
     BLS.parseBLS(parse_state, 1, to)
 
-    ## The tree half is the PURE `BLS.structural_serialization(parse_state)` surfaced by
-    ## `outputs` — the pipeline writes no file anywhere; `parseBLS` above is called purely
-    ## for its parse side-effect.
+    ## The tree print is the development tool's (`structural_serialization` in
+    ## `devtools/basic_renderer.jl`, a pure function of `parse_state` after the run) — the pipeline
+    ## writes no file anywhere; `parseBLS` above is called purely for its parse side-effect.
 
     ## The CALLABLE DRIVER SEAM — the absorb/apply driver body lives in
     ## `run_absorb_apply!` (the next function). goMeta = validate → setup → parse →
@@ -440,8 +444,8 @@ THE CONTRACT (normative rows):
    (the T4-milestone-set A5/C6 cure — this row previously said "not re-checked").
 5. A meta-free store ⇒ `PROCESS_OK` with ZERO evals rows (the E-05 class — the
    Office pilot's first gate).
-6. The seam parses NOTHING and renders NOTHING; `outputs(result)` stays the sole
-   output surface.
+6. The seam parses NOTHING and renders NOTHING; its output is the evaluated values
+   (`altValues_evals`); the (tree, render) pair is the development tool's.
 """
 ## v0.4 T3 — THE SEAM LEDGER (T3-DESIGN §7; M-AC-11 + HC-9 under the §12 re-basing).
 ## One weak-keyed side table maps each CALLER-OWNED parse state (identity-keyed — a
@@ -468,7 +472,7 @@ function run_absorb_apply!(parse_state::BLS.ParseState;
     ## v0.4 T2 (cure batch 1) — THE DOOR RUNS HERE TOO: the seam is a package-internal callable entry that accepts a
     ## registry, so an unpublished or post-publication-mutated registry could otherwise drive the
     ## engine around `goMeta`'s door (the CRX after-T2 breaker). Same typed refusals, same
-    ## no-work outcome (an EMPTY parse state rides the error result — nothing is rendered). Row 3
+    ## no-work outcome (an EMPTY parse state rides the error result — no parse runs). Row 3
     ## of the contract is untouched: the seam still does NOT re-validate CONFIG. The state-seam
     ## semantics (seal-bound injected state, the poison marker) are T3's.
     reg_diags = _registry_door_check(registry)
@@ -608,13 +612,14 @@ function run_absorb_apply!(parse_state::BLS.ParseState;
         end
     end
 
-    ## The typed `GoMetaResult` supersedes the original `(render_bytes, tree_bytes, configDict)` NamedTuple
+    ## The typed `GoMetaResult` supersedes the original three-field NamedTuple (render, tree, configDict)
     ## (the historical field name `tree_bytes` predates the `blsStructure_bytes` rename; kept verbatim in this
     ## comment only). `status` is computed from the accumulated diagnostics (empty HERE — a config-time
     ## error fail-closes via goMeta's early return before this seam is reached, and the apply-path bare
     ## `error()`s still throw — their typed conversion is deferred), so this valid-config path is
-    ## `PROCESS_OK`. The render/tree bytes are surfaced LAZILY by `outputs(result)` (a pure function
-    ## of the final `result.state.parse`, which the in-`with` absorb-walk + apply has fully mutated).
+    ## `PROCESS_OK`. The evaluated values are read by `altValues_evals(result)`; the development tool's
+    ## (tree, render) pair (`Main.BasicRenderer.outputs`) is a pure function of the final `result.state.parse`,
+    ## which the in-`with` absorb-walk + apply has fully mutated.
     status = any(d -> d.severity === :error, st.diagnostics) ? PROCESS_ERROR : PROCESS_OK
     return GoMetaResult(st, status, st.diagnostics, st.verdicts)
 end
@@ -747,41 +752,5 @@ function validate_carrier_state(parse_state::BLS.ParseState)::Vector{String}
     return issues
 end
 
-"""
-    outputs(result::GoMetaResult) -> (blsStructure_bytes::Vector{UInt8}, render_bytes::Vector{UInt8})
-
-The NATIVE, always-available output surface (docs/public-api.md §2). `blsStructure_bytes` is the verdict-free
-`BLS.structural_serialization` of the final parse tree; `render_bytes` is the jl-share-v1 emit
-(docs/CANONICAL-OUTPUT.md). Both are PURE functions of `result.state.parse` (the per-call parse state the
-in-`with` absorb-walk + apply fully mutated), so this accessor is correct OUTSIDE the per-call
-`STATE` scope. Total on any OK result (one documented qualification — the multi-Visib
-render guard: docs/public-api.md §2/§3.4; the render plane's string indexing is character-safe,
-docs/public-api.md §4, GUARDED); on a non-OK result the contract is
-`(empty tree, empty render)` for EVERY current non-OK result (no post-parse error class exists at v0.4; a
-"tree-if-parse-succeeded" distinction would be a new contract row) — for the config-time path both are empty, because the
-parse never ran. The NamedTuple field order is `(blsStructure_bytes, render_bytes)`.
-"""
-function outputs(result::GoMetaResult)
-    ## The non-OK output contract. A fail-closed PROCESS_ERROR GoMetaResult — at v0.3 the only source was a
-    ## config-time validation error; at v0.4 the registry DOOR (`REG_UNPUBLISHED` / `POST_SEAL_MUTATION`) is
-    ## the second pre-parse source — either pre-empts the parse — yields an EMPTY (tree, render):
-    ## "no render attempted", and a parse that never ran ⇒ an empty tree. `render_bytes` is NOT invoked
-    ## (the emit path stays untriggered). No post-parse error class exists at v0.4: this branch returns two
-    ## EMPTY vectors unconditionally (a "tree-if-parse-succeeded" distinction would be a new contract row).
-    if result.status === PROCESS_ERROR
-        return (blsStructure_bytes = UInt8[], render_bytes = UInt8[])
-    end
-    ## The hide marker rides the PARSE STATE's own FlavorProfile, never the config —
-    ## under a carrier-constructed store (the `run_absorb_apply!` seam) the config
-    ## need not name the flavor the store was parsed under; reading
-    ## `state.parse.flavor` keeps `outputs` stamping the CORRECT flavor's marker by
-    ## construction.
-    rendered = let fl = result.state.parse.flavor
-        render_bytes(result.state.parse;
-            hide_marker = fl.hide_marker, hide_fold_prefix = fl.hide_fold_prefix)
-    end
-    tree     = BLS.structural_serialization(result.state.parse)
-    return (blsStructure_bytes = tree, render_bytes = rendered)
-end
 
 end # module GoMeta

@@ -45,7 +45,7 @@ end
             _CS_BLS.parseBLS(ps, 1, -1)
             r_seam = GM.run_absorb_apply!(ps; config = cfg)
             @test r_seam.status === r_go.status
-            @test GM.outputs(r_seam) == GM.outputs(r_go)
+            @test Main.BasicRenderer.outputs(r_seam) == Main.BasicRenderer.outputs(r_go)
             @test GM.serialize_evals(r_seam) == GM.serialize_evals(r_go)
         end
     end

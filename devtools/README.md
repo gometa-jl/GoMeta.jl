@@ -8,9 +8,17 @@ them, and they never change a result. They `import GoMeta`, run one file, and pr
 the owner: the print tools on 2026-08-20 (R-DEV-1..9, `plan/2026-08-19-gometa-dev-print-tools/
 DESIGN_dev-print-tools.md`), the directory and the move here on 2026-08-29 (R-V04B-17; the
 directory itself was ruled on 2026-08-28, D-2a, as the future home of the basic renderer and
-`run_examples.jl` — D-2b pending). Origin: `00_GoMeta-Play/`, which keeps its own FROZEN
+`run_examples.jl` — D-2b EXECUTED on 2026-09-12, R-V04B-24). Origin: `00_GoMeta-Play/`, which keeps its own FROZEN
 copies of `devtools.jl` and `gometa.jl` since 2026-09-12 (OWNER-WORDS §26; the 2026-08-29
 forwarding stubs are gone).
+
+**What is in this directory (since 2026-09-12, R-V04B-24).** `devtools.jl` — the print tools;
+`gometa.jl` — the one-line command tool; `basic_renderer.jl` — the basic renderer (module
+`BasicRenderer`: the share-view render, the tree print and the (tree, render) pair `outputs`),
+formerly `src/emit/emit.jl` inside the Engine; `load_basic_renderer.jl` — THE ONE PATH by which the
+renderer is loaded (include it at the consumer's top level, never inside a function, never
+`basic_renderer.jl` directly — the LOAD-ORDER law); `run_examples.jl` — the corpus driver;
+`probes/` — the tools' assertion battery and its fixtures.
 
 **The rule (canon `GoMetaEcosystem/agent-doc/AGENT-RULES_GoMeta.md` §R4/§R4b):** no claim
 about what a run evaluated, for which Component, without one of these printouts. Probe, then
@@ -27,7 +35,7 @@ julia --startup-file=no --project=$GM/tests $GM/devtools/gometa.jl <verb> <file>
 
 | verb | prints |
 |---|---|
-| `tree` | the BLS Component tree, one row per input line (`outputs(result).blsStructure_bytes`) |
+| `tree` | the BLS Component tree, one row per input line (`Main.BasicRenderer.outputs(result).blsStructure_bytes`) |
 | `segments` | the same rows with input line numbers in front — "what is line N?" |
 | `evals` | the evaluated values, one row per line: `attr => value (polarity) "cell excerpt"` — the compact census form |
 | `trace` | `evals` plus each row's decoded key: namespace · grain · path · origin |
@@ -61,10 +69,13 @@ docstrings are in `devtools.jl`.
 
 ## What they read, and the alarm
 
-The tools read the Engine's internal state (`result.state.parse`) and a few non-public helpers
-under the owner's exemption D-6(a) of 2026-08-20 — allowed for THESE tools only; consumer code
-must not copy the pattern. `devtools_selfcheck()` is the drift alarm: if the internal surface
-changes, it fails loudly. Run it after every change to `src/`. Their assertion battery,
+The tools AND the moved basic renderer (`basic_renderer.jl`, the tree print included) read the
+Engine's internal state (`result.state.parse`) and a few non-public parser names under the owner's
+exemption D-6(a) of 2026-08-20, WIDENED on 2026-09-11 (R-V04B-24, C1 (a)) to the renderer file and
+the tree print as an INTERIM that LAPSES when D-4 rules the BLS-provided tree route; the interim
+ends with a full tidy-up (the owner's order, OWNER-WORDS §17). Allowed for THESE files only;
+consumer code must not copy the pattern. `devtools_selfcheck()` is the drift alarm: if the internal
+surface changes, it fails loudly. Run it after every change to `src/`. Their assertion battery,
 `devtools/probes/probe_devtools.jl`, lives beside them since 2026-09-12 (OWNER-WORDS §26 of the
 build record: the play became a self-contained fork and keeps its own frozen copy of the tools and
 of the battery; its fixture inputs are `devtools/probes/fixtures/` and `examples/InFileFolder/`);

@@ -1,7 +1,8 @@
 # golden_tests.jl — the MANIFEST-driven golden byte-oracle layer of the GoMeta test suite.
 #
 # IS:   the read-side golden runner: it drives tests/golden/MANIFEST.toml and byte-compares
-#       GoMeta.outputs — the (tree, render) pair per docs/CANONICAL-OUTPUT.md — against
+#       the development tool's (tree, render) pair (`Main.BasicRenderer.outputs`, devtools/basic_renderer.jl,
+#       loaded once by tests/runtests.jl; docs/CANONICAL-OUTPUT.md) against
 #       pinned goldens across three partitions: byte_identical, expected_to_change, net_new_surface.
 # DOES: (1) fail-closed MANIFEST schema validation: required keys present and non-empty,
 #       partition-specific golden keys, no partition silently empty. (2) byte_identical:
@@ -19,7 +20,7 @@
 #       one trailing 0x0a, the newline the corpus writer appends); skips with a warning when
 #       examples/ is absent. (7) meta-free passthrough: an input with no metaLines renders
 #       byte-identical to itself. (8) render polarity: a hidden line renders as "## " plus its
-#       original bytes, a discarded subtree's content is absent, and outputs is never
+#       original bytes, a discarded subtree's content is absent, and the pair is never
 #       tree-only (render ≠ tree). (9) the verdict-free tree invariant: for every (tree, render)
 #       fixture, the PRE-apply structural serialization byte-equals the POST-apply tree bytes —
 #       absorb/apply never mutates the structural tree — a stability any condition-evaluation
@@ -53,18 +54,19 @@ function _fixture_range(fx)
     return m === nothing ? nothing : (parse(Int, m.captures[1]):parse(Int, m.captures[2]))
 end
 
-# render outputs for a manifest fixture (a ranged fixture's id carries an "@a:b" range tag).
+# the tool's (tree, render) pair for a manifest fixture (a ranged fixture's id carries an "@a:b" range tag).
 function _co(fx)
     bytes = read(joinpath(REPO, fx["input_path"]))
     r = _fixture_range(fx)
     cfg = r === nothing ? G.GoMetaConfig() : G.GoMetaConfig(parse_range = r)
-    return G.outputs(G.goMeta(bytes; config = cfg))
+    return Main.BasicRenderer.outputs(G.goMeta(bytes; config = cfg))
 end
 
 # _preapply_tree — the VERDICT-FREE tree half taken at the PARSE stage (pre-absorb / pre-apply), used by the
 # verdict-free-tree testset below. It mirrors the EXACT parse `goMeta` performs (GoMeta.jl setUpToProcessFromBytes
 # → `parseBLS(ps, 1, to)` with `to = isnothing(range) ? -1 : last(range)`) and serializes via the SAME
-# `structural_serialization` `outputs` uses — but STOPS before absorb+apply. The range comes from
+# `structural_serialization` the tool's `outputs` uses (now the development tool's own function,
+# `Main.BasicRenderer.structural_serialization`) — but STOPS before absorb+apply. The range comes from
 # the SHARED `_fixture_range` (the same source `_co` uses — no duplicated literal). Equality with the post-apply
 # tree proves apply never mutated the structural tree (verdict-free).
 function _preapply_tree(fx)
@@ -73,7 +75,7 @@ function _preapply_tree(fx)
     r     = _fixture_range(fx)
     to    = r === nothing ? -1 : last(r)
     G.BLS.parseBLS(ps, 1, to)
-    return G.BLS.structural_serialization(ps)
+    return Main.BasicRenderer.structural_serialization(ps)
 end
 
 @testset "golden layer (MANIFEST-driven)" begin
@@ -184,7 +186,7 @@ end
                 @test _sha(read(anchor_in)) == fx["input_sha256"]          # in-repo input == anchor canonical
                 anchor_out = joinpath(ANCHOR_EXAMPLES, "OutFileFolder", name)
                 @test isfile(anchor_out)
-                # This engine's render is byte-faithful on the TERMINAL NEWLINE (src/emit/emit.jl), where the
+                # The basic renderer is byte-faithful on the TERMINAL NEWLINE (devtools/basic_renderer.jl), where the
                 # reference corpus comes from a writer that appends one unconditionally. So the
                 # "golden == oracle" drift-check is keyed
                 # on the INPUT's terminal byte — NOT the filename, NOT a blanket OR: when the whole-file input
@@ -214,7 +216,7 @@ end
         ]
         for src in metafree
             bytes = Vector{UInt8}(codeunits(src))
-            co = G.outputs(G.goMeta(bytes; config = G.GoMetaConfig()))
+            co = Main.BasicRenderer.outputs(G.goMeta(bytes; config = G.GoMetaConfig()))
             @test co.render_bytes == bytes   # verbatim passthrough (no metaLines ⇒ nothing hidden/discarded)
         end
     end
@@ -224,11 +226,11 @@ end
         # the explicit render-polarity invariant it must satisfy (hide renders "## " + original bytes; a
         # discarded subtree's content is absent) and [9] is the lite pair-shape canary.
         ext_bytes = read(joinpath(REPO, "tests", "golden", "corpus", "InFileFolder", "file_for_Example_Extended.jl"))
-        co_ext = G.outputs(G.goMeta(ext_bytes; config = G.GoMetaConfig()))
+        co_ext = Main.BasicRenderer.outputs(G.goMeta(ext_bytes; config = G.GoMetaConfig()))
         extR = String(copy(co_ext.render_bytes))   # copy: String(::Vector{UInt8}) is DESTRUCTIVE (steals the buffer) — keep co_ext.render_bytes intact for the [9] checks below
         @test occursin("## # This `Line` should still be \"hidden\"", extR)   # [1] hide ⇒ `## `+original bytes (indent after marker)
         @test !occursin("should still be \"discarded\"", extR)               # [1] discard ⇒ subtree content ABSENT (zero subtree bytes)
-        # [9] lite canary — outputs is the (tree, render) PAIR, never tree-only (a tree-only
+        # [9] lite canary — the tool's `outputs` is the (tree, render) PAIR, never tree-only (a tree-only
         #     collapse cannot arise silently). The FULL comparator canary is the self-test at the end of this file.
         @test !isempty(co_ext.render_bytes)
         @test !isempty(co_ext.blsStructure_bytes)
@@ -236,17 +238,19 @@ end
     end
 
     @testset "tree half is verdict-free (pre-apply structural_serialization == post-apply tree)" begin
-        # IS: the explicit verdict-free-tree invariant — the tree half of outputs is the PARSE-stage
+        # IS: the explicit verdict-free-tree invariant — both halves of the comparison are the development
+        #     tool's serialization of the parse state (pre- and post-apply); the tree half of the tool's pair is the PARSE-stage
         #     structural serialization, carrying NO verdict/alterant information, so it is STABLE across
         #     absorb+apply (and across any condition-evaluation implementation). DOES: for
         #     every (tree,render)-bearing golden fixture (byte_identical + expected_to_change; the
         #     net_new_surface annotations fixtures have no tree golden), assert the tree taken PRE-apply
         #     (`_preapply_tree`, the parse stage alone) byte-equals the tree taken POST-apply
-        #     (`outputs(goMeta(...)).blsStructure_bytes`). REASONING: `outputs().blsStructure_bytes` IS
-        #     `structural_serialization(result.state.parse)` (GoMeta.jl), so a DIVERGENCE here would mean
+        #     (`Main.BasicRenderer.outputs(goMeta(...)).blsStructure_bytes`). REASONING: the pair's `blsStructure_bytes` IS
+        #     `structural_serialization(result.state.parse)` (devtools/basic_renderer.jl), so a DIVERGENCE here would mean
         #     absorb/apply MUTATED the parse tree (e.g. an `addedStrings` insertion leaking into the
         #     structural half) — precisely the verdict leak this invariant forbids. PURPOSE: a standing guard
-        #     that the tree surface stays verdict-free — a property any condition-evaluation
+        #     that the tree stays verdict-free — a property any condition-evaluation implementation can rely on;
+        #     the invariant touches no Engine output surface (the pair is the tool's) — a property any condition-evaluation
         #     implementation can rely on. MANIFEST-driven (the shared
         #     `_fixture_range` handles ranged ids) so any future (tree,render) fixture is auto-covered.
         treefix = filter(f -> f["partition"] in ("byte_identical", "expected_to_change"), fixtures)
@@ -266,7 +270,7 @@ end
         #     byte_identical / expected_to_change @testsets above perform on `co.render_bytes` vs the pinned golden.
         #     DOES: take a real fixture's render golden, then assert the comparator REJECTS the two degenerate
         #     render-blanked shapes a regression could produce — an EMPTY render (emit returns nothing) and a
-        #     TREE-ONLY render (outputs collapsed so the render half is replaced by the tree half / a
+        #     TREE-ONLY render (the pair collapsed so the render half is replaced by the tree half / a
         #     noncompliant tree-only result) — at BOTH comparator legs (the sha pre-check AND the byte-compare).
         #     REASONING: the byte_identical comparator can only CATCH a render regression if its equality is a REAL
         #     constraint (a non-empty golden) that a blanked render FAILS; this canary proves that discrimination so

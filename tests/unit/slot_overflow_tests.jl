@@ -35,9 +35,9 @@ import GoMeta as GM
     @testset "eight actions: boundary green + deterministic — step-9 re-pin" begin
         r1 = GM.goMeta(mk_input(8))
         @test r1.status == GM.PROCESS_OK
-        (tree1, render1) = GM.outputs(r1)
+        (tree1, render1) = Main.BasicRenderer.outputs(r1)
         r2 = GM.goMeta(mk_input(8))
-        (tree2, render2) = GM.outputs(r2)
+        (tree2, render2) = Main.BasicRenderer.outputs(r2)
         @test tree1 == tree2
         @test render1 == render2
         @test !isempty(render1)

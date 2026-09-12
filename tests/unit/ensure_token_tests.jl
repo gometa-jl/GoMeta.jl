@@ -29,7 +29,7 @@ _et_lx = GM.GoMetaConfig(flavor_tag = :latex)
 """One render; returns the render bytes as String."""
 function _et_r(s::AbstractString; cfg = _et_jl)
     r = GM.goMeta(_et_bytes(String(s)); config = cfg)
-    _, x = GM.outputs(r)
+    _, x = Main.BasicRenderer.outputs(r)
     return String(copy(x))
 end
 
@@ -145,7 +145,7 @@ _et_rr(s::AbstractString; cfg = _et_jl) = _et_r(_et_r(s; cfg = cfg); cfg = cfg)
         ## pre-cure, measured green post-cure (the measurement records live in the development fork).
         let src = Vector{UInt8}(vcat(codeunits("#~ hide\n"), UInt8[0xE0, 0x80, 0x80], codeunits("x\n")))
             r = GM.goMeta(copy(src); config = _et_jl)
-            _, x = GM.outputs(r)
+            _, x = Main.BasicRenderer.outputs(r)
             r1 = String(copy(x))
             @test r1 == "## #~ hide\n## " * String(UInt8[0xE0, 0x80, 0x80]) * "x\n"
             @test _et_r(r1) == r1

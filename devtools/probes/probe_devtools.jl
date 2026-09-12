@@ -25,6 +25,7 @@
 const _PB_HOME = normpath(joinpath(@__DIR__, "..", ".."))   # the code home (the repository root)
 const _PB_FIX  = joinpath(@__DIR__, "fixtures")             # the battery's own fixture inputs
 import GoMeta
+include(joinpath(@__DIR__, "..", "load_basic_renderer.jl"))   # the ONE path to the basic renderer (R-V04B-24 obligation 7)
 include(joinpath(@__DIR__, "..", "devtools.jl"))   # the tools, one level up
 
 fails = 0
@@ -206,7 +207,7 @@ check(occursin("origin unverifiable", ub), "unanchored section hides origin_stat
 ## slide_sweep.jl + validate_sidecars.py — these are the sharp cases the corpus lacks)
 slsrc(s) = _dt_sl_source_lines(GoMeta.goMeta(Vector{UInt8}(codeunits(s))))
 slren(s) = (r = GoMeta.goMeta(Vector{UInt8}(codeunits(s)));
-            _dt_sl_render_lines(r, copy(GoMeta.outputs(r).render_bytes)))
+            _dt_sl_render_lines(r, copy(Main.BasicRenderer.outputs(r).render_bytes)))
 
 ## grammar rows (D1 §e.3-5): modifier forms, non-tokens, close-marker, strictness
 check(slsrc("#~0! x\n")[1] == [("#~0!", "marker"), (" x", "payload")], "slide: #~0! token")
@@ -259,7 +260,7 @@ check(tier === :component && join(first.(lr[1])) == "## x = \"🍒🍒\" ## #~ h
 ## tiers: T1 forced by a byte-perturbed render (no hideprefix, comment default);
 ## R2 forced by an unparseable perturbed render (all neutral)
 rt = GoMeta.goMeta(Vector{UInt8}(codeunits("x = 1 #~ hide\n# t\n")))
-pert = replace(String(copy(GoMeta.outputs(rt).render_bytes)), "## x" => "##  x")
+pert = replace(String(copy(Main.BasicRenderer.outputs(rt).render_bytes)), "## x" => "##  x")
 lr, _, tier = _dt_sl_render_lines(rt, Vector{UInt8}(codeunits(pert)))
 check(tier === :reparse, "slide: perturbed render must degrade to T1 (got $tier)")
 check(all(r -> r[2] != "hideprefix", Iterators.flatten(lr)), "slide: T1 must never assert hideprefix")
@@ -491,7 +492,7 @@ for (tag, src, cfg, mk, code7, code8) in (
          (mk, "marker"), (" discard{ :\U0001F352 }", "payload"), ("]}]}", "tree")]]
     r17 = GoMeta.goMeta(Vector{UInt8}(codeunits(src)); config = cfg)
     check(r17.status == GoMeta.PROCESS_OK, "s13 ($tag): source refused")
-    sb = copy(GoMeta.outputs(r17).blsStructure_bytes)
+    sb = copy(Main.BasicRenderer.outputs(r17).blsStructure_bytes)
     got = _dt_sl_structure_runs(r17, sb)
     check(got !== nothing, "s13 ($tag): structure mirror DEGRADED (must be reference-true)")
     if got !== nothing
@@ -515,7 +516,7 @@ end
 ## degrade honesty: a result whose structure bytes were perturbed must fall back
 ## to whole-line tree, never mis-role
 r17b = GoMeta.goMeta(Vector{UInt8}(codeunits(s13_jl)))
-pert = replace(String(copy(GoMeta.outputs(r17b).blsStructure_bytes)), "hide" => "hidE")
+pert = replace(String(copy(Main.BasicRenderer.outputs(r17b).blsStructure_bytes)), "hide" => "hidE")
 check(_dt_sl_structure_runs(r17b, Vector{UInt8}(codeunits(pert))) === nothing,
       "s13: perturbed structure bytes must DEGRADE the mirror to fallback")
 

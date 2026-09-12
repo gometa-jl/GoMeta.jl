@@ -52,7 +52,7 @@ function detAltValuesForSetOfSlots(
     #     skips the remaining rows of that alterant WITHOUT evaluating their conditions.
     #   `:mutExclusivePerField` alterants (the `id` compound — fields fill independently) take
     #   neither the accumulate pass nor the within-slot stop; see the registry's set derivations.
-    #   `:localOnly` alterants (the Heading — the third inheritance mode) NEVER appear
+    #   `:localOnly` alterants (the Heading — set mode `:localOnly`) NEVER appear
     #   here at all: their actions never enqueue, so neither pass can visit one — the value
     #   applied once, where it stood, at the absorb seam (delivery = `capture_heading!`).
     # The winner lands in `st.working` (one instance per alterant); the write-backs read from there.

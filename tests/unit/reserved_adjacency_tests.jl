@@ -25,7 +25,7 @@ using Test
 import GoMeta as GM
 
 _ra(s) = GM.goMeta(Vector{UInt8}(codeunits(s)))
-_ra_render(s) = String(copy(GM.outputs(_ra(s)).render_bytes))
+_ra_render(s) = String(copy(Main.BasicRenderer.outputs(_ra(s)).render_bytes))
 _ra_msg(s) = try
     _ra(s)
     nothing

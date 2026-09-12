@@ -1,7 +1,8 @@
 # gometa.jl — one-liner access to GoMeta's surfaces (AGENT-RULES_GoMeta.md §R4 / §R4b).
 #   A DEVELOPMENT TOOL: not part of the GoMeta process — the package never references this
 #   file; it imports GoMeta, runs one file and prints. Lives in the GoMeta code home's
-#   devtools/ since 2026-08-29 (owner ruling R-V04B-17); the Play's gometa.jl forwards here.
+#   devtools/ since 2026-08-29 (owner ruling R-V04B-17); the Play keeps its own frozen copy
+#   since 2026-09-12 (OWNER-WORDS §26 — a self-contained fork).
 #
 # usage (works from ANY directory; --project selects WHICH GoMeta runs):
 #   GM=/home/fido/Dropbox/_01_Crypto_Dropbox/07_Claude/GoMetaEcosystem/GoMeta
@@ -20,6 +21,7 @@
 # Evaluates, never executes. Status + diagnostics go to stderr; the surface to stdout.
 
 import GoMeta
+include(joinpath(@__DIR__, "load_basic_renderer.jl"))   # the ONE path to the basic renderer (R-V04B-24 obligation 7)
 
 const _VERBS = ("tree", "segments", "evals", "render", "trace", "evals-tree", "bls-tree")
 
@@ -82,15 +84,15 @@ function main()
     end
 
     if cmd == "tree"
-        print(String(copy(GoMeta.outputs(r).blsStructure_bytes)))
+        print(String(copy(Main.BasicRenderer.outputs(r).blsStructure_bytes)))
     elseif cmd == "segments"
-        rows = split(String(copy(GoMeta.outputs(r).blsStructure_bytes)), '\n')
+        rows = split(String(copy(Main.BasicRenderer.outputs(r).blsStructure_bytes)), '\n')
         !isempty(rows) && isempty(last(rows)) && pop!(rows)
         for (i, row) in enumerate(rows)
             println(lpad(i, 4), "  ", row)
         end
     elseif cmd == "render"
-        print(String(copy(GoMeta.outputs(r).render_bytes)))
+        print(String(copy(Main.BasicRenderer.outputs(r).render_bytes)))
     elseif cmd == "evals"
         fp = Dict{Vector{UInt8},Vector{UInt8}}(h => c for (h, c) in GoMeta.content_fingerprint(r))
         rows = GoMeta.altValues_evals(r)

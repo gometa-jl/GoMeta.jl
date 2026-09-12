@@ -18,7 +18,7 @@ _lx_bytes(s::String) = Vector{UInt8}(codeunits(s))
 _lx_cfg = GM.GoMetaConfig(flavor_tag = :latex)
 function _lx_run(s::String)
     r = GM.goMeta(_lx_bytes(s); config = _lx_cfg)
-    t, x = GM.outputs(r)
+    t, x = Main.BasicRenderer.outputs(r)
     return r, String(copy(t)), String(copy(x))
 end
 

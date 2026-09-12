@@ -2,7 +2,7 @@
 #
 # IS: the home of GoMeta's `altValues_evals` surface — the deterministic, content-hashable,
 #     final-verdicts-only per-cell verdict map `(cell_handle, attr, value, polarity)` a `goMeta`
-#     run yields alongside `outputs`'s `(blsStructure_bytes, render_bytes)` pair
+#     run yields alongside the development tool's (tree, render) pair (`devtools/basic_renderer.jl`)
 #     (docs/public-api.md §1.3; docs/CANONICAL-OUTPUT.md §4). Verdicts have no manifestation in
 #     either tuple half (the tree is verdict-free; the render reflects only Visib effects), so
 #     this surface is where label / Visib / Id outcomes become observable — the query-facing
@@ -181,7 +181,7 @@ alterant instances the apply left in `st.working`:
 - **Visib** (`:mutExclusive`, `@namedElement … Bool`): one row for the WINNING action —
   `(handle, :visib, :hide|:show|:discard, true)` (`keys(Visib)[inst.array][1]`, the proven write-back form;
   guarded against the flagless `keys(Visib)[all-false]` E-04 case rather than tripping a bare `error()`).
-- **Id** (`:mutExclusive`, `@namedElement … Int16`): one row per NON-default field —
+- **Id** (`:mutExclusivePerField`, `@namedElement … Int16`): one row per NON-default field —
   `(handle, :id_<name>, value::Int16, true)`. The corpus does NOT exercise Id (SYNTAX-AND-SEMANTICS §13;
   no read site), so this path is contract-completeness ("total over applied verdicts").
 
@@ -453,9 +453,10 @@ heterogeneous `value::Any` within the CLOSED capture value set (Bool for Labels,
 sorts lexicographically.
 
 **Cross-surface note (the discard component-skip divergence).** On an input exercising the discard
-component-skip divergence (`src/emit/emit.jl`; a known, deliberate divergence, documented there),
+component-skip divergence (`devtools/basic_renderer.jl`, the basic renderer — a development tool since
+R-V04B-24; a known, deliberate divergence, documented there),
 a captured `:show`/`:hide` verdict on a cell nested in a `:discard`-skipped ancestor APPEARS in
-`altValues_evals` even though that cell is OMITTED from `outputs(...).render_bytes` — `altValues_evals`
+`altValues_evals` even though that cell is OMITTED from the basic renderer's `render_bytes` — `altValues_evals`
 follows the apply semantics (verdict-faithful), the render follows the component-skip. A DB/agent consumer
 should read `altValues_evals` as the verdict truth and the render as the share-target bytes; the two can
 legitimately disagree only on this documented-divergence shape.
@@ -501,7 +502,7 @@ digest (the "content-hashable" property; docs/CANONICAL-OUTPUT.md §4).
 """
 function serialize_evals(ann)::Vector{UInt8}
     # Built via string/join (NOT `print`/`write`-to-stdout) — src/ never prints unconditionally to stdout
-    # (the render is the only output channel), and a static
+    # (the Engine has no stdout channel; the share render is a development tool's), and a static
     # check cannot tell a buffer-print from a stdout-print.
     parts = String[
         "# annotations golden — sorted (cell_handle, attr, value); final-verdicts-only.\n",

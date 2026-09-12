@@ -60,8 +60,8 @@ import GoMeta as GM
                   ("#~ hide()\n# c\n", "## #~ hide()\n## # c\n")]
             r1 = _run(s); r2 = _run(s)
             @test string(r1.status) == "PROCESS_OK"
-            @test GM.outputs(r1) == GM.outputs(r2)
-            @test String(copy(GM.outputs(r1)[2])) == want   # the working form's render, byte-pinned
+            @test Main.BasicRenderer.outputs(r1) == Main.BasicRenderer.outputs(r2)
+            @test String(copy(Main.BasicRenderer.outputs(r1)[2])) == want   # the working form's render, byte-pinned
         end
     end
 end

@@ -8,7 +8,8 @@
 # DOES: `setUpToProcessFromBytes(bytes)` is the sole setup entry — file-free (an in-memory
 #   IOBuffer), reentrancy-safe (it sets no module globals), sizes the component stores from
 #   the line count, and captures whether the raw bytes end in a newline BEFORE `eachline`
-#   discards terminators, so the emit layer can render byte-faithfully. Line ENDINGS
+#   discards terminators, so the basic renderer (`devtools/basic_renderer.jl`, a development tool)
+#   can render byte-faithfully. Line ENDINGS
 #   normalize CRLF→LF; content bytes stay faithful (docs/CANONICAL-OUTPUT.md §6).
 #   `parseBLS(state)` runs the line loop: empty lines; ```-fences (md or untagged → Text,
 #   julia/jl → Code, an unknown tag → generic Code); `#`-headers via `parseHashHeader!` —
@@ -19,14 +20,14 @@
 #   extension chains (`createExtensionFor`, `getLastInExtensionChain`); store growth is
 #   normal. Content flags propagate
 #   child→parent→file; the return is the component-store dict plus a config dict (the
-#   first-metaLine index, when one exists). `structural_serialization(state)` (over
-#   `writeBlsStructureToIO`; file-writing twin `writeBlsStructureToFile`) emits the
-#   deterministic `{:B-… :L-… […]}` structure dump — the verdict-free tree half of
-#   `outputs` (docs/CANONICAL-OUTPUT.md §2).
-# REASONING: the tree half is pinned byte-for-byte by tests/golden/golden_tests.jl, so the
+#   first-metaLine index, when one exists). The tree print (`structural_serialization` over
+#   `writeBlsStructureToIO`; the file-writing twin `writeBlsStructureToFile`) LEFT this file on
+#   2026-09-12 (R-V04B-24) for the development tool `devtools/basic_renderer.jl`, which reads the
+#   `ParseState` under the widened exemption D-6(a) (docs/CANONICAL-OUTPUT.md §2).
+# REASONING: the tree print (now the development tool's) is pinned byte-for-byte by tests/golden/golden_tests.jl, so the
 #   parse must be a pure, deterministic function of the input bytes — setup and parse touch
 #   no filesystem and no module globals; all state threads through the explicit `ParseState`.
-# PURPOSE: one deterministic parse substrate under GoMeta's absorb/apply/emit stages.
+# PURPOSE: one deterministic parse substrate under GoMeta's absorb/apply stages.
 # Honest edges: `insertChildComponentAt` and each store's second (insert) vector are
 #   unexercised by any v0 input (a documented latent path); this file's own internal
 #   `error()` messages keep their existing forms — they are not part of the typed-diagnostic
@@ -42,16 +43,16 @@ mutable struct ParseState
     ## terminator — then COMPLETED by `parseBLS` for a PREFIX range: a `toLine` stopping BEFORE
     ## the last source line ends at a line BOUNDARY by construction (the following lines exist), so
     ## the parser sets it true; whole-file parses keep the setup-captured value untouched. DOES:
-    ## `render_bytes` (emit.jl) reads it to decide whether to keep or trim the emit buffer's
+    ## the basic renderer's `render_bytes` (`devtools/basic_renderer.jl`) reads it to decide whether to keep or trim its buffer's
     ## unconditional trailing 0x0a, so the render is byte-faithful to the terminal newline of what
-    ## was PARSED. REASONING: parse drops the fact and emit re-fabricates one terminator per emitted
+    ## was PARSED. REASONING: parse drops the fact and the renderer re-fabricates one terminator per emitted
     ## line; output ends 0x0a IFF input ends 0x0a — held range-faithfully. PURPOSE: byte-faithful
-    ## terminal-newline rendering without touching per-line emit semantics.
+    ## terminal-newline rendering by the basic renderer without touching its per-line semantics.
     endsWithNewline::Bool
     ## The document's FlavorProfile record, populated at setup (the `flavor` kwarg
     ## below, default FLAVOR_JULIA — zero call-site churn) and read by the parse
     ## loop (hoisted once at `parseBLS` entry) and the downstream flavor consumers
-    ## (the walk's introducer regex; the outputs hide-marker pair).
+    ## (the walk's introducer regex; the basic renderer's hide-marker pair).
     flavor::FlavorProfile
 end
 
@@ -74,7 +75,7 @@ function setUpToProcessFromBytes(
     lines = collect(eachline(IOBuffer(bytes)))
     ## Capture the terminal-newline fact from the RAW bytes BEFORE `eachline` (keep=false, above)
     ## discards it. The whole-file source ends 0x0a iff its LAST byte is 0x0a (empty input ⇒ false;
-    ## there is no terminator to keep). `render_bytes` trims its unconditional trailing 0x0a iff this
+    ## there is no terminator to keep). The basic renderer's `render_bytes` trims its unconditional trailing 0x0a iff this
     ## is false, making the render byte-faithful to the terminal newline.
     ends_nl = !isempty(bytes) && @inbounds(bytes[end]) == 0x0a
     numOfLines = length(lines)
@@ -365,166 +366,6 @@ function insertChildComponentAt(
     end
 
     return childId, childComponentsVec[childId]
-end
-
-#########################################################################################
-function writeBlsStructureToFile(
-    state::ParseState,
-    pathString::String
-)
-
-    blsStructureOutFileIO = open(pathString, "w")
-
-    local oneOrTwoInt::Int
-    local stringIdx::Int
-    local crntLine::Line
-    local crntBlock::Block
-    local crntSegment::Segment
-    local newBlock::Bool
-    lineBuf = IOBuffer()  # reusable buffer — avoids O(n²) string concat
-    ## First `fileComponent` of first `fileVector`:
-    ## "componentsPDict[File][1][1]"
-    crntFile::File = state.componentsPDict[File][1][1]
-    fileVec = state.componentsPDict[File][1]
-    blockVecs = state.componentsPDict[Block]
-    lineVecs = state.componentsPDict[Line]
-    segmentVecs = state.componentsPDict[Segment]
-
-    for blockId in eachchildid(crntFile, fileVec)
-        newBlock = true
-        blockId > 0 ? oneOrTwoInt = 1 : (oneOrTwoInt = 2; blockId *= -1)
-        crntBlock = blockVecs[oneOrTwoInt][blockId]
-
-        for lineId in eachchildid(crntBlock, blockVecs[1])
-            lineId > 0 ? oneOrTwoInt = 1 : (oneOrTwoInt = 2; lineId *= -1)
-            crntLine = lineVecs[oneOrTwoInt][lineId]
-            stringIdx = getElement(crntLine.cmpntNamedInt, :idxString)
-
-            truncate(lineBuf, 0)
-            print(lineBuf, "{")
-            if newBlock
-                print(lineBuf, ":B-", nameof(crntBlock.contentType))
-            else
-                print(lineBuf, "       ")
-            end
-            print(lineBuf, ":L-", nameof(crntLine.contentType), " [")
-
-            if getElement(crntLine.componentSettribute, :includeInOutFile)
-                if getElement(crntLine.componentSettribute, :isEmpty)
-                    ## Write "Empty Line":
-                    write(blsStructureOutFileIO, "\n")
-                    if stringIdx != 0
-                        error("@L: ", @__LINE__, ", file: ", basename(@__FILE__),
-                            ":\n\t `crntLine` :isEmpty BUT stringIdx = ", stringIdx, " != 0")
-                    end #]
-                    continue
-                else
-                    print(lineBuf, state.collectedLines[stringIdx])
-                end
-            elseif getElement(crntLine.cmpntNamedInt, :numChildren) != 0
-                for segmentId in eachchildid(crntLine, lineVecs[1])
-                    segmentId > 0 ? oneOrTwoInt = 1 : oneOrTwoInt = 2
-                    crntSegment = segmentVecs[oneOrTwoInt][segmentId]
-                    stringIdx = getElement(crntSegment.cmpntNamedInt, :idxString)
-                    if getElement(crntSegment.componentSettribute, :includeInOutFile)
-                        print(lineBuf, "{:S-", nameof(crntSegment.contentType), " [",
-                            SubString(state.collectedLines[stringIdx],
-                                getElement(crntSegment.cmpntNamedInt, :startMainStr):
-                                getElement(crntSegment.cmpntNamedInt, :stopMainStr)),
-                            "]}")
-                    end
-                end
-            end
-            print(lineBuf, "]}\n")
-            write(blsStructureOutFileIO, take!(lineBuf))
-            newBlock = false
-        end # for line
-    end # for block
-    close(blsStructureOutFileIO)
-end
-
-## ADDITIVE IN-MEMORY SIBLING of `writeBlsStructureToFile`. Byte-identical
-## structure serialization, but ALL handle-writes target the passed `io` — INCLUDING the empty-line
-## DIRECT `write(io, "\n")` that does NOT go via `lineBuf` — and it neither opens nor closes `io`
-## (the caller owns it). This sibling's output is pinned by the structure goldens (the 7 tree
-## goldens in tests/golden/MANIFEST.toml).
-function writeBlsStructureToIO(
-    state::ParseState,
-    io::IO
-)
-
-    local oneOrTwoInt::Int
-    local stringIdx::Int
-    local crntLine::Line
-    local crntBlock::Block
-    local crntSegment::Segment
-    local newBlock::Bool
-    lineBuf = IOBuffer()  # reusable buffer — avoids O(n²) string concat
-    crntFile::File = state.componentsPDict[File][1][1]
-    fileVec = state.componentsPDict[File][1]
-    blockVecs = state.componentsPDict[Block]
-    lineVecs = state.componentsPDict[Line]
-    segmentVecs = state.componentsPDict[Segment]
-
-    for blockId in eachchildid(crntFile, fileVec)
-        newBlock = true
-        blockId > 0 ? oneOrTwoInt = 1 : (oneOrTwoInt = 2; blockId *= -1)
-        crntBlock = blockVecs[oneOrTwoInt][blockId]
-
-        for lineId in eachchildid(crntBlock, blockVecs[1])
-            lineId > 0 ? oneOrTwoInt = 1 : (oneOrTwoInt = 2; lineId *= -1)
-            crntLine = lineVecs[oneOrTwoInt][lineId]
-            stringIdx = getElement(crntLine.cmpntNamedInt, :idxString)
-
-            truncate(lineBuf, 0)
-            print(lineBuf, "{")
-            if newBlock
-                print(lineBuf, ":B-", nameof(crntBlock.contentType))
-            else
-                print(lineBuf, "       ")
-            end
-            print(lineBuf, ":L-", nameof(crntLine.contentType), " [")
-
-            if getElement(crntLine.componentSettribute, :includeInOutFile)
-                if getElement(crntLine.componentSettribute, :isEmpty)
-                    ## Write "Empty Line":
-                    write(io, "\n")
-                    if stringIdx != 0
-                        error("@L: ", @__LINE__, ", file: ", basename(@__FILE__),
-                            ":\n\t `crntLine` :isEmpty BUT stringIdx = ", stringIdx, " != 0")
-                    end #]
-                    continue
-                else
-                    print(lineBuf, state.collectedLines[stringIdx])
-                end
-            elseif getElement(crntLine.cmpntNamedInt, :numChildren) != 0
-                for segmentId in eachchildid(crntLine, lineVecs[1])
-                    segmentId > 0 ? oneOrTwoInt = 1 : oneOrTwoInt = 2
-                    crntSegment = segmentVecs[oneOrTwoInt][segmentId]
-                    stringIdx = getElement(crntSegment.cmpntNamedInt, :idxString)
-                    if getElement(crntSegment.componentSettribute, :includeInOutFile)
-                        print(lineBuf, "{:S-", nameof(crntSegment.contentType), " [",
-                            SubString(state.collectedLines[stringIdx],
-                                getElement(crntSegment.cmpntNamedInt, :startMainStr):
-                                getElement(crntSegment.cmpntNamedInt, :stopMainStr)),
-                            "]}")
-                    end
-                end
-            end
-            print(lineBuf, "]}\n")
-            write(io, take!(lineBuf))
-            newBlock = false
-        end # for line
-    end # for block
-end
-
-## The TREE-half observable: the deterministic `{:B-…:L-… […]}` structure dump (the exact
-## format the 7 structure goldens pin) as an in-memory byte vector. Thin wrapper over
-## `writeBlsStructureToIO`. This is the tree half that `GoMeta.outputs` returns.
-function structural_serialization(state::ParseState)::Vector{UInt8}
-    io = IOBuffer()
-    writeBlsStructureToIO(state, io)
-    return take!(io)
 end
 
 ####################################################################################
@@ -948,7 +789,7 @@ function parseBLS(
     end
     ## Range-completed terminal-newline fact: a parse range that stops
     ## BEFORE the last source line ends at a line BOUNDARY by construction — the following source
-    ## lines exist, so the last PARSED line carries a terminator. `render_bytes` keys its
+    ## lines exist, so the last PARSED line carries a terminator. The basic renderer's `render_bytes` keys its
     ## trailing-0x0a trim on this field; whole-file parses keep the setup-captured value.
     if toLine < length(state.collectedLines)
         state.endsWithNewline = true

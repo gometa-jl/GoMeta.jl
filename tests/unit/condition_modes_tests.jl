@@ -67,8 +67,8 @@ _mode_run(cfg) = redirect_stdout(
             r = _mode_run(GM.GoMetaConfig(profile = p))
             @test r.status == GM.PROCESS_OK
             # THE LAW: opting in must not change what an existing document MEANS
-            @test GM.outputs(r).blsStructure_bytes == GM.outputs(base).blsStructure_bytes
-            @test GM.outputs(r).render_bytes == GM.outputs(base).render_bytes
+            @test Main.BasicRenderer.outputs(r).blsStructure_bytes == Main.BasicRenderer.outputs(base).blsStructure_bytes
+            @test Main.BasicRenderer.outputs(r).render_bytes == Main.BasicRenderer.outputs(base).render_bytes
         end
         # and the DEFAULT is untouched by the extension being loaded (no ambient widening)
         @test GM.resolve_profile(GM.GoMetaConfig()).mode === :closed_v1
@@ -257,12 +257,12 @@ _mode_run(cfg) = redirect_stdout(
             Vector{UInt8}(codeunits("#~ hide{ 1 + 1 == 2 }\nx = 1\n"));
             config = cfgE), devnull)
         @test string(rq.status) == "PROCESS_OK"
-        @test occursin("## x = 1", String(copy(GM.outputs(rq).render_bytes)))
+        @test occursin("## x = 1", String(copy(Main.BasicRenderer.outputs(rq).render_bytes)))
         rqf = redirect_stdout(() -> GM.goMeta(
             Vector{UInt8}(codeunits("#~ hide{ 1 + 1 == 3 }\nx = 1\n"));
             config = cfgE), devnull)
         @test string(rqf.status) == "PROCESS_OK"
-        @test String(copy(GM.outputs(rqf).render_bytes)) ==
+        @test String(copy(Main.BasicRenderer.outputs(rqf).render_bytes)) ==
               "#~ hide{ 1 + 1 == 3 }\nx = 1\n"
         # …and the wall holds on the EXPLICIT-canonical and userMH routes too
         # (delta-seat NIT; all routes funnel through the one delivery call site,

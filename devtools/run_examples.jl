@@ -1,4 +1,5 @@
-# run_examples.jl — the runnable driver for the GoMeta example corpus.
+# run_examples.jl — the runnable driver for the GoMeta example corpus (in devtools/ since 2026-09-12,
+#   R-V04B-24 A1: a development tool beside the basic renderer whose render it compares).
 #
 # IS:   the corpus driver: it processes every input in examples/InFileFolder/ through GoMeta and
 #       verifies the rendered output against the committed examples/OutFileFolder/ reference files.
@@ -14,11 +15,12 @@
 # PURPOSE: one runnable, verifiable, self-documenting source of GoMeta ground-truth.
 #
 # RUN (from the repository root, after `Pkg.instantiate()`):
-#   julia --startup-file=no --project=. run_examples.jl [--out <dir>]
+#   julia --startup-file=no --project=. devtools/run_examples.jl [--out <dir>]
 
 import GoMeta as GM
+include(joinpath(@__DIR__, "load_basic_renderer.jl"))   # the ONE path to the basic renderer (R-V04B-24 obligation 7)
 
-const HERE   = @__DIR__
+const HERE   = normpath(joinpath(@__DIR__, ".."))   # the repository root (this file lives in devtools/)
 const INDIR  = joinpath(HERE, "examples", "InFileFolder")
 const REFDIR = joinpath(HERE, "examples", "OutFileFolder")
 
@@ -29,7 +31,7 @@ function main()
         if ARGS[i] == "--out" && i < length(ARGS)
             outdir = abspath(ARGS[i+1]); i += 2
         else
-            error("usage: julia --startup-file=no --project=. run_examples.jl [--out <dir>]")
+            error("usage: julia --startup-file=no --project=. devtools/run_examples.jl [--out <dir>]")
         end
     end
     isempty(outdir) && (outdir = mktempdir(; cleanup = false))
@@ -45,7 +47,7 @@ function main()
         r = GM.goMeta(bytes)
         r.status == GM.PROCESS_OK ||
             error("goMeta() reported a non-OK status on $f — diagnostics: $(r.diagnostics)")
-        out = GM.outputs(r)
+        out = Main.BasicRenderer.outputs(r)
         dest = joinpath(outdir, f)
         (islink(dest) || isfile(dest)) &&
             error("refusing to overwrite an existing entry at $dest — use an empty --out directory")

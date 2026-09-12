@@ -64,7 +64,7 @@ import GoMeta as GM
         @test r.status === GM.PROCESS_ERROR
         @test _codes(r.diagnostics) == [:REG_UNPUBLISHED]
         @test occursin("RegistryBuilder → validate → publish", r.diagnostics[1].message)
-        @test isempty(GM.outputs(r).render_bytes)           # no parse, no render attempted
+        @test isempty(Main.BasicRenderer.outputs(r).render_bytes)           # no parse, no render attempted
         # route U REFUSES inconsistent hand-built tables (never a silently misrouting registry)
         bad_idx = copy(D.action_index); bad_idx[:hide] = Int8(99)
         e = try
@@ -88,7 +88,7 @@ import GoMeta as GM
         r1 = GM.goMeta(Vector{UInt8}(codeunits("x = 1\n#~ hide\n\ny = 2\n")); registry = R)
         @test r1.status === GM.PROCESS_ERROR
         @test _codes(r1.diagnostics) == [:POST_SEAL_MUTATION]
-        @test isempty(GM.outputs(r1).render_bytes)
+        @test isempty(Main.BasicRenderer.outputs(r1).render_bytes)
         # (cure batch 1; T2-bis) a mutated DERIVED table — the declared record untouched — is
         # refused too: every table is a walked snapshot field (the CRX after-T2 breaker's
         # `action_to_settribute[:hide] = :show` attack fires at the entry's element path)
@@ -136,7 +136,7 @@ import GoMeta as GM
         GM.BLS.parseBLS(ps, 1, -1)
         rs = GM.run_absorb_apply!(ps; registry = U)
         @test rs.status === GM.PROCESS_ERROR && _codes(rs.diagnostics) == [:REG_UNPUBLISHED]
-        @test isempty(GM.outputs(rs).render_bytes)
+        @test isempty(Main.BasicRenderer.outputs(rs).render_bytes)
         # the injective slot encoding (cure batch 1): a re-cut vector boundary no longer collides
         @test GM._slot_text([Symbol("a,b")]) != GM._slot_text([:a, :b])
         @test GM._slot_text(GM.Declared(Symbol[:a, :b])) != GM._slot_text(GM.Declared(Symbol[Symbol("a,b")]))
@@ -209,7 +209,7 @@ import GoMeta as GM
                                      sugar_candidacy = :activated))
         Rc = GM.publish(bc)
         rc = GM.goMeta(Vector{UInt8}(codeunits("x = 1\n#~ :label1\n\ny = 2\n")); registry = Rc)
-        @test rc.status === GM.PROCESS_OK && !isempty(GM.outputs(rc).render_bytes)
+        @test rc.status === GM.PROCESS_OK && !isempty(Main.BasicRenderer.outputs(rc).render_bytes)
         # (cure batch 3) the attacked shape "a Visib record declaring NO write-back key" is REFUSED by
         # the record's own shadow law before it can run — the resolved Visib key is always one of the
         # instance's field names (hide/show/discard), all settribute keys, so `settribute = nothing`

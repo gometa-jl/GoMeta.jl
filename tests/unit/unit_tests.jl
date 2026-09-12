@@ -6,8 +6,9 @@
 #       contributes one focused @testset. Some members reference the shared `TestSupport` module, which
 #       tests/runtests.jl loads once before the layers — so members run via the dispatcher, not standalone.
 # DOES: wires the per-concern members, in order:
-#   - public_surface_tests.jl — the export set equals the declared semver surface (docs/public-api.md §1)
-#                               and the two output surfaces are sole.
+#   - public_surface_tests.jl — the export set equals the declared semver surface (docs/public-api.md §1);
+#                               the Engine's output surface (`altValues_evals`) and the development tool's
+#                               pair (`Main.BasicRenderer.outputs`, the one-path assertions; R-V04B-24).
 #   - slot_overflow_tests.jl  — witnesses for the "GoMeta absorb: slot action capacity" refusal.
 #   - malformed_meta_tests.jl — witnesses for the "GoMeta absorb: malformed metaLine" refusal.
 #   - error_message_tests.jl  — stable-message witnesses, e.g. "GoMeta apply: unknown label".

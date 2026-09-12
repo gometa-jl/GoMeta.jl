@@ -17,8 +17,8 @@ _ws_r(s; flavor=nothing) = begin
     cfg = flavor === nothing ? GM.GoMetaConfig() : GM.GoMetaConfig(flavor_tag=flavor)
     GM.goMeta(Vector{UInt8}(s); config=cfg)
 end
-_ws_render(s; kw...) = String(copy(GM.outputs(_ws_r(s; kw...)).render_bytes))
-_ws_tree(s; kw...)   = String(copy(GM.outputs(_ws_r(s; kw...)).blsStructure_bytes))
+_ws_render(s; kw...) = String(copy(Main.BasicRenderer.outputs(_ws_r(s; kw...)).render_bytes))
+_ws_tree(s; kw...)   = String(copy(Main.BasicRenderer.outputs(_ws_r(s; kw...)).blsStructure_bytes))
 _ws_err(s; kw...)    = try _ws_r(s; kw...); nothing catch e sprint(showerror, e) end
 
 @testset "ws_alphabet_tests (F-14 matrix)" begin

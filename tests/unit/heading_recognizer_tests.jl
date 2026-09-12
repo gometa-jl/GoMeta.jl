@@ -289,7 +289,7 @@ end
         @test es isa ErrorException && occursin("invalid arguments", es.msg)
     end
 
-    @testset "localOnly delivery — the ratified third inheritance mode (witnesses)" begin
+    @testset "localOnly delivery — the ratified `:localOnly` set mode (witnesses)" begin
         # LOCALITY: one heading governing several components mints EXACTLY ONE row,
         # keyed to the metaLine's OWN occurrence handle (the outline model). The
         # per-component inheritance repetition of the first build is GONE — flipped

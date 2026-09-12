@@ -31,8 +31,8 @@ In reading order:
 2. [Public API + error modes](public-api.md) — the API: four exported names (plus eleven
    qualified-public names, reached as `GoMeta.*`), the error-mode catalogue, the refusal
    strings.
-3. [Canonical output](CANONICAL-OUTPUT.md) — the two output halves (`blsStructure_bytes` +
-   `render_bytes`) and the six render rules.
+3. [Canonical output](CANONICAL-OUTPUT.md) — the package's canonical observable output (`altValues_evals`)
+   and the development tool's (tree, render) pair with its six render rules.
 
 ## Install
 

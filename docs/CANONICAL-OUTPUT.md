@@ -2,13 +2,15 @@
 
 - **IS:** the record of GoMeta's **canonical observable output** — the single, deterministic,
   content-hashable artifact a golden test or a downstream consumer obtains from a
-  `goMeta(bytes; config)` run: the `(blsStructure_bytes, render_bytes)` pair from `GoMeta.outputs`,
-  plus the `altValues_evals` surface. (This document's name — CANONICAL-OUTPUT — names that
-  canonical observable pair; `GoMeta.outputs` is the function that returns it.) **Trust note:**
+  `goMeta(bytes; config)` run: the evaluated values, `altValues_evals` (+ `serialize_evals`,
+  `content_fingerprint`) — the Engine's delivered surface — and, beside it, the DEVELOPMENT TOOL's
+  `(blsStructure_bytes, render_bytes)` pair (`Main.BasicRenderer.outputs`, `devtools/basic_renderer.jl`,
+  loaded through `devtools/load_basic_renderer.jl`; R-V04B-24, 2026-09-12) which the golden layer pins.
+  (This document's name — CANONICAL-OUTPUT — predates the move; it kept its name.) **Trust note:**
   a default-configured `goMeta` run evaluates no condition text (the closed interpreter); only
   the explicitly opt-in full-eval mode can execute code — `docs/public-api.md` §2/§3.2 and the
   SECURITY section of `README.md` state the posture.
-- **DOES:** (1) names the observable surface; (2) defines each half; (3) states the hide/discard
+- **DOES:** (1) names the observable surface; (2) defines each half of the tool's pair; (3) states the hide/discard
   render rules of the `jl-share-v1` profile; (4) defines the evals surface; (5) carries
   the invariant register the shipped suite asserts; (6) states the CRLF normalization convention;
   (7) walks one example end-to-end.
@@ -25,22 +27,25 @@
 
 ## §1 — The observable surface
 
-`GoMeta.outputs(result) -> (blsStructure_bytes, render_bytes)` + `altValues_evals(result)`:
+**In R-V04B-24's own words: "the package's canonical observable output = `altValues_evals` (+
+`serialize_evals`, `content_fingerprint`)" and "the Engine's delivered surface after the move = the run and
+the evaluated values".** `altValues_evals(result)` is the deterministic, final-verdicts-only per-cell map of
+evaluated Alterant values (GoMeta's semantic deliverable; the query-facing write payload; §4).
 
-- **the tree half** — the parse-stage, verdict-free structural serialization (the parse-defect
-  discriminator);
+**The development tool's pair** — `Main.BasicRenderer.outputs(result) -> (blsStructure_bytes, render_bytes)`,
+the basic renderer's own function (`devtools/basic_renderer.jl`, reached only through the loader):
+
+- **the tree half** — the parse-stage, verdict-free tree print (the parse-defect discriminator);
 - **the render half** — the post-apply share-target file bytes under the `jl-share-v1` profile,
-  complete over **`:discard` AND `:hide`**;
-- **the evals surface** — the deterministic, final-verdicts-only per-cell map of evaluated
-  Alterant values (GoMeta's semantic deliverable; the query-facing write payload).
+  complete over **`:discard` AND `:hide`**.
 
-The render half is GoMeta's **reference / verification render** — verification tooling that
-doubles as the conformance anchor. The core's primary *semantic* deliverable is the
-values-as-data surface (`altValues_evals`). The two are core outputs in different roles.
+The render is the basic renderer's **reference / verification render** — a development tool's output that
+doubles as the conformance anchor, pinned by the golden layer; it is NOT an Engine output.
 
-## §2 — The tree half
+## §2 — The tree half (the tool's tree print)
 
-The deterministic structural serialization of the final parse tree. It is **parse-stage** and
+The deterministic tree print of the final parse tree (`structural_serialization`, in the basic renderer since
+2026-09-12). It is **parse-stage** and
 **verdict-free**: identical pre- and post-apply — it carries **no** verdict information. Its
 role is discriminating parse defects: two engines that parse identically produce identical tree
 bytes regardless of their alterant behavior.
@@ -120,7 +125,7 @@ query-facing write payload; it does **not** enter the `(tree, render)` pair.
 
 | Invariant | Falsification | Enforced by |
 |---|---|---|
-| same `(bytes, profile, config)` ⇒ byte-identical `GoMeta.outputs`, across fresh processes (engine operations; see README SECURITY) | any byte diff | the golden layer (`tests/golden/golden_tests.jl`) — every fresh run must reproduce the pinned golden bytes byte-for-byte |
+| same `(bytes, profile, config)` ⇒ a byte-identical (tree, render) pair from the development tool's `Main.BasicRenderer.outputs`, across fresh processes (the tool's property over the Engine's stored values; see README SECURITY) | any byte diff | the golden layer (`tests/golden/golden_tests.jl`) — every fresh run must reproduce the pinned golden bytes byte-for-byte (the test layer's property) |
 | discard ⇒ zero subtree bytes; hide ⇒ all NON-EMPTY subtree lines `## `-prefixed (§3 rules 3+5) | a leak or an absence | the golden render-polarity + not-tree-only canary testsets (`tests/golden/golden_tests.jl`) |
 | tree half identical pre/post-apply (verdict-free) | verdict leakage into tree bytes | the verdict-free-tree testset (`tests/golden/golden_tests.jl`) |
 | the evals surface deterministic + total over applied verdicts | nondeterminism / a dropped verdict | the golden layer's net-new-surface testsets (`tests/golden/golden_tests.jl`) — serialized evals against pinned shas + a double-run equality |

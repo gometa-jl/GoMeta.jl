@@ -33,8 +33,8 @@ import GoMeta as GM
         valid = Vector{UInt8}(codeunits("#~ hide{ :label1 }\n# content\n"))
         r1 = GM.goMeta(valid)
         @test r1.status == GM.PROCESS_OK
-        (t1, o1) = GM.outputs(r1)
-        (t2, o2) = GM.outputs(GM.goMeta(valid))
+        (t1, o1) = Main.BasicRenderer.outputs(r1)
+        (t2, o2) = Main.BasicRenderer.outputs(GM.goMeta(valid))
         @test t1 == t2
         @test o1 == o2
     end
@@ -43,7 +43,7 @@ import GoMeta as GM
         inert = Vector{UInt8}(codeunits("#~! discard{ isMeta }\n# content\n"))
         r = GM.goMeta(inert)
         @test r.status == GM.PROCESS_OK
-        @test String(copy(GM.outputs(r)[2])) == "#~! discard{ isMeta }\n# content\n"   # the inert line passes through byte-exact
+        @test String(copy(Main.BasicRenderer.outputs(r)[2])) == "#~! discard{ isMeta }\n# content\n"   # the inert line passes through byte-exact
     end
 
     @testset "strict token boundaries: punctuation at action position + glued tokens refuse" begin

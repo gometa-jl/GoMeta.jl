@@ -23,6 +23,9 @@ if any(p -> startswith(p, "@v"), Base.LOAD_PATH)
 end
 
 using Test
+## THE ONE PATH to the basic renderer (a development tool; R-V04B-24 obligation 7): loaded ONCE here, at
+## Main's top level, BEFORE the support hub and every layer; every layer spells the call `Main.BasicRenderer.outputs`.
+include(joinpath(@__DIR__, "..", "devtools", "load_basic_renderer.jl"))
 include(joinpath(@__DIR__, "support", "_support.jl"))   # the shared support hub (module TestSupport) — loaded ONCE before the layers
 
 # === LAYER FENCE ==============================================================================

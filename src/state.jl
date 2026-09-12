@@ -913,10 +913,11 @@ end
 
 The public output of `goMeta(bytes; config) -> GoMetaResult` (docs/public-api.md §1.1): the per-call `state`,
 the `status` (`PROCESS_OK` ⇒ no error diagnostics), the `diagnostics`, and the `verdicts`. Defined AFTER
-`ProcessState` (its first field). `outputs(result)` surfaces `(blsStructure_bytes, render_bytes)`
-(docs/CANONICAL-OUTPUT.md); `altValues_evals(result)` reads `verdicts`.
-The `state` field is INTERNAL and semver-UNSTABLE at v0 — depend only on `status`, `diagnostics`,
-`GoMeta.outputs(result)`, and `altValues_evals(result)`; a future release may narrow or remove it.
+`ProcessState` (its first field). The development tool's `Main.BasicRenderer.outputs`
+(`devtools/basic_renderer.jl`) surfaces a result's (tree, render) pair; `altValues_evals(result)` reads `verdicts`.
+The `state` field is INTERNAL and semver-UNSTABLE at v0 — depend only on `status`, `diagnostics`
+and `altValues_evals(result)` (the (tree, render) pair is the development tool's `Main.BasicRenderer.outputs`,
+loaded through `devtools/load_basic_renderer.jl` — not an Engine surface); a future release may narrow or remove it.
 """
 struct GoMetaResult
     state::ProcessState

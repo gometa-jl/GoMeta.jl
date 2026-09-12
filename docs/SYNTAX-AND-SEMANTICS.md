@@ -12,7 +12,7 @@ can learn GoMeta exactly, and verify it, before writing or changing a metaLine.
 > input (`InFileFolder/`) and its committed rendered output (`OutFileFolder/`). Citations of the form
 > `Extended L7` mean line 7 of `InFileFolder/file_for_Example_Extended.jl`; `→ Out` means the rendered
 > `OutFileFolder/` counterpart. Structural claims (which block sits at which depth, what inherited what) are
-> engine-verified: the shipped test suite pins every corpus render byte-for-byte, and `run_examples.jl`
+> engine-verified: the shipped test suite pins every corpus render byte-for-byte, and `devtools/run_examples.jl`
 > (repository root) re-runs and re-verifies the whole set locally (§12).
 
 ---
@@ -498,7 +498,7 @@ drops `:label1` from depth 1 to depth 2. One blank line, two flips, two reasons.
 Run, from the repository root (after `Pkg.instantiate()`):
 
 ```
-julia --startup-file=no --project=. run_examples.jl
+julia --startup-file=no --project=. devtools/run_examples.jl
 ```
 
 It processes every input in `examples/InFileFolder/`, writes each rendered output to a scratch

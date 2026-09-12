@@ -21,7 +21,7 @@ import GoMeta as GM
 const _CC_PAD9  = join(fill("isText", 9), ", ")    # 9 pad atoms (with a 10th atom: 30 steps)
 const _CC_PAD12 = join(fill("isText", 12), ", ")   # 12 pad atoms (with a 13th: far over cap)
 _cc_mk(cond) = Vector{UInt8}(codeunits("#~ hide{ $cond }\nx = 1\n"))
-_cc_hidden(r) = occursin("## x = 1", String(copy(GM.outputs(r)[2])))
+_cc_hidden(r) = occursin("## x = 1", String(copy(Main.BasicRenderer.outputs(r)[2])))
 _cc_refusal(bytes) = try
     GM.goMeta(bytes)
     nothing
@@ -47,8 +47,8 @@ end
         # passthrough render.
         rf = GM.goMeta(Vector{UInt8}(codeunits("#~ hide{ " * join(fill("isCode", 8), ", ") * ", isCode }\n# t\n")))
         @test rf.status == GM.PROCESS_OK
-        @test !occursin("## # t", String(copy(GM.outputs(rf)[2])))   # the text line is NOT hidden…
-        @test String(copy(GM.outputs(rf)[2])) == "#~ hide{ isCode, isCode, isCode, isCode, isCode, isCode, isCode, isCode, isCode }\n# t\n"   # …and the whole render is the byte-exact passthrough
+        @test !occursin("## # t", String(copy(Main.BasicRenderer.outputs(rf)[2])))   # the text line is NOT hidden…
+        @test String(copy(Main.BasicRenderer.outputs(rf)[2])) == "#~ hide{ isCode, isCode, isCode, isCode, isCode, isCode, isCode, isCode, isCode }\n# t\n"   # …and the whole render is the byte-exact passthrough
     end
 
     @testset "exact boundary: whitespace-only remainder accepted; one more char refuses" begin
@@ -71,8 +71,8 @@ end
         @test e1 isa ErrorException && e2 isa ErrorException
         @test e1.msg == e2.msg
         b_ok = _cc_mk("$_CC_PAD9, isCode")
-        (t1, o1) = GM.outputs(GM.goMeta(b_ok))
-        (t2, o2) = GM.outputs(GM.goMeta(b_ok))
+        (t1, o1) = Main.BasicRenderer.outputs(GM.goMeta(b_ok))
+        (t2, o2) = Main.BasicRenderer.outputs(GM.goMeta(b_ok))
         @test t1 == t2
         @test o1 == o2
     end

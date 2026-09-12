@@ -36,4 +36,4 @@ jobs:
       - name: Instantiate
         run: julia --startup-file=no --project=. -e 'using Pkg; Pkg.instantiate()'
       - name: Run the committed example corpus
-        run: julia --startup-file=no --project=. run_examples.jl
+        run: julia --startup-file=no --project=. devtools/run_examples.jl

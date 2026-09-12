@@ -21,13 +21,14 @@ import GoMeta
 example = joinpath(root, "examples", "InFileFolder", "file_for_Example_Proposal_JuliaCon.jl")
 
 bytes  = read(example)
-result = GoMeta.goMeta(bytes)             # parse -> absorb -> evaluate -> apply -> emit
+result = GoMeta.goMeta(bytes)             # parse -> absorb -> evaluate -> apply
 result.status == GoMeta.PROCESS_OK || error("processing failed")
 
 # ## The render: the share-view of the file
 # Hidden lines come back `## `-commented; discarded lines are gone.
 
-out = GoMeta.outputs(result)              # (blsStructure_bytes, render_bytes)
+include(joinpath(pkgdir(GoMeta), "devtools", "load_basic_renderer.jl"))   # the basic renderer is a development tool (R-V04B-24); the Engine's output is altValues_evals
+out = Main.BasicRenderer.outputs(result)  # (blsStructure_bytes, render_bytes) — the tool's pair
 print(String(copy(out.render_bytes)))
 
 # ## The evals: the queryable per-cell surface

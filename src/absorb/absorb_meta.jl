@@ -576,7 +576,7 @@ function absorbMeta(
     local altActionOnRow::Int8
     firstTok::Bool = true   # the quoted-first recognizer fires only for the FIRST
                             # metaComponent of the meta region (hd-2/hd-3)
-    ## localOnly delivery (the third inheritance mode): ONE pending store PER localOnly
+    ## localOnly delivery (set mode `:localOnly`): ONE pending store PER localOnly
     ## PLUGIN per meta region (v0.4 T5 — the round's T5P-C row-1 cure: the former single
     ## Heading-typed local made a second localOnly plugin either raw-TypeError
     ## post-latch or non-injective over the shared store) — every localOnly action sets

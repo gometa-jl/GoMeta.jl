@@ -17,8 +17,8 @@ _tl_r(s; flavor=nothing) = begin
     cfg = flavor === nothing ? GM.GoMetaConfig() : GM.GoMetaConfig(flavor_tag=flavor)
     GM.goMeta(Vector{UInt8}(s); config=cfg)
 end
-_tl_render(s; kw...) = String(copy(GM.outputs(_tl_r(s; kw...)).render_bytes))
-_tl_tree(s; kw...)   = String(copy(GM.outputs(_tl_r(s; kw...)).blsStructure_bytes))
+_tl_render(s; kw...) = String(copy(Main.BasicRenderer.outputs(_tl_r(s; kw...)).render_bytes))
+_tl_tree(s; kw...)   = String(copy(Main.BasicRenderer.outputs(_tl_r(s; kw...)).blsStructure_bytes))
 _tl_err(s; kw...)    = try _tl_r(s; kw...); nothing catch e sprint(showerror, e) end
 _tl_nblocks(s; kw...) = length(collect(eachmatch(r"\{:B-", _tl_tree(s; kw...))))
 

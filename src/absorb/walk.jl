@@ -26,7 +26,7 @@
 #     documented condition seam (README SECURITY; docs/public-api.md §3.2). Malformed, unknown, and
 #     over-capacity meta refuse inside `absorbMeta` (docs/public-api.md §3.4).
 # PURPOSE: a deterministic walk that turns authored metaLines into enqueued alterant state, re-runnable
-#     against the shipped corpus via run_examples.jl.
+#     against the shipped corpus via devtools/run_examples.jl.
 
 #########################################################################################
 ###~ The absorb-fn dispatch tuples (the only LIVE consumer is `applyAbsorbFn` below).

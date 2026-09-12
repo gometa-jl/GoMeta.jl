@@ -41,6 +41,9 @@
 
 import GoMeta
 import SHA
+## the basic renderer (a development tool) for the render witness below — loaded at THIS Extension's
+## TOP LEVEL through the ONE path (R-V04B-24 C2 (a): a disclosed, temporary exception until D-4 rules the witness's fate)
+include(joinpath(@__DIR__, "devtools", "load_basic_renderer.jl"))
 
 # ── the source registry: file → legend + emitted targets ────────────────────────────────
 const NB_DIR = joinpath(@__DIR__, "notebooks")
@@ -1028,7 +1031,7 @@ function derive_from_bytes(bytes::Vector{UInt8}, spec::SourceSpec)
     r = GoMeta.goMeta(bytes)
     r.status == GoMeta.PROCESS_OK || error("EMIT FAILURE: processing failed for $(spec.path): $(r.status)")
     fates = verdict_fates(String(copy(bytes)), GoMeta.altValues_evals(r), GoMeta.content_fingerprint(r))
-    witness_against_render(fates, String(copy(GoMeta.outputs(r).render_bytes)))
+    witness_against_render(fates, String(copy(Main.BasicRenderer.outputs(r).render_bytes)))
     cells = partition(fates)
     join_labels!(cells, GoMeta.altValues_evals(r), GoMeta.content_fingerprint(r))
     n_discarded = count(lf -> lf.fate === :discard, fates)
@@ -1093,7 +1096,7 @@ function run_selfchecks()
         r = GoMeta.goMeta(Vector{UInt8}(codeunits(src)))
         r.status == GoMeta.PROCESS_OK || fail("fixture did not process: $(r.status)")
         f = verdict_fates(src, GoMeta.altValues_evals(r), GoMeta.content_fingerprint(r))
-        witness_against_render(f, String(copy(GoMeta.outputs(r).render_bytes)))
+        witness_against_render(f, String(copy(Main.BasicRenderer.outputs(r).render_bytes)))
         return f
     end
     nb_of(src::String, name::String) =

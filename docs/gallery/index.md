@@ -18,5 +18,5 @@ table (quoted per page) states what each example proves.
 | [`feature_triple_tilde.jl`](feature_triple_tilde.md) | `#~~~` = depth 3 (tilde-count), with a depth-3 block nesting in a depth-2 chapter |
 
 Verify every pair locally from the repository root (after `Pkg.instantiate()`):
-`julia --startup-file=no --project=. run_examples.jl` — it renders each input and compares
+`julia --startup-file=no --project=. devtools/run_examples.jl` — it renders each input and compares
 the result byte-for-byte against the committed reference.

@@ -71,7 +71,8 @@ extends the label whitelist by a fixed **pictograph vocabulary** (byte-exact nam
   / `()` grouping; nested metadata regions (depth + attachment scoping; author depths 1–8 at
   v0); the inert `#~!` form; inline `#~` on content lines; the `#]` close-marker; UTF-8-correct
   segment handling; CRLF→LF normalization.
-- **The pipeline:** `goMeta` → `altValues_evals` / `GoMeta.outputs` — pure and deterministic for the
+- **The pipeline:** `goMeta` → `altValues_evals` (the (tree, render) pair is a development tool's,
+  `devtools/basic_renderer.jl`, since R-V04B-24) — pure and deterministic for the
   engine's own operations (see SECURITY), with a byte-exact oracle: the 7 committed example pairs
   under `examples/` render **byte-identically**,
   pinned by the shipped **1140-test suite at this release** (the golden byte-oracle and
@@ -116,9 +117,10 @@ corpus relative to the repository root. Then process one committed example end-t
 import GoMeta
 
 bytes  = read("examples/InFileFolder/file_for_Example_Proposal_JuliaCon.jl")
-result = GoMeta.goMeta(bytes)             # parse → absorb → evaluate → apply → emit
+result = GoMeta.goMeta(bytes)             # parse → absorb → evaluate → apply
 result.status == GoMeta.PROCESS_OK || error("processing failed")   # typed status check
-out    = GoMeta.outputs(result)           # (blsStructure_bytes, render_bytes)
+include(joinpath(pkgdir(GoMeta), "devtools", "load_basic_renderer.jl"))   # the basic renderer — a development tool (R-V04B-24), loaded through its ONE path
+out    = Main.BasicRenderer.outputs(result)  # the tool's (blsStructure_bytes, render_bytes) pair
 print(String(copy(out.render_bytes)))     # the rendered share-view of the file
 
 evals = GoMeta.altValues_evals(result)    # the evaluated Alterant values, per piece of the file
@@ -163,7 +165,7 @@ byte-for-byte against the committed references:
 
 ```
 julia --startup-file=no --project=. -e 'using Pkg; Pkg.instantiate()'   # once, resolves the package env
-julia --startup-file=no --project=. run_examples.jl
+julia --startup-file=no --project=. devtools/run_examples.jl
 ```
 
 A small query demo ships beside the driver — "find it again" over the same committed corpus:
@@ -217,8 +219,8 @@ Three references, in reading order:
    cites a runnable committed example.
 2. [`docs/public-api.md`](docs/public-api.md) — the API: four exported names (plus eleven
    qualified-public names, reached as `GoMeta.*`), the error-mode catalogue, the refusal strings.
-3. [`docs/CANONICAL-OUTPUT.md`](docs/CANONICAL-OUTPUT.md) — the two output halves
-   (`blsStructure_bytes` + `render_bytes`) and the six render rules.
+3. [`docs/CANONICAL-OUTPUT.md`](docs/CANONICAL-OUTPUT.md) — the package's canonical observable output
+   (`altValues_evals`) and the development tool's (tree, render) pair with its six render rules.
 
 The docs site also carries a **derived manual** pair — two pages generated from ONE
 marked Julia source file, where the `#~` marks choose the content AND which `jldoctest`

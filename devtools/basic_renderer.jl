@@ -1,9 +1,13 @@
-# emit.jl — the render half: `render_bytes` produces the jl-share-v1 share render
+isdefined(Main, :_BASIC_RENDERER_LOADED) && error("basic_renderer.jl: loaded a SECOND time — the one-path rule (R-V04B-24 obligation 7); include devtools/load_basic_renderer.jl, never this file")
+Core.eval(Main, :(const _BASIC_RENDERER_LOADED = true))
+# basic_renderer.jl — the basic renderer, a DEVELOPMENT TOOL: `render_bytes` produces the jl-share-v1
+# share render; `outputs` (below) the (tree, render) pair. Formerly `src/emit/emit.jl`, module
+# `WriteOutFile`, the emit stage of the Engine — moved out on 2026-09-12 (R-V04B-13 / R-V04B-24).
 #
-# IS: module `WriteOutFile`, the emit stage of the GoMeta pipeline. Its entry point
+# IS: module `BasicRenderer` — the basic renderer, a development tool OUTSIDE the Engine. Its entry point
 #     `render_bytes(parse_state::BLS.ParseState)::Vector{UInt8}` walks the parsed
 #     File→Block→Line→Segment tree via `BLS.eachchildid` and writes the share-target bytes into an
-#     in-memory IOBuffer — the `render_bytes` half of `outputs` (docs/public-api.md §1.3;
+#     in-memory IOBuffer — the render half of the tool's own `outputs` (below; docs/public-api.md §1.3;
 #     docs/CANONICAL-OUTPUT.md §3). The helpers `VisibEnum` and `checkVisib` resolve one
 #     component's own Visib verdict from its `componentSettribute` `:show`/`:hide`/`:discard` keys.
 # DOES: applies the jl-share-v1 hide/discard rules (docs/CANONICAL-OUTPUT.md §3) during the walk.
@@ -33,15 +37,28 @@
 # REASONING: the golden layer pins this render byte-for-byte over the committed example corpus
 #     (docs/CANONICAL-OUTPUT.md §5), which forces the emit to be pure and side-channel-free: no
 #     filesystem / clock / environment read, render bytes produced solely by the `write(io, …)`
-#     sites. `render_bytes` is package-internal, reached only through
-#     `outputs`, never exported.
-# PURPOSE: GoMeta's deterministic reference render — the half of `outputs` the committed
-#     corpus and the golden test layer prove byte-for-byte.
+#     sites. `render_bytes` is the tool's own function, reached through the tool's `outputs`; it is no
+#     longer part of the Engine (R-V04B-24 B1).
+# PURPOSE: the development tool's deterministic reference render — the render half of the tool's
+#     `outputs`, which the committed corpus and the golden test layer pin byte-for-byte.
+# THE INTERIM (R-V04B-24 A1, dated 2026-09-12 — a dated, temporary exception to R-V04B-13's "never
+#     recompute"; closed by the pure-consumer branch, R-V04B-16 (1)): this renderer still RESOLVES the
+#     Engine's stored Visib flags itself — the precedence, nearest flag wins (`checkVisib`, `finalVisib`) —
+#     it does not re-evaluate the metaStatements; the branch makes it a pure consumer of the Engine's
+#     resolved answers. It reads the Engine's internal parse state (`result.state.parse`) and the parser's
+#     non-public names (`BLS.getElement`, `BLS.eachchildid`, `BLS.FLAVOR_JULIA`, `BLS._isspace_valid`,
+#     `ParseState.endsWithNewline`) under the owner's exemption D-6(a) of 2026-08-20, WIDENED to this file
+#     and the tree print on 2026-09-11 (R-V04B-24 C1 (a)) as an INTERIM that LAPSES when D-4 rules the
+#     BLS-provided tree route; `devtools_selfcheck()` is the drift alarm.
+# THE LOAD-ORDER LAW: include `devtools/load_basic_renderer.jl` at the consumer's TOP LEVEL — never this
+#     file (the sentinel at the top refuses a second load) and never inside a function (Julia's world age:
+#     a method defined while a function is already running is invisible to that function).
 
-## WriteOutFile.jl
-module WriteOutFile
+## BasicRenderer.jl
+module BasicRenderer
 
-import ..BLS
+import GoMeta
+import GoMeta.BLS
 
 ## The HIDE-aware render. A component's own Visib verdict lives in its ComponentSettribute
 ## :show/:hide/:discard keys (set by the Apply write-back through the registry's generic
@@ -349,5 +366,220 @@ function render_bytes(
     return out
 end
 
+#########################################################################################
+## THE TREE PRINT — the three functions that write the textual dump of the BLS tree
+## (`{:B-Meta:L-Meta [...]}`): `writeBlsStructureToFile`, `writeBlsStructureToIO`,
+## `structural_serialization`. They LEFT `src/bls/parseBLS.jl` (its lines 370–528 at code
+## commit 86ec5d0) for this development tool on 2026-09-12 (R-V04B-24 B1: they exist only so
+## a committed reference can be bytes); every parser name is qualified `BLS.`. ONE destination
+## file (this one) is the session's reading under the owner's §18 lean — R-V04B-24 names no
+## destination file (recorded in R-V04B-25). The 7 `byte_identical` tree pins
+## (tests/golden/MANIFEST.toml) pin `structural_serialization`. The owner's VERY STRONG LEAN
+## (OWNER-WORDS §18): re-mint the tree pins to the newer print and delete this dump — a row of
+## the keep/cut ledger (R-V04B-24's tidy-up list).
+#########################################################################################
+function writeBlsStructureToFile(
+    state::BLS.ParseState,
+    pathString::String
+)
+
+    blsStructureOutFileIO = open(pathString, "w")
+
+    local oneOrTwoInt::Int
+    local stringIdx::Int
+    local crntLine::BLS.Line
+    local crntBlock::BLS.Block
+    local crntSegment::BLS.Segment
+    local newBlock::Bool
+    lineBuf = IOBuffer()  # reusable buffer — avoids O(n²) string concat
+    ## First `fileComponent` of first `fileVector`:
+    ## "componentsPDict[BLS.File][1][1]"
+    crntFile::BLS.File = state.componentsPDict[BLS.File][1][1]
+    fileVec = state.componentsPDict[BLS.File][1]
+    blockVecs = state.componentsPDict[BLS.Block]
+    lineVecs = state.componentsPDict[BLS.Line]
+    segmentVecs = state.componentsPDict[BLS.Segment]
+
+    for blockId in BLS.eachchildid(crntFile, fileVec)
+        newBlock = true
+        blockId > 0 ? oneOrTwoInt = 1 : (oneOrTwoInt = 2; blockId *= -1)
+        crntBlock = blockVecs[oneOrTwoInt][blockId]
+
+        for lineId in BLS.eachchildid(crntBlock, blockVecs[1])
+            lineId > 0 ? oneOrTwoInt = 1 : (oneOrTwoInt = 2; lineId *= -1)
+            crntLine = lineVecs[oneOrTwoInt][lineId]
+            stringIdx = BLS.getElement(crntLine.cmpntNamedInt, :idxString)
+
+            truncate(lineBuf, 0)
+            print(lineBuf, "{")
+            if newBlock
+                print(lineBuf, ":B-", nameof(crntBlock.contentType))
+            else
+                print(lineBuf, "       ")
+            end
+            print(lineBuf, ":L-", nameof(crntLine.contentType), " [")
+
+            if BLS.getElement(crntLine.componentSettribute, :includeInOutFile)
+                if BLS.getElement(crntLine.componentSettribute, :isEmpty)
+                    ## Write "Empty Line":
+                    write(blsStructureOutFileIO, "\n")
+                    if stringIdx != 0
+                        error("@L: ", @__LINE__, ", file: ", basename(@__FILE__),
+                            ":\n\t `crntLine` :isEmpty BUT stringIdx = ", stringIdx, " != 0")
+                    end #]
+                    continue
+                else
+                    print(lineBuf, state.collectedLines[stringIdx])
+                end
+            elseif BLS.getElement(crntLine.cmpntNamedInt, :numChildren) != 0
+                for segmentId in BLS.eachchildid(crntLine, lineVecs[1])
+                    segmentId > 0 ? oneOrTwoInt = 1 : oneOrTwoInt = 2
+                    crntSegment = segmentVecs[oneOrTwoInt][segmentId]
+                    stringIdx = BLS.getElement(crntSegment.cmpntNamedInt, :idxString)
+                    if BLS.getElement(crntSegment.componentSettribute, :includeInOutFile)
+                        print(lineBuf, "{:S-", nameof(crntSegment.contentType), " [",
+                            SubString(state.collectedLines[stringIdx],
+                                BLS.getElement(crntSegment.cmpntNamedInt, :startMainStr):
+                                BLS.getElement(crntSegment.cmpntNamedInt, :stopMainStr)),
+                            "]}")
+                    end
+                end
+            end
+            print(lineBuf, "]}\n")
+            write(blsStructureOutFileIO, take!(lineBuf))
+            newBlock = false
+        end # for line
+    end # for block
+    close(blsStructureOutFileIO)
+end
+
+## ADDITIVE IN-MEMORY SIBLING of `writeBlsStructureToFile`. Byte-identical
+## structure serialization, but ALL handle-writes target the passed `io` — INCLUDING the empty-line
+## DIRECT `write(io, "\n")` that does NOT go via `lineBuf` — and it neither opens nor closes `io`
+## (the caller owns it). This sibling's output is pinned by the structure goldens (the 7 tree
+## goldens in tests/golden/MANIFEST.toml).
+function writeBlsStructureToIO(
+    state::BLS.ParseState,
+    io::IO
+)
+
+    local oneOrTwoInt::Int
+    local stringIdx::Int
+    local crntLine::BLS.Line
+    local crntBlock::BLS.Block
+    local crntSegment::BLS.Segment
+    local newBlock::Bool
+    lineBuf = IOBuffer()  # reusable buffer — avoids O(n²) string concat
+    crntFile::BLS.File = state.componentsPDict[BLS.File][1][1]
+    fileVec = state.componentsPDict[BLS.File][1]
+    blockVecs = state.componentsPDict[BLS.Block]
+    lineVecs = state.componentsPDict[BLS.Line]
+    segmentVecs = state.componentsPDict[BLS.Segment]
+
+    for blockId in BLS.eachchildid(crntFile, fileVec)
+        newBlock = true
+        blockId > 0 ? oneOrTwoInt = 1 : (oneOrTwoInt = 2; blockId *= -1)
+        crntBlock = blockVecs[oneOrTwoInt][blockId]
+
+        for lineId in BLS.eachchildid(crntBlock, blockVecs[1])
+            lineId > 0 ? oneOrTwoInt = 1 : (oneOrTwoInt = 2; lineId *= -1)
+            crntLine = lineVecs[oneOrTwoInt][lineId]
+            stringIdx = BLS.getElement(crntLine.cmpntNamedInt, :idxString)
+
+            truncate(lineBuf, 0)
+            print(lineBuf, "{")
+            if newBlock
+                print(lineBuf, ":B-", nameof(crntBlock.contentType))
+            else
+                print(lineBuf, "       ")
+            end
+            print(lineBuf, ":L-", nameof(crntLine.contentType), " [")
+
+            if BLS.getElement(crntLine.componentSettribute, :includeInOutFile)
+                if BLS.getElement(crntLine.componentSettribute, :isEmpty)
+                    ## Write "Empty Line":
+                    write(io, "\n")
+                    if stringIdx != 0
+                        error("@L: ", @__LINE__, ", file: ", basename(@__FILE__),
+                            ":\n\t `crntLine` :isEmpty BUT stringIdx = ", stringIdx, " != 0")
+                    end #]
+                    continue
+                else
+                    print(lineBuf, state.collectedLines[stringIdx])
+                end
+            elseif BLS.getElement(crntLine.cmpntNamedInt, :numChildren) != 0
+                for segmentId in BLS.eachchildid(crntLine, lineVecs[1])
+                    segmentId > 0 ? oneOrTwoInt = 1 : oneOrTwoInt = 2
+                    crntSegment = segmentVecs[oneOrTwoInt][segmentId]
+                    stringIdx = BLS.getElement(crntSegment.cmpntNamedInt, :idxString)
+                    if BLS.getElement(crntSegment.componentSettribute, :includeInOutFile)
+                        print(lineBuf, "{:S-", nameof(crntSegment.contentType), " [",
+                            SubString(state.collectedLines[stringIdx],
+                                BLS.getElement(crntSegment.cmpntNamedInt, :startMainStr):
+                                BLS.getElement(crntSegment.cmpntNamedInt, :stopMainStr)),
+                            "]}")
+                    end
+                end
+            end
+            print(lineBuf, "]}\n")
+            write(io, take!(lineBuf))
+            newBlock = false
+        end # for line
+    end # for block
+end
+
+## The TREE-half observable: the deterministic `{:B-…:L-… […]}` structure dump (the exact
+## format the 7 structure goldens pin) as an in-memory byte vector. Thin wrapper over
+## `writeBlsStructureToIO`. This is the tree half that the tool's `outputs` (below) returns.
+function structural_serialization(state::BLS.ParseState)::Vector{UInt8}
+    io = IOBuffer()
+    writeBlsStructureToIO(state, io)
+    return take!(io)
+end
+
+#########################################################################################
+## THE PAIR — `outputs(result)`: the Engine's former `GoMeta.outputs` (src/GoMeta.jl:750-785 at
+## code commit 86ec5d0) moved here UNCHANGED IN BEHAVIOUR on 2026-09-12 (R-V04B-24 B1: a hard
+## removal from the Engine, no stub); the only edits are the THREE qualifications this namespace
+## forces (`GoMeta.GoMetaResult` in the signature, `GoMeta.PROCESS_ERROR`, the local
+## `structural_serialization`) and the docstring's re-scoping. It is `Main.BasicRenderer.outputs` —
+## reached ONLY through devtools/load_basic_renderer.jl.
+
+"""
+    outputs(result::GoMeta.GoMetaResult) -> (blsStructure_bytes::Vector{UInt8}, render_bytes::Vector{UInt8})
+
+The development tool's pair; the Engine's canonical output is `altValues_evals` (docs/public-api.md §1.3). `blsStructure_bytes` is the verdict-free
+`structural_serialization` (this module's own function since R-V04B-24) of the final parse tree; `render_bytes` is the jl-share-v1 emit
+(docs/CANONICAL-OUTPUT.md). Both are PURE functions of `result.state.parse` (the per-call parse state the
+in-`with` absorb-walk + apply fully mutated), so this accessor is correct OUTSIDE the per-call
+`STATE` scope. Total on any OK result (one documented qualification — the multi-Visib
+render guard: docs/public-api.md §3.4, `devtools/README.md`; the render plane's string indexing is character-safe,
+docs/public-api.md §4, GUARDED); on a non-OK result the contract is
+`(empty tree, empty render)` for EVERY current non-OK result (no post-parse error class exists at v0.4; a
+"tree-if-parse-succeeded" distinction would be a new contract row) — for the config-time path both are empty, because the
+parse never ran. The NamedTuple field order is `(blsStructure_bytes, render_bytes)`.
+"""
+function outputs(result::GoMeta.GoMetaResult)
+    ## The non-OK output contract. A fail-closed PROCESS_ERROR GoMetaResult — at v0.3 the only source was a
+    ## config-time validation error; at v0.4 the registry DOOR (`REG_UNPUBLISHED` / `POST_SEAL_MUTATION`) is
+    ## the second pre-parse source — either pre-empts the parse — yields an EMPTY (tree, render):
+    ## "no render attempted", and a parse that never ran ⇒ an empty tree. `render_bytes` is NOT invoked
+    ## (the emit path stays untriggered). No post-parse error class exists at v0.4: this branch returns two
+    ## EMPTY vectors unconditionally (a "tree-if-parse-succeeded" distinction would be a new contract row).
+    if result.status === GoMeta.PROCESS_ERROR
+        return (blsStructure_bytes = UInt8[], render_bytes = UInt8[])
+    end
+    ## The hide marker rides the PARSE STATE's own FlavorProfile, never the config —
+    ## under a carrier-constructed store (the `run_absorb_apply!` seam) the config
+    ## need not name the flavor the store was parsed under; reading
+    ## `state.parse.flavor` keeps `outputs` stamping the CORRECT flavor's marker by
+    ## construction.
+    rendered = let fl = result.state.parse.flavor
+        render_bytes(result.state.parse;
+            hide_marker = fl.hide_marker, hide_fold_prefix = fl.hide_fold_prefix)
+    end
+    tree     = structural_serialization(result.state.parse)
+    return (blsStructure_bytes = tree, render_bytes = rendered)
+end
 
 end

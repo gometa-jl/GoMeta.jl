@@ -1,7 +1,7 @@
 # devtools.jl — the GoMeta developer print tools.
-#   (2026-08-29, owner ruling R-V04B-17) This file now lives in the GoMeta code home,
-#   GoMetaEcosystem/GoMeta/devtools/; the Play's devtools.jl is a forwarding stub, so
-#   `include("devtools.jl")` there still works. Run under the project whose GoMeta you want
+#   (2026-08-29, owner ruling R-V04B-17) This file lives in the GoMeta code home,
+#   GoMetaEcosystem/GoMeta/devtools/; the Play keeps its own FROZEN COPY since 2026-09-12
+#   (OWNER-WORDS §26 — a self-contained fork). Run under the project whose GoMeta you want
 #   to print: `--project=GoMetaEcosystem/GoMeta/tests` = the v0.4 build. A DEVELOPMENT TOOL:
 #   not part of the GoMeta process — the package never references this file. Docs: README.md
 #   beside it; the canon AGENT-RULES_GoMeta.md §R4b.
@@ -12,7 +12,7 @@
 #                                      `printComponentStates` capability, superseding it)
 #         `print_altValues_evals`     (the evals rows placed IN the component tree /
 #                                      as rows / as per-cell dossiers)
-#       plus their file twins (`write_*_to_file`), the three engine-surface writers
+#       plus their file twins (`write_*_to_file`), the three surface writers (the tool's pair + the marked source)
 #         `writeBlsStructureToFile` / `writeRenderToFile` / `writeMarkedSourceToFile`
 #         (§H — verbatim surface copies + the slide sidecar), and `devtools_selfcheck()`.
 #       Every tool takes the §H `slide` keyword: print tools render the truecolor ANSI
@@ -99,6 +99,7 @@
 # Canon: GoMetaEcosystem/agent-doc/AGENT-RULES_GoMeta.md.
 
 import GoMeta
+include(joinpath(@__DIR__, "load_basic_renderer.jl"))   # the ONE path to the basic renderer (R-V04B-24 obligation 7)
 const _DT_BLS = GoMeta.BLS
 
 #########################################################################################
@@ -260,7 +261,7 @@ end
 """
 IS: the per-call render context — one `goMeta` result opened for printing.
 DOES: carries the result, its ParseState, the componentsPDict, the ENGINE-TRUE Block
-census (`eachchildid` on the File root: emit.jl:160 form — the legacy
+census (`eachchildid` on the File root: the basic renderer's `render_bytes` form, devtools/basic_renderer.jl — the legacy
 `2:numChildren+1` census breaks on extension chains), and the display name.
 GUARDED: a damaged/absent File root yields an EMPTY census (`ok=false`) instead of a
 throw — status/diagnostics always print first (§6 status-first law).
@@ -2304,17 +2305,17 @@ function _dt_slide_preview(io, tool::String, sid::String, sch, lines, border::St
     nothing
 end
 
-## ── the three engine-surface writers (the `writeBlsStructureToFile` class) ────────────
+## ── the three surface writers (the `writeBlsStructureToFile` class: the tool's pair + the marked source) ──
 
 """
     writeBlsStructureToFile(path, result; slide=nothing) -> path
 
 IS: the structure-surface file writer — writes THE BLS structure view
-(`GoMeta.outputs(result).blsStructure_bytes`, line-mapped 1:1 to the input) of one
+(`Main.BasicRenderer.outputs(result).blsStructure_bytes`, line-mapped 1:1 to the input) of one
 `goMeta` result to `path`, VERBATIM. The name deliberately revives the February
-`GoMeta.BLS.writeBlsStructureToFile(path)` serialization, now fed from the public
-result (same output, new plumbing).
-DOES: byte-copies the engine surface; with `slide` set, additionally emits
+parser-side `writeBlsStructureToFile(path)` serialization, now fed from the development
+tool's pair (`Main.BasicRenderer.outputs`; same output, new plumbing).
+DOES: byte-copies the tool's surface; with `slide` set, additionally emits
 `path * ".slideruns.json"` — the slide-run sidecar (contract: BRIEF §2 in
 plan/2026-08-20-devtools-slide-output/): REFERENCE-TRUE runs per the owner
 fix-order of 2026-08-21 (DESIGN §5-bis.15) — scaffold tokens are role `tree`,
@@ -2345,7 +2346,7 @@ PARAMETERS — which behavior each triggers:
 function writeBlsStructureToFile(path::AbstractString, result::GoMeta.GoMetaResult;
                                  slide::Union{Nothing,Symbol} = nothing)
     sr = slide === nothing ? nothing : _dt_slide_resolve(slide)
-    bytes = copy(GoMeta.outputs(result).blsStructure_bytes)
+    bytes = copy(Main.BasicRenderer.outputs(result).blsStructure_bytes)
     if sr === nothing
         _dt_slide_retire_sidecar(path)   # F5: retire FIRST — a failing write must
         write(path, bytes)               # never leave a stale claim beside partial X
@@ -2375,7 +2376,7 @@ end
     writeRenderToFile(path, result; slide=nothing) -> path
 
 IS: the render-surface file writer — writes the reference render
-(`GoMeta.outputs(result).render_bytes`: show / hide via the flavor's hide marker /
+(`Main.BasicRenderer.outputs(result).render_bytes`: show / hide via the flavor's hide marker /
 discard) of one `goMeta` result to `path`, VERBATIM.
 DOES: byte-copies the engine surface; with `slide` set, additionally emits
 `path * ".slideruns.json"`. Classification is a fate-ladder DERIVATION from the
@@ -2409,7 +2410,7 @@ PARAMETERS — which behavior each triggers:
 function writeRenderToFile(path::AbstractString, result::GoMeta.GoMetaResult;
                            slide::Union{Nothing,Symbol} = nothing)
     sr = slide === nothing ? nothing : _dt_slide_resolve(slide)
-    bytes = copy(GoMeta.outputs(result).render_bytes)
+    bytes = copy(Main.BasicRenderer.outputs(result).render_bytes)
     if sr === nothing
         _dt_slide_retire_sidecar(path)   # F5: retire FIRST — a failing write must
         write(path, bytes)               # never leave a stale claim beside partial X
@@ -2528,6 +2529,14 @@ and the package snapshot is refreshed wholesale — after every refresh, RUN THI
 broken internal surface must fail here, not silently mis-render during play.
 """
 function devtools_selfcheck()
+    ## the one-path checks (R-V04B-24 obligation 7): the basic renderer is loaded through
+    ## devtools/load_basic_renderer.jl, once, as Main.BasicRenderer, with ONE `outputs` method
+    (isdefined(Main, :BasicRenderer) && isdefined(Main, :_BASIC_RENDERER_LOADED)) ||
+        error("devtools_selfcheck: the basic renderer is not loaded through devtools/load_basic_renderer.jl")
+    length(methods(Main.BasicRenderer.outputs)) == 1 ||
+        error("devtools_selfcheck: BasicRenderer.outputs has more than one method")
+    parentmodule(only(methods(Main.BasicRenderer.outputs))) === Main.BasicRenderer ||
+        error("devtools_selfcheck: BasicRenderer.outputs is not defined in Main.BasicRenderer")
     # :label1 = whitelist member; the inline head(…) metaSegment mints a Segment-grain
     # (0x01) row — keeping the Segment-attachment path under the drift alarm too
     src = "#~1 :label1\n# a Text line\nx = 1 #~ head(\"selfcheck head\", 2)\n"
@@ -2591,7 +2600,7 @@ function devtools_selfcheck()
     ## fate ladder + render transformation classes (the render writer's derivation)
     rf = GoMeta.goMeta(Vector{UInt8}(codeunits("#~ discard{ isCode }\nx = 1 #~ hide\ny = 2\n")))
     rf.status == GoMeta.PROCESS_OK || error("devtools_selfcheck: fate fixture refused")
-    String(copy(GoMeta.outputs(rf).render_bytes)) == "#~ discard{ isCode }\n## x = 1 ## #~ hide\n" ||
+    String(copy(Main.BasicRenderer.outputs(rf).render_bytes)) == "#~ discard{ isCode }\n## x = 1 ## #~ hide\n" ||
         error("devtools_selfcheck: the hide/discard render transformation drifted — REVIEW the slide derivation, then re-pin")
     fates = Tuple{Int,Symbol}[]
     _dt_sl_walk(rf.state.parse) do line, block, file, ln, lvec, svec

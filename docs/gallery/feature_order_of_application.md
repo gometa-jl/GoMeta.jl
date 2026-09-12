@@ -7,7 +7,7 @@
 
 Committed pair: `examples/InFileFolder/feature_order_of_application.jl` → `examples/OutFileFolder/feature_order_of_application.jl` — the same
 bytes the golden test layer pins. Verify locally from the repository root:
-`julia --startup-file=no --project=. run_examples.jl`.
+`julia --startup-file=no --project=. devtools/run_examples.jl`.
 
 ## Input
 
