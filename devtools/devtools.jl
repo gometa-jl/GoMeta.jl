@@ -1056,7 +1056,7 @@ PARAMETERS:
   the write twin defaults it to `basename(path)`).
 
 The "why NOT" companion: when a label/action you expected is ABSENT here, the next
-step is the canon-R4 CLI `gometa.jl trace <file>` (evals rows + decoded handles) and
+step is the canon-R4 command-line entry `devtools.jl trace <file>` (evals rows + decoded handles) and
 `print_BLS_Component_Tree` (the settribute state the conditions tested).
 
 Every row is accounted for in every layout (§6 totality): rows that do not anchor in
@@ -2658,4 +2658,100 @@ function devtools_selfcheck()
         endswith(sc, "] }\n") || error("devtools_selfcheck: sidecar must end '] }' + one newline")
     end
     true
+end
+
+#########################################################################################
+##  §Z — THE COMMAND-LINE ENTRY (the former one-line command tool devtools/gometa.jl, FOLDED here on
+##  2026-09-12 — R-V04B-24's tidy-up row, the owner's OWNER-WORDS §18 item 2 "we may remove
+##  'devtools/gometa.jl' entirely?"; the file is deleted): the seven verbs
+##      julia --startup-file=no --project=$GM/tests $GM/devtools/devtools.jl <verb> <file>
+##      tree · segments · evals · render · trace · evals-tree · bls-tree
+##  IS: the smallest complete consumer of the two containers — `altValues_evals` (+ `content_fingerprint`
+##  for the excerpts) and the development tool's (tree, render) pair (`Main.BasicRenderer.outputs`,
+##  loaded through the ONE path at this file's top). DOES: runs goMeta on ONE file; status + diagnostics
+##  to stderr, the surface to stdout; exit 0 = PROCESS_OK, 1 = a non-OK result, 2 = usage. The `trace`
+##  verb decodes each row's cell_handle with the tool's OWN `_dt_decode` (§C) — the former CLI's
+##  duplicate decoders (its rd_u16/rd_u32/rd_steps/decode_handle) are gone: ONE copy. REASONING: the
+##  block runs ONLY when this file is the program (`abspath(PROGRAM_FILE) == @__FILE__`), never when it
+##  is `include`d (the Play's frozen copy, the battery, the site's capture script include this file and
+##  see definitions only). Evaluates, never executes.
+#########################################################################################
+const _DT_VERBS = ("tree", "segments", "evals", "render", "trace", "evals-tree", "bls-tree")
+
+function _dt_cli_usage()
+    println(stderr, "usage: devtools.jl <", join(_DT_VERBS, "|"), "> <file>")
+    exit(2)
+end
+
+_dt_cli_grain_name(g) = g == 0x01 ? "Segment" : g == 0x0a ? "Line" : g == 0x46 ? "Block" :
+                        g == 0xd2 ? "File" : g == 0xe0 ? "USER_CONTEXT" : ""
+_dt_cli_store_name(s) = s == 0x01 ? "direct" : s == 0x02 ? "insert" : s == 0x00 ? "TRUNCATED" : "?"
+_dt_cli_fmt_steps(v) = "[" * join(["($(_dt_cli_store_name(s)),$(Int(o)))" for (s, o) in v], " ") * "]"
+
+function _dt_cli_main(args)
+    length(args) == 2 || _dt_cli_usage()
+    cmd, path = args[1], args[2]
+    cmd in _DT_VERBS || _dt_cli_usage()
+    isfile(path) || (println(stderr, "devtools: no such file: ", path); exit(2))
+
+    r = GoMeta.goMeta(read(path))
+    println(stderr, "status: ", r.status)
+    for d in r.diagnostics
+        println(stderr, "diagnostic: ", d)
+    end
+
+    if cmd == "tree"
+        print(String(copy(Main.BasicRenderer.outputs(r).blsStructure_bytes)))
+    elseif cmd == "segments"
+        rows = split(String(copy(Main.BasicRenderer.outputs(r).blsStructure_bytes)), '\n')
+        !isempty(rows) && isempty(last(rows)) && pop!(rows)
+        for (i, row) in enumerate(rows)
+            println(lpad(i, 4), "  ", row)
+        end
+    elseif cmd == "render"
+        print(String(copy(Main.BasicRenderer.outputs(r).render_bytes)))
+    elseif cmd == "evals"
+        fp = Dict{Vector{UInt8},Vector{UInt8}}(h => c for (h, c) in GoMeta.content_fingerprint(r))
+        rows = GoMeta.altValues_evals(r)
+        isempty(rows) && println(stderr, "(no evals rows — no LIVE metaLine on any surface)")
+        for (h, attr, v, pol) in rows
+            cell = replace(String(copy(fp[h])), '\n' => '⏎')
+            println(rpad(String(attr), 14), " => ", rpad(repr(v), 40), " (", pol, ")  \"",
+                    first(cell, 60), length(cell) > 60 ? "…\"" : "\"")
+        end
+    elseif cmd == "evals-tree"
+        ## the owner's print tool, FULL form (R-DEV-4's option): every Component visible,
+        ## absence labelled "(no evals — defaults apply)", every row with its decoded handle
+        print_altValues_evals(stdout, r; layout = :tree, include_empty = true,
+                              show_handles = true, _name = basename(path))
+    elseif cmd == "bls-tree"
+        ## the owner's tree printer (R-DEV-1 :mix): tree rows + typed named-int / settribute dumps
+        print_BLS_Component_Tree(stdout, r; style = :mix, _name = basename(path))
+    elseif cmd == "trace"
+        fp = Dict{Vector{UInt8},Vector{UInt8}}(h => c for (h, c) in GoMeta.content_fingerprint(r))
+        rows = GoMeta.altValues_evals(r)
+        isempty(rows) && println(stderr, "(no evals rows — no LIVE metaLine on any surface)")
+        for (h, attr, v, pol) in rows
+            cell = replace(String(copy(fp[h])), '\n' => '⏎')
+            println(rpad(String(attr), 14), " => ", rpad(repr(v), 40), " (", pol, ")  \"",
+                    first(cell, 60), length(cell) > 60 ? "…\"" : "\"")
+            d = _dt_decode(h)
+            if d === nothing
+                println("    handle: UNDECODED (schema != 0x01) — the excerpt above is the only locator")
+                continue
+            end
+            g = _dt_cli_grain_name(d.grain)
+            trunc = any(s -> s[1] == 0x00, d.path) || any(s -> s[1] == 0x00, d.origin)
+            println("    handle: ns=:", d.namespace, "  grain=0x", string(d.grain, base = 16, pad = 2),
+                    isempty(g) ? "" : " ($g)", "  path=", _dt_cli_fmt_steps(d.path),
+                    trunc ? "  !! TRUNCATED step — degenerate walk !!" : "")
+            println("    origin: ", isempty(d.origin) ? "[] — the key addresses the cell itself" :
+                    _dt_cli_fmt_steps(d.origin) * " — Segment-carried remap")
+        end
+    end
+    exit(r.status == GoMeta.PROCESS_OK ? 0 : 1)
+end
+
+if abspath(PROGRAM_FILE) == @__FILE__
+    _dt_cli_main(ARGS)
 end

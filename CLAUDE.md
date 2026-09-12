@@ -9,14 +9,15 @@ project memory, this one does not). The build record: `plan/2026-08-24-gometa-v0
 
 ## THE DEVELOPMENT TOOLS — use them before any claim about a run (owner order 2026-08-29)
 
-`devtools/README.md` documents them; the canon is `../agent-doc/AGENT-RULES_GoMeta.md` §R4/§R4b.
+`devtools/README.md` documents them; the canon is `../agent-doc/AGENT-RULES_GoMeta.md` §R4/§R4b. Since 2026-09-12
+(R-V04B-24's tidy-up row) the one-line command tool is the entry at the end of `devtools.jl`; `gometa.jl` is gone.
 
 ```
 GM=/home/fido/Dropbox/_01_Crypto_Dropbox/07_Claude/GoMetaEcosystem/GoMeta
-julia --startup-file=no --project=$GM/tests $GM/devtools/gometa.jl evals-tree <file>   # print_altValues_evals, FULL form
-julia --startup-file=no --project=$GM/tests $GM/devtools/gometa.jl bls-tree   <file>   # print_BLS_Component_Tree (:mix)
-julia --startup-file=no --project=$GM/tests $GM/devtools/gometa.jl segments   <file>   # the tree with line numbers
-julia --startup-file=no --project=$GM/tests $GM/devtools/gometa.jl trace      <file>   # evals rows + decoded keys
+julia --startup-file=no --project=$GM/tests $GM/devtools/devtools.jl evals-tree <file>   # print_altValues_evals, FULL form
+julia --startup-file=no --project=$GM/tests $GM/devtools/devtools.jl bls-tree   <file>   # print_BLS_Component_Tree (:mix)
+julia --startup-file=no --project=$GM/tests $GM/devtools/devtools.jl segments   <file>   # the tree with line numbers
+julia --startup-file=no --project=$GM/tests $GM/devtools/devtools.jl trace      <file>   # evals rows + decoded keys
 ```
 From Julia: `include(joinpath(pkgdir(GoMeta), "devtools", "devtools.jl"))` then
 `print_altValues_evals(result; include_empty = true, show_handles = true)` /

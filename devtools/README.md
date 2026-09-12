@@ -13,7 +13,7 @@ copies of `devtools.jl` and `gometa.jl` since 2026-09-12 (OWNER-WORDS §26; the 
 forwarding stubs are gone).
 
 **What is in this directory (since 2026-09-12, R-V04B-24).** `devtools.jl` — the print tools;
-`gometa.jl` — the one-line command tool; `basic_renderer.jl` — the basic renderer (module
+the command-line entry at its end (the seven verbs; the former `gometa.jl`, folded 2026-09-12); `basic_renderer.jl` — the basic renderer (module
 `BasicRenderer`: the share-view render, the tree print and the (tree, render) pair `outputs`),
 formerly `src/emit/emit.jl` inside the Engine; `load_basic_renderer.jl` — THE ONE PATH by which the
 renderer is loaded (include it at the consumer's top level, never inside a function, never
@@ -24,11 +24,11 @@ renderer is loaded (include it at the consumer's top level, never inside a funct
 about what a run evaluated, for which Component, without one of these printouts. Probe, then
 say.
 
-## One-liners from a shell
+## One-liners from a shell (the command-line entry of `devtools.jl`; the former `gometa.jl` was folded into it on 2026-09-12, R-V04B-24's tidy-up row)
 
 ```
 GM=/home/fido/Dropbox/_01_Crypto_Dropbox/07_Claude/GoMetaEcosystem/GoMeta
-julia --startup-file=no --project=$GM/tests $GM/devtools/gometa.jl <verb> <file>
+julia --startup-file=no --project=$GM/tests $GM/devtools/devtools.jl <verb> <file>
 ```
 `--project` selects WHICH GoMeta runs (`$GM/tests` = this v0.4 build; the Play project = its
 0.3.0 snapshot). Status and diagnostics go to stderr, the printout to stdout. Verbs:
