@@ -8,8 +8,9 @@ them, and they never change a result. They `import GoMeta`, run one file, and pr
 the owner: the print tools on 2026-08-20 (R-DEV-1..9, `plan/2026-08-19-gometa-dev-print-tools/
 DESIGN_dev-print-tools.md`), the directory and the move here on 2026-08-29 (R-V04B-17; the
 directory itself was ruled on 2026-08-28, D-2a, as the future home of the basic renderer and
-`run_examples.jl` — D-2b pending). Origin: `00_GoMeta-Play/`, whose `devtools.jl` and
-`gometa.jl` are now forwarding stubs.
+`run_examples.jl` — D-2b pending). Origin: `00_GoMeta-Play/`, which keeps its own FROZEN
+copies of `devtools.jl` and `gometa.jl` since 2026-09-12 (OWNER-WORDS §26; the 2026-08-29
+forwarding stubs are gone).
 
 **The rule (canon `GoMetaEcosystem/agent-doc/AGENT-RULES_GoMeta.md` §R4/§R4b):** no claim
 about what a run evaluated, for which Component, without one of these printouts. Probe, then
@@ -64,8 +65,11 @@ The tools read the Engine's internal state (`result.state.parse`) and a few non-
 under the owner's exemption D-6(a) of 2026-08-20 — allowed for THESE tools only; consumer code
 must not copy the pattern. `devtools_selfcheck()` is the drift alarm: if the internal surface
 changes, it fails loudly. Run it after every change to `src/`. Their assertion battery,
-`probes/probe_devtools.jl`, stays in `00_GoMeta-Play/` (its two fixture inputs live there) and
-runs through the stub.
+`devtools/probes/probe_devtools.jl`, lives beside them since 2026-09-12 (OWNER-WORDS §26 of the
+build record: the play became a self-contained fork and keeps its own frozen copy of the tools and
+of the battery; its fixture inputs are `devtools/probes/fixtures/` and `examples/InFileFolder/`);
+run it with `julia --startup-file=no --project=$GM/tests $GM/devtools/probes/probe_devtools.jl`
+— exit 0 = `probe_devtools: ALL GREEN`.
 
 ## Where they are used
 
