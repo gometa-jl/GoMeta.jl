@@ -217,7 +217,7 @@ Three references, in reading order:
 
 1. [`docs/SYNTAX-AND-SEMANTICS.md`](docs/SYNTAX-AND-SEMANTICS.md) — the language: every rule
    cites a runnable committed example.
-2. [`docs/public-api.md`](docs/public-api.md) — the API: four exported names (plus eleven
+2. [`docs/public-api.md`](docs/public-api.md) — the API: four exported names (plus thirty-nine
    qualified-public names, reached as `GoMeta.*`), the error-mode catalogue, the refusal strings.
 3. [`docs/CANONICAL-OUTPUT.md`](docs/CANONICAL-OUTPUT.md) — the package's canonical observable output
    (`altValues_evals`) and the development tool's (tree, render) pair with its six render rules.

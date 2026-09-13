@@ -367,8 +367,9 @@ clock or the environment, and cannot perform effects. (Under the explicitly opt-
 `:full_eval_v1` extension mode — see the SECURITY section of `README.md` — a condition body IS
 host-evaluated, and the guarantees then hold only for inputs whose conditions are free of side
 effects.) An invalid `config`
-fail-closes into a `PROCESS_ERROR` `GoMetaResult` **before any parse or render** — the input
-bytes are never touched; no parse, verdict, or render work occurs (§3.1).
+fail-closes into a `PROCESS_ERROR` `GoMetaResult` **before any parse** — the input
+bytes are never touched; no parse or verdict work occurs (§3.1); the Engine renders nothing since
+0.4.0 (§1.3), and the development tool's `Main.BasicRenderer.outputs` on such a result is the empty pair.
 
 **The registry door (v0.4, STRICT — published-only).** `registry` must be a PUBLISHED value
 (`DEFAULT_REGISTRY`, or the result of `GoMeta.publish`). A conforming-but-unpublished registry
@@ -506,7 +507,7 @@ are not catalogued typed codes.
 
 | Code | Status | Trigger |
 |---|---|---|
-| `ERR_UNKNOWN_PROFILE` (E-03) | config-time, **armed + typed** | `config.profile` outside the three profile names `{:jl_share_v1, :jl_share_v1_full_parse, :jl_share_v1_full_eval}` — fail-closed `PROCESS_ERROR`, no parse, verdict, or render work attempted (an opt-in name passes THIS row and refuses later at profile resolution unless the opt-in extension is explicitly included — the two-act law, §3.2) |
+| `ERR_UNKNOWN_PROFILE` (E-03) | config-time, **armed + typed** | `config.profile` outside the three profile names `{:jl_share_v1, :jl_share_v1_full_parse, :jl_share_v1_full_eval}` — fail-closed `PROCESS_ERROR`, no parse or verdict work attempted (the Engine renders nothing since 0.4.0, §1.3) (an opt-in name passes THIS row and refuses later at profile resolution unless the opt-in extension is explicitly included — the two-act law, §3.2) |
 | `ERR_RANGE_INVALID` (E-08) | config-time, **armed + typed** | `config.parse_range` with `first ≠ 1`, or an empty range |
 | `ERR_UNKNOWN_FLAVOR` | config-time, **armed + typed** | `config.flavor_tag` outside the three armed flavors `{:julia, :c, :latex}` — fail-closed before any parse (selected, never inferred). *(Row added at v0.4 T2 on a CrossReview finding — the code armed it at the flavor arming; the catalogue had not followed.)* |
 | `ERR_VISIB_NO_FLAG` (E-04) | apply-path **crash-origin** (typed conversion deferred) | a Visib verdict carries no set flag at write-back |
@@ -552,7 +553,7 @@ separately-gated motion.
 ### §3.3 — Handled class (NOT an error): E-05 — meta-free input
 
 A meta-free input is **not** an error: on the NO-FEED path `goMeta` returns `PROCESS_OK` with zero
-alterant work and a byte-exact passthrough render (a head-bearing fed profile still mints its
+alterant work, and the development tool's render of such a result is a byte-exact passthrough (a head-bearing fed profile still mints its
 user-context row; a refusal-carrying feed aborts regardless of document meta-freeness). It carries
 no typed code — it is a normal success path.
 (An input whose only meta is inline is NOT this class: inline `#~` actions on content lines DO
@@ -742,8 +743,9 @@ fabricated typed code:
   before v0.3.1 the vacuous check silently evaluated TRUE.
 
 **Message stability:** every input-reachable engine-layer message a v0 input can trigger through
-the parse/absorb/apply/emit pipeline is STABLE and explanatory (stage-honest prefix
-`GoMeta parse:` / `GoMeta absorb:` / `GoMeta apply:` / `GoMeta emit:`, the offending token
+the parse/absorb/apply pipeline — and, in the development tool's render plane
+(`devtools/basic_renderer.jl:96`), `GoMeta emit:` — is STABLE and explanatory (stage-honest prefix
+`GoMeta parse:` / `GoMeta absorb:` / `GoMeta apply:` / the tool's `GoMeta emit:`, the offending token
 bounded, what v0 accepts, this section as the pointer); three catalogued messages are
 parse-plane — the multi-inline-meta refusal and the two directive-adjacency refusals
 (segment grain and line grain, `0.2.3`) above. The not-input-reachable internal checks say

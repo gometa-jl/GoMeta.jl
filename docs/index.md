@@ -28,7 +28,7 @@ In reading order:
 
 1. [Syntax & semantics](SYNTAX-AND-SEMANTICS.md) — the language: every rule cites a runnable
    committed example.
-2. [Public API + error modes](public-api.md) — the API: four exported names (plus eleven
+2. [Public API + error modes](public-api.md) — the API: four exported names (plus thirty-nine
    qualified-public names, reached as `GoMeta.*`), the error-mode catalogue, the refusal
    strings.
 3. [Canonical output](CANONICAL-OUTPUT.md) — the package's canonical observable output (`altValues_evals`)

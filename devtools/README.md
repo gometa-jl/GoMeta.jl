@@ -31,7 +31,8 @@ GM=/home/fido/Dropbox/_01_Crypto_Dropbox/07_Claude/GoMetaEcosystem/GoMeta
 julia --startup-file=no --project=$GM/tests $GM/devtools/devtools.jl <verb> <file>
 ```
 `--project` selects WHICH GoMeta runs (`$GM/tests` = this v0.4 build; the Play project = its
-0.3.0 snapshot). Status and diagnostics go to stderr, the printout to stdout. Verbs:
+0.3.2 snapshot, driven since 2026-09-12 by the Play's OWN frozen copies of the tools — OWNER-WORDS §26,
+as the paragraph above says — not from this entry). Status and diagnostics go to stderr, the printout to stdout. Verbs:
 
 | verb | prints |
 |---|---|
