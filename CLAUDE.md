@@ -4,7 +4,10 @@ This directory is the GoMeta v0.4 package repository (branch `v04-build`; origin
 `gometa-jl/GoMeta.jl`, **push disabled**). The program's orientation, mandate and unified
 documentation live one level up in `GoMetaEcosystem/` (read its `CLAUDE.md` and
 `unified-doc/U0-orientation.md` first; launch sessions THERE — that directory arms the
-project memory, this one does not). The build record: `plan/2026-08-24-gometa-v04-build/`
+project memory, this one does not). For any question about the design — what the owner
+decided, leans to, or left open — the Unified Documentation FIRST (`../unified-doc/U8-design.md`,
+then its loci, the original transcripts, other files): his law, OWNER-WORDS §173–§174, 2026-09-22; the
+canon's R5. The build record: `plan/2026-08-24-gometa-v04-build/`
 (`RULINGS.md`, `03_process_log.md` — append-only).
 
 ## THE DEVELOPMENT TOOLS — use them before any claim about a run (owner order 2026-08-29)
