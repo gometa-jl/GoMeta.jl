@@ -49,7 +49,7 @@ by `tests/unit/public_surface_tests.jl`) and of the refusal behavior the shipped
 | Name | Kind | One-line |
 |---|---|---|
 | `goMeta` | function | the pipeline entry — `goMeta(bytes; config, registry) -> GoMetaResult` |
-| `altValues_evals` | function | the evaluated Alterant values, per piece of the file (the production surface) |
+| `readAltValuesEvals` | function | the reader over the evals rows — the evaluated Alterant values, per piece of the file (the production surface) |
 | `GoMetaConfig` | type | the v0 input options |
 | `GoMetaResult` | type | the typed pipeline result |
 
@@ -74,11 +74,11 @@ These are part of the documented public surface — declared with Julia's `publi
 `names(GoMeta)` and tooling see them — but are **not** exported: reach them qualified
 (`GoMeta.<name>`):
 
-- `GoMeta.serialize_evals(altValues_evals(result)) -> Vector{UInt8}` — the canonical,
+- `GoMeta.serialize_evals(readAltValuesEvals(result)) -> Vector{UInt8}` — the canonical,
   deterministic, binary-safe serialization of the evals surface.
 - `GoMeta.content_fingerprint(result) -> Vector{Tuple{Vector{UInt8},Vector{UInt8}}}` — the
   sibling accessor of the evals surface: per-record `(cell_handle → content)` pairs carrying
-  each cell's verbatim content bytes, in the SAME sort order as `altValues_evals(result)`
+  each cell's verbatim content bytes, in the SAME sort order as `readAltValuesEvals(result)`
   (the contract a consumer may zip on). The occurrence-handle KEY is the identity; the
   content is the reader-facing text — the shipped `find_by_label.jl` and
   `notebooks_from_source.jl` tools join exactly this way.
@@ -329,7 +329,7 @@ They are not exported; reach them qualified. `tests/unit/public_surface_tests.jl
 
 1. **In R-V04B-24's own words: "the package's canonical observable output = `altValues_evals` (+
    `serialize_evals`, `content_fingerprint`)" and "the Engine's delivered surface after the move = the run
-   and the evaluated values".** `altValues_evals(result)` is the evaluated Alterant values, per piece of the
+   and the evaluated values".** `readAltValuesEvals(result)` is the evaluated Alterant values, per piece of the
    file: the deterministic, final-verdicts-only per-cell map `(cell_handle, attr, value, polarity)`;
    `GoMeta.serialize_evals` its byte form, `GoMeta.content_fingerprint` the cell bytes. No internal module
    (`walk`, `BLS`) ever needs importing for it.
@@ -356,7 +356,7 @@ throws uncaught; absorb/apply-plane catalogued failures can still throw at v0 �
 partition). `GoMetaResult` carries the run's cargo: `status::ProcessStatus` ·
 `diagnostics::Vector{Diagnostic}` (the invariant is **non-OK ⇒ non-empty diagnostics**) ·
 `verdicts::EvalStore` (the store behind `altValues_evals`) · `state::ProcessState` — INTERNAL and
-semver-UNSTABLE at v0: depend only on `status`, `diagnostics` and `altValues_evals(result)` (the (tree, render)
+semver-UNSTABLE at v0: depend only on `status`, `diagnostics` and `readAltValuesEvals(result)` (the (tree, render)
 pair is the development tool's `Main.BasicRenderer.outputs(result)`, loaded through `devtools/load_basic_renderer.jl` — not an Engine surface). No filesystem / clock / environment read. **These three guarantees —
 purity, determinism, isolation — cover the whole default-configured run under `DEFAULT_REGISTRY`
 (under a CUSTOM registry they hold exactly as far as its own setters/getters/validators do: a
@@ -414,7 +414,7 @@ where document cells exist. The deriving heading form refuses on this surface (n
 a CONDITIONED heading refuses (no evaluable settribute state at this version). New rows appear
 ONLY when this field is set. Deliberately scope-limited at v0.
 
-### `altValues_evals(result::GoMetaResult) -> Vector{Tuple{Vector{UInt8},Symbol,Any,Bool}}`
+### `readAltValuesEvals(result::GoMetaResult) -> Vector{Tuple{Vector{UInt8},Symbol,Any,Bool}}`
 
 The evaluated Alterant values, per piece of the file: the final map
 `(cell_handle, attr, value, polarity)` — per-cell rows plus handle-classed non-cell rows (a fed
@@ -429,7 +429,7 @@ or fed-profile-authored — the §2 Heading action; `head_<level>_<k>`, k ≥ 2 
 for same-level repeats on one recorded handle); `polarity` is always `true` at v0 (the field
 is reserved for a future negated-verdict encoding). Consumers should treat UNKNOWN attribute
 families as opaque — skip them, never error: the enumeration lists the v0 families, and new
-families may arrive as additive evolution within the documented versioning policy (§6). `GoMeta.serialize_evals(altValues_evals(result))` is its canonical
+families may arrive as additive evolution within the documented versioning policy (§6). `GoMeta.serialize_evals(readAltValuesEvals(result))` is its canonical
 byte form.
 
 ### The (tree, render) pair — a development tool's, since 0.4.0 (R-V04B-24)
@@ -867,3 +867,11 @@ written here — R-V04B-24 (P)).**
   `tests/unit/public_surface_tests.jl` in one commit; the ALIAS half is NOT (B1: a hard removal, no stub).
   (ii) The unified documentation's corrections-ledger row `AU-7` (`GoMetaEcosystem/unified-doc/corrections-ledger.md`)
   records the re-scoping of `U0-orientation.md:35`. Minted 2026-09-11 (R-V04B-24); landed 2026-09-12.
+- **`altValues_evals` (function) — EXPORTED since 0.3.0 — RENAMED `readAltValuesEvals` at 0.4.0** (no deprecation stub, as
+  R-V04B-24's practice); ground: R-V04B-32 (2026-09-16) — the name `altValues_evals` belongs to the DATA CONTAINER (the part of
+  the delivered object, R-V04B-29/31), never to a function; replacement: the reader `readAltValuesEvals` — the same rows, the
+  same order, the same type (its argument Q7's, R-V04B-32; at this commit `readAltValuesEvals(result)`); a 0.3.x caller of
+  `altValues_evals(result)` sees `UndefVarError` (from stage 1's commit 2 the name `altValues_evals` is the part of
+  `GoMetaDelivery`, read by name — a field, never a function); the same-commit triple (the export line `src/GoMeta.jl`, this
+  document's §1.1/§1.2/§1.3/§2, the surface oracle `tests/unit/public_surface_tests.jl`). Minted 2026-09-16 (R-V04B-32);
+  landed 2026-09-25 on the branch `cc/v04-delivery` (stage 1, commit 1).

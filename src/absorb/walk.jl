@@ -18,9 +18,9 @@
 #     tie (`>=`), so consecutive inline metaLines each re-trigger the reset. Slots follow depth +
 #     attachment semantics (docs/SYNTAX-AND-SEMANTICS.md §2, §4): the Block grain updates by component
 #     depth, the Line and Segment grains via the shared `lineMHIdx` slot (state.jl). When `metaEnvInt`
-#     sits at Segment level, `applyAltActionFns` (apply.jl) runs immediately; a resolved Visib verdict
+#     sits at Segment level, `applyAltActionFns` (apply.jl) runs immediately; a resolved Visib value
 #     writes back to the ENCLOSING Line's settribute (inline meta applies to its line —
-#     docs/SYNTAX-AND-SEMANTICS.md §9), and `capture_verdicts!` (annotations.jl) records that Line as
+#     docs/SYNTAX-AND-SEMANTICS.md §9), and `captureEvals!` (annotations.jl) records that Line as
 #     the cell.
 # REASONING: this file holds no eval — conditions enqueued here are evaluated later at the
 #     documented condition seam (README SECURITY; docs/public-api.md §3.2). Malformed, unknown, and
@@ -255,7 +255,7 @@ function absorbWalk(
                 ## The Segment comparison uses `>=`, NOT `>`: with consecutive inline-meta lines
                 ## `metaEnvInt` carries as :Segment, so a strict `>` (`Segment > Segment`) is false — no
                 ## `updateMetaHierarchy` reset — and the prior line's `working[:Visib]` would persist,
-                ## letting a stale verdict win over a new one (e.g. an inline `#~ discard` rendered as
+                ## letting a stale Visib value win over a new one (e.g. an inline `#~ discard` rendered as
                 ## hide). `>=` re-triggers the reset on every tie.
                 ## (The Line-grain comparison above stays strict `>`.)
                 local _mh_changed = BLS.orderedComponentTypesNamedT[:Segment] >= metaEnvInt &&
@@ -271,7 +271,7 @@ function absorbWalk(
                 ## `applyAltActionFns(::Segment)` only at this point,
                 ## IF `metaEnvInt` ("metaEnvironment") is on `:Segment`-level:
                 applyAltActionFns(childComponent) ## `childComponent` is :Segment.
-                # Segment-grain Visib write-back: a resolved Visib verdict maps through
+                # Segment-grain Visib write-back: a resolved Visib value maps through
                 # `st.registry.alt_index[:Visib]` / `st.working` to a settribute key via the
                 # per-call registry's generic `action_to_settribute` table (v0.4 T1: derived from the
                 # declared per-action `settribute` slots; identity at v0.4.0), written in the Pair form
@@ -280,11 +280,11 @@ function absorbWalk(
                 # grains (the Block-grain sibling lives in GoMeta.jl).
                 # Deferred: the E-04 flagless-Visib `keys(Visib)[array][1]` BoundsError and its typed
                 # `ERR_VISIB_NO_FLAG` conversion (docs/public-api.md §3.1).
-                ## A Segment-carried Visib verdict applies to the LINE containing the Segment (inline
+                ## A Segment-carried Visib value applies to the LINE containing the Segment (inline
                 ## meta applies to its line — docs/SYNTAX-AND-SEMANTICS.md §9), NOT to the Segment
                 ## itself: written to the Segment it would be unreachable by `checkVisib(line)` at
                 ## emit, so inline `#~ hide`
-                ## / `#~ show`(override) / `#~ discard` / bare-`#~` verdicts would not gate the render
+                ## / `#~ show`(override) / `#~ discard` / bare-`#~` values would not gate the render
                 ## and the content segment would emit before the override. Hence the target is
                 ## `crntComponent` (the Line, in scope here).
                 ## The action → settribute-key table is read off the PER-CALL registry
@@ -302,13 +302,13 @@ function absorbWalk(
                                             BLS.setElement(crntComponent.componentSettribute, key => true))
                     end
                 end
-                # Capture the Segment-grain FINAL verdicts before the next apply wipes `st.working`;
+                # Capture the Segment-grain FINAL evals rows before the next apply wipes `st.working`;
                 # the cell is the LINE (`crntComponent`) the Segment's meta applies to, NOT the Segment.
-                # Reads `st.working` and appends to `st.verdicts` — never alters render bytes.
+                # Reads `st.working` and appends to `st.evals` — never alters render bytes.
                 # v0.2 CH-1 (step 3): the ORIGIN rides the key — `childComponent` (the Segment) mints
                 #   the target/origin split, so two same-kind inline Segment evals on one Line stay
                 #   DISTINCT through the segment-carried remap.
-                capture_verdicts!(st, crntComponent; origin = childComponent)
+                captureEvals!(st, crntComponent; origin = childComponent)
             end
         end
     end

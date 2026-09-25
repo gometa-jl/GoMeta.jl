@@ -21,7 +21,7 @@ import GoMeta as GM
 
 _is(s) = GM.goMeta(Vector{UInt8}(codeunits(s)))
 _is_render(s) = String(copy(Main.BasicRenderer.outputs(_is(s)).render_bytes))
-_is_rows(s) = [(a, v, p) for (h, a, v, p) in GM.altValues_evals(_is(s))]
+_is_rows(s) = [(a, v, p) for (h, a, v, p) in GM.readAltValuesEvals(_is(s))]
 _is_msg(s) = try
     TestSupport.quiet_io(() -> _is(s))
     nothing
@@ -62,8 +62,8 @@ _liveempty(text) = join(
             twin = _liveempty(src)
             r_i, r_l = _is(src), _is(twin)
             @test string(r_i.status) == string(r_l.status)
-            @test [(a, v, p) for (h, a, v, p) in GM.altValues_evals(r_i)] ==
-                  [(a, v, p) for (h, a, v, p) in GM.altValues_evals(r_l)]
+            @test [(a, v, p) for (h, a, v, p) in GM.readAltValuesEvals(r_i)] ==
+                  [(a, v, p) for (h, a, v, p) in GM.readAltValuesEvals(r_l)]
             @test _liveempty(String(copy(Main.BasicRenderer.outputs(r_i).render_bytes))) ==
                   _liveempty(String(copy(Main.BasicRenderer.outputs(r_l).render_bytes)))
             # §4.4: the inert metaLine's OWN bytes travel VERBATIM in the render ('!' and
@@ -133,7 +133,7 @@ _liveempty(text) = join(
                   "x = 1  # see \"#~!2\" in prose\ny = 2\n")
             r = _is(s)
             @test r.status == GM.PROCESS_OK
-            @test isempty(GM.altValues_evals(r))
+            @test isempty(GM.readAltValuesEvals(r))
             @test String(copy(Main.BasicRenderer.outputs(r).render_bytes)) == s
         end
     end
@@ -141,17 +141,17 @@ _liveempty(text) = join(
     @testset "[P] named post-fix outcomes (the sitting §8)" begin
         # supersession: the inert depth-2 sibling retires the earlier depth-2 rule — B SHOWN:
         r = _is("#~2 hide{ isText }\n# A\n\n#~2! hide{ isText }\n# B\n")
-        @test [(a, v) for (h, a, v, p) in GM.altValues_evals(r)] == [(:visib, :hide)]
+        @test [(a, v) for (h, a, v, p) in GM.readAltValuesEvals(r)] == [(:visib, :hide)]
         @test occursin("\n# B", String(copy(Main.BasicRenderer.outputs(r).render_bytes)))
         # the cured swallow: a live metaLine after an inert first line ABSORBS:
         r2 = _is("#~2! :label2\n#~2 :label1\n# B\n")
-        @test any(a == :label_label1 for (h, a, v, p) in GM.altValues_evals(r2))
-        @test !any(a == :label_label2 for (h, a, v, p) in GM.altValues_evals(r2))
+        @test any(a == :label_label1 for (h, a, v, p) in GM.readAltValuesEvals(r2))
+        @test !any(a == :label_label2 for (h, a, v, p) in GM.readAltValuesEvals(r2))
         # security hand-pin: a standing discard still discards THROUGH an inert head
         # (the rejected L3 design's travel hole can never open):
         rd = _is("#~ discard{ isText }\n\n#~2! x\n# B\n")
         @test !occursin("# B", String(copy(Main.BasicRenderer.outputs(rd).render_bytes)))
-        @test any(a == :visib && v == :discard for (h, a, v, p) in GM.altValues_evals(rd))
+        @test any(a == :visib && v == :discard for (h, a, v, p) in GM.readAltValuesEvals(rd))
         # t_P6: the inert metaLine itself stays governable (altValue ON it, never FROM it):
         r3 = _is("#~ hide{ isMeta }\n\n#~2! show{ isMeta }\n# T\n")
         @test occursin("## #~2! show{ isMeta }", String(copy(Main.BasicRenderer.outputs(r3).render_bytes)))
@@ -166,7 +166,7 @@ _liveempty(text) = join(
         end
         # positive control — a named label still lands:
         r = _is("#~0 :label1\n# T\n")
-        @test any(a == :label_label1 for (h, a, v, p) in GM.altValues_evals(r))
+        @test any(a == :label_label1 for (h, a, v, p) in GM.readAltValuesEvals(r))
         # the inert exemption (R-INERT-4: content never read — no guard can fire):
         @test _is("#~2! :\n# T\n").status == GM.PROCESS_OK
         # the neighbouring malformation keeps its own family:
@@ -177,10 +177,10 @@ _liveempty(text) = join(
         # a live metaLine glued directly under `#]` is still skipped (the close-marker-headed
         # block keeps :ignoreThisMeta — the unchanged family remainder):
         r = _is("#~2 :label1\n# A\n#]\n#~2 hide{ isText }\n# B\n")
-        @test !any(a == :visib for (h, a, v, p) in GM.altValues_evals(r))
+        @test !any(a == :visib for (h, a, v, p) in GM.readAltValuesEvals(r))
         # a comment-headed post-blank meta block still conducts without absorbing its head:
         r2 = _is("#~2 :label1\n\n## c\n#~2 hide{ isText }\n# B\n")
-        @test !any(a == :visib for (h, a, v, p) in GM.altValues_evals(r2))
-        @test any(a == :label_label1 for (h, a, v, p) in GM.altValues_evals(r2))
+        @test !any(a == :visib for (h, a, v, p) in GM.readAltValuesEvals(r2))
+        @test any(a == :label_label1 for (h, a, v, p) in GM.readAltValuesEvals(r2))
     end
 end

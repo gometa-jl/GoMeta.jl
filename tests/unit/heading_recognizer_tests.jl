@@ -158,7 +158,7 @@ end
     catch e
         e
     end
-    _heads(r) = [(a, v) for (_, a, v, _) in GM.altValues_evals(r) if startswith(String(a), "head")]
+    _heads(r) = [(a, v) for (_, a, v, _) in GM.readAltValuesEvals(r) if startswith(String(a), "head")]
 
     @testset "test_quoted_first_lowering — the sugar lowers to the deriving head call" begin
         # the fenced first-position String becomes the head action's argument; the level
@@ -214,7 +214,7 @@ end
         # non-head attrs) — no fabricated rows (hd-4)
         rh = _run("#~ \"Title\"\nx = 1\n")
         rn = _run("# plain\nx = 1\n")
-        nonhead(r) = sort([String(a) for (_, a, _, _) in GM.altValues_evals(r) if !startswith(String(a), "head")])
+        nonhead(r) = sort([String(a) for (_, a, _, _) in GM.readAltValuesEvals(r) if !startswith(String(a), "head")])
         @test nonhead(rh) == nonhead(rn) == String[]
         @test !isempty(_heads(rh))
     end
@@ -299,7 +299,7 @@ end
         @test length(_heads(rl)) == 1 && (:head_1, "Title") in _heads(rl)
         # the row's handle is the METALINE's (the last-published context record of a
         # single-metaLine document IS the metaLine's own — its handle keys the row)
-        hrow = only([h for (h, a, _, _) in GM.altValues_evals(rl) if startswith(String(a), "head")])
+        hrow = only([h for (h, a, _, _) in GM.readAltValuesEvals(rl) if startswith(String(a), "head")])
         @test hrow == rl.state.meta_context.handle
         # SLOT-WIPE INDEPENDENCE: delivery happens at absorb, so a LATER same-depth
         # metaLine (which reuses/wipes the slot) cannot disturb an earlier heading's row
@@ -319,7 +319,7 @@ end
         # the deriving form still meets the applicability refusal there
         ru0 = GM.goMeta(Vector{UInt8}(codeunits("x = 1\n"));
             config = GM.GoMetaConfig(user_mh_profile = "head(\"U\", 3)"))
-        u_rows = [(h, a, v) for (h, a, v, _) in GM.altValues_evals(ru0)
+        u_rows = [(h, a, v) for (h, a, v, _) in GM.readAltValuesEvals(ru0)
                   if startswith(String(a), "head")]
         @test length(u_rows) == 1
         let (h, a, v) = u_rows[1]
@@ -393,7 +393,7 @@ end
         # the fed head's row is PRESENT (the row-shape pins live in the flipped
         # witness above; this asserts presence on this route's own run)
         @test any(a === :head_3 && v == "U"
-                  for (_, a, v, _) in GM.altValues_evals(ru))
+                  for (_, a, v, _) in GM.readAltValuesEvals(ru))
         # NEW at the user-context build (the reserved wall): a CONDITIONED head in
         # a fed profile meets its typed refusal — the feed carries no evaluable
         # settribute state (unconditioned heads record; the lifting condition is

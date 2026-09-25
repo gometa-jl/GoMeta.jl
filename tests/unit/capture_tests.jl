@@ -68,7 +68,7 @@ Base.eltype(::Type{_CapF.KStore}) = Bool     # eltype passes; keys(KStore) does 
     @testset "[1] sadd2 — the conforming mock MINTS (the anti-T1 cure; three witnesses)" begin
         R = GM.publish(_mockb())
         r = GM.goMeta(_doc("x = 1\n#~ zmark(aa)\n\ny = 2\n"); registry = R)
-        rows = GM.altValues_evals(r)
+        rows = GM.readAltValuesEvals(r)
         # (the crx-t5 B6 strengthening) the three witnesses are INDEPENDENT: existence+
         # uniqueness selects by the stem PREFIX (not the expected attr), the attr is
         # then pinned, then the payload
@@ -83,7 +83,7 @@ Base.eltype(::Type{_CapF.KStore}) = Bool     # eltype passes; keys(KStore) does 
         ra = GM.goMeta(_doc("x = 1\n#~ xmark(aa)\n\ny = 2\n"); registry = Ra)
         @test ra.status === GM.PROCESS_OK &&
               any(d -> d.code === :WARN_CAPTURE_UNREADABLE, ra.diagnostics) &&
-              !any(t -> startswith(String(t[2]), "zx"), GM.altValues_evals(ra))
+              !any(t -> startswith(String(t[2]), "zx"), GM.readAltValuesEvals(ra))
     end
 
     @testset "[2] the capture floor's FIRST arm (no capture row: disclosed, once, zero rows)" begin
@@ -93,7 +93,7 @@ Base.eltype(::Type{_CapF.KStore}) = Bool     # eltype passes; keys(KStore) does 
         @test r.status === GM.PROCESS_OK
         floors = [d for d in r.diagnostics if d.code === :WARN_CAPTURE_FLOOR]
         @test length(floors) == 1 && floors[1].context === :zmock  # ONCE per call, not per cell
-        @test !any(t -> startswith(String(t[2]), "zm"), GM.altValues_evals(r))
+        @test !any(t -> startswith(String(t[2]), "zm"), GM.readAltValuesEvals(r))
     end
 
     @testset "[3] the SECOND arm — the conformance gates + the value algebra" begin
@@ -109,7 +109,7 @@ Base.eltype(::Type{_CapF.KStore}) = Bool     # eltype passes; keys(KStore) does 
         rf = GM.goMeta(_doc("x = 1\n#~ zmark(aa)\n\ny = 2\n"); registry = Rf)
         @test rf.status === GM.PROCESS_OK &&
               any(d -> d.code === :WARN_CAPTURE_UNREADABLE, rf.diagnostics) &&
-              !any(t -> startswith(String(t[2]), "zf"), GM.altValues_evals(rf))
+              !any(t -> startswith(String(t[2]), "zf"), GM.readAltValuesEvals(rf))
         # the VALUE ALGEBRA: an admitted Dict whose VALUES are in-set mints; the
         # out-of-set case is structurally unreachable from a `Dict{Symbol,Bool}` store,
         # so the algebra is pinned DIRECTLY on the predicate
@@ -123,7 +123,7 @@ Base.eltype(::Type{_CapF.KStore}) = Bool     # eltype passes; keys(KStore) does 
         # `cell(7)` ⇒ the one row (:id_cell, 7); parent/file (0) ABSENT
         R = GM.publish(GM.default_registry_builder())
         r = GM.goMeta(_doc("x = 1\n#~ cell(7)\n\ny = 2\n"); registry = R)
-        rows = GM.altValues_evals(r)
+        rows = GM.readAltValuesEvals(r)
         idrows = [(t[2], t[3]) for t in rows if startswith(String(t[2]), "id_")]
         @test idrows == [(:id_cell, Int16(7))]                     # one row per non-default field
         @test !any(t -> t[2] === :id_parent || t[2] === :id_file, rows)   # defaulted fields absent
@@ -138,7 +138,7 @@ Base.eltype(::Type{_CapF.KStore}) = Bool     # eltype passes; keys(KStore) does 
     @testset "[6] the ungated :per_occurrence fifth arm (one presence row per governed cell)" begin
         R = GM.publish(_mockb(; capture = GM.CaptureDecl(Dict{Symbol,Bool}, :per_occurrence, :many, nothing; attr_stem = :zp)))
         r = GM.goMeta(_doc("x = 1\n#~ zmark(aa)\n\ny = 2\n"); registry = R)
-        prow = [t for t in GM.altValues_evals(r) if t[2] === :zp]
+        prow = [t for t in GM.readAltValuesEvals(r) if t[2] === :zp]
         @test length(prow) == 1 && prow[1][3] === true
     end
 
@@ -156,7 +156,7 @@ Base.eltype(::Type{_CapF.KStore}) = Bool     # eltype passes; keys(KStore) does 
                 accepts_string_slot = 1))
         R = GM.publish(b)
         r = GM.goMeta(_doc("x = 1\n#~ \"T\" zhd(\"U\", 2)\n\ny = 2\n"); registry = R)
-        rows = GM.altValues_evals(r)
+        rows = GM.readAltValuesEvals(r)
         @test r.status === GM.PROCESS_OK &&
               any(t -> t[2] === :head_1 && t[3] == "T", rows) &&
               any(t -> startswith(String(t[2]), "zh_") && t[3] == "U", rows)
@@ -194,7 +194,7 @@ Base.eltype(::Type{_CapF.KStore}) = Bool     # eltype passes; keys(KStore) does 
     @testset "[10] the derived-fallback stem (a mock with attr_stem = nothing)" begin
         R = GM.publish(_mockb(; capture = GM.CaptureDecl(Dict{Symbol,Bool}, :per_key, :many, nothing)))
         r = GM.goMeta(_doc("x = 1\n#~ zmark(aa)\n\ny = 2\n"); registry = R)
-        @test any(t -> t[2] === :zmock_aa, GM.altValues_evals(r))   # lowercase(String(:zmock)) = "zmock"
+        @test any(t -> t[2] === :zmock_aa, GM.readAltValuesEvals(r))   # lowercase(String(:zmock)) = "zmock"
     end
 
     @testset "[11] the crx-t5 cure witnesses" begin
@@ -238,7 +238,7 @@ Base.eltype(::Type{_CapF.KStore}) = Bool     # eltype passes; keys(KStore) does 
         rn = GM.goMeta(_doc("x = 1\n#~ nmark(aa)\n\ny = 2\n"); registry = Rn)
         @test rn.status === GM.PROCESS_OK &&
               any(d -> d.code === :WARN_CAPTURE_UNREADABLE, rn.diagnostics) &&
-              !any(t -> startswith(String(t[2]), "zn"), GM.altValues_evals(rn))
+              !any(t -> startswith(String(t[2]), "zn"), GM.readAltValuesEvals(rn))
         # (the arm envelope) a custom :single-gated type whose keys(T) is MISSING
         # (eltype pirated to Bool, an :array field, no keys method): floors typed,
         # never a raw MethodError

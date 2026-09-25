@@ -5,7 +5,7 @@
 #   1. runs `GoMeta.goMeta` on every input in `examples/InFileFolder/` (trusted committed
 #      input — see the SECURITY section of the README before running GoMeta on files you
 #      did not write);
-#   2. collects each file's evaluated Alterant values via `GoMeta.altValues_evals` (+ the
+#   2. collects each file's evaluated Alterant values via `GoMeta.readAltValuesEvals` (+ the
 #      cells' verbatim content via `GoMeta.content_fingerprint`, same order by contract) —
 #      tuples of (occurrence-handle bytes, attribute, value, polarity), where labels appear as
 #      `:label_label1` .. `:label_label5` and the visibility outcome as `:visib`;
@@ -74,7 +74,7 @@ function index_examples()
             n_skipped += 1
             continue
         end
-        evals = GoMeta.altValues_evals(result)
+        evals = GoMeta.readAltValuesEvals(result)
         fps   = GoMeta.content_fingerprint(result)   # same order as evals, by contract
         length(evals) == length(fps) ||
             error("find_by_label: evals/fingerprint arity diverged — the accessors' contract broke")

@@ -50,10 +50,10 @@ _uc_err(s)     = try _uc_full(s); nothing catch e sprint(showerror, e) end
     @testset "[4] CAL-14 + the honest worst case (comma-OR, unknown silently false)" begin
         g = _uc_full("#~ hide{ isCode , :zzz9 }\nx = 1\n")
         @test g.status == GM.PROCESS_OK           # ASCII control row
-        @test length(GM.altValues_evals(g)) == 1
+        @test length(GM.readAltValuesEvals(g)) == 1
         u = _uc_full("#~ hide{ isCode , :é}\nx = 1\n")   # U1-16: formerly ABORTED
         @test u.status == GM.PROCESS_OK           # now renders WITH hide applied —
-        @test length(GM.altValues_evals(u)) == 1  # measured + pre-registered
+        @test length(GM.readAltValuesEvals(u)) == 1  # measured + pre-registered
     end
 
     @testset "[5] preservation: walls, quirks, parity (the cure changed NOTHING else)" begin

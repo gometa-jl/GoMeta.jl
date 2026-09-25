@@ -43,7 +43,7 @@ import TOML
 @testset "public_surface (the Engine's surface, the tool's pair + the declared export set)" begin
 
     # The declared semver export set (docs/public-api.md §1.1).
-    DECLARED_EXPORTS = Set([:goMeta, :altValues_evals, :GoMetaConfig, :GoMetaResult])
+    DECLARED_EXPORTS = Set([:goMeta, :readAltValuesEvals, :GoMetaConfig, :GoMetaResult])
     # The supporting PACKAGE-PUBLIC surface (docs/public-api.md §1.2): documented + qualified-access, NOT exported.
     SUPPORTING_PUBLIC = [:serialize_evals, :content_fingerprint, :EvalRecord, :EvalStore, :ProcessStatus, :PROCESS_OK,
                          :PROCESS_ERROR, :Diagnostic, :AlterantRegistry, :DEFAULT_REGISTRY,
@@ -114,7 +114,7 @@ import TOML
         # the Engine's surface — altValues_evals: the typed per-cell map of evaluated Alterant values (the DB-interface payload). The fixture is
         # meta-bearing, so [8b] asserts the surface is FUNCTIONALLY populated (the type-only [8a] would hold even
         # for an empty result); [8c] is a per-row content guard (non-empty cell_handle + a present verdict value).
-        ann = GM.altValues_evals(r)
+        ann = GM.readAltValuesEvals(r)
         @test ann isa Vector{Tuple{Vector{UInt8},Symbol,Any,Bool}}    # [8a] altValues_evals is the pinned typed surface
         @test !isempty(ann)                                           # [8b] …and is functionally populated (the fixture has verdicts)
         @test all(t -> !isempty(t[1]) && t[3] !== nothing, ann)       # [8c] each row: non-empty cell_handle + present verdict value (the [8a] type-pin already guarantees the Symbol attr + Bool polarity slots)

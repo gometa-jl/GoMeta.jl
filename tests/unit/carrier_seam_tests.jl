@@ -55,7 +55,7 @@ end
         _CS_BLS.parseBLS(ps, 1, -1)
         r = GM.run_absorb_apply!(ps)
         @test r.status === GM.PROCESS_OK
-        @test isempty(GM.altValues_evals(r))
+        @test isempty(GM.readAltValuesEvals(r))
     end
 
     @testset "[3] surface discipline (package-public, NOT exported)" begin

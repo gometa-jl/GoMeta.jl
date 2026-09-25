@@ -2,14 +2,14 @@
 #
 # IS: the dep-free pieces of the public `GoMetaResult` surface that `ProcessState` itself embeds — the run
 #     status, the typed diagnostic record (which replaces every bare `error()`), and the per-cell
-#     verdict store. (The top-level `GoMetaResult` aggregate is defined in `state.jl`, AFTER
+#     evals store. (The top-level `GoMetaResult` aggregate is defined in `state.jl`, AFTER
 #     `ProcessState` — its first field; these three types must precede `ProcessState`, so they live here.)
 # DOES: declares `ProcessStatus` (the OK/non-OK enum), `Diagnostic` (`{code, severity, message, context}`),
 #     and `EvalStore` (a growable set of `EvalRecord`s) + its empty constructor.
 # REASONING: catalogued failures surface as typed `Diagnostic`s (E-01..E-08); the E-04/E-06 rows
 #     still throw and the condition-path rows (E-01/E-02/E-07) stay deferred at v0
-#     (docs/public-api.md §3). `capture_verdicts!` records per-cell verdicts
-#     before the slot wipe, feeding `altValues_evals`.
+#     (docs/public-api.md §3). `captureEvals!` records per-cell evals rows
+#     before the slot wipe, feeding `readAltValuesEvals`.
 # PURPOSE: the stable, total, machine-inspectable result vocabulary.
 
 """
@@ -46,14 +46,22 @@ Diagnostic(code::Symbol, severity::Symbol, message::AbstractString) =
 """
     EvalRecord(cell_handle, attr, value, polarity, content)
 
-One final per-cell verdict captured before the slot wipe. `cell_handle::Vector{UInt8}` holds the
+IS: one final evals row of a cell, captured before the slot wipe — the element of `EvalStore`.
+
+DOES: One final per-cell evals row captured before the slot wipe. `cell_handle::Vector{UInt8}` holds the
 `key_bytes` of the cell's NORMALIZED STRUCTURAL occurrence handle (`occurrence_key`,
-src/occurrence.jl; a Segment-carried verdict keys on its owning Line with the Segment recorded as the
+src/occurrence.jl; a Segment-carried evals row keys on its owning Line with the Segment recorded as the
 key's origin), so two distinct cells NEVER share a slot. The verbatim CONTENT bytes ride in the
 `content` metadata field (the find-again fingerprint — plain bytes, no hashing core-side);
 `attr::Symbol` the attribute; `value::Any` its value; `polarity::Bool` the on/off polarity. Feeds
-`altValues_evals(result)` (sorted `(cell_handle, attr, value)` — key-bytes order) + the
+`readAltValuesEvals(result)` (sorted `(cell_handle, attr, value)` — key-bytes order) + the
 `content_fingerprint` sibling accessor.
+
+REASONING: keyed by the normalized structural occurrence handle so that two distinct cells never share a slot;
+the verbatim content bytes ride as the find-again fingerprint rather than as the key.
+
+PURPOSE: the record `readAltValuesEvals` delivers as `(cell_handle, attr, value, polarity)` and
+`content_fingerprint` as `(cell_handle → content)`.
 """
 struct EvalRecord
     cell_handle::Vector{UInt8}
@@ -66,10 +74,17 @@ end
 """
     EvalStore()
 
-The per-call store of final `EvalRecord`s (deduped per `(cell_handle, attr)` during Apply — a
-re-applied cell supersedes, so the store holds final-verdicts-only). `EvalStore()` starts empty;
-`capture_verdicts!` (`src/annotations.jl`) populates it at the two apply-site write-backs BEFORE the
-slot wipe; the `altValues_evals(result)` accessor sorts them by `(cell_handle, attr, value)`.
+IS: the per-call store of final `EvalRecord`s — the container behind the evals rows.
+
+DOES: The per-call store of final `EvalRecord`s (deduped per `(cell_handle, attr)` during Apply — a
+re-applied cell supersedes, so the store holds final-evals-only). `EvalStore()` starts empty;
+`captureEvals!` (`src/annotations.jl`) populates it at the two apply-site write-backs BEFORE the
+slot wipe; the `readAltValuesEvals(result)` accessor sorts them by `(cell_handle, attr, value)`.
+
+REASONING: deduped per `(cell_handle, attr)` at capture (a re-applied cell supersedes) so that the store holds
+final evals only and the reader need not resolve repeats.
+
+PURPOSE: the store `_putEval!` writes and `readAltValuesEvals` sorts.
 """
 struct EvalStore
     records::Vector{EvalRecord}

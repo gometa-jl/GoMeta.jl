@@ -106,7 +106,7 @@ function checkLabels(
 )
     ## §4.8 twin guard (v0.3.1, with the setLabels guard above): the word-less
     ## label query ':()' reached this checker with ZERO labels and returned a vacuous TRUE —
-    ## a wrong-verdict class (the K5/K6 family). The K2 pin that held the misapply at its old
+    ## a wrong-outcome class (the K5/K6 family). The K2 pin that held the misapply at its old
     ## fate ("so it cannot drift silently") is flipped by name in the same change. The corpus
     ## sweep (v0.3.1) found no input depending on the vacuous form.
     isempty(labels) && error("GoMeta apply: empty label query — ':()' names no label to ",
@@ -116,7 +116,7 @@ function checkLabels(
     ## (crx C9): membership (unknown-label) FIRST, then the R-V04-36 write-only valve,
     ## then the store lookup. A record declaring NO vocabulary has neither guard.
     ## (the T4-milestone-set C1 cure) TWO PASSES at the CALL grain: EVERY supplied label
-    ## is validated (membership + valve) BEFORE any presence verdict — the interleaved
+    ## is validated (membership + valve) BEFORE any presence outcome — the interleaved
     ## per-label form returned `false` on an earlier unset member without ever validating
     ## a later write-only (or unknown) label, bypassing both refusal contracts.
     local vocab = _vocabulary_for_action(actionName)
@@ -244,7 +244,7 @@ _heading_validate_level(lvl::Int) =
 
 ## The setHead METHOD PAIR: the DERIVING method is the default — the quoted-first
 ## sugar lowers to it and the level derives from placement (the MetaContext record;
-## the level fact rides the head verdict row's ATTR NAME `head_<level>` — the
+## the level fact rides the head evals row's ATTR NAME `head_<level>` — the
 ## attr-fold; stored in NO Component) — and the EXPLICIT sibling takes the level
 ## per call. The explicit level arrives as Symbol text (`Symbol("2")`: the literal
 ## floor keeps the integer space RESERVED out of the args wall) and is parsed
@@ -590,7 +590,7 @@ function default_registry_builder()
     # the interim assert's refusal shape. Then the registration-time CHECK CHAIN
     # (each fail-closed BEFORE the registry object exists — the ATOMICITY law: no
     # partial registry is ever observable): the reflection cross-check (a)/(b)/(c)
-    # (the memo verify-not-derive verdict) · the value-algebra refusal (id-5) · the
+    # (the memo verify-not-derive outcome) · the value-algebra refusal (id-5) · the
     # reachability refusal · the unactivated-candidacy diagnostic (x-8).
     # v0.4 T2 — the declarations above are the DEFAULT BUILDER; the chain (the clash law + the
     # record shape law + the reflection cross-check + the value algebra + the reachability
@@ -2116,7 +2116,7 @@ end
 ## active probe; a probe's guard view = the EFFECTIVE guard (the spine ∪ every enclosing
 ## overlay); a pair anywhere in it returns equal (coinductive — termination on tandem
 ## cycles at any depth); an overlay is DISCARDED on rejection and on acceptance MERGES
-## into the ENCLOSING segment. There is NO verdict memo (the round-5 SIMPLIFY cure —
+## into the ENCLOSING segment. There is NO outcome memo (the round-5 SIMPLIFY cure —
 ## degenerate nested duplicate-equal-key rejected-twin towers are exponential-in-depth by
 ## disclosure, T2BIS-DESIGN §11). The door dispatches NO user-extensible method anywhere —
 ## no `hash`, no `isequal`, no `==`, no user `show` (rendering included): Dicts are

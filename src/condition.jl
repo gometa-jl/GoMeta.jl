@@ -15,7 +15,7 @@
 #        whitespace-only;
 #      · K5, the UNTERMINATED-LABEL TRUNCATION — a label word EXACTLY at the inner scan
 #        wall was silently rewritten to the zero-argument label query (TRUE against any
-#        present label store, FALSE with the store absent, EITHER WAY a verdict the author
+#        present label store, FALSE with the store absent, EITHER WAY an outcome the author
 #        never wrote; those fates sit in the sealed retirement cells) — the wall now
 #        REFUSES. The SECOND route to the same guard — a condition ENDING inside an atom
 #        whose FINAL character is multibyte — has a three-generation history, kept whole:
@@ -34,10 +34,10 @@
 #        trigger-2 cells ride the sealed-oracle conversion ledger, consciously;
 #      · K6, the LABEL-PAREN DISCARD — a label key immediately followed by a parenthesized
 #        argument list silently DISCARDED the authored word, so `:abc(:label1)` parsed as
-#        `:(:label1)` and a DIFFERENT label than the author named decided the verdict, and
+#        `:(:label1)` and a DIFFERENT label than the author named decided the outcome, and
 #        its WORST sub-form `:word()` routed into the zero-argument query (TRUE vacuously
 #        against a PRESENT label store, FALSE against an absent one — either way the label
-#        the author NAMED was never checked); the same wrong-verdict family as K5,
+#        the author NAMED was never checked); the same wrong-outcome family as K5,
 #        surfaced by the K5 retirement's review round, retired at the stage-2 close — a
 #        WORDED label key carrying an argument list now meets a typed grammar refusal
 #        NAMING the word, while the WORD-LESS form `:(...)` (no authored word to lose) is
@@ -47,7 +47,7 @@
 #      differences — the frozen reference is never edited. TWO corners REMAIN deliberately
 #      replicated: the settribute pending-argument LEAK (K3 — NOTE, recorded OPEN: the
 #      full-parse opt-in mode DROPS these pended arguments instead of leaking them, a
-#      divergence class on closed-accepted text, verdict-inert on the current registry;
+#      divergence class on closed-accepted text, outcome-inert on the current registry;
 #      see the extension file's settribute-call arm) and the END-OF-BODY parenthesis
 #      fold (K4). (Adjacent engine quirk, also
 #      replicated: the label arm's flag stays set after a label-paren atom — reachable
@@ -411,7 +411,7 @@ function _scan_condition(text::String, registry::AlterantRegistry, profile::Gram
                         # this refusal now fires AT the worded atom and so PREEMPTS
                         # whatever later refusal the pre-cure scan produced for a composite
                         # body (follower stale-span/stale-index/label-guard — message, and
-                        # in one pinned shape the code, differ). Verdicts changed ONLY for
+                        # in one pinned shape the code, differ). Outcomes changed ONLY for
                         # the silent accepts; zero sealed cells carry either family
                         # (verified at the motion).
                         if atom_is_label && prevind(text, indOpenParen) > indStartKey
@@ -440,7 +440,7 @@ function _scan_condition(text::String, registry::AlterantRegistry, profile::Gram
                 # so it could not fire). TWO triggers land here, both refused with one
                 # truthful message: (1) the label runs to the inner scan wall — there the
                 # OLD bytes minted the silent query (TRUE against a present label store,
-                # FALSE with it absent, either way a verdict the author never wrote; the
+                # FALSE with it absent, either way an outcome the author never wrote; the
                 # sealed retirement cells hold both fates); (2) the condition ENDS inside
                 # the label with a MULTIBYTE final character, which the single-byte
                 # end-of-text arm above cannot terminate — there the OLD bytes CRASHED raw
@@ -683,14 +683,23 @@ evaluate(st::ProcessState, ast::ConditionAST)::Bool = _eval_node(st, ast.root)::
 """
     has_query_atom(ast::ConditionAST) -> Bool
 
-TRUE iff the condition's algebra contains any `CondQueryAtom` (an alterant-state
+IS: the predicate whether a condition's algebra contains a `CondQueryAtom` (an alterant-state query).
+
+DOES: TRUE iff the condition's algebra contains any `CondQueryAtom` (an alterant-state
 query). The localOnly delivery seam consults this: a heading condition may test only
 SETTRIBUTE predicates at v0.2 — a query atom has no honest referent at the absorb
 seam (the working set there is the PREVIOUS apply's residue, not the heading's own
 context; an identical condition would mint or drop the head row depending on
-unrelated preceding content — the order-dependent wrong-verdict class), so the
+unrelated preceding content — the order-dependent wrong-outcome class), so the
 query form REFUSES there, RESERVED for a build that can give it the heading's own
 lineage context (a compatible refusal→semantics widening later).
+
+REASONING: at the absorb seam a query atom has no honest referent — `st.working` holds the previous apply's
+residue — so a heading condition carrying one would gate on unrelated preceding content (the order-dependent
+wrong-outcome class).
+
+PURPOSE: the localOnly delivery seam's refusal gate: a heading condition may test only settribute predicates at
+v0.2; the query form is reserved.
 """
 has_query_atom(ast::ConditionAST) = _has_query(ast.root)
 _has_query(::CondQueryAtom) = true

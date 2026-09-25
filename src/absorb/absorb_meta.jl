@@ -760,7 +760,7 @@ end
 ##   state — the pre-walk snapshot describes no component). A QUERY atom
 ##   (alterant-state query) REFUSES here at v0.2 (at absorb time `st.working` holds the PREVIOUS apply's residue, so a query
 ##   would gate the heading on unrelated preceding content — the order-dependent
-##   wrong-verdict class; the query form is RESERVED until a build can supply the
+##   wrong-outcome class; the query form is RESERVED until a build can supply the
 ##   heading's own lineage context — refusal→semantics is a compatible widening).
 ##   An opt-in FullEvalCondition marker on a heading is RESERVED TOO (the second
 ##   wall arm below);
@@ -889,8 +889,8 @@ function _absorb_local_only!(
             "region ", repr(first(metaSS, 40)),
             " (see docs/public-api.md §3.4)")
     end
-    local _verdict = conditionExpr === nothing ? nothing : GMX.evaluate(st, conditionExpr)
-    if conditionExpr === nothing || _verdict
+    local _condOutcome = conditionExpr === nothing ? nothing : GMX.evaluate(st, conditionExpr)
+    if conditionExpr === nothing || _condOutcome
         # v0.4 T5: the store is the OWNING PLUGIN's pending entry (per-plugin injective)
         store = get(pendingLocal, plugIdx, nothing)
         store === nothing && (store = GMX._mint_instance(plug))   # T3: the wrapped THIRD mint

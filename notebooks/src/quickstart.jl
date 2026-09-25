@@ -35,7 +35,7 @@ print(String(copy(out.render_bytes)))
 # Labels arrive as `:label_label1`..`:label_label5`; the per-cell visibility
 # verdict as `:visib`.
 
-evals = GoMeta.altValues_evals(result)
+evals = GoMeta.readAltValuesEvals(result)
 first(evals, 5)
 
 # ## Find it again

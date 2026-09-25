@@ -123,7 +123,7 @@ include(joinpath(pkgdir(GoMeta), "devtools", "load_basic_renderer.jl"))   # the 
 out    = Main.BasicRenderer.outputs(result)  # the tool's (blsStructure_bytes, render_bytes) pair
 print(String(copy(out.render_bytes)))     # the rendered share-view of the file
 
-evals = GoMeta.altValues_evals(result)    # the evaluated Alterant values, per piece of the file
+evals = GoMeta.readAltValuesEvals(result)    # the evaluated Alterant values, per piece of the file
                                           # (`evals` = evaluated metadata values — unrelated
                                           #  to Julia's `eval`)
 evals[1]                                  # (cell_handle, attr, value, polarity), e.g. (…, :label_label1, true, true)

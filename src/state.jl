@@ -149,12 +149,15 @@ const _CAPTURE_MODE_GATES     = (nothing, :localOnly)   # v0.4 T5: the closed ga
 """
     CaptureDecl(instance_type, attr_scheme, multiplicity, mode_gate[, attr_stem]; attr_stem = nothing)
 
-The declared capture row (CONSUMED by the capture walk since v0.4 T5 — the registration-
+IS: the declared capture row of an Alterant — slot (2) of its registration record: HOW the Alterant's applied
+value becomes evals rows.
+
+DOES: The declared capture row (CONSUMED by the capture walk since v0.4 T5 — the registration-
 driven re-home of the retired alt-name ladder): `instance_type` = the Alterant instance
 type the walk keys on (tier 1 requires it `===` the record's own `altConstructor`);
 `attr_scheme` ∈ `(:per_key, :single, :per_field, :per_occurrence)` = how attr names mint
 (`<stem>_<key>` per admitted Dict entry · one `<stem>` row for a NamedElements-shaped
-single verdict · `<stem>_<field>` per non-default numeric field · one presence row per
+single evals row · `<stem>_<field>` per non-default numeric field · one presence row per
 occurrence handle); `multiplicity` ∈ `(:many, :one, :per_field)` (CARRIED at v0.4 —
 its consumer is the T11 catalogue); `mode_gate` ∈ `(nothing, :localOnly)` — `:localOnly`
 delivers at the absorb seam keyed to the metaLine's own occurrence handle, and tier 1
@@ -165,6 +168,13 @@ derivation). A PLAIN 5-field struct — NO inner constructor and NO `@kwdef` (th
 copier rebuilds slot structs POSITIONALLY over all fields; an inner ctor or `@kwdef`
 would break `DEFAULT_REGISTRY` at module load) — with ONE outer compatibility method
 (the PlugIn precedent below).
+
+REASONING: the capture walk is registration-driven (v0.4 T5) — keyed on the declared instance type, never an
+alt-name ladder — and the struct is plain (no inner constructor, no `@kwdef`) because the domain copier rebuilds
+slot structs positionally.
+
+PURPOSE: the row `captureEvals!` reads to mint an Alterant's evals rows, and the row tier 1 validates for
+coherence with the record's `setMode`.
 """
 struct CaptureDecl
     instance_type::Type
@@ -204,10 +214,18 @@ end
 """
     RenderDecl(effects, resolve_order, materialize)
 
-The render-plane declaration: `effects` = action → `EffectRow` pairs in declaration order;
+IS: the render-plane declaration of an Alterant — its declared effects per action, its grain resolve order, and
+whether the resolved value is written back into the component's settribute.
+
+DOES: The render-plane declaration: `effects` = action → `EffectRow` pairs in declaration order;
 `resolve_order` = the declared grain resolve order (e.g. `[:Line, :Block]` — the Line-over-Block
-arm) or `nothing`; `materialize` = whether the resolved verdict is written back into the
+arm) or `nothing`; `materialize` = whether the resolved value is written back into the
 component's settribute (the generic write-back gate).
+
+REASONING: the write-back is declared per Alterant (the generic gate) rather than hard-wired, so the registry's
+`action_to_settribute` table is derived from declarations.
+
+PURPOSE: the declaration the apply's write-back and the render-plane effects read.
 """
 struct RenderDecl
     effects::Vector{Pair{Symbol,EffectRow}}
@@ -396,9 +414,12 @@ PlugIn(; altName::Symbol, setMode::Symbol, altConstructor::Type, setAltInstance:
 """
     ActionOverload
 
-ONE row of the DECLARED registration record (v0.2 registration build, the reflection-memo
+IS: ONE row of the DECLARED registration record — a per-overload declaration of an action's method signature,
+literal kinds, return type, effect, queryability, applicability and phase.
+
+DOES: ONE row of the DECLARED registration record (v0.2 registration build, the reflection-memo
 bindings): a per-overload declaration the registration-time REFLECTION CROSS-CHECK
-verifies against the executable method table (verify-not-derive — the memo verdict).
+verifies against the executable method table (verify-not-derive — the memo outcome).
 Fields: `sig_types` — the method signature's argument types AFTER the function
 type (store · action name · literal slots), stated as the METHOD declares them;
 `kinds` — the GRAMMAR-level literal kind per literal slot (`:symbol` | `:string`;
@@ -412,6 +433,12 @@ effect set); `queryable`; `applicability` (`:context_free` | `:context_required`
 `phase` (`:apply` | `:absorb` — mode-derived, the localOnly delta); `grammar` —
 `false` marks an INTERNAL row (the probe-surfaced inherited shapes, declared so the
 implemented-but-undeclared diagnostic stays armed for FUTURE drift).
+
+REASONING: verify-not-derive — the registration-time reflection cross-check verifies the declared row against the
+executable method table and never derives it from the compiler (the determinism law), so the record stays a
+declaration a reader can check.
+
+PURPOSE: the row the registration check chain, the grammar and the value-algebra refusal read.
 """
 struct ActionOverload
     sig_types::Vector{Type}
@@ -460,7 +487,7 @@ struct ActionSpec
     keyed_slot::Union{Nothing,Tuple{Symbol,Symbol}}
     # --- the v0.4 declared per-action slots (T1) ---
     default::DefaultSlot              # slot (3): the explicit default — `NoDefault()` = undeclared
-    settribute::Union{Nothing,Symbol} # slot (1): the settribute key this action's applied verdict
+    settribute::Union{Nothing,Symbol} # slot (1): the settribute key this action's applied value
                                       #   writes back to (`nothing` = no write-back); the registry's
                                       #   generic `action_to_settribute` table is DERIVED from these
 end
@@ -809,14 +836,17 @@ end
 """
     MetaContext
 
-The v0.2 CH-3 context record — **{grain, depth, application level, occurrence handle}**,
+IS: the v0.2 CH-3 context record — {grain, depth, application level, occurrence handle} — published at the
+walk→absorb handover for the current component.
+
+DOES: The v0.2 CH-3 context record — **{grain, depth, application level, occurrence handle}**,
 a PURE function of the parse, published at the walk→absorb handover (`applyAbsorbFn`
 builds it from the component + the post-update MH cursor and sets `st.meta_context`) and
 stored in NO Component (the evaluation-free-tree law). Consumers at this step:
 the quoted-first heading recognizer's APPLICABILITY check (the userMH feed NULLS the
 record before its absorb call — no document line exists there — so a derived-context
 heading through that surface meets a TYPED applicability refusal, never fabrication)
-and the head verdict row's level (the attr-fold: the level rides the attr NAME
+and the head evals row's level (the attr-fold: the level rides the attr NAME
 `head_<level>`; no fabricated rows, no record-schema change). `level` is the
 application level — the RAW MH-ladder index the walk set for this component (a
 Segment-attached metaLine inherits the metaLine's `lineMHIdx`, so the inheritance
@@ -825,6 +855,12 @@ author's own `#~`-digit vocabulary — at the enqueue materialization seam (the 
 level vocabulary; the record itself stays pure from parse). `handle` is the
 serialized occurrence key (`key_bytes`); under localOnly delivery it is
 LOAD-BEARING as the heading row's key.
+
+REASONING: a pure function of the parse, stored in no Component (the evaluation-free-tree law), so a consumer
+reads a record rather than a mutated tree.
+
+PURPOSE: the consumers' record: the quoted-first heading recognizer's applicability check, the head evals row's
+level (the attr-fold) and, under localOnly delivery, the heading row's key.
 """
 struct MetaContext
     grain::Symbol            # :Block | :Line | :Segment
@@ -856,12 +892,21 @@ end
 """
     ProcessState
 
-The per-call, mutable, threaded-via-`ctx()`, NEVER-global engine state. Wraps the parse state,
+IS: the per-call, mutable, threaded-via-`ctx()`, NEVER-global engine state of one run.
+
+DOES: The per-call, mutable, threaded-via-`ctx()`, NEVER-global engine state. Wraps the parse state,
 the config, the (immutable) registry, the meta-hierarchy + queue sub-states, the transient per-slot
-alterant-instance dict (`working`), the `verdicts` (captured
-before slot wipe → altValues_evals), the current-settribute `snapshot`,
+alterant-instance dict (`working`), the `evals` (the evals rows captured
+before the slot wipe → readAltValuesEvals), the current-settribute `snapshot`,
 the accumulating `diagnostics`, the three mutable meta-hierarchy cursors, and the per-component
 `meta_context` record (see `MetaContext`). Constructed only by `init_state`; delivered per-call via the `STATE` ScopedValue, read through `ctx()`.
+
+REASONING: one fresh state per call, delivered through the `STATE` ScopedValue, so two concurrent calls never
+share state and nothing carries over between runs.
+
+PURPOSE: the working memory of a run — the parse, the config, the registry, the meta-hierarchy and queue
+sub-states, the transient `working` dict, the `evals` store, the snapshot, the diagnostics, the cursors and the
+per-component context — constructed only by `init_state`.
 """
 mutable struct ProcessState
     parse::BLS.ParseState
@@ -870,7 +915,7 @@ mutable struct ProcessState
     mh::MetaHierarchyState
     queue::AlterantQueue
     working::Dict{Int8,Any}
-    verdicts::EvalStore
+    evals::EvalStore
     snapshot::BLS.ComponentSettribute
     diagnostics::Vector{Diagnostic}
     crnt_depth_idx::Int
@@ -914,9 +959,9 @@ end
 The public output of `goMeta(bytes; config) -> GoMetaResult` (docs/public-api.md §1.1): the per-call `state`,
 the `status` (`PROCESS_OK` ⇒ no error diagnostics), the `diagnostics`, and the `verdicts`. Defined AFTER
 `ProcessState` (its first field). The development tool's `Main.BasicRenderer.outputs`
-(`devtools/basic_renderer.jl`) surfaces a result's (tree, render) pair; `altValues_evals(result)` reads `verdicts`.
+(`devtools/basic_renderer.jl`) surfaces a result's (tree, render) pair; `readAltValuesEvals(result)` reads `verdicts`.
 The `state` field is INTERNAL and semver-UNSTABLE at v0 — depend only on `status`, `diagnostics`
-and `altValues_evals(result)` (the (tree, render) pair is the development tool's `Main.BasicRenderer.outputs`,
+and `readAltValuesEvals(result)` (the (tree, render) pair is the development tool's `Main.BasicRenderer.outputs`,
 loaded through `devtools/load_basic_renderer.jl` — not an Engine surface); a future release may narrow or remove it.
 """
 struct GoMetaResult
@@ -945,13 +990,20 @@ eval'd `getState`/`getAltState` reach `ctx()` with zero change to the generated 
 """
     init_state(parse_state, config, registry) -> ProcessState
 
-Build a FRESH `ProcessState`, sizing every container ONCE from `registry` + `NUM_MH_LEVELS`. Every
+IS: the constructor of a FRESH `ProcessState`, sized once per call from the registry and `NUM_MH_LEVELS`.
+
+DOES: Build a FRESH `ProcessState`, sizing every container ONCE from `registry` + `NUM_MH_LEVELS`. Every
 per-field init is performed here, so each call is independent — no tensor or cursor carries over:
 `slots = zeros(Int8, NUM_MH_LEVELS)`; the `slot_*`/`count_*` per-slot vectors `fill(false,·)`/`zeros(Int8,·)`;
 `queued = zeros(Int8, 2, nAct, nSlot)`; `conditions`/`args` matrices filled with `nothing`; `working` an
-empty `Dict`; `verdicts` empty; `snapshot` a FRESH `ComponentSettribute` (its `array` is COPIED into by
+empty `Dict`; `evals` empty; `snapshot` a FRESH `ComponentSettribute` (its `array` is COPIED into by
 `snapshot_settribute!`, never aliased); the three cursors all `fileMHIdx` (= 1).
 `num_slots == NUM_MH_LEVELS`.
+
+REASONING: every per-field init is performed here so that each call is independent — no tensor or cursor
+carries over (the reset-safe law).
+
+PURPOSE: the reset-safe start of every run, the only route to a `ProcessState`.
 """
 function init_state(parse_state::BLS.ParseState, config::GoMetaConfig, registry::AlterantRegistry)
     n_act  = num_alt_actions(registry)   # 8 since CH-3 step 9 (was 7; the head action joined)
@@ -970,7 +1022,7 @@ function init_state(parse_state::BLS.ParseState, config::GoMetaConfig, registry:
     return ProcessState(
         parse_state, config, registry, mh, queue,
         Dict{Int8,Any}(),            # working
-        EvalStore(),              # verdicts
+        EvalStore(),              # evals
         BLS.ComponentSettribute(),   # snapshot — FRESH (array copied-into, not aliased)
         Diagnostic[],                # diagnostics
         fileMHIdx, fileMHIdx, fileMHIdx,   # crnt_depth_idx / first_parent_idx / crnt_idx

@@ -29,7 +29,7 @@
 
 **In R-V04B-24's own words: "the package's canonical observable output = `altValues_evals` (+
 `serialize_evals`, `content_fingerprint`)" and "the Engine's delivered surface after the move = the run and
-the evaluated values".** `altValues_evals(result)` is the deterministic, final-verdicts-only per-cell map of
+the evaluated values".** `readAltValuesEvals(result)` is the deterministic, final-verdicts-only per-cell map of
 evaluated Alterant values (GoMeta's semantic deliverable; the query-facing write payload; §4).
 
 **The development tool's pair** — `Main.BasicRenderer.outputs(result) -> (blsStructure_bytes, render_bytes)`,
@@ -113,12 +113,12 @@ doubling died with the ensure-token rule and the corpus outputs carry no doubled
 
 ## §4 — The evals surface
 
-`altValues_evals(result) -> Vector{(cell_handle, attr, value, polarity)}` — the evaluated
+`readAltValuesEvals(result) -> Vector{(cell_handle, attr, value, polarity)}` — the evaluated
 Alterant values, per piece of the file: **deterministic,
 content-hashable, final-verdicts-only**. Sorted by
 `(cell_handle, attr, value)`; deduped at capture; **empty when no metaLine exists on ANY
 surface** (the fed profile is a metaLine body).
-`GoMeta.serialize_evals(altValues_evals(result))` is its canonical byte form. It is the
+`GoMeta.serialize_evals(readAltValuesEvals(result))` is its canonical byte form. It is the
 query-facing write payload; it does **not** enter the `(tree, render)` pair.
 
 ## §5 — The invariant register (asserted by the shipped suite)

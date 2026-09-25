@@ -27,7 +27,7 @@
 # REASONING: conditions travel as parsed condition ASTs and arguments as opaque tuples, so there
 #     is one auditable evaluation site (the closed interpreter's `evaluate`), one auditable setter
 #     seam, plus explicit guards ("GoMeta internal invariant violated …", not reachable from any
-#     v0 input) on impossible verdict states. Honest edges: the E-04 apply-path crash-origin and
+#     v0 input) on impossible apply states. Honest edges: the E-04 apply-path crash-origin and
 #     the E-06 absorb-path guarded refusal keep their typed conversion deferred
 #     (docs/public-api.md §3.1); the BARE unqueryable condition atom aborts raw at evaluation —
 #     the E-07 pending mint (docs/public-api.md §3.2/§3.4).
@@ -89,8 +89,8 @@ function detAltValuesForSetOfSlots(
             if insorted(crntAltIdx, st.registry.accum_alt_idxs)
 
                 local _cond = st.queue.conditions[row, crntSlot]
-                local _verdict = _cond === nothing ? nothing : evaluate(st, _cond)   # v0.2 FLIP: the closed interpreter (the eval seam is retired)
-                if _cond === nothing || _verdict
+                local _condOutcome = _cond === nothing ? nothing : evaluate(st, _cond)   # v0.2 FLIP: the closed interpreter (the eval seam is retired)
+                if _cond === nothing || _condOutcome
                     if crntAltIdx ∉ keys(st.working)
                         st.working[crntAltIdx] =
                             _mint_instance(st.registry.plugins[crntAltIdx])   # T3: the wrapped mint
@@ -155,8 +155,8 @@ function detAltValuesForSetOfSlots(
                     continue
                 end
                 local _cond = st.queue.conditions[idx, crntSlot]
-                local _verdict = _cond === nothing ? nothing : evaluate(st, _cond)   # v0.2 FLIP: the closed interpreter (the eval seam is retired)
-                if _cond === nothing || _verdict
+                local _condOutcome = _cond === nothing ? nothing : evaluate(st, _cond)   # v0.2 FLIP: the closed interpreter (the eval seam is retired)
+                if _cond === nothing || _condOutcome
 
 
                     if crntAltIdx ∉ view(previousSetAltIdxVec,

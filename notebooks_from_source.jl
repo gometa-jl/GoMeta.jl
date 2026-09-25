@@ -5,7 +5,7 @@
 #   1. runs `GoMeta.goMeta` on the source (trusted committed input — see the SECURITY
 #      section of the README) and requires `PROCESS_OK`;
 #   2. takes each line's EFFECTIVE fate from the engine's own VERDICTS: the `:visib`
-#      rows of `GoMeta.altValues_evals` joined to source spans via
+#      rows of `GoMeta.readAltValuesEvals` joined to source spans via
 #      `GoMeta.content_fingerprint` — never from the render bytes (at the render grain
 #      an engine-hidden line and an authored marker-headed line are
 #      byte-INDISTINGUISHABLE, the ensure-token fidelity bound; the render serves only
@@ -17,7 +17,7 @@
 #      travels with the artifact in SOURCE form, as HTML comments in markdown cells and
 #      as `gometa` cell metadata in code cells; hidden content lines travel the same
 #      way; DISCARDED lines never travel) and joins each cell to its evaluated labels
-#      via `GoMeta.altValues_evals` + `GoMeta.content_fingerprint` (occurrence-keyed
+#      via `GoMeta.readAltValuesEvals` + `GoMeta.content_fingerprint` (occurrence-keyed
 #      rows; the fingerprint carries each cell's verbatim content bytes, same order);
 #   4. writes one notebook per EDITION — full · student · report · slides — each a pure
 #      function of the marks plus the edition's small policy table below, in
@@ -308,7 +308,7 @@ function partition(fates::Vector{LineFate})
 end
 
 # join labels onto cells via each row's verbatim CONTENT bytes (the
-# `content_fingerprint` sibling accessor — same sort order as `altValues_evals`, by
+# `content_fingerprint` sibling accessor — same sort order as `readAltValuesEvals`, by
 # contract). The evals KEY is the structural occurrence handle since v0.2 and is opaque
 # here. HONEST SCOPE: an eval row with NO home fails red; the containment match may
 # attach a label to more than one cell on shared bytes — editions treat labels as
@@ -1030,14 +1030,14 @@ derive(spec::SourceSpec) = derive_from_bytes(read(spec.path), spec)
 function derive_from_bytes(bytes::Vector{UInt8}, spec::SourceSpec)
     r = GoMeta.goMeta(bytes)
     r.status == GoMeta.PROCESS_OK || error("EMIT FAILURE: processing failed for $(spec.path): $(r.status)")
-    fates = verdict_fates(String(copy(bytes)), GoMeta.altValues_evals(r), GoMeta.content_fingerprint(r))
+    fates = verdict_fates(String(copy(bytes)), GoMeta.readAltValuesEvals(r), GoMeta.content_fingerprint(r))
     witness_against_render(fates, String(copy(Main.BasicRenderer.outputs(r).render_bytes)))
     cells = partition(fates)
-    join_labels!(cells, GoMeta.altValues_evals(r), GoMeta.content_fingerprint(r))
+    join_labels!(cells, GoMeta.readAltValuesEvals(r), GoMeta.content_fingerprint(r))
     n_discarded = count(lf -> lf.fate === :discard, fates)
     n_hidden = count(lf -> lf.fate === :hide, fates)
     stem = splitext(basename(spec.path))[1]
-    digest = bytes2hex(SHA.sha256(Vector{UInt8}(codeunits(String(GoMeta.serialize_evals(GoMeta.altValues_evals(r)))))))[1:8]
+    digest = bytes2hex(SHA.sha256(Vector{UInt8}(codeunits(String(GoMeta.serialize_evals(GoMeta.readAltValuesEvals(r)))))))[1:8]
     label_counts = join(sort(["$(l)×$(count(c -> l in c.labels, cells))" for l in Set(l for c in cells for l in c.labels)]), " ")
     println("  labels on cells: ", isempty(label_counts) ? "(none)" : label_counts, " · verdict digest ", digest)
     outputs = Tuple{String,String}[]
@@ -1095,7 +1095,7 @@ function run_selfchecks()
     function fates_of(src::String)
         r = GoMeta.goMeta(Vector{UInt8}(codeunits(src)))
         r.status == GoMeta.PROCESS_OK || fail("fixture did not process: $(r.status)")
-        f = verdict_fates(src, GoMeta.altValues_evals(r), GoMeta.content_fingerprint(r))
+        f = verdict_fates(src, GoMeta.readAltValuesEvals(r), GoMeta.content_fingerprint(r))
         witness_against_render(f, String(copy(Main.BasicRenderer.outputs(r).render_bytes)))
         return f
     end
@@ -1188,9 +1188,9 @@ function run_selfchecks()
         bytes = Vector{UInt8}(codeunits(src))
         r = GoMeta.goMeta(bytes)
         r.status == GoMeta.PROCESS_OK || fail("page fixture did not process: $(r.status)")
-        fates = verdict_fates(String(copy(bytes)), GoMeta.altValues_evals(r), GoMeta.content_fingerprint(r))
+        fates = verdict_fates(String(copy(bytes)), GoMeta.readAltValuesEvals(r), GoMeta.content_fingerprint(r))
         cells = partition(fates)
-        join_labels!(cells, GoMeta.altValues_evals(r), GoMeta.content_fingerprint(r))
+        join_labels!(cells, GoMeta.readAltValuesEvals(r), GoMeta.content_fingerprint(r))
         pages = derive_pages(spec, cells)
         return last(pages[1]), last(pages[2])            # full, reader
     end

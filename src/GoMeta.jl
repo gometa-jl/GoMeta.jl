@@ -3,7 +3,7 @@
 # IS: the GoMeta package top module. It holds the ordered include spine — config.jl, result.jl,
 #     bls/BLS.jl, state.jl, alterants/registry.jl, annotations.jl,
 #     absorb/absorb_meta.jl, absorb/walk.jl, alterants/apply.jl — and declares the
-#     exported semver surface: `goMeta`, `altValues_evals`, `GoMetaConfig`, `GoMetaResult`
+#     exported semver surface: `goMeta`, `readAltValuesEvals`, `GoMetaConfig`, `GoMetaResult`
 #     (docs/public-api.md §1.1; asserted by tests/unit/public_surface_tests.jl), plus the
 #     declared `public` tier of qualified names (docs/public-api.md §1.2 — e.g. `GoMeta.serialize_evals`,
 #     `GoMeta.PROCESS_OK`).
@@ -18,8 +18,8 @@
 #     range). The absorb-walk + apply run inside one per-call dynamic scope, `with(STATE =>
 #     init_state(parse_state, config, registry))`, so two
 #     concurrent calls never share state; the driver walk enters each file-level Block, absorbs its
-#     metaLines, applies the queued alterant actions, writes back the Block-grain Visib verdict,
-#     and captures per-cell verdicts for `altValues_evals(result)`. The (tree, render) pair is the
+#     metaLines, applies the queued alterant actions, writes back the Block-grain Visib value,
+#     and captures per-cell evals rows for `readAltValuesEvals(result)`. The tool's `outputs` pair — the BLS Component tree's print and the render — is the
 #     development tool's — `devtools/basic_renderer.jl`, loaded through `devtools/load_basic_renderer.jl`,
 #     never by the Engine (R-V04B-24, 2026-09-12). The optional
 #     `config.user_mh_profile` seeds the reserved user slot of the meta-hierarchy before the walk
@@ -119,10 +119,10 @@ using .CnS: getState, getAltState
 include("condition.jl")             # the closed condition interpreter (bounded intake + algebra +
                                     #   printer + evaluate) — after registry.jl (the query dispatch
                                     #   surface) + state.jl; inert until the engine flips to it.
-include("annotations.jl")           # the per-cell verdict surface — verdict capture +
-                                    #   altValues_evals(result). AFTER registry.jl (Alterants.Visib/Id) + state.jl
+include("annotations.jl")           # the per-cell evals surface — evals capture +
+                                    #   readAltValuesEvals(result). AFTER registry.jl (Alterants.Visib/Id) + state.jl
                                     #   (ProcessState/GoMetaResult/EvalStore); BEFORE walk.jl + the driver below
-                                    #   (which call capture_verdicts!). Holds no eval, no render-write.
+                                    #   (which call captureEvals!). Holds no eval, no render-write.
 include("absorb/absorb_meta.jl")
 using .AbsorbMeta
 include("absorb/walk.jl")           # goMetaAddOns absorb-half — absorbMeta (above) must precede it
@@ -147,7 +147,7 @@ include("alterants/apply.jl")       # goMetaAddOns apply-half — late-bound fro
 #   docs/public-api.md §1.2 is the mirror).
 # Qualified import (`import GoMeta as GM`) is UNAFFECTED by these exports and remains canonical for namespace
 # hygiene + multi-implementation use; exporting serves the single-implementation `using` convenience only.
-export goMeta, altValues_evals, GoMetaConfig, GoMetaResult
+export goMeta, readAltValuesEvals, GoMetaConfig, GoMetaResult
 public serialize_evals, content_fingerprint, EvalRecord, EvalStore, ProcessStatus, PROCESS_OK, PROCESS_ERROR, Diagnostic, AlterantRegistry, DEFAULT_REGISTRY,
        RegistryBuilder, register!, next_plugin_index, validate, publish, RegistrationRefused,   # v0.4 T2: the registration lifecycle (docs/public-api.md §1.2)
        Alterant, PlugIn, ActionSpec, ActionOverload, DomainRef, CaptureDecl, DefaultSlot, NoDefault, Declared,   # v0.4 T2 (cure batch 1) + the rename: the record
@@ -238,7 +238,7 @@ input — the development tool's `outputs` (`devtools/basic_renderer.jl`) then y
                                         registry::AlterantRegistry, config_diags::Vector{Diagnostic})
     st = init_state(parse_state, config, registry)
     append!(st.diagnostics, config_diags)
-    return GoMetaResult(st, PROCESS_ERROR, st.diagnostics, st.verdicts)
+    return GoMetaResult(st, PROCESS_ERROR, st.diagnostics, st.evals)
 end
 
 """
@@ -295,7 +295,10 @@ end
             config::GoMetaConfig = GoMetaConfig(),
             registry::AlterantRegistry = DEFAULT_REGISTRY) -> GoMetaResult
 
-Run the GoMeta pipeline over `bytes` and return a typed `GoMetaResult` — the package's primary public entry
+IS: the pipeline driver — the package's primary public entry, `goMeta(bytes; config, registry) -> GoMetaResult`
+(docs/public-api.md §2): the run whose evals rows `readAltValuesEvals` reads.
+
+DOES: Run the GoMeta pipeline over `bytes` and return a typed `GoMetaResult` — the package's primary public entry
 (docs/public-api.md §2). PURE + DETERMINISTIC for a DEFAULT-CONFIGURED run under `DEFAULT_REGISTRY`
 (the closed interpreter; the opt-in full-eval mode and a custom registry's own callables are outside
 the guarantee — the trust model): the same `(bytes, config, registry)` always yields
@@ -318,7 +321,7 @@ Arguments:
 The `GoMetaResult` is `{state, status::ProcessStatus, diagnostics::Vector{Diagnostic}, verdicts::EvalStore}` and is
 TOTAL over the CONFIG-TIME catalogued surface (an invalid profile or parse_range never throws uncaught); absorb/apply-plane catalogued failures can still throw at v0 (see below): `status` is
 `PROCESS_OK` (no error diagnostics) or `PROCESS_ERROR` (>=1 error `Diagnostic`; non-OK => non-empty diagnostics).
-Obtain the Engine's output via `altValues_evals(result)` (the per-cell verdict map; its byte form
+Obtain the Engine's output via `readAltValuesEvals(result)` (the per-cell evals map; its byte form
 `serialize_evals`, the cell bytes `content_fingerprint`) — with the run itself, the Engine's delivered surface
 after the move (R-V04B-24: "the run and the evaluated values"). The (tree, render) pair is the development
 tool's: `Main.BasicRenderer.outputs`, applied to the result after `include("devtools/load_basic_renderer.jl")`
@@ -334,6 +337,14 @@ now (the honest partition — docs/public-api.md §3). The full honest-edges cat
 structurally identical, content ignored · the transposed `#~!N` refuses loudly · `#]`
 closes the innermost metaBlock and detaches what follows · a trailing `#~ …` applies to
 its own line. Full family + laws: the module docstring and `docs/SYNTAX-AND-SEMANTICS.md`.
+
+REASONING: the Engine's own operations are pure and deterministic — no filesystem, clock or environment read; the
+closed condition interpreter — so that the same `(bytes, config, registry)` always yields the same result (the
+byte law's ground); the trust model bounds the guarantee: the opt-in full-eval mode and a custom registry's own
+callables are outside it.
+
+PURPOSE: the one route from a document's bytes to the delivered object — the run and the evaluated values
+(R-V04B-24) — for an Extension, a test, a development tool or a DB-interface.
 """
 function goMeta(
     bytes::Vector{UInt8};
@@ -404,7 +415,10 @@ end
                       config::GoMetaConfig = GoMetaConfig(),
                       registry::AlterantRegistry = DEFAULT_REGISTRY) -> GoMetaResult
 
-The CALLABLE DRIVER SEAM. ONE callable exposes, indivisibly: the absorb WALK plane
+IS: the CALLABLE DRIVER SEAM — one package-internal callable exposing, indivisibly, the absorb walk (both
+grains), the conditions plane, the Alterants/apply plane and the evals plane over a caller-owned `ParseState`.
+
+DOES: The CALLABLE DRIVER SEAM. ONE callable exposes, indivisibly: the absorb WALK plane
 (both grains), the CONDITIONS plane (the closed interpreter via the per-call state),
 the ALTERANTS/APPLY plane (registry + slot tensors + write-backs), and the EVALS
 plane (capture → `altValues_evals`). An adapter never composes them individually.
@@ -424,7 +438,7 @@ THE CONTRACT (normative rows):
    `:startMainStr` byte; the walk's typed internal error enforces this on the FIRST
    ABSORBED META UNIT AT EITHER GRAIN (Line or Segment). A store whose metadata is
    entirely absent or inert never consults the flavor record and renders
-   byte-identically under any record (no hide verdict can exist without an absorbed
+   byte-identically under any record (no hide value can exist without an absorbed
    meta unit); `validate_carrier_state` (below) reports a wrong-record pairing
    UNCONDITIONALLY — the standing check for exactly that class.
 3. VALIDATION ASYMMETRY (a contract row, not a footnote): `goMeta` validates config
@@ -446,6 +460,13 @@ THE CONTRACT (normative rows):
    Office pilot's first gate).
 6. The seam parses NOTHING and renders NOTHING; its output is the evaluated values
    (`altValues_evals`); the (tree, render) pair is the development tool's.
+
+REASONING: an adapter never composes the planes individually (the seam's indivisibility law), and every call
+builds its `ProcessState` fresh (the reset-safe law) while the caller-owned parse state is mutated by the
+write-backs — hence the seam ledger's refusal of an in-flight re-injection.
+
+PURPOSE: the route by which an adapter package (the Office pilot's carrier profile) runs the Engine over a store
+it built itself, without re-validation — its output the evaluated values, the render nothing of the seam's.
 """
 ## v0.4 T3 — THE SEAM LEDGER (T3-DESIGN §7; M-AC-11 + HC-9 under the §12 re-basing).
 ## One weak-keyed side table maps each CALLER-OWNED parse state (identity-keyed — a
@@ -588,10 +609,10 @@ function run_absorb_apply!(parse_state::BLS.ParseState;
                                             BLS.setElement(childComponent.componentSettribute, key => true))
                     end
                 end
-                # Capture this Block's FINAL verdicts (Labels + Visib + Id) into st.verdicts BEFORE the
+                # Capture this Block's FINAL evals rows (Labels + Visib + Id) into st.evals BEFORE the
                 #   next apply wipes st.working — the cell is this Block. Render-neutral: it only reads
-                #   st.working + appends to st.verdicts (no parse-tree or render mutation).
-                capture_verdicts!(st, childComponent)
+                #   st.working + appends to st.evals (no parse-tree or render mutation).
+                captureEvals!(st, childComponent)
             end
         end
     end
@@ -617,11 +638,11 @@ function run_absorb_apply!(parse_state::BLS.ParseState;
     ## comment only). `status` is computed from the accumulated diagnostics (empty HERE — a config-time
     ## error fail-closes via goMeta's early return before this seam is reached, and the apply-path bare
     ## `error()`s still throw — their typed conversion is deferred), so this valid-config path is
-    ## `PROCESS_OK`. The evaluated values are read by `altValues_evals(result)`; the development tool's
+    ## `PROCESS_OK`. The evaluated values are read by `readAltValuesEvals(result)`; the development tool's
     ## (tree, render) pair (`Main.BasicRenderer.outputs`) is a pure function of the final `result.state.parse`,
     ## which the in-`with` absorb-walk + apply has fully mutated.
     status = any(d -> d.severity === :error, st.diagnostics) ? PROCESS_ERROR : PROCESS_OK
-    return GoMetaResult(st, status, st.diagnostics, st.verdicts)
+    return GoMetaResult(st, status, st.diagnostics, st.evals)
 end
 
 """

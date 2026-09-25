@@ -1,25 +1,25 @@
-# annotations.jl — the evals surface: the per-cell verdict map + its canonical serialization.
+# annotations.jl — the evals surface: the per-cell evals map + its canonical serialization.
 #
 # IS: the home of GoMeta's `altValues_evals` surface — the deterministic, content-hashable,
-#     final-verdicts-only per-cell verdict map `(cell_handle, attr, value, polarity)` a `goMeta`
+#     final-evals-only per-cell evals map `(cell_handle, attr, value, polarity)` a `goMeta`
 #     run yields alongside the development tool's (tree, render) pair (`devtools/basic_renderer.jl`)
-#     (docs/public-api.md §1.3; docs/CANONICAL-OUTPUT.md §4). Verdicts have no manifestation in
-#     either tuple half (the tree is verdict-free; the render reflects only Visib effects), so
+#     (docs/public-api.md §1.3; docs/CANONICAL-OUTPUT.md §4). Evals rows have no manifestation in
+#     either tuple half (the BLS Component tree is evals-free; the render reflects only Visib effects), so
 #     this surface is where label / Visib / Id outcomes become observable — the query-facing
 #     write payload, GoMeta's semantic deliverable.
 # DOES: (1) `cell_content_bytes(parse, component)` — the grain-aware `cell_handle` extractor:
 #     the VERBATIM content bytes of a BLS cell (Block = its joined line span, Line = its full
 #     source line, Segment = a byte-offset slice of its own line), byte-sliced so non-ASCII
 #     content stays byte-faithful, NO hashing core-side (the core stays dependency-free); empty
-#     for a structural cell that addresses no content. (2) `capture_verdicts!(st, cell)` —
+#     for a structural cell that addresses no content. (2) `captureEvals!(st, cell)` —
 #     called from the apply sites right after a cell's alterant state is finalized and BEFORE
-#     the next slot reset wipes it; records the cell's final label / Visib / Id verdicts into
+#     the next slot reset wipes it; records the cell's final label / Visib / Id evals rows into
 #     the `EvalStore`, deduped per `(cell_handle, attr)` with later-wins supersede.
-#     (3) `altValues_evals(result)` — the exported accessor: sorts by `(cell_handle, attr, value)`,
+#     (3) `readAltValuesEvals(result)` — the exported accessor: sorts by `(cell_handle, attr, value)`,
 #     returns the pinned `Vector{Tuple{Vector{UInt8},Symbol,Any,Bool}}` — empty when no metaLine
 #     exists on any surface (the fed profile is a metaLine body; un-fed meta-free input yields
 #     the empty vector) — and is pure + read-only on `result`. (4) `serialize_evals` — the
-#     canonical, deterministic, binary-safe byte forms (one verdict per line, hex-encoded
+#     canonical, deterministic, binary-safe byte forms (one evals row per line, hex-encoded
 #     handle; the golden layer's form appends the content-fingerprint hex column) pinned by the
 #     read-side golden tests.
 # REASONING: final results are observable, deterministic, and hash-stable.
@@ -27,10 +27,9 @@
 #     distinct cells never share a slot even with byte-identical content; the verbatim content
 #     bytes ride each record as its find-again fingerprint, and a value-CHANGING re-apply of
 #     the SAME occurrence emits the non-fatal `WARN_VERDICT_COLLISION` diagnostic rather than
-#     masking the supersede (docs/public-api.md §3). A
-#     verdict on a cell nested in a `:discard`-skipped ancestor still appears here even though
-#     the render omits that cell — `altValues_evals` is the verdict truth; the render is the
-#     share-target bytes.
+#     masking the supersede (docs/public-api.md §3). A row is recorded for every captured cell —
+#     the evals rows are the Engine's recorded truth of the run; the render is the development
+#     tool's own concern (`devtools/basic_renderer.jl`), not this surface's.
 # PURPOSE: the machine-readable RESULTS surface of a `goMeta` run — pinned, attributed,
 #     deterministic, hash-stable; its determinism + totality laws are asserted by
 #     the golden layer (tests/golden/golden_tests.jl), and its
@@ -42,11 +41,13 @@
 """
     cell_content_bytes(parse::BLS.ParseState, component) -> Vector{UInt8}
 
-The VERBATIM content bytes of a BLS `component` — its `cell_handle`. The handle is
+IS: the grain-aware `cell_handle` extractor: the VERBATIM content bytes of a BLS Component at its own grain.
+
+DOES: The VERBATIM content bytes of a BLS `component` — its `cell_handle`. The handle is
 the raw content bytes (NOT a hash — the core stays dependency-free, not even the SHA stdlib; an adapter layer
 can wrap the SAME bytes as `CellID(sha256(bytes))` without re-extraction). The grain is COMPONENT-grain
-(Block / Line / Segment); "Segment-else-Line" is the LEAF-grain phrasing — a Block-level verdict keys on
-whole-block content (per-block verdicts). Grain-aware extraction, because `:startMainStr`/`:stopMainStr` mean
+(Block / Line / Segment); "Segment-else-Line" is the LEAF-grain phrasing — a Block-level evals row keys on
+whole-block content (per-block evals rows). Grain-aware extraction, because `:startMainStr`/`:stopMainStr` mean
 DIFFERENT things per grain:
 
 - **Block** (`Component{70}`): `:idxString == 0`; `:startMainStr`/`:stopMainStr` are the block's LINE-NUMBER
@@ -57,17 +58,23 @@ DIFFERENT things per grain:
   line robustly — even a MULTI-SEGMENT line (`:idxString == 0`, content split into Segments) carries its
   source-line number in `:inputLineNum` (the addChildComponentTo idNum writes in parseBLS), where `:idxString` cannot. (A single-segment
   line's `:idxString` equals its `:inputLineNum`, so this is uniform.) The whole source line, including any
-  inline `#~` meta, is the verbatim content the verdict addresses.
+  inline `#~` meta, is the verbatim content the evals row addresses.
 - **Segment** (`Component{1}`) and any other grain: a byte-offset span into its own source line —
   `codeunits(collectedLines[idxString])[startMainStr:stopMainStr]` (negative `idxString` ⇒ the `addedStrings`
   insert-store). BYTE-sliced (not char-indexed) so a non-ASCII line is byte-faithful — the slicing is
-  UTF-8-correct on multi-byte lines. (The corpus capture path never passes a bare Segment — a Segment-grain verdict is
+  UTF-8-correct on multi-byte lines. (The corpus capture path never passes a bare Segment — a Segment-grain evals row is
   keyed on its Line.)
 
 Returns an empty `Vector{UInt8}` for a structural component that addresses no content (a Block with a `0`/
-out-of-range line span, or a Segment placeholder with no string) — `capture_verdicts!` skips those. A genuinely
-empty source line (a blank line) is also empty here; the corpus apply never leaves a verdict on a blank line
-(blank lines detach / start new blocks — SYNTAX-AND-SEMANTICS §3), so no real verdict is lost.
+out-of-range line span, or a Segment placeholder with no string) — `captureEvals!` skips those. A genuinely
+empty source line (a blank line) is also empty here; the corpus apply never leaves an evals row on a blank line
+(blank lines detach / start new blocks — SYNTAX-AND-SEMANTICS §3), so no real evals row is lost.
+
+REASONING: the core stays dependency-free (no hashing) and byte-faithful (byte-sliced, UTF-8-correct), and an
+unaddressable span returns empty (fail-closed) — the capture predicate's arms.
+
+PURPOSE: the verbatim content bytes each evals row carries as its fingerprint, and the emptiness test that
+decides whether a cell is captured at all.
 """
 function cell_content_bytes(parse::BLS.ParseState, component::BLS.AbstractComponent)
     cni       = component.cmpntNamedInt
@@ -111,30 +118,37 @@ function cell_content_bytes(parse::BLS.ParseState, component::BLS.AbstractCompon
 end
 
 # --------------------------------------------------------------------------------------------------------
-# Verdict capture — record a cell's FINAL verdicts before the slot wipe (called from the apply sites)
+# Evals capture — record a cell's FINAL evals rows before the slot wipe (called from the apply sites)
 # --------------------------------------------------------------------------------------------------------
 """
-    _put_verdict!(st::ProcessState, handle, attr::Symbol, value, polarity::Bool, content) -> nothing
+    _putEval!(st::ProcessState, handle, attr::Symbol, value, polarity::Bool, content) -> nothing
 
-Record one final verdict into `st.verdicts`, DEDUPED per `(cell_handle, attr)`: a later put for the same
-occurrence+attribute SUPERSEDES the earlier one (later wins). The store therefore holds at most one record
-per `(cell_handle, attr)` by construction.
+IS: the deduped put of ONE final evals row into `st.evals` — the one door into the store.
 
-**Occurrence-addressing + the collision signal.** `handle` is the `key_bytes` of the cell's NORMALIZED
-STRUCTURAL occurrence key (src/occurrence.jl) — two DISTINCT cells never share a slot, even with
-byte-identical content (the distinct-cell content-collision class of a purely content-keyed store cannot
-occur by construction; PRECISE BOUND: this holds for WELL-FORMED keys — two DEGENERATE truncated-walk
-keys could alias each other, a case no real parse produces). A slot match here is therefore the SAME
-occurrence re-applied; a value-CHANGING supersede is a genuine conflicting re-apply (applied-state-wins)
-and still records the non-fatal `:warning` Diagnostic (`WARN_VERDICT_COLLISION`) — surfaced, never
-masked. The verbatim `content` bytes ride each record as the demoted find-again fingerprint (plain
-bytes — no hashing core-side; an adapter layer that wraps handles as digests is the natural home for a
-hashing scheme). O(n) per put (a linear scan); acceptable at v0 (small files; a Dict-keyed store gives
-O(1) later).
+DOES: records the row `(handle, attr, value, polarity, content)`, DEDUPED per `(cell_handle, attr)`: a later put
+for the same occurrence+attribute SUPERSEDES the earlier one (later wins), so the store holds at most one record
+per `(cell_handle, attr)` by construction. **Occurrence-addressing + the collision signal.** `handle` is the
+`key_bytes` of the cell's NORMALIZED STRUCTURAL occurrence key (src/occurrence.jl) — two DISTINCT cells never
+share a slot, even with byte-identical content (the distinct-cell content-collision class of a purely
+content-keyed store cannot occur by construction; PRECISE BOUND: this holds for WELL-FORMED keys — two DEGENERATE
+truncated-walk keys could alias each other, a case no real parse produces). A slot match here is therefore the
+SAME occurrence re-applied; a value-CHANGING supersede is a genuine conflicting re-apply (applied-state-wins) and
+still records the non-fatal `:warning` Diagnostic (`WARN_VERDICT_COLLISION` — the code's name unchanged) —
+surfaced, never masked. The verbatim `content` bytes ride each record as the demoted find-again fingerprint
+(plain bytes — no hashing core-side; an adapter layer that wraps handles as digests is the natural home for a
+hashing scheme).
+
+REASONING: the surface promises final evals only — one row per `(cell_handle, attr)` — so the put dedupes at
+write time, a later put superseding, rather than by a later pass, and the reader sorts without resolving
+repeats; the linear scan — O(n) per put, n = the rows already in the store — is accepted at v0 for the corpus's
+small files, a Dict-keyed store being the O(1) successor.
+
+PURPOSE: the single primitive both `captureEvals!` (the apply sites' rows) and `capture_heading!` (the absorb
+seam's heading rows) write through — every evals row a run records enters the store here.
 """
-function _put_verdict!(st::ProcessState, handle::Vector{UInt8}, attr::Symbol, value, polarity::Bool,
+function _putEval!(st::ProcessState, handle::Vector{UInt8}, attr::Symbol, value, polarity::Bool,
                        content::Vector{UInt8})
-    recs = st.verdicts.records
+    recs = st.evals.records
     @inbounds for i in eachindex(recs)
         r = recs[i]
         if r.attr === attr && r.cell_handle == handle
@@ -160,9 +174,12 @@ function _put_verdict!(st::ProcessState, handle::Vector{UInt8}, attr::Symbol, va
 end
 
 """
-    capture_verdicts!(st::ProcessState, cell; origin = nothing) -> nothing
+    captureEvals!(st::ProcessState, cell; origin = nothing) -> nothing
 
-Capture `cell`'s FINAL alterant verdicts from `st.working` into `st.verdicts`, keyed by the cell's
+IS: the capture of a cell's FINAL evals rows from `st.working` into `st.evals` before the slot wipe — the apply
+sites' write path into the store.
+
+DOES: captures `cell`'s FINAL Alterant values from `st.working` into `st.evals`, keyed by the cell's
 NORMALIZED STRUCTURAL occurrence key (v0.2 CH-1: `key_bytes(occurrence_key(parse, cell; origin,
 namespace = config.namespace))` — the verbatim content bytes DEMOTE to each record's fingerprint field).
 `origin` carries the target/origin split: the walk's Segment-grain site passes the SEGMENT while
@@ -183,13 +200,26 @@ alterant instances the apply left in `st.working`:
   guarded against the flagless `keys(Visib)[all-false]` E-04 case rather than tripping a bare `error()`).
 - **Id** (`:mutExclusivePerField`, `@namedElement … Int16`): one row per NON-default field —
   `(handle, :id_<name>, value::Int16, true)`. The corpus does NOT exercise Id (SYNTAX-AND-SEMANTICS §13;
-  no read site), so this path is contract-completeness ("total over applied verdicts").
+  no read site), so this path is contract-completeness ("total over the applied evals rows").
 
-`polarity` is `true` for every applied verdict at v0 (all captured verdicts are "set/on"); the field is in the
-pinned tuple to distinguish on/off and is reserved for a future negated-verdict encoding. The dispatch reads
-the per-call `st.registry.alt_index` (NOT the global `DEFAULT_REGISTRY`), so a custom registry threads through.
+`polarity` is `true` for every applied evals row at v0 (all captured evals rows are "set/on"); the field is in
+the pinned tuple to distinguish on/off and is reserved for a future negated-row encoding — an evals row with
+`polarity == false`. The dispatch reads the per-call `st.registry.alt_index` (NOT the global
+`DEFAULT_REGISTRY`), so a custom registry threads through.
+
+REASONING: the store is keyed by the normalized structural occurrence key so two distinct cells never share a
+slot, and the capture happens between the apply's finalization and the next wipe because `st.working` is
+transient — what is not captured here is gone with the wipe.
+
+PURPOSE: the write path for a Component's evals rows from the APPLY — the rows of every Alterant the apply
+left in `st.working` (the shipped Labels, Visib and Id), put from the two apply sites: `src/GoMeta.jl` (the
+Block grain) and `src/absorb/walk.jl` (the Segment grain, `origin` = the Segment, the row keyed on the owning
+Line). The heading rows — a metaLine region's, keyed on the metaLine's own occurrence handle, and the fed
+profile's, keyed on the user-context handle — are NOT put here: `capture_heading!` puts them from the absorb
+seam's flush (its one call in `src/absorb/absorb_meta.jl`). Both writers go through the one primitive
+`_putEval!`.
 """
-function capture_verdicts!(st::ProcessState, cell::BLS.AbstractComponent;
+function captureEvals!(st::ProcessState, cell::BLS.AbstractComponent;
                            origin::Union{Nothing,BLS.AbstractComponent} = nothing)
     isempty(st.working) && return nothing
     # SPAN-VALIDITY POLICY (the interim capture predicate): the CAPTURE decision keeps keying on the
@@ -260,7 +290,7 @@ function capture_verdicts!(st::ProcessState, cell::BLS.AbstractComponent;
                     bad = false
                     for (kk, vv) in inst
                         if kk isa Symbol && _capture_value_leaf(vv)
-                            _put_verdict!(st, handle, Symbol(stem, :_, kk), vv, true, content)
+                            _putEval!(st, handle, Symbol(stem, :_, kk), vv, true, content)
                         else
                             bad = true
                         end
@@ -270,7 +300,7 @@ function capture_verdicts!(st::ProcessState, cell::BLS.AbstractComponent;
                     _capture_floor!(st, p, :WARN_CAPTURE_UNREADABLE)
                 end
             elseif sch === :single
-                # the NamedElements-shaped single verdict; the capability gate is STATIC
+                # the NamedElements-shaped single evals row; the capability gate is STATIC
                 # on the declared type (Base.eltype on the abstract root — probes
                 # P101/P102), the array/keys parity preflighted, the minted value
                 # algebra-checked
@@ -294,7 +324,7 @@ function capture_verdicts!(st::ProcessState, cell::BLS.AbstractComponent;
                     if !isempty(set_acts)
                         el = set_acts[1]
                         _capture_value_leaf(el) ?
-                            _put_verdict!(st, handle, stem, el, true, content) :
+                            _putEval!(st, handle, stem, el, true, content) :
                             _capture_floor!(st, p, :WARN_CAPTURE_UNREADABLE)
                     end
                 else
@@ -315,7 +345,7 @@ function capture_verdicts!(st::ProcessState, cell::BLS.AbstractComponent;
                     for (fi, name) in enumerate(ks)
                         v = arr[fi]
                         (v isa ET && v != z) &&
-                            _put_verdict!(st, handle, Symbol(stem, :_, name), v, true, content)
+                            _putEval!(st, handle, Symbol(stem, :_, name), v, true, content)
                     end
                 else
                     _capture_floor!(st, p, :WARN_CAPTURE_UNREADABLE)
@@ -323,7 +353,7 @@ function capture_verdicts!(st::ProcessState, cell::BLS.AbstractComponent;
             elseif sch === :per_occurrence
                 # the ungated fifth arm: one presence row per governed cell — the
                 # occurrence handle IS the locus (the value = `true` at v0.4; T11's row)
-                _put_verdict!(st, handle, stem, true, true, content)
+                _putEval!(st, handle, stem, true, true, content)
             end
         catch e
             e isa InterruptException && rethrow()
@@ -351,16 +381,24 @@ _capture_value_leaf(@nospecialize v) =
 """
     _capture_floor!(st, p, code) -> nothing
 
-The typed capture-floor diagnostic (T5-DESIGN §3; the silent skip retires). Both arms
+IS: the typed capture-floor diagnostic — the disclosure that an Alterant's applied state minted no evals rows.
+
+DOES: The typed capture-floor diagnostic (T5-DESIGN §3; the silent skip retires). Both arms
 WARNING-severity (non-fatal — totality) and deduped ONCE PER CALL per (alterant, code)
-by scanning `st.diagnostics` — the O(n) linear-scan policy `_put_verdict!` already
+by scanning `st.diagnostics` — the O(n) linear-scan policy `_putEval!` already
 ratifies; ZERO state-shape change.
+
+REASONING: the silent skip retires: an evals-invisible applied state is disclosed as a non-fatal WARNING, once
+per call per (alterant, code), so totality holds without a throw.
+
+PURPOSE: to make the capture floor visible — an Alterant that declares no capture row, or a live value outside
+its declared readable shape — to whoever reads the diagnostics.
 """
 function _capture_floor!(st::ProcessState, p, code::Symbol)
     any(d -> d.code === code && d.context === p.altName, st.diagnostics) && return nothing
     msg = code === :WARN_CAPTURE_FLOOR ?
         string("GoMeta capture: alterant ", repr(p.altName), " produced applied state but ",
-            "declares no capture row — its verdicts mint NO evals rows (the capture floor; ",
+            "declares no capture row — its outcomes mint NO evals rows (the capture floor; ",
             "declare a CaptureDecl to lift it)") :
         string("GoMeta capture: alterant ", repr(p.altName), " declares scheme ",
             repr(p.capture === nothing ? :none : p.capture.attr_scheme),   # (crx-t5 A1) defensive — the UNREADABLE arm must never itself throw
@@ -425,43 +463,53 @@ function capture_heading!(st::ProcessState, heading, stem::Symbol)
         attr = lvl === nothing ?
             (k == 1 ? stem : Symbol(stem, :_u, k)) :
             (k == 1 ? Symbol(stem, :_, lvl) : Symbol(stem, :_, lvl, :_, k))
-        _put_verdict!(st, handle, attr, text, true, content)
+        _putEval!(st, handle, attr, text, true, content)
     end
     return nothing
 end
 
 # --------------------------------------------------------------------------------------------------------
-# The public accessor — altValues_evals(result)
+# The public accessor — readAltValuesEvals(result)
 # --------------------------------------------------------------------------------------------------------
 """
-    altValues_evals(result::GoMetaResult) -> Vector{Tuple{Vector{UInt8},Symbol,Any,Bool}}
+    readAltValuesEvals(result::GoMetaResult) -> Vector{Tuple{Vector{UInt8},Symbol,Any,Bool}}
 
-The evals surface (docs/CANONICAL-OUTPUT.md §4; docs/public-api.md §1.3): the per-cell final
-verdict map `(cell_handle, attr, value, polarity)`, **sorted by `(cell_handle, attr, value)`** for a
-deterministic, content-hashable order. **Final-verdicts-only** (the store is deduped at capture). **Total
-over applied verdicts** — exactly one row per final `(cell, attr)` verdict the apply produced (count == the
-deduped `EvalStore`). **Empty when no metaLine exists on ANY surface** (the fed profile IS a
-metaLine body; a passthrough render of an un-fed meta-free input captures no verdicts). This
-surface is OUTSIDE the `(tree, render)` output pair at v0 (folding it in later is a purely additive,
-consciously versioned change); it IS the DB-interface write payload.
+IS: the core's reader over the evals rows of a run — the production surface of the GoMeta Engine
+(docs/CANONICAL-OUTPUT.md §4; docs/public-api.md §1.3). Named by the owner's ruling R-V04B-32 (2026-09-16):
+the name `altValues_evals` belongs to the DATA CONTAINER — the evals rows a run delivers — never to a function.
 
-Pure + read-only on `result` (it sorts the already-final store without mutating it, and each returned
-`cell_handle` is a COPY of the store's bytes — mutating a returned handle never perturbs a later accessor
-or serializer call on the same result), so it is safe to call any number of times and
-outside the per-call `STATE` scope — `result.verdicts` was fully populated by the in-`with` apply. The sort key stringifies `attr`/`value` for a total order over the
-heterogeneous `value::Any` within the CLOSED capture value set (Bool for Labels, Symbol for Visib, Int16 for Id, String for heading text — the v0.4 T5 capture value algebra: Bool · Symbol · the machine ints · String); `cell_handle::Vector{UInt8}`
-sorts lexicographically.
+DOES: returns one row `(cell_handle, attr, value, polarity)` per final evaluation recorded for a handle and an
+attribute — the per-cell rows (a Component's: put at the two apply sites, and a metaLine's own heading rows at
+the absorb seam's flush) plus the handle-classed non-cell rows the explicit headings of a fed profile record
+against the user-context handle, one per entry (docs/public-api.md §2, the reader's own section) — **sorted by
+`(cell_handle, attr, value)`** so that the order is deterministic and content-hashable; final evals only (the
+store is deduped at capture); total over the recorded evals (the row count == the deduped `EvalStore`); empty
+when no metaLine exists on ANY surface (the fed profile IS a metaLine body; a run over an un-fed meta-free input
+records no evals rows). Pure and read-only on `result`: it sorts the already-final store without mutating it,
+and each returned `cell_handle` is a COPY of the store's bytes, so a caller mutating a returned handle never
+perturbs a later reader or serializer call on the same result; safe to call any number of times, also outside
+the per-call `STATE` scope (`result.verdicts` was fully populated by the in-`with` apply). The sort key
+stringifies `attr` and `value` for a total order over the heterogeneous `value::Any` within the CLOSED capture
+value set — the T5 capture value algebra: Bool · Symbol · the machine ints · String (`_capture_value_leaf`);
+the shipped four use Bool for Labels, Symbol for Visib, Int16 for Id, String for heading text;
+`cell_handle::Vector{UInt8}` sorts lexicographically. The first element is the OCCURRENCE-KEY bytes (v0.2
+CH-1); the content bytes are read through `content_fingerprint`.
 
-**Cross-surface note (the discard component-skip divergence).** On an input exercising the discard
-component-skip divergence (`devtools/basic_renderer.jl`, the basic renderer — a development tool since
-R-V04B-24; a known, deliberate divergence, documented there),
-a captured `:show`/`:hide` verdict on a cell nested in a `:discard`-skipped ancestor APPEARS in
-`altValues_evals` even though that cell is OMITTED from the basic renderer's `render_bytes` — `altValues_evals`
-follows the apply semantics (verdict-faithful), the render follows the component-skip. A DB/agent consumer
-should read `altValues_evals` as the verdict truth and the render as the share-target bytes; the two can
-legitimately disagree only on this documented-divergence shape.
+REASONING: the GoMeta Engine EVALUATES and records values as data (the boundary law, 2026-08-27); this reader
+is the one core-provided route from a run to those values, and its order is fixed so that two runs over the
+same input bytes, configuration (the fed profile included) and registry serialize identically — for a
+default-configured run under `DEFAULT_REGISTRY`, the closed interpreter (the opt-in `:full_eval_v1` mode and a
+custom registry's own callables are outside the guarantee — `goMeta`'s docstring, the trust model): the
+Engine's determinism supplies equal rows, the sort their equal order. This surface is the Engine's; the
+development tool's `outputs` pair — the BLS Component tree's print and the render
+(`Main.BasicRenderer.outputs`, R-V04B-24) — is the tool's own, and no ruling foresees the two joined.
+
+PURPOSE: what an Extension, a test, a development tool or a DB-interface reads to learn the final Alterant
+values a run recorded and for which handle — a Component's rows from the apply, a metaLine region's heading
+rows from the absorb seam's flush, and the non-cell rows the explicit headings of a fed profile record against
+the user-context handle, one per entry — the evals rows as the recorded truth of the run.
 """
-function altValues_evals(result::GoMetaResult)
+function readAltValuesEvals(result::GoMetaResult)
     recs   = result.verdicts.records
     order  = sortperm(recs; by = r -> (r.cell_handle, string(r.attr), string(r.value)))
     ## Each returned cell_handle is a COPY — the accessor never aliases the store's byte vectors,
@@ -476,10 +524,19 @@ end
 """
     content_fingerprint(result::GoMetaResult) -> Vector{Tuple{Vector{UInt8},Vector{UInt8}}}
 
-The SIBLING accessor of the occurrence-key store: the per-record
+IS: the SIBLING accessor of the occurrence-key store: the per-record `(cell_handle → content)` pairs in the
+reader's sort order.
+
+DOES: The SIBLING accessor of the occurrence-key store: the per-record
 `(cell_handle → content)` pairs — the demoted verbatim content bytes (the layered find-again
 fingerprint; plain bytes, NO hashing core-side) keyed by the same occurrence-key bytes
-`altValues_evals` returns, in the SAME sort order. Pure + copying, like `altValues_evals`.
+`readAltValuesEvals` returns, in the SAME sort order. Pure + copying, like `readAltValuesEvals`.
+
+REASONING: the content bytes are demoted from the key to a fingerprint so that identity is structural (the
+occurrence handle) while the content stays reviewable beside it.
+
+PURPOSE: the pairs a consumer zips on the reader's rows to find a cell again by its verbatim bytes (the golden
+layer's fifth column; the notebook generator's join).
 """
 function content_fingerprint(result::GoMetaResult)
     recs  = result.verdicts.records
@@ -492,13 +549,22 @@ end
 """
     serialize_evals(ann) -> Vector{UInt8}
 
-The deterministic, binary-safe 4-COLUMN byte form of an `altValues_evals(result)` vector — one
-already-sorted verdict per line, `<attr>\\t<repr(value)>\\t<polarity>\\t<hex(cell_handle)>`, under a
+IS: the deterministic, binary-safe 4-COLUMN byte form of a reader vector — the public back-compat
+serialization of the evals rows.
+
+DOES: The deterministic, binary-safe 4-COLUMN byte form of an `readAltValuesEvals(result)` vector — one
+already-sorted evals row per line, `<attr>\\t<repr(value)>\\t<polarity>\\t<hex(cell_handle)>`, under a
 fixed header (`cell_handle` = the occurrence-key bytes, hex — v0.2 CH-1). **BACK-COMPAT form** kept
 on the public surface; the GOLDEN layer's write+read sides both use the 5-COLUMN `GoMetaResult` method
 below (which appends the content-fingerprint hex column for reviewability + per-fixture
 discrimination) — see that method's docstring. Hashing either form's bytes gives a stable behaviour
 digest (the "content-hashable" property; docs/CANONICAL-OUTPUT.md §4).
+
+REASONING: a fixed header and one row per line, hex-encoded handles, make the bytes hash-stable and
+diff-reviewable; the golden layer uses the 5-column `GoMetaResult` method beside it.
+
+PURPOSE: the byte form a consumer hashes for a behaviour digest (docs/CANONICAL-OUTPUT.md §4) and the notebook
+generator's digest source.
 """
 function serialize_evals(ann)::Vector{UInt8}
     # Built via string/join (NOT `print`/`write`-to-stdout) — src/ never prints unconditionally to stdout
@@ -525,7 +591,7 @@ above keeps the key-only 4-column form (public back-compat; an adapter's payload
 adapter's, not this dev-side golden).
 """
 function serialize_evals(result::GoMetaResult)::Vector{UInt8}
-    ann = altValues_evals(result)
+    ann = readAltValuesEvals(result)
     fp  = content_fingerprint(result)
     parts = String[
         "# annotations golden — sorted (cell_handle, attr, value); final-verdicts-only.\n",

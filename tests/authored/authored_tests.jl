@@ -204,7 +204,7 @@ const CONFIRMED = sort([f for f in readdir(AUTHORED_DIR) if endswith(f, ".toml")
             @test isfile(input)
             r = GA.goMeta(read(input))
             @test r.status == GA.PROCESS_OK
-            rows = GA.altValues_evals(r)
+            rows = GA.readAltValuesEvals(r)
             t    = _components(r.state.parse)
             for ex in spec["expect"]
                 n_stmt += 1

@@ -230,7 +230,7 @@ import GoMeta as GM
         @test all(ov.phase === :absorb for ov in hs.overloads)
         # behavior THROUGH the record is unchanged: the slot law + validation
         r = GM.goMeta(Vector{UInt8}(codeunits("#~ \"T\"\nx = 1\n")))
-        @test any(a === :head_1 for (_, a, _, _) in GM.altValues_evals(r))
+        @test any(a === :head_1 for (_, a, _, _) in GM.readAltValuesEvals(r))
         eq = try
             GM.goMeta(Vector{UInt8}(codeunits("#~ head(\"T\", \"2\")\nx = 1\n")))
             nothing
