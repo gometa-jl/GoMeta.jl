@@ -48,10 +48,10 @@ by `tests/unit/public_surface_tests.jl`) and of the refusal behavior the shipped
 
 | Name | Kind | One-line |
 |---|---|---|
-| `goMeta` | function | the pipeline entry — `goMeta(bytes; config, registry) -> GoMetaResult` |
+| `goMeta` | function | the pipeline entry — `goMeta(bytes; config, registry) -> GoMetaDelivery` |
 | `readAltValuesEvals` | function | the reader over the evals rows — the evaluated Alterant values, per piece of the file (the production surface) |
 | `GoMetaConfig` | type | the v0 input options |
-| `GoMetaResult` | type | the typed pipeline result |
+| `GoMetaDelivery` | type | the delivered object of a run — its four public parts `altValues_evals`, `blsComponentTree`, `status`, `diagnostics` |
 
 `names(GoMeta)` is exactly this set plus the §1.2 public names (39 since R-V04B-24 (2026-09-12): the
 ten of 0.3.x that remain — `outputs` REMOVED, §6 —, the six lifecycle names, the twenty record-vocabulary names — `Alterant` is the
@@ -82,7 +82,7 @@ These are part of the documented public surface — declared with Julia's `publi
   (the contract a consumer may zip on). The occurrence-handle KEY is the identity; the
   content is the reader-facing text — the shipped `find_by_label.jl` and
   `notebooks_from_source.jl` tools join exactly this way.
-- `EvalRecord` / `EvalStore` — the per-cell store underlying `altValues_evals`.
+- `EvalRecord` / `EvalStore` — the type of one evals row, and the type of the part `altValues_evals` that holds them.
 - `ProcessStatus` (the enum) + its values `PROCESS_OK` / `PROCESS_ERROR`.
 - `Diagnostic` `{code::Symbol, severity::Symbol, message::String, context::Any}` — the typed,
   non-throwing diagnostic record.
@@ -346,18 +346,22 @@ They are not exported; reach them qualified. `tests/unit/public_surface_tests.jl
 interpreter, §3.2). Only under the explicitly opt-in full-eval mode — two operator acts, see the
 SECURITY section of `README.md` — can processing input you did not write execute arbitrary code.
 
-### `goMeta(bytes::Vector{UInt8}; config::GoMetaConfig = GoMetaConfig(), registry::AlterantRegistry = DEFAULT_REGISTRY) -> GoMetaResult`
+### `goMeta(bytes::Vector{UInt8}; config::GoMetaConfig = GoMetaConfig(), registry::AlterantRegistry = DEFAULT_REGISTRY) -> GoMetaDelivery`
 
 (`goMeta` consumes raw bytes; from a `String` use `Vector{UInt8}(codeunits(s))` — or `read(path)`
 for a file, as in the README quickstart.)
 
 Pure, deterministic, **TOTAL over the CONFIG-TIME catalogued surface** (an invalid `config` never
 throws uncaught; absorb/apply-plane catalogued failures can still throw at v0 — the §3
-partition). `GoMetaResult` carries the run's cargo: `status::ProcessStatus` ·
-`diagnostics::Vector{Diagnostic}` (the invariant is **non-OK ⇒ non-empty diagnostics**) ·
-`verdicts::EvalStore` (the store behind `altValues_evals`) · `state::ProcessState` — INTERNAL and
-semver-UNSTABLE at v0: depend only on `status`, `diagnostics` and `readAltValuesEvals(result)` (the (tree, render)
-pair is the development tool's `Main.BasicRenderer.outputs(result)`, loaded through `devtools/load_basic_renderer.jl` — not an Engine surface). No filesystem / clock / environment read. **These three guarantees —
+partition). `GoMetaDelivery` carries the run's FOUR public parts, read by name (R-V04B-28/29/30):
+`altValues_evals::EvalStore` (the data container of the evaluated values — the reader over it
+`readAltValuesEvals`, §2 below) · `blsComponentTree::BLS.ParseState` (the BLS Component tree the run was
+evaluated over: the parser's own object, provided by BLS itself and travelled with BLS's own public functions
+— the door of stage 2; MUTABLE — the run wrote into it, and every reader of one delivery shares the one
+object) · `status::ProcessStatus` · `diagnostics::Vector{Diagnostic}` (the invariant is **non-OK ⇒ non-empty
+diagnostics**). Nothing internal travels: the per-call working state never leaves the core. (The (tree,
+render) pair is the development tool's `Main.BasicRenderer.outputs(result)`, loaded through
+`devtools/load_basic_renderer.jl` — not an Engine surface.) No filesystem / clock / environment read. **These three guarantees —
 purity, determinism, isolation — cover the whole default-configured run under `DEFAULT_REGISTRY`
 (under a CUSTOM registry they hold exactly as far as its own setters/getters/validators do: a
 callable closing over mutable state or performing I/O is that Alterant's act, outside the
@@ -367,7 +371,7 @@ clock or the environment, and cannot perform effects. (Under the explicitly opt-
 `:full_eval_v1` extension mode — see the SECURITY section of `README.md` — a condition body IS
 host-evaluated, and the guarantees then hold only for inputs whose conditions are free of side
 effects.) An invalid `config`
-fail-closes into a `PROCESS_ERROR` `GoMetaResult` **before any parse** — the input
+fail-closes into a `PROCESS_ERROR` `GoMetaDelivery` **before any parse** — the input
 bytes are never touched; no parse or verdict work occurs (§3.1); the Engine renders nothing since
 0.4.0 (§1.3), and the development tool's `Main.BasicRenderer.outputs` on such a result is the empty pair.
 
@@ -414,7 +418,7 @@ where document cells exist. The deriving heading form refuses on this surface (n
 a CONDITIONED heading refuses (no evaluable settribute state at this version). New rows appear
 ONLY when this field is set. Deliberately scope-limited at v0.
 
-### `readAltValuesEvals(result::GoMetaResult) -> Vector{Tuple{Vector{UInt8},Symbol,Any,Bool}}`
+### `readAltValuesEvals(result::GoMetaDelivery) -> Vector{Tuple{Vector{UInt8},Symbol,Any,Bool}}`
 
 The evaluated Alterant values, per piece of the file: the final map
 `(cell_handle, attr, value, polarity)` — per-cell rows plus handle-classed non-cell rows (a fed
@@ -513,7 +517,7 @@ are not catalogued typed codes.
 | `ERR_VISIB_NO_FLAG` (E-04) | apply-path **crash-origin** (typed conversion deferred) | a Visib verdict carries no set flag at write-back |
 | `ERR_DEPTH_OUT_OF_WINDOW` (E-06) | **GUARDED** — stable untyped refusal; typed conversion deferred | a `#~9`-style **digit** depth beyond the meta-hierarchy's depth window raises the stable-message `ErrorException` "meta depth out of range …" at the depth lookup (§3.4) |
 
-E-03 / E-08 / `ERR_UNKNOWN_FLAVOR` are armed (the three config-time rows): a bad profile/range/flavor returns a `PROCESS_ERROR` `GoMetaResult` carrying the
+E-03 / E-08 / `ERR_UNKNOWN_FLAVOR` are armed (the three config-time rows): a bad profile/range/flavor returns a `PROCESS_ERROR` `GoMetaDelivery` carrying the
 typed code, with the development tool's `Main.BasicRenderer.outputs` yielding the empty `(tree, render)` pair (its non-OK contract). E-04 (apply-path) is the
 remaining crash-origin whose **typed conversion is deferred at v0**:
 its current crash-reachability is a documented v0 edge.
@@ -875,3 +879,15 @@ written here — R-V04B-24 (P)).**
   `GoMetaDelivery`, read by name — a field, never a function); the same-commit triple (the export line `src/GoMeta.jl`, this
   document's §1.1/§1.2/§1.3/§2, the surface oracle `tests/unit/public_surface_tests.jl`). Minted 2026-09-16 (R-V04B-32);
   landed 2026-09-25 on the branch `cc/v04-delivery` (stage 1, commit 1).
+- **`GoMetaResult` (type) — EXPORTED since 0.3.0 — RENAMED `GoMetaDelivery` and RE-SHAPED at 0.4.0** (no deprecation
+  stub, as R-V04B-24's practice); ground: R-V04B-28 (2026-09-15: the content — `altValues_evals`, the BLS Component
+  tree, the status, the diagnostics, nothing else), R-V04B-29 (2026-09-16: the shape — one named object, the four
+  parts public by name, no hand-over function), R-V04B-30 (2026-09-16: the name; "result" not descriptive);
+  replacement: `GoMetaDelivery` with the public parts `altValues_evals::EvalStore` (the field `verdicts` of 0.3.x,
+  given the container's name — R-V04B-32), `blsComponentTree::BLS.ParseState` (the field `state.parse` of 0.3.x, now a
+  part), `status`, `diagnostics`; REMOVED: the field `state::ProcessState` (INTERNAL / semver-UNSTABLE "at v0" by its
+  own declaration in the 0.3.x docstring and this document's §2 — the working state is never delivered again) and the
+  field name `verdicts`; a 0.3.x caller of `GoMetaResult` sees `UndefVarError`, a reader of `.state` or `.verdicts` a
+  field error; the same-commit triple (the export line `src/GoMeta.jl`, this document's §1.1/§1.2/§2, the surface
+  oracle `tests/unit/public_surface_tests.jl`); one `Base.show` method. Minted 2026-09-15/16 (R-V04B-28/29/30); landed
+  2026-09-28 on the branch `cc/v04-delivery` (stage 1, commit 2).

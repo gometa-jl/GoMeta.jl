@@ -1,6 +1,6 @@
 # src/config.jl — the public input configuration `GoMetaConfig`.
 #
-# IS: the v0 public input-options type for `goMeta(bytes; config) -> GoMetaResult` (docs/public-api.md §2).
+# IS: the v0 public input-options type for `goMeta(bytes; config) -> GoMetaDelivery` (docs/public-api.md §2).
 # DOES: declares `GoMetaConfig` with its v0 fields + a keyword constructor with the documented
 #     defaults.
 # REASONING: this is part of the declared semver public API (additive evolution only). `parse_range` is

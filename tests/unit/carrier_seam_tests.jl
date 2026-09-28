@@ -45,6 +45,7 @@ end
             _CS_BLS.parseBLS(ps, 1, -1)
             r_seam = GM.run_absorb_apply!(ps; config = cfg)
             @test r_seam.status === r_go.status
+            @test r_seam.blsComponentTree === ps   # the delivered part IS the injected parse state — identity, not a copy (R-V04B-29's effects: the tree MUTABLE, shared)
             @test Main.BasicRenderer.outputs(r_seam) == Main.BasicRenderer.outputs(r_go)
             @test GM.serialize_evals(r_seam) == GM.serialize_evals(r_go)
         end
@@ -68,23 +69,23 @@ end
     @testset "[4] validate_carrier_state: clean on real stores; detects each planted breach" begin
         for (tag, src) in ((:julia, "#~ hide\nx = 1\n"), (:c, "//~ hide\nint x;\n"))
             r = GM.goMeta(_cs_bytes(src); config = GM.GoMetaConfig(flavor_tag = tag))
-            @test isempty(GM.validate_carrier_state(r.state.parse))
+            @test isempty(GM.validate_carrier_state(r.blsComponentTree))
         end
         ## breach A — the introducer law: shift the metaLine slice's start byte so it
         ## no longer begins at the lead.
-        ps_a = GM.goMeta(_cs_bytes("#~ hide\nx = 1\n")).state.parse
+        ps_a = GM.goMeta(_cs_bytes("#~ hide\nx = 1\n")).blsComponentTree
         ml_a = _cs_first_meta_line(ps_a)
         @test ml_a !== nothing
         _CS_BLS.setElement(ml_a.cmpntNamedInt,
             :startMainStr => _CS_BLS.getElement(ml_a.cmpntNamedInt, :startMainStr) + 1)
         @test any(contains("introducer law"), GM.validate_carrier_state(ps_a))
         ## breach B — store coherence: corrupt the File root's first child id.
-        ps_b = GM.goMeta(_cs_bytes("#~ hide\nx = 1\n")).state.parse
+        ps_b = GM.goMeta(_cs_bytes("#~ hide\nx = 1\n")).blsComponentTree
         ps_b.componentsPDict[_CS_BLS.File][1][1].childComponentsIdxVec[1] = 99999
         @test any(contains("store coherence"), GM.validate_carrier_state(ps_b))
         ## breach C — the flag invariant: clear the metaLine's depth flags (leaving a
         ## Meta-typed component with neither :depthN nor :ignoreThisMeta).
-        ps_c = GM.goMeta(_cs_bytes("#~ hide\nx = 1\n")).state.parse
+        ps_c = GM.goMeta(_cs_bytes("#~ hide\nx = 1\n")).blsComponentTree
         ml_c = _cs_first_meta_line(ps_c)
         @test ml_c !== nothing
         for i in 0:9
@@ -96,7 +97,7 @@ end
         ## here; the checker's guarded chain-walk must report instead). The File
         ## root's child vector is FILLED so the chain-follow lane is actually
         ## reached (a 0 entry short-circuits it).
-        ps_d = GM.goMeta(_cs_bytes("#~ hide\nx = 1\n")).state.parse
+        ps_d = GM.goMeta(_cs_bytes("#~ hide\nx = 1\n")).blsComponentTree
         f_d = ps_d.componentsPDict[_CS_BLS.File][1][1]
         fill!(f_d.childComponentsIdxVec, 1)
         _CS_BLS.setElement(f_d.cmpntNamedInt, :idExtension => 99999)
@@ -105,7 +106,7 @@ end
         ## breach E — a CYCLIC extension chain REPORTS, never hangs (the step cap:
         ## a chain longer than its store must revisit a slot). idExtension = 1
         ## points the File root's chain at itself.
-        ps_e = GM.goMeta(_cs_bytes("#~ hide\nx = 1\n")).state.parse
+        ps_e = GM.goMeta(_cs_bytes("#~ hide\nx = 1\n")).blsComponentTree
         f_e = ps_e.componentsPDict[_CS_BLS.File][1][1]
         fill!(f_e.childComponentsIdxVec, 1)
         _CS_BLS.setElement(f_e.cmpntNamedInt, :idExtension => 1)

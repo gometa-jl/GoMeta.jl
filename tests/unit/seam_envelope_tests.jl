@@ -195,7 +195,7 @@ end
         _SeamT.PSREF[] = ps4
         GM.run_absorb_apply!(ps4; registry = Rn)
         nested = _SeamT.NESTED[]
-        @test nested isa GM.GoMetaResult && _codes(nested.diagnostics) == [:STATE_REUSE_REFUSED] &&
+        @test nested isa GM.GoMetaDelivery && _codes(nested.diagnostics) == [:STATE_REUSE_REFUSED] &&
               occursin("IN FLIGHT", nested.diagnostics[1].message)
     end
 

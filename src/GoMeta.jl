@@ -3,14 +3,14 @@
 # IS: the GoMeta package top module. It holds the ordered include spine — config.jl, result.jl,
 #     bls/BLS.jl, state.jl, alterants/registry.jl, annotations.jl,
 #     absorb/absorb_meta.jl, absorb/walk.jl, alterants/apply.jl — and declares the
-#     exported semver surface: `goMeta`, `readAltValuesEvals`, `GoMetaConfig`, `GoMetaResult`
+#     exported semver surface: `goMeta`, `readAltValuesEvals`, `GoMetaConfig`, `GoMetaDelivery`
 #     (docs/public-api.md §1.1; asserted by tests/unit/public_surface_tests.jl), plus the
 #     declared `public` tier of qualified names (docs/public-api.md §1.2 — e.g. `GoMeta.serialize_evals`,
 #     `GoMeta.PROCESS_OK`).
 # DOES: `goMeta(bytes; config::GoMetaConfig = GoMetaConfig(), registry::AlterantRegistry =
-#     DEFAULT_REGISTRY) -> GoMetaResult` runs the pipeline parse -> Absorb-walk (enqueue alterant
+#     DEFAULT_REGISTRY) -> GoMetaDelivery` runs the pipeline parse -> Absorb-walk (enqueue alterant
 #     actions) -> Apply (evaluate conditions + apply); the evaluated values are the product. `validate_config` fail-closes
-#     an invalid config into a `PROCESS_ERROR` `GoMetaResult` carrying typed `Diagnostic`s BEFORE any
+#     an invalid config into a `PROCESS_ERROR` `GoMetaDelivery` carrying typed `Diagnostic`s BEFORE any
 #     parse work (the input bytes are never touched): `ERR_UNKNOWN_PROFILE` (E-03 — the
 #     three profile names are `:jl_share_v1` + the two opt-in names, docs/public-api.md §3.1),
 #     `ERR_UNKNOWN_FLAVOR` (the closed three-flavor set `:julia`/`:c`/`:latex`, selected never
@@ -35,7 +35,7 @@
 #     not yet typed (conversion deferred); the condition-path refusals are TYPED since the
 #     closed-interpreter flip, with E-07's mint PENDING (the unqueryable-alt shape still aborts
 #     raw). The full honest-edges catalogue: docs/public-api.md §3.
-# PURPOSE: the single auditable entry point — bytes in, a typed `GoMetaResult` out, with the package's
+# PURPOSE: the single auditable entry point — bytes in, a typed `GoMetaDelivery` out, with the package's
 #     canonical observable output = `altValues_evals` (+ `serialize_evals`, `content_fingerprint`); the Engine's
 #     delivered surface = the run and the evaluated values (R-V04B-24); the (tree, render) pair is the
 #     development tool's.
@@ -107,13 +107,13 @@ include("grammar_profile.jl")       # v0.2 CH-2/CH-4: the versioned grammar-prof
                                     #   DEFINITIONS depend on GoMetaConfig only, so it sits after config.jl;
                                     #   the DEFAULT profile CONST is built at the registry tail (its
                                     #   registration digest folds the declared record; call-time-bound refs).
-include("result.jl")    # ProcessStatus / Diagnostic / EvalStore (the GoMetaResult support types)
+include("result.jl")    # ProcessStatus / Diagnostic / EvalStore (the GoMetaDelivery support types)
 include("bls/BLS.jl")
 include("occurrence.jl")            # v0.2 CH-1 (step 1): the normalized occurrence handle — depends
                                     # on BLS ONLY; everything downstream may
                                     # reference OccurrenceKey/occurrence_key/key_bytes
 import .BLS
-include("state.jl")     # per-call ProcessState + the typed GoMetaResult surface + the AlterantRegistry type + the STATE/ctx() seam
+include("state.jl")     # per-call ProcessState + the typed GoMetaDelivery surface + the AlterantRegistry type + the STATE/ctx() seam
 include("alterants/registry.jl")    # the Alterants + CnS layers, combined (Alterants BEFORE CnS)
 using .CnS: getState, getAltState
 include("condition.jl")             # the closed condition interpreter (bounded intake + algebra +
@@ -121,7 +121,7 @@ include("condition.jl")             # the closed condition interpreter (bounded 
                                     #   surface) + state.jl; inert until the engine flips to it.
 include("annotations.jl")           # the per-cell evals surface — evals capture +
                                     #   readAltValuesEvals(result). AFTER registry.jl (Alterants.Visib/Id) + state.jl
-                                    #   (ProcessState/GoMetaResult/EvalStore); BEFORE walk.jl + the driver below
+                                    #   (ProcessState/GoMetaDelivery/EvalStore); BEFORE walk.jl + the driver below
                                     #   (which call captureEvals!). Holds no eval, no render-write.
 include("absorb/absorb_meta.jl")
 using .AbsorbMeta
@@ -147,7 +147,7 @@ include("alterants/apply.jl")       # goMetaAddOns apply-half — late-bound fro
 #   docs/public-api.md §1.2 is the mirror).
 # Qualified import (`import GoMeta as GM`) is UNAFFECTED by these exports and remains canonical for namespace
 # hygiene + multi-implementation use; exporting serves the single-implementation `using` convenience only.
-export goMeta, readAltValuesEvals, GoMetaConfig, GoMetaResult
+export goMeta, readAltValuesEvals, GoMetaConfig, GoMetaDelivery
 public serialize_evals, content_fingerprint, EvalRecord, EvalStore, ProcessStatus, PROCESS_OK, PROCESS_ERROR, Diagnostic, AlterantRegistry, DEFAULT_REGISTRY,
        RegistryBuilder, register!, next_plugin_index, validate, publish, RegistrationRefused,   # v0.4 T2: the registration lifecycle (docs/public-api.md §1.2)
        Alterant, PlugIn, ActionSpec, ActionOverload, DomainRef, CaptureDecl, DefaultSlot, NoDefault, Declared,   # v0.4 T2 (cure batch 1) + the rename: the record
@@ -161,9 +161,11 @@ public serialize_evals, content_fingerprint, EvalRecord, EvalStore, ProcessStatu
 """
     validate_config(config::GoMetaConfig) -> Vector{Diagnostic}
 
-Config-time validation of the public `GoMetaConfig`, returning the (possibly empty) typed
+IS: the config-time validator of the public `GoMetaConfig` — the fail-closed gate every `goMeta` run passes BEFORE any parse.
+
+DOES: Config-time validation of the public `GoMetaConfig`, returning the (possibly empty) typed
 diagnostics that `goMeta` fail-closes on. A non-empty result means `goMeta` returns a `PROCESS_ERROR`
-`GoMetaResult` BEFORE any parse work is attempted (the input bytes are never touched; the
+`GoMetaDelivery` BEFORE any parse work is attempted (the input bytes are never touched; the
 docs/public-api.md §2 fail-closed contract — downstream, the development tool's `outputs` yields its empty non-OK pair).
 
 The three v0 config-time error rows of the documented error catalogue (docs/public-api.md §3):
@@ -188,6 +190,10 @@ membership over the typed `GoMetaConfig` fields. The non-config-time codes are i
 TYPED at their origins in the closed interpreter; E-07's typed mint is PENDING (the unqueryable-alt
 shape still aborts raw); E-04 is the apply-path crash-origin and E-06 the GUARDED absorb-path depth
 refusal (both un-typed, conversion deferred).
+
+REASONING: an invalid configuration must never reach the parser or the apply — the three config-time rows are decided by comparison and membership over typed fields, so the check is pure and total and the input bytes are never touched.
+
+PURPOSE: the one place a caller's configuration is refused with typed diagnostics, the empty vector being the pass.
 """
 function validate_config(config::GoMetaConfig)
     diags = Diagnostic[]
@@ -223,22 +229,29 @@ function validate_config(config::GoMetaConfig)
 end
 
 """
-    _config_error_result(parse_state, config, registry, config_diags) -> GoMetaResult
+    _configErrorDelivery(parse_state, config, registry, config_diags) -> GoMetaDelivery
 
-Build the fail-closed `PROCESS_ERROR` `GoMetaResult` for an invalid `GoMetaConfig`. `@noinline` + cold:
-it is reached ONLY on a PRE-PARSE refusal — a non-empty `validate_config` vector, or (v0.4) the registry
-door's diagnostics at `goMeta` / `run_absorb_apply!` — so its `init_state` +
-`GoMetaResult` construction never perturb the byte-exact, low-allocation main `goMeta` path. A per-call
-`ProcessState` is built (container SIZING only — no parse content is read, no `parseBLS`/absorb-walk
-runs) so the `GoMetaResult` carries the standard state shape; the typed `config_diags` are appended; the unparsed
-`parse_state` — the caller passes one built from EMPTY bytes, since validation now pre-empts touching the
-input — the development tool's `outputs` (`devtools/basic_renderer.jl`) then yields its empty non-OK pair.
+IS: the cold constructor of the fail-closed `PROCESS_ERROR` `GoMetaDelivery` — reached ONLY on a PRE-PARSE refusal: a
+non-empty `validate_config` vector, the registry door's diagnostics at `goMeta` / `run_absorb_apply!`, or the seam
+ledger's refusals of an injected parse state.
+
+DOES: builds a per-call `ProcessState` by `init_state` (container SIZING only — no parse content is read, no
+`parseBLS` / absorb-walk runs), appends the typed `config_diags`, and hands back the delivery's four parts taken
+from that state: the EMPTY store `st.evals` as `altValues_evals`; the unparsed `parse_state` — the caller passes
+one built from EMPTY bytes, since validation pre-empts touching the input — as `blsComponentTree`; `PROCESS_ERROR`;
+the diagnostics. The working state itself is not delivered (R-V04B-28).
+
+REASONING: `@noinline` + cold, so its `init_state` and the construction never perturb the byte-exact,
+low-allocation main `goMeta` path; the empty-bytes tree keeps the delivery total (the development tool's `outputs`,
+`devtools/basic_renderer.jl`, yields its empty non-OK pair on it).
+
+PURPOSE: ONE fail-closed outcome for every pre-parse refusal — typed diagnostics, never a throw.
 """
-@noinline function _config_error_result(parse_state::BLS.ParseState, config::GoMetaConfig,
+@noinline function _configErrorDelivery(parse_state::BLS.ParseState, config::GoMetaConfig,
                                         registry::AlterantRegistry, config_diags::Vector{Diagnostic})
     st = init_state(parse_state, config, registry)
     append!(st.diagnostics, config_diags)
-    return GoMetaResult(st, PROCESS_ERROR, st.diagnostics, st.evals)
+    return GoMetaDelivery(st.evals, st.parse, PROCESS_ERROR, st.diagnostics)
 end
 
 """
@@ -293,16 +306,16 @@ end
 """
     goMeta(bytes::Vector{UInt8};
             config::GoMetaConfig = GoMetaConfig(),
-            registry::AlterantRegistry = DEFAULT_REGISTRY) -> GoMetaResult
+            registry::AlterantRegistry = DEFAULT_REGISTRY) -> GoMetaDelivery
 
-IS: the pipeline driver — the package's primary public entry, `goMeta(bytes; config, registry) -> GoMetaResult`
+IS: the pipeline driver — the package's primary public entry, `goMeta(bytes; config, registry) -> GoMetaDelivery`
 (docs/public-api.md §2): the run whose evals rows `readAltValuesEvals` reads.
 
-DOES: Run the GoMeta pipeline over `bytes` and return a typed `GoMetaResult` — the package's primary public entry
+DOES: Run the GoMeta pipeline over `bytes` and return a typed `GoMetaDelivery` — the package's primary public entry
 (docs/public-api.md §2). PURE + DETERMINISTIC for a DEFAULT-CONFIGURED run under `DEFAULT_REGISTRY`
 (the closed interpreter; the opt-in full-eval mode and a custom registry's own callables are outside
 the guarantee — the trust model): the same `(bytes, config, registry)` always yields
-the same `GoMetaResult`, with no filesystem / clock / environment read — conditions run in the
+the same `GoMetaDelivery`, with no filesystem / clock / environment read — conditions run in the
 closed no-eval interpreter, so in a default-configured run a condition body cannot read or have
 effects (only the explicitly opt-in `:full_eval_v1` extension mode host-evaluates condition text —
 README SECURITY). The pipeline is parse -> Absorb-walk (enqueue alterant
@@ -313,12 +326,12 @@ Arguments:
 - `bytes` — the input document as raw bytes. Line ENDINGS normalize to LF (CRLF is chomped — documented, not an
   error; see `docs/CANONICAL-OUTPUT.md`); content bytes are preserved faithfully for arbitrary bytes, including invalid UTF-8; non-ASCII inside a META line parses character-safely, a non-ASCII label or action meeting the stable unknown-label/unknown-action refusal (docs/public-api.md §4).
 - `config::GoMetaConfig` — the v0 input options (profile / flavor_tag / parse_range / user_mh_profile; see `GoMetaConfig`).
-  An invalid profile, flavor_tag, or parse_range fail-closes into a `PROCESS_ERROR` `GoMetaResult` carrying typed
+  An invalid profile, flavor_tag, or parse_range fail-closes into a `PROCESS_ERROR` `GoMetaDelivery` carrying typed
   `Diagnostic`s BEFORE any parse — the input bytes are never touched (`ERR_UNKNOWN_PROFILE` /
   `ERR_UNKNOWN_FLAVOR` / `ERR_RANGE_INVALID`).
 - `registry::AlterantRegistry` — the alterant inventory; defaults to the deterministic `DEFAULT_REGISTRY`.
 
-The `GoMetaResult` is `{state, status::ProcessStatus, diagnostics::Vector{Diagnostic}, verdicts::EvalStore}` and is
+The `GoMetaDelivery` is `{altValues_evals::EvalStore, blsComponentTree::BLS.ParseState, status::ProcessStatus, diagnostics::Vector{Diagnostic}}` — the four public parts, read by name (R-V04B-28/29/30) — and is
 TOTAL over the CONFIG-TIME catalogued surface (an invalid profile or parse_range never throws uncaught); absorb/apply-plane catalogued failures can still throw at v0 (see below): `status` is
 `PROCESS_OK` (no error diagnostics) or `PROCESS_ERROR` (>=1 error `Diagnostic`; non-OK => non-empty diagnostics).
 Obtain the Engine's output via `readAltValuesEvals(result)` (the per-cell evals map; its byte form
@@ -355,10 +368,10 @@ function goMeta(
     ## Config-time fail-closed validation — typed Diagnostics BEFORE any parse
     ## work (docs/public-api.md §2: ERR_UNKNOWN_PROFILE / ERR_UNKNOWN_FLAVOR / ERR_RANGE_INVALID;
     ## the development tool's `outputs` then yields its empty non-OK pair); on an invalid config the input bytes are never touched — the error-path
-    ## GoMetaResult carries a parse state built from EMPTY bytes (container sizing only). A VALID
+    ## GoMetaDelivery carries a parse state built from EMPTY bytes (container sizing only). A VALID
     ## config ⇒ an empty vector ⇒ the pipeline below runs unchanged; an INVALID config ⇒ a fail-closed
-    ## PROCESS_ERROR GoMetaResult built in the `@noinline` cold `_config_error_result` helper (its `init_state` +
-    ## `GoMetaResult` construction stay OUT of this hot path). The E-04 (apply) crash-origin, the E-06
+    ## PROCESS_ERROR GoMetaDelivery built in the `@noinline` cold `_configErrorDelivery` helper (its `init_state` +
+    ## `GoMetaDelivery` construction stay OUT of this hot path). The E-04 (apply) crash-origin, the E-06
     ## (absorb) guarded refusal and the condition-path crash-origins remain untyped at v0
     ## (their typed conversion sits at the apply.jl seam).
     config_diags = validate_config(config)
@@ -370,7 +383,7 @@ function goMeta(
     ## PROCESS_ERROR result (config first, then registry); the input bytes are never touched.
     append!(config_diags, _registry_door_check(registry))
     isempty(config_diags) ||
-        return _config_error_result(BLS.setUpToProcessFromBytes(UInt8[]), config, registry, config_diags)
+        return _configErrorDelivery(BLS.setUpToProcessFromBytes(UInt8[]), config, registry, config_diags)
 
     ## Resolve the flavor ONCE, strictly AFTER the config validation above (an invalid tag
     ## must keep its typed ERR_UNKNOWN_FLAVOR PROCESS_ERROR, never a raw throw), and thread
@@ -380,7 +393,7 @@ function goMeta(
     parse_state = BLS.setUpToProcessFromBytes(bytes; flavor = flavor)
 
     ## The public contract form — `goMeta(bytes; config::GoMetaConfig, registry::AlterantRegistry)
-    ## -> GoMetaResult` (docs/public-api.md §2). The parse range is the typed `config.parse_range`: `nothing` ⇒
+    ## -> GoMetaDelivery` (docs/public-api.md §2). The parse range is the typed `config.parse_range`: `nothing` ⇒
     ## the WHOLE file (mapped to `to = -1`); a `1:N` range ⇒ lines 1..N
     ## (`to = last(range)`). `parseBLS` ignores `fromLine` + breaks on `lineNum > toLine`
     ## (docs/SYNTAX-AND-SEMANTICS.md), so a non-positive `to` parses the whole file. (`config.parse_range`
@@ -413,7 +426,7 @@ end
 """
     run_absorb_apply!(parse_state::BLS.ParseState;
                       config::GoMetaConfig = GoMetaConfig(),
-                      registry::AlterantRegistry = DEFAULT_REGISTRY) -> GoMetaResult
+                      registry::AlterantRegistry = DEFAULT_REGISTRY) -> GoMetaDelivery
 
 IS: the CALLABLE DRIVER SEAM — one package-internal callable exposing, indivisibly, the absorb walk (both
 grains), the conditions plane, the Alterants/apply plane and the evals plane over a caller-owned `ParseState`.
@@ -477,7 +490,7 @@ it built itself, without re-validation — its output the evaluated values, the 
 ## runs under the ONE lock; the hot loop never touches the ledger (the write LATCH is a
 ## plain per-call Bool on `ProcessState`). `goMeta` routes through this seam and STAMPS
 ## like any caller (the uniform law — it also preserves the identity semantics for states
-## a consumer extracts via `result.state.parse`); the per-call cost is measured and
+## a consumer extracts via `result.blsComponentTree`); the per-call cost is measured and
 ## banked at the T3 receipts, never claimed away.
 mutable struct _SeamEntry
     registry::Union{Nothing,AlterantRegistry}   # bound at EXIT of the first call that WROTE
@@ -489,7 +502,7 @@ const _SEAM_LEDGER_LOCK = ReentrantLock()
 
 function run_absorb_apply!(parse_state::BLS.ParseState;
                            config::GoMetaConfig = GoMetaConfig(),
-                           registry::AlterantRegistry = DEFAULT_REGISTRY)::GoMetaResult
+                           registry::AlterantRegistry = DEFAULT_REGISTRY)::GoMetaDelivery
     ## v0.4 T2 (cure batch 1) — THE DOOR RUNS HERE TOO: the seam is a package-internal callable entry that accepts a
     ## registry, so an unpublished or post-publication-mutated registry could otherwise drive the
     ## engine around `goMeta`'s door (the CRX after-T2 breaker). Same typed refusals, same
@@ -498,7 +511,7 @@ function run_absorb_apply!(parse_state::BLS.ParseState;
     ## semantics (seal-bound injected state, the poison marker) are T3's.
     reg_diags = _registry_door_check(registry)
     isempty(reg_diags) ||
-        return _config_error_result(BLS.setUpToProcessFromBytes(UInt8[]), config, registry, reg_diags)
+        return _configErrorDelivery(BLS.setUpToProcessFromBytes(UInt8[]), config, registry, reg_diags)
     ## v0.4 T3 — the LEDGER at seam entry (AFTER the door; T3-DESIGN §7's fixed order).
     ## Checks + the in-flight flip only — the registry BINDING happens at exit, and only
     ## for a call that WROTE (so a clean abort leaves the state unbound and re-injectable
@@ -520,21 +533,21 @@ function run_absorb_apply!(parse_state::BLS.ParseState;
         _SEAM_LEDGER[parse_state] = e2
         return e2
     end
-    entry === :in_flight && return _config_error_result(
+    entry === :in_flight && return _configErrorDelivery(
         BLS.setUpToProcessFromBytes(UInt8[]), config, registry,
         [Diagnostic(:STATE_REUSE_REFUSED, :error, string("GoMeta seam: the injected parse ",
             "state is already IN FLIGHT in another `run_absorb_apply!` call ",
             "(STATE_REUSE_REFUSED) — two calls must never share one parse state (the seam ",
             "contract's caller obligation, row 4; nested re-injection included); re-parse ",
             "the source into a fresh state (see docs/public-api.md §3.4)"), nothing)])
-    entry === :poisoned && return _config_error_result(
+    entry === :poisoned && return _configErrorDelivery(
         BLS.setUpToProcessFromBytes(UInt8[]), config, registry,
         [Diagnostic(:STATE_REUSE_REFUSED, :error, string("GoMeta seam: the injected parse ",
             "state was POISONED (STATE_POISONED) by an earlier aborted call that had begun ",
             "writing back (STATE_REUSE_REFUSED) — its settributes may be partially ",
             "mutated; re-parse the source into a fresh state ",
             "(see docs/public-api.md §3.4)"), nothing)])
-    entry === :mismatch && return _config_error_result(
+    entry === :mismatch && return _configErrorDelivery(
         BLS.setUpToProcessFromBytes(UInt8[]), config, registry,
         [Diagnostic(:STATE_SEAL_MISMATCH, :error, string("GoMeta seam: the injected parse ",
             "state is bound to a DIFFERENT published registry than the one injected ",
@@ -633,16 +646,16 @@ function run_absorb_apply!(parse_state::BLS.ParseState;
         end
     end
 
-    ## The typed `GoMetaResult` supersedes the original three-field NamedTuple (render, tree, configDict)
+    ## The typed `GoMetaDelivery` supersedes the original three-field NamedTuple (render, tree, configDict)
     ## (the historical field name `tree_bytes` predates the `blsStructure_bytes` rename; kept verbatim in this
     ## comment only). `status` is computed from the accumulated diagnostics (empty HERE — a config-time
     ## error fail-closes via goMeta's early return before this seam is reached, and the apply-path bare
     ## `error()`s still throw — their typed conversion is deferred), so this valid-config path is
     ## `PROCESS_OK`. The evaluated values are read by `readAltValuesEvals(result)`; the development tool's
-    ## (tree, render) pair (`Main.BasicRenderer.outputs`) is a pure function of the final `result.state.parse`,
+    ## (tree, render) pair (`Main.BasicRenderer.outputs`) is a pure function of the final `result.blsComponentTree`,
     ## which the in-`with` absorb-walk + apply has fully mutated.
     status = any(d -> d.severity === :error, st.diagnostics) ? PROCESS_ERROR : PROCESS_OK
-    return GoMetaResult(st, status, st.diagnostics, st.evals)
+    return GoMetaDelivery(st.evals, st.parse, status, st.diagnostics)
 end
 
 """

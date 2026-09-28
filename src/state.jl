@@ -3,7 +3,7 @@
 # IS: the state vocabulary of the GoMeta engine — the per-call `ProcessState` (delivered through a
 #     `ScopedValue`, never held in a global), the immutable `AlterantRegistry` type behind
 #     `DEFAULT_REGISTRY`, the meta-hierarchy and alterant-queue sub-states, the `PlugIn` inventory
-#     unit, the public `GoMetaResult` (docs/public-api.md §1.1), and the `init_state` constructor that
+#     unit, the public `GoMetaDelivery` (docs/public-api.md §1.1), and the `init_state` constructor that
 #     sizes every container fresh for each call.
 # DOES: declares `ConditionT` (the condition-representation alias: the closed interpreter's
 #     bounded `ConditionAST`, plus the `FullEvalCondition` marker only the opt-in
@@ -14,7 +14,7 @@
 #     seeds; docs/public-api.md §2); `PlugIn`; `AlterantRegistry` with
 #     `num_alterants` / `num_alt_actions` (4 alterants / 8 actions since the heading registration,
 #     incl. the generic action → settribute write-back table); `MetaHierarchyState`; `AlterantQueue`;
-#     `ProcessState`; `GoMetaResult`; the `STATE` ScopedValue + `ctx()`; `init_state`;
+#     `ProcessState`; `GoMetaDelivery`; the `STATE` ScopedValue + `ctx()`; `init_state`;
 #     `snapshot_settribute!`; `get_state`; the v0.4 record SLOTS + the registration LIFECYCLE types.
 # REASONING: every mutable container lives in one per-call `ProcessState`, so two concurrent
 #     `goMeta` calls never share state. Conditions eval'd at apply time read it through a
@@ -954,21 +954,62 @@ mutable struct ProcessState
 end
 
 """
-    GoMetaResult(state, status, diagnostics, verdicts)
+    GoMetaDelivery(altValues_evals, blsComponentTree, status, diagnostics)
 
-The public output of `goMeta(bytes; config) -> GoMetaResult` (docs/public-api.md §1.1): the per-call `state`,
-the `status` (`PROCESS_OK` ⇒ no error diagnostics), the `diagnostics`, and the `verdicts`. Defined AFTER
-`ProcessState` (its first field). The development tool's `Main.BasicRenderer.outputs`
-(`devtools/basic_renderer.jl`) surfaces a result's (tree, render) pair; `readAltValuesEvals(result)` reads `verdicts`.
-The `state` field is INTERNAL and semver-UNSTABLE at v0 — depend only on `status`, `diagnostics`
-and `readAltValuesEvals(result)` (the (tree, render) pair is the development tool's `Main.BasicRenderer.outputs`,
-loaded through `devtools/load_basic_renderer.jl` — not an Engine surface); a future release may narrow or remove it.
+IS: the ONE object a GoMeta run hands back — the delivery of `goMeta(bytes; config, registry)` and of the
+seam `run_absorb_apply!` — with its FOUR public parts, read by name (the owner's rulings R-V04B-28 the content,
+R-V04B-29 the shape, R-V04B-30 the name, 2026-09-15/16; docs/public-api.md §1.1, §2):
+
+- `altValues_evals::EvalStore` — the data container of the evaluated Alterant values: one final evals row per
+  handle and attribute, as the run recorded them; the reader over it is `readAltValuesEvals`.
+- `blsComponentTree::BLS.ParseState` — the BLS Component tree the run was evaluated over: the parser's own
+  object, provided by BLS itself. An Extension reads it by this name and travels it with BLS's own public
+  functions (the door of stage 2); no function of the GoMeta Engine hands it over (R-V04B-29; R-V04B-45).
+- `status::ProcessStatus` — `PROCESS_OK` (no error-severity diagnostic) or `PROCESS_ERROR` (at least one;
+  non-OK ⇒ non-empty diagnostics).
+- `diagnostics::Vector{Diagnostic}` — the run's typed diagnostics: every row the run recorded, `:error` and
+  `:warning` alike; empty when it recorded none (a `PROCESS_OK` run may still carry `:warning` rows —
+  `PROCESS_OK` means no `:error` row).
+
+DOES: carries these four and NOTHING internal — the per-call working state (`ProcessState`) never leaves the
+core (R-V04B-28). The parts are plain fields: `d.altValues_evals`, `d.blsComponentTree`, `d.status`,
+`d.diagnostics`. The BLS Component tree is the SAME object the run wrote into (`init_state` keeps the caller's
+parse state by identity; the apply writes its Visib settributes back into it), and it is MUTABLE: every reader
+of one delivery shares that one object, and a caller that injected its own parse state through the seam holds
+it too — a discipline, not a copy. On a fail-closed run (`PROCESS_ERROR` before any parse: an invalid config,
+a refused registry, a refused seam state) the tree is a container built from EMPTY bytes and the store is
+empty.
+
+REASONING: his words and his selections — `altValues_evals` and the BLS Component tree are "BY FAR the two MOST
+IMPORTANT DATA CONTAINERS produced during the GoMeta process" (the owner's words, 2026-09-11); it is "NOW VERY
+IMPORTANT to RESTRICT THAT INTERFACE TO A MINIMUM in order to MAXIMIZE OUR FLEXIBILITY IN IMPROVING GoMeta"
+(his words, 2026-09-11); the content: his selection of the label F1 put to him — "altValues_evals, the BLS
+Component tree, the status and the diagnostics; nothing else" (the label's wording the session's) — anchored by
+his own "I meant four parts" (R-V04B-28, 2026-09-15); the shape: his "(iii) stands" (R-V04B-29, 2026-09-16) on
+the label put — "One named object, the four parts public by name, no hand-over function" (its wording the
+session's); the name `GoMetaDelivery` his pick (R-V04B-30, 2026-09-16) and his own typing (2026-09-17),
+"object's names such as 'result' are NOT DESCRIPTIVE" (his words, 2026-09-15). The working state is the
+Engine's own and its shape is not part of the delivered surface, so it is not delivered at all rather than
+delivered and declared unstable (his order of 2026-09-15: "I HAD ENOUGH OF INTERIM. NO MORE.").
+
+PURPOSE: what every Extension, development tool and test consumes from a run — and the reference object of
+v0.4 for the GoMetaRetro line ("The final GoMeta v0.4 must produce a GoMetaDelivery which we can use as a
+reference" — his words, 2026-09-17). The one `Base.show` method prints one line — the status, the row count of
+`altValues_evals`, the source-line count of `blsComponentTree`, the diagnostics count — never the tree or the
+rows.
 """
-struct GoMetaResult
-    state::ProcessState
+struct GoMetaDelivery
+    altValues_evals::EvalStore
+    blsComponentTree::BLS.ParseState
     status::ProcessStatus
     diagnostics::Vector{Diagnostic}
-    verdicts::EvalStore
+end
+
+function Base.show(io::IO, d::GoMetaDelivery)
+    print(io, "GoMetaDelivery(", d.status,
+          "; altValues_evals: ", length(d.altValues_evals.records), " evals rows",
+          "; blsComponentTree: BLS.ParseState over ", length(d.blsComponentTree.collectedLines), " source lines",
+          "; diagnostics: ", length(d.diagnostics), ")")
 end
 
 # --- the swappable delivery seam -------------------------------------------------

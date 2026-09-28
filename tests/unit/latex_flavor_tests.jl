@@ -52,7 +52,7 @@ end
         @test _LX_BLS.flavor_for(:latex) === _LX_BLS.FLAVOR_LATEX
         r_ok = GM.goMeta(_lx_bytes("x 1\n"); config = _lx_cfg)
         @test r_ok.status === GM.PROCESS_OK
-        @test r_ok.state.parse.flavor === _LX_BLS.FLAVOR_LATEX
+        @test r_ok.blsComponentTree.flavor === _LX_BLS.FLAVOR_LATEX
         r_bad = GM.goMeta(_lx_bytes("x\n");
             config = GM.GoMetaConfig(flavor_tag = :tex))
         @test r_bad.status === GM.PROCESS_ERROR

@@ -164,7 +164,7 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
 
     @testset "[2] membership UNCHANGED end-to-end (the relocation is behavior-zero)" begin
         r = _drive("x = 1\n#~ :label1\n\ny = 2\n")
-        @test r isa GM.GoMetaResult && r.status === GM.PROCESS_OK
+        @test r isa GM.GoMetaDelivery && r.status === GM.PROCESS_OK
         e = _drive("x = 1\n#~ :nope\n\ny = 2\n")
         @test e isa ErrorException && occursin("unknown label", e.msg)
     end
@@ -174,16 +174,16 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
         # over it would silently lose the names after the first sort break while the
         # corpus stayed green (the 28/38 class). Both roles must pass through the ∈-scan.
         rs = _drive("x = 1\n#~ :💫\n\ny = 2\n")
-        @test rs isa GM.GoMetaResult && rs.status === GM.PROCESS_OK
+        @test rs isa GM.GoMetaDelivery && rs.status === GM.PROCESS_OK
         rq = _drive("x = 1\n#~1 :💫 hide{ :💫 }\n\ny = 2\n")
-        @test rq isa GM.GoMetaResult && rq.status === GM.PROCESS_OK
+        @test rq isa GM.GoMetaDelivery && rq.status === GM.PROCESS_OK
     end
 
     @testset "[4] the registration-surface FLIP (M-AC-12: the declaration is load-bearing)" begin
         Rz = GM.publish(_vocab_builder(GM.InlineVocabulary([:zz1],
             Dict(:zz1 => (query = true,)))))
         rz = _drive("x = 1\n#~ :zz1\n\ny = 2\n"; R = Rz)
-        @test rz isa GM.GoMetaResult && rz.status === GM.PROCESS_OK
+        @test rz isa GM.GoMetaDelivery && rz.status === GM.PROCESS_OK
         ez = _drive("x = 1\n#~ :label1\n\ny = 2\n"; R = Rz)   # the SHIPPED name is now foreign
         @test ez isa ErrorException && occursin("unknown label", ez.msg) &&
               occursin("zz1", ez.msg)

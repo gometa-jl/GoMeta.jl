@@ -27,7 +27,7 @@
 #       defensive contract (root-anchor + parent-link + grain↔leaf + namespace checks;
 #       unanchored rows rendered, never dropped; fingerprint self-check per row).
 # REASONING: the released v0.3.0 package deliberately ships no debug printer (e1c
-#       strip) and `result.state` is INTERNAL — so the dev tools live PLAY-SIDE, on a
+#       strip) and the run's WORKING state is not delivered at all (R-V04B-28; 0.3.x delivered it as a field) — so the dev tools live PLAY-SIDE, on a
 #       session-writable surface, honestly labeled (see the exemption below), instead
 #       of re-entering the engine through the release pipeline. Package-proper
 #       restoration is a friction-ledger motion (F-LED-16..19), never code from here.
@@ -37,11 +37,11 @@
 #       (colored) or as .html / .txt files.
 #
 # ── Internal-surface exemption (owner ruling D-6(a), 2026-08-20) ────────────────────────
-# These tools read `result.state.parse` (componentsPDict, collectedLines, addedStrings)
+# These tools read `result.blsComponentTree` (componentsPDict, collectedLines, addedStrings)
 # and call the non-public `GoMeta.cell_content_bytes`, `GoMeta.BLS.getElement`,
 # `GoMeta.BLS.eachchildid`, `keys(GoMeta.BLS.CmpntNamedInt)`,
-# `keys(GoMeta.BLS.ComponentSettribute)` — a surface `docs/public-api.md §2` declares
-# semver-UNSTABLE. That is authorized for THESE dev tools only; consumer code must not
+# `keys(GoMeta.BLS.ComponentSettribute)` — parser names no document declares public
+# (stage 2's door is R-V04B-45's). That is authorized for THESE dev tools only; consumer code must not
 # copy the pattern (CONSUMER-GUIDE §2). `devtools_selfcheck()` is the drift alarm: run
 # it after every package-snapshot refresh — a broken internal surface fails LOUDLY.
 #
@@ -273,17 +273,33 @@ struct DTDoc
     blockIds::Vector{Int}
     name::String
     ok::Bool
-    ns::String      # THIS result's configured occurrence-key namespace — rows anchor
-                    # against it (a namespace=:other run's own rows must anchor; only
-                    # rows FOREIGN to the result stay unanchored — impl CrossReview)
+    ns::String      # THIS delivery's occurrence-key namespace, read off its own rows (the
+                    # configuration is not delivered — R-V04B-28); rows anchor against it (a
+                    # namespace=:other run's own rows anchor; only a row FOREIGN to the delivery
+                    # stays unanchored)
 end
+## THIS delivery's occurrence-key namespace, read off its own rows — the configuration is not a part of the
+## delivered object (R-V04B-28: four parts and nothing else); the first row's decoded key names it; a delivery
+## with no rows anchors nothing ("?"). One run mints every key with one namespace, so the `:foreign_namespace`
+## arm below now compares each row against the FIRST row's — an internal-consistency check on the store. What it
+## can no longer catch is a store whose rows UNIFORMLY carry a namespace other than the run's configuration:
+## the configuration is not delivered, so nothing in the delivery names it. And if the FIRST row's key does not
+## decode, `ns` is "?" and every decodable row lands in that arm (today only the undecodable row does, as
+## `:undecoded`) — a schema-drift case the self-check's anchoring pin catches.
+function _dt_ns_of(result)
+    recs = result.altValues_evals.records
+    isempty(recs) && return "?"
+    d = _dt_decode(recs[1].cell_handle)
+    return d === nothing ? "?" : String(d.namespace)
+end
+
 function _dt_doc(result; name::AbstractString = "")
     # EVERY internal read guarded (§6 status-first: the caller prints status BEFORE
-    # this runs, and a drifted/partial `result.state` must yield ok=false, not a throw)
+    # this runs, and a drifted/partial delivery must yield ok=false, not a throw)
     ps, pd, blockIds, ok, ns = try
-        ps = result.state.parse
+        ps = result.blsComponentTree
         pd = ps.componentsPDict
-        ns = String(result.state.config.namespace)
+        ns = _dt_ns_of(result)
         fvec = pd[_DT_BLS.File][1]
         (checkbounds(Bool, fvec, 1) && isassigned(fvec, 1)) ?
             (ps, pd, collect(_DT_BLS.eachchildid(fvec[1], fvec)), true, ns) :
@@ -504,9 +520,9 @@ end
 
 ## IS: the row builder. DOES: decodes + resolves EVERY `altValues_evals` row, applying
 ## the §6 gates — the non-document grain PLANE (byte > 0xd2, incl. USER_CONTEXT 0xe0)
-## never walks the ladder; a namespace FOREIGN to this result's configured one
-## (`doc.ns`) never resolves against THIS document's tree (it stays unanchored WITH
-## its namespace shown — the result's OWN namespace, whatever it is, anchors); the
+## never walks the ladder; a namespace differing from this delivery's own (`doc.ns`, read
+## off its first row — the configuration is not delivered, R-V04B-28) never resolves against
+## THIS document's tree (it stays unanchored WITH its namespace shown); the
 ## decoded grain
 ## must equal the resolved leaf's type; the origin is verified or flagged. PURPOSE:
 ## layout totality — every row reaches a renderer, anchored or not.
@@ -532,7 +548,7 @@ function _dt_eval_rows(doc)
             continue
         end
         gt = _dt_graintype(d.grain)
-        # rows anchor against THIS result's configured namespace (doc.ns) — a
+        # rows anchor against THIS delivery's namespace (doc.ns, read off its rows) — a
         # namespace=:other run's own rows are native, not foreign (impl CrossReview)
         comp, why = d.grain > 0xd2         ? (nothing, :non_document_grain) :
                     d.namespace != doc.ns  ? (nothing, :foreign_namespace) :
@@ -626,8 +642,8 @@ end
 const _DT_T1_STYLES = (:mix, :legacy, :tree, :banner)
 
 """
-    print_BLS_Component_Tree(io::IO, result::GoMetaResult; kwargs...)   # core method
-    print_BLS_Component_Tree(result::GoMetaResult; kwargs...)           # → stdout
+    print_BLS_Component_Tree(io::IO, result::GoMetaDelivery; kwargs...)   # core method
+    print_BLS_Component_Tree(result::GoMetaDelivery; kwargs...)           # → stdout
     write_BLS_Component_Tree_to_file(path, result; format=:auto, kwargs...)
 
 Print the BLS Component tree of one `goMeta` result — every Block/Line/Segment with
@@ -706,7 +722,7 @@ diagnostics banner prints FIRST — read directly from the stable `result` field
 before any parse-tree access — and rendering continues over whatever parse state
 exists (§6 status-first law).
 """
-function print_BLS_Component_Tree(io::IO, result::GoMeta.GoMetaResult;
+function print_BLS_Component_Tree(io::IO, result::GoMeta.GoMetaDelivery;
         color::Symbol = :auto, style::Symbol = :mix, detail::Symbol = :auto,
         blocks = :all, lines = nothing, grain::Symbol = :segment,
         slide::Union{Nothing,Symbol} = nothing,
@@ -792,7 +808,7 @@ function _dt_dumplines(io, c, indent)
 end
 
 "REPL convenience — `print_BLS_Component_Tree(stdout, result; kwargs...)`. See the core docstring."
-print_BLS_Component_Tree(result::GoMeta.GoMetaResult; kwargs...) =
+print_BLS_Component_Tree(result::GoMeta.GoMetaDelivery; kwargs...) =
     print_BLS_Component_Tree(stdout, result; kwargs...)
 
 ## ── :mix (R-DEV-1) — the owner-ruled default ──────────────────────────────────────────
@@ -992,8 +1008,8 @@ end
 const _DT_T2_LAYOUTS = (:tree, :rows, :cells)
 
 """
-    print_altValues_evals(io::IO, result::GoMetaResult; kwargs...)      # core method
-    print_altValues_evals(result::GoMetaResult; kwargs...)              # → stdout
+    print_altValues_evals(io::IO, result::GoMetaDelivery; kwargs...)      # core method
+    print_altValues_evals(result::GoMetaDelivery; kwargs...)              # → stdout
     write_altValues_evals_to_file(path, result; format=:auto, kwargs...)
 
 Print the `altValues_evals` rows of one `goMeta` result — each evals row placed AT its
@@ -1067,7 +1083,7 @@ are never dropped — `:rows`/`:tree` render them in a red `unanchored rows` sec
 The two `print_altValues_evals` methods return `nothing`;
 `write_altValues_evals_to_file` returns `path`.
 """
-function print_altValues_evals(io::IO, result::GoMeta.GoMetaResult;
+function print_altValues_evals(io::IO, result::GoMeta.GoMetaDelivery;
         color::Symbol = :auto, layout::Symbol = :tree,
         include_empty::Union{Bool,Nothing} = nothing,
         attrs = :all, lines = nothing, show_handles::Bool = false,
@@ -1123,7 +1139,7 @@ function print_altValues_evals(io::IO, result::GoMeta.GoMetaResult;
 end
 
 "REPL convenience — `print_altValues_evals(stdout, result; kwargs...)`. See the core docstring."
-print_altValues_evals(result::GoMeta.GoMetaResult; kwargs...) =
+print_altValues_evals(result::GoMeta.GoMetaDelivery; kwargs...) =
     print_altValues_evals(stdout, result; kwargs...)
 
 ## IS: the §4 filter contract. DOES: normalizes `attrs` (:all | Symbol | Vector),
@@ -1390,7 +1406,7 @@ never forwarded to the printer; X and the sidecar publish as a staged PAIR, and 
 call WITHOUT `slide` retires a stale sidecar beside the path (F4/F5).
 All other kwargs pass through. Returns `path`.
 """
-function write_BLS_Component_Tree_to_file(path::AbstractString, result::GoMeta.GoMetaResult;
+function write_BLS_Component_Tree_to_file(path::AbstractString, result::GoMeta.GoMetaDelivery;
         format::Symbol = :auto, color::Symbol = :never,
         title::AbstractString = "print_BLS_Component_Tree",
         slide::Union{Nothing,Symbol} = nothing,
@@ -1445,7 +1461,7 @@ The file twin of [`print_altValues_evals`](@ref) — same format/color/title/_na
 rules as [`write_BLS_Component_Tree_to_file`](@ref) (its sidecar border is
 `"accent"`). Returns `path`.
 """
-function write_altValues_evals_to_file(path::AbstractString, result::GoMeta.GoMetaResult;
+function write_altValues_evals_to_file(path::AbstractString, result::GoMeta.GoMetaDelivery;
         format::Symbol = :auto, color::Symbol = :never,
         title::AbstractString = "print_altValues_evals",
         slide::Union{Nothing,Symbol} = nothing,
@@ -1682,7 +1698,7 @@ function _dt_slide_lines(cap::_DTSlideCap)
 end
 
 ## ── the content classifier (marked source / render / structure; seat-D1 spec) ─────────
-## Everything below reads the semver-UNSTABLE result.state internals under the D-6(a)
+## Everything below reads the BLS internals of the delivered tree (`result.blsComponentTree`) under the D-6(a)
 ## exemption; devtools_selfcheck() pins every read (fate flags, :comment grains, the
 ## flavor record, byte offsets, collectedLines) so a drifted engine fails LOUDLY.
 
@@ -1827,10 +1843,10 @@ end
 function _dt_sl_source_lines(result)
     try
         result.status == GoMeta.PROCESS_OK || return nothing
-        ps = result.state.parse
+        ps = result.blsComponentTree
         src = ps.collectedLines
         out = Vector{Union{Nothing,Vector{Tuple{String,String}}}}(nothing, length(src))
-        _dt_sl_walk(result.state.parse) do line, block, file, ln, lvec, svec
+        _dt_sl_walk(result.blsComponentTree) do line, block, file, ln, lvec, svec
             1 <= ln <= length(src) || throw(ErrorException("slide classifier: inputLineNum $ln outside 1:$(length(src))"))
             out[ln] === nothing || throw(ErrorException("slide classifier: line $ln visited twice"))
             out[ln] = _dt_sl_line(ps.flavor, lvec, svec, line, src[ln])
@@ -1857,14 +1873,14 @@ end
 function _dt_sl_render_lines_T0(result, renderlines)
     try
         result.status == GoMeta.PROCESS_OK || return nothing
-        ps = result.state.parse
+        ps = result.blsComponentTree
         F = ps.flavor
         hm = F.hide_marker
         src = ps.collectedLines
         out = Vector{Vector{Tuple{String,String}}}()
         ok = Ref(true)
         j = Ref(1)
-        _dt_sl_walk(result.state.parse) do line, block, file, ln, lvec, svec
+        _dt_sl_walk(result.blsComponentTree) do line, block, file, ln, lvec, svec
             ok[] || return
             f = _dt_sl_fate(line, block, file)
             f === :discard && return
@@ -1917,7 +1933,10 @@ function _dt_sl_render_lines_T0(result, renderlines)
 end
 
 ## RENDER tier T1 (whole-file degradation; D1 §d.R1): re-parse the RENDER bytes as
-## their own document with the ORIGINATING config (flavor + namespace must carry) and
+## their own document under the ORIGINATING FLAVOR, rebuilt from the delivered tree
+## (`blsComponentTree.flavor.flavor_tag`; the configuration is not delivered — R-V04B-28: the
+## namespace, the profile, a fed profile and a parse range do not carry — the tiling reads
+## structure and flavor, never a handle, and the render bytes are a whole document of their own) and
 ## classify per the source procedure — leading/mid hide marks classify `comment` via
 ## their :comment settributes; hideprefix is NEVER asserted (rule 6.1 needs an input
 ## to compare, and T1 has none). T1 failing too → R2: whole-file neutral.
@@ -1941,7 +1960,7 @@ function _dt_sl_render_lines(result, renderbytes)
     t0 = _dt_sl_render_lines_T0(result, renderlines)
     t0 !== nothing && return t0, fnl, :component
     t1 = try
-        r2 = GoMeta.goMeta(copy(renderbytes); config = result.state.config)
+        r2 = GoMeta.goMeta(copy(renderbytes); config = GoMeta.GoMetaConfig(flavor_tag = result.blsComponentTree.flavor.flavor_tag))
         _dt_sl_source_lines(r2)
     catch err
         err isa InterruptException && rethrow()
@@ -1984,7 +2003,7 @@ function _dt_sl_structure_runs(result, bytes)
     try
         result.status == GoMeta.PROCESS_OK || return nothing
         actual, _ = _dt_sl_splitlines(bytes)
-        ps = result.state.parse
+        ps = result.blsComponentTree
         F = ps.flavor
         pd = ps.componentsPDict
         fvec = pd[_DT_BLS.File][1]
@@ -2333,7 +2352,7 @@ command turns any play structure view into deck-ready colored-run data.
 PARAMETERS — which behavior each triggers:
 - `path::AbstractString` — the output file; the sidecar lands beside it as
   `path * ".slideruns.json"` (X keeps its extension: `t.jl` → `t.jl.slideruns.json`).
-- `result::GoMeta.GoMetaResult` — the ONE `goMeta` result whose structure is written.
+- `result::GoMeta.GoMetaDelivery` — the ONE `goMeta` result whose structure is written.
 - `slide::Union{Nothing,Symbol} = nothing` — `nothing`: write X only, byte-identical
   to today, no sidecar; a stale `X.slideruns.json` sitting beside the path is
   RETIRED (removed — F5: a sidecar, when present, describes the X beside it). One of
@@ -2343,7 +2362,7 @@ PARAMETERS — which behavior each triggers:
   five (validated BEFORE any byte is written); a non-Symbol ⇒ TypeError at the call
   boundary (typed kwarg).
 """
-function writeBlsStructureToFile(path::AbstractString, result::GoMeta.GoMetaResult;
+function writeBlsStructureToFile(path::AbstractString, result::GoMeta.GoMetaDelivery;
                                  slide::Union{Nothing,Symbol} = nothing)
     sr = slide === nothing ? nothing : _dt_slide_resolve(slide)
     bytes = copy(Main.BasicRenderer.outputs(result).blsStructure_bytes)
@@ -2399,15 +2418,15 @@ false provenance. PURPOSE: any play render becomes deck-ready colored-run data.
 
 PARAMETERS — which behavior each triggers:
 - `path::AbstractString` — the output file; sidecar at `path * ".slideruns.json"`.
-- `result::GoMeta.GoMetaResult` — the ONE `goMeta` result whose render is written;
-  its `state` internals feed the derivation (D-6(a) exemption surface, pinned by
+- `result::GoMeta.GoMetaDelivery` — the ONE `goMeta` result whose render is written;
+  its delivered tree's BLS internals (`blsComponentTree`) feed the derivation (D-6(a) exemption surface, pinned by
   `devtools_selfcheck()`).
 - `slide::Union{Nothing,Symbol} = nothing` — as [`writeBlsStructureToFile`](@ref):
   `nothing` = X only AND a stale `X.slideruns.json` beside the path is RETIRED
   (removed — F5); a scheme Symbol = X + sidecar published as a staged pair (border
   `"usual"`); unknown Symbol ⇒ ArgumentError naming the five supported values.
 """
-function writeRenderToFile(path::AbstractString, result::GoMeta.GoMetaResult;
+function writeRenderToFile(path::AbstractString, result::GoMeta.GoMetaDelivery;
                            slide::Union{Nothing,Symbol} = nothing)
     sr = slide === nothing ? nothing : _dt_slide_resolve(slide)
     bytes = copy(Main.BasicRenderer.outputs(result).render_bytes)
@@ -2522,10 +2541,10 @@ end
 
 IS: the internal-surface drift alarm (design §2). DOES: runs `goMeta` on a tiny inline
 marked input and asserts, LOUDLY, everything these tools stand on: the walkable
-`result.state.parse` tree + engine-true census, evals rows present and 100%
+`result.blsComponentTree` tree + engine-true census, evals rows present and 100%
 anchored with `:match` fingerprints, and both printers rendering non-empty output to
-plain AND colored IO without throwing. REASONING: `result.state` is semver-unstable
-and the package snapshot is refreshed wholesale — after every refresh, RUN THIS; a
+plain AND colored IO without throwing. REASONING: the tools read the delivered part's BLS internals
+— parser names non-public until the door of stage 2 (R-V04B-45; R-V04B-58) — and the package snapshot is refreshed wholesale — after every refresh, RUN THIS; a
 broken internal surface must fail here, not silently mis-render during play.
 """
 function devtools_selfcheck()
@@ -2586,24 +2605,25 @@ function devtools_selfcheck()
     ## ── §H slide-surface pins (D-6(a) rider: every NEW internal read the slide path
     ## adds is pinned here or battery-covered — T1's re-parse arm lives in probe §16 —
     ## so a drifted engine fails LOUDLY, never mis-roles) ─────────────────────────────
-    F = r.state.parse.flavor
+    F = r.blsComponentTree.flavor
     (F.lead == "#" && F.hide_marker == "## " && F.re_meta_leaded isa Regex &&
      F.flavor_tag === :julia) ||
         error("devtools_selfcheck: the flavor record drifted (lead/hide_marker/re_meta_leaded/flavor_tag)")
-    r.state.parse.endsWithNewline isa Bool ||
+    r.blsComponentTree.endsWithNewline isa Bool ||
         error("devtools_selfcheck: ParseState.endsWithNewline drifted")
     (_DT_BLS._is_h_ws(' ') && _DT_BLS._is_h_ws('\t') && _DT_BLS._is_h_ws('\u00a0') &&
      !_DT_BLS._is_h_ws('x') && !_DT_BLS._is_h_ws('\n')) ||
         error("devtools_selfcheck: the engine [\\h] delimiter class drifted (_is_h_ws; NBSP must delimit)")
-    r.state.config isa GoMeta.GoMetaConfig ||
-        error("devtools_selfcheck: result.state.config drifted (the T1 re-parse arm needs it)")
+    (F.flavor_tag in (:julia, :c, :latex) && _DT_BLS.flavor_for(F.flavor_tag) === F &&
+     isempty(GoMeta.validate_config(GoMeta.GoMetaConfig(flavor_tag = F.flavor_tag)))) ||
+        error("devtools_selfcheck: the delivered tree's flavor record does not round-trip through its flavor_tag into a valid config (the T1 re-parse arm rebuilds its config from it)")
     ## fate ladder + render transformation classes (the render writer's derivation)
     rf = GoMeta.goMeta(Vector{UInt8}(codeunits("#~ discard{ isCode }\nx = 1 #~ hide\ny = 2\n")))
     rf.status == GoMeta.PROCESS_OK || error("devtools_selfcheck: fate fixture refused")
     String(copy(Main.BasicRenderer.outputs(rf).render_bytes)) == "#~ discard{ isCode }\n## x = 1 ## #~ hide\n" ||
         error("devtools_selfcheck: the hide/discard render transformation drifted — REVIEW the slide derivation, then re-pin")
     fates = Tuple{Int,Symbol}[]
-    _dt_sl_walk(rf.state.parse) do line, block, file, ln, lvec, svec
+    _dt_sl_walk(rf.blsComponentTree) do line, block, file, ln, lvec, svec
         push!(fates, (ln, _dt_sl_fate(line, block, file)))
     end
     sort(fates) == [(1, :show), (2, :hide), (3, :discard)] ||
@@ -2611,7 +2631,7 @@ function devtools_selfcheck()
     ## :comment settribute at Line grain, julia strictness split
     rc = GoMeta.goMeta(Vector{UInt8}(codeunits("## c\n### banner\n")))
     ccm = Bool[]
-    _dt_sl_walk(rc.state.parse) do line, block, file, ln, lvec, svec
+    _dt_sl_walk(rc.blsComponentTree) do line, block, file, ln, lvec, svec
         push!(ccm, _DT_BLS.getElement(line.componentSettribute, :comment))
     end
     ccm == [true, false] ||
@@ -2619,7 +2639,7 @@ function devtools_selfcheck()
     ## segment byte offsets (1-based inclusive; emoji multi-byte pin) + collectedLines
     re = GoMeta.goMeta(Vector{UInt8}(codeunits("x = \"🍒🍒\" #~ hide\n")))
     spans = Tuple{Int,Int}[]
-    _dt_sl_walk(re.state.parse) do line, block, file, ln, lvec, svec
+    _dt_sl_walk(re.blsComponentTree) do line, block, file, ln, lvec, svec
         for sid in _DT_BLS.eachchildid(line, lvec)
             seg = svec[sid]
             push!(spans, (Int(_DT_BLS.getElement(seg.cmpntNamedInt, :startMainStr)),
@@ -2628,7 +2648,7 @@ function devtools_selfcheck()
     end
     spans == [(1, 15), (16, 22)] ||
         error("devtools_selfcheck: segment byte offsets drifted (got $spans, pinned [(1,15),(16,22)])")
-    re.state.parse.collectedLines == ["x = \"🍒🍒\" #~ hide"] ||
+    re.blsComponentTree.collectedLines == ["x = \"🍒🍒\" #~ hide"] ||
         error("devtools_selfcheck: collectedLines drifted")
     ## capture smoke: the run annotation is TOTAL — concat of runs+newlines == the
     ## plain render of the same call, byte-for-byte; roles stay in the closed set

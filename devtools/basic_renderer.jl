@@ -45,7 +45,7 @@ Core.eval(Main, :(const _BASIC_RENDERER_LOADED = true))
 #     recompute"; closed by the pure-consumer branch, R-V04B-16 (1)): this renderer still RESOLVES the
 #     Engine's stored Visib flags itself — the precedence, nearest flag wins (`checkVisib`, `finalVisib`) —
 #     it does not re-evaluate the metaStatements; the branch makes it a pure consumer of the Engine's
-#     resolved answers. It reads the Engine's internal parse state (`result.state.parse`) and the parser's
+#     resolved answers. It reads the delivered part `result.blsComponentTree` (public by name, R-V04B-29) and the parser's
 #     non-public names (`BLS.getElement`, `BLS.eachchildid`, `BLS.FLAVOR_JULIA`, `BLS._isspace_valid`,
 #     `ParseState.endsWithNewline`) under the owner's exemption D-6(a) of 2026-08-20, WIDENED to this file
 #     and the tree print on 2026-09-11 (R-V04B-24 C1 (a)) as an INTERIM that LAPSES when D-4 rules the
@@ -78,7 +78,7 @@ import GoMeta.BLS
 ## FLAVOR AXIS: the hide marker is the flavor's `hide_marker` ("## " for :julia — the
 ## default, byte-identical for every existing caller — and "//# " for :c), passed as the
 ## `hide_marker` kwarg at the output-assembly site from the state's FlavorProfile record
-## (`result.state.parse.flavor`). Hide is VISIBILITY-only — the marker is a plain comment
+## (`result.blsComponentTree.flavor`). Hide is VISIBILITY-only — the marker is a plain comment
 ## form in its flavor and hidden metadata remains live on re-ingestion, by design.
 @enum VisibEnum notAvailable show hide discard
 
@@ -541,16 +541,16 @@ end
 ## THE PAIR — `outputs(result)`: the Engine's former `GoMeta.outputs` (src/GoMeta.jl:750-785 at
 ## code commit 86ec5d0) moved here UNCHANGED IN BEHAVIOUR on 2026-09-12 (R-V04B-24 B1: a hard
 ## removal from the Engine, no stub); the only edits are the THREE qualifications this namespace
-## forces (`GoMeta.GoMetaResult` in the signature, `GoMeta.PROCESS_ERROR`, the local
+## forces (`GoMeta.GoMetaDelivery` in the signature, `GoMeta.PROCESS_ERROR`, the local
 ## `structural_serialization`) and the docstring's re-scoping. It is `Main.BasicRenderer.outputs` —
 ## reached ONLY through devtools/load_basic_renderer.jl.
 
 """
-    outputs(result::GoMeta.GoMetaResult) -> (blsStructure_bytes::Vector{UInt8}, render_bytes::Vector{UInt8})
+    outputs(result::GoMeta.GoMetaDelivery) -> (blsStructure_bytes::Vector{UInt8}, render_bytes::Vector{UInt8})
 
 The development tool's pair; the Engine's canonical output is `altValues_evals` (docs/public-api.md §1.3). `blsStructure_bytes` is the verdict-free
 `structural_serialization` (this module's own function since R-V04B-24) of the final parse tree; `render_bytes` is the jl-share-v1 emit
-(docs/CANONICAL-OUTPUT.md). Both are PURE functions of `result.state.parse` (the per-call parse state the
+(docs/CANONICAL-OUTPUT.md). Both are PURE functions of `result.blsComponentTree` (the per-call parse state the
 in-`with` absorb-walk + apply fully mutated), so this accessor is correct OUTSIDE the per-call
 `STATE` scope. Total on any OK result (one documented qualification — the multi-Visib
 render guard: docs/public-api.md §3.4, `devtools/README.md`; the render plane's string indexing is character-safe,
@@ -559,8 +559,8 @@ docs/public-api.md §4, GUARDED); on a non-OK result the contract is
 "tree-if-parse-succeeded" distinction would be a new contract row) — for the config-time path both are empty, because the
 parse never ran. The NamedTuple field order is `(blsStructure_bytes, render_bytes)`.
 """
-function outputs(result::GoMeta.GoMetaResult)
-    ## The non-OK output contract. A fail-closed PROCESS_ERROR GoMetaResult — at v0.3 the only source was a
+function outputs(result::GoMeta.GoMetaDelivery)
+    ## The non-OK output contract. A fail-closed PROCESS_ERROR GoMetaDelivery — at v0.3 the only source was a
     ## config-time validation error; at v0.4 the registry DOOR (`REG_UNPUBLISHED` / `POST_SEAL_MUTATION`) is
     ## the second pre-parse source — either pre-empts the parse — yields an EMPTY (tree, render):
     ## "no render attempted", and a parse that never ran ⇒ an empty tree. `render_bytes` is NOT invoked
@@ -572,13 +572,13 @@ function outputs(result::GoMeta.GoMetaResult)
     ## The hide marker rides the PARSE STATE's own FlavorProfile, never the config —
     ## under a carrier-constructed store (the `run_absorb_apply!` seam) the config
     ## need not name the flavor the store was parsed under; reading
-    ## `state.parse.flavor` keeps `outputs` stamping the CORRECT flavor's marker by
+    ## `blsComponentTree.flavor` keeps `outputs` stamping the CORRECT flavor's marker by
     ## construction.
-    rendered = let fl = result.state.parse.flavor
-        render_bytes(result.state.parse;
+    rendered = let fl = result.blsComponentTree.flavor
+        render_bytes(result.blsComponentTree;
             hide_marker = fl.hide_marker, hide_fold_prefix = fl.hide_fold_prefix)
     end
-    tree     = structural_serialization(result.state.parse)
+    tree     = structural_serialization(result.blsComponentTree)
     return (blsStructure_bytes = tree, render_bytes = rendered)
 end
 

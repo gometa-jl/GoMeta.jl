@@ -199,13 +199,6 @@ end
         rs = _run("x = 1 #~ \"T\"\ny = 2\n")
         @test string(rs.status) == "PROCESS_OK"
         @test (:head_10, "T") in _heads(rs)
-        # the context record itself is PURE FROM PARSE and published on the per-call
-        # state (stored in NO Component): the last absorbed component's record survives
-        # on the result's state with the four fields populated
-        mc = rs.state.meta_context
-        @test mc isa GM.MetaContext
-        @test mc.grain in (:Block, :Line, :Segment)
-        @test mc.level >= 1 && !isempty(mc.handle)
     end
 
     @testset "test_depth_existing_rows_only — the level rides EXISTING head rows, none fabricated" begin
@@ -297,10 +290,13 @@ end
         rl = _run("#~ \"Title\"\nx = 1\ny = 2\nz = 3\n")
         @test string(rl.status) == "PROCESS_OK"
         @test length(_heads(rl)) == 1 && (:head_1, "Title") in _heads(rl)
-        # the row's handle is the METALINE's (the last-published context record of a
-        # single-metaLine document IS the metaLine's own — its handle keys the row)
+        # the row's handle is the METALINE's own occurrence handle, computed from the delivered tree
+        # (`blsComponentTree`; the Engine's `occurrence_key` + `key_bytes`, the default namespace)
         hrow = only([h for (h, a, _, _) in GM.readAltValuesEvals(rl) if startswith(String(a), "head")])
-        @test hrow == rl.state.meta_context.handle
+        lv = rl.blsComponentTree.componentsPDict[GM.BLS.Line][1]
+        ml = only(lv[i] for i in eachindex(lv)
+                    if isassigned(lv, i) && GM.BLS.getElement(lv[i].cmpntNamedInt, :inputLineNum) == 1)
+        @test hrow == GM.key_bytes(GM.occurrence_key(rl.blsComponentTree, ml; namespace = :default))
         # SLOT-WIPE INDEPENDENCE: delivery happens at absorb, so a LATER same-depth
         # metaLine (which reuses/wipes the slot) cannot disturb an earlier heading's row
         rw = _run("#~ \"A\"\nx = 1\n#~ :label1\ny = 2\n")
@@ -337,11 +333,11 @@ end
         # absorbs (the head never occupies a queue row)
         rq = _run("#~ \"H\" hide show discard cell( 1) parent( 2) file( 3) :label1 :label2\nx = 1\n")
         @test string(rq.status) == "PROCESS_OK" && (:head_1, "H") in _heads(rq)
-        # …and the DIRECT queue-state discrimination (external-lens sharpening): a
-        # heading-only document leaves the slot tensors COMPLETELY untouched — the
-        # capacity witness above pins the at-capacity case; this pins the mechanism
+        # …and, through the delivered rows, a heading-only document mints its head row and nothing else
+        # — the observable face of "the slot tensors untouched"; the tensors themselves are the working
+        # state's and are not delivered (the direct pin is lost — the record names it)
         rz = _run("#~ \"Only\"\nx = 1\n")
-        @test sum(rz.state.mh.count_actions_per_slot) == 0
+        @test [a for (_, a, _, _) in GM.readAltValuesEvals(rz)] == [:head_1]
         # THE RATIFIED VOCABULARY BOUNDARIES (panel-found coverage gap): `#~0` = the
         # file level records head_0; `#~8` = the deepest depth-digit records head_8
         r0 = _run("#~0 \"Root\"\nx = 1\n")

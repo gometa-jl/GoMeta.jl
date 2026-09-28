@@ -156,7 +156,7 @@ end
         # headers would MATCH ⇒ this guard is what keeps that case from silently false-greening.
         @test res.status == G.PROCESS_OK
         ann = G.readAltValuesEvals(res)
-        ser = G.serialize_evals(res)                             # the SINGLE shared serializer (v0.2: the 5-column GoMetaResult form)
+        ser = G.serialize_evals(res)                             # the SINGLE shared serializer (the 5-column form over the delivered object, v0.2's)
         @test _sha(ser) == fx["annotations_golden_sha256"]             # golden sha pre-check
         @test ser == read(joinpath(REPO, fx["annotations_golden_path"]))   # full byte-compare on the golden file
         # deterministic across a 2nd fresh in-process run; sorted; polarity; totality.
@@ -246,7 +246,7 @@ end
         #     net_new_surface annotations fixtures have no tree golden), assert the tree taken PRE-apply
         #     (`_preapply_tree`, the parse stage alone) byte-equals the tree taken POST-apply
         #     (`Main.BasicRenderer.outputs(goMeta(...)).blsStructure_bytes`). REASONING: the pair's `blsStructure_bytes` IS
-        #     `structural_serialization(result.state.parse)` (devtools/basic_renderer.jl), so a DIVERGENCE here would mean
+        #     `structural_serialization(result.blsComponentTree)` (devtools/basic_renderer.jl), so a DIVERGENCE here would mean
         #     absorb/apply MUTATED the parse tree (e.g. an `addedStrings` insertion leaking into the
         #     structural half) — precisely the verdict leak this invariant forbids. PURPOSE: a standing guard
         #     that the tree stays verdict-free — a property any condition-evaluation implementation can rely on;

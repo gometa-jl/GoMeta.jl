@@ -43,7 +43,7 @@ import TOML
 @testset "public_surface (the Engine's surface, the tool's pair + the declared export set)" begin
 
     # The declared semver export set (docs/public-api.md §1.1).
-    DECLARED_EXPORTS = Set([:goMeta, :readAltValuesEvals, :GoMetaConfig, :GoMetaResult])
+    DECLARED_EXPORTS = Set([:goMeta, :readAltValuesEvals, :GoMetaConfig, :GoMetaDelivery])
     # The supporting PACKAGE-PUBLIC surface (docs/public-api.md §1.2): documented + qualified-access, NOT exported.
     SUPPORTING_PUBLIC = [:serialize_evals, :content_fingerprint, :EvalRecord, :EvalStore, :ProcessStatus, :PROCESS_OK,
                          :PROCESS_ERROR, :Diagnostic, :AlterantRegistry, :DEFAULT_REGISTRY,

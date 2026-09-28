@@ -41,7 +41,7 @@
 #   message rather than passing vacuously. Id's per-field form is undefined (README rule 2) — likewise.
 #   Extension chains (a Component whose `idExtended` ≠ 0) are not normalized here (the five confirmed
 #   inputs have none) — the runner refuses such an input loudly. The rows are read through the PUBLIC
-#   `altValues_evals`; the tree through `result.state.parse` and the parser module — the same read the
+#   `altValues_evals`; the tree through `result.blsComponentTree` and the parser module — the same read the
 #   golden layer makes (`_preapply_tree`), inside the repository's own tests.
 
 using Test, TOML
@@ -205,7 +205,7 @@ const CONFIRMED = sort([f for f in readdir(AUTHORED_DIR) if endswith(f, ".toml")
             r = GA.goMeta(read(input))
             @test r.status == GA.PROCESS_OK
             rows = GA.readAltValuesEvals(r)
-            t    = _components(r.state.parse)
+            t    = _components(r.blsComponentTree)
             for ex in spec["expect"]
                 n_stmt += 1
                 pos, alt = ex["component"], ex["alterant"]

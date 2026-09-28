@@ -260,10 +260,10 @@ _fp_julia_kwargs(; overrides...) = merge((
         ## carries the CONFIG's flavor for BOTH armed tags (the behavior-safety row —
         ## a :c state must never carry the julia record).
         r_jl = GM.goMeta(_fp_bytes("#~ hide\nx = 1\n"))
-        @test r_jl.state.parse.flavor === _FP_BLS.FLAVOR_JULIA
+        @test r_jl.blsComponentTree.flavor === _FP_BLS.FLAVOR_JULIA
         r_c = GM.goMeta(_fp_bytes("//~ hide\nint x;\n");
             config = GM.GoMetaConfig(flavor_tag = :c))
-        @test r_c.state.parse.flavor === _FP_BLS.FLAVOR_CFAM
+        @test r_c.blsComponentTree.flavor === _FP_BLS.FLAVOR_CFAM
         ## The invalid-tag path keeps its TYPED refusal (the resolve-once placement
         ## law: flavor_for must never see an unvalidated tag).
         r_bad = GM.goMeta(_fp_bytes("x\n");

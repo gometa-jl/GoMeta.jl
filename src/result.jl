@@ -1,9 +1,9 @@
 # src/result.jl — the typed result-support types: ProcessStatus, Diagnostic, EvalStore.
 #
-# IS: the dep-free pieces of the public `GoMetaResult` surface that `ProcessState` itself embeds — the run
+# IS: the dep-free pieces of the public `GoMetaDelivery` surface that `ProcessState` itself embeds — the run
 #     status, the typed diagnostic record (which replaces every bare `error()`), and the per-cell
-#     evals store. (The top-level `GoMetaResult` aggregate is defined in `state.jl`, AFTER
-#     `ProcessState` — its first field; these three types must precede `ProcessState`, so they live here.)
+#     evals store. (The top-level `GoMetaDelivery` aggregate is defined in `state.jl`, AFTER
+#     `ProcessState` — the run builds it from the state's own pieces at exit; these three types must precede `ProcessState`, so they live here.)
 # DOES: declares `ProcessStatus` (the OK/non-OK enum), `Diagnostic` (`{code, severity, message, context}`),
 #     and `EvalStore` (a growable set of `EvalRecord`s) + its empty constructor.
 # REASONING: catalogued failures surface as typed `Diagnostic`s (E-01..E-08); the E-04/E-06 rows
@@ -15,12 +15,18 @@
 """
     @enum ProcessStatus PROCESS_OK PROCESS_ERROR
 
-The run status. `PROCESS_OK` ⇒ no error-severity diagnostics (a meta-free input on the no-feed
+IS: the run status of a delivery — the two-valued enum every consumer checks first.
+
+DOES: The run status. `PROCESS_OK` ⇒ no error-severity diagnostics (a meta-free input on the no-feed
 path is still OK — E-05; a refusal-carrying feed aborts regardless of document meta-freeness);
 `PROCESS_ERROR` ⇒ at least one error-severity `Diagnostic` (non-OK ⇒ non-empty diagnostics). This
-invariant is enforced when `goMeta` constructs the `GoMetaResult`; these types are additive until then. The
+invariant is enforced when `goMeta` constructs the `GoMetaDelivery`; these types are additive until then. The
 set is intentionally small + extensible (a new status value would slot in here without
 breaking the read-window).
+
+REASONING: a consumer needs one total signal that says whether the evals rows may be trusted before it reads a diagnostic — the invariant non-OK ⇒ non-empty diagnostics makes the enum sufficient.
+
+PURPOSE: the fail-closed signal of the delivered object (R-V04B-28: one of its four parts).
 """
 @enum ProcessStatus PROCESS_OK PROCESS_ERROR
 

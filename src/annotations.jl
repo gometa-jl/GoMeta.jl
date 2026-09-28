@@ -472,7 +472,7 @@ end
 # The public accessor — readAltValuesEvals(result)
 # --------------------------------------------------------------------------------------------------------
 """
-    readAltValuesEvals(result::GoMetaResult) -> Vector{Tuple{Vector{UInt8},Symbol,Any,Bool}}
+    readAltValuesEvals(result::GoMetaDelivery) -> Vector{Tuple{Vector{UInt8},Symbol,Any,Bool}}
 
 IS: the core's reader over the evals rows of a run — the production surface of the GoMeta Engine
 (docs/CANONICAL-OUTPUT.md §4; docs/public-api.md §1.3). Named by the owner's ruling R-V04B-32 (2026-09-16):
@@ -488,7 +488,7 @@ when no metaLine exists on ANY surface (the fed profile IS a metaLine body; a ru
 records no evals rows). Pure and read-only on `result`: it sorts the already-final store without mutating it,
 and each returned `cell_handle` is a COPY of the store's bytes, so a caller mutating a returned handle never
 perturbs a later reader or serializer call on the same result; safe to call any number of times, also outside
-the per-call `STATE` scope (`result.verdicts` was fully populated by the in-`with` apply). The sort key
+the per-call `STATE` scope (`result.altValues_evals` was fully populated by the in-`with` apply). The sort key
 stringifies `attr` and `value` for a total order over the heterogeneous `value::Any` within the CLOSED capture
 value set — the T5 capture value algebra: Bool · Symbol · the machine ints · String (`_capture_value_leaf`);
 the shipped four use Bool for Labels, Symbol for Visib, Int16 for Id, String for heading text;
@@ -509,8 +509,8 @@ values a run recorded and for which handle — a Component's rows from the apply
 rows from the absorb seam's flush, and the non-cell rows the explicit headings of a fed profile record against
 the user-context handle, one per entry — the evals rows as the recorded truth of the run.
 """
-function readAltValuesEvals(result::GoMetaResult)
-    recs   = result.verdicts.records
+function readAltValuesEvals(result::GoMetaDelivery)
+    recs   = result.altValues_evals.records
     order  = sortperm(recs; by = r -> (r.cell_handle, string(r.attr), string(r.value)))
     ## Each returned cell_handle is a COPY — the accessor never aliases the store's byte vectors,
     ## so a caller mutating a returned handle cannot corrupt a later accessor/serialize call.
@@ -522,7 +522,7 @@ function readAltValuesEvals(result::GoMetaResult)
 end
 
 """
-    content_fingerprint(result::GoMetaResult) -> Vector{Tuple{Vector{UInt8},Vector{UInt8}}}
+    content_fingerprint(result::GoMetaDelivery) -> Vector{Tuple{Vector{UInt8},Vector{UInt8}}}
 
 IS: the SIBLING accessor of the occurrence-key store: the per-record `(cell_handle → content)` pairs in the
 reader's sort order.
@@ -538,8 +538,8 @@ occurrence handle) while the content stays reviewable beside it.
 PURPOSE: the pairs a consumer zips on the reader's rows to find a cell again by its verbatim bytes (the golden
 layer's fifth column; the notebook generator's join).
 """
-function content_fingerprint(result::GoMetaResult)
-    recs  = result.verdicts.records
+function content_fingerprint(result::GoMetaDelivery)
+    recs  = result.altValues_evals.records
     order = sortperm(recs; by = r -> (r.cell_handle, string(r.attr), string(r.value)))
     return Tuple{Vector{UInt8},Vector{UInt8}}[
         (copy(recs[i].cell_handle), copy(recs[i].content)) for i in order
@@ -555,13 +555,13 @@ serialization of the evals rows.
 DOES: The deterministic, binary-safe 4-COLUMN byte form of an `readAltValuesEvals(result)` vector — one
 already-sorted evals row per line, `<attr>\\t<repr(value)>\\t<polarity>\\t<hex(cell_handle)>`, under a
 fixed header (`cell_handle` = the occurrence-key bytes, hex — v0.2 CH-1). **BACK-COMPAT form** kept
-on the public surface; the GOLDEN layer's write+read sides both use the 5-COLUMN `GoMetaResult` method
+on the public surface; the GOLDEN layer's write+read sides both use the 5-COLUMN `GoMetaDelivery` method
 below (which appends the content-fingerprint hex column for reviewability + per-fixture
 discrimination) — see that method's docstring. Hashing either form's bytes gives a stable behaviour
 digest (the "content-hashable" property; docs/CANONICAL-OUTPUT.md §4).
 
 REASONING: a fixed header and one row per line, hex-encoded handles, make the bytes hash-stable and
-diff-reviewable; the golden layer uses the 5-column `GoMetaResult` method beside it.
+diff-reviewable; the golden layer uses the 5-column `GoMetaDelivery` method beside it.
 
 PURPOSE: the byte form a consumer hashes for a behaviour digest (docs/CANONICAL-OUTPUT.md §4) and the notebook
 generator's digest source.
@@ -581,16 +581,22 @@ function serialize_evals(ann)::Vector{UInt8}
 end
 
 """
-    serialize_evals(result::GoMetaResult) -> Vector{UInt8}
+    serialize_evals(result::GoMetaDelivery) -> Vector{UInt8}
 
-The GOLDEN form of the serializer (the golden layer's write+read sides use THIS method): the 4-column
+IS: the golden layer's five-column byte form of a delivery's evals rows — the key form plus the content fingerprint.
+
+DOES: The GOLDEN form of the serializer (the golden layer's write+read sides use THIS method): the 4-column
 key form PLUS the demoted content fingerprint as a fifth hex column — the golden stays REVIEWABLE in a
 plain diff (a reviewer sees WHICH cell each row addresses) and per-fixture DISCRIMINATING (two
 structurally-identical inputs with different content produce different goldens). The ann-vector method
 above keeps the key-only 4-column form (public back-compat; an adapter's payload concerns are the
 adapter's, not this dev-side golden).
+
+REASONING: a golden that shows WHICH cell each row addresses stays reviewable in a plain diff and discriminating between structurally identical inputs; the four-column form above stays the public back-compat form.
+
+PURPOSE: what the golden runner writes and reads (`tests/golden/golden_tests.jl`) — the twelve annotation pins' producer.
 """
-function serialize_evals(result::GoMetaResult)::Vector{UInt8}
+function serialize_evals(result::GoMetaDelivery)::Vector{UInt8}
     ann = readAltValuesEvals(result)
     fp  = content_fingerprint(result)
     parts = String[

@@ -71,7 +71,7 @@ docstrings are in `devtools.jl`.
 ## What they read, and the alarm
 
 The tools AND the moved basic renderer (`basic_renderer.jl`, the tree print included) read the
-Engine's internal state (`result.state.parse`) and a few non-public parser names under the owner's
+delivered part `result.blsComponentTree` (public by name, R-V04B-29) and a few non-public parser names under the owner's
 exemption D-6(a) of 2026-08-20, WIDENED on 2026-09-11 (R-V04B-24, C1 (a)) to the renderer file and
 the tree print as an INTERIM that LAPSES when D-4 rules the BLS-provided tree route; the interim
 ends with a full tidy-up (the owner's order, OWNER-WORDS §17). Allowed for THESE files only;
