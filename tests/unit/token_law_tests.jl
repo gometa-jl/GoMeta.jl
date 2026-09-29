@@ -29,7 +29,7 @@ _tl_nblocks(s; kw...) = length(collect(eachmatch(r"\{:B-", _tl_tree(s; kw...))))
                   "someCharacters#~someMoreCharacters\nx = 1\n")
             r = _tl_r(s)
             @test r.status == GM.PROCESS_OK
-            @test isempty(GM.readAltValuesEvals(r))
+            @test isempty(GM.readAltValuesEvals(r.altValues_evals))
             @test _tl_render(s) == s
             @test _tl_nblocks(s) == 1                  # a single Code block, unsplit
         end
@@ -42,7 +42,7 @@ _tl_nblocks(s; kw...) = length(collect(eachmatch(r"\{:B-", _tl_tree(s; kw...))))
             @test _tl_err(inp) === nothing
             r = _tl_r(inp)
             @test r.status == GM.PROCESS_OK
-            @test isempty(GM.readAltValuesEvals(r))
+            @test isempty(GM.readAltValuesEvals(r.altValues_evals))
             @test _tl_render(inp) == inp
         end
     end
@@ -126,7 +126,7 @@ _tl_nblocks(s; kw...) = length(collect(eachmatch(r"\{:B-", _tl_tree(s; kw...))))
         let s = "//~hide\na = 1;\n"                                          # bound 5 DEAD
             @test _tl_err(s; flavor=:c) === nothing
             @test _tl_render(s; flavor=:c) == s
-            @test isempty(GM.readAltValuesEvals(_tl_r(s; flavor=:c)))
+            @test isempty(GM.readAltValuesEvals(_tl_r(s; flavor=:c).altValues_evals))
         end
         let s = "//]x\nb = 2;\n"                                             # glued closer
             @test _tl_err(s; flavor=:c) === nothing
@@ -156,16 +156,16 @@ _tl_nblocks(s; kw...) = length(collect(eachmatch(r"\{:B-", _tl_tree(s; kw...))))
         let s = "#~ hide\n###banner\nx = 1\n"
             t = _tl_tree(s)
             @test occursin(":L-Meta [###banner]", t)
-            @test !any(a -> a[3] === :discard, GM.readAltValuesEvals(_tl_r(s)))
+            @test !any(a -> a[3] === :discard, GM.readAltValuesEvals(_tl_r(s).altValues_evals))
         end
         # preserved family completion: digit form (label LANDS) + bang form (inert)
         let s = "#~2 :label1\nx = 1\n"
             @test occursin(":L-Meta [#~2 :label1]", _tl_tree(s))
-            @test any(a -> a[2] == :label_label1, GM.readAltValuesEvals(_tl_r(s)))
+            @test any(a -> a[2] == :label_label1, GM.readAltValuesEvals(_tl_r(s).altValues_evals))
         end
         let s = "#~~~! x\nx = 1\n"
             @test occursin(":L-Meta [#~~~! x]", _tl_tree(s))
-            @test isempty(GM.readAltValuesEvals(_tl_r(s)))    # ! = inert, never evaluated
+            @test isempty(GM.readAltValuesEvals(_tl_r(s).altValues_evals))    # ! = inert, never evaluated
         end
         # line-START glued head followed by a real inline token (flag-leak witnesses:
         # a leaked line-grain :hasMetaStr would trip the >1-inline-marker refusal)

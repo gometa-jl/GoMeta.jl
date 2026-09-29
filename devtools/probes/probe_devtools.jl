@@ -39,7 +39,7 @@ ext  = GoMeta.goMeta(read(joinpath(_PB_HOME, "examples", "InFileFolder", "file_f
 check(devtools_selfcheck() === true, "devtools_selfcheck() did not return true")
 
 ## 2 — attrs filter: count agreement with the raw surface + explicit never-minted state
-raw_visib = count(r -> r[2] === :visib, GoMeta.readAltValuesEvals(ext))
+raw_visib = count(r -> r[2] === :visib, GoMeta.readAltValuesEvals(ext.altValues_evals))
 out = plain(io -> print_altValues_evals(io, ext; layout = :rows, attrs = :visib))
 nrows = count(l -> occursin("visib", l) && occursin("=>", l), split(out, '\n'))
 check(nrows == raw_visib, "attrs=:visib rendered $nrows rows, expected $raw_visib")
@@ -92,7 +92,7 @@ check(occursin("[Segment #", out) && occursin("head_2", out),
       "Segment-grain head row not attached with a [Segment #N] tag in :tree")
 check(!occursin("unanchored rows", out), "Segment-grain head row fell to the unanchored section")
 nbullets = count(l -> occursin("●", l), split(out, '\n'))
-nrows = length(GoMeta.readAltValuesEvals(seg))
+nrows = length(GoMeta.readAltValuesEvals(seg.altValues_evals))
 check(nbullets == nrows, ":tree rendered $nbullets bullets for $nrows rows — totality broken")
 out = plain(io -> print_altValues_evals(io, seg; layout = :cells))
 check(occursin("head_2", out), "Segment-grain head row missing from :cells")
@@ -152,7 +152,7 @@ check(!occursin("unanchored", out) && occursin("label_🍻", out),
 ## 12 — USER_CONTEXT totality in ALL THREE layouts + the ordinal tag
 uctx2 = GoMeta.goMeta(read(joinpath(_PB_FIX, "mini-Documenter-Source-File.jl"));
                       config = GoMeta.GoMetaConfig(user_mh_profile = "head(\"Fed head\", 1)"))
-nraw = length(GoMeta.readAltValuesEvals(uctx2))
+nraw = length(GoMeta.readAltValuesEvals(uctx2.altValues_evals))
 out = plain(io -> print_altValues_evals(io, uctx2; layout = :rows))
 nrend = count(l -> occursin("=>", l), split(out, '\n'))
 check(nrend == nraw, ":rows rendered $nrend rows for $nraw raw rows — totality broken")

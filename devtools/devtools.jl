@@ -533,7 +533,7 @@ function _dt_eval_rows(doc)
     fp = Dict{Vector{UInt8},Vector{UInt8}}(h => c for (h, c) in GoMeta.content_fingerprint(doc.r))
     rows = DTEvalRow[]
     nosteps = Tuple{UInt8,UInt32}[]
-    for (h, attr, v, pol) in GoMeta.readAltValuesEvals(doc.r)
+    for (h, attr, v, pol) in GoMeta.readAltValuesEvals(doc.r.altValues_evals)
         d = _dt_decode(h)
         if !doc.ok           # damaged/absent tree: rows render unanchored, honestly
             dd = d === nothing ? nothing : d
@@ -2739,7 +2739,7 @@ function _dt_cli_main(args)
         print(String(copy(Main.BasicRenderer.outputs(r).render_bytes)))
     elseif cmd == "evals"
         fp = Dict{Vector{UInt8},Vector{UInt8}}(h => c for (h, c) in GoMeta.content_fingerprint(r))
-        rows = GoMeta.readAltValuesEvals(r)
+        rows = GoMeta.readAltValuesEvals(r.altValues_evals)
         isempty(rows) && println(stderr, "(no evals rows — no LIVE metaLine on any surface)")
         for (h, attr, v, pol) in rows
             cell = replace(String(copy(fp[h])), '\n' => '⏎')
@@ -2756,7 +2756,7 @@ function _dt_cli_main(args)
         print_BLS_Component_Tree(stdout, r; style = :mix, _name = basename(path))
     elseif cmd == "trace"
         fp = Dict{Vector{UInt8},Vector{UInt8}}(h => c for (h, c) in GoMeta.content_fingerprint(r))
-        rows = GoMeta.readAltValuesEvals(r)
+        rows = GoMeta.readAltValuesEvals(r.altValues_evals)
         isempty(rows) && println(stderr, "(no evals rows — no LIVE metaLine on any surface)")
         for (h, attr, v, pol) in rows
             cell = replace(String(copy(fp[h])), '\n' => '⏎')

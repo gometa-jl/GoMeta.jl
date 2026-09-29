@@ -75,15 +75,15 @@ These are part of the documented public surface — declared with Julia's `publi
 `names(GoMeta)` and tooling see them — but are **not** exported: reach them qualified
 (`GoMeta.<name>`):
 
-- `GoMeta.serialize_evals(readAltValuesEvals(result)) -> Vector{UInt8}` — the canonical,
+- `GoMeta.serialize_evals(readAltValuesEvals(result.altValues_evals)) -> Vector{UInt8}` — the canonical,
   deterministic, binary-safe serialization of the evals surface.
 - `GoMeta.content_fingerprint(result) -> Vector{Tuple{Vector{UInt8},Vector{UInt8}}}` — the
   sibling accessor of the evals surface: per-record `(cell_handle → content)` pairs carrying
-  each cell's verbatim content bytes, in the SAME sort order as `readAltValuesEvals(result)`
+  each cell's verbatim content bytes, in the SAME sort order as `readAltValuesEvals(result.altValues_evals)`
   (the contract a consumer may zip on). The occurrence-handle KEY is the identity; the
   content is the reader-facing text — the shipped `find_by_label.jl` and
   `notebooks_from_source.jl` tools join exactly this way.
-- `EvalRecord` / `EvalStore` — the type of one evals row, and the type of the part `altValues_evals` that holds them.
+- `EvalRecord` / `EvalStore` — the type of one evals row, and the type of the part `altValues_evals` that holds them (the reader's argument).
 - `ProcessStatus` (the enum) + its values `PROCESS_OK` / `PROCESS_ERROR`.
 - `Diagnostic` `{code::Symbol, severity::Symbol, message::String, context::Any}` — the typed,
   non-throwing diagnostic record.
@@ -332,7 +332,7 @@ They are not exported; reach them qualified. `tests/unit/public_surface_tests.jl
 
 1. **In R-V04B-24's own words: "the package's canonical observable output = `altValues_evals` (+
    `serialize_evals`, `content_fingerprint`)" and "the Engine's delivered surface after the move = the run
-   and the evaluated values".** `readAltValuesEvals(result)` is the evaluated Alterant values, per piece of the
+   and the evaluated values".** `readAltValuesEvals(result.altValues_evals)` is the evaluated Alterant values, per piece of the
    file: the deterministic, final-verdicts-only per-cell map `(cell_handle, attr, value, polarity)`;
    `GoMeta.serialize_evals` its byte form, `GoMeta.content_fingerprint` the cell bytes. No internal module
    (`walk`, `BLS`) ever needs importing for it.
@@ -421,9 +421,11 @@ where document cells exist. The deriving heading form refuses on this surface (n
 a CONDITIONED heading refuses (no evaluable settribute state at this version). New rows appear
 ONLY when this field is set. Deliberately scope-limited at v0.
 
-### `readAltValuesEvals(result::GoMetaDelivery) -> Vector{Tuple{Vector{UInt8},Symbol,Any,Bool}}`
+### `readAltValuesEvals(altValues_evals::EvalStore) -> Vector{Tuple{Vector{UInt8},Symbol,Any,Bool}}`
 
-The evaluated Alterant values, per piece of the file: the final map
+Given the delivered PART — the data container of R-V04B-29/32, never the whole delivered object:
+`readAltValuesEvals(result.altValues_evals)` (a reader takes the PART — R-V04B-29's record; the branch's default under
+R-V04B-40 (2)) — the evaluated Alterant values, per piece of the file: the final map
 `(cell_handle, attr, value, polarity)` — per-cell rows plus handle-classed non-cell rows (a fed
 explicit heading records against the user-context handle class) — **sorted by `(cell_handle,
 attr, value)`** for a deterministic, content-hashable order; **final-verdicts-only** (deduped at
@@ -436,7 +438,7 @@ or fed-profile-authored — the §2 Heading action; `head_<level>_<k>`, k ≥ 2 
 for same-level repeats on one recorded handle); `polarity` is always `true` at v0 (the field
 is reserved for a future negated-verdict encoding). Consumers should treat UNKNOWN attribute
 families as opaque — skip them, never error: the enumeration lists the v0 families, and new
-families may arrive as additive evolution within the documented versioning policy (§6). `GoMeta.serialize_evals(readAltValuesEvals(result))` is its canonical
+families may arrive as additive evolution within the documented versioning policy (§6). `GoMeta.serialize_evals(readAltValuesEvals(result.altValues_evals))` is its canonical
 byte form.
 
 ### The (tree, render) pair — a development tool's, since 0.4.0 (R-V04B-24)
@@ -886,7 +888,8 @@ non-silent record under R-V04B-61; the letter of R-V04B-24 (P) does not govern u
 - **`altValues_evals` (function) — EXPORTED since 0.3.0 — RENAMED `readAltValuesEvals` at 0.4.0** (no deprecation stub, as
   R-V04B-24's practice); ground: R-V04B-32 (2026-09-16) — the name `altValues_evals` belongs to the DATA CONTAINER (the part of
   the delivered object, R-V04B-29/31), never to a function; replacement: the reader `readAltValuesEvals` — the same rows, the
-  same order, the same type (its argument Q7's, R-V04B-32; at this commit `readAltValuesEvals(result)`); a 0.3.x caller of
+  same order, the same type (its argument Q7's, R-V04B-32 — since stage 1's commit 3 the delivered PART:
+  `readAltValuesEvals(result.altValues_evals)`, the branch's default under R-V04B-40 (2)); a 0.3.x caller of
   `altValues_evals(result)` sees `UndefVarError` (from stage 1's commit 2 the name `altValues_evals` is the part of
   `GoMetaDelivery`, read by name — a field, never a function); the same-commit triple (the export line `src/GoMeta.jl`, this
   document's §1.1/§1.2/§1.3/§2, the surface oracle `tests/unit/public_surface_tests.jl`). Minted 2026-09-16 (R-V04B-32);

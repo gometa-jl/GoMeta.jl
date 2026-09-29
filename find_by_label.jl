@@ -74,7 +74,7 @@ function index_examples()
             n_skipped += 1
             continue
         end
-        evals = GoMeta.readAltValuesEvals(result)
+        evals = GoMeta.readAltValuesEvals(result.altValues_evals)
         fps   = GoMeta.content_fingerprint(result)   # same order as evals, by contract
         length(evals) == length(fps) ||
             error("find_by_label: evals/fingerprint arity diverged — the accessors' contract broke")

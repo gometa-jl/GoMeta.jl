@@ -158,7 +158,7 @@ end
     catch e
         e
     end
-    _heads(r) = [(a, v) for (_, a, v, _) in GM.readAltValuesEvals(r) if startswith(String(a), "head")]
+    _heads(r) = [(a, v) for (_, a, v, _) in GM.readAltValuesEvals(r.altValues_evals) if startswith(String(a), "head")]
 
     @testset "test_quoted_first_lowering — the sugar lowers to the deriving head call" begin
         # the fenced first-position String becomes the head action's argument; the level
@@ -207,7 +207,7 @@ end
         # non-head attrs) — no fabricated rows (hd-4)
         rh = _run("#~ \"Title\"\nx = 1\n")
         rn = _run("# plain\nx = 1\n")
-        nonhead(r) = sort([String(a) for (_, a, _, _) in GM.readAltValuesEvals(r) if !startswith(String(a), "head")])
+        nonhead(r) = sort([String(a) for (_, a, _, _) in GM.readAltValuesEvals(r.altValues_evals) if !startswith(String(a), "head")])
         @test nonhead(rh) == nonhead(rn) == String[]
         @test !isempty(_heads(rh))
     end
@@ -292,7 +292,7 @@ end
         @test length(_heads(rl)) == 1 && (:head_1, "Title") in _heads(rl)
         # the row's handle is the METALINE's own occurrence handle, computed from the delivered tree
         # (`blsComponentTree`; the Engine's `occurrence_key` + `key_bytes`, the default namespace)
-        hrow = only([h for (h, a, _, _) in GM.readAltValuesEvals(rl) if startswith(String(a), "head")])
+        hrow = only([h for (h, a, _, _) in GM.readAltValuesEvals(rl.altValues_evals) if startswith(String(a), "head")])
         lv = rl.blsComponentTree.componentsPDict[GM.BLS.Line][1]
         ml = only(lv[i] for i in eachindex(lv)
                     if isassigned(lv, i) && GM.BLS.getElement(lv[i].cmpntNamedInt, :inputLineNum) == 1)
@@ -315,7 +315,7 @@ end
         # the deriving form still meets the applicability refusal there
         ru0 = GM.goMeta(Vector{UInt8}(codeunits("x = 1\n"));
             config = GM.GoMetaConfig(user_mh_profile = "head(\"U\", 3)"))
-        u_rows = [(h, a, v) for (h, a, v, _) in GM.readAltValuesEvals(ru0)
+        u_rows = [(h, a, v) for (h, a, v, _) in GM.readAltValuesEvals(ru0.altValues_evals)
                   if startswith(String(a), "head")]
         @test length(u_rows) == 1
         let (h, a, v) = u_rows[1]
@@ -337,7 +337,7 @@ end
         # — the observable face of "the slot tensors untouched"; the tensors themselves are the working
         # state's and are not delivered (the direct pin is lost — the record names it)
         rz = _run("#~ \"Only\"\nx = 1\n")
-        @test [a for (_, a, _, _) in GM.readAltValuesEvals(rz)] == [:head_1]
+        @test [a for (_, a, _, _) in GM.readAltValuesEvals(rz.altValues_evals)] == [:head_1]
         # THE RATIFIED VOCABULARY BOUNDARIES (panel-found coverage gap): `#~0` = the
         # file level records head_0; `#~8` = the deepest depth-digit records head_8
         r0 = _run("#~0 \"Root\"\nx = 1\n")
@@ -389,7 +389,7 @@ end
         # the fed head's row is PRESENT (the row-shape pins live in the flipped
         # witness above; this asserts presence on this route's own run)
         @test any(a === :head_3 && v == "U"
-                  for (_, a, v, _) in GM.readAltValuesEvals(ru))
+                  for (_, a, v, _) in GM.readAltValuesEvals(ru.altValues_evals))
         # NEW at the user-context build (the reserved wall): a CONDITIONED head in
         # a fed profile meets its typed refusal — the feed carries no evaluable
         # settribute state (unconditioned heads record; the lifting condition is

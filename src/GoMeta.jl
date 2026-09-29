@@ -19,7 +19,7 @@
 #     init_state(parse_state, config, registry))`, so two
 #     concurrent calls never share state; the driver walk enters each file-level Block, absorbs its
 #     metaLines, applies the queued alterant actions, writes back the Block-grain Visib value,
-#     and captures per-cell evals rows for `readAltValuesEvals(result)`. The tool's `outputs` pair — the BLS Component tree's print and the render — is the
+#     and captures per-cell evals rows for `readAltValuesEvals(result.altValues_evals)`. The tool's `outputs` pair — the BLS Component tree's print and the render — is the
 #     development tool's — `devtools/basic_renderer.jl`, loaded through `devtools/load_basic_renderer.jl`,
 #     never by the Engine (R-V04B-24, 2026-09-12). The optional
 #     `config.user_mh_profile` seeds the reserved user slot of the meta-hierarchy before the walk
@@ -121,7 +121,7 @@ include("condition.jl")             # the closed condition interpreter (bounded 
                                     #   printer + evaluate) — after registry.jl (the query dispatch
                                     #   surface) + state.jl; inert until the engine flips to it.
 include("annotations.jl")           # the per-cell evals surface — evals capture +
-                                    #   readAltValuesEvals(result). AFTER registry.jl (Alterants.Visib/Id) + state.jl
+                                    #   readAltValuesEvals(result.altValues_evals). AFTER registry.jl (Alterants.Visib/Id) + state.jl
                                     #   (ProcessState/GoMetaDelivery/EvalStore); BEFORE walk.jl + the driver below
                                     #   (which call captureEvals!). Holds no eval, no render-write.
 include("absorb/absorb_meta.jl")
@@ -338,7 +338,7 @@ Arguments:
 The `GoMetaDelivery` is `{altValues_evals::EvalStore, blsComponentTree::BLS.ParseState, status::ProcessStatus, diagnostics::Vector{Diagnostic}}` — the four public parts, read by name (R-V04B-28/29/30) — and is
 TOTAL over the CONFIG-TIME catalogued surface (an invalid profile or parse_range never throws uncaught); absorb/apply-plane catalogued failures can still throw at v0 (see below): `status` is
 `PROCESS_OK` (no error diagnostics) or `PROCESS_ERROR` (>=1 error `Diagnostic`; non-OK => non-empty diagnostics).
-Obtain the Engine's output via `readAltValuesEvals(result)` (the per-cell evals map; its byte form
+Obtain the Engine's output via `readAltValuesEvals(result.altValues_evals)` (the per-cell evals map; its byte form
 `serialize_evals`, the cell bytes `content_fingerprint`) — with the run itself, the Engine's delivered surface
 after the move (R-V04B-24: "the run and the evaluated values"). The (tree, render) pair is the development
 tool's: `Main.BasicRenderer.outputs`, applied to the result after `include("devtools/load_basic_renderer.jl")`
@@ -667,7 +667,7 @@ function run_absorb_apply!(parse_state::BLS.ParseState;
     ## THROW — the condition refusal rethrown at the absorb seam, the E-04/E-06 rows raw), so a run that returns
     ## here is `PROCESS_OK` — but the vector need NOT be empty: the walk's and the capture's `:warning` rows
     ## (`WARN_VERDICT_COLLISION`, `WARN_DEGENERATE_OCCURRENCE_KEY`, the capture-floor codes) ride the delivery
-    ## (the type's docstring). The evaluated values are read by `readAltValuesEvals(result)`; the development tool's
+    ## (the type's docstring). The evaluated values are read by `readAltValuesEvals(result.altValues_evals)`; the development tool's
     ## (tree, render) pair (`Main.BasicRenderer.outputs`) is a pure function of the final `result.blsComponentTree`,
     ## which the in-`with` absorb-walk + apply has fully mutated.
     status = any(d -> d.severity === :error, st.diagnostics) ? PROCESS_ERROR : PROCESS_OK

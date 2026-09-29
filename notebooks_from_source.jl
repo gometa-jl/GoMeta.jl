@@ -1032,14 +1032,14 @@ derive(spec::SourceSpec) = derive_from_bytes(read(spec.path), spec)
 function derive_from_bytes(bytes::Vector{UInt8}, spec::SourceSpec)
     r = GoMeta.goMeta(bytes)
     r.status == GoMeta.PROCESS_OK || error("EMIT FAILURE: processing failed for $(spec.path): $(r.status)")
-    fates = verdict_fates(String(copy(bytes)), GoMeta.readAltValuesEvals(r), GoMeta.content_fingerprint(r))
+    fates = verdict_fates(String(copy(bytes)), GoMeta.readAltValuesEvals(r.altValues_evals), GoMeta.content_fingerprint(r))
     witness_against_render(fates, String(copy(Main.BasicRenderer.outputs(r).render_bytes)))
     cells = partition(fates)
-    join_labels!(cells, GoMeta.readAltValuesEvals(r), GoMeta.content_fingerprint(r))
+    join_labels!(cells, GoMeta.readAltValuesEvals(r.altValues_evals), GoMeta.content_fingerprint(r))
     n_discarded = count(lf -> lf.fate === :discard, fates)
     n_hidden = count(lf -> lf.fate === :hide, fates)
     stem = splitext(basename(spec.path))[1]
-    digest = bytes2hex(SHA.sha256(Vector{UInt8}(codeunits(String(GoMeta.serialize_evals(GoMeta.readAltValuesEvals(r)))))))[1:8]
+    digest = bytes2hex(SHA.sha256(Vector{UInt8}(codeunits(String(GoMeta.serialize_evals(GoMeta.readAltValuesEvals(r.altValues_evals)))))))[1:8]
     label_counts = join(sort(["$(l)×$(count(c -> l in c.labels, cells))" for l in Set(l for c in cells for l in c.labels)]), " ")
     println("  labels on cells: ", isempty(label_counts) ? "(none)" : label_counts, " · verdict digest ", digest)
     outputs = Tuple{String,String}[]
@@ -1097,7 +1097,7 @@ function run_selfchecks()
     function fates_of(src::String)
         r = GoMeta.goMeta(Vector{UInt8}(codeunits(src)))
         r.status == GoMeta.PROCESS_OK || fail("fixture did not process: $(r.status)")
-        f = verdict_fates(src, GoMeta.readAltValuesEvals(r), GoMeta.content_fingerprint(r))
+        f = verdict_fates(src, GoMeta.readAltValuesEvals(r.altValues_evals), GoMeta.content_fingerprint(r))
         witness_against_render(f, String(copy(Main.BasicRenderer.outputs(r).render_bytes)))
         return f
     end
@@ -1190,9 +1190,9 @@ function run_selfchecks()
         bytes = Vector{UInt8}(codeunits(src))
         r = GoMeta.goMeta(bytes)
         r.status == GoMeta.PROCESS_OK || fail("page fixture did not process: $(r.status)")
-        fates = verdict_fates(String(copy(bytes)), GoMeta.readAltValuesEvals(r), GoMeta.content_fingerprint(r))
+        fates = verdict_fates(String(copy(bytes)), GoMeta.readAltValuesEvals(r.altValues_evals), GoMeta.content_fingerprint(r))
         cells = partition(fates)
-        join_labels!(cells, GoMeta.readAltValuesEvals(r), GoMeta.content_fingerprint(r))
+        join_labels!(cells, GoMeta.readAltValuesEvals(r.altValues_evals), GoMeta.content_fingerprint(r))
         pages = derive_pages(spec, cells)
         return last(pages[1]), last(pages[2])            # full, reader
     end

@@ -69,7 +69,7 @@ fed profile's heading row the user-context key (`user_context_key`) — so two d
 slot. The verbatim CONTENT bytes ride in the
 `content` metadata field (the find-again fingerprint — plain bytes, no hashing core-side);
 `attr::Symbol` the attribute; `value::Any` its value; `polarity::Bool` the on/off polarity. Feeds
-`readAltValuesEvals(result)` (sorted `(cell_handle, attr, value)` — key-bytes order) + the
+`readAltValuesEvals(result.altValues_evals)` (sorted `(cell_handle, attr, value)` — key-bytes order) + the
 `content_fingerprint` sibling accessor.
 
 REASONING: keyed by the row's handle — a Component's or the metaLine's normalized structural occurrence handle,
@@ -96,7 +96,7 @@ DOES: The per-call store of final `EvalRecord`s, deduped per `(cell_handle, attr
 (`_putEval!`; a re-put supersedes, so the store holds final-evals-only). `EvalStore()` starts empty;
 `captureEvals!` (`src/annotations.jl`) populates it at the two apply-site write-backs BEFORE the
 slot wipe and `capture_heading!` at the absorb seam's flush (a metaLine region's rows; the fed profile's
-rows during the feed, before the walk); the `readAltValuesEvals(result)` accessor sorts them by
+rows during the feed, before the walk); the `readAltValuesEvals(result.altValues_evals)` accessor sorts them by
 `(cell_handle, attr, value)`.
 
 REASONING: deduped per `(cell_handle, attr)` at every put (a re-put supersedes) so that the store holds

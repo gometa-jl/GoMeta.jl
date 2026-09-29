@@ -245,7 +245,7 @@ _mode_run(cfg) = redirect_stdout(
             Vector{UInt8}(codeunits("#~ \"T\"{ isMeta }\nx = 1\n"));
             config = cfgE), devnull)
         @test string(rh.status) == "PROCESS_OK"
-        @test any(a === :head_1 for (_, a, _, _) in GM.readAltValuesEvals(rh))
+        @test any(a === :head_1 for (_, a, _, _) in GM.readAltValuesEvals(rh.altValues_evals))
         # …and a QUEUED action's executing condition keeps the mode's full
         # contracted behavior (the reservation is heading-scoped, not mode-wide) —
         # DISCRIMINATED at the render (delta-seat cure: PROCESS_OK alone could not

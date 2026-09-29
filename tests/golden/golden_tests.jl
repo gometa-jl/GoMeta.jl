@@ -144,7 +144,7 @@ end
     end
 
     @testset "net_new_surface :: annotations :: $(fx["id"])" for fx in filter(f -> f["partition"] == "net_new_surface", fixtures)
-        # the net-new surface (readAltValuesEvals(result)): no oracle FILE (the reference corpus carries
+        # the net-new surface (readAltValuesEvals(result.altValues_evals)): no oracle FILE (the reference corpus carries
         # no per-cell verdict map), values oracle-grounded. The golden is this engine's serialized annotations;
         # a standing determinism + totality + regression guard.
         bytes = read(joinpath(REPO, fx["input_path"]))
@@ -155,12 +155,12 @@ end
         # the sha pre-check below catches that, but for a (future) intentionally-EMPTY-annotations fixture the
         # headers would MATCH ⇒ this guard is what keeps that case from silently false-greening.
         @test res.status == G.PROCESS_OK
-        ann = G.readAltValuesEvals(res)
+        ann = G.readAltValuesEvals(res.altValues_evals)
         ser = G.serialize_evals(res)                             # the SINGLE shared serializer (the 5-column form over the delivered object, v0.2's)
         @test _sha(ser) == fx["annotations_golden_sha256"]             # golden sha pre-check
         @test ser == read(joinpath(REPO, fx["annotations_golden_path"]))   # full byte-compare on the golden file
         # deterministic across a 2nd fresh in-process run; sorted; polarity; totality.
-        ann2 = G.readAltValuesEvals(G.goMeta(bytes; config = G.GoMetaConfig()))
+        ann2 = G.readAltValuesEvals(G.goMeta(bytes; config = G.GoMetaConfig()).altValues_evals)
         @test ann2 == ann                                                # determinism (independent fresh run)
         @test issorted(ann; by = t -> (t[1], string(t[2]), string(t[3])))
         @test all(t -> t[4] === true, ann)                               # v0: every applied verdict polarity true

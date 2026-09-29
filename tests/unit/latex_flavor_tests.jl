@@ -78,7 +78,7 @@ end
         @test r.status === GM.PROCESS_OK
         @test t == "{:B-Text:L-Text [%~hide]}\n{:B-Code:L-Code [x 1]}\n"
         @test x == "%~hide\nx 1\n"
-        @test isempty(GM.readAltValuesEvals(r))
+        @test isempty(GM.readAltValuesEvals(r.altValues_evals))
     end
 
     @testset "[5b] `% `-led is the TEXT arm (N-4's second clause — the W5-panel cure)" begin
@@ -119,7 +119,7 @@ end
         @test r.status === GM.PROCESS_OK
         ## ONE Text block — a stray %-directive shape can never split blocks.
         @test t == "{:B-Text:L-Text [%- y]}\n{       :L-Text [%+ y]}\n{       :L-Text [%> y]}\n{       :L-Text [%[ y]}\n{:B-Code:L-Code [x 1]}\n"
-        @test isempty(GM.readAltValuesEvals(r))
+        @test isempty(GM.readAltValuesEvals(r.altValues_evals))
     end
 
     @testset "[9] the verbatim DECLINED bound — %~ inside \\begin{verbatim} IS live (witnessed)" begin

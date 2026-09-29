@@ -15,10 +15,10 @@
 #     called from the apply sites right after a cell's alterant state is finalized and BEFORE
 #     the next slot reset wipes it; records the cell's final label / Visib / Id evals rows into
 #     the `EvalStore`, deduped per `(cell_handle, attr)` with later-wins supersede.
-#     (3) `readAltValuesEvals(result)` — the exported accessor: sorts by `(cell_handle, attr, value)`,
+#     (3) `readAltValuesEvals(result.altValues_evals)` — the exported accessor: sorts by `(cell_handle, attr, value)`,
 #     returns the pinned `Vector{Tuple{Vector{UInt8},Symbol,Any,Bool}}` — empty when no metaLine
 #     exists on any surface (the fed profile is a metaLine body; un-fed meta-free input yields
-#     the empty vector) — and is pure + read-only on `result`. (4) `serialize_evals` — the
+#     the empty vector) — and is pure + read-only on the store it is given. (4) `serialize_evals` — the
 #     canonical, deterministic, binary-safe byte forms (one evals row per line, hex-encoded
 #     handle; the golden layer's form appends the content-fingerprint hex column) pinned by the
 #     read-side golden tests.
@@ -478,14 +478,17 @@ function capture_heading!(st::ProcessState, heading, stem::Symbol)
 end
 
 # --------------------------------------------------------------------------------------------------------
-# The public accessor — readAltValuesEvals(result)
+# The public accessor — readAltValuesEvals(result.altValues_evals)
 # --------------------------------------------------------------------------------------------------------
 """
-    readAltValuesEvals(result::GoMetaDelivery) -> Vector{Tuple{Vector{UInt8},Symbol,Any,Bool}}
+    readAltValuesEvals(altValues_evals::EvalStore) -> Vector{Tuple{Vector{UInt8},Symbol,Any,Bool}}
 
-IS: the core's reader over the evals rows of a run — the production surface of the GoMeta Engine
-(docs/CANONICAL-OUTPUT.md §4; docs/public-api.md §1.3). Named by the owner's ruling R-V04B-32 (2026-09-16):
-the name `altValues_evals` belongs to the DATA CONTAINER — the evals rows a run delivers — never to a function.
+IS: the core's reader over the part `altValues_evals` of a delivery — the evals rows a run recorded — the
+production surface of the GoMeta Engine (docs/CANONICAL-OUTPUT.md §4; docs/public-api.md §1.3). GIVEN THE PART,
+never the whole delivered object: `readAltValuesEvals(delivery.altValues_evals)` (a reader takes the PART —
+R-V04B-29's record; the branch's default under R-V04B-40 (2)). Named by the owner's ruling R-V04B-32
+(2026-09-16): the name `altValues_evals` belongs to the DATA CONTAINER — the evals rows a run delivers — never to
+a function.
 
 DOES: returns one row `(cell_handle, attr, value, polarity)` per final evaluation recorded for a handle and an
 attribute — the per-cell rows (a Component's: put at the two apply sites, and a metaLine's own heading rows at
@@ -494,10 +497,10 @@ against the user-context handle, one per entry (docs/public-api.md §2, the read
 `(cell_handle, attr, value)`** so that the order is deterministic and content-hashable; final evals only (the
 store is deduped at capture); total over the recorded evals (the row count == the deduped `EvalStore`); empty
 when no metaLine exists on ANY surface (the fed profile IS a metaLine body; a run over an un-fed meta-free input
-records no evals rows). Pure and read-only on `result`: it sorts the already-final store without mutating it,
-and each returned `cell_handle` is a COPY of the store's bytes, so a caller mutating a returned handle never
-perturbs a later reader or serializer call on the same result; safe to call any number of times, also outside
-the per-call `STATE` scope (`result.altValues_evals` was fully populated by the in-`with` apply). The sort key
+records no evals rows). Pure and read-only on the store it is given: it sorts the already-final store without
+mutating it, and each returned `cell_handle` is a COPY of the store's bytes, so a caller mutating a returned
+handle never perturbs a later reader or serializer call on the same store; safe to call any number of times,
+also outside the per-call `STATE` scope (the part was fully populated by the in-`with` apply). The sort key
 stringifies `attr` and `value` for a total order over the heterogeneous `value::Any` within the CLOSED capture
 value set — the T5 capture value algebra: Bool · Symbol · the machine ints · String (`_capture_value_leaf`);
 the shipped four use Bool for Labels, Symbol for Visib, Int16 for Id, String for heading text;
@@ -505,7 +508,11 @@ the shipped four use Bool for Labels, Symbol for Visib, Int16 for Id, String for
 CH-1); the content bytes are read through `content_fingerprint`.
 
 REASONING: the GoMeta Engine EVALUATES and records values as data (the boundary law, 2026-08-27); this reader
-is the one core-provided route from a run to those values, and its order is fixed so that two runs over the
+is the one core-provided route from a run to those values. It is given the PART and not the delivered object
+around it so that whoever holds an `EvalStore` reads it the same way — the delivery's part, the seam's, and
+the rows of a File, User or Default level once the Engine's apply records them: such a row is a row of this
+same store under its own grain code (`src/occurrence.jl`), so a level's entry needs no new part and no new
+signature (R-V04B-53's room — stated here, not built). Its order is fixed so that two runs over the
 same input bytes, configuration (the fed profile included) and registry serialize identically — for a
 default-configured run under `DEFAULT_REGISTRY`, the closed interpreter (the opt-in `:full_eval_v1` mode and a
 custom registry's own callables are outside the guarantee — `goMeta`'s docstring, the trust model): the
@@ -518,8 +525,8 @@ values a run recorded and for which handle — a Component's rows from the apply
 rows from the absorb seam's flush, and the non-cell rows the explicit headings of a fed profile record against
 the user-context handle, one per entry — the evals rows as the recorded truth of the run.
 """
-function readAltValuesEvals(result::GoMetaDelivery)
-    recs   = result.altValues_evals.records
+function readAltValuesEvals(altValues_evals::EvalStore)
+    recs   = altValues_evals.records
     order  = sortperm(recs; by = r -> (r.cell_handle, string(r.attr), string(r.value)))
     ## Each returned cell_handle is a COPY — the accessor never aliases the store's byte vectors,
     ## so a caller mutating a returned handle cannot corrupt a later accessor/serialize call.
@@ -561,7 +568,7 @@ end
 IS: the deterministic, binary-safe 4-COLUMN byte form of a reader vector — the public back-compat
 serialization of the evals rows.
 
-DOES: The deterministic, binary-safe 4-COLUMN byte form of a `readAltValuesEvals(result)` vector — one
+DOES: The deterministic, binary-safe 4-COLUMN byte form of a `readAltValuesEvals(result.altValues_evals)` vector — one
 already-sorted evals row per line, `<attr>\\t<repr(value)>\\t<polarity>\\t<hex(cell_handle)>`, under a
 fixed header (`cell_handle` = the occurrence-key bytes, hex — v0.2 CH-1). **BACK-COMPAT form** kept
 on the public surface; the GOLDEN layer's write+read sides both use the 5-COLUMN `GoMetaDelivery` method
@@ -608,7 +615,7 @@ fixtures whose recorded rows differ only in content; the four-column form above 
 PURPOSE: what the golden runner writes and reads (`tests/golden/golden_tests.jl`) — the twelve annotation pins' producer.
 """
 function serialize_evals(result::GoMetaDelivery)::Vector{UInt8}
-    ann = readAltValuesEvals(result)
+    ann = readAltValuesEvals(result.altValues_evals)
     fp  = content_fingerprint(result)
     parts = String[
         "# annotations golden — sorted (cell_handle, attr, value); final-verdicts-only.\n",

@@ -39,7 +39,7 @@ _ws_err(s; kw...)    = try _ws_r(s; kw...); nothing catch e sprint(showerror, e)
         a = "x = 1　#~ hide\ny = 2\n"            # before-side, segment grain
         b = "x = 1 #~ hide\ny = 2\n"
         @test _ws_err(a) === nothing
-        @test GM.readAltValuesEvals(_ws_r(a)) == GM.readAltValuesEvals(_ws_r(b))
+        @test GM.readAltValuesEvals(_ws_r(a).altValues_evals) == GM.readAltValuesEvals(_ws_r(b).altValues_evals)
         @test occursin(":S-Meta", _ws_tree(a))
     end
 
@@ -61,7 +61,7 @@ _ws_err(s; kw...)    = try _ws_r(s; kw...); nothing catch e sprint(showerror, e)
         s = "#~​hide\nx = 1\n"                    # ZWSP is Cf, not whitespace
         @test _ws_err(s) === nothing
         @test _ws_render(s) == s
-        @test isempty(GM.readAltValuesEvals(_ws_r(s)))
+        @test isempty(GM.readAltValuesEvals(_ws_r(s).altValues_evals))
         @test _ws_render("#~hide\nx = 1\n") == "#~hide\nx = 1\n"
     end
 
