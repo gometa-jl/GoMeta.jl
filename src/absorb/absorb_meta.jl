@@ -749,8 +749,9 @@ end
 ##   documents `#~`=depth 1 … `#~8`, digit 0 = the file level; ladder =
 ##   author-digit+1) — so depth-marked and explicit vocabularies COINCIDE (`#~2 "T"`
 ##   ≡ `head("T", 2)` ⇒ head_2; plain `#~` ⇒ 1; `#~0` ⇒ 0; inline segment ⇒ 10 =
-##   lineMHIdx−1, the documented constant). The MetaContext record stays PURE from
-##   parse; the normalization lives at THIS one materialization seam. Materialized as
+##   lineMHIdx−1, the documented constant). The MetaContext record stays as derived from
+##   the parse and the configured namespace, mutated by nothing; the normalization lives
+##   at THIS one materialization seam. Materialized as
 ##   a floor-legal Symbol (`Symbol("2")` — the literal floor reserves ints);
 ## - THE ONE CONDITION EVALUATION (condition-evaluated-once-at-the-heading): a
 ##   SETTRIBUTE condition gates the HEADING at its own context (the metaLine's

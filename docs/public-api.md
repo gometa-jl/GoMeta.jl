@@ -31,7 +31,8 @@ v0 — the §3 partition (the E-04 crash-origin row of §3.1 and the stable-mess
 Honesty over completeness: the rows not yet armed (E-07's pending mint, the E-04 crash-origin and
 the E-06 guarded refusal — §3.1/§3.2) and the crashes still latent or refused with a stable
 message (§3.4) are documented **as such**, never papered over with a fabricated typed code; the
-other condition-path refusals ARE typed since the closed-interpreter flip (§3.2).
+other condition-path refusals ARE minted typed since the closed-interpreter flip, the statement still
+aborting at the absorb seam (§3.2's preamble).
 
 **PURPOSE.** The stable contract a consumer programs against and a reviewer audits the surface
 against — the human-readable mirror of the machine-checkable export set (`names(GoMeta)`, asserted
@@ -88,13 +89,15 @@ These are part of the documented public surface — declared with Julia's `publi
   non-throwing diagnostic record.
 - `AlterantRegistry` + the `const DEFAULT_REGISTRY` — the deterministic alterant inventory (the
   `goMeta` default registry), a PUBLISHED (validated + sealed) value since v0.4. **What a custom
-  registry can do at THIS build state (v0.4.0-candidate, Stage-A rows T0–T2 landed):** it is
+  registry can do at THIS build state (v0.4.0-candidate; Stage-A rows T0–T5 landed; the getter's
+  registration-time signature reflection a deferred row, T11's catalogue sitting):** it is
   built through the lifecycle below, its declared record + derived tables + callables are
   sealed and door-checked, its setters DISPATCH (the apply plane is registry-data-driven) and a
-  registry without the built-in Visib RUNS; what is NOT yet registration-driven — landing with
-  the named Stage-A rows — is the CAPTURE plane (T5: `altValues_evals` rows are minted only for
-  the built-in instance types today; a new Alterant's verdicts apply but do not yet surface as
-  rows), the QUERY plane's argument floor (T3: the getter is called with Symbol literals only;
+  registry without the built-in Visib RUNS; the CAPTURE plane is registration-driven since T5 (a
+  declared `CaptureDecl` row mints an Alterant's evals rows; `WARN_CAPTURE_FLOOR` discloses a
+  missing declaration, `WARN_CAPTURE_UNREADABLE` an unreadable live value — the LIFECYCLE bullet
+  below and §3.4); what is NOT yet registration-driven — landing with the named Stage-A rows — is
+  the QUERY plane's argument floor (T3: the getter is called with Symbol literals only;
   the getter's signature is not yet verified at registration), and the RENDER write-back
   (T6/T7: only a Visib-style `settribute` mapping writes back). The release contract page states,
   per slot, which row consumes it.
@@ -399,7 +402,7 @@ before any parse — selected, never inferred (no file-extension or content snif
 sentence previously said "any value is accepted and ignored; validation is deferred" — stale
 since the flavor arming; corrected at v0.4 T2 on a CrossReview finding.)*
 `namespace::Symbol` — the occurrence-key namespace every `altValues_evals` cell handle is scoped
-under (`:default` by default; the key's length-prefixed namespace segment, §1.4). One
+under (`:default` by default; encoded as the key's length-prefixed namespace segment). One
 constructor-time guard: a namespace over 65535 bytes throws an `ArgumentError` at
 `GoMetaConfig(...)` construction — before any `goMeta` run, hence outside the fail-close rows
 below (which require a constructed config).
@@ -440,7 +443,8 @@ byte form.
 
 `GoMeta.outputs` left the Engine at 0.4.0 (the breaking-change register row in §6). The pair `(blsStructure_bytes, render_bytes)` —
 the verdict-free tree print + the `jl-share-v1` share render, the SAME field names and order, the same non-OK
-contract (a pre-parse `PROCESS_ERROR` result yields the **empty** pair) — is the basic renderer's own function
+contract (a `PROCESS_ERROR` result of an entry refusal — at `goMeta` before its parse, at the seam's door or
+ledger before any absorb or apply work — yields the **empty** pair) — is the basic renderer's own function
 `Main.BasicRenderer.outputs(result)`, obtained ONLY after `include("devtools/load_basic_renderer.jl")` at the
 caller's top level. Its render-plane qualifications (the multi-Visib guard, §3.4; the character-safe string
 indexing, §4) are the tool's. See `devtools/README.md` and `docs/CANONICAL-OUTPUT.md`.
@@ -548,10 +552,10 @@ separately-gated motion.
 
 | Code | Trigger |
 |---|---|
-| `ERR_UNKNOWN_CONDITION_KEY` (E-01) | **typed** — a condition atom outside the derived whitelist of state-refs and action names |
-| `ERR_CONDITION_CAP` (E-02) | **typed** — the condition scan exhausts a profile cap (29 scan steps, whitespace counted; or the raw-byte / grouping-depth walls) with non-whitespace input unconsumed, or a label key is left unterminated — a refusal, never a silent truncation; each mint carries its governing wall or window size in the `Diagnostic`'s context |
-| `ERR_CONDITION_ARG_DOMAIN` | **typed** — a query argument outside the declared argument grammar above |
-| `ERR_CONDITION_PARSE` | **typed** — the intake's grammar refusals: an empty `{}` body · an unterminated argument list · a malformed or unterminated condition key · a worded label key carrying a parenthesized argument list · an unparsable operator sequence |
+| `ERR_UNKNOWN_CONDITION_KEY` (E-01) | **typed mint; the statement still aborts at the absorb seam** (§3.2's preamble) — a condition atom outside the derived whitelist of state-refs and action names |
+| `ERR_CONDITION_CAP` (E-02) | **typed mint; the statement still aborts at the absorb seam** (§3.2's preamble) — the condition scan exhausts a profile cap (29 scan steps, whitespace counted; or the raw-byte / grouping-depth walls) with non-whitespace input unconsumed, or a label key is left unterminated — a refusal, never a silent truncation; each mint carries its governing wall or window size in the `Diagnostic`'s context |
+| `ERR_CONDITION_ARG_DOMAIN` | **typed mint; the statement still aborts at the absorb seam** (§3.2's preamble) — a query argument outside the declared argument grammar above |
+| `ERR_CONDITION_PARSE` | **typed mint; the statement still aborts at the absorb seam** (§3.2's preamble) — the intake's grammar refusals: an empty `{}` body · an unterminated argument list · a malformed or unterminated condition key · a worded label key carrying a parenthesized argument list · an unparsable operator sequence |
 | `ERR_CONDITION_UNQUERYABLE_ALT` (E-07) | `cell` / `parent` / `file` used as a condition atom (Id has no queryable instance) — **typed mint PENDING**: the shape still aborts raw at evaluation (documented honest edge, §3.4) |
 
 ### §3.3 — Handled class (NOT an error): E-05 — meta-free input
@@ -797,7 +801,8 @@ overflow (`REG_SLOT_EXHAUSTED`; also `next_plugin_index` at capacity) — wrap `
 `RegistrationRefused.diagnostics` when `publish` refuses; **(iii) ROUTE-U-only** —
 `REG_DERIVED_TABLES`, raised by the gated positional constructor together with the validation
 rows; **(iv) DOOR results** — `REG_UNPUBLISHED` / `POST_SEAL_MUTATION` come back as a
-`PROCESS_ERROR` result from `goMeta` / the internal seam before any parse.
+`PROCESS_ERROR` result from `goMeta` / the internal seam — an entry refusal (at `goMeta` before
+its parse; at the seam's door before any absorb or apply work).
 
 | Code | Severity | Trigger | Context |
 |---|---|---|---|
@@ -834,8 +839,10 @@ stay faithful for arbitrary bytes, including invalid UTF-8 (documented engine be
 invalid-byte classes — lone invalid bytes and decode-requiring sequences such as overlong
 encodings; the shipped suite does not exercise invalid-byte content). The
 **meta-line plane indexes on character boundaries**: non-ASCII inside a metaLine parses
-correctly, and — the whitelist and action set being ASCII-named at v0 — a non-ASCII label or
-action meets the stable unknown-label/unknown-action refusal naming the FULL token
+correctly, and — the ACTION set being ASCII-named at v0, while the label whitelist carries a
+fixed pictograph vocabulary since 0.3.0 (`src/alterants-std/labels_vocabulary.txt`) — a
+non-ASCII label OUTSIDE the governing vocabulary or a non-ASCII action meets the stable
+unknown-label/unknown-action refusal naming the FULL token
 (a GUARDED edge). Goldens are LF. This is a documented normalization, not an error. See
 `docs/CANONICAL-OUTPUT.md`.
 
@@ -849,14 +856,19 @@ action meets the stable unknown-label/unknown-action refusal naming the FULL tok
 
 ## §6 — Versioning policy
 
-Evolution is **additive-only from this first published release forward**: new public names /
-fields are added; a published exported name is never silently removed or repurposed (a
-removal/rename is a breaking change handled with a deprecation under full re-validation). No
-deprecation debt exists at this release. `Project.toml` carries the version; the alpha maturity states
-the surface honestly — it may still move before `1.0`, additively wherever possible.
+**No backward compatibility and no deprecation until at least GoMeta v0.7** — the owner's typed
+policy of 2026-09-28 (R-V04B-61), in his words: *"I want clean cuts and no left overs from old
+version in newer ones. This policy will hold AT LEAST until GoMeta v0.7."* Every change of the
+public surface is a CLEAN CUT — the old name removed; no stub, no alias, no leftover of an older
+version in a newer one — and the breaking-change register below is the non-silent record of every
+removal or rename (its ground, its replacement, what an older caller sees). The one alias still
+standing is the public `PlugIn` = `Alterant` alias of R-V04B-5 (§1.2), removed as a clean cut at
+stage 5 of the v0.4 build (R-V04B-62; the v0.5 schedule superseded). The policy will change at a
+later stage — maybe v0.8, maybe later — by the owner's word; nothing is promised now. `Project.toml`
+carries the version.
 
-**The breaking-change register (the policy's letter protects EXPORTED names; every public-tier change is
-written here — R-V04B-24 (P)).**
+**The breaking-change register (every removal or rename of a public name of EITHER tier is written here — the
+non-silent record under R-V04B-61; the letter of R-V04B-24 (P) does not govern until at least v0.7).**
 
 - **`GoMeta.outputs` — §1.2 public-not-exported since 0.3.0 — REMOVED at 0.4.0** (no deprecation stub; the
   owner's "as clean as possible NOW"); ground: the renderer and the tree print are development tools

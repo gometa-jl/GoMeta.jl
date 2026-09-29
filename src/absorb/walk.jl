@@ -52,7 +52,8 @@ function applyAbsorbFn(
     local st = ctx()
     snapshot_settribute!(st, crntComponent)
     # v0.2 CH-3 step 9 — publish the MetaContext record at the walk→absorb HANDOVER:
-    # {grain, depth, application level, occurrence handle}, pure from parse, stored in NO
+    # {grain, depth, application level, occurrence handle}, derived from the parse and
+    # the configured namespace, stored in NO
     # Component (hd-4). The MH cursor was set by the CALLER before this call (Block:
     # updateMetaHierarchy(getGivenDepthMH); Line and Segment: lineMHIdx — a
     # Segment-attached metaLine therefore inherits the metaLine's level, the hd-2
@@ -304,7 +305,8 @@ function absorbWalk(
                 end
                 # Capture the Segment-grain FINAL evals rows before the next apply wipes `st.working`;
                 # the cell is the LINE (`crntComponent`) the Segment's meta applies to, NOT the Segment.
-                # Reads `st.working` and appends to `st.evals` — never alters render bytes.
+                # Reads `st.working`, puts or supersedes rows in `st.evals` (and may append warning
+                # diagnostics) — never alters render bytes.
                 # v0.2 CH-1 (step 3): the ORIGIN rides the key — `childComponent` (the Segment) mints
                 #   the target/origin split, so two same-kind inline Segment evals on one Line stay
                 #   DISTINCT through the segment-carried remap.

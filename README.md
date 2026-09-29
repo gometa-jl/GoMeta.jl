@@ -75,7 +75,7 @@ extends the label whitelist by a fixed **pictograph vocabulary** (byte-exact nam
   `devtools/basic_renderer.jl`, since R-V04B-24) — pure and deterministic for the
   engine's own operations (see SECURITY), with a byte-exact oracle: the 7 committed example pairs
   under `examples/` render **byte-identically**,
-  pinned by the shipped **1140-test suite at this release** (the golden byte-oracle and
+  pinned by the shipped **4912-test suite at this release** (the golden byte-oracle and
   unit layers, including the dual-mode, refusal-witness, token-delimiter-law,
   whitespace-alphabet, Unicode-correctness, and directive-adjacency families — green
   under a plain `Pkg.test()`).
@@ -88,7 +88,8 @@ extends the label whitelist by a fixed **pictograph vocabulary** (byte-exact nam
   `docs/public-api.md` §3.
   The documented exceptions — an apply-path crash edge (a flagless-Visib write-back) and the
   guarded `#~9` depth refusal — are likewise catalogued honestly in `docs/public-api.md`
-  §3.1/§3.2/§3.4 (the condition path itself is typed since the closed-interpreter flip).
+  §3.1/§3.2/§3.4 (the condition path itself is minted typed since the closed-interpreter flip, the
+  statement still aborting at the absorb seam — §3.2's preamble).
 
 **The language grows by design; the v0 subset forecloses none of it.** `using()` is a reserved
 name.
@@ -278,8 +279,11 @@ of `GoMeta`"*, 2026-08-14.
 
 ## Versioning + compatibility
 
-The alpha status states the maturity honestly: the surface may still move before `1.0`. The
-evolution intent is **additive-only** — an existing exported name is never silently removed or
-repurposed; a breaking change means a deprecation under full re-validation
-(`docs/public-api.md` §6). Compatibility: Julia **1.12**; core dependencies **StaticArrays** +
+The alpha status states the maturity honestly: the surface may still move. **No backward
+compatibility and no deprecation until at least GoMeta v0.7** (the owner's typed policy of
+2026-09-28): every change of the public surface is a clean cut — the old name removed; no stub,
+no alias, no leftover of an older version in a newer one — and every removal or rename is written
+into the breaking-change register (`docs/public-api.md` §6) with its ground, its replacement and
+what an older caller sees. The policy will change at a later stage — maybe v0.8, maybe later — by
+the owner's word. Compatibility: Julia **1.12**; core dependencies **StaticArrays** +
 **InlineStrings** (exact-pinned).

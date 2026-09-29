@@ -1,13 +1,13 @@
-# annotations.jl — the evals surface: the per-cell evals map + its canonical serialization.
+# annotations.jl — the evals surface: the evals map + its canonical serialization.
 #
 # IS: the home of GoMeta's `altValues_evals` surface — the deterministic, content-hashable,
-#     final-evals-only per-cell evals map `(cell_handle, attr, value, polarity)` a `goMeta`
+#     final-evals-only evals map `(cell_handle, attr, value, polarity)` a `goMeta`
 #     run yields alongside the development tool's (tree, render) pair (`devtools/basic_renderer.jl`)
 #     (docs/public-api.md §1.3; docs/CANONICAL-OUTPUT.md §4). Evals rows have no manifestation in
 #     either tuple half (the BLS Component tree is evals-free; the render reflects only Visib effects), so
 #     this surface is where label / Visib / Id outcomes become observable — the query-facing
 #     write payload, GoMeta's semantic deliverable.
-# DOES: (1) `cell_content_bytes(parse, component)` — the grain-aware `cell_handle` extractor:
+# DOES: (1) `cell_content_bytes(parse, component)` — the grain-aware content-fingerprint extractor:
 #     the VERBATIM content bytes of a BLS cell (Block = its joined line span, Line = its full
 #     source line, Segment = a byte-offset slice of its own line), byte-sliced so non-ASCII
 #     content stays byte-faithful, NO hashing core-side (the core stays dependency-free); empty
@@ -23,8 +23,9 @@
 #     handle; the golden layer's form appends the content-fingerprint hex column) pinned by the
 #     read-side golden tests.
 # REASONING: final results are observable, deterministic, and hash-stable.
-#     The store keys by a NORMALIZED STRUCTURAL occurrence handle (src/occurrence.jl), so two
-#     distinct cells never share a slot even with byte-identical content; the verbatim content
+#     The store keys by the row's handle — a NORMALIZED STRUCTURAL occurrence handle (src/occurrence.jl)
+#     or a fed profile's user-context handle — so two distinct cells never share a slot even with
+#     byte-identical content; the verbatim content
 #     bytes ride each record as its find-again fingerprint, and a value-CHANGING re-apply of
 #     the SAME occurrence emits the non-fatal `WARN_VERDICT_COLLISION` diagnostic rather than
 #     masking the supersede (docs/public-api.md §3). A row is recorded for every captured cell —
@@ -36,19 +37,21 @@
 #     serialization anchors the annotations goldens read by tests/golden/golden_tests.jl.
 
 # --------------------------------------------------------------------------------------------------------
-# The cell_handle — the verbatim content bytes of a cell (COMPONENT-grain; no hashing core-side)
+# The content fingerprint — the verbatim content bytes of a cell (COMPONENT-grain; no hashing core-side)
 # --------------------------------------------------------------------------------------------------------
 """
     cell_content_bytes(parse::BLS.ParseState, component) -> Vector{UInt8}
 
-IS: the grain-aware `cell_handle` extractor: the VERBATIM content bytes of a BLS Component at its own grain.
+IS: the grain-aware extractor of a BLS Component's VERBATIM content bytes at its own grain — the bytes an
+evals row carries as its content fingerprint (`EvalRecord.content`), never its `cell_handle` (the
+occurrence-key bytes, `key_bytes(occurrence_key(…))`, src/occurrence.jl).
 
-DOES: The VERBATIM content bytes of a BLS `component` — its `cell_handle`. The handle is
-the raw content bytes (NOT a hash — the core stays dependency-free, not even the SHA stdlib; an adapter layer
-can wrap the SAME bytes as `CellID(sha256(bytes))` without re-extraction). The grain is COMPONENT-grain
-(Block / Line / Segment); "Segment-else-Line" is the LEAF-grain phrasing — a Block-level evals row keys on
-whole-block content (per-block evals rows). Grain-aware extraction, because `:startMainStr`/`:stopMainStr` mean
-DIFFERENT things per grain:
+DOES: The VERBATIM content bytes of a BLS `component` — the row's fingerprint and the capture predicate's
+emptiness test (`captureEvals!` skips an empty return). The bytes are raw content (NOT a hash — the core stays
+dependency-free, not even the SHA stdlib; an adapter layer can wrap the SAME bytes as `CellID(sha256(bytes))`
+without re-extraction). The grain is COMPONENT-grain (Block / Line / Segment); "Segment-else-Line" is the
+LEAF-grain phrasing — a Block-level evals row carries whole-block content as its fingerprint (per-block evals
+rows). Grain-aware extraction, because `:startMainStr`/`:stopMainStr` mean DIFFERENT things per grain:
 
 - **Block** (`Component{70}`): `:idxString == 0`; `:startMainStr`/`:stopMainStr` are the block's LINE-NUMBER
   range (the Block start/stopMainStr writes in parseBLS) ⇒ the content is `collectedLines[startMainStr:stopMainStr]` joined with `\\n`.
@@ -60,10 +63,11 @@ DIFFERENT things per grain:
   line's `:idxString` equals its `:inputLineNum`, so this is uniform.) The whole source line, including any
   inline `#~` meta, is the verbatim content the evals row addresses.
 - **Segment** (`Component{1}`) and any other grain: a byte-offset span into its own source line —
-  `codeunits(collectedLines[idxString])[startMainStr:stopMainStr]` (negative `idxString` ⇒ the `addedStrings`
-  insert-store). BYTE-sliced (not char-indexed) so a non-ASCII line is byte-faithful — the slicing is
-  UTF-8-correct on multi-byte lines. (The corpus capture path never passes a bare Segment — a Segment-grain evals row is
-  keyed on its Line.)
+  `codeunits(src)[startMainStr:(nextind(src, stopMainStr) - 1)]`, `src` = `collectedLines[idxString]` (a negative
+  `idxString` ⇒ the `addedStrings` insert-store); `stopMainStr` is the final character's START byte (IV-1) and
+  the slice is widened to that character's last byte, so a multibyte final character stays whole. BYTE-sliced
+  (not char-indexed) so a non-ASCII line is byte-faithful. (The corpus capture path never passes a bare Segment —
+  a Segment-grain evals row is keyed on its Line.)
 
 Returns an empty `Vector{UInt8}` for a structural component that addresses no content (a Block with a `0`/
 out-of-range line span, or a Segment placeholder with no string) — `captureEvals!` skips those. A genuinely
@@ -128,7 +132,8 @@ IS: the deduped put of ONE final evals row into `st.evals` — the one door into
 DOES: records the row `(handle, attr, value, polarity, content)`, DEDUPED per `(cell_handle, attr)`: a later put
 for the same occurrence+attribute SUPERSEDES the earlier one (later wins), so the store holds at most one record
 per `(cell_handle, attr)` by construction. **Occurrence-addressing + the collision signal.** `handle` is the
-`key_bytes` of the cell's NORMALIZED STRUCTURAL occurrence key (src/occurrence.jl) — two DISTINCT cells never
+`key_bytes` of the row's handle — a cell's NORMALIZED STRUCTURAL occurrence key (src/occurrence.jl), or a fed
+profile's user-context key for its heading rows (`capture_heading!`) — two DISTINCT cells never
 share a slot, even with byte-identical content (the distinct-cell content-collision class of a purely
 content-keyed store cannot occur by construction; PRECISE BOUND: this holds for WELL-FORMED keys — two DEGENERATE
 truncated-walk keys could alias each other, a case no real parse produces). A slot match here is therefore the
@@ -204,8 +209,9 @@ alterant instances the apply left in `st.working`:
 
 `polarity` is `true` for every applied evals row at v0 (all captured evals rows are "set/on"); the field is in
 the pinned tuple to distinguish on/off and is reserved for a future negated-row encoding — an evals row with
-`polarity == false`. The dispatch reads the per-call `st.registry.alt_index` (NOT the global
-`DEFAULT_REGISTRY`), so a custom registry threads through.
+`polarity == false`. The dispatch iterates the per-call `st.registry.plugins` and reads each plugin's declared
+`CaptureDecl` (its instance type, scheme, gate and stem — NOT the global `DEFAULT_REGISTRY`), so a custom
+registry threads through.
 
 REASONING: the store is keyed by the normalized structural occurrence key so two distinct cells never share a
 slot, and the capture happens between the apply's finalization and the next wipe because `st.working` is
@@ -381,15 +387,18 @@ _capture_value_leaf(@nospecialize v) =
 """
     _capture_floor!(st, p, code) -> nothing
 
-IS: the typed capture-floor diagnostic — the disclosure that an Alterant's applied state minted no evals rows.
+IS: the typed capture-floor diagnostic — the disclosure that an Alterant's applied state minted no evals rows
+(`WARN_CAPTURE_FLOOR`: no capture row declared) or that some or all of them were not minted
+(`WARN_CAPTURE_UNREADABLE`: a live value outside the declared readable shape — under `:per_key` the admitted
+entries are still put before the floor fires).
 
 DOES: The typed capture-floor diagnostic (T5-DESIGN §3; the silent skip retires). Both arms
 WARNING-severity (non-fatal — totality) and deduped ONCE PER CALL per (alterant, code)
 by scanning `st.diagnostics` — the O(n) linear-scan policy `_putEval!` already
 ratifies; ZERO state-shape change.
 
-REASONING: the silent skip retires: an evals-invisible applied state is disclosed as a non-fatal WARNING, once
-per call per (alterant, code), so totality holds without a throw.
+REASONING: the silent skip retires: an evals-invisible applied state, or the unreadable part of one, is
+disclosed as a non-fatal WARNING, once per call per (alterant, code), so totality holds without a throw.
 
 PURPOSE: to make the capture floor visible — an Alterant that declares no capture row, or a live value outside
 its declared readable shape — to whoever reads the diagnostics.
@@ -552,7 +561,7 @@ end
 IS: the deterministic, binary-safe 4-COLUMN byte form of a reader vector — the public back-compat
 serialization of the evals rows.
 
-DOES: The deterministic, binary-safe 4-COLUMN byte form of an `readAltValuesEvals(result)` vector — one
+DOES: The deterministic, binary-safe 4-COLUMN byte form of a `readAltValuesEvals(result)` vector — one
 already-sorted evals row per line, `<attr>\\t<repr(value)>\\t<polarity>\\t<hex(cell_handle)>`, under a
 fixed header (`cell_handle` = the occurrence-key bytes, hex — v0.2 CH-1). **BACK-COMPAT form** kept
 on the public surface; the GOLDEN layer's write+read sides both use the 5-COLUMN `GoMetaDelivery` method
@@ -587,12 +596,14 @@ IS: the golden layer's five-column byte form of a delivery's evals rows — the 
 
 DOES: The GOLDEN form of the serializer (the golden layer's write+read sides use THIS method): the 4-column
 key form PLUS the demoted content fingerprint as a fifth hex column — the golden stays REVIEWABLE in a
-plain diff (a reviewer sees WHICH cell each row addresses) and per-fixture DISCRIMINATING (two
-structurally-identical inputs with different content produce different goldens). The ann-vector method
+plain diff (a reviewer sees WHICH cell each row addresses) and per-fixture DISCRIMINATING (two inputs whose
+rows have equal keys and values but different captured content produce different goldens — the fifth column;
+content outside a recorded row, and two empty stores, stay indistinguishable). The ann-vector method
 above keeps the key-only 4-column form (public back-compat; an adapter's payload concerns are the
 adapter's, not this dev-side golden).
 
-REASONING: a golden that shows WHICH cell each row addresses stays reviewable in a plain diff and discriminating between structurally identical inputs; the four-column form above stays the public back-compat form.
+REASONING: a golden that shows WHICH cell each row addresses stays reviewable in a plain diff and separates
+fixtures whose recorded rows differ only in content; the four-column form above stays the public back-compat form.
 
 PURPOSE: what the golden runner writes and reads (`tests/golden/golden_tests.jl`) — the twelve annotation pins' producer.
 """

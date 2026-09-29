@@ -77,7 +77,7 @@ import GoMeta.BLS
 ## non-empty branch). There is NO component-level `:discard` subtree-skip.
 ## FLAVOR AXIS: the hide marker is the flavor's `hide_marker` ("## " for :julia — the
 ## default, byte-identical for every existing caller — and "//# " for :c), passed as the
-## `hide_marker` kwarg at the output-assembly site from the state's FlavorProfile record
+## `hide_marker` kwarg at the output-assembly site from the delivered tree's FlavorProfile record
 ## (`result.blsComponentTree.flavor`). Hide is VISIBILITY-only — the marker is a plain comment
 ## form in its flavor and hidden metadata remains live on re-ingestion, by design.
 @enum VisibEnum notAvailable show hide discard
@@ -137,14 +137,14 @@ function render_bytes(
     parse_state::BLS.ParseState;
     ## The per-flavor hide render marker. Default = the Julia record's marker
     ## (single-sourced), so every existing caller is byte-identical; the
-    ## output-assembly site passes the state record's `parse.flavor.hide_marker`.
+    ## output-assembly site passes the delivered tree's `result.blsComponentTree.flavor.hide_marker`.
     ## Hide is VISIBILITY-only — the marker is a plain comment form in its flavor and
     ## hidden metadata remains live on re-ingestion, by design.
     hide_marker::AbstractString = BLS.FLAVOR_JULIA.hide_marker,
     ## The comment-aware hide fold's per-flavor eligibility prefix — a comment-CLASSIFIED
     ## component already carrying it (post-indent) takes NO additional marker
-    ## (ensure-token). Passed by the output-assembly site from the state's
-    ## FlavorProfile record.
+    ## (ensure-token). Passed by the output-assembly site from the delivered tree's
+    ## FlavorProfile record (`result.blsComponentTree.flavor`).
     hide_fold_prefix::AbstractString = BLS.FLAVOR_JULIA.hide_fold_prefix
 )::Vector{UInt8}
 
@@ -560,12 +560,15 @@ docs/public-api.md §4, GUARDED); on a non-OK result the contract is
 parse never ran. The NamedTuple field order is `(blsStructure_bytes, render_bytes)`.
 """
 function outputs(result::GoMeta.GoMetaDelivery)
-    ## The non-OK output contract. A fail-closed PROCESS_ERROR GoMetaDelivery — at v0.3 the only source was a
-    ## config-time validation error; at v0.4 the registry DOOR (`REG_UNPUBLISHED` / `POST_SEAL_MUTATION`) is
-    ## the second pre-parse source — either pre-empts the parse — yields an EMPTY (tree, render):
-    ## "no render attempted", and a parse that never ran ⇒ an empty tree. `render_bytes` is NOT invoked
-    ## (the emit path stays untriggered). No post-parse error class exists at v0.4: this branch returns two
-    ## EMPTY vectors unconditionally (a "tree-if-parse-succeeded" distinction would be a new contract row).
+    ## The non-OK output contract. A fail-closed PROCESS_ERROR GoMetaDelivery — an ENTRY refusal: at v0.3 the
+    ## only source was a config-time validation error; at v0.4 the registry DOOR
+    ## (`REG_UNPUBLISHED` / `POST_SEAL_MUTATION`) and the seam ledger's refusals of an injected parse state
+    ## (`STATE_REUSE_REFUSED` / `STATE_SEAL_MISMATCH`) are the further sources — every one before any absorb
+    ## or apply work, `goMeta`'s before its parse — yields an EMPTY (tree, render): "no render attempted",
+    ## and the delivered tree is a container built from EMPTY bytes ⇒ an empty tree. `render_bytes` is NOT
+    ## invoked (the emit path stays untriggered). No post-parse error class exists at v0.4: this branch
+    ## returns two EMPTY vectors unconditionally (a "tree-if-parse-succeeded" distinction would be a new
+    ## contract row).
     if result.status === GoMeta.PROCESS_ERROR
         return (blsStructure_bytes = UInt8[], render_bytes = UInt8[])
     end

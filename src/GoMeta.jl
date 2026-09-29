@@ -24,7 +24,7 @@
 #     never by the Engine (R-V04B-24, 2026-09-12). The optional
 #     `config.user_mh_profile` seeds the reserved user slot of the meta-hierarchy before the walk
 #     (`feed_user_mh!`; a fed explicit `head` records one row against the minted user-context
-#     handle — docs/public-api.md §1.4/§2; experimental).
+#     handle — docs/public-api.md §2; experimental).
 # REASONING: the public contract (docs/public-api.md §2) requires `goMeta` to be pure and
 #     deterministic FOR THE ENGINE'S OWN OPERATIONS (no filesystem / clock / environment read; a v0
 #     condition body runs in the closed no-eval interpreter — only under the opt-in
@@ -32,9 +32,10 @@
 #     and TOTAL over the config-time
 #     catalogued surface — non-OK implies non-empty diagnostics. Honest edges: the
 #     E-04 apply-path crash-origin and the E-06 absorb-path guarded refusal are documented but
-#     not yet typed (conversion deferred); the condition-path refusals are TYPED since the
-#     closed-interpreter flip, with E-07's mint PENDING (the unqueryable-alt shape still aborts
-#     raw). The full honest-edges catalogue: docs/public-api.md §3.
+#     not yet typed (conversion deferred); the condition-path refusals are MINTED typed since the
+#     closed-interpreter flip, though the statement still aborts at the absorb seam, with E-07's mint
+#     PENDING (the unqueryable-alt shape still aborts raw). The full honest-edges catalogue:
+#     docs/public-api.md §3.
 # PURPOSE: the single auditable entry point — bytes in, a typed `GoMetaDelivery` out, with the package's
 #     canonical observable output = `altValues_evals` (+ `serialize_evals`, `content_fingerprint`); the Engine's
 #     delivered surface = the run and the evaluated values (R-V04B-24); the (tree, render) pair is the
@@ -231,21 +232,24 @@ end
 """
     _configErrorDelivery(parse_state, config, registry, config_diags) -> GoMetaDelivery
 
-IS: the cold constructor of the fail-closed `PROCESS_ERROR` `GoMetaDelivery` — reached ONLY on a PRE-PARSE refusal: a
+IS: the cold constructor of the fail-closed `PROCESS_ERROR` `GoMetaDelivery` — reached ONLY on an ENTRY
+refusal — before any absorb or apply work of the refused call, and at `goMeta` before its parse: a
 non-empty `validate_config` vector, the registry door's diagnostics at `goMeta` / `run_absorb_apply!`, or the seam
 ledger's refusals of an injected parse state.
 
 DOES: builds a per-call `ProcessState` by `init_state` (container SIZING only — no parse content is read, no
 `parseBLS` / absorb-walk runs), appends the typed `config_diags`, and hands back the delivery's four parts taken
 from that state: the EMPTY store `st.evals` as `altValues_evals`; the unparsed `parse_state` — the caller passes
-one built from EMPTY bytes, since validation pre-empts touching the input — as `blsComponentTree`; `PROCESS_ERROR`;
+one built from EMPTY bytes: on `goMeta`'s route validation pre-empts touching the input, and the seam's own
+refusals (the door and the ledger) hand in a fresh empty state rather than the caller's, which this call never
+parses or reads — as `blsComponentTree`; `PROCESS_ERROR`;
 the diagnostics. The working state itself is not delivered (R-V04B-28).
 
 REASONING: `@noinline` + cold, so its `init_state` and the construction never perturb the byte-exact,
 low-allocation main `goMeta` path; the empty-bytes tree keeps the delivery total (the development tool's `outputs`,
 `devtools/basic_renderer.jl`, yields its empty non-OK pair on it).
 
-PURPOSE: ONE fail-closed outcome for every pre-parse refusal — typed diagnostics, never a throw.
+PURPOSE: ONE fail-closed outcome for every entry refusal — typed diagnostics, never a throw.
 """
 @noinline function _configErrorDelivery(parse_state::BLS.ParseState, config::GoMetaConfig,
                                         registry::AlterantRegistry, config_diags::Vector{Diagnostic})
@@ -340,9 +344,11 @@ after the move (R-V04B-24: "the run and the evaluated values"). The (tree, rende
 tool's: `Main.BasicRenderer.outputs`, applied to the result after `include("devtools/load_basic_renderer.jl")`
 at the caller's top level. The config-time error rows are armed + typed; the condition-path refusals
 (the unknown-key, cap, argument-domain and grammar rows) are typed at their own origins in the closed
-condition interpreter — E-07's typed mint is PENDING (the unqueryable-alt shape still aborts raw) —
-and the E-04 apply-path crash-origin and the E-06 absorb-path guarded depth refusal stay un-typed for
-now (the honest partition — docs/public-api.md §3). The full honest-edges catalogue: docs/public-api.md §3.4.
+condition interpreter, though the statement still ABORTS at the absorb seam (the refusal rethrown raw;
+its routing into the delivered diagnostics a later, separately-gated motion) — E-07's typed mint is
+PENDING (the unqueryable-alt shape still aborts raw) — and the E-04 apply-path crash-origin and the E-06
+absorb-path guarded depth refusal stay un-typed for now (the honest partition — docs/public-api.md §3).
+The full honest-edges catalogue: docs/public-api.md §3.4.
 
 # The marker syntax (short form)
 
@@ -371,9 +377,11 @@ function goMeta(
     ## GoMetaDelivery carries a parse state built from EMPTY bytes (container sizing only). A VALID
     ## config ⇒ an empty vector ⇒ the pipeline below runs unchanged; an INVALID config ⇒ a fail-closed
     ## PROCESS_ERROR GoMetaDelivery built in the `@noinline` cold `_configErrorDelivery` helper (its `init_state` +
-    ## `GoMetaDelivery` construction stay OUT of this hot path). The E-04 (apply) crash-origin, the E-06
-    ## (absorb) guarded refusal and the condition-path crash-origins remain untyped at v0
-    ## (their typed conversion sits at the apply.jl seam).
+    ## `GoMetaDelivery` construction stay OUT of this hot path). The E-04 (apply) crash-origin and the
+    ## E-06 (absorb) guarded refusal remain untyped at v0; the condition-path refusals are minted typed
+    ## in the closed interpreter (E-07's mint pending) but the statement still aborts at the absorb seam
+    ## (`absorb_meta.jl`: the refusal rethrown raw — its routing into the delivered diagnostics a later,
+    ## separately-gated motion, docs/public-api.md §3).
     config_diags = validate_config(config)
     ## v0.4 T2 — THE STRICT DOOR (R-V04-34): the registry must be PUBLISHED (validated + sealed);
     ## an unpublished value refuses typed (`REG_UNPUBLISHED`, naming RegistryBuilder → validate →
@@ -423,6 +431,25 @@ function goMeta(
     return run_absorb_apply!(parse_state; config = config, registry = registry)
 end
 
+## v0.4 T3 — THE SEAM LEDGER (T3-DESIGN §7; M-AC-11 + HC-9 under the §12 re-basing).
+## One weak-keyed side table maps each CALLER-OWNED parse state (identity-keyed — a
+## mutable struct; BLS defines no `hash`/`isequal`/`==` on it, pinned by the seam tests)
+## to its lifecycle entry. GC-transparency is NOT a lapsing refusal: a poisoned entry can
+## vanish only when the state itself is unreachable — nothing can re-inject it. The
+## `WeakKeyDict` attaches a finalizer to every stamped state (disclosed). Every access
+## runs under the ONE lock; the hot loop never touches the ledger (the write LATCH is a
+## plain per-call Bool on `ProcessState`). `goMeta` routes through this seam and STAMPS
+## like any caller (the uniform law — it also preserves the identity semantics for states
+## a consumer extracts via `result.blsComponentTree`); the per-call cost is measured and
+## banked at the T3 receipts, never claimed away.
+mutable struct _SeamEntry
+    registry::Union{Nothing,AlterantRegistry}   # bound at EXIT of the first call that WROTE
+    poisoned::Bool                              # an abort escaped after the write latch rose
+    in_flight::Bool                             # a call is currently running on this state
+end
+const _SEAM_LEDGER = WeakKeyDict{Any,_SeamEntry}()
+const _SEAM_LEDGER_LOCK = ReentrantLock()
+
 """
     run_absorb_apply!(parse_state::BLS.ParseState;
                       config::GoMetaConfig = GoMetaConfig(),
@@ -469,8 +496,12 @@ THE CONTRACT (normative rows):
    the seam ledger ENFORCES it: an in-flight re-injection (nested included) is refused
    `STATE_REUSE_REFUSED`; ownership of the state's lifetime stays the caller's
    (the T4-milestone-set A5/C6 cure — this row previously said "not re-checked").
-5. A meta-free store ⇒ `PROCESS_OK` with ZERO evals rows (the E-05 class — the
-   Office pilot's first gate).
+5. A meta-free store on the no-feed path ⇒ `PROCESS_OK` with ZERO evals rows (the
+   E-05 class — the Office pilot's first gate). With `config.user_mh_profile` set
+   the fed profile is itself a metaLine body: its explicit headings record non-cell
+   rows against the user-context handle, and a refusal-carrying feed aborts, whether
+   or not the store carries a metaLine (`ProcessStatus`'s and `readAltValuesEvals`'s
+   docstrings).
 6. The seam parses NOTHING and renders NOTHING; its output is the evaluated values
    (`altValues_evals`); the (tree, render) pair is the development tool's.
 
@@ -481,25 +512,6 @@ write-backs — hence the seam ledger's refusal of an in-flight re-injection.
 PURPOSE: the route by which an adapter package (the Office pilot's carrier profile) runs the Engine over a store
 it built itself, without re-validation — its output the evaluated values, the render nothing of the seam's.
 """
-## v0.4 T3 — THE SEAM LEDGER (T3-DESIGN §7; M-AC-11 + HC-9 under the §12 re-basing).
-## One weak-keyed side table maps each CALLER-OWNED parse state (identity-keyed — a
-## mutable struct; BLS defines no `hash`/`isequal`/`==` on it, pinned by the seam tests)
-## to its lifecycle entry. GC-transparency is NOT a lapsing refusal: a poisoned entry can
-## vanish only when the state itself is unreachable — nothing can re-inject it. The
-## `WeakKeyDict` attaches a finalizer to every stamped state (disclosed). Every access
-## runs under the ONE lock; the hot loop never touches the ledger (the write LATCH is a
-## plain per-call Bool on `ProcessState`). `goMeta` routes through this seam and STAMPS
-## like any caller (the uniform law — it also preserves the identity semantics for states
-## a consumer extracts via `result.blsComponentTree`); the per-call cost is measured and
-## banked at the T3 receipts, never claimed away.
-mutable struct _SeamEntry
-    registry::Union{Nothing,AlterantRegistry}   # bound at EXIT of the first call that WROTE
-    poisoned::Bool                              # an abort escaped after the write latch rose
-    in_flight::Bool                             # a call is currently running on this state
-end
-const _SEAM_LEDGER = WeakKeyDict{Any,_SeamEntry}()
-const _SEAM_LEDGER_LOCK = ReentrantLock()
-
 function run_absorb_apply!(parse_state::BLS.ParseState;
                            config::GoMetaConfig = GoMetaConfig(),
                            registry::AlterantRegistry = DEFAULT_REGISTRY)::GoMetaDelivery
@@ -623,8 +635,9 @@ function run_absorb_apply!(parse_state::BLS.ParseState;
                     end
                 end
                 # Capture this Block's FINAL evals rows (Labels + Visib + Id) into st.evals BEFORE the
-                #   next apply wipes st.working — the cell is this Block. Render-neutral: it only reads
-                #   st.working + appends to st.evals (no parse-tree or render mutation).
+                #   next apply wipes st.working — the cell is this Block. Render-neutral: it reads
+                #   st.working, puts or supersedes rows in st.evals and may append warning diagnostics
+                #   (no parse-tree or render mutation).
                 captureEvals!(st, childComponent)
             end
         end
@@ -648,10 +661,13 @@ function run_absorb_apply!(parse_state::BLS.ParseState;
 
     ## The typed `GoMetaDelivery` supersedes the original three-field NamedTuple (render, tree, configDict)
     ## (the historical field name `tree_bytes` predates the `blsStructure_bytes` rename; kept verbatim in this
-    ## comment only). `status` is computed from the accumulated diagnostics (empty HERE — a config-time
-    ## error fail-closes via goMeta's early return before this seam is reached, and the apply-path bare
-    ## `error()`s still throw — their typed conversion is deferred), so this valid-config path is
-    ## `PROCESS_OK`. The evaluated values are read by `readAltValuesEvals(result)`; the development tool's
+    ## comment only). `status` is computed from the accumulated diagnostics: `PROCESS_ERROR` iff an `:error` row
+    ## exists, else `PROCESS_OK`. On this path no `:error` row is ever pushed (a config-time, door or seam-ledger
+    ## refusal fail-closes through `_configErrorDelivery` before the walk; the absorb/apply-path refusals still
+    ## THROW — the condition refusal rethrown at the absorb seam, the E-04/E-06 rows raw), so a run that returns
+    ## here is `PROCESS_OK` — but the vector need NOT be empty: the walk's and the capture's `:warning` rows
+    ## (`WARN_VERDICT_COLLISION`, `WARN_DEGENERATE_OCCURRENCE_KEY`, the capture-floor codes) ride the delivery
+    ## (the type's docstring). The evaluated values are read by `readAltValuesEvals(result)`; the development tool's
     ## (tree, render) pair (`Main.BasicRenderer.outputs`) is a pure function of the final `result.blsComponentTree`,
     ## which the in-`with` absorb-walk + apply has fully mutated.
     status = any(d -> d.severity === :error, st.diagnostics) ? PROCESS_ERROR : PROCESS_OK

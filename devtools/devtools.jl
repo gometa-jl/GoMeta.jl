@@ -284,8 +284,11 @@ end
 ## arm below now compares each row against the FIRST row's — an internal-consistency check on the store. What it
 ## can no longer catch is a store whose rows UNIFORMLY carry a namespace other than the run's configuration:
 ## the configuration is not delivered, so nothing in the delivery names it. And if the FIRST row's key does not
-## decode, `ns` is "?" and every decodable row lands in that arm (today only the undecodable row does, as
-## `:undecoded`) — a schema-drift case the self-check's anchoring pin catches.
+## decode, `ns` is "?": every decoded row of a DOCUMENT grain whose namespace is not itself "?" then lands in
+## that arm (a decoded non-document grain still lands in `:non_document_grain` first, as ever; a row whose
+## decoded namespace IS "?" passes), and the undecoded rows — their own `ns` "?" too — print no `ns=:?` suffix:
+## a malformed store only (an ordinary run's rows all decode), a schema-drift case
+## the self-check's anchoring pin catches.
 function _dt_ns_of(result)
     recs = result.altValues_evals.records
     isempty(recs) && return "?"
@@ -2408,9 +2411,13 @@ render-added leading hide marker classifies `hideprefix` (bold 14pt, the scheme'
 hideprefix color); the
 mid-inserted one classifies `comment` (rule 6.3 — source-authored and
 render-inserted mid marks paint alike). Any mismatch (e.g. a future engine changing
-render surfaces) degrades WHOLE-FILE to a re-parse of the render bytes under the
-originating config (hide marks then classify `comment`; `hideprefix` is never
-asserted without an input to compare) and, failing that too, to whole-line
+render surfaces) degrades WHOLE-FILE to a re-parse of the render bytes under a
+config REBUILT from the delivered tree's flavor
+(`GoMetaConfig(flavor_tag = result.blsComponentTree.flavor.flavor_tag)` — the
+originating configuration is not delivered, R-V04B-28; the tier-T1 comment
+`## RENDER tier T1 (whole-file degradation; D1 §d.R1)` above `_dt_sl_splitlines`
+names what does not carry) (hide marks then classify `comment`; `hideprefix` is
+never asserted without an input to compare) and, failing that too, to whole-line
 `neutral` — the sidecar never errors on content and never lies about provenance.
 REASONING: the deck's output boxes are renders; hideprefix-vs-comment is exactly
 the distinction slides must show, and only the fate derivation can make it without

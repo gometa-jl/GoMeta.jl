@@ -211,7 +211,9 @@ struct Cell
     kind::Symbol            # :markdown | :code | :carrier (a detached meta block —
                             # no visible lines; renders as nothing)
     lines::Vector{LineFate} # surviving + hidden lines (discarded lines dropped)
-    original::String        # the block's ORIGINAL bytes (the engine's cell-handle key)
+    original::String        # the block's ORIGINAL source bytes — what the content-keyed
+                            # label join matches (`content_fingerprint`); the evals KEY is
+                            # the opaque occurrence handle, not these bytes
     labels::Set{Symbol}
     depth::Int              # the governing mark's depth, SCRAPED from the source text
                             # (0 = no preceding mark; depth is not on the evals surface

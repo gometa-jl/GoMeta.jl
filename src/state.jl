@@ -1,4 +1,4 @@
-# src/state.jl — the per-call engine state, the immutable alterant registry, and the typed result type.
+# src/state.jl — the per-call engine state, the immutable alterant registry, and the typed delivered object.
 #
 # IS: the state vocabulary of the GoMeta engine — the per-call `ProcessState` (delivered through a
 #     `ScopedValue`, never held in a global), the immutable `AlterantRegistry` type behind
@@ -164,13 +164,14 @@ delivers at the absorb seam keyed to the metaLine's own occurrence handle, and t
 enforces the BIDIRECTIONAL coherence with the record's `setMode`; `attr_stem` = the
 declared attr name stem (`nothing` ⇒ the derived fallback `lowercase(String(altName))`
 — the shipped four DECLARE theirs explicitly; byte-compatibility never rides a
-derivation). A PLAIN 5-field struct — NO inner constructor and NO `@kwdef` (the domain
-copier rebuilds slot structs POSITIONALLY over all fields; an inner ctor or `@kwdef`
-would break `DEFAULT_REGISTRY` at module load) — with ONE outer compatibility method
-(the PlugIn precedent below).
+derivation). A PLAIN 5-field struct — NO inner constructor that changes the positional
+signature (the domain copier rebuilds slot structs POSITIONALLY over all fields at the
+exact concrete type, src/alterants/registry.jl; an inner ctor of another arity would
+break the rebuild of `DEFAULT_REGISTRY`) — with ONE outer compatibility method (the
+PlugIn precedent below).
 
 REASONING: the capture walk is registration-driven (v0.4 T5) — keyed on the declared instance type, never an
-alt-name ladder — and the struct is plain (no inner constructor, no `@kwdef`) because the domain copier rebuilds
+alt-name ladder — and the struct is plain (no inner constructor) because the domain copier rebuilds
 slot structs positionally.
 
 PURPOSE: the row `captureEvals!` reads to mint an Alterant's evals rows, and the row tier 1 validates for
@@ -840,7 +841,8 @@ IS: the v0.2 CH-3 context record — {grain, depth, application level, occurrenc
 walk→absorb handover for the current component.
 
 DOES: The v0.2 CH-3 context record — **{grain, depth, application level, occurrence handle}**,
-a PURE function of the parse, published at the walk→absorb handover (`applyAbsorbFn`
+derived from the parse and the run's configured namespace (`st.config.namespace` keys the handle —
+nothing else of the configuration enters), published at the walk→absorb handover (`applyAbsorbFn`
 builds it from the component + the post-update MH cursor and sets `st.meta_context`) and
 stored in NO Component (the evaluation-free-tree law). Consumers at this step:
 the quoted-first heading recognizer's APPLICABILITY check (the userMH feed NULLS the
@@ -852,12 +854,13 @@ application level — the RAW MH-ladder index the walk set for this component (a
 Segment-attached metaLine inherits the metaLine's `lineMHIdx`, so the inheritance
 law holds by construction); the RECORDED level is normalized to ladder−1 — the
 author's own `#~`-digit vocabulary — at the enqueue materialization seam (the documented
-level vocabulary; the record itself stays pure from parse). `handle` is the
+level vocabulary; the record itself stays as derived — from the parse and the configured
+namespace, mutated by nothing). `handle` is the
 serialized occurrence key (`key_bytes`); under localOnly delivery it is
 LOAD-BEARING as the heading row's key.
 
-REASONING: a pure function of the parse, stored in no Component (the evaluation-free-tree law), so a consumer
-reads a record rather than a mutated tree.
+REASONING: derived from the parse and the configured namespace, stored in no Component (the evaluation-free-tree
+law), so a consumer reads a record rather than a mutated tree.
 
 PURPOSE: the consumers' record: the quoted-first heading recognizer's applicability check, the head evals row's
 level (the attr-fold) and, under localOnly delivery, the heading row's key.
@@ -869,7 +872,8 @@ struct MetaContext
                              # applyAbsorbFn call site exists), so the Block arm is defensive;
                              # the field is the record's designed shape (delta-review trued)
     level::Int               # the APPLICATION level — the MH-ladder index at absorb time
-    handle::Vector{UInt8}    # occurrence-key bytes (pure from parse)
+    handle::Vector{UInt8}    # occurrence-key bytes (from the parse and the configured
+                             # namespace)
 end
 
 """
@@ -976,8 +980,10 @@ core (R-V04B-28). The parts are plain fields: `d.altValues_evals`, `d.blsCompone
 `d.diagnostics`. The BLS Component tree is the SAME object the run wrote into (`init_state` keeps the caller's
 parse state by identity; the apply writes its Visib settributes back into it), and it is MUTABLE: every reader
 of one delivery shares that one object, and a caller that injected its own parse state through the seam holds
-it too — a discipline, not a copy. On a fail-closed run (`PROCESS_ERROR` before any parse: an invalid config,
-a refused registry, a refused seam state) the tree is a container built from EMPTY bytes and the store is
+it too — a discipline, not a copy. On a fail-closed run (`PROCESS_ERROR` before any parse of that call — an
+invalid config or a refused registry, refused at the entry before any absorb or apply work; or an injected
+parse state the seam ledger refuses — the caller's own state, which an earlier or concurrent call may have
+written into) the tree is a container built from EMPTY bytes — never the injected state — and the store is
 empty.
 
 REASONING: his words and his selections — `altValues_evals` and the BLS Component tree are "BY FAR the two MOST

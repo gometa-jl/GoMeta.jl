@@ -34,8 +34,8 @@ The v0 public input options for `goMeta` (additive evolution only; docs/public-a
   `"discard{ :label1 } show"`). Scope at v0 is deliberately MINIMAL: a single feed entry, NOT a general
   user-level configuration system (deliberately scope-limited at v0).
 - `namespace::Symbol` — the occurrence-key namespace every `altValues_evals` cell handle is scoped
-  under (`:default` by default; the key's length-prefixed namespace segment — docs/public-api.md
-  §1.4). One constructor-time guard: a namespace over 65535 bytes throws an `ArgumentError` AT
+  under (`:default` by default; encoded as the key's length-prefixed namespace segment — docs/public-api.md
+  §2). One constructor-time guard: a namespace over 65535 bytes throws an `ArgumentError` AT
   CONSTRUCTION (a `GoMetaConfig(...)` call error, before any `goMeta` run — distinct from the
   config-time fail-close rows, which require a constructed config).
 """

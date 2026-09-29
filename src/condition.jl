@@ -437,26 +437,26 @@ function _scan_condition(text::String, registry::AlterantRegistry, profile::Gram
                 # RETIRED DEFECT K5 (a recorded owner decision): an UNTERMINATED label key
                 # used to be silently rewritten to the zero-argument label query (the
                 # end-of-key guard below compares two indices the label arm pre-set EQUAL,
-                # so it could not fire). TWO triggers land here, both refused with one
-                # truthful message: (1) the label runs to the inner scan wall — there the
-                # OLD bytes minted the silent query (TRUE against a present label store,
-                # FALSE with it absent, either way an outcome the author never wrote; the
-                # sealed retirement cells hold both fates); (2) the condition ENDS inside
-                # the label with a MULTIBYTE final character, which the single-byte
-                # end-of-text arm above cannot terminate — there the OLD bytes CRASHED raw
-                # (BoundsError, one index past the final multibyte character; byte-verified
-                # at the K6 motion's execution, correcting an earlier revision of this note
-                # that claimed the
-                # silent mint on this route too — that mint was the pre-cure
-                # transliteration's own, whose guarded loop exits cleanly where the old
-                # bytes crashed). The trigger-2 form is witnessed in the sealed populations
-                # by supplement-2's inner/lbl_mb_end family (ridden in with the K6 motion,
-                # class- and membership-pinned there).
+                # so it could not fire). ONE trigger lands here today: the label runs
+                # to the inner scan wall — there the OLD bytes minted the silent query
+                # (TRUE against a present label store, FALSE with it absent, either way
+                # an outcome the author never wrote; the sealed retirement cells hold
+                # both fates). The FORMER second trigger — the condition ENDING inside
+                # the label with a MULTIBYTE final character — no longer reaches this
+                # guard: since the Unicode-correctness cure the inner loop terminates
+                # on `thisInd == lastCharInd` (the char end predicate above) and the
+                # atom takes its ordinary vocabulary fate (the module overview's
+                # three-generation history: the OLD bytes CRASHED raw there — BoundsError
+                # one index past the final multibyte character, byte-verified at the K6
+                # motion; the interim transliteration refused wrong-class); its form
+                # stays witnessed in the sealed populations by supplement-2's
+                # inner/lbl_mb_end family, ridden in with the K6 motion and carried on
+                # the sealed-oracle conversion ledger.
                 atom_is_label && !inner_resolved &&
                     _refuse(:ERR_CONDITION_CAP,
                         "GoMeta absorb: unterminated label key — a ':'-introduced key ran " *
                         "to the inner scan wall (" * string(profile.inner_scan_cap) *
-                        " scan steps) or to the end of the condition without terminating; " *
+                        " scan steps) without terminating; " *
                         "the intake refuses rather than silently minting the zero-argument " *
                         "label query (see docs/public-api.md §3.4)",
                         profile.inner_scan_cap)
