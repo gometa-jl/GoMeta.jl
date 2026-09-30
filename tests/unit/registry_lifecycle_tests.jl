@@ -65,6 +65,8 @@ import GoMeta as GM
         @test _codes(r.diagnostics) == [:REG_UNPUBLISHED]
         @test occursin("RegistryBuilder → validate → publish", r.diagnostics[1].message)
         @test isempty(Main.BasicRenderer.outputs(r).render_bytes)           # no parse, no render attempted
+        @test isempty(GM.readAltValuesEvals(r.altValues_evals))                # the delivered part carries no rows on the refusal path (REAL-1 R2 #9; measured 2026-09-30: rows 0)
+        @test !isempty(r.diagnostics)                                          # non-OK ⇒ non-empty diagnostics — the documented contract (src/state.jl; measured: 1, :REG_UNPUBLISHED)
         # route U REFUSES inconsistent hand-built tables (never a silently misrouting registry)
         bad_idx = copy(D.action_index); bad_idx[:hide] = Int8(99)
         e = try
@@ -89,6 +91,8 @@ import GoMeta as GM
         @test r1.status === GM.PROCESS_ERROR
         @test _codes(r1.diagnostics) == [:POST_SEAL_MUTATION]
         @test isempty(Main.BasicRenderer.outputs(r1).render_bytes)
+        @test isempty(GM.readAltValuesEvals(r1.altValues_evals))               # the delivered part carries no rows on the refusal path (REAL-1 R2 #9; measured: rows 0)
+        @test !isempty(r1.diagnostics)                                         # non-OK ⇒ non-empty diagnostics (measured: 1, :POST_SEAL_MUTATION)
         # (cure batch 1; T2-bis) a mutated DERIVED table — the declared record untouched — is
         # refused too: every table is a walked snapshot field (the CRX after-T2 breaker's
         # `action_to_settribute[:hide] = :show` attack fires at the entry's element path)

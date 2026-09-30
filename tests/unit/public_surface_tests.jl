@@ -120,6 +120,9 @@ import TOML
         @test all(t -> !isempty(t[1]) && t[3] !== nothing, ann)       # [8c] each row: non-empty cell_handle + present verdict value (the [8a] type-pin already guarantees the Symbol attr + Bool polarity slots)
         ser = String(GM.serialize_evals(ann))
         @test first(split(ser, '\n')) == "# annotations golden — sorted (cell_handle, attr, value); final-verdicts-only."   # [8d] the serializer + its layout-stable header line, byte-pinned in-suite
+        let hand = Tuple{Vector{UInt8},Symbol,Any,Bool}[(UInt8[0x00], :visib, :hide, true), (UInt8[0x01, 0x02], :label_label1, true, true), (UInt8[0xab, 0xcd], :heading, "a\tb", false), (UInt8[0xab, 0xce], :heading, "c\nd", false), (UInt8[0xab, 0xcf], :heading, "e\\f", false)]   # in the reader's sort order (by handle); tab, newline and backslash payloads
+            @test String(GM.serialize_evals(hand)) == "# annotations golden — sorted (cell_handle, attr, value); final-verdicts-only.\n# columns: <attr>\\t<value>\\t<polarity>\\t<cell_handle = occurrence-key bytes, hex>\nvisib\t:hide\ttrue\t00\nlabel_label1\ttrue\ttrue\t0102\nheading\t\"a\\tb\"\tfalse\tabcd\nheading\t\"c\\nd\"\tfalse\tabce\nheading\t\"e\\\\f\"\tfalse\tabcf\n"   # [8g] the 4-column form's BYTES over a hand vector in the reader's order — value-discriminating; the tab, newline and backslash payloads escaped by repr (REAL-1 R2 #3; the bytes MEASURED 2026-09-30, receipts/S8-branch/c5-oracles/probe_c5_v2.txt)
+        end
         @test hasmethod(GM.readAltValuesEvals, Tuple{GM.EvalStore})          # [8e] the reader takes the delivered PART `altValues_evals` (stage 1 commit 3; R-V04B-29's record; R-V04B-40 (2))
         @test !hasmethod(GM.readAltValuesEvals, Tuple{GM.GoMetaDelivery})   # [8f] and no method over the whole delivered object remains — the clean cut (R-V04B-61)
     end

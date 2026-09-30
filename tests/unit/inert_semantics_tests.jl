@@ -62,8 +62,7 @@ _liveempty(text) = join(
             twin = _liveempty(src)
             r_i, r_l = _is(src), _is(twin)
             @test string(r_i.status) == string(r_l.status)
-            @test [(a, v, p) for (h, a, v, p) in GM.readAltValuesEvals(r_i.altValues_evals)] ==
-                  [(a, v, p) for (h, a, v, p) in GM.readAltValuesEvals(r_l.altValues_evals)]
+            @test GM.readAltValuesEvals(r_i.altValues_evals) == GM.readAltValuesEvals(r_l.altValues_evals)   # the WHOLE rows, handles included (REAL-1 R2 #7; measured equal on all 18 shapes, 2026-09-30) — an inert-path bug assigning right values to WRONG occurrences now reds
             @test _liveempty(String(copy(Main.BasicRenderer.outputs(r_i).render_bytes))) ==
                   _liveempty(String(copy(Main.BasicRenderer.outputs(r_l).render_bytes)))
             # §4.4: the inert metaLine's OWN bytes travel VERBATIM in the render ('!' and

@@ -185,4 +185,34 @@ _tl_nblocks(s; kw...) = length(collect(eachmatch(r"\{:B-", _tl_tree(s; kw...))))
         # the ws-delimited closer produces a real Meta segment (not just no-error)
         @test occursin("{:S-Meta [#]]}", _tl_tree("x = 1 #]\ny = 2\n"))
     end
+
+    @testset "[12] REAL-1b rows 3, 17 and 7 — the delivered object on the edge inputs (stage 1 commit 5; every value measured first, 2026-09-30)" begin
+        let s = "x#~ hide\ny = 1\n", r = _tl_r(s)             # row 3: a missing BEFORE boundary — plain content by the token law
+            @test r.status == GM.PROCESS_OK
+            @test isempty(GM.readAltValuesEvals(r.altValues_evals))
+            @test _tl_render(s) == s                             # (the one-Block witness — a read of the old tree dump — is written at stage 6 with rows 15/16, against the reference style)
+        end
+        let r = GM.goMeta(UInt8[])                               # row 17 + R2 #21: the EMPTY input
+            @test r.status == GM.PROCESS_OK
+            @test isempty(GM.readAltValuesEvals(r.altValues_evals))
+            @test isempty(r.diagnostics)
+            @test isempty(Main.BasicRenderer.outputs(r).render_bytes)   # (the terminal-newline fact of the empty input has no witness from the outside — through the door's `endsWithNewline` at stage 2, if door B lands)
+        end
+        let s = "x = 1\n#~ hide\ny = 2", r = _tl_r(s)           # row 17: NO terminal newline
+            @test r.status == GM.PROCESS_OK
+            @test _tl_render(s) == "x = 1\n## #~ hide\n## y = 2"   # the render ends without LF, as the input did (the terminal-newline fact witnessed from the outside)
+            @test _tl_render(s * "\n") == _tl_render(s) * "\n"     # the LF twin renders the same bytes plus the final LF
+            @test GM.readAltValuesEvals(r.altValues_evals) == GM.readAltValuesEvals(_tl_r(s * "\n").altValues_evals)   # the same two evals rows either way — WHOLE rows, handles included (measured equal)
+        end
+        let s = "#~ hide\n", r = _tl_r(s)                          # R2 #21: a METADATA-ONLY input — one metaLine, nothing else
+            @test r.status == GM.PROCESS_OK
+            @test [(a, v, p) for (h, a, v, p) in GM.readAltValuesEvals(r.altValues_evals)] == [(:visib, :hide, true)]   # one evals row, the metaLine's own Block
+            @test isempty(r.diagnostics)
+            @test _tl_render(s) == "## #~ hide\n"                 # the metaLine itself is hidden — the render is NOT the input
+            @test _tl_render("#~ hide") == "## #~ hide"           # its LF-less twin renders without the final LF
+        end
+        let m = _tl_err("x = 1 #~ hide #~ show\n")                # row 7: two inline markers on ONE line — refused at parse (docs/public-api.md §3.4)
+            @test m !== nothing && occursin("more than one inline meta segment", m)
+        end
+    end
 end

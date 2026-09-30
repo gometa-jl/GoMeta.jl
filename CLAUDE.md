@@ -36,8 +36,8 @@ such a claim. `devtools_selfcheck()` must return `true` after every change under
   `tests/authored/` is written implementation-neutral (positions, not handles) and is the shared
   specification of this build and the parallel new-GoMeta effort.
 - **The suite:** `JULIA_LOAD_PATH="@:@stdlib" julia --project=tests tests/runtests.jl`
-  (`Pkg.test()` uses the `test/` target and fails on a missing `Random` — an environment
-  artefact, not a defect). The twelve annotation pins in `tests/golden/MANIFEST.toml` are
+  (`Pkg.test()` uses the `test/` target; `Random` is declared in both test environments since stage 1
+  commit 5 — green under `Pkg.test()`, measured at its pre-check). The twelve annotation pins in `tests/golden/MANIFEST.toml` are
   append-only.
 - **Commits:** pathspec-only, never `-am`, never bare; never push (origin is the public repo).
 - **The boundary law (owner, 2026-08-27):** the GoMeta Engine EVALUATES and records values as

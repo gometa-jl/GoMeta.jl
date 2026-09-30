@@ -69,6 +69,7 @@ _mode_run(cfg) = redirect_stdout(
             # THE LAW: opting in must not change what an existing document MEANS
             @test Main.BasicRenderer.outputs(r).blsStructure_bytes == Main.BasicRenderer.outputs(base).blsStructure_bytes
             @test Main.BasicRenderer.outputs(r).render_bytes == Main.BasicRenderer.outputs(base).render_bytes
+            @test GM.readAltValuesEvals(r.altValues_evals) == GM.readAltValuesEvals(base.altValues_evals)   # the DELIVERED part itself, handles included — not only the tool's pair (REAL-1 R2 #6; measured equal, 2026-09-30)
         end
         # and the DEFAULT is untouched by the extension being loaded (no ambient widening)
         @test GM.resolve_profile(GM.GoMetaConfig()).mode === :closed_v1
