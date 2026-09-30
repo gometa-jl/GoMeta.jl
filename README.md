@@ -118,16 +118,24 @@ corpus relative to the repository root. Then process one committed example end-t
 import GoMeta
 
 bytes  = read("examples/InFileFolder/file_for_Example_Proposal_JuliaCon.jl")
-result = GoMeta.goMeta(bytes)             # parse → absorb → evaluate → apply
-result.status == GoMeta.PROCESS_OK || error("processing failed")   # typed status check
-include(joinpath(pkgdir(GoMeta), "devtools", "load_basic_renderer.jl"))   # the basic renderer — a development tool (R-V04B-24), loaded through its ONE path
-out    = Main.BasicRenderer.outputs(result)  # the tool's (blsStructure_bytes, render_bytes) pair
-print(String(copy(out.render_bytes)))     # the rendered share-view of the file
+result = GoMeta.goMeta(bytes)             # ONE run: BLS parses the file into the BLS Component tree; the GoMeta Engine evaluates
+                                          # the altValues over it — ONE object delivered, `GoMetaDelivery`, carrying both MAIN PRODUCTS
+result.status == GoMeta.PROCESS_OK || error("processing failed")   # the part `status` (typed), read by name
 
-evals = GoMeta.readAltValuesEvals(result.altValues_evals)    # the evaluated Alterant values, per piece of the file
-                                          # (`evals` = evaluated metadata values — unrelated
-                                          #  to Julia's `eval`)
+result.blsComponentTree;                  # the part `blsComponentTree` (the object, not printed): the BLS Component tree the
+                                          # run was evaluated over — provided by BLS itself; it reaches an Extension as the
+                                          # part `blsComponentTree`, not through any function of the GoMeta Engine; an
+                                          # Extension travels it with BLS's own public functions (`docs/public-api.md` §2)
+evals = GoMeta.readAltValuesEvals(result.altValues_evals)    # the part `altValues_evals`: the evaluated Alterant values, per piece
+                                          # of the file, read through the Engine's reader (`evals` = evaluated metadata
+                                          # values — unrelated to Julia's `eval`)
 evals[1]                                  # (cell_handle, attr, value, polarity), e.g. (…, :label_label1, true, true)
+result.diagnostics                        # the part `diagnostics`: the run's typed diagnostics (a non-OK status ⇒ non-empty)
+
+include(joinpath(pkgdir(GoMeta), "devtools", "load_basic_renderer.jl"))   # the basic renderer — a DEVELOPMENT TOOL, not part of
+                                          # the Engine's output (R-V04B-24) — loaded through its ONE path, at the top level
+out    = Main.BasicRenderer.outputs(result)  # the tool's (blsStructure_bytes, render_bytes) pair
+print(String(copy(out.render_bytes)))     # the rendered share-view of the file — the way to inspect a run by eye
 ```
 
 (`blsStructure_bytes` is the render's structural twin — the parsed Block/Line/Segment tree serialized
@@ -135,9 +143,11 @@ deterministically; `docs/CANONICAL-OUTPUT.md` names both halves in §1 and defin
 [tree] and §3 [render rules]. `altValues_evals` is the
 queryable per-cell surface of evaluated Alterant values — `docs/public-api.md` §2.)
 
-What the render does: the line marked `#~ discard` is **removed**, and the code line (which
-inherits `hide{ … isCode }` from the file's first metaLine) is **commented out** with the `## `
-hide marker. Input, lines 5–10 verbatim:
+What the render shows — the Alterant Visib as the example; the principle holds for every Alterant: if an
+altValue of an Alterant applies to a Block, it applies indirectly to the Block's children. The line marked
+`#~ discard` is **removed**, and the code line — a child of the Code Block to which the `hide{ … isCode }`
+stated on the file's first metaLine applies, hence hidden indirectly, through that Block — is **commented out**
+with the `## ` hide marker. Input, lines 5–10 verbatim:
 
 ```julia
 # This `Line` of text starts a new `Block` of text.
