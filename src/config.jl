@@ -3,7 +3,7 @@
 # IS: the v0 public input-options type for `goMeta(bytes; config) -> GoMetaDelivery` (docs/public-api.md §2).
 # DOES: declares `GoMetaConfig` with its v0 fields + a keyword constructor with the documented
 #     defaults.
-# REASONING: this is part of the declared semver public API (additive evolution only). `parse_range` is
+# REASONING: this is part of the declared public API (docs/public-api.md §2; its versioning policy §6 — clean cuts until at least v0.7, R-V04B-61). `parse_range` is
 #     explicit about what it accepts: `nothing` ⇒ whole input; a given range REQUIRES
 #     `first == 1`, else a fail-closed `ERR_RANGE_INVALID` diagnostic
 #     (`validate_config` in `GoMeta.jl`).
@@ -13,7 +13,7 @@
     GoMetaConfig(; profile=:jl_share_v1, flavor_tag=:julia, parse_range=nothing,
                   user_mh_profile=nothing, namespace=:default)
 
-The v0 public input options for `goMeta` (additive evolution only; docs/public-api.md §2):
+The v0 public input options for `goMeta` (docs/public-api.md §2; the versioning policy §6):
 
 - `profile::Symbol` — the share-profile. The closed default is `:jl_share_v1`; the two OPT-IN names
   `:jl_share_v1_full_parse` / `:jl_share_v1_full_eval` are also config-valid and additionally require the

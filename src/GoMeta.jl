@@ -120,7 +120,7 @@ using .CnS: getState, getAltState
 include("condition.jl")             # the closed condition interpreter (bounded intake + algebra +
                                     #   printer + evaluate) — after registry.jl (the query dispatch
                                     #   surface) + state.jl; inert until the engine flips to it.
-include("annotations.jl")           # the per-cell evals surface — evals capture +
+include("annotations.jl")           # the evals surface — evals capture +
                                     #   readAltValuesEvals(result.altValues_evals). AFTER registry.jl (Alterants.Visib/Id) + state.jl
                                     #   (ProcessState/GoMetaDelivery/EvalStore); BEFORE walk.jl + the driver below
                                     #   (which call captureEvals!). Holds no eval, no render-write.
@@ -217,8 +217,8 @@ function validate_config(config::GoMetaConfig)
     # the ONE parse loop over its FlavorProfile record); :latex = the `%` lead
     # alphabet (.tex). Closed set, no fallback (the profile law's shape). SELECTED,
     # NEVER INFERRED: the flavor is exactly the caller's explicit config value — no
-    # file-extension or content sniffing exists anywhere, which is what keeps the
-    # additive compatibility claim alive.
+    # file-extension or content sniffing exists anywhere — so a flavor added later can
+    # never change how an existing input is read.
     if config.flavor_tag !== :julia && config.flavor_tag !== :c &&
        config.flavor_tag !== :latex
         push!(diags, Diagnostic(:ERR_UNKNOWN_FLAVOR, :error,
@@ -338,7 +338,7 @@ Arguments:
 The `GoMetaDelivery` is `{altValues_evals::EvalStore, blsComponentTree::BLS.ParseState, status::ProcessStatus, diagnostics::Vector{Diagnostic}}` — the four public parts, read by name (R-V04B-28/29/30) — and is
 TOTAL over the CONFIG-TIME catalogued surface (an invalid profile or parse_range never throws uncaught); absorb/apply-plane catalogued failures can still throw at v0 (see below): `status` is
 `PROCESS_OK` (no error diagnostics) or `PROCESS_ERROR` (>=1 error `Diagnostic`; non-OK => non-empty diagnostics).
-Obtain the Engine's output via `readAltValuesEvals(result.altValues_evals)` (the per-cell evals map; its byte form
+Obtain the Engine's output via `readAltValuesEvals(result.altValues_evals)` (the evals map, keyed by (handle, attr); its byte form
 `serialize_evals`, the cell bytes `content_fingerprint`) — with the run itself, the Engine's delivered surface
 after the move (R-V04B-24: "the run and the evaluated values"). The (tree, render) pair is the development
 tool's: `Main.BasicRenderer.outputs`, applied to the result after `include("devtools/load_basic_renderer.jl")`

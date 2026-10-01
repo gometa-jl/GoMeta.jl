@@ -223,10 +223,13 @@ DOES: The render-plane declaration: `effects` = action → `EffectRow` pairs in 
 arm) or `nothing`; `materialize` = whether the resolved value is written back into the
 component's settribute (the generic write-back gate).
 
-REASONING: the write-back is declared per Alterant (the generic gate) rather than hard-wired, so the registry's
-`action_to_settribute` table is derived from declarations.
+REASONING: the render-plane data travel in the record as declarations rather than hard-wired per Alterant; at T1 the
+slot is CARRIED, not consumed (the record's law above): no plane reads `materialize` — only the seal's text form encodes
+it (`_slot_text`, `alterants/registry.jl`); the apply's write-back table `action_to_settribute` is derived from
+`ActionSpec.settribute` (`alterants/registry.jl`), and the built-in Visib declares no `RenderDecl` (`render` defaults to `nothing`).
 
-PURPOSE: the declaration the apply's write-back and the render-plane effects read.
+PURPOSE: the declaration a render-plane consumer would read — read by no plane today; the declarations stay until the
+owner's word (R-V04B-42 (2); the census before stage 5) — the Visib write-back it would gate is removed at stage 3 (R-V04B-42).
 """
 struct RenderDecl
     effects::Vector{Pair{Symbol,EffectRow}}
@@ -860,7 +863,7 @@ serialized occurrence key (`key_bytes`); under localOnly delivery it is
 LOAD-BEARING as the heading row's key.
 
 REASONING: derived from the parse and the configured namespace, stored in no Component (the evaluation-free-tree
-law), so a consumer reads a record rather than a mutated tree.
+law), so a consumer reads a record rather than a mutated BLS Component tree.
 
 PURPOSE: the consumers' record: the quoted-first heading recognizer's applicability check, the head evals row's
 level (the attr-fold) and, under localOnly delivery, the heading row's key.
@@ -966,9 +969,9 @@ R-V04B-29 the shape, R-V04B-30 the name, 2026-09-15/16; docs/public-api.md §1.1
 
 - `altValues_evals::EvalStore` — the data container of the evaluated Alterant values: one final evals row per
   handle and attribute, as the run recorded them; the reader over it is `readAltValuesEvals`.
-- `blsComponentTree::BLS.ParseState` — the BLS Component tree the run was evaluated over: the parser's own
-  object, provided by BLS itself. An Extension reads it by this name and travels it with BLS's own public
-  functions (the door of stage 2); no function of the GoMeta Engine hands it over (R-V04B-29; R-V04B-45).
+- `blsComponentTree::BLS.ParseState` — the BLS Component tree the run was evaluated over, provided by BLS itself;
+  it reaches an Extension as the part `blsComponentTree`, not through any function of the GoMeta Engine; an Extension
+  travels it with BLS's own public functions (R-V04B-29; R-V04B-45; the owner's sentence — R-V04B-75 (8)).
 - `status::ProcessStatus` — `PROCESS_OK` (no error-severity diagnostic) or `PROCESS_ERROR` (at least one;
   non-OK ⇒ non-empty diagnostics).
 - `diagnostics::Vector{Diagnostic}` — the run's typed diagnostics: every row the run recorded, `:error` and

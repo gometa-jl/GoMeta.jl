@@ -510,7 +510,7 @@ CH-1); the content bytes are read through `content_fingerprint`.
 REASONING: the GoMeta Engine EVALUATES and records values as data (the boundary law, 2026-08-27); this reader
 is the one core-provided route from a run to those values. It is given the PART and not the delivered object
 around it so that whoever holds an `EvalStore` reads it the same way — the delivery's part, the seam's, and
-the rows of a File, User or Default level once the Engine's apply records them: such a row is a row of this
+the rows of a File, User or `fallBack` level once the Engine's apply records them: such a row is a row of this
 same store under its own grain code (`src/occurrence.jl`), so a level's entry needs no new part and no new
 signature (R-V04B-53's room — stated here, not built). Its order is fixed so that two runs over the
 same input bytes, configuration (the fed profile included) and registry serialize identically — for a
@@ -565,12 +565,12 @@ end
 """
     serialize_evals(ann) -> Vector{UInt8}
 
-IS: the deterministic, binary-safe 4-COLUMN byte form of a reader vector — the public back-compat
-serialization of the evals rows.
+IS: the deterministic, binary-safe 4-COLUMN byte form of a reader vector — THE public serialization
+of the evals rows (no compatibility form exists — R-V04B-61).
 
 DOES: The deterministic, binary-safe 4-COLUMN byte form of a `readAltValuesEvals(result.altValues_evals)` vector — one
 already-sorted evals row per line, `<attr>\\t<repr(value)>\\t<polarity>\\t<hex(cell_handle)>`, under a
-fixed header (`cell_handle` = the occurrence-key bytes, hex — v0.2 CH-1). **BACK-COMPAT form** kept
+fixed header (`cell_handle` = the occurrence-key bytes, hex — v0.2 CH-1). **THE PUBLIC form**, kept
 on the public surface; the GOLDEN layer's write+read sides both use the 5-COLUMN `GoMetaDelivery` method
 below (which appends the content-fingerprint hex column for reviewability + per-fixture
 discrimination) — see that method's docstring. Hashing either form's bytes gives a stable behaviour
@@ -606,11 +606,11 @@ key form PLUS the demoted content fingerprint as a fifth hex column — the gold
 plain diff (a reviewer sees WHICH cell each row addresses) and per-fixture DISCRIMINATING (two inputs whose
 rows have equal keys and values but different captured content produce different goldens — the fifth column;
 content outside a recorded row, and two empty stores, stay indistinguishable). The ann-vector method
-above keeps the key-only 4-column form (public back-compat; an adapter's payload concerns are the
+above keeps the key-only 4-column form (the public form; an adapter's payload concerns are the
 adapter's, not this dev-side golden).
 
 REASONING: a golden that shows WHICH cell each row addresses stays reviewable in a plain diff and separates
-fixtures whose recorded rows differ only in content; the four-column form above stays the public back-compat form.
+fixtures whose recorded rows differ only in content; the four-column form above stays the public form.
 
 PURPOSE: what the golden runner writes and reads (`tests/golden/golden_tests.jl`) — the twelve annotation pins' producer.
 """

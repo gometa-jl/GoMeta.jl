@@ -71,8 +71,10 @@ extends the label whitelist by a fixed **pictograph vocabulary** (byte-exact nam
   / `()` grouping; nested metadata regions (depth + attachment scoping; author depths 1–8 at
   v0); the inert `#~!` form; inline `#~` on content lines; the `#]` close-marker; UTF-8-correct
   segment handling; CRLF→LF normalization.
-- **The pipeline:** `goMeta` → `altValues_evals` (the (tree, render) pair is a development tool's,
-  `devtools/basic_renderer.jl`, since R-V04B-24) — pure and deterministic for the
+- **The pipeline:** the input file → BLS parses it into the BLS Component tree → the GoMeta Engine evaluates the
+  altValues over it (`altValues_evals`) → the Extensions use both MAIN PRODUCTS; ONE run, `goMeta`, delivers
+  both in `GoMetaDelivery` (the (tree, render) pair is a development tool's, `devtools/basic_renderer.jl`, since
+  R-V04B-24) — pure and deterministic for the
   engine's own operations (see SECURITY), with a byte-exact oracle: the 7 committed example pairs
   under `examples/` render **byte-identically**,
   pinned by the shipped **4912-test suite at this release** (the golden byte-oracle and
@@ -141,7 +143,7 @@ print(String(copy(out.render_bytes)))     # the rendered share-view of the file 
 (`blsStructure_bytes` is the render's structural twin — the parsed Block/Line/Segment tree serialized
 deterministically; `docs/CANONICAL-OUTPUT.md` names both halves in §1 and defines them in §2
 [tree] and §3 [render rules]. `altValues_evals` is the
-queryable per-cell surface of evaluated Alterant values — `docs/public-api.md` §2.)
+queryable surface of evaluated Alterant values, keyed by (handle, attr) — `docs/public-api.md` §2.)
 
 What the render shows — the Alterant Visib as the example; the principle holds for every Alterant: if an
 altValue of an Alterant applies to a Block, it applies indirectly to the Block's children. The line marked

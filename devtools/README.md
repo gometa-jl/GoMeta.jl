@@ -73,8 +73,9 @@ docstrings are in `devtools.jl`.
 The tools AND the moved basic renderer (`basic_renderer.jl`, the tree print included) read the
 delivered part `result.blsComponentTree` (public by name, R-V04B-29) and a few non-public parser names under the owner's
 exemption D-6(a) of 2026-08-20, WIDENED on 2026-09-11 (R-V04B-24, C1 (a)) to the renderer file and
-the tree print as an INTERIM that LAPSES when D-4 rules the BLS-provided tree route; the interim
-ends with a full tidy-up (the owner's order, OWNER-WORDS §17). Allowed for THESE files only;
+the tree print as an INTERIM whose lapse condition FIRED on 2026-09-16 (R-V04B-29: the BLS-provided tree route is
+ruled); these exemption texts are deleted at stage 5 of the v0.4 branch (the plan's stage 5 (1); R-V04B-48 (1)), their
+non-public reads served by the door or removed at stage 2's commit 0 (R-V04B-58) — the full tidy-up, the owner's order (OWNER-WORDS §17 and §44). Allowed for THESE files only;
 consumer code must not copy the pattern. `devtools_selfcheck()` is the drift alarm: if the internal
 surface changes, it fails loudly. Run it after every change to `src/`. Their assertion battery,
 `devtools/probes/probe_devtools.jl`, lives beside them since 2026-09-12 (OWNER-WORDS §26 of the

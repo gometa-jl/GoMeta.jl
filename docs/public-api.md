@@ -22,7 +22,7 @@ through `Main.BasicRenderer.outputs` loaded by the one loader and pinned byte-ex
 the typed error catalogue with its honest partition (§3 — the 0.3.x rows as the tables list them, plus the v0.4
 registration/door rows of §3.5); (5) records the
 CRLF-normalization convention (§4), the explicitly **deferred / not-v0** surfaces (§5), and the
-additive-only **versioning policy** (§6).
+**versioning policy** (§6: clean cuts — no compatibility promise — until at least v0.7; R-V04B-61).
 
 **REASONING.** The API is **TOTAL over the CONFIG-TIME catalogued surface** — an invalid `config`
 never throws an uncaught exception; it fail-closes into a `PROCESS_ERROR` result carrying a typed
@@ -96,10 +96,10 @@ These are part of the documented public surface — declared with Julia's `publi
   registry without the built-in Visib RUNS; the CAPTURE plane is registration-driven since T5 (a
   declared `CaptureDecl` row mints an Alterant's evals rows; `WARN_CAPTURE_FLOOR` discloses a
   missing declaration, `WARN_CAPTURE_UNREADABLE` an unreadable live value — the LIFECYCLE bullet
-  below and §3.4); what is NOT yet registration-driven — landing with the named Stage-A rows — is
-  the QUERY plane's argument floor (T3: the getter is called with Symbol literals only;
-  the getter's signature is not yet verified at registration), and the RENDER write-back
-  (T6/T7: only a Visib-style `settribute` mapping writes back). The release contract page states,
+  below and §3.4); NOT registration-driven at v0.4 (the deferred rows): the QUERY plane's argument floor
+  (T3: the getter is called with Symbol literals only; the getter's signature is not yet verified at
+  registration), and the RENDER write-back (today only a Visib-style `settribute` mapping writes back; the
+  write-back is REMOVED at stage 3 of the v0.4 branch, R-V04B-42; the declarations' fate is the owner's word at stage 5). The release contract page states,
   per slot, which row consumes it.
 - **The registration LIFECYCLE (v0.4):** `RegistryBuilder()` (empty) or
   `RegistryBuilder(DEFAULT_REGISTRY)` (PRELOADED with the four built-ins, copied by the domain
@@ -333,7 +333,7 @@ They are not exported; reach them qualified. `tests/unit/public_surface_tests.jl
 1. **In R-V04B-24's own words: "the package's canonical observable output = `altValues_evals` (+
    `serialize_evals`, `content_fingerprint`)" and "the Engine's delivered surface after the move = the run
    and the evaluated values".** `readAltValuesEvals(result.altValues_evals)` is the evaluated Alterant values, per piece of the
-   file: the deterministic, final-verdicts-only per-cell map `(cell_handle, attr, value, polarity)`;
+   file: the deterministic, final-verdicts-only map `(cell_handle, attr, value, polarity)`, keyed by (handle, attr);
    `GoMeta.serialize_evals` its byte form, `GoMeta.content_fingerprint` the cell bytes. No internal module
    (`walk`, `BLS`) ever needs importing for it.
 2. **The (tree, render) pair is the development tool's**, not the Engine's: `Main.BasicRenderer.outputs(result)
@@ -359,8 +359,8 @@ throws uncaught; absorb/apply-plane catalogued failures can still throw at v0 �
 partition). `GoMetaDelivery` carries the run's FOUR public parts, read by name (R-V04B-28/29/30):
 `altValues_evals::EvalStore` (the data container of the evaluated values — the reader over it
 `readAltValuesEvals`, §2 below) · `blsComponentTree::BLS.ParseState` (the BLS Component tree the run was
-evaluated over: the parser's own object, provided by BLS itself and travelled with BLS's own public functions
-— the door of stage 2; MUTABLE — the run wrote into it, and every reader of one delivery shares the one
+evaluated over, provided by BLS itself; it reaches an Extension as the part `blsComponentTree`, not through any function of the
+GoMeta Engine; an Extension travels it with BLS's own public functions; MUTABLE — the run wrote into it, and every reader of one delivery shares the one
 object) · `status::ProcessStatus` · `diagnostics::Vector{Diagnostic}` (the invariant is **non-OK ⇒ non-empty
 diagnostics**). Nothing internal travels: the per-call working state never leaves the core. (The (tree,
 render) pair is the development tool's `Main.BasicRenderer.outputs(result)`, loaded through
@@ -391,7 +391,7 @@ first).
 
 ### `GoMetaConfig(; profile = :jl_share_v1, flavor_tag = :julia, parse_range = nothing, user_mh_profile = nothing, namespace = :default)`
 
-The v0 input options (additive evolution only). `profile::Symbol` — the closed default is
+The v0 input options (the versioning policy §6). `profile::Symbol` — the closed default is
 `:jl_share_v1`; the two OPT-IN names `:jl_share_v1_full_parse` / `:jl_share_v1_full_eval` are
 also config-valid and additionally require the explicitly-included opt-in extension (the two-act
 law, §3.2). The remainder of this paragraph describes the default: the share-profile proper is
@@ -438,7 +438,7 @@ or fed-profile-authored — the §2 Heading action; `head_<level>_<k>`, k ≥ 2 
 for same-level repeats on one recorded handle); `polarity` is always `true` at v0 (the field
 is reserved for a future negated-verdict encoding). Consumers should treat UNKNOWN attribute
 families as opaque — skip them, never error: the enumeration lists the v0 families, and new
-families may arrive as additive evolution within the documented versioning policy (§6). `GoMeta.serialize_evals(readAltValuesEvals(result.altValues_evals))` is its canonical
+families may arrive in a later version under the versioning policy (§6 — no compatibility promise until at least v0.7). `GoMeta.serialize_evals(readAltValuesEvals(result.altValues_evals))` is its canonical
 byte form.
 
 ### The (tree, render) pair — a development tool's, since 0.4.0 (R-V04B-24)

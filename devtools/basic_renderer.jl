@@ -48,8 +48,8 @@ Core.eval(Main, :(const _BASIC_RENDERER_LOADED = true))
 #     resolved answers. It reads the delivered part `result.blsComponentTree` (public by name, R-V04B-29) and the parser's
 #     non-public names (`BLS.getElement`, `BLS.eachchildid`, `BLS.FLAVOR_JULIA`, `BLS._isspace_valid`,
 #     `ParseState.endsWithNewline`) under the owner's exemption D-6(a) of 2026-08-20, WIDENED to this file
-#     and the tree print on 2026-09-11 (R-V04B-24 C1 (a)) as an INTERIM that LAPSES when D-4 rules the
-#     BLS-provided tree route; `devtools_selfcheck()` is the drift alarm.
+#     and the tree print on 2026-09-11 (R-V04B-24 C1 (a)) as an INTERIM whose lapse condition FIRED on 2026-09-16
+#     (R-V04B-29; this text is deleted at stage 5, its reads served by the door or removed at stage 2's commit 0); `devtools_selfcheck()` is the drift alarm.
 # THE LOAD-ORDER LAW: include `devtools/load_basic_renderer.jl` at the consumer's TOP LEVEL — never this
 #     file (the sentinel at the top refuses a second load) and never inside a function (Julia's world age:
 #     a method defined while a function is already running is invisible to that function).

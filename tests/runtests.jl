@@ -12,7 +12,8 @@
 #   test/runtests.jl shim both run the IDENTICAL layers.
 #
 # STANDING INVOCATION: `--project=tests` — the env resolves the package itself via its
-#   `[sources]` entry; the declared test dependencies are standard-library only.
+#   `[sources]` entry; the declared test dependencies are `Random`, `SHA`, `TOML`, `Test` (standard library) and the
+#   registered package `StaticArrays` (both test environments, kept equal by the env_twin check).
 
 # --- load-path discipline (preamble assert) --- Run the suite with JULIA_LOAD_PATH="@:@stdlib" so the GLOBAL default env
 # (@v#.#) is NOT reachable, and an undeclared package dependency fails LOUDLY instead of being silently
