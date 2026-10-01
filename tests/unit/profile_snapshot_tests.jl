@@ -152,9 +152,9 @@ import GoMeta as GM
         # pin asserted UNMOVED as always)
         p = GM.resolve_profile(GM.GoMetaConfig())
         @test p.grammar_digest      == 0x12972c9924c2bf2b
-        @test p.registration_digest == 0x014a5cb7a2c21a4e
+        @test p.registration_digest == 0xdd648d9f52f4f47c   # stage 2's commit 3-i: the Alterant's default joins the seal (the per-action default STAYS in the fold until commit 3-ii — R-V04B-51/55) — the EIGHTH re-mint, MEASURED by a probe
         @test GM.cache_key(p) == string("gometa/v", GM._ENGINE_VERSION,
-            "/jl_share_v1/closed_v1/s3/g12972c9924c2bf2b/r14a5cb7a2c21a4e")   # the r-component re-minted with the pin above (v0.4 T5 = the seventh)
+            "/jl_share_v1/closed_v1/s3/g12972c9924c2bf2b/rdd648d9f52f4f47c")   # the r-component re-minted with the pin above (stage 2's commit 3 = the eighth)
     end
 
     @testset "test_error_oracle_corrupt_and_incompatible" begin

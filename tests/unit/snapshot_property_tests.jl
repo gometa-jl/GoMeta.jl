@@ -769,7 +769,7 @@ end
         s.pT in (GM.PlugIn, GM.ActionSpec, GM.ActionOverload) && s.path[end] isa Symbol &&
             push!(recfields, (s.pT, s.path[end]))
     end
-    @test length(recfields) == 36                                # every §1 record field exercised
+    @test length(recfields) == 37                                # every §1 record field exercised (37 since stage 2's commit 3: the Alterant's default slot — R-V04B-51)
     leafcats = Set(s.cat for s in sites if s.kind in (:leaf, :single, :dictkey))
     @test issubset(Set([:bool, :symbol, :int, :float, :string, :type, :function, :version,
                         :complex, :rational, :nothing_leaf]), leafcats)

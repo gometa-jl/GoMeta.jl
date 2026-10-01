@@ -296,7 +296,7 @@ export getState
 ########### Constants AFTER `BLS` BEFORE `PlugIn(s)` ####################################
 # The structural meta-hierarchy index consts are NOT per-call state, and they have a SINGLE source,
 # state.jl: `NUM_MH_LEVELS = 12` + `maxDepthMH`(=length(BLS.depthLevelsMH)=9) / `fileMHIdx`(=1) /
-# `userMHIdx`(=maxDepthMH+1=10) / `lineMHIdx`(=maxDepthMH+2=11) / `defaultMHIdx`(=maxDepthMH+3=12),
+# `userMHIdx`(=maxDepthMH+1=10) / `lineMHIdx`(=maxDepthMH+2=11) / `fallBackMHIdx`(=maxDepthMH+3=12),
 # guarded there by `@assert maxDepthMH+3==NUM_MH_LEVELS`. The only consumer inside this sub-module
 # (`updateMetaHierarchy`) imports `maxDepthMH` + `NUM_MH_LEVELS` from the parent (the import above);
 # the external consumers (walk.jl / apply.jl, both in the parent module) reference them unqualified.
@@ -495,6 +495,7 @@ function default_registry_builder()
                  provenance = Provenance(; policy_id = "gometa-labels/v0-closed@1")),
         PlugIn(; altName = :Visib, setMode = :mutExclusive, altConstructor = Alterants.Visib,
                  setAltInstance = Alterants.setVisib,
+                 default = Declared(:show),   # R-V04B-51 (2): Visib's ONE declared default is 'show' (his lean §11; his word §180)
                  capture = CaptureDecl(Alterants.Visib, :single, :one, nothing; attr_stem = :visib)),
         PlugIn(; altName = :id, setMode = :mutExclusivePerField, altConstructor = Alterants.Id,
                  setAltInstance = Alterants.setId,
@@ -865,6 +866,10 @@ function _record_wellformed_plugins_collect!(diags::Vector{Diagnostic}, plugins:
         Symbol(lowercase(String(p.altName))) : p.capture.attr_stem
     seen_stems = Dict{Symbol,Symbol}()   # stem => first-declaring altName (the clash law)
     for p in plugins
+        # stage 2's commit 3 — the Alterant's default slot's shape (R-V04B-51 (1); the closed slot types of state.jl):
+        p.default isa DefaultSlot ||
+            proto(string("GoMeta registry: the default slot on alterant ", repr(p.altName),
+                " is not a DefaultSlot (NoDefault() | Declared(v)) (the record shape law)"), p.altName)
         if p.capture !== nothing
             p.capture.attr_scheme in _CAPTURE_SCHEMES ||
                 proto(string("GoMeta registry: unknown capture attr scheme ", repr(p.capture.attr_scheme),
@@ -1119,6 +1124,8 @@ function _registration_digest(action_specs::Vector{ActionSpec};
             # `===` leaf compare at the door (T2-bis) closes the same-named-swap remainder.
             "setter", _slot_text(p.setAltInstance), "getter", _slot_text(p.getAltInstance),
             "prec", _slot_text(p.precedencesTuple),
+            # stage 2's commit 3 — the Alterant's ONE declared default joins the seal (R-V04B-51 (1))
+            "default", _slot_text(p.default),
             # v0.4 T2 — every declared per-Alterant slot joins the fold: the seal (HC-9) covers the
             # record + the declared source digests + policy_id.
             "capture", _slot_text(p.capture), "render", _slot_text(p.render),
@@ -1313,12 +1320,12 @@ _domain_leaf(x)::Bool =
     x isa Function || x isa Type || x isa Symbol || x === nothing || x isa String ||
     x isa VersionNumber || _numeric_leaf(x)
 
-## the per-record explicit field lists — 16/10/10, each asserted against the compiler at
+## the per-record explicit field lists — 17/10/10 (the Alterant's default slot since stage 2's commit 3), each asserted against the compiler at
 ## load (T2BIS-DESIGN §15 (7)); the three record structs are POSITION-RESTRICTED walker
 ## containers (elements of `plugins`/`action_specs`; `ActionOverload` inside
 ## `ActionSpec.overloads`) and are REFUSED anywhere else, declared data included.
 const _WALK_PLUGIN_FIELDS = (:altName, :setMode, :altConstructor, :setAltInstance,
-    :getAltInstance, :precedencesTuple, :capture, :render, :vocabulary, :constraints, :atoms,
+    :getAltInstance, :precedencesTuple, :default, :capture, :render, :vocabulary, :constraints, :atoms,
     :contract_version, :requires, :sugar, :provenance, :permissions)
 @assert _WALK_PLUGIN_FIELDS == fieldnames(PlugIn)
 const _WALK_ACTION_FIELDS = (:name, :spelling, :plugin, :overloads, :accepts_string_slot,

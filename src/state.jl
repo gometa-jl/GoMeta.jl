@@ -10,7 +10,7 @@
 #     `:full_eval_v1` extension can mint — README SECURITY; docs/public-api.md §3.2); the
 #     meta-hierarchy level layout
 #     (`NUM_MH_LEVELS = 12`: the file level, the depth window `1..maxDepthMH`, then the user / line /
-#     default levels — the user level is the reserved slot that `GoMetaConfig.user_mh_profile`
+#     fallBack levels — the user level is the reserved slot that `GoMetaConfig.user_mh_profile`
 #     seeds; docs/public-api.md §2); `PlugIn`; `AlterantRegistry` with
 #     `num_alterants` / `num_alt_actions` (4 alterants / 8 actions since the heading registration,
 #     incl. the generic action → settribute write-back table); `MetaHierarchyState`; `AlterantQueue`;
@@ -79,19 +79,21 @@ minted by the explicitly-loaded opt-in extension, so a default-configured run ca
 would ride."""
 const ConditionT = Union{ConditionAST,FullEvalCondition}
 
-"The unified meta-hierarchy level count (`= maxDepthMH + 3 = defaultMHIdx`): the file level, the
-authorable depth window, and the user / line / default levels — 12 at v0."
+"The unified meta-hierarchy level count (`= maxDepthMH + 3 = fallBackMHIdx`): the file level, the
+authorable depth window, and the user / line / fallBack levels — 12 at v0. The level formerly named 'default'
+is `fallBack` since stage 2's commit 3 (his word, R-V04B-55 (3)): the word 'default' is the Alterant's declared VALUE."
 const NUM_MH_LEVELS = 12
 
 const maxDepthMH = length(BLS.depthLevelsMH)   # 9 — `depthLevelsMH` incl. `:depth0`
 @assert maxDepthMH + 3 == NUM_MH_LEVELS "NUM_MH_LEVELS ($NUM_MH_LEVELS) must equal maxDepthMH+3 ($(maxDepthMH+3)) — the meta-hierarchy sizing invariant"
 
 "The meta-hierarchy index layout: the file level, the depth window `1..maxDepthMH`,
-then the user / line / default levels (`defaultMHIdx == NUM_MH_LEVELS`)."
+then the user / line / fallBack levels (`fallBackMHIdx == NUM_MH_LEVELS`) — the fallBack level is consulted LAST by
+the apply (R-V04B-55 (3); his §196 (iv)); today no feed occupies it (the `metaLevel` Alterant comes after the branch)."
 const fileMHIdx    = 1
 const userMHIdx    = maxDepthMH + 1   # 10
 const lineMHIdx    = maxDepthMH + 2   # 11
-const defaultMHIdx = maxDepthMH + 3   # 12 == NUM_MH_LEVELS
+const fallBackMHIdx = maxDepthMH + 3   # 12 == NUM_MH_LEVELS — the fallBack level (R-V04B-55 (3)), consulted LAST by the apply
 
 # --- the v0.4 registration-record SLOTS (the Stage-A T1 schema extension) ---------------------------
 # IS: the DECLARED data slots the v0.4 record carries (the architecture chapter's sec 2.a, slots
@@ -190,12 +192,14 @@ CaptureDecl(instance_type::Type, attr_scheme::Symbol, multiplicity::Symbol,
             attr_stem::Union{Nothing,Symbol} = nothing) =
     CaptureDecl(instance_type, attr_scheme, multiplicity, mode_gate, attr_stem)
 
-## Slot (3): the presence-typed explicit default — undeclared is a TYPE, never a sentinel value.
+## Slot (3): the presence-typed explicit default — undeclared is a TYPE, never a sentinel value. Since stage 2's
+## commit 3 the slot is the ALTERANT's (one default per Alterant, declared as data — R-V04B-51 (1)–(2); R-V04B-55 (1));
+## the per-action slot of T1 stays (every action's `NoDefault()`, read by no Engine path) until it gives way at commit 3-ii.
 "The explicit-default slot's abstract root: `NoDefault()` (undeclared) | `Declared(v)`."
 abstract type DefaultSlot end
 "The UNDECLARED default — mechanically distinct from every declared value (the G-DEF disjointness law)."
 struct NoDefault <: DefaultSlot end
-"A DECLARED default value for an action; `value` is the Alterant's own datum, Core never interprets it."
+"A DECLARED default value — an Alterant's since stage 2's commit 3 (R-V04B-51 (1)); `value` is the Alterant's own datum, Core never interprets it."
 struct Declared{T} <: DefaultSlot
     value::T
 end
@@ -369,8 +373,9 @@ The inventory unit for one alterant (`Labels` / `Visib` / `Id` / `Heading`): its
 (`:accumulate` — the inheritance backtrack COLLECTS every applicable value · `:mutExclusive` — the
 backtrack stops at the FIRST applicable value · `:mutExclusivePerField` — first-wins per FIELD of a
 compound · `:localOnly` — the value applies ONCE, where it stands: never enqueued, never visited by
-the backtrack, delivered at the absorb seam), the alterant-instance constructor type, the setter/getter, and the (always-`nothing` at
-v0) precedence tuple. A fixed-size-array-free inventory unit, built into the registry by
+the backtrack, delivered at the absorb seam), the alterant-instance constructor type, the setter/getter, the (always-`nothing` at
+v0) precedence tuple and — since stage 2's commit 3 — the Alterant's ONE declared default value (`default`,
+R-V04B-51 (1)–(2): Visib's is `:show`; delivered by the answer function with the source "default"). A fixed-size-array-free inventory unit, built into the registry by
 `build_default_registry`. `precedencesTuple` is sized by `NUM_MH_LEVELS`,
 the unified meta-hierarchy level count.
 """
@@ -381,6 +386,10 @@ struct Alterant
     setAltInstance::Function
     getAltInstance::Union{Nothing,Function}
     precedencesTuple::Union{Nothing,NTuple{NUM_MH_LEVELS,Symbol}}
+    default::DefaultSlot                           # slot (3) at the ALTERANT: its ONE declared default value (R-V04B-51 (1)–(2);
+                                                   #   R-V04B-55 (1)) — `NoDefault()` undeclared | `Declared(v)`; stage 2's commit 3;
+                                                   #   delivered by the answer function with the source "default" (R-V04B-55 (2)) —
+                                                   #   Visib declares `:show`; Labels, Heading and Id await the owner's word
     # --- the v0.4 declared slots (T1; all nothing/empty-defaulted; carried at T1, consumed T4–T10) ---
     capture::Union{Nothing,CaptureDecl}            # slot (2): the capture declaration
     render::Union{Nothing,RenderDecl}              # slot (4): render-plane data
@@ -402,18 +411,19 @@ PlugIn(altName::Symbol, setMode::Symbol, altConstructor::Type, setAltInstance::F
        getAltInstance::Union{Nothing,Function},
        precedencesTuple::Union{Nothing,NTuple{NUM_MH_LEVELS,Symbol}}) =
     PlugIn(altName, setMode, altConstructor, setAltInstance, getAltInstance, precedencesTuple,
-           nothing, nothing, nothing, MutEx[], ConditionAtom[], nothing, (), SugarRow[],
+           NoDefault(), nothing, nothing, nothing, MutEx[], ConditionAtom[], nothing, (), SugarRow[],
            Provenance(), nothing)
 "The keyword form: every v0.4 slot addressable by name; unnamed slots take their nothing/empty default."
 PlugIn(; altName::Symbol, setMode::Symbol, altConstructor::Type, setAltInstance::Function,
          getAltInstance::Union{Nothing,Function} = nothing,
          precedencesTuple::Union{Nothing,NTuple{NUM_MH_LEVELS,Symbol}} = nothing,
+         default::DefaultSlot = NoDefault(),
          capture = nothing, render = nothing, vocabulary = nothing,
          constraints = MutEx[], atoms = ConditionAtom[], contract_version = nothing,
          requires::Tuple{Vararg{Symbol}} = (), sugar = SugarRow[],
          provenance::Provenance = Provenance(), permissions = nothing) =
     PlugIn(altName, setMode, altConstructor, setAltInstance, getAltInstance, precedencesTuple,
-           capture, render, vocabulary, constraints, atoms, contract_version, requires, sugar,
+           default, capture, render, vocabulary, constraints, atoms, contract_version, requires, sugar,
            provenance, permissions)
 
 """

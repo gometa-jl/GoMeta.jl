@@ -34,6 +34,7 @@ import GoMeta as GM
         s = GM.ActionSpec(:zza, :identifier, Int8(1), [ov], 0, :none, nothing, nothing)
         @test s.default === GM.NoDefault()
         @test s.settribute === nothing
+        @test p.default === GM.NoDefault()   # stage 2's commit 3: the ALTERANT's default slot (R-V04B-51), undeclared by the positional form
     end
 
     @testset "keyword shapes round-trip every slot" begin
@@ -100,8 +101,12 @@ import GoMeta as GM
         end
         @test !hasfield(GM.AlterantRegistry, :visib_to_settribute)
         @test !isdefined(GM, :VISIB_TO_SETTRIBUTE)
-        # the default record's per-action defaults are all UNDECLARED at v0.4.0 T1
+        # the default record's per-action defaults are all UNDECLARED at v0.4.0 T1 (the slot gives way at stage 2's commit 3-ii)
         @test all(s -> s.default === GM.NoDefault(), R.action_specs)
+        # stage 2's commit 3 (R-V04B-51 (1)–(2); R-V04B-55 (1)): the default is the ALTERANT's — Visib declares 'show', the
+        # others (Labels, Id, Heading) stay UNDECLARED until the owner's word at stage 2's review
+        @test R.plugins[R.alt_index[:Visib]].default === GM.Declared(:show)
+        @test all(p -> p.default === GM.NoDefault(), (p for p in R.plugins if p.altName !== :Visib))
     end
 
     @testset "DomainRef refuses an un-tagged or mis-shaped digest" begin

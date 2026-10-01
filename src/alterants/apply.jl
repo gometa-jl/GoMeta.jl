@@ -9,7 +9,8 @@
 #     `applyAltActionFns(::BLS.Block)` snapshot the settribute, gather the occupied eligible
 #     slots for their grain (the Segment overload scans the `userMHIdx`/`lineMHIdx` levels
 #     plus, when the enclosing Block is `:attachedToMeta`, the depth window; the Block overload
-#     scans `userMHIdx` plus the depth window down to `fileMHIdx`), and delegate.
+#     scans `userMHIdx` plus the depth window down to `fileMHIdx`; both append the `fallBack` level LAST —
+#     R-V04B-55 (3), stage 2's commit 3), and delegate.
 #     `_invoke_set` is the sole invocation seam for every plugin set-function.
 # DOES: evaluates each queued action's stored condition — `nothing` means set unconditionally,
 #     otherwise the stored `ConditionAST` is evaluated at apply time by the closed condition
@@ -254,6 +255,14 @@ function applyAltActionFns(
             mhIdx -= 1
         end
     end
+    ## 3.: the fallBack level LAST (stage 2's commit 3 — R-V04B-55 (3); his §196 (iv): "it only gets applied
+    ##      if no altValue … has been set / evaluated for any of the preceeding meta level"); today never
+    ##      occupied (the metaLevel Alterant and its feeds come after the branch — R-V04B-55 (5)).
+    crntSlot = st.mh.slots[fallBackMHIdx]
+    if 0 != crntSlot && st.mh.slot_occupied[crntSlot]
+        countEligibleSlots += 1
+        checkTheseSlotsInOrderVec[countEligibleSlots] = crntSlot
+    end
     detAltValuesForSetOfSlots(view(checkTheseSlotsInOrderVec, 1:countEligibleSlots))
 end
 
@@ -287,6 +296,14 @@ function applyAltActionFns(
             checkTheseSlotsInOrderVec[countEligibleSlots] = crntSlot
         end
         mhIdx -= 1
+    end
+    ## 3.: the fallBack level LAST (stage 2's commit 3 — R-V04B-55 (3); his §196 (iv): "it only gets applied
+    ##      if no altValue … has been set / evaluated for any of the preceeding meta level"); today never
+    ##      occupied (the metaLevel Alterant and its feeds come after the branch — R-V04B-55 (5)).
+    crntSlot = st.mh.slots[fallBackMHIdx]
+    if 0 != crntSlot && st.mh.slot_occupied[crntSlot]
+        countEligibleSlots += 1
+        checkTheseSlotsInOrderVec[countEligibleSlots] = crntSlot
     end
     detAltValuesForSetOfSlots(view(checkTheseSlotsInOrderVec, 1:countEligibleSlots))
 end
