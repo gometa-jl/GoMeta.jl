@@ -52,6 +52,7 @@ using Test
     include(joinpath(@__DIR__, "seam_envelope_tests.jl"))           # v0.4 T3: the seams — query/validate/ctor envelopes, DEP_MISSING, store identity, the state-seam ledger (T3-DESIGN §8)
     include(joinpath(@__DIR__, "vocabulary_tests.jl"))              # v0.4 T4: the whitelist relocation — the digest-pinned artifact, the registration-surface flip, G-VOC, the valve, the zero-literal law (T4-DESIGN §6)
     include(joinpath(@__DIR__, "fallback_order_tests.jl"))          # stage 2 commit 3a (R-V04B-55 (3)): the fallBack level consulted LAST — three witnesses over a prepared slot
+    include(joinpath(@__DIR__, "userfeed_visib_tests.jl"))        # stage 2 commit 7b (REAL-1 R2 #13): the fed Visib verdict against an authored one — four witnesses at the public entry
     include(joinpath(@__DIR__, "origin_tests.jl"))                  # stage 2 commit 2 (R-V04B-35 (d)): the provenance field decided_by — recorded at the enqueue, carried through the apply, captured with the row
     include(joinpath(@__DIR__, "answer_tests.jl"))                  # stage 2 commit 4 (R-V04B-35 (c)): THE ONE ANSWER FUNCTION — seven witnesses over measured rows
     include(joinpath(@__DIR__, "scan_tests.jl"))                    # stage 2 commit 5 (his 9.A; the plan :57): the scan by Alterant and the access by Component — six witnesses
