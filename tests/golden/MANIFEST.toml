@@ -178,7 +178,15 @@ source = "captured"   # CONSTRUCTED regression fixture (no oracle file).
 input_path = "tests/golden/constructed/InFileFolder/heading_quoted_first.jl"
 input_sha256 = "ed5ddabaef2d94d3b332e4f458b4ec0de8fa17fc7bf1e608380b484fb27fb09e"
 annotations_golden_path = "tests/golden/corpus/annotations/heading_quoted_first.jl.ann.txt"
-annotations_golden_sha256 = "0459799d9f9b0f4ef40dbe640933923acb30c378a538a7f61d1f8e91b080dc21"
+annotations_golden_sha256 = "9e6000667ba04cca1d56b7e29b9666dc023b824bdb00aed51930d0aa259f6324"
+
+[[fixture.repin]]
+date = "2026-10-01"
+category = "engine-ruled"
+reason = "the heading re-key (R-V04B-50; stage 2's commit 1 of the v0.4 build): a whole-line metaLine's heading row is keyed to the metaBlock the metaLine forms, no longer to the metaLine's own Line — the three Line-keyed head_ rows of this fixture (head_1, head_2, head_4) become Block-keyed; the inline head_10 row unchanged; the content column unchanged (single-line metaBlocks)"
+old_sha256 = "0459799d9f9b0f4ef40dbe640933923acb30c378a538a7f61d1f8e91b080dc21"
+new_sha256 = "9e6000667ba04cca1d56b7e29b9666dc023b824bdb00aed51930d0aa259f6324"
+ratified_by = "the owner's typed re-mint order, OWNER-WORDS §269 (2026-10-01); R-V04B-50's effects; R-V04B-15 (a)"
 
 [[fixture]]
 id = "annotations@negation_discard_tworegion.jl"
