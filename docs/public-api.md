@@ -52,7 +52,7 @@ by `tests/unit/public_surface_tests.jl`) and of the refusal behavior the shipped
 | `goMeta` | function | the pipeline entry — `goMeta(bytes; config, registry) -> GoMetaDelivery` |
 | `readAltValuesEvals` | function | the reader over the evals rows — the evaluated Alterant values, per piece of the file (the production surface) |
 | `GoMetaConfig` | type | the v0 input options |
-| `GoMetaDelivery` | type | the delivered object of a run — its four public parts `altValues_evals`, `blsComponentTree`, `status`, `diagnostics` |
+| `GoMetaDelivery` | type | the delivered object of a run — its four public parts, in his pipeline order (R-V04B-89): `blsComponentTree`, `altValues_evals`, `status`, `diagnostics` |
 
 `names(GoMeta)` is exactly this set plus the §1.2 public names (40 since stage 2's commit 0 of the v0.4 build, R-V04B-58 — the parser module `BLS`; 39 since R-V04B-24 (2026-09-12): the
 ten of 0.3.x that remain — `outputs` REMOVED, §6 —, the six lifecycle names, the twenty record-vocabulary names — `Alterant` is the
@@ -373,12 +373,12 @@ for a file, as in the README quickstart.)
 
 Pure, deterministic, **TOTAL over the CONFIG-TIME catalogued surface** (an invalid `config` never
 throws uncaught; absorb/apply-plane catalogued failures can still throw at v0 — the §3
-partition). `GoMetaDelivery` carries the run's FOUR public parts, read by name (R-V04B-28/29/30):
-`altValues_evals::EvalStore` (the data container of the evaluated values — the reader over it
-`readAltValuesEvals`, §2 below) · `blsComponentTree::BLS.ParseState` (the BLS Component tree the run was
+partition). `GoMetaDelivery` carries the run's FOUR public parts, read by name (R-V04B-28/29/30), in his pipeline order (R-V04B-89):
+`blsComponentTree::BLS.ParseState` (the BLS Component tree the run was
 evaluated over, provided by BLS itself; it reaches an Extension as the part `blsComponentTree`, not through any function of the
 GoMeta Engine; an Extension travels it with BLS's own public functions; MUTABLE — the run wrote into it, and every reader of one delivery shares the one
-object) · `status::ProcessStatus` · `diagnostics::Vector{Diagnostic}` (the invariant is **non-OK ⇒ non-empty
+object) · `altValues_evals::EvalStore` (the data container of the evaluated values — the reader over it
+`readAltValuesEvals`, §2 below) · `status::ProcessStatus` · `diagnostics::Vector{Diagnostic}` (the invariant is **non-OK ⇒ non-empty
 diagnostics**). Nothing internal travels: the per-call working state never leaves the core. (The (tree,
 render) pair is the development tool's `Main.BasicRenderer.outputs(result)`, loaded through
 `devtools/load_basic_renderer.jl` — not an Engine surface.) No filesystem / clock / environment read. **These three guarantees —
@@ -950,3 +950,4 @@ non-silent record under R-V04B-61; the letter of R-V04B-24 (P) does not govern u
 - **`GoMeta.BLS.ComponentSettribute` — ADDED (public, not exported) at 0.4.0 with the door** — ADAPTED — the legacy named-element type declared public as it is (`keys(ComponentSettribute)` — the print tools); one register row (the plan v8 :35; R-V04B-58).
 - **`GoMeta.BLS.CmpntNamedInt` — ADDED (public, not exported) at 0.4.0 with the door** — ADAPTED — the legacy named-element type declared public as it is (`keys(CmpntNamedInt)` — the print tools); one register row (the plan v8 :35; R-V04B-58).
 - **`EvalRecord.decided_by` (field) — ADDED to the public record type at 0.4.0** (stage 2's commit 2 of the v0.4 build; R-V04B-35 (b) "ONE provenance field on the public record type `EvalRecord` — one register row", (d) "the provenance RECORDED where it is known — an origin per queued action at the enqueue, carried through the apply and captured with the record; the never-enqueued :localOnly Heading's at the flush — so that own or indirect is MEASURED, never inferred from a row's presence"); the field `decided_by::Vector{Vector{UInt8}}` — the `key_bytes` handles of the statements that produced the row, in application order (the stating Component's handle: the metaBlock a whole-line metaLine forms, the Segment of an inline one — R-V04B-50; the minted user-context handle on the userMH feed); the delivered ROWS of `readAltValuesEvals` unchanged (R-V04B-35 (a) — the four-tuple, the sort, the count); nothing removed; a 0.3.x or stage-1 caller constructing `EvalRecord` positionally with five arguments sees a `MethodError` (no constructor is public; none exists outside `src/`); the same-commit triple (the type `src/result.jl`, this document's §1.2, the witness `tests/unit/origin_tests.jl` — the surface oracle pins names, not fields); the name the authored set's word (his confirmed scenarios' `decided_by`), the session's default under R-V04B-40 (2), his at stage 2's review. Minted 2026-09-17 (R-V04B-35); landed on the branch `cc/v04-delivery` (stage 2, commit 2).
+- **`GoMetaDelivery` (type) — RE-ORDERED at 0.4.0: the field order `blsComponentTree`, `altValues_evals`, `status`, `diagnostics`** (stage 2's commit 2b of the v0.4 build; the owner's word of 2026-10-01 on row 44 of stage 1's review agenda — R-V04B-89 "(b)": his pipeline order, §242 / R-V04B-71, the BLS Component tree first); ground: the parts are read BY NAME (R-V04B-29) — a reader by name sees no change; what changes: the struct's field order (`fieldnames`), the positional constructor's argument order (the two constructor sites in `src/GoMeta.jl`; none outside `src/`) and the one `Base.show` line (now in the field order); nothing removed; the same-commit triple (the type `src/state.jl`, this document's §1.1 table and §2, the surface oracle unchanged — it pins names; the `fieldnames` pin is the agenda's row 45 (a), on his word). Minted 2026-10-01 (R-V04B-89); landed on the branch `cc/v04-delivery` (stage 2, commit 2b).

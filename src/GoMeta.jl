@@ -257,7 +257,7 @@ PURPOSE: ONE fail-closed outcome for every entry refusal — typed diagnostics, 
                                         registry::AlterantRegistry, config_diags::Vector{Diagnostic})
     st = init_state(parse_state, config, registry)
     append!(st.diagnostics, config_diags)
-    return GoMetaDelivery(st.evals, st.parse, PROCESS_ERROR, st.diagnostics)
+    return GoMetaDelivery(st.parse, st.evals, PROCESS_ERROR, st.diagnostics)   # the field order R-V04B-89
 end
 
 """
@@ -673,7 +673,7 @@ function run_absorb_apply!(parse_state::BLS.ParseState;
     ## (tree, render) pair (`Main.BasicRenderer.outputs`) is a pure function of the final `result.blsComponentTree`,
     ## which the in-`with` absorb-walk + apply has fully mutated.
     status = any(d -> d.severity === :error, st.diagnostics) ? PROCESS_ERROR : PROCESS_OK
-    return GoMetaDelivery(st.evals, st.parse, status, st.diagnostics)
+    return GoMetaDelivery(st.parse, st.evals, status, st.diagnostics)   # the field order R-V04B-89
 end
 
 """

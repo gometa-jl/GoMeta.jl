@@ -972,17 +972,18 @@ mutable struct ProcessState
 end
 
 """
-    GoMetaDelivery(altValues_evals, blsComponentTree, status, diagnostics)
+    GoMetaDelivery(blsComponentTree, altValues_evals, status, diagnostics)
 
 IS: the ONE object a GoMeta run hands back — the delivery of `goMeta(bytes; config, registry)` and of the
 seam `run_absorb_apply!` — with its FOUR public parts, read by name (the owner's rulings R-V04B-28 the content,
 R-V04B-29 the shape, R-V04B-30 the name, 2026-09-15/16; docs/public-api.md §1.1, §2):
 
-- `altValues_evals::EvalStore` — the data container of the evaluated Alterant values: one final evals row per
-  handle and attribute, as the run recorded them; the reader over it is `readAltValuesEvals`.
 - `blsComponentTree::BLS.ParseState` — the BLS Component tree the run was evaluated over, provided by BLS itself;
   it reaches an Extension as the part `blsComponentTree`, not through any function of the GoMeta Engine; an Extension
-  travels it with BLS's own public functions (R-V04B-29; R-V04B-45; the owner's sentence — R-V04B-75 (8)).
+  travels it with BLS's own public functions (R-V04B-29; R-V04B-45; the owner's sentence — R-V04B-75 (8)). FIRST in
+  the field order — his pipeline order (§242; R-V04B-71; his word on row 44, R-V04B-89).
+- `altValues_evals::EvalStore` — the data container of the evaluated Alterant values: one final evals row per
+  handle and attribute, as the run recorded them; the reader over it is `readAltValuesEvals`.
 - `status::ProcessStatus` — `PROCESS_OK` (no error-severity diagnostic) or `PROCESS_ERROR` (at least one;
   non-OK ⇒ non-empty diagnostics).
 - `diagnostics::Vector{Diagnostic}` — the run's typed diagnostics: every row the run recorded, `:error` and
@@ -990,8 +991,8 @@ R-V04B-29 the shape, R-V04B-30 the name, 2026-09-15/16; docs/public-api.md §1.1
   `PROCESS_OK` means no `:error` row).
 
 DOES: carries these four and NOTHING internal — the per-call working state (`ProcessState`) never leaves the
-core (R-V04B-28). The parts are plain fields: `d.altValues_evals`, `d.blsComponentTree`, `d.status`,
-`d.diagnostics`. The BLS Component tree is the SAME object the run wrote into (`init_state` keeps the caller's
+core (R-V04B-28). The parts are plain fields, in his pipeline order (R-V04B-89): `d.blsComponentTree`, `d.altValues_evals`,
+`d.status`, `d.diagnostics`. The BLS Component tree is the SAME object the run wrote into (`init_state` keeps the caller's
 parse state by identity; the apply writes its Visib settributes back into it), and it is MUTABLE: every reader
 of one delivery shares that one object, and a caller that injected its own parse state through the seam holds
 it too — a discipline, not a copy. On a fail-closed run (`PROCESS_ERROR` before any parse of that call — an
@@ -1014,21 +1015,21 @@ delivered and declared unstable (his order of 2026-09-15: "I HAD ENOUGH OF INTER
 
 PURPOSE: what every Extension, development tool and test consumes from a run — and the reference object of
 v0.4 for the GoMetaRetro line ("The final GoMeta v0.4 must produce a GoMetaDelivery which we can use as a
-reference" — his words, 2026-09-17). The one `Base.show` method prints one line — the status, the row count of
-`altValues_evals`, the source-line count of `blsComponentTree`, the diagnostics count — never the tree or the
+reference" — his words, 2026-09-17). The one `Base.show` method prints one line in the field order — the source-line count of
+`blsComponentTree`, the row count of `altValues_evals`, the status, the diagnostics count — never the tree or the
 rows.
 """
 struct GoMetaDelivery
+    blsComponentTree::BLS.ParseState     # his pipeline order (R-V04B-89, row 44): the tree first
     altValues_evals::EvalStore
-    blsComponentTree::BLS.ParseState
     status::ProcessStatus
     diagnostics::Vector{Diagnostic}
 end
 
 function Base.show(io::IO, d::GoMetaDelivery)
-    print(io, "GoMetaDelivery(", d.status,
+    print(io, "GoMetaDelivery(blsComponentTree: BLS.ParseState over ", length(d.blsComponentTree.collectedLines), " source lines",
           "; altValues_evals: ", length(d.altValues_evals.records), " evals rows",
-          "; blsComponentTree: BLS.ParseState over ", length(d.blsComponentTree.collectedLines), " source lines",
+          "; ", d.status,
           "; diagnostics: ", length(d.diagnostics), ")")
 end
 
