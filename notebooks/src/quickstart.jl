@@ -27,9 +27,16 @@ result.status == GoMeta.PROCESS_OK || error("processing failed")
 # ## The delivered object — the BLS Component tree
 # `blsComponentTree` is the BLS Component tree the run was evaluated over — provided by
 # BLS itself; it reaches an Extension as the part `blsComponentTree`, not through any
-# function of the GoMeta Engine; an Extension travels it with BLS's own public functions.
+# function of the GoMeta Engine; an Extension travels it with BLS's own public functions —
+# the door (`docs/public-api.md` §1.2): `children` walks down (the File's Blocks, a Block's
+# Lines, a Line's Segments), `kind` names a Component's flavor (:Meta / :Code / :Text — a
+# metaLine is a Line of flavor Meta), `content` gives the verbatim text of the piece.
 
-result.blsComponentTree;
+tree = result.blsComponentTree
+for block in GoMeta.BLS.children(tree), line in GoMeta.BLS.children(tree, block)
+    GoMeta.BLS.kind(line) === :Meta || continue
+    println(String(GoMeta.BLS.content(tree, line)))   # every metaLine of the example, from the tree and nothing else
+end
 
 # ## The delivered object — the evaluated Alterant values
 # `altValues_evals` is the part of the delivered object that carries the evaluated

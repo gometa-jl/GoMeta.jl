@@ -293,9 +293,8 @@ end
         # the row's handle is the METALINE's own occurrence handle, computed from the delivered tree
         # (`blsComponentTree`; the Engine's `occurrence_key` + `key_bytes`, the default namespace)
         hrow = only([h for (h, a, _, _) in GM.readAltValuesEvals(rl.altValues_evals) if startswith(String(a), "head")])
-        lv = rl.blsComponentTree.componentsPDict[GM.BLS.Line][1]
-        ml = only(lv[i] for i in eachindex(lv)
-                    if isassigned(lv, i) && GM.BLS.getElement(lv[i].cmpntNamedInt, :inputLineNum) == 1)
+        ml = only(l for b in GM.BLS.children(rl.blsComponentTree) for l in GM.BLS.children(rl.blsComponentTree, b)
+                    if GM.BLS.getElement(l, :inputLineNum) == 1)   # the Line at input line 1, through the door
         @test hrow == GM.key_bytes(GM.occurrence_key(rl.blsComponentTree, ml; namespace = :default))
         # SLOT-WIPE INDEPENDENCE: delivery happens at absorb, so a LATER same-depth
         # metaLine (which reuses/wipes the slot) cannot disturb an earlier heading's row

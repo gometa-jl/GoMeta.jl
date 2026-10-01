@@ -21,7 +21,7 @@
 # DOES: renders — from the BLS component data of ONE `goMeta(bytes)` result, and only
 #       as deep as the selected style/detail/filters ask —
 #       (canon R1 — never re-derived from raw text): the guarded engine-true Block
-#       census (`eachchildid` on the File root — the legacy `2:numChildren+1` census is
+#       census (the door's `children` of the File root — the legacy `2:numChildren+1` census is
 #       extension-unsafe), per-component named-int + settribute dumps, and the
 #       probe-proven cell_handle → Component resolution (design §1, 27/27) with the §6
 #       defensive contract (root-anchor + parent-link + grain↔leaf + namespace checks;
@@ -36,14 +36,19 @@
 #       which Component — including the metaSegment that caused it — in the terminal
 #       (colored) or as .html / .txt files.
 #
-# ── Internal-surface exemption (owner ruling D-6(a), 2026-08-20) ────────────────────────
-# These tools read `result.blsComponentTree` (componentsPDict, collectedLines, addedStrings)
-# and call the non-public `GoMeta.cell_content_bytes`, `GoMeta.BLS.getElement`,
-# `GoMeta.BLS.eachchildid`, `keys(GoMeta.BLS.CmpntNamedInt)`,
-# `keys(GoMeta.BLS.ComponentSettribute)` — parser names no document declares public
-# (stage 2's door is R-V04B-45's). That is authorized for THESE dev tools only; consumer code must not
-# copy the pattern (CONSUMER-GUIDE §2). `devtools_selfcheck()` is the drift alarm: run
-# it after every package-snapshot refresh — a broken internal surface fails LOUDLY.
+# ── The tree through THE DOOR (stage 2's commit 0; R-V04B-58, R-V04B-80) ─────────────────────
+# These tools read `result.blsComponentTree` through BLS's public functions and types ONLY —
+# `GoMeta.BLS.root` / `children` (the walk), `getElement` (every flag and position, by key, over a
+# Component), `content` (the verbatim bytes at a Component's grain), `kind` (the flavor word),
+# `flavor` (the record; five fields promised), `endsWithNewline`, `isHorizontalSpace` (the lexer's
+# delimiter), the Component types and `keys` of the two named-element types (docs/public-api.md §1.2) —
+# and no field of a BLS object. TWO RESIDUE reads outside the door remain, marked at their sites and
+# asked for his word: the whole-document text of the File (`collectedLines` joined — `content` has no
+# File arm, a question its docstring names) and the source-line COUNT the slide classifier sizes its
+# output by (`length(collectedLines)`). The former exemption D-6(a) of 2026-08-20 covers those two
+# residues alone now. Consumer code — an Extension — reads the tree the same way, through the door
+# (docs/public-api.md §1.2; R-V04B-45).
+# `devtools_selfcheck()` is the drift alarm: run it after every change under `src/` — a broken surface fails LOUDLY.
 #
 # ── Use ─────────────────────────────────────────────────────────────────────────────────
 #   julia> include("run_play.jl")           # or directly: include("devtools.jl")
@@ -231,26 +236,23 @@ end
 ##  §B — guarded tree access
 #########################################################################################
 
-## Fail-loud fetch for engine-produced child ids (owner ruling D-15): the insert store
-## is DORMANT at v0 — a negative id means it woke up, and silent mis-indexing was the
-## legacy printer's sign-blind defect. Never reproduces it.
-_dt_fetch1(vec, id) = id > 0 ? vec[id] :
-    error("devtools: inserted (negative-id) child $id — the insert store is not supported by these dev tools yet")
+## The door's walk (`BLS.children`) resolves the insert store's negative ids itself (owner ruling D-15's
+## concern — the legacy printer's sign-blind mis-indexing — cannot recur: no id is indexed here).
+## The Components of one grain in source order; `_dt_id` the Component's own id (the printed `#N`).
+_dt_children(doc, c) = _DT_BLS.children(doc.ps, c)
+_dt_id(c) = Int(_dt_ni(c, :idComponent))
 
-## IS: the checked fetch for USER-SUPPLIED Block ids (`blocks=` requests). DOES:
-## enforces membership in the File root's logical Block census (which also covers
-## dummy-at-1, bounds, isassigned and self-id — census ids come from the engine walk).
-## Returns `(valid_ids, invalid_ids)`. PURPOSE: §6 — invalid requests are REPORTED,
-## never silently rendered or crashed on.
-function _dt_check_blocks(requested, census_ids::Vector{Int}, blockVec)
-    census = Set(census_ids)
-    valid = Int[]; invalid = Any[]
+## IS: the check of USER-SUPPLIED Block ids (`blocks=` requests). DOES: enforces membership in the
+## File root's logical Block census (the ids of the Blocks the door's walk yields — the walk covers
+## dummy-at-1, bounds and self-id). Returns `(valid_blocks, invalid_ids)` — the valid ids as their
+## Block Components, in the request's order. PURPOSE: §6 — invalid requests are REPORTED, never
+## silently rendered or crashed on.
+function _dt_check_blocks(requested, blocks)
+    byid = Dict(_dt_id(b) => b for b in blocks)
+    valid = Any[]; invalid = Any[]
     for id in requested
-        if !(id isa Bool) && id isa Integer && 1 <= id <= typemax(Int) &&
-           Int(id) in census &&
-           checkbounds(Bool, blockVec, Int(id)) && isassigned(blockVec, Int(id)) &&
-           Int(_dt_ni(blockVec[Int(id)], :idComponent)) == Int(id)
-            push!(valid, Int(id))
+        if !(id isa Bool) && id isa Integer && 1 <= id <= typemax(Int) && haskey(byid, Int(id))
+            push!(valid, byid[Int(id)])
         else
             push!(invalid, id)
         end
@@ -260,17 +262,17 @@ end
 
 """
 IS: the per-call render context — one `goMeta` result opened for printing.
-DOES: carries the result, its ParseState, the componentsPDict, the ENGINE-TRUE Block
-census (`eachchildid` on the File root: the basic renderer's `render_bytes` form, devtools/basic_renderer.jl — the legacy
-`2:numChildren+1` census breaks on extension chains), and the display name.
+DOES: carries the result, its delivered tree (`blsComponentTree`), the ENGINE-TRUE Block census as
+the Block Components the door's walk yields (`BLS.children` of the tree: the basic renderer's form,
+devtools/basic_renderer.jl — the legacy `2:numChildren+1` census breaks on extension chains), and the
+display name.
 GUARDED: a damaged/absent File root yields an EMPTY census (`ok=false`) instead of a
 throw — status/diagnostics always print first (§6 status-first law).
 """
 struct DTDoc
     r::Any
     ps::Any
-    pd::Any
-    blockIds::Vector{Int}
+    blocks::Vector{Any}
     name::String
     ok::Bool
     ns::String      # THIS delivery's occurrence-key namespace, read off its own rows (the
@@ -297,33 +299,36 @@ function _dt_ns_of(result)
 end
 
 function _dt_doc(result; name::AbstractString = "")
-    # EVERY internal read guarded (§6 status-first: the caller prints status BEFORE
-    # this runs, and a drifted/partial delivery must yield ok=false, not a throw)
-    ps, pd, blockIds, ok, ns = try
+    # EVERY read guarded (§6 status-first: the caller prints status BEFORE this runs, and a
+    # drifted/partial delivery must yield ok=false, not a throw). The door's `root` and `children`
+    # throw on a damaged tree (BoundsError / UndefRefError) — caught here into ok=false.
+    ps, blocks, ok, ns = try
         ps = result.blsComponentTree
-        pd = ps.componentsPDict
         ns = _dt_ns_of(result)
-        fvec = pd[_DT_BLS.File][1]
-        (checkbounds(Bool, fvec, 1) && isassigned(fvec, 1)) ?
-            (ps, pd, collect(_DT_BLS.eachchildid(fvec[1], fvec)), true, ns) :
-            (ps, pd, Int[], false, ns)
+        _DT_BLS.root(ps)
+        (ps, Any[b for b in _DT_BLS.children(ps)], true, ns)
     catch
-        (nothing, nothing, Int[], false, "?")
+        (nothing, Any[], false, "?")
     end
-    DTDoc(result, ps, pd, blockIds, String(name), ok, ns)
+    DTDoc(result, ps, blocks, String(name), ok, ns)
 end
 
-_dt_ni(c, k)    = _DT_BLS.getElement(c.cmpntNamedInt, k)
+_dt_ni(c, k)    = _DT_BLS.getElement(c, k)      # a named integer or a flag, by key, through the door
 _dt_grain(c)    = c isa _DT_BLS.Block ? "Block" : c isa _DT_BLS.Line ? "Line" :
                   c isa _DT_BLS.Segment ? "Segment" : "File"
 _dt_gcolor(c)   = c isa _DT_BLS.Block ? _DT_C_BLOCK : c isa _DT_BLS.Line ? _DT_C_LINE : _DT_C_SEG
-_dt_flavor(c)   = string(nameof(c.contentType))   # simple name = the in-module legacy display
+## The flavor word through the door (`kind`: :Meta / :Code / :Text — the same bytes the former
+## `nameof(c.contentType)` gave). A File has no flavor (`kind` answers `nothing`; the field carried
+## the store's constructor default "Meta" before) — the word "File" is printed in that column.
+_dt_flavor(c)   = (k = _DT_BLS.kind(c); k === nothing ? "File" : string(k))
 _dt_fcolor(f)   = f == "Meta" ? _DT_C_META_F : f == "Code" ? _DT_C_CODE_F : _DT_C_TEXT_F
-_dt_trueflags(c) = [k for k in keys(_DT_BLS.ComponentSettribute) if _DT_BLS.getElement(c.componentSettribute, k)]
-## File arm: cell_content_bytes has NO File branch (returns empty) — the whole-document
-## content is the joined collectedLines (§6 layout-totality clause).
+_dt_trueflags(c) = [k for k in keys(_DT_BLS.ComponentSettribute) if _DT_BLS.getElement(c, k)]
+## File arm: the door's `content` has NO File arm (a question its docstring names for his word) — the
+## whole-document content is the joined collectedLines (§6 layout-totality clause). RESIDUE outside the
+## door (stage 2's commit 0; his word asked). The other grains: `BLS.content` (the former Engine call
+## `cell_content_bytes`, byte-equal by construction of the copy).
 _dt_content(doc, c) = c isa _DT_BLS.File ? join(doc.ps.collectedLines, '\n') :
-                      String(copy(GoMeta.cell_content_bytes(doc.ps, c)))
+                      String(_DT_BLS.content(doc.ps, c))
 
 ## Input-line span label: Blocks span `startMainStr:stopMainStr` LINE numbers
 ## (probe-proven semantics); Lines/Segments locate by :inputLineNum.
@@ -344,19 +349,15 @@ _dt_spanrange(c) = c isa _DT_BLS.Block ?
 _dt_intersects(c, r) = r === nothing || c isa _DT_BLS.File ||
     !isempty(intersect(_dt_spanrange(c), r))
 
-## Guarded census walk (own loops through _dt_fetch1 — `visit_tree`'s raw fetches are
-## unguarded engine code).
+## Guarded census walk through the door (`children` at each grain).
 function _dt_census(doc)
-    doc.ok || return (0, 0, 0)     # damaged tree: never index the stores (§6)
-    blockVec, lineVec = doc.pd[_DT_BLS.Block][1], doc.pd[_DT_BLS.Line][1]
+    doc.ok || return (0, 0, 0)     # damaged tree: never walk it (§6)
     nl = 0; ns = 0
-    for bid in doc.blockIds, lid in _DT_BLS.eachchildid(_dt_fetch1(blockVec, bid), blockVec)
+    for b in doc.blocks, l in _dt_children(doc, b)
         nl += 1
-        for _ in _DT_BLS.eachchildid(_dt_fetch1(lineVec, lid), lineVec)
-            ns += 1
-        end
+        ns += length(_dt_children(doc, l))
     end
-    (length(doc.blockIds), nl, ns)
+    (length(doc.blocks), nl, ns)
 end
 
 _dt_plural(n, w) = "$n $w" * (n == 1 ? "" : "s")
@@ -428,51 +429,36 @@ const _DT_LADDER = (_DT_BLS.File, _DT_BLS.Block, _DT_BLS.Line, _DT_BLS.Segment)
 _dt_graintype(g) = g == 0x01 ? _DT_BLS.Segment : g == 0x0a ? _DT_BLS.Line :
                    g == 0x46 ? _DT_BLS.Block : g == 0xd2 ? _DT_BLS.File : nothing
 
-## Follow the `idExtended` chain from a PHYSICAL component id to its LOGICAL chain-root
-## ordinal (occurrence keys normalize extension components to that root, so a child's
-## raw `idParent` may name a physical extension component while the handle path names
-## the root — impl CrossReview T2-L1 #1). Bounded + cycle-guarded; identity when no
-## extension exists (idExtended == 0 everywhere at play sizes).
-function _dt_chainroot(vec, id::Int)
-    hops = 0
-    while true
-        (checkbounds(Bool, vec, id) && isassigned(vec, id)) || return id
-        ext = Int(_DT_BLS.getElement(vec[id].cmpntNamedInt, :idExtended))
-        (ext == 0 || ext == id) && return id
-        (hops += 1) > length(vec) && return 0      # cap overrun: reject, never guess
-        id = ext
-    end
-end
-
-## IS: the defensive path resolver. DOES (§6 contract, each violation ⇒ `nothing` =
-## unanchored, NEVER a wrong anchor): ladder-length gate · `path[1] == (direct, 1)` =
-## the File root anchor · per step: direct-store byte only (0x00 TRUNCATED / 0x02
-## insert / unknown reject — the v0 engine cannot mint 0x02: occurrence keys read the
-## POSITIVE idComponent, the engine-side identity gap of ledger motion (v)) · guarded
-## store access (a damaged componentsPDict yields unanchored, never a KeyError) ·
-## bounds · `isassigned` (stores are undef-oversized) · self-id integrity ·
-## PARENT-LINK through the `idExtended` chain root (the physical parent may be an
-## extension component; the handle path names the LOGICAL root).
+## IS: the defensive path resolver, through the door. DOES (§6 contract, each violation ⇒ `nothing` =
+## unanchored, NEVER a wrong anchor): ladder-length gate · `path[1] == (direct, 1)` = the File root
+## anchor · per step: direct-store byte only (0x00 TRUNCATED / 0x02 insert / unknown reject — the v0
+## engine cannot mint 0x02: occurrence keys read the POSITIVE idComponent, the engine-side identity
+## gap of ledger motion (v)) · the step's ordinal must name a LOGICAL child of the previous step's
+## Component: the door's `children` walks each Component's extension chain and yields the chain's
+## children flattened (occurrence keys normalize extension components to their chain root — impl
+## CrossReview T2-L1 #1), so a child found among `children(parent)` has that parent as its logical
+## parent, and a chain root alone carries `idExtended == 0` (handles name chain ROOTS only) · the
+## grain of the found Component is the ladder's. A damaged tree throws out of the door's walk and
+## resolves to unanchored, never a wrong anchor.
 function _dt_resolve(doc, steps)
     (isempty(steps) || length(steps) > length(_DT_LADDER)) && return nothing
     steps[1] == (0x01, UInt32(1)) || return nothing
-    doc.pd === nothing && return nothing
+    doc.ps === nothing && return nothing
     try
-        comp = nothing; previd = 0
+        comp = nothing
         for (j, (store, ord)) in enumerate(steps)
             store == 0x01 || return nothing
-            haskey(doc.pd, _DT_LADDER[j]) || return nothing
-            vec = doc.pd[_DT_LADDER[j]][1]
-            checkbounds(Bool, vec, Int(ord)) || return nothing
-            isassigned(vec, Int(ord)) || return nothing
-            comp = vec[Int(ord)]
-            Int(_dt_ni(comp, :idComponent)) == Int(ord) || return nothing
-            Int(_dt_ni(comp, :idExtended)) == 0 || return nothing   # handles name chain ROOTS only
-            if j > 1
-                pvec = doc.pd[_DT_LADDER[j-1]][1]
-                _dt_chainroot(pvec, Int(_dt_ni(comp, :idParent))) == previd || return nothing
+            if j == 1
+                comp = _DT_BLS.root(doc.ps)
+                _dt_id(comp) == Int(ord) || return nothing
+            else
+                kids = _dt_children(doc, comp)
+                k = findfirst(c -> _dt_id(c) == Int(ord), kids)
+                k === nothing && return nothing
+                comp = kids[k]
             end
-            previd = Int(ord)
+            comp isa _DT_LADDER[j] || return nothing
+            Int(_dt_ni(comp, :idExtended)) == 0 || return nothing   # handles name chain ROOTS only
         end
         return comp
     catch e   # damaged parse surfaces resolve to unanchored, never crash mid-diagnosis
@@ -577,7 +563,7 @@ function _dt_eval_rows(doc)
         end
         f = comp === nothing ? :na :
             !haskey(fp, h) ? :missing :
-            GoMeta.cell_content_bytes(doc.ps, comp) == fp[h] ? :match : :mismatch
+            _DT_BLS.content(doc.ps, comp) == fp[h] ? :match : :mismatch   # the door's bytes against the Engine's fingerprint
         push!(rows, DTEvalRow(attr, v, pol, comp, oc, orig, h, d.grain, d.namespace,
                               d.path, d.origin, f, why))
     end
@@ -767,9 +753,9 @@ function print_BLS_Component_Tree(io::IO, result::GoMeta.GoMetaDelivery;
     _dt_status_result(io, result)          # status FIRST — before ANY parse-tree access
     doc = _dt_doc(result; name = _name)
     _dt_status_tree(io, doc)
-    sel, invalid = blocks === :all ? (doc.blockIds, Any[]) :
-                   (doc.ok ? _dt_check_blocks(blocks, doc.blockIds, doc.pd[_DT_BLS.Block][1]) :
-                             (Int[], Any[]))
+    sel, invalid = blocks === :all ? (doc.blocks, Any[]) :
+                   (doc.ok ? _dt_check_blocks(blocks, doc.blocks) :
+                             (Any[], Any[]))
     for id in invalid
         _dt_sty(io, "requested Block id $(repr(id)) is not a valid File-census Block — skipped\n",
                 color = _DT_C_BAD, bold = true)
@@ -780,7 +766,7 @@ function print_BLS_Component_Tree(io::IO, result::GoMeta.GoMetaDelivery;
         _dt_sty(io, "File  ", bold = true); _dt_sty(io, doc.name, bold = true)
         _dt_sty(io, "  —  $nb Blocks · $nl Lines · $ns2 Segments\n", color = _DT_C_CHROME)
         _dt_sty(io, !doc.ok ? "(no Blocks — no parse tree)\n" :
-                    isempty(doc.blockIds) ? "(no Blocks — empty document)\n" :
+                    isempty(doc.blocks) ? "(no Blocks — empty document)\n" :
                     "(no Blocks — nothing matched the blocks= request)\n", color = _DT_C_CHROME)
         return nothing
     end
@@ -820,51 +806,46 @@ function _dt_t1_mix(io, doc, sel, lines_r, grain)
     _dt_sty(io, "File  ", bold = true); _dt_sty(io, doc.name, bold = true)
     _dt_sty(io, "  —  $nb Blocks · $nl Lines · $ns Segments\n", color = _DT_C_CHROME)
     isempty(sel) && (_dt_sty(io, "(no Blocks)\n", color = _DT_C_CHROME); return)
-    blockVec, lineVec, segVec = doc.pd[_DT_BLS.Block][1], doc.pd[_DT_BLS.Line][1], doc.pd[_DT_BLS.Segment][1]
     dumplines(c, indent) = _dt_dumplines(io, c, indent)
-    row(c, id, guide, gcol, name; content = nothing) = begin
+    row(c, guide, gcol, name; content = nothing) = begin
         _dt_sty(io, guide, color = _DT_C_CHROME)
-        _dt_sty(io, _dt_tpad("$name #$id", 12), color = gcol, bold = (name == "Block"))
+        _dt_sty(io, _dt_tpad("$name #$(_dt_id(c))", 12), color = gcol, bold = (name == "Block"))
         _dt_sty(io, _dt_tpad(_dt_flavor(c), 5), color = _dt_fcolor(_dt_flavor(c)))
         _dt_sty(io, "  " * _dt_tpad(_dt_span(c), 8), color = _DT_C_CHROME)
         content !== nothing && _dt_sty(io, " \"" * _dt_excerpt(content, 44) * "\"")
         println(io)
     end
-    shown = [b for b in sel if _dt_intersects(_dt_fetch1(blockVec, b), lines_r)]
+    shown = [b for b in sel if _dt_intersects(b, lines_r)]
     isempty(shown) &&
         (_dt_sty(io, "(no Blocks matched the lines= range)\n", color = _DT_C_CHROME); return)
-    any(_dt_ni(_dt_fetch1(blockVec, b), :idExtension) != 0 for b in shown) &&
+    any(_dt_ni(b, :idExtension) != 0 for b in shown) &&
         _dt_sty(io, "… extension chain present — physical extension components are " *
                 "flattened by the logical walk (see the Int64 idExtension/idExtended values)\n",
                 color = _DT_C_WARN, bold = true)
-    for (bi, blockId) in enumerate(shown)
+    for (bi, b) in enumerate(shown)
         bi > 1 && println(io)                        # R-DEV-1 (ii): blank line between Blocks
-        b = _dt_fetch1(blockVec, blockId)
         lastb = bi == length(shown)
-        row(b, blockId, lastb ? "└─ " : "├─ ", _DT_C_BLOCK, "Block")
+        row(b, lastb ? "└─ " : "├─ ", _DT_C_BLOCK, "Block")
         gB = lastb ? "   " : "│  "
-        lineIds = grain === :block ? Int[] :
-                  [l for l in _DT_BLS.eachchildid(b, blockVec)
-                   if _dt_intersects(_dt_fetch1(lineVec, l), lines_r)]
+        lines = grain === :block ? Any[] :
+                [l for l in _dt_children(doc, b) if _dt_intersects(l, lines_r)]
         ## RAILS (owner fix-order #2 Part B, 2026-08-21): an attribute row of a
         ## component with a printed child carries │ at the first child's connector
         ## column — the parent→first-child rail is unbroken; childless stays blank
-        dumplines(b, gB * (isempty(lineIds) ? "   " : "│  "))
+        dumplines(b, gB * (isempty(lines) ? "   " : "│  "))
         grain === :block && continue
-        for (li, lineId) in enumerate(lineIds)
-            l = _dt_fetch1(lineVec, lineId)
-            lastl = li == length(lineIds)
-            segIds = grain === :line ? Int[] : collect(_DT_BLS.eachchildid(l, lineVec))
+        for (li, l) in enumerate(lines)
+            lastl = li == length(lines)
+            segs = grain === :line ? Any[] : _dt_children(doc, l)
             # R-DEV-1 (iii): print the string once, at the DEEPEST DISPLAYED owner — the
             # Line shows it whenever its Segments are not displayed (incl. grain=:line)
-            row(l, lineId, gB * (lastl ? "└─ " : "├─ "), _DT_C_LINE, "Line";
-                content = isempty(segIds) ? _dt_content(doc, l) : nothing)
+            row(l, gB * (lastl ? "└─ " : "├─ "), _DT_C_LINE, "Line";
+                content = isempty(segs) ? _dt_content(doc, l) : nothing)
             gL = gB * (lastl ? "   " : "│  ")
-            dumplines(l, gL * (isempty(segIds) ? "   " : "│  "))   # rails (Part B)
-            for (si, segId) in enumerate(segIds)
-                s = _dt_fetch1(segVec, segId)
-                lasts = si == length(segIds)
-                row(s, segId, gL * (lasts ? "└─ " : "├─ "), _DT_C_SEG, "Segment";
+            dumplines(l, gL * (isempty(segs) ? "   " : "│  "))   # rails (Part B)
+            for (si, s) in enumerate(segs)
+                lasts = si == length(segs)
+                row(s, gL * (lasts ? "└─ " : "├─ "), _DT_C_SEG, "Segment";
                     content = _dt_content(doc, s))
                 dumplines(s, gL * (lasts ? "   " : "│  ") * "   ")   # leaf: blank rail column
             end
@@ -879,46 +860,41 @@ function _dt_t1_tree(io, doc, sel, lines_r, grain; dumps::Bool = false)
     _dt_sty(io, "File  ", bold = true); _dt_sty(io, doc.name, bold = true)
     _dt_sty(io, "  —  $nb Blocks · $nl Lines · $ns Segments\n", color = _DT_C_CHROME)
     isempty(sel) && (_dt_sty(io, "(no Blocks)\n", color = _DT_C_CHROME); return)
-    blockVec, lineVec = doc.pd[_DT_BLS.Block][1], doc.pd[_DT_BLS.Line][1]
-    row(c, id, guide, gcol, name; content = nothing) = begin
+    row(c, guide, gcol, name; content = nothing) = begin
         _dt_sty(io, guide, color = _DT_C_CHROME)
-        _dt_sty(io, _dt_tpad("$name #$id", 12), color = gcol, bold = (name == "Block"))
+        _dt_sty(io, _dt_tpad("$name #$(_dt_id(c))", 12), color = gcol, bold = (name == "Block"))
         _dt_sty(io, _dt_tpad(_dt_flavor(c), 5), color = _dt_fcolor(_dt_flavor(c)))
         _dt_sty(io, "  " * _dt_tpad(_dt_span(c), 8), color = _DT_C_CHROME)
         content !== nothing && _dt_sty(io, " \"" * _dt_excerpt(content, 40) * "\"")
         _dt_sty(io, "  {" * join(string.(_dt_trueflags(c)), " ") * "}", color = _DT_C_CHROME)
         println(io)
     end
-    shown = [b for b in sel if _dt_intersects(_dt_fetch1(blockVec, b), lines_r)]
+    shown = [b for b in sel if _dt_intersects(b, lines_r)]
     isempty(shown) &&
         (_dt_sty(io, "(no Blocks matched the lines= range)\n", color = _DT_C_CHROME); return)
-    for (bi, blockId) in enumerate(shown)
-        b = _dt_fetch1(blockVec, blockId)
+    for (bi, b) in enumerate(shown)
         lastb = bi == length(shown)
-        row(b, blockId, lastb ? "└─ " : "├─ ", _DT_C_BLOCK, "Block")
-        lineIds = grain === :block ? Int[] :
-                  [l for l in _DT_BLS.eachchildid(b, blockVec)
-                   if _dt_intersects(_dt_fetch1(lineVec, l), lines_r)]
+        row(b, lastb ? "└─ " : "├─ ", _DT_C_BLOCK, "Block")
+        lines = grain === :block ? Any[] :
+                [l for l in _dt_children(doc, b) if _dt_intersects(l, lines_r)]
         ## rails (owner fix-order #2 Part B): │ at the first child's connector column
         dumps && _dt_dumplines(io, b, (lastb ? "   " : "│  ") *
-                                      (isempty(lineIds) ? "   " : "│  "))
+                                      (isempty(lines) ? "   " : "│  "))
         grain === :block && continue
-        for (li, lineId) in enumerate(lineIds)
-            l = _dt_fetch1(lineVec, lineId)
-            lastl = li == length(lineIds)
+        for (li, l) in enumerate(lines)
+            lastl = li == length(lines)
             g1 = lastb ? "   " : "│  "
-            row(l, lineId, g1 * (lastl ? "└─ " : "├─ "), _DT_C_LINE, "Line";
+            row(l, g1 * (lastl ? "└─ " : "├─ "), _DT_C_LINE, "Line";
                 content = _dt_content(doc, l))
-            segIds = grain === :line ? Int[] : collect(_DT_BLS.eachchildid(l, lineVec))
+            segs = grain === :line ? Any[] : _dt_children(doc, l)
             dumps && _dt_dumplines(io, l, g1 * (lastl ? "   " : "│  ") *
-                                          (isempty(segIds) ? "   " : "│  "))   # rails
+                                          (isempty(segs) ? "   " : "│  "))   # rails
             grain === :line && continue
-            for (si, segId) in enumerate(segIds)
-                s = _dt_fetch1(doc.pd[_DT_BLS.Segment][1], segId)
+            for (si, s) in enumerate(segs)
                 g2 = g1 * (lastl ? "   " : "│  ")
-                row(s, segId, g2 * (si == length(segIds) ? "└─ " : "├─ "), _DT_C_SEG, "Segment";
+                row(s, g2 * (si == length(segs) ? "└─ " : "├─ "), _DT_C_SEG, "Segment";
                     content = _dt_content(doc, s))
-                dumps && _dt_dumplines(io, s, g2 * (si == length(segIds) ? "   " : "│  ") * "   ")
+                dumps && _dt_dumplines(io, s, g2 * (si == length(segs) ? "   " : "│  ") * "   ")
             end
         end
     end
@@ -929,34 +905,33 @@ function _dt_t1_legacy(io, doc, sel, lines_r, grain)
     H(n) = repeat('#', n)
     _dt_sty(io, "\n$(H(90))\n$(H(90))\n###### printComponentStates(...):\n", bold = true)
     isempty(sel) && _dt_sty(io, "\n(no Blocks)", color = _DT_C_CHROME)   # empty-file law (§3)
-    blockVec, lineVec, segVec = doc.pd[_DT_BLS.Block][1], doc.pd[_DT_BLS.Line][1], doc.pd[_DT_BLS.Segment][1]
-    dump_named(x, ::Type{T}, boolstore) where T = begin
+    dump_named(c, ::Type{T}, boolstore) where T = begin
         _dt_sty(io, "\n###### Type of NamedElement: $(nameof(T))", color = _DT_C_LEGACY_DUMP, bold = true)
         parts = String[]
         for k in keys(T)
-            v = _DT_BLS.getElement(x, k)
+            v = _DT_BLS.getElement(c, k)   # by key, through the door (the key names the container)
             boolstore ? (v && push!(parts, "$k=>1")) : push!(parts, "$k=>$v")
         end
         _dt_sty(io, "\n##" * (isempty(parts) ? "" : " " * join(parts, ", ")), color = _DT_C_LEGACY_DUMP)
     end
-    dumps(c) = (dump_named(c.cmpntNamedInt, _DT_BLS.CmpntNamedInt, false);
-                dump_named(c.componentSettribute, _DT_BLS.ComponentSettribute, true))
-    for blockId in sel
-        b = _dt_fetch1(blockVec, blockId)
+    dumps(c) = (dump_named(c, _DT_BLS.CmpntNamedInt, false);
+                dump_named(c, _DT_BLS.ComponentSettribute, true))
+    for b in sel
         _dt_intersects(b, lines_r) || continue
+        blockId = _dt_id(b)
         _dt_sty(io, "\n\n$(H(90))\n$(H(6)) :inputLineNum = $(_dt_ni(b,:inputLineNum)) $(H(35)) blockId = $blockId $(H(16))\n$(H(35)) $(_dt_flavor(b)) $(H(33))",
                 color = _DT_C_BLOCK, bold = true)
         dumps(b)
         grain === :block && continue
-        for lineId in _DT_BLS.eachchildid(b, blockVec)
-            l = _dt_fetch1(lineVec, lineId)
+        for l in _dt_children(doc, b)
             _dt_intersects(l, lines_r) || continue
+            lineId = _dt_id(l)
             _dt_sty(io, "\n\n$(H(6)) :inputLineNum = $(_dt_ni(l,:inputLineNum)) $(H(35)) lineId = $lineId $(H(16))\n$(H(35)) $(_dt_flavor(l)) $(H(33))",
                     color = _DT_C_LINE, bold = true)
             dumps(l)
             grain === :line && continue
-            for segId in _DT_BLS.eachchildid(l, lineVec)
-                s = _dt_fetch1(segVec, segId)
+            for s in _dt_children(doc, l)
+                segId = _dt_id(s)
                 _dt_sty(io, "\n\n$(H(6)) :inputLineNum = $(_dt_ni(s,:inputLineNum)) $(H(9)) $(_dt_flavor(s)) $(H(9)) segmentId = $segId $(H(10))",
                         color = _DT_C_SEG, bold = true)
                 dumps(s)
@@ -970,7 +945,6 @@ end
 function _dt_t1_banner(io, doc, sel, lines_r, grain)
     H(n) = repeat('#', n)
     isempty(sel) && (_dt_sty(io, "(no Blocks)\n", color = _DT_C_CHROME); return)
-    blockVec, lineVec = doc.pd[_DT_BLS.Block][1], doc.pd[_DT_BLS.Line][1]
     compact(c; indent = "") = begin
         _dt_sty(io, indent * "ints  ", color = _DT_C_CHROME)
         _dt_sty(io, join(["$k=$(_dt_ni(c,k))" for k in keys(_DT_BLS.CmpntNamedInt)], " "), color = _DT_C_LEGACY_DUMP)
@@ -979,24 +953,21 @@ function _dt_t1_banner(io, doc, sel, lines_r, grain)
         _dt_sty(io, join(string.(_dt_trueflags(c)), " "), color = _DT_C_LEGACY_DUMP)
         println(io)
     end
-    for blockId in sel
-        b = _dt_fetch1(blockVec, blockId)
+    for b in sel
         _dt_intersects(b, lines_r) || continue
         _dt_sty(io, "\n$(H(78))\n", color = _DT_C_BLOCK, bold = true)
-        _dt_sty(io, "###### Block #$blockId  $(_dt_flavor(b))  $(_dt_span(b))\n", color = _DT_C_BLOCK, bold = true)
+        _dt_sty(io, "###### Block #$(_dt_id(b))  $(_dt_flavor(b))  $(_dt_span(b))\n", color = _DT_C_BLOCK, bold = true)
         _dt_sty(io, "\"" * _dt_excerpt(_dt_content(doc, b), 66) * "\"\n")
         compact(b)
         grain === :block && continue
-        for lineId in _DT_BLS.eachchildid(b, blockVec)
-            l = _dt_fetch1(lineVec, lineId)
+        for l in _dt_children(doc, b)
             _dt_intersects(l, lines_r) || continue
-            _dt_sty(io, "\n  ### Line #$lineId  $(_dt_flavor(l))  $(_dt_span(l))  ", color = _DT_C_LINE, bold = true)
+            _dt_sty(io, "\n  ### Line #$(_dt_id(l))  $(_dt_flavor(l))  $(_dt_span(l))  ", color = _DT_C_LINE, bold = true)
             _dt_sty(io, "\"" * _dt_excerpt(_dt_content(doc, l), 44) * "\"\n")
             compact(l; indent = "  ")
             grain === :line && continue
-            for segId in _DT_BLS.eachchildid(l, lineVec)
-                s = _dt_fetch1(doc.pd[_DT_BLS.Segment][1], segId)
-                _dt_sty(io, "\n    ## Segment #$segId  $(_dt_flavor(s))  $(_dt_span(s))  ", color = _DT_C_SEG, bold = true)
+            for s in _dt_children(doc, l)
+                _dt_sty(io, "\n    ## Segment #$(_dt_id(s))  $(_dt_flavor(s))  $(_dt_span(s))  ", color = _DT_C_SEG, bold = true)
                 _dt_sty(io, "\"" * _dt_excerpt(_dt_content(doc, s), 40) * "\"\n")
                 compact(s; indent = "    ")
             end
@@ -1262,15 +1233,14 @@ function _dt_t2_tree(io, doc, frows, allrows, echo;
         _dt_print_unanchored(io, doc, _dt_unanchored(frows); show_handles)
         return
     end
-    blockVec, lineVec = doc.pd[_DT_BLS.Block][1], doc.pd[_DT_BLS.Line][1]
     # with a filter active, an absence label must not assert "no evals" — rows may
     # simply be filtered out (impl-panel adversary finding)
     nolabel  = filtered ? "   (no matching evals)" : "   (no evals — defaults apply)"
     eliword  = filtered ? "(no matching evals)" : "(no evals)"
-    node(c, id, guide, name) = begin
+    node(c, guide, name) = begin
         has = haskey(am, _dt_akey(c))
         _dt_sty(io, guide, color = _DT_C_CHROME)
-        _dt_sty(io, _dt_tpad("$name #$id", 10), color = _dt_gcolor(c), bold = has)
+        _dt_sty(io, _dt_tpad("$name #$(_dt_id(c))", 10), color = _dt_gcolor(c), bold = has)
         _dt_sty(io, _dt_tpad(_dt_flavor(c), 5), color = _dt_fcolor(_dt_flavor(c)))  # R-DEV-9
         _dt_sty(io, " " * _dt_tpad(_dt_span(c), 8), color = _DT_C_CHROME)
         _dt_sty(io, " \"" * _dt_excerpt(strip(_dt_content(doc, c)), 38) * "\"")
@@ -1288,40 +1258,35 @@ function _dt_t2_tree(io, doc, frows, allrows, echo;
         show_handles && _dt_handle_note(io, row, indent * "    ")
     end
     empty_ok(c) = include_empty && _dt_intersects(c, lines_r)   # lines= is also the focus
-    block_shown(bid) = begin
-        b = _dt_fetch1(blockVec, bid)
-        empty_ok(b) || haskey(am, _dt_akey(b)) ||
-            any(haskey(am, _dt_akey(_dt_fetch1(lineVec, lid)))
-                for lid in _DT_BLS.eachchildid(b, blockVec))
-    end
-    shownBlocks = filter(block_shown, doc.blockIds)
+    block_shown(b) = empty_ok(b) || haskey(am, _dt_akey(b)) ||
+                     any(haskey(am, _dt_akey(l)) for l in _dt_children(doc, b))
+    shownBlocks = filter(block_shown, doc.blocks)
     if isempty(shownBlocks)
-        isempty(doc.blockIds) && _dt_sty(io, "(no Blocks)\n", color = _DT_C_CHROME)
+        isempty(doc.blocks) && _dt_sty(io, "(no Blocks)\n", color = _DT_C_CHROME)
     end
     pending = 0
-    for blockId in doc.blockIds
-        if !block_shown(blockId)
+    for b in doc.blocks
+        if !block_shown(b)
             pending += 1; continue
         end
         pending > 0 && (elision("├─ ", pending, "Block"); pending = 0)
-        b = _dt_fetch1(blockVec, blockId)
-        lastb = blockId == last(shownBlocks) && blockId == last(doc.blockIds)
-        node(b, blockId, lastb ? "└─ " : "├─ ", "Block")
+        blockId = _dt_id(b)
+        lastb = blockId == _dt_id(last(shownBlocks)) && blockId == _dt_id(last(doc.blocks))
+        node(b, lastb ? "└─ " : "├─ ", "Block")
         emit_rows(b, (lastb ? "   " : "│  "))
-        lineIds = collect(_DT_BLS.eachchildid(b, blockVec))
-        line_shown(lid) = empty_ok(_dt_fetch1(lineVec, lid)) ||
-                          haskey(am, _dt_akey(_dt_fetch1(lineVec, lid)))
-        shownL = filter(line_shown, lineIds)
+        lines = _dt_children(doc, b)
+        line_shown(l) = empty_ok(l) || haskey(am, _dt_akey(l))
+        shownL = filter(line_shown, lines)
         g1 = lastb ? "   " : "│  "
         pendL = 0
-        for lineId in lineIds
-            if !line_shown(lineId)
+        for l in lines
+            if !line_shown(l)
                 pendL += 1; continue
             end
             pendL > 0 && (elision(g1 * "├─ ", pendL, "Line"); pendL = 0)
-            l = _dt_fetch1(lineVec, lineId)
-            lastl = lineId == last(shownL) && lineId == last(lineIds)
-            node(l, lineId, g1 * (lastl ? "└─ " : "├─ "), "Line")
+            lineId = _dt_id(l)
+            lastl = lineId == _dt_id(last(shownL)) && lineId == _dt_id(last(lines))
+            node(l, g1 * (lastl ? "└─ " : "├─ "), "Line")
             emit_rows(l, g1 * (lastl ? "   " : "│  "))
         end
         pendL > 0 && elision(g1 * "└─ ", pendL, "Line")
@@ -1701,16 +1666,20 @@ function _dt_slide_lines(cap::_DTSlideCap)
 end
 
 ## ── the content classifier (marked source / render / structure; seat-D1 spec) ─────────
-## Everything below reads the BLS internals of the delivered tree (`result.blsComponentTree`) under the D-6(a)
-## exemption; devtools_selfcheck() pins every read (fate flags, :comment grains, the
-## flavor record, byte offsets, collectedLines) so a drifted engine fails LOUDLY.
+## Everything below reads the delivered tree (`result.blsComponentTree`) THROUGH THE DOOR — `root`,
+## `children`, `getElement`, `content`, `flavor`, `isHorizontalSpace` (stage 2's commit 0) — with ONE
+## residue outside it, marked at its two sites: the source-line COUNT (`length(collectedLines)`) that
+## sizes and range-checks the per-line output (no door name serves it; his word asked).
+## devtools_selfcheck() pins every read (fate flags, :comment grains, the flavor record, byte offsets,
+## the Line texts) so a drifted engine fails LOUDLY.
 
 ## first char of the engine's own horizontal-whitespace class ([\h]; includes NBSP) —
-## the marker-token delimiter. Returns the byte index AFTER the token, or 0 if none.
+## the marker-token delimiter, through the door (`isHorizontalSpace`). Returns the byte index AFTER
+## the token, or 0 if none.
 function _dt_sl_token_end(txt::AbstractString)
     i = firstindex(txt)
     while i <= lastindex(txt)
-        _DT_BLS._is_h_ws(txt[i]) && return i
+        _DT_BLS.isHorizontalSpace(txt[i]) && return i
         i = nextind(txt, i)
     end
     return 0
@@ -1745,13 +1714,14 @@ function _dt_sl_seg(F, isMeta::Bool, isCode::Bool, iscomment::Bool, txt::Abstrac
     return runs
 end
 
-_dt_sl_flags(c) = (_DT_BLS.getElement(c.componentSettribute, :isMeta),
-                   _DT_BLS.getElement(c.componentSettribute, :isCode),
-                   _DT_BLS.getElement(c.componentSettribute, :comment))
+_dt_sl_flags(c) = (_DT_BLS.getElement(c, :isMeta),
+                   _DT_BLS.getElement(c, :isCode),
+                   _DT_BLS.getElement(c, :comment))
 
-## byte-exact slice: segment offsets are BYTE offsets whose stop can be the LAST byte
-## of a multi-byte char — String char-indexing would throw StringIndexError there;
-## codeunit slicing cannot (segments are char-complete, so the piece stays valid).
+## byte-exact slice of the GAPS and TAILS of a line (the pieces no Segment covers): `a`..`b` are
+## inclusive BYTE offsets. A Segment's OWN bytes come through the door's `content` since stage 2's
+## commit 0: a Segment's `:stopMainStr` is its final character's START byte (IV-1), so a byte slice
+## `a:stopMainStr` cut a multibyte final character short — the classifier's former read.
 _dt_sl_bslice(s::AbstractString, a::Int, b::Int) =
     a > b ? "" : String(Vector{UInt8}(codeunits(s)[a:b]))
 
@@ -1762,25 +1732,24 @@ _dt_sl_bslice(s::AbstractString, a::Int, b::Int) =
 ## `neutral`); interior/trailing gaps append to the last run — this keeps every Meta
 ## segment's run starting exactly at `startMainStr`, the aligner's cut point. The
 ## byte-concat invariant (runs == line) is asserted by the callers' degrade guard.
-function _dt_sl_line(F, lvec, svec, line, s::AbstractString)
+function _dt_sl_line(F, ps, line, s::AbstractString)
     isempty(s) && return Tuple{String,String}[]
-    segids = collect(_DT_BLS.eachchildid(line, lvec))
-    if isempty(segids)
+    segs = _DT_BLS.children(ps, line)   # the Line's Segments through the door (the insert store resolved by BLS itself)
+    if isempty(segs)
         m, c, k = _dt_sl_flags(line)
         return _dt_sl_seg(F, m, c, k, s)
     end
     runs = Tuple{String,String}[]
     pos = 1
-    for sid in segids
-        sid isa Integer && sid > 0 || throw(ErrorException("slide classifier: non-positive Segment id $sid"))
-        seg = svec[sid]
-        a = Int(_DT_BLS.getElement(seg.cmpntNamedInt, :startMainStr))
-        b = Int(_DT_BLS.getElement(seg.cmpntNamedInt, :stopMainStr))
+    for seg in segs
+        a = Int(_DT_BLS.getElement(seg, :startMainStr))
+        b = Int(_DT_BLS.getElement(seg, :stopMainStr))
         (1 <= a && a <= b + 1 && b <= ncodeunits(s)) ||
             throw(ErrorException("slide classifier: segment span [$a:$b] outside line ($(ncodeunits(s)) bytes)"))
         gap = _dt_sl_bslice(s, pos, a - 1)
         m, c, k = _dt_sl_flags(seg)
-        segruns = _dt_sl_seg(F, m, c, k, _dt_sl_bslice(s, a, b))
+        segtxt = String(_DT_BLS.content(ps, seg))   # the Segment's bytes through the door — its final character WHOLE (`b` is that character's START byte, IV-1; the former byte slice `a:b` cut it short)
+        segruns = _dt_sl_seg(F, m, c, k, segtxt)
         if !isempty(gap)
             if isempty(runs)
                 if !isempty(segruns) && segruns[1][2] == "marker"
@@ -1795,7 +1764,7 @@ function _dt_sl_line(F, lvec, svec, line, s::AbstractString)
             end
         end
         append!(runs, segruns)
-        pos = b + 1
+        pos = a + ncodeunits(segtxt)   # past the Segment's whole final character
     end
     if pos <= ncodeunits(s)
         tail = _dt_sl_bslice(s, pos, ncodeunits(s))
@@ -1811,31 +1780,23 @@ end
 ## order; no grain flagged → :show. Drops are KNOWN (:discard), never inferred.
 function _dt_sl_fate(line, block, file)
     for c in (line, block, file)
-        d = _DT_BLS.getElement(c.componentSettribute, :discard)
-        h = _DT_BLS.getElement(c.componentSettribute, :hide)
-        s = _DT_BLS.getElement(c.componentSettribute, :show)
+        d = _DT_BLS.getElement(c, :discard)
+        h = _DT_BLS.getElement(c, :hide)
+        s = _DT_BLS.getElement(c, :show)
         (d || h || s) && return d ? :discard : h ? :hide : :show
     end
     return :show
 end
 
-## the shared File→Block→Line walk (mirrors probe-proven seat-D1 sweep code; positive
-## store-1 ids only — anything else throws into the caller's degrade guard).
+## the shared File→Block→Line walk through the door (`root`, `children`; the insert store's negative
+## ids are resolved by BLS itself — the former positive-id guards are gone). The callback receives the
+## Line, its Block, the File and the Line's input line number.
 function _dt_sl_walk(f, ps)
-    pd = ps.componentsPDict
-    fvec = pd[_DT_BLS.File][1]
-    bvec = pd[_DT_BLS.Block][1]
-    lvec = pd[_DT_BLS.Line][1]
-    svec = pd[_DT_BLS.Segment][1]
-    file = fvec[1]
-    for bid in _DT_BLS.eachchildid(file, fvec)
-        bid isa Integer && bid > 0 || throw(ErrorException("slide classifier: non-positive Block id $bid"))
-        block = bvec[bid]
-        for lid in _DT_BLS.eachchildid(block, bvec)
-            lid isa Integer && lid > 0 || throw(ErrorException("slide classifier: non-positive Line id $lid"))
-            line = lvec[lid]
-            ln = Int(_DT_BLS.getElement(line.cmpntNamedInt, :inputLineNum))
-            f(line, block, file, ln, lvec, svec)
+    file = _DT_BLS.root(ps)
+    for block in _DT_BLS.children(ps, file)
+        for line in _DT_BLS.children(ps, block)
+            ln = Int(_DT_BLS.getElement(line, :inputLineNum))
+            f(line, block, file, ln)
         end
     end
 end
@@ -1847,12 +1808,13 @@ function _dt_sl_source_lines(result)
     try
         result.status == GoMeta.PROCESS_OK || return nothing
         ps = result.blsComponentTree
-        src = ps.collectedLines
-        out = Vector{Union{Nothing,Vector{Tuple{String,String}}}}(nothing, length(src))
-        _dt_sl_walk(result.blsComponentTree) do line, block, file, ln, lvec, svec
-            1 <= ln <= length(src) || throw(ErrorException("slide classifier: inputLineNum $ln outside 1:$(length(src))"))
+        F = _DT_BLS.flavor(ps)
+        nsrc = length(ps.collectedLines)   # RESIDUE outside the door: the source-line COUNT sizes and range-checks the per-line output (no door name; his word asked)
+        out = Vector{Union{Nothing,Vector{Tuple{String,String}}}}(nothing, nsrc)
+        _dt_sl_walk(ps) do line, block, file, ln
+            1 <= ln <= nsrc || throw(ErrorException("slide classifier: inputLineNum $ln outside 1:$nsrc"))
             out[ln] === nothing || throw(ErrorException("slide classifier: line $ln visited twice"))
-            out[ln] = _dt_sl_line(ps.flavor, lvec, svec, line, src[ln])
+            out[ln] = _dt_sl_line(F, ps, line, String(_DT_BLS.content(ps, line)))   # the Line's text through the door (its source line by `:inputLineNum`)
         end
         any(x -> x === nothing, out) && return nothing
         return Vector{Vector{Tuple{String,String}}}(out)
@@ -1877,34 +1839,34 @@ function _dt_sl_render_lines_T0(result, renderlines)
     try
         result.status == GoMeta.PROCESS_OK || return nothing
         ps = result.blsComponentTree
-        F = ps.flavor
+        F = _DT_BLS.flavor(ps)
         hm = F.hide_marker
-        src = ps.collectedLines
+        nsrc = length(ps.collectedLines)   # RESIDUE outside the door: the source-line COUNT range-checks the walk (see _dt_sl_source_lines)
         out = Vector{Vector{Tuple{String,String}}}()
         ok = Ref(true)
         j = Ref(1)
-        _dt_sl_walk(result.blsComponentTree) do line, block, file, ln, lvec, svec
+        _dt_sl_walk(ps) do line, block, file, ln
             ok[] || return
             f = _dt_sl_fate(line, block, file)
             f === :discard && return
-            1 <= ln <= length(src) || throw(ErrorException("slide classifier: inputLineNum $ln outside 1:$(length(src))"))
-            s = src[ln]
+            1 <= ln <= nsrc || throw(ErrorException("slide classifier: inputLineNum $ln outside 1:$nsrc"))
+            s = String(_DT_BLS.content(ps, line))   # the Line's text through the door
             if j[] > length(renderlines)
                 ok[] = false; return
             end
             r = renderlines[j[]]; j[] += 1
-            base = _dt_sl_line(F, lvec, svec, line, s)
+            base = _dt_sl_line(F, ps, line, s)
             if r == s
                 push!(out, base)
             elseif f === :hide && r == hm * s
                 push!(out, vcat([(hm, "hideprefix")], base))
-            elseif f === :hide && !_DT_BLS.getElement(line.componentSettribute, :isMeta)
-                segids = collect(_DT_BLS.eachchildid(line, lvec))
-                k = findfirst(sid -> _DT_BLS.getElement(svec[sid].componentSettribute, :isMeta), segids)
+            elseif f === :hide && !_DT_BLS.getElement(line, :isMeta)
+                segs = _DT_BLS.children(ps, line)
+                k = findfirst(sg -> _DT_BLS.getElement(sg, :isMeta), segs)
                 if k === nothing
                     ok[] = false; return
                 end
-                m = Int(_DT_BLS.getElement(svec[segids[k]].cmpntNamedInt, :startMainStr))
+                m = Int(_DT_BLS.getElement(segs[k], :startMainStr))
                 if r != hm * _dt_sl_bslice(s, 1, m - 1) * hm * _dt_sl_bslice(s, m, ncodeunits(s))
                     ok[] = false; return
                 end
@@ -1937,7 +1899,7 @@ end
 
 ## RENDER tier T1 (whole-file degradation; D1 §d.R1): re-parse the RENDER bytes as
 ## their own document under the ORIGINATING FLAVOR, rebuilt from the delivered tree
-## (`blsComponentTree.flavor.flavor_tag`; the configuration is not delivered — R-V04B-28: the
+## (`BLS.flavor(blsComponentTree).flavor_tag`; the configuration is not delivered — R-V04B-28: the
 ## namespace, the profile, a fed profile and a parse range do not carry — the tiling reads
 ## structure and flavor, never a handle, and the render bytes are a whole document of their own) and
 ## classify per the source procedure — leading/mid hide marks classify `comment` via
@@ -1963,7 +1925,7 @@ function _dt_sl_render_lines(result, renderbytes)
     t0 = _dt_sl_render_lines_T0(result, renderlines)
     t0 !== nothing && return t0, fnl, :component
     t1 = try
-        r2 = GoMeta.goMeta(copy(renderbytes); config = GoMeta.GoMetaConfig(flavor_tag = result.blsComponentTree.flavor.flavor_tag))
+        r2 = GoMeta.goMeta(copy(renderbytes); config = GoMeta.GoMetaConfig(flavor_tag = _DT_BLS.flavor(result.blsComponentTree).flavor_tag))
         _dt_sl_source_lines(r2)
     catch err
         err isa InterruptException && rethrow()
@@ -2007,12 +1969,7 @@ function _dt_sl_structure_runs(result, bytes)
         result.status == GoMeta.PROCESS_OK || return nothing
         actual, _ = _dt_sl_splitlines(bytes)
         ps = result.blsComponentTree
-        F = ps.flavor
-        pd = ps.componentsPDict
-        fvec = pd[_DT_BLS.File][1]
-        bvec = pd[_DT_BLS.Block][1]
-        lvec = pd[_DT_BLS.Line][1]
-        svec = pd[_DT_BLS.Segment][1]
+        F = _DT_BLS.flavor(ps)
         out = Vector{Vector{Tuple{String,String}}}()
         pushrun!(runs, txt, role) = begin
             isempty(txt) && return
@@ -2022,15 +1979,11 @@ function _dt_sl_structure_runs(result, bytes)
                 push!(runs, (String(txt), role))
             end
         end
-        for bid in _DT_BLS.eachchildid(fvec[1], fvec)
-            (bid isa Integer && bid > 0) || return nothing
-            b = bvec[bid]
+        for b in _DT_BLS.children(ps)   # the walk through the door (mirrors the serialization walk of the basic renderer)
             newBlock = true
-            for lid in _DT_BLS.eachchildid(b, bvec)
-                (lid isa Integer && lid > 0) || return nothing
-                line = lvec[lid]
-                if _DT_BLS.getElement(line.componentSettribute, :includeInOutFile) &&
-                   _DT_BLS.getElement(line.componentSettribute, :isEmpty)
+            for line in _DT_BLS.children(ps, b)
+                if _DT_BLS.getElement(line, :includeInOutFile) &&
+                   _DT_BLS.getElement(line, :isEmpty)
                     length(out) < length(actual) && isempty(actual[length(out) + 1]) ||
                         return nothing
                     push!(out, Tuple{String,String}[])
@@ -2039,21 +1992,17 @@ function _dt_sl_structure_runs(result, bytes)
                 runs = Tuple{String,String}[]
                 pushrun!(runs, newBlock ? "{:B-" * _dt_flavor(b) : "{       ", "tree")
                 pushrun!(runs, ":L-" * _dt_flavor(line) * " [", "tree")
-                if _DT_BLS.getElement(line.componentSettribute, :includeInOutFile)
+                if _DT_BLS.getElement(line, :includeInOutFile)
                     m, c, k = _dt_sl_flags(line)
-                    for r in _dt_sl_seg(F, m, c, k, ps.collectedLines[_dt_ni(line, :idxString)])
+                    for r in _dt_sl_seg(F, m, c, k, String(_DT_BLS.content(ps, line)))   # the Line's text through the door
                         pushrun!(runs, r[1], r[2])
                     end
                 elseif _dt_ni(line, :numChildren) != 0
-                    for sid in _DT_BLS.eachchildid(line, lvec)
-                        (sid isa Integer && sid > 0) || return nothing
-                        seg = svec[sid]
-                        _DT_BLS.getElement(seg.componentSettribute, :includeInOutFile) || continue
+                    for seg in _DT_BLS.children(ps, line)
+                        _DT_BLS.getElement(seg, :includeInOutFile) || continue
                         pushrun!(runs, "{:S-" * _dt_flavor(seg) * " [", "tree")
-                        a = _dt_ni(seg, :startMainStr); z = _dt_ni(seg, :stopMainStr)
                         m, c, k = _dt_sl_flags(seg)
-                        for r in _dt_sl_seg(F, m, c, k,
-                                _dt_sl_bslice(ps.collectedLines[_dt_ni(seg, :idxString)], a, z))
+                        for r in _dt_sl_seg(F, m, c, k, String(_DT_BLS.content(ps, seg)))   # the Segment's byte span through the door (the bytes the serialization writes)
                             pushrun!(runs, r[1], r[2])
                         end
                         pushrun!(runs, "]}", "tree")
@@ -2413,7 +2362,7 @@ mid-inserted one classifies `comment` (rule 6.3 — source-authored and
 render-inserted mid marks paint alike). Any mismatch (e.g. a future engine changing
 render surfaces) degrades WHOLE-FILE to a re-parse of the render bytes under a
 config REBUILT from the delivered tree's flavor
-(`GoMetaConfig(flavor_tag = result.blsComponentTree.flavor.flavor_tag)` — the
+(`GoMetaConfig(flavor_tag = BLS.flavor(result.blsComponentTree).flavor_tag)` — the
 originating configuration is not delivered, R-V04B-28; the tier-T1 comment
 `## RENDER tier T1 (whole-file degradation; D1 §d.R1)` above `_dt_sl_splitlines`
 names what does not carry) (hide marks then classify `comment`; `hideprefix` is
@@ -2612,16 +2561,16 @@ function devtools_selfcheck()
     ## ── §H slide-surface pins (D-6(a) rider: every NEW internal read the slide path
     ## adds is pinned here or battery-covered — T1's re-parse arm lives in probe §16 —
     ## so a drifted engine fails LOUDLY, never mis-roles) ─────────────────────────────
-    F = r.blsComponentTree.flavor
-    (F.lead == "#" && F.hide_marker == "## " && F.re_meta_leaded isa Regex &&
+    F = _DT_BLS.flavor(r.blsComponentTree)   # the record through the door; the five promised fields pinned
+    (F.lead == "#" && F.hide_marker == "## " && F.hide_fold_prefix isa AbstractString && F.re_meta_leaded isa Regex &&
      F.flavor_tag === :julia) ||
-        error("devtools_selfcheck: the flavor record drifted (lead/hide_marker/re_meta_leaded/flavor_tag)")
-    r.blsComponentTree.endsWithNewline isa Bool ||
-        error("devtools_selfcheck: ParseState.endsWithNewline drifted")
-    (_DT_BLS._is_h_ws(' ') && _DT_BLS._is_h_ws('\t') && _DT_BLS._is_h_ws('\u00a0') &&
-     !_DT_BLS._is_h_ws('x') && !_DT_BLS._is_h_ws('\n')) ||
-        error("devtools_selfcheck: the engine [\\h] delimiter class drifted (_is_h_ws; NBSP must delimit)")
-    (F.flavor_tag in (:julia, :c, :latex) && _DT_BLS.flavor_for(F.flavor_tag) === F &&
+        error("devtools_selfcheck: the flavor record drifted (lead/hide_marker/hide_fold_prefix/re_meta_leaded/flavor_tag)")
+    _DT_BLS.endsWithNewline(r.blsComponentTree) isa Bool ||
+        error("devtools_selfcheck: BLS.endsWithNewline drifted")
+    (_DT_BLS.isHorizontalSpace(' ') && _DT_BLS.isHorizontalSpace('\t') && _DT_BLS.isHorizontalSpace('\u00a0') &&
+     !_DT_BLS.isHorizontalSpace('x') && !_DT_BLS.isHorizontalSpace('\n')) ||
+        error("devtools_selfcheck: the engine [\\h] delimiter class drifted (isHorizontalSpace, the door's name; NBSP must delimit)")
+    (F.flavor_tag in (:julia, :c, :latex) &&   # the registry identity (`flavor_for`) left the self-check at commit 0 — a parser-internal read (R-V04B-80 (2)(iii))
      isempty(GoMeta.validate_config(GoMeta.GoMetaConfig(flavor_tag = F.flavor_tag)))) ||
         error("devtools_selfcheck: the delivered tree's flavor record does not round-trip through its flavor_tag into a valid config (the T1 re-parse arm rebuilds its config from it)")
     ## fate ladder + render transformation classes (the render writer's derivation)
@@ -2630,7 +2579,7 @@ function devtools_selfcheck()
     String(copy(Main.BasicRenderer.outputs(rf).render_bytes)) == "#~ discard{ isCode }\n## x = 1 ## #~ hide\n" ||
         error("devtools_selfcheck: the hide/discard render transformation drifted — REVIEW the slide derivation, then re-pin")
     fates = Tuple{Int,Symbol}[]
-    _dt_sl_walk(rf.blsComponentTree) do line, block, file, ln, lvec, svec
+    _dt_sl_walk(rf.blsComponentTree) do line, block, file, ln
         push!(fates, (ln, _dt_sl_fate(line, block, file)))
     end
     sort(fates) == [(1, :show), (2, :hide), (3, :discard)] ||
@@ -2638,25 +2587,26 @@ function devtools_selfcheck()
     ## :comment settribute at Line grain, julia strictness split
     rc = GoMeta.goMeta(Vector{UInt8}(codeunits("## c\n### banner\n")))
     ccm = Bool[]
-    _dt_sl_walk(rc.blsComponentTree) do line, block, file, ln, lvec, svec
-        push!(ccm, _DT_BLS.getElement(line.componentSettribute, :comment))
+    _dt_sl_walk(rc.blsComponentTree) do line, block, file, ln
+        push!(ccm, _DT_BLS.getElement(line, :comment))
     end
     ccm == [true, false] ||
         error("devtools_selfcheck: the :comment settribute strictness drifted (got $ccm)")
-    ## segment byte offsets (1-based inclusive; emoji multi-byte pin) + collectedLines
+    ## segment byte offsets (1-based inclusive; emoji multi-byte pin) + the Line texts through the door
     re = GoMeta.goMeta(Vector{UInt8}(codeunits("x = \"🍒🍒\" #~ hide\n")))
     spans = Tuple{Int,Int}[]
-    _dt_sl_walk(re.blsComponentTree) do line, block, file, ln, lvec, svec
-        for sid in _DT_BLS.eachchildid(line, lvec)
-            seg = svec[sid]
-            push!(spans, (Int(_DT_BLS.getElement(seg.cmpntNamedInt, :startMainStr)),
-                          Int(_DT_BLS.getElement(seg.cmpntNamedInt, :stopMainStr))))
+    texts = String[]
+    _dt_sl_walk(re.blsComponentTree) do line, block, file, ln
+        push!(texts, String(_DT_BLS.content(re.blsComponentTree, line)))
+        for seg in _DT_BLS.children(re.blsComponentTree, line)
+            push!(spans, (Int(_DT_BLS.getElement(seg, :startMainStr)),
+                          Int(_DT_BLS.getElement(seg, :stopMainStr))))
         end
     end
     spans == [(1, 15), (16, 22)] ||
         error("devtools_selfcheck: segment byte offsets drifted (got $spans, pinned [(1,15),(16,22)])")
-    re.blsComponentTree.collectedLines == ["x = \"🍒🍒\" #~ hide"] ||
-        error("devtools_selfcheck: collectedLines drifted")
+    texts == ["x = \"🍒🍒\" #~ hide"] ||
+        error("devtools_selfcheck: the Line texts through the door (BLS.content) drifted")
     ## capture smoke: the run annotation is TOTAL — concat of runs+newlines == the
     ## plain render of the same call, byte-for-byte; roles stay in the closed set
     capr = _dt_slide_cap()

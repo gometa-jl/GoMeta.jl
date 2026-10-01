@@ -145,6 +145,7 @@ include("alterants/apply.jl")       # goMetaAddOns apply-half — late-bound fro
 #   PUBLIC 0.4.x deprecation alias (R-V04B-5); FORTY since v0.4 T4: + the G-VOC query triple
 #   `vocabulary`/`vocabulary_member`/`vocabulary_queryable`; THIRTY-NINE since R-V04B-24 (2026-09-12):
 #   `outputs` REMOVED with the basic renderer — a development tool; the register row in docs/public-api.md §6;
+#   FORTY since stage 2's commit 0 of the v0.4 build (R-V04B-58): + the parser module `BLS`, its door inside it;
 #   docs/public-api.md §1.2 is the mirror).
 # Qualified import (`import GoMeta as GM`) is UNAFFECTED by these exports and remains canonical for namespace
 # hygiene + multi-implementation use; exporting serves the single-implementation `using` convenience only.
@@ -155,6 +156,7 @@ public serialize_evals, content_fingerprint, EvalRecord, EvalStore, ProcessStatu
        EffectRow, RenderDecl, VocabularySlot, InlineVocabulary, VocabularyRef, MutEx, ConditionAtom,   #   VOCABULARY a third-party author
        SugarRow, Provenance, SignatureRecord, PermissionManifest,                                     #   constructs (docs/public-api.md §1.2)
        vocabulary, vocabulary_member, vocabulary_queryable   # v0.4 T4: the G-VOC query surface (the ONE vocabulary read the three planes share; docs/public-api.md §3.4)
+public BLS   # stage 2's commit 0 of the v0.4 build (R-V04B-33/45/58): the parser module public by name — its door of travel / access functions declared INSIDE it (src/bls/BLS.jl; docs/public-api.md §1.2 + §6)
 
 #########################################################################################
 #~~ Config-time validation

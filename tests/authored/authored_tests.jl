@@ -83,39 +83,35 @@ end
 const GRAIN_LINE  = 0x0a
 const GRAIN_BLOCK = 0x46
 
-## --- the tree: positions → Components; Components → (grain, ordinal) ---
-_ni(c, k) = GB.getElement(c.cmpntNamedInt, k)
-## The parser's Component vectors carry UNASSIGNED slots (pre-sized storage; seen on the two legacy example files,
-## 2026-09-11 — never on the five small confirmed inputs): iterate the assigned slots only, never the raw vector.
-_assigned(v) = (v[i] for i in eachindex(v) if isassigned(v, i))
-
+## --- the tree: positions → Components; Components → (grain, ordinal) — through the door (stage 2's commit 0) ---
+_ni(c, k) = GB.getElement(c, k)
+## The tree's Blocks and Lines as the door's walk yields them (`BLS.children`: source order, the stores never
+## read here — the former walk over the raw store vectors with their UNASSIGNED slots is gone).
 function _components(ps)
-    file   = ps.componentsPDict[GB.File][1][1]
-    blocks = ps.componentsPDict[GB.Block][1]
-    lines  = ps.componentsPDict[GB.Line][1]
-    for c in Iterators.flatten((_assigned(blocks), _assigned(lines)))
+    file   = GB.root(ps)
+    blocks = GB.children(ps)
+    lines  = [l for b in blocks for l in GB.children(ps, b)]
+    for c in Iterators.flatten((blocks, lines))
         (_ni(c, :idExtension) == 0 && _ni(c, :idExtended) == 0) ||
             error("authored: an extension chain exists in this input (idExtension/idExtended ≠ 0) — " *
                   "chain normalization is not implemented here; see src/occurrence.jl")
     end
-    return (; file, blocks, lines)
+    return (; ps, file, blocks, lines)
 end
 
 ## line@N → the Line whose input line number is N
 function _line_at(t, n::Int)
-    hits = [l for l in _assigned(t.lines) if _ni(l, :idComponent) != 0 && _ni(l, :inputLineNum) == n]
+    hits = [l for l in t.lines if _ni(l, :inputLineNum) == n]
     length(hits) == 1 || error("authored: line@$n — expected exactly one Line with input line number $n, found $(length(hits))")
     return hits[1]
 end
 ## block@N → the Block whose FIRST Line is line N
 function _block_at(t, n::Int)
     hits = GB.Block[]
-    for b in _assigned(t.blocks)
-        _ni(b, :idComponent) == 0 && continue
-        kids = collect(GB.eachchildid(b, t.blocks))
+    for b in t.blocks
+        kids = GB.children(t.ps, b)
         isempty(kids) && continue
-        first_line = t.lines[abs(first(kids))]
-        _ni(first_line, :inputLineNum) == n && push!(hits, b)
+        _ni(first(kids), :inputLineNum) == n && push!(hits, b)
     end
     length(hits) == 1 || error("authored: block@$n — expected exactly one Block whose first Line is line $n, found $(length(hits))")
     return hits[1]
@@ -129,7 +125,7 @@ function _component(t, pos::AbstractString)
 end
 _grain(c) = c isa GB.Block ? GRAIN_BLOCK : c isa GB.Line ? GRAIN_LINE : error("authored: unsupported grain $(typeof(c))")
 _ordinal(c) = UInt32(abs(_ni(c, :idComponent)))
-_block_of(t, l::GB.Line) = t.blocks[abs(_ni(l, :idParent))]
+_block_of(t, l::GB.Line) = GB.parent(t.ps, l)   # the Line's Block through the door (the former store index by `:idParent`)
 
 ## --- the rows: those ON a Component (its own), by grain + the last path step's ordinal ---
 function _rows_on(rows, c)

@@ -124,10 +124,16 @@ result = GoMeta.goMeta(bytes)             # ONE run: BLS parses the file into th
                                           # the altValues over it — ONE object delivered, `GoMetaDelivery`, carrying both MAIN PRODUCTS
 result.status == GoMeta.PROCESS_OK || error("processing failed")   # the part `status` (typed), read by name
 
-result.blsComponentTree;                  # the part `blsComponentTree` (the object, not printed): the BLS Component tree the
+tree = result.blsComponentTree            # the part `blsComponentTree` (the object, not printed): the BLS Component tree the
                                           # run was evaluated over — provided by BLS itself; it reaches an Extension as the
                                           # part `blsComponentTree`, not through any function of the GoMeta Engine; an
-                                          # Extension travels it with BLS's own public functions (`docs/public-api.md` §2)
+                                          # Extension travels it with BLS's own public functions — THE DOOR (`docs/public-api.md` §1.2):
+for block in GoMeta.BLS.children(tree)                      # the File's Blocks, in source order …
+    for line in GoMeta.BLS.children(tree, block)            # … a Block's Lines (a Line's Segments the same way)
+        GoMeta.BLS.kind(line) === :Meta || continue         # the Component's flavor: :Meta / :Code / :Text — a metaLine is a Line of flavor Meta
+        println(String(GoMeta.BLS.content(tree, line)))     # the verbatim text of the piece, from the tree and nothing else
+    end
+end
 evals = GoMeta.readAltValuesEvals(result.altValues_evals)    # the part `altValues_evals`: the evaluated Alterant values, per piece
                                           # of the file, read through the Engine's reader (`evals` = evaluated metadata
                                           # values — unrelated to Julia's `eval`)

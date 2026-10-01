@@ -71,13 +71,18 @@ docstrings are in `devtools.jl`.
 ## What they read, and the alarm
 
 The tools AND the moved basic renderer (`basic_renderer.jl`, the tree print included) read the
-delivered part `result.blsComponentTree` (public by name, R-V04B-29) and a few non-public parser names under the owner's
-exemption D-6(a) of 2026-08-20, WIDENED on 2026-09-11 (R-V04B-24, C1 (a)) to the renderer file and
-the tree print as an INTERIM whose lapse condition FIRED on 2026-09-16 (R-V04B-29: the BLS-provided tree route is
-ruled); these exemption texts are deleted at stage 5 of the v0.4 branch (the plan's stage 5 (1); R-V04B-48 (1)), their
-non-public reads served by the door or removed at stage 2's commit 0 (R-V04B-58) — the full tidy-up, the owner's order (OWNER-WORDS §17 and §44). Allowed for THESE files only;
-consumer code must not copy the pattern. `devtools_selfcheck()` is the drift alarm: if the internal
-surface changes, it fails loudly. Run it after every change to `src/`. Their assertion battery,
+delivered part `result.blsComponentTree` (public by name, R-V04B-29) THROUGH THE DOOR since stage 2's commit 0 of the
+v0.4 build (R-V04B-58, R-V04B-80): BLS's public functions and types — `GoMeta.BLS.root`, `children`, `getElement`,
+`content`, `kind`, `flavor`, `endsWithNewline`, `isHorizontalSpace`, the Component types, `keys` of the two
+named-element types (`docs/public-api.md` §1.2) — and no field of a BLS object. THREE RESIDUE reads outside the door
+remain, each marked at its site and asked for the owner's word: the renderer's `BLS._isspace_valid` (the parser's own
+whitespace guard for the ensure-token head read; `isHorizontalSpace` is the `[\h]` class and differs at \f and \v), the
+tools' whole-document text of the File (`collectedLines` joined — `content` has no File arm) and the slide classifier's
+source-line COUNT (`length(collectedLines)`). The former exemption D-6(a) of 2026-08-20 (widened 2026-09-11, R-V04B-24
+C1 (a); lapsed 2026-09-16, R-V04B-29) covers those three residues alone; its texts are deleted at stage 5 of the v0.4
+branch (the plan's stage 5 (1); R-V04B-48 (1)). Consumer code — an Extension — reads the tree the same way, through the door
+(`docs/public-api.md` §1.2; R-V04B-45).
+`devtools_selfcheck()` is the drift alarm: if the surface changes, it fails loudly. Run it after every change to `src/`. Their assertion battery,
 `devtools/probes/probe_devtools.jl`, lives beside them since 2026-09-12 (OWNER-WORDS §26 of the
 build record: the play became a self-contained fork and keeps its own frozen copy of the tools and
 of the battery; its fixture inputs are `devtools/probes/fixtures/` and `examples/InFileFolder/`);

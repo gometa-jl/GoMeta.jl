@@ -98,7 +98,7 @@ function cell_content_bytes(parse::BLS.ParseState, component::BLS.AbstractCompon
         # :inputLineNum (robust for multi-segment lines where idxString == 0, where idxString cannot locate it).
         idxString = BLS.getElement(cni, :idxString)
         if idxString < 0
-            (-idxString <= length(parse.addedStrings)) || return UInt8[]
+            (-length(parse.addedStrings) <= idxString < 0) || return UInt8[]   # the lower bound closes typemin(Int): -typemin(Int) wraps (R-V04B-80 (2)(iv))
             return Vector{UInt8}(codeunits(parse.addedStrings[-idxString]))
         end
         iln = BLS.getElement(cni, :inputLineNum)
@@ -110,7 +110,7 @@ function cell_content_bytes(parse::BLS.ParseState, component::BLS.AbstractCompon
     (idxString != 0 && 1 <= startMain && startMain <= stopMain) || return UInt8[]
     # bounds-guard the store lookup so a malformed idxString returns UInt8[] (the docstring's total-return
     # contract), never a BoundsError.
-    inbounds = idxString > 0 ? idxString <= length(parse.collectedLines) : -idxString <= length(parse.addedStrings)
+    inbounds = idxString > 0 ? idxString <= length(parse.collectedLines) : -length(parse.addedStrings) <= idxString < 0   # the lower bound closes typemin(Int) (R-V04B-80 (2)(iv))
     inbounds || return UInt8[]
     src = idxString > 0 ? parse.collectedLines[idxString] : parse.addedStrings[-idxString]
     cu  = codeunits(src)

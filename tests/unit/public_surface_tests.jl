@@ -57,18 +57,21 @@ import TOML
                          # read surface the three planes share (T4-DESIGN §4);
                          # 40 → 39 at R-V04B-24 (2026-09-12): `outputs` REMOVED with the basic renderer
                          # (a development tool; the register row in docs/public-api.md §6).
+                         # 39 → 40 at stage 2's commit 0 (R-V04B-58): `BLS` — the parser module public by name; its door
+                         # of travel / access functions declared inside it (the BLS-tier testset below).
                          :RegistryBuilder, :register!, :next_plugin_index, :validate, :publish, :RegistrationRefused,
                          :Alterant, :PlugIn, :ActionSpec, :ActionOverload, :DomainRef, :CaptureDecl, :DefaultSlot,
                          :NoDefault, :Declared, :EffectRow, :RenderDecl, :VocabularySlot,
                          :InlineVocabulary, :VocabularyRef, :MutEx, :ConditionAtom, :SugarRow,
                          :Provenance, :SignatureRecord, :PermissionManifest,
-                         :vocabulary, :vocabulary_member, :vocabulary_queryable]   # mirrors docs/public-api.md §1.2 EXACTLY
+                         :vocabulary, :vocabulary_member, :vocabulary_queryable,
+                         :BLS]   # mirrors docs/public-api.md §1.2 EXACTLY (40 since stage 2's commit 0: the parser module `BLS`, R-V04B-58)
 
     @testset "export set is EXACTLY the declared semver surface" begin
         live = setdiff(Set(names(GM)), Set([:GoMeta]))     # names() on Julia ≥1.11 == exported ∪ `public` (+ the module name)
         exported = Set(filter(n -> Base.isexported(GM, n), collect(live)))
         @test exported == DECLARED_EXPORTS                        # [1] no accidental leak AND no gap (exact equality)
-        @test setdiff(live, exported) == Set(SUPPORTING_PUBLIC)   # [1b] the `public` tier is EXACTLY the declared names (39 since R-V04B-24; 40 before)
+        @test setdiff(live, exported) == Set(SUPPORTING_PUBLIC)   # [1b] the `public` tier is EXACTLY the declared names (40 since stage 2's commit 0: `BLS`; 39 since R-V04B-24; 40 before)
         @test all(n -> Base.ispublic(GM, n), SUPPORTING_PUBLIC)   # [1c] every supporting name carries the `public` marking
         @test all(n -> !Base.isexported(GM, n), SUPPORTING_PUBLIC) # [1d] …and none is exported (the two-tier partition is real)
         for n in DECLARED_EXPORTS
@@ -83,6 +86,16 @@ import TOML
         @test isempty(intersect(Set(SUPPORTING_PUBLIC), exported))  # [4] none of the supporting names leaked into the LIVE export set
         # `render_bytes` is the development tool's function (devtools/basic_renderer.jl), never an exported name of the Engine.
         @test :render_bytes ∉ exported                           # [5] render_bytes is never an exported name
+    end
+
+    @testset "the BLS tier (stage 2's commit 0, R-V04B-58): the parser module public by name; its door EXACTLY the declared set" begin
+        DOOR = Set([:children, :parent, :kind, :content, :root, :flavor, :endsWithNewline, :isHorizontalSpace, :getElement, :File, :Block, :Line, :Segment, :ComponentSettribute, :CmpntNamedInt])   # the door's declared set (the plan v8 :35; card 10; R-V04B-58)
+        live = setdiff(Set(names(GM.BLS)), Set([:BLS]))
+        @test live == DOOR                                        # [B1] the door is EXACTLY the declared names — no leak, no gap
+        @test all(n -> Base.ispublic(GM.BLS, n), DOOR)            # [B2] every door name carries the `public` marking
+        @test all(n -> !Base.isexported(GM.BLS, n), DOOR)         # [B3] …and none is exported (qualified access only: BLS.<name>)
+        @test all(n -> isdefined(GM.BLS, n), DOOR)                # [B4] every door name is a real binding
+        @test Base.ispublic(GM, :BLS) && !Base.isexported(GM, :BLS)   # [B5] the module itself: public, not exported
     end
 
     @testset "naming tooth (the methods tooth, armed at the dialect-convergence wave)" begin

@@ -54,7 +54,7 @@ by `tests/unit/public_surface_tests.jl`) and of the refusal behavior the shipped
 | `GoMetaConfig` | type | the v0 input options |
 | `GoMetaDelivery` | type | the delivered object of a run — its four public parts `altValues_evals`, `blsComponentTree`, `status`, `diagnostics` |
 
-`names(GoMeta)` is exactly this set plus the §1.2 public names (39 since R-V04B-24 (2026-09-12): the
+`names(GoMeta)` is exactly this set plus the §1.2 public names (40 since stage 2's commit 0 of the v0.4 build, R-V04B-58 — the parser module `BLS`; 39 since R-V04B-24 (2026-09-12): the
 ten of 0.3.x that remain — `outputs` REMOVED, §6 —, the six lifecycle names, the twenty record-vocabulary names — `Alterant` is the
 record's canonical name and `PlugIn` its PUBLIC 0.4.x deprecation alias, R-V04B-5 — and the
 T4 G-VOC query triple `vocabulary`/`vocabulary_member`/`vocabulary_queryable`; and the module
@@ -330,6 +330,21 @@ These are part of the documented public surface — declared with Julia's `publi
 They are not exported; reach them qualified. `tests/unit/public_surface_tests.jl` asserts every
 §1.2 name is `public` and NOT exported (no accidental leak, no silent demotion).
 
+- `GoMeta.BLS` — the parser module, public by name since stage 2's commit 0 of the v0.4 build (R-V04B-33/45/58): the
+  BLS Component tree (`result.blsComponentTree`) is BLS's own object, provided by BLS itself and travelled with BLS's
+  own public functions — THE DOOR, read qualified `GoMeta.BLS.<name>`, nothing exported: `children(tree, c)` /
+  `children(tree)` (the child Components in source order; the File's Blocks), `parent(tree, c)` (the parent
+  Component; `nothing` for the File), `kind(c)` (`:Meta` / `:Code` / `:Text` — the Component's flavor; `nothing` for the File), `content(tree, c)`
+  (the verbatim content bytes at the Component's own grain); and, for the development tools and the tests:
+  `root(tree)` (the File), `flavor(tree)` (the flavor record — the PROMISE is five of its fields, `lead`, `hide_marker`,
+  `hide_fold_prefix`, `flavor_tag`, `re_meta_leaded`; every other field, `parse_header!` first, is reachable but not part of the
+  contract; its type stays internal), `endsWithNewline(tree)`, `isHorizontalSpace(c)` (the parser's horizontal-whitespace
+  class — the print tools' lexer), the
+  settribute / position read `getElement` (over a container, or over a Component by key — through which a caller reads no
+  field), the Component types `File` / `Block` / `Line` / `Segment` and the
+  named-element types `ComponentSettribute` / `CmpntNamedInt`. Each name has its row in §6. Everything else in
+  `GoMeta.BLS` is internal.
+
 ### §1.3 — The Engine's output surface, and the development tool's pair (since 0.4.0, R-V04B-24)
 
 1. **In R-V04B-24's own words: "the package's canonical observable output = `altValues_evals` (+
@@ -337,7 +352,7 @@ They are not exported; reach them qualified. `tests/unit/public_surface_tests.jl
    and the evaluated values".** `readAltValuesEvals(result.altValues_evals)` is the evaluated Alterant values, per piece of the
    file: the deterministic, final-verdicts-only map `(cell_handle, attr, value, polarity)`, keyed by (handle, attr);
    `GoMeta.serialize_evals` its byte form, `GoMeta.content_fingerprint` the cell bytes. No internal module
-   (`walk`, `BLS`) ever needs importing for it.
+   (`walk`) ever needs importing for it; `GoMeta.BLS` is public for the BLS Component tree (§1.2), not needed for the evals.
 2. **The (tree, render) pair is the development tool's**, not the Engine's: `Main.BasicRenderer.outputs(result)
    -> (blsStructure_bytes, render_bytes)` — the verdict-free tree print + the `jl-share-v1` share render — is
    obtained ONLY through the basic renderer (`devtools/basic_renderer.jl`) loaded by its one loader,
@@ -876,7 +891,7 @@ stage 5 of the v0.4 build (R-V04B-62; the v0.5 schedule superseded). The policy 
 later stage — maybe v0.8, maybe later — by the owner's word; nothing is promised now. `Project.toml`
 carries the version.
 
-**The breaking-change register (every removal or rename of a public name of EITHER tier is written here — the
+**The breaking-change register (every removal, rename or ADDITION of a public name of EITHER tier is written here — the
 non-silent record under R-V04B-61; the letter of R-V04B-24 (P) does not govern until at least v0.7).**
 
 - **`GoMeta.outputs` — §1.2 public-not-exported since 0.3.0 — REMOVED at 0.4.0** (no deprecation stub; the
@@ -913,3 +928,24 @@ non-silent record under R-V04B-61; the letter of R-V04B-24 (P) does not govern u
   field error; the same-commit triple (the export line `src/GoMeta.jl`, this document's §1.1/§1.2/§2, the surface
   oracle `tests/unit/public_surface_tests.jl`); one `Base.show` method. Minted 2026-09-15/16 (R-V04B-28/29/30); landed
   2026-09-28 on the branch `cc/v04-delivery` (stage 1, commit 2).
+- **`GoMeta.BLS` (module) — ADDED to the package-public tier at 0.4.0** (stage 2's commit 0 of the v0.4 build; R-V04B-33
+  "`public BLS` at the Engine's tier with the door of travel / access functions", R-V04B-45, R-V04B-58); ground: his §19 :304
+  ("Extensions MUST go through the public surface … the BLS tree structure … some functions provided to travel / access the
+  required data") and his §6 :170 (the BLS Component tree "provided by BLS itself"); the same-commit triple (`src/GoMeta.jl`
+  `public BLS`, this document's §1.2, the surface oracle `tests/unit/public_surface_tests.jl` — the BLS tier's own testset);
+  nothing removed; the set his choice at stage 1's review (item 4 of the stage-1 brief).
+- **`GoMeta.BLS.children` — ADDED (public, not exported) at 0.4.0 with the door** — ADAPTED — the legacy's child walk as carried by `eachchildid` over `parentChildComponentPDict`, the store read folded in; Components returned, the insert store's negative ids resolved; one register row (the plan v8 :35; R-V04B-58).
+- **`GoMeta.BLS.parent` — ADDED (public, not exported) at 0.4.0 with the door** — ADAPTED — the legacy `getParentComponent` under the door's name; `nothing` for the File; `Base.parent` untouched (read qualified); one register row (the plan v8 :35; R-V04B-58).
+- **`GoMeta.BLS.kind` — ADDED (public, not exported) at 0.4.0 with the door** — NEW — the `contentType` field read given a name: `:Meta` / `:Code` / `:Text`, `nothing` for the File (its field is the store's constructor default); no type of BLS made public for it; one register row (the plan v8 :35; R-V04B-58).
+- **`GoMeta.BLS.content` — ADDED (public, not exported) at 0.4.0 with the door** — NEW in BLS — the body of the Engine's `cell_content_bytes` copied unchanged (R-V04B-43 (1); the Engine's copy stays at commit 0 and leaves at stage 2, R-V04B-43 (5)); the fifth column then served through the door; one register row (the plan v8 :35; R-V04B-58).
+- **`GoMeta.BLS.root` — ADDED (public, not exported) at 0.4.0 with the door** — NEW — the store read `componentsPDict[File][1][1]` given a name; one register row (the plan v8 :35; R-V04B-58).
+- **`GoMeta.BLS.flavor` — ADDED (public, not exported) at 0.4.0 with the door** — NEW — the field read `tree.flavor` given a name (the flavor record; its type internal); THE PROMISE (R-V04B-80 (2)(ii)): five fields — `lead`, `hide_marker`, `hide_fold_prefix`, `flavor_tag`, `re_meta_leaded`; the rest of the record (`parse_header!` first) reachable, not promised; one register row (the plan v8 :35; R-V04B-58).
+- **`GoMeta.BLS.isHorizontalSpace` — ADDED (public, not exported) at 0.4.0 with the door** — ADAPTED — the parser's horizontal-whitespace predicate (`_is_h_ws`, flavor.jl) given a public name, so that the print tools' lexer classifies whitespace as the parser does; one register row (R-V04B-80 (2)(iii)).
+- **`GoMeta.BLS.endsWithNewline` — ADDED (public, not exported) at 0.4.0 with the door** — NEW — the field read `tree.endsWithNewline` given a name; one register row (the plan v8 :35; R-V04B-58).
+- **`GoMeta.BLS.getElement` — ADDED (public, not exported) at 0.4.0 with the door** — ADAPTED — the legacy named-element read (settribute flags; the named-int keys — four positions, two store indices, a count, two extension-chain links) declared public as it is, plus ONE Component-taking method `getElement(c, key)` dispatching over the two containers (R-V04B-80 (2)(i); a caller reads no field) — every settribute key and named-int key thereby readable; the Visib flags `:show` / `:hide` / `:discard` lose their meaning at stage 3 (R-V04B-42); one register row (the plan v8 :35; R-V04B-58).
+- **`GoMeta.BLS.File` — ADDED (public, not exported) at 0.4.0 with the door** — ADAPTED — the legacy Component type alias declared public as it is; one register row (the plan v8 :35; R-V04B-58).
+- **`GoMeta.BLS.Block` — ADDED (public, not exported) at 0.4.0 with the door** — ADAPTED — the legacy Component type alias declared public as it is; one register row (the plan v8 :35; R-V04B-58).
+- **`GoMeta.BLS.Line` — ADDED (public, not exported) at 0.4.0 with the door** — ADAPTED — the legacy Component type alias declared public as it is; one register row (the plan v8 :35; R-V04B-58).
+- **`GoMeta.BLS.Segment` — ADDED (public, not exported) at 0.4.0 with the door** — ADAPTED — the legacy Component type alias declared public as it is; one register row (the plan v8 :35; R-V04B-58).
+- **`GoMeta.BLS.ComponentSettribute` — ADDED (public, not exported) at 0.4.0 with the door** — ADAPTED — the legacy named-element type declared public as it is (`keys(ComponentSettribute)` — the print tools); one register row (the plan v8 :35; R-V04B-58).
+- **`GoMeta.BLS.CmpntNamedInt` — ADDED (public, not exported) at 0.4.0 with the door** — ADAPTED — the legacy named-element type declared public as it is (`keys(CmpntNamedInt)` — the print tools); one register row (the plan v8 :35; R-V04B-58).

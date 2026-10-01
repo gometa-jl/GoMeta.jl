@@ -15,16 +15,13 @@ const _CS_BLS = GM.BLS
 _cs_bytes(s::String) = Vector{UInt8}(codeunits(s))
 
 ## The first meta-flagged (:hasMetaStr) Line component reachable from the File root
-## (the checker's own traversal order), for the planted-breach witnesses.
+## (the checker's own traversal order), for the planted-breach witnesses — the walk through
+## the door (`BLS.children`, `BLS.getElement`; stage 2's commit 0). The planted breaches below
+## mutate the stores directly: a test OF the parser's internals, qualified-internal by the tidy-up row.
 function _cs_first_meta_line(ps)
-    fileC = ps.componentsPDict[_CS_BLS.File][1][1]
-    for blockId in _CS_BLS.eachchildid(fileC, ps.componentsPDict[_CS_BLS.File][1])
-        blockC = ps.componentsPDict[_CS_BLS.Block][1][blockId]
-        for lineId in _CS_BLS.eachchildid(blockC, ps.componentsPDict[_CS_BLS.Block][1])
-            lineC = ps.componentsPDict[_CS_BLS.Line][1][lineId]
-            if _CS_BLS.getElement(lineC.componentSettribute, :hasMetaStr)
-                return lineC
-            end
+    for blockC in _CS_BLS.children(ps), lineC in _CS_BLS.children(ps, blockC)
+        if _CS_BLS.getElement(lineC, :hasMetaStr)
+            return lineC
         end
     end
     return nothing
