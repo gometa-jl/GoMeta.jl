@@ -3,8 +3,9 @@
 #
 # IS:   the ARGS-filtered layer-dispatching runner for the shipped suite.
 # DOES: runs the standing layers — golden (the byte-oracle authority) · unit (the public-surface
-#   smoke + the documented-refusal witnesses) — each self-contained (own `using` + @testset).
-#   With NO ARGS, runs BOTH; `JULIA_LOAD_PATH="@:@stdlib" julia --project=tests tests/runtests.jl golden`
+#   smoke + the documented-refusal witnesses) · authored (the owner's confirmed statements;
+#   tests/authored/README.md) — each self-contained (own `using` + @testset).
+#   With NO ARGS, runs ALL THREE; `JULIA_LOAD_PATH="@:@stdlib" julia --project=tests tests/runtests.jl golden`
 #   (or any subset) runs only the named layers (FAIL-CLOSED on an unknown name); the load-path
 #   prefix is REQUIRED — the guard below fail-closes on Julia's default load path.
 # REASONING: invocation requires `JULIA_LOAD_PATH="@:@stdlib"`; an unknown layer name fails closed.

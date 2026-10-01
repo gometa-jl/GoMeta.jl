@@ -328,7 +328,7 @@ actions) -> Apply (evaluate conditions + apply), run inside one per-call dynamic
 
 Arguments:
 - `bytes` — the input document as raw bytes. Line ENDINGS normalize to LF (CRLF is chomped — documented, not an
-  error; see `docs/CANONICAL-OUTPUT.md`); content bytes are preserved faithfully for arbitrary bytes, including invalid UTF-8; non-ASCII inside a META line parses character-safely, a non-ASCII label or action meeting the stable unknown-label/unknown-action refusal (docs/public-api.md §4).
+  error; see `docs/CANONICAL-OUTPUT.md`); content bytes are preserved faithfully for arbitrary bytes, including invalid UTF-8; non-ASCII inside a META line parses character-safely, a non-ASCII label OUTSIDE the governing vocabulary or a non-ASCII action meeting the stable unknown-label/unknown-action refusal (docs/public-api.md §4).
 - `config::GoMetaConfig` — the v0 input options (profile / flavor_tag / parse_range / user_mh_profile; see `GoMetaConfig`).
   An invalid profile, flavor_tag, or parse_range fail-closes into a `PROCESS_ERROR` `GoMetaDelivery` carrying typed
   `Diagnostic`s BEFORE any parse — the input bytes are never touched (`ERR_UNKNOWN_PROFILE` /

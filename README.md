@@ -206,8 +206,9 @@ entries; and the separate opt-in modes below.)
 `:jl_share_v1_full_eval` profile, in which condition text beyond the safe grammar **is**
 host-evaluated. Activation takes **two explicit operator acts** — `include`-ing that file AND
 naming the profile in your config; neither act alone evaluates anything, neither is reachable
-from document content, and no dependency can perform them for you (`src/` never includes the
-file). With the mode active, **processing a file you did not write can execute arbitrary
+from document content, and GoMeta itself never performs them for you (`src/` never includes the
+file; any other loaded Julia code can — Julia has no access control, the honest bound of
+`docs/public-api.md` §1.2). With the mode active, **processing a file you did not write can execute arbitrary
 code**, so use it only on input you trust. A default-configured run cannot reach this path:
 naming the profile without the included extension refuses loudly with a stable message —
 never a silent fallback.

@@ -149,7 +149,7 @@ These are part of the documented public surface — declared with Julia's `publi
   guarantee stands — an identity/lifecycle check, never the config/registration chain). The
   seam's guarantee rows (the fodt lane's five, restated): fresh per-call process state ·
   caller-owned mutated parse state (NARROWED as above — poisoned/in-flight states refuse) ·
-  no re-validation at the entry · a meta-free store ⇒ `PROCESS_OK` with zero evals rows · the
+  no re-validation at the entry · a meta-free store on the no-feed path ⇒ `PROCESS_OK` with zero evals rows · the
   seam parses and renders nothing. A COPY of a poisoned state is a NEW unstamped object
   possibly carrying partial write-backs — the ledger tracks identities, not content lineage
   (the caller obligation extends to copies). *The T2-bis honest bound, stated exactly: the snapshot's own members are mutable
@@ -253,8 +253,10 @@ These are part of the documented public surface — declared with Julia's `publi
     and `getAltState`). The registration-time signature reflection for getters is a deferred row
     (T11's catalogue sitting).
   - **The validate contract** (`ActionSpec.validate`, the handover validation of the accepting
-    String slot): called as `validate(text::String) -> Bool` — `true` accepts; `false` refuses
-    typed (`REG_VALIDATE_FALSE`); a non-`Bool` return refuses (`RES_RETURN_TYPE`); a throw of
+    String slot): called as `validate(text::String) -> Bool` — `true` accepts; `false` refuses with the
+    catalogue-named stable message (`REG_VALIDATE_FALSE` — an `ErrorException` carrying the name, the §3.4 T3
+    seam-envelope family; its typed `Diagnostic` conversion the T11 catalogue); a non-`Bool` return refuses
+    (`RES_RETURN_TYPE`); a throw of
     any other class wraps (`CB_VALIDATE_THROW`, the class named via `nameof`, never its text).
     A validator may refuse with its OWN complete stable message by throwing an `ErrorException`
     whose message begins `"GoMeta "` — the engine's typed-prose refusal vocabulary, passed
@@ -507,7 +509,10 @@ arg2)` — parsed with the metaLine and handed to the action when it fires. The 
 ## §3 — The typed error-mode catalogue
 
 `Diagnostic = {code::Symbol, severity, message, context}`; a catalogued failure is a typed
-`Diagnostic` — **never** a bare `error()`. The catalogue's inventory IS the tables of §3.1–§3.5
+`Diagnostic` except where its row says otherwise — the E-04 crash-origin and the E-06 GUARDED refusal
+still throw (§3.1; their typed conversion deferred at v0), the condition-path rows are minted typed while
+the statement still aborts at the absorb seam (§3.2's preamble), and E-07's mint is pending (§3.2). The
+catalogue's inventory IS the tables of §3.1–§3.5
 below (no aggregate count is maintained by hand — two hand-written counts drifted at v0.4 T2);
 the rows fall into three classes
 (§3.1–§3.3); §3.4 additionally documents the latent crashes and the stable-message refusals that
@@ -763,8 +768,10 @@ parse-plane — the multi-inline-meta refusal and the two directive-adjacency re
 keep their existing forms; they are not part of the typed catalogue above.
 
 Additionally, a non-fatal `:warning` `Diagnostic` — `WARN_VERDICT_COLLISION` — is emitted (the run
-continues) when two byte-identical cells receive conflicting verdicts; cell-id disambiguation is
-deferred.
+continues) when a later put for the SAME occurrence handle and attribute changes the recorded value
+or polarity — the same cell re-applied with conflicting verdicts (the later row supersedes;
+applied-state-wins); two distinct cells never share a slot, byte-identical content included, for
+well-formed occurrence keys (`_putEval!`, `src/annotations.jl`).
 
 - **The T3 SEAM-ENVELOPE family — GUARDED (v0.4 T3; catalogue-NAMED stable-message refusals,
   their typed `Diagnostic` conversion = the T11 catalogue):** each fires as an

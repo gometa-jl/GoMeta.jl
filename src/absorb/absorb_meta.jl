@@ -811,9 +811,9 @@ function _absorb_local_only!(
         # the accepting slot rides to the typed arity/type refusals at the setter
         # guard — never the wrong-class validation message).
         # v0.4 T3 (T3-DESIGN §3; FM-CB-5) — the result is CONSUMED: `true` accepts;
-        # `false` refuses typed (REG_VALIDATE_FALSE); a non-Bool refuses typed
-        # (RES_RETURN_TYPE — the `-> Bool` contract); a FOREIGN throw wraps typed
-        # (CB_VALIDATE_THROW); the engine's own "GoMeta "-prefixed refusals (the
+        # `false` refuses (REG_VALIDATE_FALSE); a non-Bool refuses (RES_RETURN_TYPE — the `-> Bool`
+        # contract); a FOREIGN throw wraps (CB_VALIDATE_THROW) — each a catalogue-named stable-message
+        # ErrorException (docs/public-api.md §3.4); the engine's own "GoMeta "-prefixed refusals (the
         # ratified empty-heading class) pass through VERBATIM (the pass-through law).
         if spec.validate !== nothing && argsTup[spec.accepts_string_slot] isa String
             ok = try
