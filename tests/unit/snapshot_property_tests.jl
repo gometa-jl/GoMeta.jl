@@ -81,21 +81,23 @@ end
                 signatures = [GM.SignatureRecord(; algorithm = "ed25519")],
                 acquisition_mode = :shipped, artifact_version = v"1.0.0-rc1+build.7",
                 declared_capabilities = Symbol[:c1]),
-            permissions = GM.PermissionManifest(; seam = [:s1], ambient = [:a1]))
-        s1 = b.action_specs[1]
-        b.action_specs[1] = GM.ActionSpec(; name = s1.name, spelling = s1.spelling,
-            plugin = s1.plugin, overloads = s1.overloads,
-            accepts_string_slot = s1.accepts_string_slot, sugar_candidacy = s1.sugar_candidacy,
-            validate = _callable_struct,
+            permissions = GM.PermissionManifest(; seam = [:s1], ambient = [:a1]),
+            # stage 2's commit 3-ii: the default slot is the ALTERANT's — the value-domain carrier (formerly action 1's) rides plugin 1
             default = GM.Declared(Any[Int8(3), 1.5, Float32(2.5), Float16(1.0), _nan64,
                                       "str", :sym, true, Int128(7), UInt8(2),
                                       complex(1, 2), 1//2, Complex(1//2, 1//2),
                                       v"1.0.0-rc1", v"1.0.0+build.7", Val{:tp},
                                       (Int8(1), :a), (q = 1, w = :x), (:pk => 1),
                                       Dict{Any,Any}(:dk => Any[UInt16(9)], "sk" => 2.5)]))
-        s3 = b.action_specs[3]
-        b.action_specs[3] = GM.ActionSpec(; name = s3.name, spelling = s3.spelling,
-            plugin = s3.plugin, overloads = s3.overloads, settribute = s3.settribute,
+        s1 = b.action_specs[1]
+        b.action_specs[1] = GM.ActionSpec(; name = s1.name, spelling = s1.spelling,
+            plugin = s1.plugin, overloads = s1.overloads,
+            accepts_string_slot = s1.accepts_string_slot, sugar_candidacy = s1.sugar_candidacy,
+            validate = _callable_struct)
+        # the slot-struct default (formerly action 3's) rides plugin 2 (Visib; the DEFAULT_REGISTRY's fields copied)
+        b.plugins[2] = GM.PlugIn(; altName = :Visib, setMode = :mutExclusive, altConstructor = GM.Alterants.Visib,
+            setAltInstance = GM.Alterants.setVisib,
+            capture = GM.CaptureDecl(GM.Alterants.Visib, :single, :one, nothing; attr_stem = :visib),
             default = GM.Declared(GM.EffectRow(:mark, Dict{Any,Any}(Int16(2) => "pv"))))
         GM.register!(b,
             GM.PlugIn(Symbol("prop"), :accumulate, Dict{Symbol,Bool}, _closure_ref, nothing, nothing),
@@ -204,7 +206,7 @@ end
         pT === GM.PlugIn && pf === :permissions && return GM.PermissionManifest()
         pT === GM.ActionSpec && pf === :validate && return _swap_fn_a
         pT === GM.ActionSpec && pf === :keyed_slot && return (:ka, :kb)
-        pT === GM.ActionSpec && pf === :default && return GM.Declared(1)
+        pT === GM.PlugIn && pf === :default && return GM.Declared(1)   # stage 2's commit 3-ii: the slot is the Alterant's
         pT === GM.ActionSpec && pf === :settribute && return :zz
         pT === GM.ActionOverload && pf === :vararg_kind && return :symbol
         pT === GM.EffectRow && pf === :payload && return "px"
@@ -450,8 +452,8 @@ end
         @test isempty(GM._registry_door_check(R))
     end
     let R = GM.publish(_mk_prop_builder())                       # (3) Tuple rebuilt
-        t = R.action_specs[1].default.value[17]
-        _set_at!(R, Any[:action_specs, 1, :default, :value, 17], ntuple(j -> t[j], length(t)))
+        t = R.plugins[1].default.value[17]
+        _set_at!(R, Any[:plugins, 1, :default, :value, 17], ntuple(j -> t[j], length(t)))
         @test isempty(GM._registry_door_check(R))
     end
     let R = GM.publish(_mk_prop_builder())                       # (4) Pair rebuilt
@@ -460,8 +462,8 @@ end
         @test isempty(GM._registry_door_check(R))
     end
     let R = GM.publish(_mk_prop_builder())                       # (5) NamedTuple rebuilt
-        nt = R.action_specs[1].default.value[18]
-        _set_at!(R, Any[:action_specs, 1, :default, :value, 18], NamedTuple{keys(nt)}(values(nt)))
+        nt = R.plugins[1].default.value[18]
+        _set_at!(R, Any[:plugins, 1, :default, :value, 18], NamedTuple{keys(nt)}(values(nt)))
         @test isempty(GM._registry_door_check(R))
     end
     let R = GM.publish(_mk_prop_builder())                       # (6) slot struct rebuilt
@@ -470,27 +472,32 @@ end
                  GM.CaptureDecl(cd.instance_type, cd.attr_scheme, cd.multiplicity, cd.mode_gate, cd.attr_stem))
         @test isempty(GM._registry_door_check(R))
     end
+    # stage 2's commit 3-ii: the default slot is the ALTERANT's — `_with_default(b, i, v)` declares `v` on the plugin OWNING action i
+    # (action 4 = Visib's :discard → plugin 2), every other field copied; the readers below read `R.plugins[2].default`
+    _with_default(b, i, v) = begin
+        k = Int(b.action_specs[i].plugin); p = b.plugins[k]
+        b.plugins[k] = GM.PlugIn(; altName = p.altName, setMode = p.setMode, altConstructor = p.altConstructor,
+            setAltInstance = p.setAltInstance, getAltInstance = p.getAltInstance, precedencesTuple = p.precedencesTuple,
+            default = GM.Declared(v), capture = p.capture, render = p.render, vocabulary = p.vocabulary,
+            constraints = p.constraints, atoms = p.atoms, contract_version = p.contract_version, requires = p.requires,
+            sugar = p.sugar, provenance = p.provenance, permissions = p.permissions)
+        b
+    end
     let                                                          # (7) DAG SPLIT: shared → unshared
         b = _mk_prop_builder()
         shared = Any[Int8(5)]
-        s4 = b.action_specs[4]
-        b.action_specs[4] = GM.ActionSpec(; name = s4.name, spelling = s4.spelling,
-            plugin = s4.plugin, overloads = s4.overloads, settribute = s4.settribute,
-            default = GM.Declared(Any[shared, shared]))
+        b = _with_default(b, 4, Any[shared, shared])
         R = GM.publish(b)
-        live = R.action_specs[4].default.value
+        live = R.plugins[2].default.value
         live[2] = Any[e for e in live[1]]                        # sharing REMOVED on the live side
         @test isempty(GM._registry_door_check(R))
         push!(dagseen, :split)
     end
     let                                                          # (8) DAG JOIN: unshared → shared
         b = _mk_prop_builder()
-        s4 = b.action_specs[4]
-        b.action_specs[4] = GM.ActionSpec(; name = s4.name, spelling = s4.spelling,
-            plugin = s4.plugin, overloads = s4.overloads, settribute = s4.settribute,
-            default = GM.Declared(Any[Any[Int8(5)], Any[Int8(5)]]))
+        b = _with_default(b, 4, Any[Any[Int8(5)], Any[Int8(5)]])
         R = GM.publish(b)
-        live = R.action_specs[4].default.value
+        live = R.plugins[2].default.value
         live[2] = live[1]                                        # sharing INTRODUCED on the live side
         @test isempty(GM._registry_door_check(R))
         push!(dagseen, :join)
@@ -499,12 +506,6 @@ end
     # ═══ the NAMED cases (§9): Σ = 46 asserts (44 at T2-bis + the T4 VocabularyRef case) ═══
     _with_ctor(b, T) = (b.plugins[2] = GM.PlugIn(; altName = :Visib, setMode = :mutExclusive,
         altConstructor = T, setAltInstance = GM.Alterants.setVisib); b)
-    _with_default(b, i, v) = begin
-        s = b.action_specs[i]
-        b.action_specs[i] = GM.ActionSpec(; name = s.name, spelling = s.spelling, plugin = s.plugin,
-            overloads = s.overloads, settribute = s.settribute, default = GM.Declared(v))
-        b
-    end
     _swap_ctor!(R, T) = (R.plugins[2] = GM.PlugIn(; altName = :Visib, setMode = :mutExclusive,
         altConstructor = T, setAltInstance = GM.Alterants.setVisib); R)
     # (v0.4 T3 — the case-(iv) migration; RE-HOMED at T5: `SubString{String}` and its
@@ -539,7 +540,7 @@ end
     # VALUE form refuses at validate (1)
     let R = GM.publish(_with_default(_mk_prop_builder(), 4, SubString{String}))
         @test isempty(GM._registry_door_check(R))
-        _set_at!(R, Any[:action_specs, 4, :default, :value], String)
+        _set_at!(R, Any[:plugins, 2, :default, :value], String)
         @test _codesp(GM._registry_door_check(R)) == [:POST_SEAL_MUTATION]
     end
     let d = GM.validate(_with_default(_mk_prop_builder(), 4, SubString("ab", 1, 1)))
@@ -567,37 +568,37 @@ end
     # Dict ops with their path classes: key added (2) · deleted (2) · type-swapped 1 → 1.0
     # (2, CONTAINER) · -0.0 ↔ 0.0 (2, CONTAINER) · element appended (2) · removed (2)
     _dict_reg() = GM.publish(_with_default(_mk_prop_builder(), 4, Dict{Any,Any}(:a => 1, 1 => "one", -0.0 => :nz)))
-    _dpath = Any[:action_specs, 4, :default, :value]
+    _dpath = Any[:plugins, 2, :default, :value]
     let R = _dict_reg()
-        d = R.action_specs[4].default.value
+        d = R.plugins[2].default.value
         d[:b] = 2
         @test _codesp(GM._registry_door_check(R)) == [:POST_SEAL_MUTATION]
         @test _reported_segments(R) == _dpath
     end
     let R = _dict_reg()
-        delete!(R.action_specs[4].default.value, :a)
+        delete!(R.plugins[2].default.value, :a)
         @test _codesp(GM._registry_door_check(R)) == [:POST_SEAL_MUTATION]
         @test _reported_segments(R) == _dpath
     end
     let R = _dict_reg()
-        d = R.action_specs[4].default.value
+        d = R.plugins[2].default.value
         delete!(d, 1); d[1.0] = "one"
         @test _codesp(GM._registry_door_check(R)) == [:POST_SEAL_MUTATION]
         @test _reported_segments(R) == _dpath                    # CONTAINER — no `===` key-match
     end
     let R = _dict_reg()
-        d = R.action_specs[4].default.value
+        d = R.plugins[2].default.value
         delete!(d, -0.0); d[0.0] = :nz
         @test _codesp(GM._registry_door_check(R)) == [:POST_SEAL_MUTATION]
         @test _reported_segments(R) == _dpath                    # CONTAINER — signed zero is a distinct key
     end
     let R = GM.publish(_with_default(_mk_prop_builder(), 4, Any[Int8(1), Int8(2)]))
-        push!(R.action_specs[4].default.value, Int8(3))
+        push!(R.plugins[2].default.value, Int8(3))
         @test _codesp(GM._registry_door_check(R)) == [:POST_SEAL_MUTATION]
         @test _reported_segments(R) == _dpath
     end
     let R = GM.publish(_with_default(_mk_prop_builder(), 4, Any[Int8(1), Int8(2)]))
-        pop!(R.action_specs[4].default.value)
+        pop!(R.plugins[2].default.value)
         @test _codesp(GM._registry_door_check(R)) == [:POST_SEAL_MUTATION]
         @test _reported_segments(R) == _dpath
     end
@@ -627,7 +628,7 @@ end
         b = _with_default(b, 4, Any[shared, shared])
         R = GM.publish(b)
         @test isempty(GM._registry_door_check(R))
-        R.action_specs[4].default.value[1][1] = Int8(8)
+        R.plugins[2].default.value[1][1] = Int8(8)
         rep = _reported_segments(R)
         @test _codesp(GM._registry_door_check(R)) == [:POST_SEAL_MUTATION] && rep !== nothing &&
               (_prefix_comparable(rep, Any[_dpath; 1; 1]) || _prefix_comparable(rep, Any[_dpath; 2; 1]))
@@ -638,7 +639,7 @@ end
         @test isempty(GM._registry_door_check(R))                # two equal keys, different values — SILENT
     end
     let R = GM.publish(_with_default(_mk_prop_builder(), 4, _twokey(1, 2)))
-        d = R.action_specs[4].default.value
+        d = R.plugins[2].default.value
         ks = collect(keys(d))
         v1 = d[ks[1]]; d[ks[1]] = d[ks[2]]; d[ks[2]] = v1        # a pure VALUE SWAP — structurally equal
         @test isempty(GM._registry_door_check(R))                # SILENT (scope note 4 — surfaced, ruled-covered reading)
@@ -661,7 +662,7 @@ end
     let b = _mk_prop_builder()
         b = _with_default(b, 4, b.action_specs[2])
         d = GM.validate(b)
-        @test any(x -> x.code === :REG_PROTOCOL && x.context === b.action_specs[4].name &&
+        @test any(x -> x.code === :REG_PROTOCOL && x.context === b.plugins[2].altName &&   # commit 3-ii: the context is the Alterant's name
                        occursin("slot default", x.message), d)
     end
     # the NESTED-NUMERIC case (1): `Declared(Complex(1//2, 1//2))` publishes; door SILENT
@@ -679,23 +680,23 @@ end
     end
     # the TANDEM-CYCLE case (1): `d[k] = d` written on BOTH sides (a test-side B-2 act) — SILENT
     let R = GM.publish(_with_default(_mk_prop_builder(), 4, Dict{Any,Any}(:k => 1)))
-        dl = R.action_specs[4].default.value
-        ds = R._snapshot.action_specs[4].default.value
+        dl = R.plugins[2].default.value
+        ds = R._snapshot.plugins[2].default.value
         dl[:self] = dl
         ds[:self] = ds
         @test isempty(GM._registry_door_check(R))
     end
     # the EQUAL-KEY-MUTATION case (2): a THIRD value under one of two equal keys — CONTAINER path
     let R = GM.publish(_with_default(_mk_prop_builder(), 4, _twokey(1, 2)))
-        d = R.action_specs[4].default.value
+        d = R.plugins[2].default.value
         d[first(keys(d))] = 3
         @test _codesp(GM._registry_door_check(R)) == [:POST_SEAL_MUTATION]
         @test _reported_segments(R) == _dpath
     end
     # the NESTED tandem cycle (1): `d2` under `d1`'s struct-keyed entry, self-cycled BOTH sides
     let R = GM.publish(_with_default(_mk_prop_builder(), 4, Dict{Any,Any}(GM.MutEx([:n]) => Dict{Any,Any}(:k => 1))))
-        d2l = first(values(R.action_specs[4].default.value))
-        d2s = first(values(R._snapshot.action_specs[4].default.value))
+        d2l = first(values(R.plugins[2].default.value))
+        d2s = first(values(R._snapshot.plugins[2].default.value))
         d2l[:self] = d2l
         d2s[:self] = d2s
         @test isempty(GM._registry_door_check(R))
@@ -769,7 +770,7 @@ end
         s.pT in (GM.PlugIn, GM.ActionSpec, GM.ActionOverload) && s.path[end] isa Symbol &&
             push!(recfields, (s.pT, s.path[end]))
     end
-    @test length(recfields) == 37                                # every §1 record field exercised (37 since stage 2's commit 3: the Alterant's default slot — R-V04B-51)
+    @test length(recfields) == 36                                # every §1 record field exercised (36: the Alterant's default slot joined at commit 3, the action's left at 3-ii — R-V04B-51)
     leafcats = Set(s.cat for s in sites if s.kind in (:leaf, :single, :dictkey))
     @test issubset(Set([:bool, :symbol, :int, :float, :string, :type, :function, :version,
                         :complex, :rational, :nothing_leaf]), leafcats)

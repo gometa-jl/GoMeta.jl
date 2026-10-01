@@ -542,13 +542,13 @@ function default_registry_builder()
             [_ov(Type[Alterants.Visib, Symbol], Symbol[], Symbol[]; rt=Bool),
              _ov(Type[Alterants.Visib, SubString{String}], Symbol[], Symbol[];
                  rt=Bool, gr=false)],
-            0, :none, nothing, nothing, NoDefault(), :hide),
+            0, :none, nothing, nothing, :hide),
         ActionSpec(:show, :identifier, Int8(2),
             [_ov(Type[Alterants.Visib, Symbol], Symbol[], Symbol[]; rt=Bool)],
-            0, :none, nothing, nothing, NoDefault(), :show),
+            0, :none, nothing, nothing, :show),
         ActionSpec(:discard, :identifier, Int8(2),
             [_ov(Type[Alterants.Visib, Symbol], Symbol[], Symbol[]; rt=Bool)],
-            0, :none, nothing, nothing, NoDefault(), :discard),
+            0, :none, nothing, nothing, :discard),
         # Id cell/parent/file — ONE literal slot, kind :symbol DECLARED (the setter
         # slot is `Any` — the untyped-slot class the reflection memo tags; reflection
         # cannot carry this kind). NON-queryable (experimental, I21). The inherited
@@ -843,10 +843,6 @@ function _record_wellformed_actions_collect!(diags::Vector{Diagnostic}, action_s
                 "sets — the dispatch-target uniqueness law refuses (one declared ",
                 "form per arity; the guard's row set must be a singleton)"), spec.name)
         end
-        # v0.4 T1 — the per-action slots' shape (additive; the closed enums of state.jl):
-        spec.default isa DefaultSlot ||
-            proto(string("GoMeta registry: the default slot on ", repr(spec.name),
-                " is not a DefaultSlot (NoDefault() | Declared(v)) (the record shape law)"), spec.name)
         # v0.4 T2 — a declared write-back key must be a settribute key the component carries
         spec.settribute === nothing || spec.settribute in keys(BLS.ComponentSettribute) ||
             proto(string("GoMeta registry: action ", repr(spec.name), " declares the write-back ",
@@ -1098,8 +1094,9 @@ function _registration_digest(action_specs::Vector{ActionSpec};
             Int(spec.plugin), spec.accepts_string_slot, spec.sugar_candidacy,
             spec.validate === nothing ? "-" : String(nameof(spec.validate)),
             spec.keyed_slot,
-            # v0.4 T2 — the declared per-action slots join the fold (the seal covers the record)
-            "default", _slot_text(spec.default), "settribute", _slot_text(spec.settribute))
+            # v0.4 T2 — the declared per-action slot joins the fold (the seal covers the record; the per-action
+            # default left the record at stage 2's commit 3-ii — the Alterant's default folds below)
+            "settribute", _slot_text(spec.settribute))
         for ov in sort(spec.overloads; by = _overload_text)
             h = _fold_parts(h, "ov")
             for t in ov.sig_types
@@ -1320,7 +1317,7 @@ _domain_leaf(x)::Bool =
     x isa Function || x isa Type || x isa Symbol || x === nothing || x isa String ||
     x isa VersionNumber || _numeric_leaf(x)
 
-## the per-record explicit field lists — 17/10/10 (the Alterant's default slot since stage 2's commit 3), each asserted against the compiler at
+## the per-record explicit field lists — 17/9/10 (the Alterant's default slot since stage 2's commit 3; the action's gone since 3-ii), each asserted against the compiler at
 ## load (T2BIS-DESIGN §15 (7)); the three record structs are POSITION-RESTRICTED walker
 ## containers (elements of `plugins`/`action_specs`; `ActionOverload` inside
 ## `ActionSpec.overloads`) and are REFUSED anywhere else, declared data included.
@@ -1329,7 +1326,7 @@ const _WALK_PLUGIN_FIELDS = (:altName, :setMode, :altConstructor, :setAltInstanc
     :contract_version, :requires, :sugar, :provenance, :permissions)
 @assert _WALK_PLUGIN_FIELDS == fieldnames(PlugIn)
 const _WALK_ACTION_FIELDS = (:name, :spelling, :plugin, :overloads, :accepts_string_slot,
-    :sugar_candidacy, :validate, :keyed_slot, :default, :settribute)
+    :sugar_candidacy, :validate, :keyed_slot, :settribute)
 @assert _WALK_ACTION_FIELDS == fieldnames(ActionSpec)
 const _WALK_OVERLOAD_FIELDS = (:sig_types, :kinds, :kind_sources, :vararg_kind, :return_type,
     :effect, :queryable, :applicability, :phase, :grammar)

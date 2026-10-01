@@ -32,7 +32,6 @@ import GoMeta as GM
         ov = GM.ActionOverload(Type[Dict{Symbol,Bool}, Symbol], Symbol[], Symbol[], nothing,
                                Nothing, :set, false, :context_free, :apply, true)
         s = GM.ActionSpec(:zza, :identifier, Int8(1), [ov], 0, :none, nothing, nothing)
-        @test s.default === GM.NoDefault()
         @test s.settribute === nothing
         @test p.default === GM.NoDefault()   # stage 2's commit 3: the ALTERANT's default slot (R-V04B-51), undeclared by the positional form
     end
@@ -83,8 +82,7 @@ import GoMeta as GM
         ov = GM.ActionOverload(Type[Dict{Symbol,Bool}, Symbol], Symbol[], Symbol[], nothing,
                                Bool, :set, false, :context_free, :apply, true)
         s = GM.ActionSpec(; name = :zzh, spelling = :identifier, plugin = Int8(1), overloads = [ov],
-                            default = GM.Declared(:show), settribute = :zzh)
-        @test s.default isa GM.Declared && s.default.value === :show
+                            settribute = :zzh)
         @test s.settribute === :zzh
     end
 
@@ -101,8 +99,7 @@ import GoMeta as GM
         end
         @test !hasfield(GM.AlterantRegistry, :visib_to_settribute)
         @test !isdefined(GM, :VISIB_TO_SETTRIBUTE)
-        # the default record's per-action defaults are all UNDECLARED at v0.4.0 T1 (the slot gives way at stage 2's commit 3-ii)
-        @test all(s -> s.default === GM.NoDefault(), R.action_specs)
+        @test !hasfield(GM.ActionSpec, :default)   # stage 2's commit 3-ii: the per-action slot of T1 GAVE WAY to the Alterant's (R-V04B-51)
         # stage 2's commit 3 (R-V04B-51 (1)–(2); R-V04B-55 (1)): the default is the ALTERANT's — Visib declares 'show', the
         # others (Labels, Id, Heading) stay UNDECLARED until the owner's word at stage 2's review
         @test R.plugins[R.alt_index[:Visib]].default === GM.Declared(:show)
@@ -170,7 +167,7 @@ import GoMeta as GM
         alt[i] = GM.ActionSpec(; name = h.name, spelling = h.spelling, plugin = h.plugin,
                                  overloads = h.overloads, accepts_string_slot = h.accepts_string_slot,
                                  sugar_candidacy = h.sugar_candidacy, validate = h.validate,
-                                 keyed_slot = h.keyed_slot, default = GM.Declared(:show),
+                                 keyed_slot = h.keyed_slot,
                                  settribute = :elsewhere)
         @test GM._registration_digest(alt) != GM._registration_digest(specs)   # flipped at T2 (was ==)
     end

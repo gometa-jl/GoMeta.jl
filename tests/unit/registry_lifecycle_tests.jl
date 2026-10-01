@@ -27,6 +27,12 @@
 using Test
 import GoMeta as GM
 
+_plugin_with_default(p, d) = GM.PlugIn(; altName = p.altName, setMode = p.setMode, altConstructor = p.altConstructor,
+        setAltInstance = p.setAltInstance, getAltInstance = p.getAltInstance, precedencesTuple = p.precedencesTuple,
+        default = d, capture = p.capture, render = p.render, vocabulary = p.vocabulary, constraints = p.constraints,
+        atoms = p.atoms, contract_version = p.contract_version, requires = p.requires, sugar = p.sugar,
+        provenance = p.provenance, permissions = p.permissions)   # stage 2's commit 3-ii: the declared default is the ALTERANT's — the record `p` with the slot `d`, every other field copied
+
 @testset "registry_lifecycle (v0.4 T2)" begin
 
     _ov(sig; rt = Nothing, q = false) = GM.ActionOverload(sig, Symbol[], Symbol[], nothing, rt,
@@ -231,11 +237,9 @@ import GoMeta as GM
         @test string(nan1) == string(nan2) && GM._slot_text(nan1) != GM._slot_text(nan2)
         # (cure batch 3) a published container mutated into a CYCLE is refused as a mutation, not a StackOverflow
         bcy = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
-        bcy.action_specs[3] = GM.ActionSpec(; name = :show, spelling = :identifier, plugin = Int8(2),
-                                              overloads = bcy.action_specs[3].overloads, settribute = :show,
-                                              default = GM.Declared(Any[]))
+        bcy.plugins[2] = _plugin_with_default(bcy.plugins[2], GM.Declared(Any[]))
         Rcy = GM.publish(bcy)
-        v = Rcy.action_specs[3].default.value; push!(v, v)
+        v = Rcy.plugins[2].default.value; push!(v, v)
         @test _codes(GM._registry_door_check(Rcy)) == [:POST_SEAL_MUTATION]
         # (cure batch 3) a PLUGIN-level structural defect does not mark the actions broken: a sound
         # action's tier-2 defect is still reported
@@ -253,29 +257,23 @@ import GoMeta as GM
         @test GM._slot_text(1//2) != GM._slot_text(2//4 + 0//1 + 1//3)   # structural, not display
         @eval module _Opaque; struct Thing; x::Int; end; end
         bu = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
-        bu.action_specs[3] = GM.ActionSpec(; name = :show, spelling = :identifier, plugin = Int8(2),
-                                             overloads = bu.action_specs[3].overloads, settribute = :show,
-                                             default = GM.Declared(_Opaque.Thing(1)))
+        bu.plugins[2] = _plugin_with_default(bu.plugins[2], GM.Declared(_Opaque.Thing(1)))
         du = GM.validate(bu)
         @test :REG_PROTOCOL in _errors(du) && occursin("no canonical encoder", only(filter(x -> x.code === :REG_PROTOCOL, du)).message)
         @test_throws GM.RegistrationRefused GM.publish(bu)
         # (cure batch 4) a PRE-publication cycle is a validation refusal, never a leaked internal exception
         bpc = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
         cyc = Any[]; push!(cyc, cyc)
-        bpc.action_specs[3] = GM.ActionSpec(; name = :show, spelling = :identifier, plugin = Int8(2),
-                                              overloads = bpc.action_specs[3].overloads, settribute = :show,
-                                              default = GM.Declared(cyc))
+        bpc.plugins[2] = _plugin_with_default(bpc.plugins[2], GM.Declared(cyc))
         dpc = GM.validate(bpc)
         @test :REG_PROTOCOL in _errors(dpc) && occursin("CYCLIC", only(filter(x -> x.code === :REG_PROTOCOL, dpc)).message)
         e = try GM.publish(bpc); nothing catch err; err end
         @test e isa GM.RegistrationRefused
         # (cure batch 4) a published Dict mutated into a cycle is refused as a mutation (the Dict encoder is guarded)
         bdc = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
-        bdc.action_specs[3] = GM.ActionSpec(; name = :show, spelling = :identifier, plugin = Int8(2),
-                                              overloads = bdc.action_specs[3].overloads, settribute = :show,
-                                              default = GM.Declared(Dict{Any,Any}(:k => 1)))
+        bdc.plugins[2] = _plugin_with_default(bdc.plugins[2], GM.Declared(Dict{Any,Any}(:k => 1)))
         Rdc = GM.publish(bdc)
-        dd = Rdc.action_specs[3].default.value; dd[:self] = dd
+        dd = Rdc.plugins[2].default.value; dd[:self] = dd
         @test _codes(GM._registry_door_check(Rdc)) == [:POST_SEAL_MUTATION]
         # (cure batch 4) a DAG (the same container reached twice, no cycle) is NOT reported cyclic
         shared = Symbol[:a]
@@ -289,9 +287,7 @@ import GoMeta as GM
         @test_throws GM._UnencodableSlot GM._slot_text(GM.EffectRow(:mark, sin))
         @test GM._slot_text(sin) == "f3:sin"
         bfn = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
-        bfn.action_specs[3] = GM.ActionSpec(; name = :show, spelling = :identifier, plugin = Int8(2),
-                                              overloads = bfn.action_specs[3].overloads, settribute = :show,
-                                              default = GM.Declared(Any[sin]))
+        bfn.plugins[2] = _plugin_with_default(bfn.plugins[2], GM.Declared(Any[sin]))
         dfn = GM.validate(bfn)
         @test :REG_PROTOCOL in _errors(dfn) && occursin("slot default", only(filter(x -> x.code === :REG_PROTOCOL, dfn)).message)
         # (cure batch 5) CONCRETE containers only: a range/view is not a Vector — refused, so `1:3` can
@@ -306,15 +302,13 @@ import GoMeta as GM
         # (cure batch 5) the publish → mutate → DOOR witness of the bit-exact composite encoding (t2r4 A-4:
         # the batch-4 witness only compared two encodings and passed on the pre-batch tree)
         bcx = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
-        bcx.action_specs[3] = GM.ActionSpec(; name = :show, spelling = :identifier, plugin = Int8(2),
-                                              overloads = bcx.action_specs[3].overloads, settribute = :show,
-                                              default = GM.Declared(Any[complex(nan1, 0.0)]))
+        bcx.plugins[2] = _plugin_with_default(bcx.plugins[2], GM.Declared(Any[complex(nan1, 0.0)]))
         Rcx = GM.publish(bcx)
         @test isempty(GM._registry_door_check(Rcx))
-        Rcx.action_specs[3].default.value[1] = complex(nan2, 0.0)
+        Rcx.plugins[2].default.value[1] = complex(nan2, 0.0)
         @test _codes(GM._registry_door_check(Rcx)) == [:POST_SEAL_MUTATION]
         # (cure batch 5) a published value mutated from encodable to UNENCODABLE is a mutation at the door
-        Rcx.action_specs[3].default.value[1] = 'c'
+        Rcx.plugins[2].default.value[1] = 'c'
         @test _codes(GM._registry_door_check(Rcx)) == [:POST_SEAL_MUTATION]
         # (cure batch 5) Rational: concrete-type-tagged + structural; BigInt parts are outside the machine domain
         @test GM._slot_text(Rational{Int8}(1, 2)) != GM._slot_text(1//2)
@@ -327,15 +321,11 @@ import GoMeta as GM
         # (cure batch 5) encodability is probed PER SLOT with FULL collection: two defective records ⇒ two
         # diagnostics, each naming its record + slot
         bps = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
-        bps.action_specs[3] = GM.ActionSpec(; name = :show, spelling = :identifier, plugin = Int8(2),
-                                              overloads = bps.action_specs[3].overloads, settribute = :show,
-                                              default = GM.Declared(1:3))
-        bps.action_specs[2] = GM.ActionSpec(; name = :hide, spelling = :identifier, plugin = Int8(2),
-                                              overloads = bps.action_specs[2].overloads, settribute = :hide,
-                                              default = GM.Declared('c'))
+        bps.plugins[2] = _plugin_with_default(bps.plugins[2], GM.Declared(1:3))
+        bps.plugins[1] = _plugin_with_default(bps.plugins[1], GM.Declared('c'))   # the second defective default on another Alterant (labels)
         dps = filter(x -> x.code === :REG_PROTOCOL, GM.validate(bps))
         @test length(dps) == 2 && all(x -> occursin("slot default", x.message), dps) &&
-              Set(x.context for x in dps) == Set([:hide, :show])
+              Set(x.context for x in dps) == Set([:labels, :Visib])   # commit 3-ii: the slots are the Alterants' — the contexts their names
         # deep-copy publication: a NESTED declared container of the builder is not shared with the published value
         bdp = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
         bdp.plugins[2] = GM.PlugIn(; altName = :Visib, setMode = :mutExclusive, altConstructor = GM.Alterants.Visib,
@@ -514,24 +504,20 @@ import GoMeta as GM
         # W1 — the CONTAINED route refuses a published value mutated into a CYCLE, typed,
         # naming the record + slot via the path (Rcx/Rcy above are testset-locals — rebuilt)
         b1 = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
-        b1.action_specs[3] = GM.ActionSpec(; name = :show, spelling = :identifier, plugin = Int8(2),
-                                             overloads = b1.action_specs[3].overloads, settribute = :show,
-                                             default = GM.Declared(Any[]))
+        b1.plugins[2] = _plugin_with_default(b1.plugins[2], GM.Declared(Any[]))
         R1 = GM.publish(b1)
-        v1 = R1.action_specs[3].default.value; push!(v1, v1)
+        v1 = R1.plugins[2].default.value; push!(v1, v1)
         e1 = try GM.RegistryBuilder(R1); nothing catch err; err end
         @test e1 isa GM.RegistrationRefused
-        @test occursin("show", e1.diagnostics[1].message) && occursin("default", e1.diagnostics[1].message)
+        @test occursin("Visib", e1.diagnostics[1].message) && occursin("default", e1.diagnostics[1].message)   # commit 3-ii: the slot is the Alterant's — the record named is :Visib
         # W2 — the contained route refuses an out-of-domain value ('c'), naming the TYPE + path
         b2 = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
-        b2.action_specs[3] = GM.ActionSpec(; name = :show, spelling = :identifier, plugin = Int8(2),
-                                             overloads = b2.action_specs[3].overloads, settribute = :show,
-                                             default = GM.Declared(Any[1]))
+        b2.plugins[2] = _plugin_with_default(b2.plugins[2], GM.Declared(Any[1]))
         R2b = GM.publish(b2)
-        R2b.action_specs[3].default.value[1] = 'c'
+        R2b.plugins[2].default.value[1] = 'c'
         e2 = try GM.RegistryBuilder(R2b); nothing catch err; err end
         @test e2 isa GM.RegistrationRefused
-        @test occursin("Char", e2.diagnostics[1].message) && occursin("action_specs[3].default.value[1]", e2.diagnostics[1].message)
+        @test occursin("Char", e2.diagnostics[1].message) && occursin("plugins[2].default.value[1]", e2.diagnostics[1].message)
         # W3 — the ASYMMETRY witness: rewriting the SNAPSHOT side ALONE fires (the length gate)
         R3b = GM.publish(GM.default_registry_builder())
         push!(R3b._snapshot.plugins, R3b.plugins[1])
@@ -563,33 +549,27 @@ import GoMeta as GM
         # W6 — a RECORD STRUCT in declared data refuses at validate (the slot-named row, never
         # the publish-containment generic row) + a typed publish refusal
         b6 = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
-        b6.action_specs[3] = GM.ActionSpec(; name = :show, spelling = :identifier, plugin = Int8(2),
-                                             overloads = b6.action_specs[3].overloads, settribute = :show,
-                                             default = GM.Declared(GM.ActionOverload(; sig_types = Type[])))
+        b6.plugins[2] = _plugin_with_default(b6.plugins[2], GM.Declared(GM.ActionOverload(; sig_types = Type[])))
         d6 = GM.validate(b6)
-        @test any(x -> x.code === :REG_PROTOCOL && x.context === :show &&
+        @test any(x -> x.code === :REG_PROTOCOL && x.context === :Visib &&   # commit 3-ii: the context is the Alterant's name
                        occursin("slot default", x.message) && occursin("ActionOverload", x.message), d6)
         @test_throws GM.RegistrationRefused GM.publish(b6)
         # W7 — the contained route ENFORCES the position rules on its unvalidated input: a
         # Function IN DATA refuses typed, the message naming the position rule + the path
         b7 = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
-        b7.action_specs[3] = GM.ActionSpec(; name = :show, spelling = :identifier, plugin = Int8(2),
-                                             overloads = b7.action_specs[3].overloads, settribute = :show,
-                                             default = GM.Declared(Any[1]))
+        b7.plugins[2] = _plugin_with_default(b7.plugins[2], GM.Declared(Any[1]))
         R7 = GM.publish(b7)
-        R7.action_specs[3].default.value[1] = sin
+        R7.plugins[2].default.value[1] = sin
         e7 = try GM.RegistryBuilder(R7); nothing catch err; err end
         @test e7 isa GM.RegistrationRefused
         @test occursin("position rule", e7.diagnostics[1].message) &&
-              occursin("action_specs[3].default.value[1]", e7.diagnostics[1].message)
+              occursin("plugins[2].default.value[1]", e7.diagnostics[1].message)
         # W8 — the MINT-PARITY witness of the DATA-WINS precedence: an atom nested in data has
         # its `evaluate` REFUSED (a Function in data), never the generic containment row
         b8 = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
-        b8.action_specs[3] = GM.ActionSpec(; name = :show, spelling = :identifier, plugin = Int8(2),
-                                             overloads = b8.action_specs[3].overloads, settribute = :show,
-                                             default = GM.Declared(GM.ConditionAtom(:n, "s", sin)))
+        b8.plugins[2] = _plugin_with_default(b8.plugins[2], GM.Declared(GM.ConditionAtom(:n, "s", sin)))
         d8 = GM.validate(b8)
-        @test any(x -> x.code === :REG_PROTOCOL && x.context === :show &&
+        @test any(x -> x.code === :REG_PROTOCOL && x.context === :Visib &&   # commit 3-ii: the context is the Alterant's name
                        occursin("slot default", x.message), d8)
         @test_throws GM.RegistrationRefused GM.publish(b8)
     end
@@ -626,9 +606,7 @@ import GoMeta as GM
         end
         bc2 = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
         s2c = bc2.action_specs[3]
-        bc2.action_specs[3] = GM.ActionSpec(; name = s2c.name, spelling = s2c.spelling,
-            plugin = s2c.plugin, overloads = s2c.overloads, settribute = s2c.settribute,
-            default = GM.Declared(Dict{Any,Any}(_CrxHashBomb.K => 1)))
+        bc2.plugins[2] = _plugin_with_default(bc2.plugins[2], GM.Declared(Dict{Any,Any}(_CrxHashBomb.K => 1)))
         _CrxHashBomb.ARMED[] = true
         ec2 = try GM.publish(bc2); nothing catch err; err end
         _CrxHashBomb.ARMED[] = false
@@ -640,20 +618,16 @@ import GoMeta as GM
         # preload route refuses typed
         bc3 = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
         s3c = bc3.action_specs[3]
-        bc3.action_specs[3] = GM.ActionSpec(; name = s3c.name, spelling = s3c.spelling,
-            plugin = s3c.plugin, overloads = s3c.overloads, settribute = s3c.settribute,
-            default = GM.Declared(Any[1]))
+        bc3.plugins[2] = _plugin_with_default(bc3.plugins[2], GM.Declared(Any[1]))
         Rc3 = GM.publish(bc3)
-        vc3 = Rc3.action_specs[3].default.value
+        vc3 = Rc3.plugins[2].default.value
         resize!(vc3, 0); resize!(vc3, 1)
         @test _codes(GM._registry_door_check(Rc3)) == [:POST_SEAL_MUTATION]
         ec3 = try GM.RegistryBuilder(Rc3); nothing catch err; err end
         @test ec3 isa GM.RegistrationRefused
         bc4 = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
         s4c = bc4.action_specs[3]
-        bc4.action_specs[3] = GM.ActionSpec(; name = s4c.name, spelling = s4c.spelling,
-            plugin = s4c.plugin, overloads = s4c.overloads, settribute = s4c.settribute,
-            default = GM.Declared(Vector{Any}(undef, 1)))
+        bc4.plugins[2] = _plugin_with_default(bc4.plugins[2], GM.Declared(Vector{Any}(undef, 1)))
         dc4 = GM.validate(bc4)
         @test any(x -> x.code === :REG_PROTOCOL && occursin("UNDEFINED element", x.message), dc4)
     end

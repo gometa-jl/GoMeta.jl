@@ -246,7 +246,7 @@ end
 const depthLevelsMH =
     (:depth0, :depth1, :depth2, :depth3, :depth4, :depth5, :depth6, :depth7, :depth8)
 ## The depth window :depth0..:depth8 is ARCHITECTURAL (state.jl's slot map: slots 1-9 carry
-## depth 0-8, slot 10 is the user level, 11 the line level, 12 the default — a depth-9 slot
+## depth 0-8, slot 10 is the user level, 11 the line level, 12 the fallBack level (R-V04B-55 (3)) — a depth-9 slot
 ## would collide with the user level). This lookup is TOTAL by construction: a slot index or
 ## the stable refusal — `nothing` can never escape into the Int conversion.
 function getGivenDepthMH(crntComponent::Component)::Int

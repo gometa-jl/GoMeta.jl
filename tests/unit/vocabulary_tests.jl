@@ -140,6 +140,11 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
 
     _zwj = Symbol("⛓️‍💥")
     _doc(s) = Vector{UInt8}(codeunits(s))
+    _plugin_with_default(p, d) = GM.PlugIn(; altName = p.altName, setMode = p.setMode, altConstructor = p.altConstructor,
+        setAltInstance = p.setAltInstance, getAltInstance = p.getAltInstance, precedencesTuple = p.precedencesTuple,
+        default = d, capture = p.capture, render = p.render, vocabulary = p.vocabulary, constraints = p.constraints,
+        atoms = p.atoms, contract_version = p.contract_version, requires = p.requires, sugar = p.sugar,
+        provenance = p.provenance, permissions = p.permissions)   # stage 2's commit 3-ii: the declared default is the ALTERANT's — the record `p` with the slot `d`, every other field copied
     _drive(s; R = GM.DEFAULT_REGISTRY) = try
         GM.goMeta(_doc(s); registry = R)
     catch e
@@ -393,8 +398,9 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
             plugin = s6.plugin, overloads = s6.overloads,
             accepts_string_slot = s6.accepts_string_slot,
             sugar_candidacy = s6.sugar_candidacy, validate = s6.validate,
-            keyed_slot = s6.keyed_slot, default = GM.Declared(_VocHostile.HostileP()),
+            keyed_slot = s6.keyed_slot,
             settribute = s6.settribute)
+        b6.plugins[2] = _plugin_with_default(b6.plugins[2], GM.Declared(_VocHostile.HostileP()))   # the hostile value rides the Alterant's slot (commit 3-ii)
         d6 = GM.validate(b6)
         @test any(x -> x.code === :REG_PROTOCOL && occursin("HostileP", x.message), d6)
         # (A7) the reflection cross-check renders a hostile-typed DECLARED signature
@@ -410,7 +416,7 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
             plugin = s7.plugin, overloads = [s7.overloads..., hov],
             accepts_string_slot = s7.accepts_string_slot,
             sugar_candidacy = s7.sugar_candidacy, validate = s7.validate,
-            keyed_slot = s7.keyed_slot, default = s7.default, settribute = s7.settribute)
+            keyed_slot = s7.keyed_slot, settribute = s7.settribute)
         d7 = GM.validate(b7)
         @test any(x -> x.code === :REG_SIG_MISMATCH && occursin("HostileS", x.message), d7)
         # (A8) the value-algebra refusal renders a hostile declared return_type
@@ -428,7 +434,7 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
             plugin = s7.plugin, overloads = [s7.overloads..., rov],
             accepts_string_slot = s7.accepts_string_slot,
             sugar_candidacy = s7.sugar_candidacy, validate = s7.validate,
-            keyed_slot = s7.keyed_slot, default = s7.default, settribute = s7.settribute)
+            keyed_slot = s7.keyed_slot, settribute = s7.settribute)
         d8 = GM.validate(b8)
         @test any(x -> x.code === :REG_VALUE_ALGEBRA && occursin("HostileS", x.message), d8)
     end
@@ -475,7 +481,7 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
             plugin = sq.plugin, overloads = [qov],
             accepts_string_slot = sq.accepts_string_slot,
             sugar_candidacy = sq.sugar_candidacy, validate = sq.validate,
-            keyed_slot = sq.keyed_slot, default = sq.default, settribute = sq.settribute)
+            keyed_slot = sq.keyed_slot, settribute = sq.settribute)
         dq = GM.validate(bq)
         @test dq isa Vector && !any(x -> x.code === :REG_SIG_MISMATCH &&
                                          occursin("declared overload has no", x.message), dq) &&
@@ -494,8 +500,8 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
             accepts_string_slot = sk.accepts_string_slot,
             sugar_candidacy = sk.sugar_candidacy, validate = sk.validate,
             keyed_slot = sk.keyed_slot,
-            default = GM.Declared(Dict{Any,Any}(_VocR3.hkey => 1)),
             settribute = sk.settribute)
+        bk.plugins[2] = _plugin_with_default(bk.plugins[2], GM.Declared(Dict{Any,Any}(_VocR3.hkey => 1)))   # commit 3-ii: the Alterant's slot
         dk = GM.validate(bk)
         @test dk isa Vector && any(x -> x.code === :REG_PROTOCOL, dk) &&
               _VocR3.KCALLS[] == 0      # (r4-B1) the key's nameof never EXECUTED (the
@@ -514,7 +520,7 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
             plugin = sb.plugin, overloads = [sb.overloads..., bov2],
             accepts_string_slot = sb.accepts_string_slot,
             sugar_candidacy = sb.sugar_candidacy, validate = sb.validate,
-            keyed_slot = sb.keyed_slot, default = sb.default, settribute = sb.settribute)
+            keyed_slot = sb.keyed_slot, settribute = sb.settribute)
         db = GM.validate(bb)
         @test any(x -> x.code === :REG_PROTOCOL, db) &&
               !any(x -> x.code === :REG_SIG_MISMATCH, db)
@@ -560,8 +566,8 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
             accepts_string_slot = ss.accepts_string_slot,
             sugar_candidacy = ss.sugar_candidacy, validate = ss.validate,
             keyed_slot = ss.keyed_slot,
-            default = GM.Declared(Dict{Any,Any}(_VocR5.BadString() => 1)),
             settribute = ss.settribute)
+        bs5.plugins[2] = _plugin_with_default(bs5.plugins[2], GM.Declared(Dict{Any,Any}(_VocR5.BadString() => 1)))   # commit 3-ii: the Alterant's slot
         _VocR5.POST[] = true
         c0 = _VocR5.SCALLS[]
         d5 = GM.validate(bs5)
@@ -583,7 +589,7 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
             plugin = su.plugin, overloads = [uov],
             accepts_string_slot = su.accepts_string_slot,
             sugar_candidacy = su.sugar_candidacy, validate = su.validate,
-            keyed_slot = su.keyed_slot, default = su.default, settribute = su.settribute)
+            keyed_slot = su.keyed_slot, settribute = su.settribute)
         du5 = GM.validate(bu5)
         @test du5 isa Vector && any(x -> x.code === :REG_SIG_MISMATCH &&
               occursin("outside the encodable domain", x.message), du5)
@@ -626,7 +632,7 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
             plugin = s6.plugin, overloads = [xov],
             accepts_string_slot = s6.accepts_string_slot,
             sugar_candidacy = s6.sugar_candidacy, validate = s6.validate,
-            keyed_slot = s6.keyed_slot, default = s6.default, settribute = s6.settribute)
+            keyed_slot = s6.keyed_slot, settribute = s6.settribute)
         d6 = GM.validate(b6)
         @test d6 isa Vector && any(x -> x.code === :REG_SIG_MISMATCH &&
               occursin("outside the encodable domain", x.message), d6)

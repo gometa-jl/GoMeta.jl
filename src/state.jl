@@ -194,7 +194,7 @@ CaptureDecl(instance_type::Type, attr_scheme::Symbol, multiplicity::Symbol,
 
 ## Slot (3): the presence-typed explicit default — undeclared is a TYPE, never a sentinel value. Since stage 2's
 ## commit 3 the slot is the ALTERANT's (one default per Alterant, declared as data — R-V04B-51 (1)–(2); R-V04B-55 (1));
-## the per-action slot of T1 stays (every action's `NoDefault()`, read by no Engine path) until it gives way at commit 3-ii.
+## the per-action slot of T1 GAVE WAY at commit 3-ii (a clean cut, R-V04B-61).
 "The explicit-default slot's abstract root: `NoDefault()` (undeclared) | `Declared(v)`."
 abstract type DefaultSlot end
 "The UNDECLARED default — mechanically distinct from every declared value (the G-DEF disjointness law)."
@@ -500,24 +500,23 @@ struct ActionSpec
     sugar_candidacy::Symbol
     validate::Union{Nothing,Function}
     keyed_slot::Union{Nothing,Tuple{Symbol,Symbol}}
-    # --- the v0.4 declared per-action slots (T1) ---
-    default::DefaultSlot              # slot (3): the explicit default — `NoDefault()` = undeclared
+    # --- the v0.4 declared per-action slot (T1; the per-action default of T1 GAVE WAY to the Alterant's at stage 2's commit 3-ii) ---
     settribute::Union{Nothing,Symbol} # slot (1): the settribute key this action's applied value
                                       #   writes back to (`nothing` = no write-back); the registry's
                                       #   generic `action_to_settribute` table is DERIVED from these
 end
-"The v0.3.2 positional shape still constructs (default `NoDefault()`, no write-back key)."
+"The v0.3.2 positional shape still constructs (no write-back key)."
 ActionSpec(name::Symbol, spelling::Symbol, plugin::Int8, overloads::Vector{ActionOverload},
            accepts_string_slot::Int, sugar_candidacy::Symbol, validate::Union{Nothing,Function},
            keyed_slot::Union{Nothing,Tuple{Symbol,Symbol}}) =
     ActionSpec(name, spelling, plugin, overloads, accepts_string_slot, sugar_candidacy, validate,
-               keyed_slot, NoDefault(), nothing)
+               keyed_slot, nothing)
 "The keyword form of the per-action record."
 ActionSpec(; name::Symbol, spelling::Symbol, plugin::Int8, overloads::Vector{ActionOverload},
              accepts_string_slot::Int = 0, sugar_candidacy::Symbol = :none, validate = nothing,
-             keyed_slot = nothing, default::DefaultSlot = NoDefault(), settribute = nothing) =
+             keyed_slot = nothing, settribute = nothing) =
     ActionSpec(name, spelling, plugin, overloads, accepts_string_slot, sugar_candidacy, validate,
-               keyed_slot, default, settribute)
+               keyed_slot, settribute)
 
 """
     _SealToken
