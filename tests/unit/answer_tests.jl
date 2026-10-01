@@ -1,0 +1,129 @@
+# answer_tests.jl — stage 2's commit 4 of the v0.4 build: THE ONE ANSWER FUNCTION `answerFor` (R-V04B-35 (c); R-V04B-52 (2);
+# R-V04B-55 (2); the plan v8.1 :56).
+#
+# IS:   seven witnesses of the answer's value and SOURCE over small inputs whose rows and deciding handles were MEASURED first
+#       (R4b — the evals-tree printouts and the origin probe banked at receipts/S8-branch/precheck-s2c4/PROBES-*).
+# DOES: [A1] Visib — the metaBlock's own statement, the attached Block indirect through it, a rowless Line inherits; [A2] Labels —
+#       the SET with one source; [A3] no rows anywhere — the declared default, `:none` without one, the File `:none`; [A4] a
+#       Segment's statement — its Line indirect through the Segment, the Segment itself own, the heading metaBlock own, its
+#       rowless Line inherits the heading; [A5] the user feed — `:user`; [A6] the refusals and the registry keyword; [A7] the
+#       surface (package-public, not exported; the one method).
+# PURPOSE: the measured consult of the answer's two parts — the value and the source — never inferred from a row's presence.
+
+using Test
+import GoMeta as GM
+const _AN_BLS = GM.BLS
+
+_an_bytes(s::String) = Vector{UInt8}(codeunits(s))
+_an_id(c) = _AN_BLS.getElement(c.cmpntNamedInt, :idComponent)
+
+@testset "answerFor (stage 2 commit 4; R-V04B-35 (c))" begin
+
+    @testset "[A1] Visib: own on the metaBlock; indirect through it on the attached Block; a rowless Line inherits" begin
+        r = GM.goMeta(_an_bytes("#~ hide\nx = 1\ny = 2\n")); ps = r.blsComponentTree
+        bs = _AN_BLS.children(ps); @test length(bs) == 2
+        a = GM.answerFor(r, bs[1], :Visib)
+        @test a isa GM.AltAnswer
+        @test a.value === :hide && a.source === :own && a.via === nothing
+        b = GM.answerFor(r, bs[2], :Visib)
+        @test b.value === :hide && b.source === :indirect
+        @test b.via isa _AN_BLS.Block && _an_id(b.via) == _an_id(bs[1])
+        ls = _AN_BLS.children(ps, bs[2]); @test length(ls) == 2
+        l = GM.answerFor(r, ls[2], :Visib)                      # "y = 2": no row of its own — its Block's, through the metaBlock
+        @test l.value === :hide && l.source === :indirect
+        @test l.via isa _AN_BLS.Block && _an_id(l.via) == _an_id(bs[1])
+    end
+
+    @testset "[A2] Labels: the SET of names with ONE source" begin
+        r = GM.goMeta(_an_bytes("#~ :label1 :label5\nx = 1\n")); ps = r.blsComponentTree
+        bs = _AN_BLS.children(ps); @test length(bs) == 2
+        a = GM.answerFor(r, bs[1], :labels)
+        @test a.value == [:label1, :label5] && a.source === :own && a.via === nothing
+        b = GM.answerFor(r, bs[2], :labels)
+        @test b.value == [:label1, :label5] && b.source === :indirect
+        @test b.via isa _AN_BLS.Block && _an_id(b.via) == _an_id(bs[1])
+    end
+
+    @testset "[A3] no rows anywhere: the declared default; `:none` without one; the File answers nothing" begin
+        r = GM.goMeta(_an_bytes("x = 1\n")); ps = r.blsComponentTree
+        @test r.status === GM.PROCESS_OK && isempty(r.altValues_evals.records)
+        bs = _AN_BLS.children(ps); @test length(bs) == 1
+        a = GM.answerFor(r, bs[1], :Visib)
+        @test a.value === :show && a.source === :default && a.via === nothing     # Visib's ONE declared default (R-V04B-51 (2))
+        b = GM.answerFor(r, bs[1], :labels)
+        @test b.value === nothing && b.source === :none && b.via === nothing      # Labels declares no default
+        l = GM.answerFor(r, _AN_BLS.children(ps, bs[1])[1], :Visib)
+        @test l.value === :show && l.source === :default                          # a rowless Line under a rowless Block: the default too
+        f = GM.answerFor(r, _AN_BLS.root(ps), :Visib)
+        @test f.value === nothing && f.source === :none && f.via === nothing      # the File: NOTHING built (card 6 "next")
+    end
+
+    @testset "[A4] a Segment's statement and a heading: the Line indirect through the Segment; the Segment own; the metaBlock's heading own; its Line inherits" begin
+        r = GM.goMeta(_an_bytes("#~ \"Title\"\nx = 1 #~ discard\ny = 2\n")); ps = r.blsComponentTree
+        bs = _AN_BLS.children(ps); @test length(bs) == 2
+        h = GM.answerFor(r, bs[1], :heading)
+        @test h.value == "Title" && h.source === :own && h.via === nothing
+        hl = GM.answerFor(r, _AN_BLS.children(ps, bs[1])[1], :heading)
+        @test hl.value == "Title" && hl.source === :indirect && _an_id(hl.via) == _an_id(bs[1])
+        ls = _AN_BLS.children(ps, bs[2]); @test length(ls) == 2
+        l = GM.answerFor(r, ls[1], :Visib)                      # "x = 1 #~ discard": the Line-keyed row, decided by Segment #3
+        @test l.value === :discard && l.source === :indirect
+        @test l.via isa _AN_BLS.Segment && _an_id(l.via) == 3
+        segs = _AN_BLS.children(ps, ls[1]); @test !isempty(segs)
+        k = findfirst(s -> _an_id(s) == 3, segs); @test k !== nothing
+        s = GM.answerFor(r, segs[k], :Visib)                     # the Segment: no row keyed on itself — its Line's, decided by ITSELF
+        @test s.value === :discard && s.source === :own && s.via === nothing
+        l2 = GM.answerFor(r, ls[2], :Visib)                     # "y = 2": neither it nor its Block carries a Visib row
+        @test l2.value === :show && l2.source === :default
+        n = GM.answerFor(r, bs[2], :heading)
+        @test n.value === nothing && n.source === :none          # Heading declares no default; the code Block carries no heading
+    end
+
+    @testset "[A5] the user feed: the source `:user`" begin
+        r = GM.goMeta(_an_bytes("#~ hide\nx = 1\n"); config = GM.GoMetaConfig(; user_mh_profile = "show")); ps = r.blsComponentTree
+        bs = _AN_BLS.children(ps); @test length(bs) == 2
+        for b in bs
+            a = GM.answerFor(r, b, :Visib)
+            @test a.value === :show && a.source === :user && a.via === nothing
+        end
+    end
+
+    @testset "[A6] the refusals and the registry keyword" begin
+        r = GM.goMeta(_an_bytes("#~ hide\nx = 1\n")); b1 = _AN_BLS.children(r.blsComponentTree)[1]
+        @test_throws ArgumentError GM.answerFor(r, b1, :nosuch)
+        a = GM.answerFor(r, b1, :Visib; registry = GM.DEFAULT_REGISTRY)
+        @test a.value === :hide && a.source === :own
+    end
+
+    @testset "[A8] a custom registry: an undeclared capture stem derives as the walk derives it; a capture-less Alterant answers its declared default" begin
+        # the seat wf-s10-s2c4-check F-1: the Engine mints a stem-less Alterant's rows under lowercase(altName) and a capture-less Alterant's none
+        _with_capture(p, cap) = GM.PlugIn(; altName = p.altName, setMode = p.setMode, altConstructor = p.altConstructor,
+            setAltInstance = p.setAltInstance, getAltInstance = p.getAltInstance, precedencesTuple = p.precedencesTuple,
+            default = p.default, capture = cap, render = p.render, vocabulary = p.vocabulary, constraints = p.constraints,
+            atoms = p.atoms, contract_version = p.contract_version, requires = p.requires, sugar = p.sugar,
+            provenance = p.provenance, permissions = p.permissions)
+        k = findfirst(p -> p.altName === :Visib, GM.DEFAULT_REGISTRY.plugins); @test k !== nothing
+        b1 = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
+        b1.plugins[k] = _with_capture(b1.plugins[k], GM.CaptureDecl(GM.Alterants.Visib, :single, :one, nothing; attr_stem = nothing))
+        R1 = GM.publish(b1)
+        r1 = GM.goMeta(_an_bytes("#~ hide\nx = 1\n"); registry = R1); @test r1.status === GM.PROCESS_OK
+        bs1 = _AN_BLS.children(r1.blsComponentTree); @test length(bs1) == 2
+        @test any(x -> x.attr === :visib, r1.altValues_evals.records)                  # the rows minted under the derived stem :visib
+        a1 = GM.answerFor(r1, bs1[2], :Visib; registry = R1)
+        @test a1.value === :hide && a1.source === :indirect && _an_id(a1.via) == _an_id(bs1[1])
+        b2 = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
+        b2.plugins[k] = _with_capture(b2.plugins[k], nothing)
+        R2 = GM.publish(b2)
+        r2 = GM.goMeta(_an_bytes("#~ hide\nx = 1\n"); registry = R2); @test r2.status === GM.PROCESS_OK
+        @test !any(x -> x.attr === :visib, r2.altValues_evals.records)                 # no capture declaration: no Visib rows
+        a2 = GM.answerFor(r2, _AN_BLS.children(r2.blsComponentTree)[2], :Visib; registry = R2)
+        @test a2.value === :show && a2.source === :default && a2.via === nothing       # the declared default (R-V04B-55 (2))
+    end
+
+    @testset "[A7] the surface: package-public, NOT exported; the one method over the delivered object" begin
+        @test Base.ispublic(GM, :answerFor) && !Base.isexported(GM, :answerFor)
+        @test Base.ispublic(GM, :AltAnswer) && !Base.isexported(GM, :AltAnswer)
+        @test hasmethod(GM.answerFor, Tuple{GM.GoMetaDelivery, GM.BLS.Block, Symbol})
+        @test fieldnames(GM.AltAnswer) == (:value, :source, :via)
+    end
+end

@@ -84,6 +84,13 @@ These are part of the documented public surface — declared with Julia's `publi
   content is the reader-facing text — the shipped `find_by_label.jl` and
   `notebooks_from_source.jl` tools join exactly this way.
 - `EvalRecord` / `EvalStore` — the type of one evals row (`cell_handle`, `attr`, `value`, `polarity`, `content`; since 0.4.0's stage-2 commit 2 THE ONE PROVENANCE FIELD `decided_by::Vector{Vector{UInt8}}` — the handles of the statements that produced the row, in application order: the deciding statement's for a single-valued mode, the contributing statements' for an accumulating one, a heading row's own carrier — R-V04B-35 (b), (d); the name his confirmed scenarios' word, his at stage 2's review), and the type of the part `altValues_evals` that holds them (the reader's argument; its rows unchanged — R-V04B-35 (a)).
+- `GoMeta.answerFor(delivery, component, alterant; registry = DEFAULT_REGISTRY) -> AltAnswer` — THE ONE ANSWER FUNCTION
+  (since 0.4.0's stage-2 commit 4; R-V04B-35 (c)): for ONE Component of the delivered tree and ONE Alterant (its registered
+  name) the resolved value and its SOURCE — `:own` · `:indirect` through a named Component · `:user` · `:file` · `:fallBack`
+  (reserved) · `:default` · `:none` — derived at the call from the delivered rows and their `decided_by`; the contract in §2;
+  NOT FINAL until the review (the name, the tier, the File's case).
+- `AltAnswer` — the answer record `(value, source, via)`: `value` in the Alterant's own shape, `source` ONE tag, `via` the
+  deciding Component for `:indirect`, else `nothing`.
 - `ProcessStatus` (the enum) + its values `PROCESS_OK` / `PROCESS_ERROR`.
 - `Diagnostic` `{code::Symbol, severity::Symbol, message::String, context::Any}` — the typed,
   non-throwing diagnostic record.
@@ -460,6 +467,27 @@ is reserved for a future negated-verdict encoding). Consumers should treat UNKNO
 families as opaque — skip them, never error: the enumeration lists the v0 families, and new
 families may arrive in a later version under the versioning policy (§6 — no compatibility promise until at least v0.7). `GoMeta.serialize_evals(readAltValuesEvals(result.altValues_evals))` is its canonical
 byte form.
+
+### `answerFor(delivery::GoMetaDelivery, component, alterant::Symbol; registry::AlterantRegistry = DEFAULT_REGISTRY) -> AltAnswer`
+
+THE ONE ANSWER FUNCTION (since 0.4.0's stage-2 commit 4; R-V04B-35 (c); the plan v8.1 :56) — for ONE Component of the
+delivered tree (`result.blsComponentTree`, reached through `BLS.root` / `BLS.children` / `BLS.parent`) and ONE Alterant by
+its registered name (`:Visib`, `:labels`, `:id`, `:heading` in the default registry): the resolved value and its SOURCE,
+derived at the call from the delivered rows and their `decided_by` provenance — never stored, never cached, the delivery
+untouched. `AltAnswer(value, source, via)`: `value` in the Alterant's own shape (Visib a `Symbol`; Labels the SET of names,
+a sorted `Vector{Symbol}`; Id the compound, a `NamedTuple` of the recorded fields; Heading the `String` of the first heading
+row); `source` ONE tag — `:own` (every deciding statement the Component's own), `:indirect` (through the Component `via`
+whose statement decided it — the metaBlock an attached Block follows, the Segment whose inline statement decided its Line),
+`:user` (the fed profile), `:file` (the File level's room, R-V04B-53 — no feed at v0.4), `:fallBack` (RESERVED for the
+fallBack level's carrier once the metaLevel Alterant feeds it, R-V04B-55 (4)), `:default` (no rows anywhere: the Alterant's
+declared default — Visib's `:show`, R-V04B-55 (2)), `:none` (no rows and no declared default; the File — NOTHING built for
+it at v0.4, card 6 "next"); an Alterant without a capture DECLARATION mints no rows and answers its declared default or
+`:none`, and an undeclared capture stem is derived as the walk derives it (`lowercase(altName)`). The Segment whose inline
+statement decided its Line answers `:own` itself, its statement's row being its own. A rowless child inherits its parent's rows up the tree (a
+Segment its Line's, a Line its Block's — OQ-148; R-V04B-52 (2)); a Segment-carried row (keyed on a Line with the Segment as
+the key's origin) is the Line's. An unknown Alterant name throws `ArgumentError` naming the registered names. **NOT FINAL**
+— the name (`answerFor`, the branch's working name under R-V04B-31), the tier, the File's case, the equal-child rows and
+the per-call tree walk behind `via` are the review's (R-V04B-40 (2)); no compatibility promise before v0.7 (§6).
 
 ### The (tree, render) pair — a development tool's, since 0.4.0 (R-V04B-24)
 
@@ -956,3 +984,4 @@ non-silent record under R-V04B-61; the letter of R-V04B-24 (P) does not govern u
 - **`GoMetaDelivery` (type) — RE-ORDERED at 0.4.0: the field order `blsComponentTree`, `altValues_evals`, `status`, `diagnostics`** (stage 2's commit 2b of the v0.4 build; the owner's word of 2026-10-01 on row 44 of stage 1's review agenda — R-V04B-89 "(b)": his pipeline order, §242 / R-V04B-71, the BLS Component tree first); ground: the parts are read BY NAME (R-V04B-29) — a reader by name sees no change; what changes: the struct's field order (`fieldnames`), the positional constructor's argument order (the two constructor sites in `src/GoMeta.jl`; none outside `src/`) and the one `Base.show` line (now in the field order); nothing removed; the same-commit triple (the type `src/state.jl`, this document's §1.1 table and §2, the surface oracle unchanged — it pins names; the `fieldnames` pin is the agenda's row 45 (a), on his word). Minted 2026-10-01 (R-V04B-89); landed on the branch `cc/v04-delivery` (stage 2, commit 2b).
 - **`Alterant.default` (keyword and field) — ADDED to the Alterant registration record at 0.4.0** (stage 2's commit 3 of the v0.4 build; R-V04B-51 (1)–(2) "each Alterant declares ONE default value, as data in the Alterant registry (the Alterant's, not an action's); Visib's default is 'show'"; R-V04B-55 (1)–(3) — the meta level formerly 'default' renamed `fallBack` and consulted LAST by the apply; the Alterant's default delivered by the answer function with the source "default"); ground: his lean of 2026-09-10 (§11), his words of 2026-09-22 (§180) and 2026-09-24 (§197); the slot `NoDefault()` | `Declared(value)` on `PlugIn`'s keyword form (the 6-positional 0.3.x form still constructs, the slot undeclared); the registration digest moves (the fold carries the Alterant's slot — the pin re-measured); the per-action `default` slot of `ActionSpec` (T1) STAYS in this commit, read by no Engine path, and GIVES WAY at commit 3-ii (its removal with the test layer re-homed — a clean cut under R-V04B-61, its own register row then); the internal level constant `defaultMHIdx` renamed `fallBackMHIdx` (not public); the same-commit triple (the record `src/state.jl`, this document's record vocabulary, the witnesses `tests/unit/record_schema_tests.jl`). Minted 2026-09-22/24 (R-V04B-51/55); landed on the branch `cc/v04-delivery` (stage 2, commit 3).
 - **`ActionSpec.default` (keyword and field) — REMOVED at 0.4.0** (stage 2's commit 3-ii of the v0.4 build; R-V04B-51's effects "the per-action `NoDefault()` slots of the registry give way to one per-Alterant slot"; R-V04B-61 clean cuts — no stub); ground: the default is the Alterant's (R-V04B-51 (1): "the Alterant's, not an action's"), declared at commit 3 (the row above); replacement: `PlugIn(; …, default = …)`; an action record constructed with `default = …` sees a `MethodError` (no such keyword; the 8-positional 0.3.x form still constructs), a reader of `spec.default` a field error; the registration digest moves (the per-action part leaves the fold — the pin re-measured); the same-commit triple (the record `src/state.jl`, this document's record vocabulary, the witnesses re-homed — `record_schema_tests.jl`, `registry_lifecycle_tests.jl`, `vocabulary_tests.jl`, `snapshot_property_tests.jl`). Minted 2026-09-22 (R-V04B-51); landed on the branch `cc/v04-delivery` (stage 2, commit 3-ii).
+- **`GoMeta.answerFor` (function) + `GoMeta.AltAnswer` (type) — ADDED (package-public, not exported) at 0.4.0** (stage 2's commit 4 of the v0.4 build; R-V04B-35 (c) "the ENGINE ANSWERS, on demand, ONE resolved value per Component per Alterant with a source of own / indirect-through-C / default, the answer shape UNIFORM across Alterants"; R-V04B-52 (2) a Segment's answer its own rows if any, else its Line's marked indirect; R-V04B-53 the levels' room — `:user`, `:file`, `:fallBack` reserved; R-V04B-55 (2) the Alterant's declared default with the source `:default`): `answerFor(delivery, component, alterant; registry = DEFAULT_REGISTRY) -> AltAnswer(value, source, via)` — derived at the call from the delivered rows and `decided_by`, never stored; the delivered ROWS unchanged; nothing removed; the same-commit triple (the code `src/answer.jl` and the `public` declaration in `src/GoMeta.jl`, this document's §1.2 + §2, the witnesses `tests/unit/answer_tests.jl` with `public_surface_tests.jl` 40 → 42); NOT FINAL — the name, the tier, the File's case (`:none`), the equal-child rows (OQ-148) and the per-call walk (Q6) are put at stage 2's review (R-V04B-40 (2)); the letter of R-V04B-24 (P) does not govern until at least v0.7.
