@@ -371,8 +371,12 @@ are public; alias removal + field-name normalization = v0.5).
 
 The inventory unit for one alterant (`Labels` / `Visib` / `Id` / `Heading`): its name, set-mode
 (`:accumulate` — the inheritance backtrack COLLECTS every applicable value · `:mutExclusive` — the
-backtrack stops at the FIRST applicable value · `:mutExclusivePerField` — first-wins per FIELD of a
-compound · `:localOnly` — the value applies ONCE, where it stands: never enqueued, never visited by
+backtrack stops at the FIRST applicable value · `:mutExclusivePerField` — the `Id` compound; the per-FIELD
+first-wins semantics its name promises are DEFERRED (the registry's note: the mode sits in neither set-mode table by
+design) — at v0.4 the nearest statement sets the compound as a WHOLE (an unset field is not inherited from an outer
+slot) and within one slot the LAST row of a field wins (MEASURED at stage 2's commit 7, `tests/authored/006_id_compound.toml`
+a draft put to the owner; card 8 "next"; the CrossReview set REAL-1 R1 #1 — the contract narrowed, no Engine change)
+· `:localOnly` — the value applies ONCE, where it stands: never enqueued, never visited by
 the backtrack, delivered at the absorb seam), the alterant-instance constructor type, the setter/getter, the (always-`nothing` at
 v0) precedence tuple and — since stage 2's commit 3 — the Alterant's ONE declared default value (`default`,
 R-V04B-51 (1)–(2): Visib's is `:show`; delivered by the answer function with the source "default"). A fixed-size-array-free inventory unit, built into the registry by

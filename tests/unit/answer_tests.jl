@@ -120,6 +120,18 @@ _an_id(c) = _AN_BLS.getElement(c.cmpntNamedInt, :idComponent)
         @test a2.value === :show && a2.source === :default && a2.via === nothing       # the declared default (R-V04B-55 (2))
     end
 
+    @testset "[A9] the Id compound: a NamedTuple of the recorded fields; the nearest statement's compound as a WHOLE" begin
+        # stage 2's commit 7 (the seat of commit 4, F-8): measured by receipts/S8-branch/precheck-s2c7/PROBES-F_id_two_levels.evals-tree.txt
+        r = GM.goMeta(_an_bytes("#~ cell(7) parent(3)\nx = 1\n#~2 cell(9)\ny = 2\n")); ps = r.blsComponentTree
+        bs = _AN_BLS.children(ps); @test length(bs) == 4
+        a = GM.answerFor(r, bs[1], :id); @test a.value == (cell = 7, parent = 3) && a.source === :own
+        b = GM.answerFor(r, bs[2], :id); @test b.value == (cell = 7, parent = 3) && b.source === :indirect && _an_id(b.via) == _an_id(bs[1])
+        c = GM.answerFor(r, bs[3], :id); @test c.value == (cell = 9,) && c.source === :own          # parent(3) NOT inherited across the depth — the per-field semantics deferred
+        d = GM.answerFor(r, bs[4], :id); @test d.value == (cell = 9,) && d.source === :indirect && _an_id(d.via) == _an_id(bs[3])
+        z = GM.goMeta(_an_bytes("#~ cell(0) parent(5)\nx = 1\n"))
+        za = GM.answerFor(z, _AN_BLS.children(z.blsComponentTree)[1], :id); @test za.value == (parent = 5,) && za.source === :own   # a stated zero is not recorded (zero-versus-unset)
+    end
+
     @testset "[A7] the surface: package-public, NOT exported; the one method over the delivered object" begin
         @test Base.ispublic(GM, :answerFor) && !Base.isexported(GM, :answerFor)
         @test Base.ispublic(GM, :AltAnswer) && !Base.isexported(GM, :AltAnswer)
