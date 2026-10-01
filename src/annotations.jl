@@ -572,6 +572,13 @@ function content_fingerprint(result::GoMetaDelivery)
     ]
 end
 
+## the ATTR column of the four-column public form, ENCODED (stage 2's commit 7a; the CrossReview set REAL-1 R1 #2): a backslash, tab,
+## newline or carriage return in an attribute name — a third-party Alterant's stem or member name may carry one; the registry refuses
+## none of them (his §120 defers the hardening, R-V04B-37) — is escaped as \\\\, \\t, \\n, \\r, so one row stays one line and
+## four columns; the shipped families (`visib`, `label_<name>`, `id_<name>`, `head_<level>`) carry none and serialize byte-identically.
+## The five-column golden producer below is UNTOUCHED (the twelve pins unmoved; it is removed at commit 9).
+_attr_encoded(attr::Symbol) = replace(String(attr), "\\" => "\\\\", "\t" => "\\t", "\n" => "\\n", "\r" => "\\r")
+
 """
     serialize_evals(ann) -> Vector{UInt8}
 
@@ -580,7 +587,10 @@ of the evals rows (no compatibility form exists — R-V04B-61).
 
 DOES: The deterministic, binary-safe 4-COLUMN byte form of a `readAltValuesEvals(result.altValues_evals)` vector — one
 already-sorted evals row per line, `<attr>\\t<repr(value)>\\t<polarity>\\t<hex(cell_handle)>`, under a
-fixed header (`cell_handle` = the occurrence-key bytes, hex — v0.2 CH-1). **THE PUBLIC form**, kept
+fixed header (`cell_handle` = the occurrence-key bytes, hex — v0.2 CH-1); the `attr` column ENCODED since stage 2's
+commit 7a — a backslash, tab, newline or carriage return in an attribute name escaped as `\\\\`, `\\t`, `\\n`, `\\r`
+(the CrossReview set REAL-1 R1 #2: one row stays one line and four columns; the shipped families carry none and
+serialize byte-identically; the registry refuses no delimiter — his §120 defers that hardening, R-V04B-37). **THE PUBLIC form**, kept
 on the public surface; the GOLDEN layer's write+read sides both use the 5-COLUMN `GoMetaDelivery` method
 below (which appends the content-fingerprint hex column for reviewability + per-fixture
 discrimination) — see that method's docstring. Hashing either form's bytes gives a stable behaviour
@@ -601,7 +611,7 @@ function serialize_evals(ann)::Vector{UInt8}
         "# columns: <attr>\\t<value>\\t<polarity>\\t<cell_handle = occurrence-key bytes, hex>\n",
     ]
     for (h, attr, val, pol) in ann
-        push!(parts, string(attr, '\t', repr(val), '\t', pol, '\t', bytes2hex(h), '\n'))
+        push!(parts, string(_attr_encoded(attr), '\t', repr(val), '\t', pol, '\t', bytes2hex(h), '\n'))   # the attr column encoded (commit 7a; R1 #2)
     end
     return Vector{UInt8}(codeunits(join(parts)))
 end
