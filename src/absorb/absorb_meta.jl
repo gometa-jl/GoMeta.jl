@@ -57,7 +57,7 @@ import ..GoMeta: parse_condition, Diagnostic, ConditionT, resolve_profile, condi
 import ..GoMeta: AlterantArgT
 # v0.2 CH-3 step 9: the context record type (the enqueue-seam applicability + derivation
 # reads it) and the Alterants submodule (the Heading validation seam lives there).
-import ..GoMeta: MetaContext
+import ..GoMeta: MetaContext, UserContext   # UserContext since stage 2's commit 3a — the enqueue's origin line (commit 2) reads it on the user feed
 import ..Alterants
 # v0.2 localOnly delivery: the absorb seam invokes the setter guard (`_invoke_set`,
 # apply.jl — included AFTER this file, hence module-qualified late binding), evaluates

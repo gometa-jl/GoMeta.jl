@@ -453,6 +453,76 @@ const _SEAM_LEDGER = WeakKeyDict{Any,_SeamEntry}()
 const _SEAM_LEDGER_LOCK = ReentrantLock()
 
 """
+    _walk_and_apply!(st::ProcessState, parse_state::BLS.ParseState) -> nothing
+
+IS: the Engine's walk-and-apply over the File's child Blocks — the body `run_absorb_apply!` runs inside its per-call
+STATE scope after the optional user feed: per non-deprecated Block, the absorb walk of its metaLines (when it carries
+meta), the apply at the Block grain (when attached to meta), the Visib write-back and the capture of its final evals
+rows before the next apply wipes `st.working`. FACTORED OUT at stage 2's commit 3a (the plan v8.1 :62) with NO change
+of a line — so a test can run the Engine's own pipeline over a state it prepared (the fallBack consult-order witnesses
+occupy slot `fallBackMHIdx` the way the user feed occupies the user slot; a FEED of that slot in the Engine is the
+`metaLevel` Alterant's, after the branch — R-V04B-55 (5)). Package-internal; not public.
+
+DOES: exactly what the seam's inline loop did (the body moved verbatim, de-indented); it reads `st` as `ctx()` does and
+mutates the parse state's settributes through the write-back as before.
+"""
+function _walk_and_apply!(st::ProcessState, parse_state::BLS.ParseState)
+    crntFileComponent::BLS.File = parse_state.componentsPDict[BLS.File][1][1]
+    local metaEnvInt::Int = BLS.orderedComponentTypesNamedT[:noMetaEnvYet]
+    local childComponent::BLS.Block
+    for childId in BLS.eachchildid(crntFileComponent, parse_state.componentsPDict[BLS.File][1])
+        if childId > 0
+            childComponent = parse_state.componentsPDict[BLS.Block][1][childId]
+        else
+            childId *= -1
+            childComponent = parse_state.componentsPDict[BLS.Block][2][childId]
+        end
+        if !BLS.getElement(childComponent.componentSettribute, :depricated)
+            if BLS.getElement(childComponent.componentSettribute, :containsMeta) &&
+               !BLS.getElement(childComponent.componentSettribute, :ignoreThisMeta)
+
+                metaEnvInt = BLS.orderedComponentTypesNamedT[:noMetaEnvYet]
+                metaEnvInt = absorbWalk(parse_state, childComponent::BLS.Block, metaEnvInt)
+            end
+        end
+        if BLS.getElement(childComponent.componentSettribute, :attachedToMeta)
+            applyAltActionFns(childComponent::BLS.Block)
+            # Block-grain Visib write-back, resolved through the per-call state: the alterant index
+            # `st.registry.alt_index[:Visib]` + the working set `st.working` carry the
+            # resolution, and the resolved Visib action maps through the per-call registry's
+            # generic `action_to_settribute` write-back table (v0.4 T1: DERIVED from the declared
+            # per-action `settribute` slots — identity at v0.4.0). BOTH grains use
+            # the Pair-form `=> true` — the Block form here, and the Segment grain in walk.jl.
+            # The driver IS the per-call state producer — `st` (the `init_state` result above, captured
+            #   by this `with(STATE=>st) do` closure) === `ctx()` === `STATE[]` — so the write-back reads
+            #   the in-scope `st` instead of repeating the `ctx()` lookup once per iteration.
+            ## The action → settribute-key table is read off the PER-CALL registry
+            ## (`st.registry.action_to_settribute`; the module-global alias is retired), so a
+            ## custom `registry` kwarg's mapping is honored at the Block grain. The `:Visib`
+            ## index literal + the `keys(Alterants.Visib)` read are the T7 write-back cure's scope.
+            ## (cure batch 2, interim until T7) a PUBLISHED custom registry need not carry the
+            ## built-in Visib alterant — guard the literal lookup so such a registry RUNS.
+            if haskey(st.registry.alt_index, :Visib) && st.registry.alt_index[:Visib] ∈ keys(st.working)
+                ## (cure batch 3) a Visib record may declare NO write-back key (`settribute =
+                ## nothing` is schema-legal) — an absent mapping = no write-back, never a KeyError
+                let act = keys(Alterants.Visib)[st.working[st.registry.alt_index[:Visib]].array][1],
+                    key = get(st.registry.action_to_settribute, act, nothing)
+                    ## v0.4 T3 — the write LATCH raises before the block-grain caller-state write too
+                    key === nothing || (st.wrote_back = true;
+                                        BLS.setElement(childComponent.componentSettribute, key => true))
+                end
+            end
+            # Capture this Block's FINAL evals rows (Labels + Visib + Id) into st.evals BEFORE the
+            #   next apply wipes st.working — the cell is this Block. Render-neutral: it reads
+            #   st.working, puts or supersedes rows in st.evals and may append warning diagnostics
+            #   (no parse-tree or render mutation).
+            captureEvals!(st, childComponent)
+        end
+    end
+    return nothing
+end
+
+"""
     run_absorb_apply!(parse_state::BLS.ParseState;
                       config::GoMetaConfig = GoMetaConfig(),
                       registry::AlterantRegistry = DEFAULT_REGISTRY) -> GoMetaDelivery
@@ -591,58 +661,7 @@ function run_absorb_apply!(parse_state::BLS.ParseState;
         if !isnothing(config.user_mh_profile)
             feed_user_mh!(st)
         end
-        crntFileComponent::BLS.File = parse_state.componentsPDict[BLS.File][1][1]
-        local metaEnvInt::Int = BLS.orderedComponentTypesNamedT[:noMetaEnvYet]
-        local childComponent::BLS.Block
-        for childId in BLS.eachchildid(crntFileComponent, parse_state.componentsPDict[BLS.File][1])
-            if childId > 0
-                childComponent = parse_state.componentsPDict[BLS.Block][1][childId]
-            else
-                childId *= -1
-                childComponent = parse_state.componentsPDict[BLS.Block][2][childId]
-            end
-            if !BLS.getElement(childComponent.componentSettribute, :depricated)
-                if BLS.getElement(childComponent.componentSettribute, :containsMeta) &&
-                   !BLS.getElement(childComponent.componentSettribute, :ignoreThisMeta)
-
-                    metaEnvInt = BLS.orderedComponentTypesNamedT[:noMetaEnvYet]
-                    metaEnvInt = absorbWalk(parse_state, childComponent::BLS.Block, metaEnvInt)
-                end
-            end
-            if BLS.getElement(childComponent.componentSettribute, :attachedToMeta)
-                applyAltActionFns(childComponent::BLS.Block)
-                # Block-grain Visib write-back, resolved through the per-call state: the alterant index
-                # `st.registry.alt_index[:Visib]` + the working set `st.working` carry the
-                # resolution, and the resolved Visib action maps through the per-call registry's
-                # generic `action_to_settribute` write-back table (v0.4 T1: DERIVED from the declared
-                # per-action `settribute` slots — identity at v0.4.0). BOTH grains use
-                # the Pair-form `=> true` — the Block form here, and the Segment grain in walk.jl.
-                # The driver IS the per-call state producer — `st` (the `init_state` result above, captured
-                #   by this `with(STATE=>st) do` closure) === `ctx()` === `STATE[]` — so the write-back reads
-                #   the in-scope `st` instead of repeating the `ctx()` lookup once per iteration.
-                ## The action → settribute-key table is read off the PER-CALL registry
-                ## (`st.registry.action_to_settribute`; the module-global alias is retired), so a
-                ## custom `registry` kwarg's mapping is honored at the Block grain. The `:Visib`
-                ## index literal + the `keys(Alterants.Visib)` read are the T7 write-back cure's scope.
-                ## (cure batch 2, interim until T7) a PUBLISHED custom registry need not carry the
-                ## built-in Visib alterant — guard the literal lookup so such a registry RUNS.
-                if haskey(st.registry.alt_index, :Visib) && st.registry.alt_index[:Visib] ∈ keys(st.working)
-                    ## (cure batch 3) a Visib record may declare NO write-back key (`settribute =
-                    ## nothing` is schema-legal) — an absent mapping = no write-back, never a KeyError
-                    let act = keys(Alterants.Visib)[st.working[st.registry.alt_index[:Visib]].array][1],
-                        key = get(st.registry.action_to_settribute, act, nothing)
-                        ## v0.4 T3 — the write LATCH raises before the block-grain caller-state write too
-                        key === nothing || (st.wrote_back = true;
-                                            BLS.setElement(childComponent.componentSettribute, key => true))
-                    end
-                end
-                # Capture this Block's FINAL evals rows (Labels + Visib + Id) into st.evals BEFORE the
-                #   next apply wipes st.working — the cell is this Block. Render-neutral: it reads
-                #   st.working, puts or supersedes rows in st.evals and may append warning diagnostics
-                #   (no parse-tree or render mutation).
-                captureEvals!(st, childComponent)
-            end
-        end
+        _walk_and_apply!(st, parse_state)   # stage 2's commit 3a: the loop factored out (verbatim) — the fallBack consult-order test drives it
     end
     lock(_SEAM_LEDGER_LOCK) do                      # normal return: bind iff the call WROTE
         st.wrote_back && (entry.registry = registry)
