@@ -326,6 +326,7 @@ function wipeAltActionSlots(fromIdx::Int, toIdx::Int)
                     ## holds plain values, so `nothing` is stored directly:
                     st.queue.conditions[actionIdx, crntSlot] = nothing
                     st.queue.args[actionIdx, crntSlot] = nothing
+                    st.queue.decided_by[actionIdx, crntSlot] = nothing   # R-V04B-35 (d): the origin references, like the single-index wipe
                 end
                 st.mh.count_actions_per_slot[crntSlot] = 0
             end
@@ -346,6 +347,7 @@ function wipeAltActionSlots(idx::Int)
             for actionIdx ∈ 1:st.mh.count_actions_per_slot[crntSlot]
                 st.queue.conditions[actionIdx, crntSlot] = nothing
                 st.queue.args[actionIdx, crntSlot] = nothing
+                st.queue.decided_by[actionIdx, crntSlot] = nothing
             end
             st.mh.count_actions_per_slot[crntSlot] = 0
         end

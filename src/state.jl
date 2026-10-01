@@ -822,7 +822,11 @@ const AlterantArgT = Union{Symbol,String}
     AlterantQueue
 
 The per-call enqueue tensors: `queued`
-(`2 × numAltActions × num_slots`), `conditions`, and `args`.
+(`2 × numAltActions × num_slots`), `conditions`, `args` and — since stage 2's commit 2 of the v0.4 build
+(R-V04B-35 (d)) — `decided_by`: per enqueued action the `key_bytes` handle of the Component that STATED it
+(the carrying Component's handle published at the walk handover — the metaBlock a whole-line metaLine forms,
+the Segment of an inline one, R-V04B-50; on the userMH feed the minted user-context handle), carried through
+the apply into the stored row's provenance field.
 `conditions` carries `ConditionT` (the closed interpreter's parsed condition, plus the
 opt-in full-eval marker — see that alias's docstring); `args` carries tuples over the
 argument literal floor `AlterantArgT` (`Symbol` | `String` — see that type's docstring).
@@ -836,6 +840,7 @@ struct AlterantQueue
     queued::Array{Int8,3}
     conditions::Matrix{Union{Nothing,ConditionT}}
     args::Matrix{Union{Nothing,Tuple{Vararg{AlterantArgT}}}}
+    decided_by::Matrix{Union{Nothing,Vector{UInt8}}}
 end
 
 """
@@ -905,7 +910,8 @@ IS: the per-call, mutable, threaded-via-`ctx()`, NEVER-global engine state of on
 
 DOES: The per-call, mutable, threaded-via-`ctx()`, NEVER-global engine state. Wraps the parse state,
 the config, the (immutable) registry, the meta-hierarchy + queue sub-states, the transient per-slot
-alterant-instance dict (`working`), the `evals` (the evals rows captured
+alterant-instance dict (`working`) with its provenance sibling `working_origin` (per Alterant the handles of the
+statements the apply applied, in application order — R-V04B-35 (d), stage 2's commit 2), the `evals` (the evals rows captured
 before the slot wipe → readAltValuesEvals), the current-settribute `snapshot`,
 the accumulating `diagnostics`, the three mutable meta-hierarchy cursors, and the per-component
 `meta_context` record (see `MetaContext`). Constructed only by `init_state`; delivered per-call via the `STATE` ScopedValue, read through `ctx()`.
@@ -924,6 +930,8 @@ mutable struct ProcessState
     mh::MetaHierarchyState
     queue::AlterantQueue
     working::Dict{Int8,Any}
+    working_origin::Dict{Int8,Vector{Vector{UInt8}}}   # stage 2's commit 2 (R-V04B-35 (d)): per Alterant the handles of the
+                                                       # statements the apply APPLIED, in application order; rebuilt with `working`
     evals::EvalStore
     snapshot::BLS.ComponentSettribute
     diagnostics::Vector{Diagnostic}
@@ -1048,8 +1056,8 @@ IS: the constructor of a FRESH `ProcessState`, sized once per call from the regi
 DOES: Build a FRESH `ProcessState`, sizing every container ONCE from `registry` + `NUM_MH_LEVELS`. Every
 per-field init is performed here, so each call is independent — no tensor or cursor carries over:
 `slots = zeros(Int8, NUM_MH_LEVELS)`; the `slot_*`/`count_*` per-slot vectors `fill(false,·)`/`zeros(Int8,·)`;
-`queued = zeros(Int8, 2, nAct, nSlot)`; `conditions`/`args` matrices filled with `nothing`; `working` an
-empty `Dict`; `evals` empty; `snapshot` a FRESH `ComponentSettribute` (its `array` is COPIED into by
+`queued = zeros(Int8, 2, nAct, nSlot)`; `conditions`/`args`/`decided_by` matrices filled with `nothing`; `working` and `working_origin`
+empty `Dict`s; `evals` empty; `snapshot` a FRESH `ComponentSettribute` (its `array` is COPIED into by
 `snapshot_settribute!`, never aliased); the three cursors all `fileMHIdx` (= 1).
 `num_slots == NUM_MH_LEVELS`.
 
@@ -1071,10 +1079,12 @@ function init_state(parse_state::BLS.ParseState, config::GoMetaConfig, registry:
         zeros(Int8, 2, n_act, n_slot),                                                     # queued
         fill!(Matrix{Union{Nothing,ConditionT}}(undef, n_act, n_slot), nothing),           # conditions
         fill!(Matrix{Union{Nothing,Tuple{Vararg{AlterantArgT}}}}(undef, n_act, n_slot), nothing),# args
+        fill!(Matrix{Union{Nothing,Vector{UInt8}}}(undef, n_act, n_slot), nothing),               # decided_by (R-V04B-35 (d))
     )
     return ProcessState(
         parse_state, config, registry, mh, queue,
         Dict{Int8,Any}(),            # working
+        Dict{Int8,Vector{Vector{UInt8}}}(),   # working_origin (R-V04B-35 (d))
         EvalStore(),              # evals
         BLS.ComponentSettribute(),   # snapshot — FRESH (array copied-into, not aliased)
         Diagnostic[],                # diagnostics

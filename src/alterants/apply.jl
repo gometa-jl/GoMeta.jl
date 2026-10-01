@@ -34,6 +34,19 @@
 # PURPOSE: a runnable, observable Apply phase whose single evaluation site and single setter seam
 #     are the package's two replaceable condition surfaces.
 
+## stage 2's commit 2 (R-V04B-35 (d)): the provenance of an APPLIED action — the stating Component's handle
+## (recorded at the enqueue, `st.queue.decided_by`), kept per Alterant in APPLICATION ORDER: one entry for a
+## single-valued mode (the deciding statement — the first applicable wins), the contributing statements'
+## entries for an accumulating one, the applied fields' for the compound. Rebuilt with `st.working`; the
+## capture copies it onto every row of the Alterant (`captureEvals!`).
+@inline function _record_origin!(st::ProcessState, altIdx::Int8, row::Int, slot::Int8)
+    o = st.queue.decided_by[row, slot]
+    o === nothing && error("GoMeta apply: an applied action without a recorded origin — ",
+        "please report this (not reachable from any input by construction)")
+    push!(get!(st.working_origin, altIdx, Vector{UInt8}[]), o)
+    return nothing
+end
+
 function detAltValuesForSetOfSlots(
     checkTheseSlotsInOrderVec::AbstractVector{Int8}
 )
@@ -74,6 +87,7 @@ function detAltValuesForSetOfSlots(
     # The working dict is rebuilt fresh on every call: the Apply phase keeps no cross-call
     # accumulation store and returns only the set-alterant index vector plus its count.
     st.working = Dict{Int8,Any}()
+    st.working_origin = Dict{Int8,Vector{Vector{UInt8}}}()   # stage 2's commit 2 (R-V04B-35 (d)): rebuilt with `working`
     local crntSlot::Int8
     local crntAltIdx::Int8
     local crntAltActionIdx::Int8
@@ -95,6 +109,7 @@ function detAltValuesForSetOfSlots(
                         st.working[crntAltIdx] =
                             _mint_instance(st.registry.plugins[crntAltIdx])   # T3: the wrapped mint
                     end
+                    _record_origin!(st, crntAltIdx, row, crntSlot)   # R-V04B-35 (d)
                     if st.queue.args[row, crntSlot] === nothing
                         _invoke_set(st.registry,
                             st.registry.plugins[crntAltIdx].setAltInstance,
@@ -175,6 +190,7 @@ function detAltValuesForSetOfSlots(
                         st.working[crntAltIdx] =
                             _mint_instance(st.registry.plugins[crntAltIdx])   # T3: the wrapped mint
                     end
+                    _record_origin!(st, crntAltIdx, idx, crntSlot)   # R-V04B-35 (d)
                     if st.queue.args[idx, crntSlot] === nothing
                         _invoke_set(st.registry,
                             st.registry.plugins[crntAltIdx].setAltInstance,

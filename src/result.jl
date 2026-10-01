@@ -57,7 +57,7 @@ Diagnostic(code::Symbol, severity::Symbol, message::AbstractString) =
     Diagnostic(code, severity, String(message), nothing)
 
 """
-    EvalRecord(cell_handle, attr, value, polarity, content)
+    EvalRecord(cell_handle, attr, value, polarity, content, decided_by)
 
 IS: one final evals row — a Component's (keyed by its occurrence handle), a metaLine region's heading row
 (keyed by the metaBlock the metaLine forms — R-V04B-50; an inline metaSegment's by the Segment) or a fed profile's heading row (keyed by the minted user-context
@@ -69,7 +69,19 @@ Segment-carried evals row keys on its owning Line with the Segment recorded as t
 fed profile's heading row the user-context key (`user_context_key`) — so two distinct cells NEVER share a
 slot. The verbatim CONTENT bytes ride in the
 `content` metadata field (the find-again fingerprint — plain bytes, no hashing core-side);
-`attr::Symbol` the attribute; `value::Any` its value; `polarity::Bool` the on/off polarity. Feeds
+`attr::Symbol` the attribute; `value::Any` its value; `polarity::Bool` the on/off polarity.
+`decided_by::Vector{Vector{UInt8}}` — THE ONE PROVENANCE FIELD (R-V04B-35 (b), (d); stage 2's commit 2 of the v0.4
+build): the `key_bytes` handles of the statements that PRODUCED the row, in application order — the Component that
+STATED each applied action (the metaBlock a whole-line metaLine forms, the Segment of an inline one — R-V04B-50; on
+the userMH feed the minted user-context handle): one entry for a single-valued mode (the deciding statement — OWN when it names the row's own Component,
+INDIRECT otherwise: for a Block's row own means the entry equals `cell_handle`; for a Segment-carried row — keyed
+on its Line with the Segment as the KEY's origin — own means the entry is the Segment's own occurrence key, which
+differs from `cell_handle` by construction; the answer function of commit 4 applies that rule), the contributing
+statements' entries for an accumulating one
+(Labels; which statement contributed which label stays Q4 (ii)), the applied fields' entries for the compound (Id);
+a heading row's its own carrier. MEASURED at the enqueue and the apply, never inferred from a row's presence. The
+name is the authored set's word (his confirmed scenarios' `decided_by`) — the session's default under R-V04B-40 (2),
+his at stage 2's review (the alternatives `origin`, `source`). Feeds
 `readAltValuesEvals(result.altValues_evals)` (sorted `(cell_handle, attr, value)` — key-bytes order) + the
 `content_fingerprint` sibling accessor.
 
@@ -86,6 +98,7 @@ struct EvalRecord
     value::Any
     polarity::Bool
     content::Vector{UInt8}
+    decided_by::Vector{Vector{UInt8}}
 end
 
 """

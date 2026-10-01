@@ -125,11 +125,11 @@ end
 # Evals capture — record a cell's FINAL evals rows before the slot wipe (called from the apply sites)
 # --------------------------------------------------------------------------------------------------------
 """
-    _putEval!(st::ProcessState, handle, attr::Symbol, value, polarity::Bool, content) -> nothing
+    _putEval!(st::ProcessState, handle, attr::Symbol, value, polarity::Bool, content, decided_by) -> nothing
 
 IS: the deduped put of ONE final evals row into `st.evals` — the one door into the store.
 
-DOES: records the row `(handle, attr, value, polarity, content)`, DEDUPED per `(cell_handle, attr)`: a later put
+DOES: records the row `(handle, attr, value, polarity, content, decided_by)`, DEDUPED per `(cell_handle, attr)`: a later put
 for the same occurrence+attribute SUPERSEDES the earlier one (later wins), so the store holds at most one record
 per `(cell_handle, attr)` by construction. **Occurrence-addressing + the collision signal.** `handle` is the
 `key_bytes` of the row's handle — a cell's NORMALIZED STRUCTURAL occurrence key (src/occurrence.jl), or a fed
@@ -152,7 +152,7 @@ PURPOSE: the single primitive both `captureEvals!` (the apply sites' rows) and `
 seam's heading rows) write through — every evals row a run records enters the store here.
 """
 function _putEval!(st::ProcessState, handle::Vector{UInt8}, attr::Symbol, value, polarity::Bool,
-                       content::Vector{UInt8})
+                       content::Vector{UInt8}, decided_by::Vector{Vector{UInt8}})
     recs = st.evals.records
     @inbounds for i in eachindex(recs)
         r = recs[i]
@@ -170,11 +170,11 @@ function _putEval!(st::ProcessState, handle::Vector{UInt8}, attr::Symbol, value,
                     "(later wins; applied-state-wins).",
                     handle))
             end
-            recs[i] = EvalRecord(handle, attr, value, polarity, content)   # supersede (later wins)
+            recs[i] = EvalRecord(handle, attr, value, polarity, content, decided_by)   # supersede (later wins)
             return nothing
         end
     end
-    push!(recs, EvalRecord(handle, attr, value, polarity, content))
+    push!(recs, EvalRecord(handle, attr, value, polarity, content, decided_by))
     return nothing
 end
 
@@ -212,6 +212,13 @@ the pinned tuple to distinguish on/off and is reserved for a future negated-row 
 `polarity == false`. The dispatch iterates the per-call `st.registry.plugins` and reads each plugin's declared
 `CaptureDecl` (its instance type, scheme, gate and stem — NOT the global `DEFAULT_REGISTRY`), so a custom
 registry threads through.
+
+Each row's `decided_by` (R-V04B-35 (d); stage 2's commit 2) is the list the apply recorded for the Alterant in
+`st.working_origin`: the handles of the statements it APPLIED, in application order — ONE for a single-valued mode
+(the deciding statement), the contributing statements' for an accumulating one (which statement contributed which
+label stays Q4 (ii)), the applied fields' for the compound; own when it names the row's own Component (a Block's: the entry equals the
+row's handle; a Segment-carried row's: the entry is the Segment's own key — its row is keyed on the Line with the
+Segment as the key's origin), indirect otherwise — MEASURED, never inferred from a row's presence.
 
 REASONING: the store is keyed by the normalized structural occurrence key so two distinct cells never share a
 slot, and the capture happens between the apply's finalization and the next wipe because `st.working` is
@@ -272,6 +279,7 @@ function captureEvals!(st::ProcessState, cell::BLS.AbstractComponent;
         p.capture.mode_gate === nothing || continue      # :localOnly delivers at the absorb seam
         haskey(st.working, idx8) || continue
         inst = st.working[idx8]
+        decided = get(st.working_origin, idx8, Vector{UInt8}[])   # R-V04B-35 (d): the applied statements' handles
         stem = p.capture.attr_stem === nothing ?
             Symbol(lowercase(String(p.altName))) : p.capture.attr_stem
         ## defense-in-depth (tier 1's identity law makes a mismatch lifecycle-unreachable;
@@ -297,7 +305,7 @@ function captureEvals!(st::ProcessState, cell::BLS.AbstractComponent;
                     bad = false
                     for (kk, vv) in inst
                         if kk isa Symbol && _capture_value_leaf(vv)
-                            _putEval!(st, handle, Symbol(stem, :_, kk), vv, true, content)
+                            _putEval!(st, handle, Symbol(stem, :_, kk), vv, true, content, decided)
                         else
                             bad = true
                         end
@@ -331,7 +339,7 @@ function captureEvals!(st::ProcessState, cell::BLS.AbstractComponent;
                     if !isempty(set_acts)
                         el = set_acts[1]
                         _capture_value_leaf(el) ?
-                            _putEval!(st, handle, stem, el, true, content) :
+                            _putEval!(st, handle, stem, el, true, content, decided) :
                             _capture_floor!(st, p, :WARN_CAPTURE_UNREADABLE)
                     end
                 else
@@ -352,7 +360,7 @@ function captureEvals!(st::ProcessState, cell::BLS.AbstractComponent;
                     for (fi, name) in enumerate(ks)
                         v = arr[fi]
                         (v isa ET && v != z) &&
-                            _putEval!(st, handle, Symbol(stem, :_, name), v, true, content)
+                            _putEval!(st, handle, Symbol(stem, :_, name), v, true, content, decided)
                     end
                 else
                     _capture_floor!(st, p, :WARN_CAPTURE_UNREADABLE)
@@ -360,7 +368,7 @@ function captureEvals!(st::ProcessState, cell::BLS.AbstractComponent;
             elseif sch === :per_occurrence
                 # the ungated fifth arm: one presence row per governed cell — the
                 # occurrence handle IS the locus (the value = `true` at v0.4; T11's row)
-                _putEval!(st, handle, stem, true, true, content)
+                _putEval!(st, handle, stem, true, true, content, decided)
             end
         catch e
             e isa InterruptException && rethrow()
@@ -474,7 +482,7 @@ function capture_heading!(st::ProcessState, heading, stem::Symbol)
         attr = lvl === nothing ?
             (k == 1 ? stem : Symbol(stem, :_u, k)) :
             (k == 1 ? Symbol(stem, :_, lvl) : Symbol(stem, :_, lvl, :_, k))
-        _putEval!(st, handle, attr, text, true, content)
+        _putEval!(st, handle, attr, text, true, content, [copy(handle)])   # the never-enqueued :localOnly Heading's origin: its own carrier (R-V04B-35 (d))
     end
     return nothing
 end

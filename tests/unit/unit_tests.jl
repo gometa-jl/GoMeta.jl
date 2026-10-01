@@ -51,6 +51,7 @@ using Test
     include(joinpath(@__DIR__, "snapshot_property_tests.jl"))       # v0.4 T2-bis: the snapshot door's PROPERTY proof (N=1024 site mutations + FP rebuilds + named cases; T2BIS-DESIGN §9)
     include(joinpath(@__DIR__, "seam_envelope_tests.jl"))           # v0.4 T3: the seams — query/validate/ctor envelopes, DEP_MISSING, store identity, the state-seam ledger (T3-DESIGN §8)
     include(joinpath(@__DIR__, "vocabulary_tests.jl"))              # v0.4 T4: the whitelist relocation — the digest-pinned artifact, the registration-surface flip, G-VOC, the valve, the zero-literal law (T4-DESIGN §6)
+    include(joinpath(@__DIR__, "origin_tests.jl"))                  # stage 2 commit 2 (R-V04B-35 (d)): the provenance field decided_by — recorded at the enqueue, carried through the apply, captured with the row
     include(joinpath(@__DIR__, "capture_tests.jl"))                 # v0.4 T5: the capture re-home — the registration-driven walk (the sadd2 anti-T1 cure), the typed floor, the value algebra, the per-plugin localOnly flush, the tier-1 capture laws (T5-DESIGN §6)
     include(joinpath(@__DIR__, "renderer_free_process_tests.jl"))  # stage 1 commit 5 (REAL-1 #6): ONE fresh child process with `import GoMeta` only — the delivered object needs no development tool
 end

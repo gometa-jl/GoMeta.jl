@@ -636,6 +636,15 @@ function absorbMeta(
                     altActionOnRow, crntSlot] = st.registry.action_to_plugin[crntAltActionIdx]
                 st.queue.queued[2,
                     altActionOnRow, crntSlot] = crntAltActionIdx
+                ## stage 2's commit 2 (R-V04B-35 (d)): THE ORIGIN of the enqueued action — the handle of the
+                ## Component that STATES it (the carrying Component's, published at the walk handover —
+                ## R-V04B-50; on the userMH feed the minted user-context handle), carried through the
+                ## apply into the stored row's `decided_by`.
+                st.queue.decided_by[altActionOnRow, crntSlot] =
+                    st.meta_context !== nothing ? (st.meta_context::MetaContext).handle :
+                    st.user_context !== nothing ? (st.user_context::UserContext).handle :
+                    error("GoMeta absorb: an action enqueued without a document or user context — ",
+                        "please report this (not reachable from any input by construction)")
 
                 if !st.mh.slot_has_accum[crntSlot] &&
                    insorted(st.registry.action_to_plugin[crntAltActionIdx],
