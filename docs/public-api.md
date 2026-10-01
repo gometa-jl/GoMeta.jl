@@ -97,6 +97,10 @@ These are part of the documented public surface — declared with Julia's `publi
 - `GoMeta.answersFor(delivery, component; registry = DEFAULT_REGISTRY) -> Vector{Pair{Symbol,AltAnswer}}` — THE ACCESS BY
   COMPONENT: every registered Alterant's answer for ONE Component, in the registry's Alterant order. Both NOT FINAL until the
   review (card 4 — functions of their own, or methods of the reader).
+- `GoMeta.childDiffers(delivery, component, alterant; registry = DEFAULT_REGISTRY) -> Bool` — THE CHILD-DIFFERS SIGNAL (since
+  0.4.0's stage-2 commit 6; R-V04B-35 (e); his §37 item 4.2): `true` when the Component's resolved answer has a VALUE different
+  from its parent's — COMPUTED from `answerFor` at the call, never stored (the stored form is the benchmark phase's); the File
+  never differs. NOT FINAL until the review.
 - `ProcessStatus` (the enum) + its values `PROCESS_OK` / `PROCESS_ERROR`.
 - `Diagnostic` `{code::Symbol, severity::Symbol, message::String, context::Any}` — the typed,
   non-throwing diagnostic record.
@@ -509,6 +513,18 @@ pure, derived at the call, and can never disagree with `answerFor` (they are bui
 `ArgumentError`. **NOT FINAL** — functions of their own are the session's default (R-V04B-40 (2)); the alternative, methods of the
 reader `readAltValuesEvals`, is banked as a labelled diff (`receipts/S8-branch/ALTERNATIVE-s2c5_reader-methods.txt`) and both are
 shown at stage 2's review, his choice (card 4); no compatibility promise before v0.7 (§6).
+
+### `childDiffers(delivery::GoMetaDelivery, component, alterant::Symbol; registry::AlterantRegistry = DEFAULT_REGISTRY) -> Bool`
+
+THE CHILD-DIFFERS SIGNAL, COMPUTED FROM THE ANSWER (since 0.4.0's stage-2 commit 6; R-V04B-35 (e) "his (ii) child-differs signal
+COMPUTED from that answer, its stored form left to the benchmark phase"; his §37 item 4.2 — a Block's child Components' evaluations
+"only REQUIRE to be explicitly recorded … IF they differ from their parent's corresponding evaluation"; the plan v8.1 :58): `true`
+when `answerFor(component).value` differs from `answerFor(parent).value` — a Segment against its Line, a Line against its Block, a
+Block against the File (which answers `nothing` at v0.4, NOTHING built for it — card 6 "next" — so a Block with any answer, the
+declared default included, differs); the File itself `false`. The VALUE is compared, not the source: a rowless child inheriting its
+parent's rows never differs (it is hidden "as PART OF" its Block, his §7 item 2); a child with its own statement differs exactly
+when that statement's value is another. Pure; nothing stored. An unknown Alterant name throws `ArgumentError`. **NOT FINAL** — the
+name and the Block-against-File reading are the review's (R-V04B-40 (2)); no compatibility promise before v0.7 (§6).
 
 ### The (tree, render) pair — a development tool's, since 0.4.0 (R-V04B-24)
 
@@ -1007,3 +1023,4 @@ non-silent record under R-V04B-61; the letter of R-V04B-24 (P) does not govern u
 - **`ActionSpec.default` (keyword and field) — REMOVED at 0.4.0** (stage 2's commit 3-ii of the v0.4 build; R-V04B-51's effects "the per-action `NoDefault()` slots of the registry give way to one per-Alterant slot"; R-V04B-61 clean cuts — no stub); ground: the default is the Alterant's (R-V04B-51 (1): "the Alterant's, not an action's"), declared at commit 3 (the row above); replacement: `PlugIn(; …, default = …)`; an action record constructed with `default = …` sees a `MethodError` (no such keyword; the 8-positional 0.3.x form still constructs), a reader of `spec.default` a field error; the registration digest moves (the per-action part leaves the fold — the pin re-measured); the same-commit triple (the record `src/state.jl`, this document's record vocabulary, the witnesses re-homed — `record_schema_tests.jl`, `registry_lifecycle_tests.jl`, `vocabulary_tests.jl`, `snapshot_property_tests.jl`). Minted 2026-09-22 (R-V04B-51); landed on the branch `cc/v04-delivery` (stage 2, commit 3-ii).
 - **`GoMeta.answerFor` (function) + `GoMeta.AltAnswer` (type) — ADDED (package-public, not exported) at 0.4.0** (stage 2's commit 4 of the v0.4 build; R-V04B-35 (c) "the ENGINE ANSWERS, on demand, ONE resolved value per Component per Alterant with a source of own / indirect-through-C / default, the answer shape UNIFORM across Alterants"; R-V04B-52 (2) a Segment's answer its own rows if any, else its Line's marked indirect; R-V04B-53 the levels' room — `:user`, `:file`, `:fallBack` reserved; R-V04B-55 (2) the Alterant's declared default with the source `:default`): `answerFor(delivery, component, alterant; registry = DEFAULT_REGISTRY) -> AltAnswer(value, source, via)` — derived at the call from the delivered rows and `decided_by`, never stored; the delivered ROWS unchanged; nothing removed; the same-commit triple (the code `src/answer.jl` and the `public` declaration in `src/GoMeta.jl`, this document's §1.2 + §2, the witnesses `tests/unit/answer_tests.jl` with `public_surface_tests.jl` 40 → 42); NOT FINAL — the name, the tier, the File's case (`:none`), the equal-child rows (OQ-148) and the per-call walk (Q6) are put at stage 2's review (R-V04B-40 (2)); the letter of R-V04B-24 (P) does not govern until at least v0.7.
 - **`GoMeta.scanAlterant` + `GoMeta.answersFor` (functions) — ADDED (package-public, not exported) at 0.4.0** (stage 2's commit 5 of the v0.4 build; his §6 item 9.A — the scan for the Components that got values of an Alterant, "unambiguous, and informative"; the plan v8.1 :57; card 4): the scan by Alterant and the access by Component, thin reads over `answerFor` — functions of their own (the session's default, R-V04B-40 (2)); the alternative as methods of the reader banked as a labelled diff beside the commit; the delivered ROWS unchanged; nothing removed; the same-commit triple (the code `src/scan.jl` with the `public` declaration, this document's §1.2 + §2, the witnesses `tests/unit/scan_tests.jl` with `public_surface_tests.jl` 42 → 44); NOT FINAL — the form (functions or methods) and the names are put at stage 2's review; the letter of R-V04B-24 (P) does not govern until at least v0.7.
+- **`GoMeta.childDiffers` (function) — ADDED (package-public, not exported) at 0.4.0** (stage 2's commit 6 of the v0.4 build; R-V04B-35 (e) "his (ii) child-differs signal COMPUTED from that answer, its stored form left to the benchmark phase"; his §37 item 4.2; the plan v8.1 :58): `true` when a Component's resolved answer's VALUE differs from its parent's — computed from `answerFor` at the call, never stored; the delivered ROWS unchanged; nothing removed; the same-commit triple (the code `src/childdiff.jl` and the `public` declaration in `src/GoMeta.jl`, this document's §1.2 + §2, the witnesses `tests/unit/childdiff_tests.jl` with `public_surface_tests.jl` 44 → 45); NOT FINAL — the name and the Block-against-File reading are put at stage 2's review; the letter of R-V04B-24 (P) does not govern until at least v0.7.
