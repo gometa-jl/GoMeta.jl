@@ -54,6 +54,7 @@ using Test
     include(joinpath(@__DIR__, "fallback_order_tests.jl"))          # stage 2 commit 3a (R-V04B-55 (3)): the fallBack level consulted LAST — three witnesses over a prepared slot
     include(joinpath(@__DIR__, "origin_tests.jl"))                  # stage 2 commit 2 (R-V04B-35 (d)): the provenance field decided_by — recorded at the enqueue, carried through the apply, captured with the row
     include(joinpath(@__DIR__, "answer_tests.jl"))                  # stage 2 commit 4 (R-V04B-35 (c)): THE ONE ANSWER FUNCTION — seven witnesses over measured rows
+    include(joinpath(@__DIR__, "scan_tests.jl"))                    # stage 2 commit 5 (his 9.A; the plan :57): the scan by Alterant and the access by Component — six witnesses
     include(joinpath(@__DIR__, "capture_tests.jl"))                 # v0.4 T5: the capture re-home — the registration-driven walk (the sadd2 anti-T1 cure), the typed floor, the value algebra, the per-plugin localOnly flush, the tier-1 capture laws (T5-DESIGN §6)
     include(joinpath(@__DIR__, "renderer_free_process_tests.jl"))  # stage 1 commit 5 (REAL-1 #6): ONE fresh child process with `import GoMeta` only — the delivered object needs no development tool
 end

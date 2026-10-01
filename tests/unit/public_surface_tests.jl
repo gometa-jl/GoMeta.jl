@@ -60,6 +60,7 @@ import TOML
                          # 39 → 40 at stage 2's commit 0 (R-V04B-58): `BLS` — the parser module public by name; its door
                          # of travel / access functions declared inside it (the BLS-tier testset below).
                          # 40 → 42 at stage 2's commit 4 (R-V04B-35 (c)): `answerFor` + `AltAnswer` — THE ONE ANSWER FUNCTION and its record.
+                         # 42 → 44 at stage 2's commit 5 (his §6 9.A; the plan :57): `scanAlterant` + `answersFor` — the scan by Alterant, the access by Component.
                          :RegistryBuilder, :register!, :next_plugin_index, :validate, :publish, :RegistrationRefused,
                          :Alterant, :PlugIn, :ActionSpec, :ActionOverload, :DomainRef, :CaptureDecl, :DefaultSlot,
                          :NoDefault, :Declared, :EffectRow, :RenderDecl, :VocabularySlot,
@@ -67,13 +68,14 @@ import TOML
                          :Provenance, :SignatureRecord, :PermissionManifest,
                          :vocabulary, :vocabulary_member, :vocabulary_queryable,
                          :BLS,   # 40 since stage 2's commit 0: the parser module `BLS`, R-V04B-58
-                         :answerFor, :AltAnswer]   # mirrors docs/public-api.md §1.2 EXACTLY (42 since stage 2's commit 4: THE ONE ANSWER FUNCTION and its record, R-V04B-35 (c))
+                         :answerFor, :AltAnswer,   # 42 since stage 2's commit 4: THE ONE ANSWER FUNCTION and its record, R-V04B-35 (c)
+                         :scanAlterant, :answersFor]   # mirrors docs/public-api.md §1.2 EXACTLY (44 since stage 2's commit 5: the scan by Alterant and the access by Component, his §6 9.A)
 
     @testset "export set is EXACTLY the declared semver surface" begin
         live = setdiff(Set(names(GM)), Set([:GoMeta]))     # names() on Julia ≥1.11 == exported ∪ `public` (+ the module name)
         exported = Set(filter(n -> Base.isexported(GM, n), collect(live)))
         @test exported == DECLARED_EXPORTS                        # [1] no accidental leak AND no gap (exact equality)
-        @test setdiff(live, exported) == Set(SUPPORTING_PUBLIC)   # [1b] the `public` tier is EXACTLY the declared names (42 since stage 2's commit 4: `answerFor`, `AltAnswer`; 40 since commit 0: `BLS`; 39 since R-V04B-24; 40 before)
+        @test setdiff(live, exported) == Set(SUPPORTING_PUBLIC)   # [1b] the `public` tier is EXACTLY the declared names (44 since stage 2's commit 5: `scanAlterant`, `answersFor`; 42 since commit 4: `answerFor`, `AltAnswer`; 40 since commit 0: `BLS`; 39 since R-V04B-24; 40 before)
         @test all(n -> Base.ispublic(GM, n), SUPPORTING_PUBLIC)   # [1c] every supporting name carries the `public` marking
         @test all(n -> !Base.isexported(GM, n), SUPPORTING_PUBLIC) # [1d] …and none is exported (the two-tier partition is real)
         for n in DECLARED_EXPORTS
