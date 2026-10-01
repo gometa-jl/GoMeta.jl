@@ -220,7 +220,8 @@ transient — what is not captured here is gone with the wipe.
 PURPOSE: the write path for a Component's evals rows from the APPLY — the rows of every Alterant the apply
 left in `st.working` (the shipped Labels, Visib and Id), put from the two apply sites: `src/GoMeta.jl` (the
 Block grain) and `src/absorb/walk.jl` (the Segment grain, `origin` = the Segment, the row keyed on the owning
-Line). The heading rows — a metaLine region's, keyed on the metaLine's own occurrence handle, and the fed
+Line). The heading rows — a metaLine region's, keyed on the carrying Component's occurrence handle (the metaBlock a
+whole-line metaLine forms, R-V04B-50; the Segment of an inline metaSegment), and the fed
 profile's, keyed on the user-context handle — are NOT put here: `capture_heading!` puts them from the absorb
 seam's flush (its one call in `src/absorb/absorb_meta.jl`). Both writers go through the one primitive
 `_putEval!`.
@@ -427,9 +428,10 @@ checks the declared row's gate, the instance shape, and the entries protocol BEF
 this call; the Heading typing retired with the re-home, and the four attr spellings
 re-derive from the DECLARED `stem` — byte-identical for the shipped `:head`), minting
 one row per captured entry, keyed to the region's OWN identity. TWO (handle, content)
-sources: the DOCUMENT surface supplies the metaLine's own
-occurrence handle (`st.meta_context.handle`) + its verbatim bytes
-(`st.meta_content`); the userMH FEED supplies the minted user-context handle +
+sources: the DOCUMENT surface supplies the occurrence handle and the verbatim bytes of the Component
+that CARRIES the heading — the metaBlock a whole-line metaLine forms (R-V04B-50, stage 2's commit 1), the
+Segment of an inline metaSegment — published by the walk as `st.meta_context.handle` + `st.meta_content`;
+the userMH FEED supplies the minted user-context handle +
 the fed profile's verbatim bytes (`st.user_context`). One shared fold/dedup body serves both sources, so the evals
 surface stays uniformly `(cell_handle, attr, value, polarity)`. BOTH sources
 populated at once is an INTERNAL-INVARIANT ERROR (unreachable by construction —

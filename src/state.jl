@@ -160,7 +160,8 @@ type the walk keys on (tier 1 requires it `===` the record's own `altConstructor
 single evals row · `<stem>_<field>` per non-default numeric field · one presence row per
 occurrence handle); `multiplicity` ∈ `(:many, :one, :per_field)` (CARRIED at v0.4 —
 its consumer is the T11 catalogue); `mode_gate` ∈ `(nothing, :localOnly)` — `:localOnly`
-delivers at the absorb seam keyed to the metaLine's own occurrence handle, and tier 1
+delivers at the absorb seam keyed to the carrying Component's occurrence handle (the metaBlock
+a whole-line metaLine forms — R-V04B-50; the Segment of an inline one), and tier 1
 enforces the BIDIRECTIONAL coherence with the record's `setMode`; `attr_stem` = the
 declared attr name stem (`nothing` ⇒ the derived fallback `lowercase(String(altName))`
 — the shipped four DECLARE theirs explicitly; byte-compatibility never rides a
@@ -841,7 +842,7 @@ end
     MetaContext
 
 IS: the v0.2 CH-3 context record — {grain, depth, application level, occurrence handle} — published at the
-walk→absorb handover for the current component.
+walk→absorb handover for the current component (its handle the carrying Component's — R-V04B-50).
 
 DOES: The v0.2 CH-3 context record — **{grain, depth, application level, occurrence handle}**,
 derived from the parse and the run's configured namespace (`st.config.namespace` keys the handle —
@@ -885,8 +886,9 @@ end
 The profile-feed surface's own recordable identity (the user-context build): `handle` =
 the minted user-context key bytes (`user_context_key(config.namespace, region_ordinal)`,
 serialized); `content` = the fed profile's verbatim UTF-8 bytes (the minted row's
-fingerprint column — the analogue of the document rule that a heading row carries its
-metaLine's bytes). Constructed by the feed routine immediately before its absorb call and
+fingerprint column — the analogue of the document rule that a heading row carries the bytes of the
+Component that carries the heading: the metaBlock a whole-line metaLine forms, R-V04B-50; the Segment of an
+inline one). Constructed by the feed routine immediately before its absorb call and
 RESTORED-to-prior in a `finally` right after (the stack-disciplined bracket); the
 document-side `meta_context` stays `nothing` on the feed, so the deriving-form refusal
 holds by construction. Immutable; per-call config inputs only.
@@ -929,8 +931,9 @@ mutable struct ProcessState
     first_parent_idx::Int
     crnt_idx::Int
     meta_context::Union{Nothing,MetaContext}   # v0.2 CH-3 step 9 (see MetaContext above)
-    meta_content::Vector{UInt8}                # v0.2 CH-3 localOnly delivery: the CURRENT
-                                               # metaLine component's verbatim content bytes
+    meta_content::Vector{UInt8}                # v0.2 CH-3 localOnly delivery: the CARRYING
+                                               # Component's verbatim content bytes (the metaBlock a
+                                               # whole-line metaLine forms, R-V04B-50; the Segment of an inline one)
                                                # (`cell_content_bytes`), published at the
                                                # walk handover BESIDE `meta_context` and
                                                # consumed by the absorb-seam heading

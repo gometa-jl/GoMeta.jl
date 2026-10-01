@@ -501,7 +501,8 @@ function default_registry_builder()
         # a localOnly alterant's value applies ONCE, WHERE IT STANDS — its
         # actions NEVER ENQUEUE into the slot tensors, so the inheritance
         # backtrack (both apply passes) never visits them; delivery happens at
-        # the absorb seam, keyed to the metaLine's own occurrence handle (the
+        # the absorb seam, keyed to the carrying Component's occurrence handle — the
+        # metaBlock a whole-line metaLine forms (R-V04B-50), the Segment of an inline one (the
         # outline model: one row per heading occurrence, document order
         # recoverable from handles). Deliberately in NEITHER derived set below.
         PlugIn(; altName = :heading, setMode = :localOnly, altConstructor = Alterants.Heading,

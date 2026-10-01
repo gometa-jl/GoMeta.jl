@@ -583,7 +583,8 @@ function absorbMeta(
     ## into ITS OWNING PLUGIN's store (entry order preserved per store, so the
     ## per-region fold's injectivity ordinals keep their key), and the region flushes
     ## ONCE after the component loop via the REGISTRY-DRIVEN loop below (keyed to the
-    ## metaLine's own occurrence handle).
+    ## carrying Component's occurrence handle — the metaBlock a whole-line metaLine forms,
+    ## R-V04B-50; the Segment of an inline one).
     local pendingLocal::Dict{Int8,Any} = Dict{Int8,Any}()
     local isLocalOnly::Bool = false
     while (thisInd = nextind(metaSS, thisInd)) < ncodeunits(metaSS) + 1
@@ -694,7 +695,8 @@ function absorbMeta(
     ## per-plugin, deterministic order): each pending store (every condition-passing
     ## localOnly action of this meta region, in source order per store) mints its rows
     ## keyed to the region's OWN identity + content: on the document surface that is
-    ## the metaLine's occurrence handle + its verbatim bytes; on the userMH feed it is
+    ## the carrying Component's occurrence handle + its verbatim bytes (the metaBlock a
+    ## whole-line metaLine forms, R-V04B-50; the Segment of an inline one); on the userMH feed it is
     ## the minted USER-CONTEXT handle + the profile's verbatim bytes. The WRONG-SHAPE
     ## check runs HERE, BEFORE any typed conversion (the T5 floor law — a mismatched or
     ## entries-less store takes the typed WARNING, never a raw TypeError in the poison

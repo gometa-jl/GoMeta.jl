@@ -52,11 +52,10 @@ const GB = GoMeta.BLS
 const AUTHORED_DIR = @__DIR__
 
 ## --- expected failures: (stem, component, alterant) => the reason and the ruling that scopes the fix ---
-const EXPECTED_FAILURES = Dict{Tuple{String,String,String},String}(
-    ("005_heading_local_only", "block@1", "Heading") =>
-        "the Engine records the heading on the metaLine's own Line (one head_1 row, Line grain); a Block-level " *
-        "heading entry is an Engine change scoped to D-4 (R-V04B-23; R-V04B-24 (R); the file's history)",
-)
+## (none since stage 2's commit 1: scenario 005's entry — the heading recorded on the metaLine's own Line — left when the
+## heading re-key (R-V04B-50) keyed the row to the metaBlock; the scenario is green against the expectations the owner confirmed on
+## 2026-09-10 (R-V04B-23))
+const EXPECTED_FAILURES = Dict{Tuple{String,String,String},String}()
 
 ## --- the occurrence handle, decoded (the documented layout of src/occurrence.jl; schema 0x01) ---
 _u16(b, i) = (UInt16(b[i]) << 8) | UInt16(b[i+1])

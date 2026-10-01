@@ -284,18 +284,21 @@ end
 
     @testset "localOnly delivery — the ratified `:localOnly` set mode (witnesses)" begin
         # LOCALITY: one heading governing several components mints EXACTLY ONE row,
-        # keyed to the metaLine's OWN occurrence handle (the outline model). The
+        # keyed to the occurrence handle of the metaBLOCK the metaLine forms (R-V04B-50,
+        # stage 2's commit 1 — before it, the metaLine's own Line; the outline model). The
         # per-component inheritance repetition of the first build is GONE — flipped
         # consciously at the ratified delivery decision.
         rl = _run("#~ \"Title\"\nx = 1\ny = 2\nz = 3\n")
         @test string(rl.status) == "PROCESS_OK"
         @test length(_heads(rl)) == 1 && (:head_1, "Title") in _heads(rl)
-        # the row's handle is the METALINE's own occurrence handle, computed from the delivered tree
-        # (`blsComponentTree`; the Engine's `occurrence_key` + `key_bytes`, the default namespace)
+        # the row's handle is the occurrence handle of the metaBLOCK the metaLine forms (R-V04B-50), computed
+        # from the delivered tree (`blsComponentTree`; the Engine's `occurrence_key` + `key_bytes`, the default namespace)
         hrow = only([h for (h, a, _, _) in GM.readAltValuesEvals(rl.altValues_evals) if startswith(String(a), "head")])
         ml = only(l for b in GM.BLS.children(rl.blsComponentTree) for l in GM.BLS.children(rl.blsComponentTree, b)
-                    if GM.BLS.getElement(l, :inputLineNum) == 1)   # the Line at input line 1, through the door
-        @test hrow == GM.key_bytes(GM.occurrence_key(rl.blsComponentTree, ml; namespace = :default))
+                    if GM.BLS.getElement(l, :inputLineNum) == 1)   # the metaLine at input line 1, through the door
+        mb = GM.BLS.parent(rl.blsComponentTree, ml)                   # the metaBlock it forms — the row's Component
+        @test hrow == GM.key_bytes(GM.occurrence_key(rl.blsComponentTree, mb; namespace = :default))
+        @test hrow != GM.key_bytes(GM.occurrence_key(rl.blsComponentTree, ml; namespace = :default))   # no longer the Line's
         # SLOT-WIPE INDEPENDENCE: delivery happens at absorb, so a LATER same-depth
         # metaLine (which reuses/wipes the slot) cannot disturb an earlier heading's row
         rw = _run("#~ \"A\"\nx = 1\n#~ :label1\ny = 2\n")

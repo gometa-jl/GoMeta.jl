@@ -64,9 +64,16 @@ function applyAbsorbFn(
     # the Block arm below is DEFENSIVE — depth is 0 on every live path at v0.2; the
     # field is the context record's designed shape, populated when a Block-grain
     # handover site exists.)
-    local _mc_key = occurrence_key(parse_state, crntComponent;
+    # R-V04B-50 (stage 2's commit 1 — THE HEADING RE-KEY): a WHOLE-LINE metaLine's heading is carried by the
+    # metaBlock it forms (his §12: "applied to the first Block only"; his §8 item 3: it applies to the Block's
+    # children INDIRECTLY through the Block), so the context record's HANDLE and the published CONTENT are the
+    # Block's — the parent of the metaLine (a Line-grain handover is always a whole-line metaLine: the one Line
+    # call site is guarded by `:hasMetaStr`); an inline metaSegment (a Segment-grain handover) keeps its own.
+    # The record's grain, depth and level stay the metaLine's (the heading recognizer reads the level).
+    local keyComponent = crntComponent isa BLS.Line ? BLS.parent(parse_state, crntComponent) : crntComponent
+    local _mc_key = occurrence_key(parse_state, keyComponent;
         namespace = st.config.namespace)
-    local _mc_content = cell_content_bytes(parse_state, crntComponent)
+    local _mc_content = cell_content_bytes(parse_state, keyComponent)
     # DEGENERATE-KEY PARITY: the per-cell capture warns loudly on a
     # truncated-walk (degenerate) occurrence key; the metaLine's context-record key
     # gets the SAME diagnostic HERE — capture_heading! receives only the serialized
@@ -88,8 +95,8 @@ function applyAbsorbFn(
         crntComponent isa BLS.Block ? Int(BLS.getGivenDepthMH(crntComponent)) : 0,
         st.crnt_idx,
         key_bytes(_mc_key))
-    # localOnly delivery: publish the metaLine
-    # component's verbatim content bytes BESIDE the record — the absorb-seam heading
+    # localOnly delivery: publish the CARRYING component's (the metaBlock's, or the inline Segment's — R-V04B-50)
+    # verbatim content bytes BESIDE the record — the absorb-seam heading
     # delivery mints its row keyed (meta_context.handle, …, meta_content), the same
     # (handle, content) pair the apply-plane capture derives per governed cell. The
     # canonical extractor keeps the pair grain-consistent with every other row.
