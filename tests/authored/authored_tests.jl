@@ -22,9 +22,13 @@
 #           §7 "The default is show"; R-V04B-21 — the Engine declares no default at v0.4; whether it
 #           delivers one is D-4's 3a-DESIGN), for Labels the empty set, for Heading absence.
 #       (6) compares: a SINGLE value (Visib, Heading) as a string; an ACCUMULATING value (Labels) as the
-#           SET of label names; `present = false` as absence. (7) `decided_by` is NOT asserted: the Engine
-#           delivers no provenance at v0.4 (the handle's origin names only a Segment-carried remap); it is
-#           read and reported once per run, never checked — until D-4.
+#           SET of label names; `present = false` as absence. (7) `decided_by` IS ASSERTED (stage 2's commit 4a of
+#           the v0.4 build; the Engine's provenance since its commit 2, R-V04B-35 (d)): the deciding statements'
+#           Components of the rows that gave the applied value, named by position — a Block `block@N`, a Line
+#           `line@N`, a Segment's statement by ITS LINE (`line@N` — the vocabulary of the confirmed files; the
+#           session's reading, put to the owner), the fed profile `user`, no statement `default` — must equal
+#           the expectation's set (a string or a list); the rows' `decided_by` handles are decoded like the
+#           cell handles (step 4) and mapped to the tree's Blocks and Lines.
 #       (8) EXPECTED FAILURES: a confirmed statement the Engine is KNOWN not to meet yet is listed in
 #           `EXPECTED_FAILURES` with its ruling and runs as `@test_broken` — the suite stays green while
 #           the gap stays visible, and the day the Engine meets it the `@test_broken` UNEXPECTED PASS
@@ -138,17 +142,64 @@ function _rows_on(rows, c)
 end
 
 ## --- the value that APPLIES (step 5 of the header) ---
-## returns (value, source) — value: a String (Visib/Heading), a Set{String} (Labels), or `nothing` (absent);
-## source: :own | :block | :default
+## returns (value, source, used) — value: a String (Visib/Heading), a Set{String} (Labels), or `nothing` (absent);
+## source: :own | :block | :default; used: the rows the value was read from (empty for :default) — the provenance
+## assertion (step 7; stage 2's commit 4a) reads their `decided_by`
 function _applied(rows, t, c, alterant::AbstractString)
-    own = _extract(_rows_on(rows, c), alterant)
-    own !== nothing && return (own, :own)
+    mine = _rows_on(rows, c)
+    own = _extract(mine, alterant)
+    own !== nothing && return (own, :own, mine)
     if c isa GB.Line
-        viablock = _extract(_rows_on(rows, _block_of(t, c)), alterant)
-        viablock !== nothing && return (viablock, :block)
+        theirs = _rows_on(rows, _block_of(t, c))
+        viablock = _extract(theirs, alterant)
+        viablock !== nothing && return (viablock, :block, theirs)
     end
-    alterant == "Visib" && return ("show", :default)        # the documented default (header, step 5)
-    return (nothing, :default)
+    alterant == "Visib" && return ("show", :default, eltype(rows)[])        # the documented default (header, step 5)
+    return (nothing, :default, eltype(rows)[])
+end
+
+## --- the provenance (step 7; stage 2's commit 4a): the deciding statements' Components of the rows a value was read from, as positions ---
+const GRAIN_SEGMENT = 0x01
+const GRAIN_USER    = 0xe0     # the user-context class (src/occurrence.jl USER_CONTEXT_GRAIN): the fed profile's statements
+function _family(attr::Symbol, alterant::AbstractString)
+    alterant == "Visib"   && return attr === :visib
+    alterant == "Labels"  && return startswith(string(attr), "label_")
+    alterant == "Heading" && return startswith(string(attr), "head_")
+    error("authored: unknown Alterant '$alterant'")
+end
+_pos_of_block(t, b) = "block@" * string(_ni(first(GB.children(t.ps, b)), :inputLineNum))
+_pos_of_line(l) = "line@" * string(_ni(l, :inputLineNum))
+## a deciding handle → the position of the Component whose metaStatement it names; a Segment's statement → ITS LINE
+function _position(t, h::Vector{UInt8})
+    d = decode_handle(h)
+    d.grain == GRAIN_USER && return "user"
+    isempty(d.path) && error("authored: a deciding handle with an empty path")
+    if d.grain == GRAIN_BLOCK
+        o = last(d.path)[2]
+        hits = [b for b in t.blocks if _ordinal(b) == o]
+        length(hits) == 1 || error("authored: the deciding Block ordinal $o maps to $(length(hits)) Blocks")
+        return _pos_of_block(t, hits[1])
+    elseif d.grain == GRAIN_LINE || d.grain == GRAIN_SEGMENT
+        length(d.path) >= 3 || error("authored: a Line or Segment handle with fewer than three path steps")
+        o = d.grain == GRAIN_LINE ? last(d.path)[2] : d.path[3][2]     # a Segment's path: file · block · LINE · segment
+        hits = [l for l in t.lines if _ordinal(l) == o]
+        length(hits) == 1 || error("authored: the deciding Line ordinal $o maps to $(length(hits)) Lines")
+        return _pos_of_line(hits[1])
+    end
+    error("authored: a deciding handle of grain $(d.grain) is not mapped by this runner")
+end
+## the SET of positions that decided the rows of the Alterant's family among `used`; {"default"} when no row applied
+function _deciders(t, used, dec, alterant::AbstractString)
+    isempty(used) && return Set(["default"])
+    out = Set{String}()
+    for r in used
+        _family(r[2], alterant) || continue
+        for h in dec[(r[1], r[2])]
+            push!(out, _position(t, h))
+        end
+    end
+    isempty(out) && error("authored: the rows that gave the value carry no provenance — the Engine's decided_by is empty")
+    return out
 end
 function _extract(rows, alterant::AbstractString)
     if alterant == "Visib"
@@ -188,7 +239,7 @@ _show(v) = v === nothing ? "absent" : v isa Set ? "{" * join(sort(collect(v)), "
 const CONFIRMED = sort([f for f in readdir(AUTHORED_DIR) if endswith(f, ".toml")])
 
 @testset verbose = true "authored (the owner's confirmed statements; tests/authored/README.md)" begin
-    n_confirmed = 0; n_stmt = 0; n_decided_by_unchecked = 0
+    n_confirmed = 0; n_stmt = 0; n_decided_by_asserted = 0
     for tomlname in CONFIRMED
         spec = TOML.parsefile(joinpath(AUTHORED_DIR, tomlname))
         get(spec, "status", "draft") == "confirmed" || continue      # README rule 3: a draft has no authority
@@ -200,16 +251,25 @@ const CONFIRMED = sort([f for f in readdir(AUTHORED_DIR) if endswith(f, ".toml")
             r = GA.goMeta(read(input))
             @test r.status == GA.PROCESS_OK
             rows = GA.readAltValuesEvals(r.altValues_evals)
+            dec  = Dict{Tuple{Vector{UInt8},Symbol},Vector{Vector{UInt8}}}((rec.cell_handle, rec.attr) => rec.decided_by for rec in r.altValues_evals.records)   # step 7: the rows' provenance by (handle, attr)
             t    = _components(r.blsComponentTree)
             for ex in spec["expect"]
                 n_stmt += 1
                 pos, alt = ex["component"], ex["alterant"]
-                haskey(ex, "decided_by") && (n_decided_by_unchecked += 1)
                 c = _component(t, pos)
-                applied, source = _applied(rows, t, c, alt)
+                applied, source, used = _applied(rows, t, c, alt)
                 ok = _matches(ex, applied)
+                prov = ""
+                if haskey(ex, "decided_by")                       # step 7 (stage 2's commit 4a): the provenance ASSERTED
+                    n_decided_by_asserted += 1
+                    want = ex["decided_by"]
+                    want_set = Set{String}(want isa AbstractVector ? String.(want) : [String(want)])
+                    got_set = _deciders(t, used, dec, alt)
+                    ok = ok && got_set == want_set
+                    prov = " — decided_by expected $(_show(want_set)), the rows' provenance gives $(_show(got_set))"
+                end
                 key = (stem, pos, alt)
-                label = "$pos · $alt — expected $(get(ex, "present", true) === false ? "absent" : _show(ex["value"] isa AbstractVector ? Set{String}(String.(ex["value"])) : String(ex["value"]))), the Engine's rows give $(_show(applied)) (via $source)"
+                label = "$pos · $alt — expected $(get(ex, "present", true) === false ? "absent" : _show(ex["value"] isa AbstractVector ? Set{String}(String.(ex["value"])) : String(ex["value"]))), the Engine's rows give $(_show(applied)) (via $source)" * prov
                 if haskey(EXPECTED_FAILURES, key)
                     @testset "EXPECTED FAILURE — $label — $(EXPECTED_FAILURES[key])" begin
                         @test_broken ok
@@ -223,7 +283,8 @@ const CONFIRMED = sort([f for f in readdir(AUTHORED_DIR) if endswith(f, ".toml")
         end
     end
     @test n_confirmed >= 1        # non-vacuity: at least one confirmed scenario ran
+    @test n_decided_by_asserted >= 1   # non-vacuity: the provenance assertion ran (step 7)
     @info "authored layer: $n_confirmed confirmed scenario file(s), $n_stmt statement(s) checked; " *
-          "$n_decided_by_unchecked `decided_by` field(s) read but NOT asserted (the Engine delivers no provenance at v0.4 — D-4); " *
+          "$n_decided_by_asserted `decided_by` field(s) ASSERTED against the rows' provenance (stage 2's commit 4a; a Segment's statement attributed to its Line); " *
           "$(length(EXPECTED_FAILURES)) statement(s) listed as expected failures (@test_broken)"
 end
