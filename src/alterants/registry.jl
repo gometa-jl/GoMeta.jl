@@ -2934,9 +2934,10 @@ const DEFAULT_REGISTRY = build_default_registry()
 ## v0.4 T1 — the `VISIB_TO_SETTRIBUTE` convenience alias is RETIRED (a registered breaking change,
 ## no forwarding window): it was the SAME `Dict` object as the registry's map (`===`, not a copy),
 ## i.e. a mutable alias onto the "immutable" inventory — the measured post-publication-mutation
-## class the freeze/publication seal (T2) closes. The write-back at both grains reads the
+## class the freeze/publication seal (T2) closes. The former write-back at both grains read the
 ## PER-CALL `st.registry.action_to_settribute` (derived from the declared per-action `settribute`
-## slots); the default inventory's table is `DEFAULT_REGISTRY.action_to_settribute`. It was never
+## slots) until stage 3's commit 4 — the table stays, read by nothing, until his word (R-V04B-42 (2)); the
+## default inventory's table is `DEFAULT_REGISTRY.action_to_settribute`. It was never
 ## in the `export`/`public` surface (docs/public-api.md §1), so no consumer contract moves.
 
 """

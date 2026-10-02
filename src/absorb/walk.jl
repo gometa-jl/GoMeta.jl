@@ -19,9 +19,9 @@
 #     attachment semantics (docs/SYNTAX-AND-SEMANTICS.md §2, §4): the Block grain updates by component
 #     depth, the Line and Segment grains via the shared `lineMHIdx` slot (state.jl). When `metaEnvInt`
 #     sits at Segment level, `applyAltActionFns` (apply.jl) runs immediately; a resolved Visib value
-#     writes back to the ENCLOSING Line's settribute (inline meta applies to its line —
-#     docs/SYNTAX-AND-SEMANTICS.md §9), and `captureEvals!` (annotations.jl) records that Line as
-#     the cell.
+#     is CAPTURED on the ENCLOSING Line (inline meta applies to its line — docs/SYNTAX-AND-SEMANTICS.md §9)
+#     by `captureEvals!` (annotations.jl), which records that Line as the cell; the former write into the
+#     Line's settribute left at stage 3's commit 4 (R-V04B-42 (1)).
 # REASONING: this file holds no eval — conditions enqueued here are evaluated later at the
 #     documented condition seam (README SECURITY; docs/public-api.md §3.2). Malformed, unknown, and
 #     over-capacity meta refuse inside `absorbMeta` (docs/public-api.md §3.4).
@@ -219,8 +219,8 @@ function absorbWalk(
     metaEnvInt::Int
 )::Int ## Returning updated value of `metaEnvInt`
 
-    # Hoist `local st = ctx()` once per call — the per-child Visib write-back inside the
-    # `for childId` loop below goes through the single hoisted `st`,
+    # Hoist `local st = ctx()` once per call — the per-child apply and capture inside the
+    # `for childId` loop below go through the single hoisted `st`,
     # avoiding per-iteration ScopedValue lookups (`st === ctx()` is stable for the whole call).
     local st = ctx()
     ## Line-Component-Specific:
@@ -272,37 +272,10 @@ function absorbWalk(
                 ## `applyAltActionFns(::Segment)` only at this point,
                 ## IF `metaEnvInt` ("metaEnvironment") is on `:Segment`-level:
                 applyAltActionFns(childComponent) ## `childComponent` is :Segment.
-                # Segment-grain Visib write-back: a resolved Visib value maps through
-                # `st.registry.alt_index[:Visib]` / `st.working` to a settribute key via the
-                # per-call registry's generic `action_to_settribute` table (v0.4 T1: derived from the
-                # declared per-action `settribute` slots; identity at v0.4.0), written in the Pair form
-                # `setElement(cs, key => true)` — `setElement(::BLS.ComponentSettribute, ::Symbol)` has
-                # NO method (only `Vararg{Pair{Symbol, Bool}}`), so the Pair form is required at both
-                # grains (the Block-grain sibling lives in GoMeta.jl).
-                # Deferred: the E-04 flagless-Visib `keys(Visib)[array][1]` BoundsError and its typed
-                # `ERR_VISIB_NO_FLAG` conversion (docs/public-api.md §3.1).
-                ## A Segment-carried Visib value applies to the LINE containing the Segment (inline
-                ## meta applies to its line — docs/SYNTAX-AND-SEMANTICS.md §9), NOT to the Segment
-                ## itself: written to the Segment it would be unreachable by `checkVisib(line)` at
-                ## emit, so inline `#~ hide`
-                ## / `#~ show`(override) / `#~ discard` / bare-`#~` values would not gate the render
-                ## and the content segment would emit before the override. Hence the target is
-                ## `crntComponent` (the Line, in scope here).
-                ## The action → settribute-key table is read off the PER-CALL registry
-                ## (`st.registry.action_to_settribute`; the module-global alias is retired), so a
-                ## custom `registry` kwarg's mapping is honored at the Segment grain too. The
-                ## `:Visib` index literal + the `keys(Alterants.Visib)` read = the T7 cure's scope.
-                ## (cure batch 2, interim until T7) guarded: a published custom registry without Visib runs.
-                if haskey(st.registry.alt_index, :Visib) && st.registry.alt_index[:Visib] ∈ keys(st.working)
-                    ## (cure batch 3) an absent write-back mapping (`settribute = nothing`) = no write-back
-                    let act = keys(Alterants.Visib)[st.working[st.registry.alt_index[:Visib]].array][1],
-                        key = get(st.registry.action_to_settribute, act, nothing)
-                        ## v0.4 T3 — the write LATCH raises IMMEDIATELY BEFORE the first caller-owned
-                        ## parse-state write (segment grain; T3-DESIGN §7); never lowered in-call
-                        key === nothing || (st.wrote_back = true;
-                                            BLS.setElement(crntComponent.componentSettribute, key => true))
-                    end
-                end
+                ## The Segment-grain Visib write-back onto the Line LEFT here (stage 3's commit 4 of the v0.4 build, R-V04B-42 (1)): the Engine writes NOTHING into the
+                ## caller's BLS Components — a Segment-carried Visib value is CAPTURED on its Line (below) and read through
+                ## the one answer function (R-V04B-16 (1)); the registry's `settribute` declarations and the derived table stay
+                ## until his word (R-V04B-42 (2)). The E-04 flagless read (`keys(Visib)[array][1]`) went with the write.
                 # Capture the Segment-grain FINAL evals rows before the next apply wipes `st.working`;
                 # the cell is the LINE (`crntComponent`) the Segment's meta applies to, NOT the Segment.
                 # Reads `st.working`, puts or supersedes rows in `st.evals` (and may append warning

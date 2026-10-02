@@ -13,7 +13,7 @@
 #     rows) are MINTED typed in the closed interpreter, but the statement still ABORTS at the absorb seam
 #     (`absorb_meta.jl`: the refusal rethrown as a raw `ErrorException`, its code and context dropped — the
 #     routing into the delivered diagnostics a later, separately-gated motion), E-07's mint is pending, and
-#     the E-04/E-06 rows still throw (docs/public-api.md §3). `captureEvals!` (the apply sites, before the
+#     the E-06 row still throws (docs/public-api.md §3; E-04 left with the Visib write-back at stage 3's commit 4). `captureEvals!` (the apply sites, before the
 #     slot wipe) and `capture_heading!` (the absorb seam's flush) record the evals rows, feeding
 #     `readAltValuesEvals`.
 # PURPOSE: the stable, total, machine-inspectable result vocabulary.
@@ -107,7 +107,7 @@ IS: the per-call store of final `EvalRecord`s — the container behind the evals
 
 DOES: The per-call store of final `EvalRecord`s, deduped per `(cell_handle, attr)` at every put
 (`_putEval!`; a re-put supersedes, so the store holds final-evals-only). `EvalStore()` starts empty;
-`captureEvals!` (`src/annotations.jl`) populates it at the two apply-site write-backs BEFORE the
+`captureEvals!` (`src/annotations.jl`) populates it at the two apply sites BEFORE the
 slot wipe and `capture_heading!` at the absorb seam's flush (a metaLine region's rows; the fed profile's
 rows during the feed, before the walk); the `readAltValuesEvals(result.altValues_evals)` accessor sorts them by
 `(cell_handle, attr, value)`.

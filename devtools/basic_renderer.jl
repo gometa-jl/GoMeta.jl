@@ -411,8 +411,8 @@ parse never ran. The NamedTuple field order is `(blsStructure_bytes, render_byte
 function outputs(result::GoMeta.GoMetaDelivery)
     ## The non-OK output contract. A fail-closed PROCESS_ERROR GoMetaDelivery — an ENTRY refusal: at v0.3 the
     ## only source was a config-time validation error; at v0.4 the registry DOOR
-    ## (`REG_UNPUBLISHED` / `POST_SEAL_MUTATION`) and the seam ledger's refusals of an injected parse state
-    ## (`STATE_REUSE_REFUSED` / `STATE_SEAL_MISMATCH`) are the further sources — every one before any absorb
+    ## (`REG_UNPUBLISHED` / `POST_SEAL_MUTATION`) and the seam ledger's refusal of an in-flight injected parse state
+    ## (`STATE_REUSE_REFUSED`; `STATE_SEAL_MISMATCH` left with the write-back at stage 3's commit 4) are the further sources — every one before any absorb
     ## or apply work, `goMeta`'s before its parse — yields an EMPTY (tree, render): "no render attempted",
     ## and the delivered tree is a container built from EMPTY bytes ⇒ an empty tree. `render_bytes` is NOT
     ## invoked (the emit path stays untriggered). No post-parse error class exists at v0.4: this branch

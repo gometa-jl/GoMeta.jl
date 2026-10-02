@@ -27,9 +27,9 @@ CRLF-normalization convention (§4), the explicitly **deferred / not-v0** surfac
 **REASONING.** The API is **TOTAL over the CONFIG-TIME catalogued surface** — an invalid `config`
 never throws an uncaught exception; it fail-closes into a `PROCESS_ERROR` result carrying a typed
 `Diagnostic`. The absorb- and apply-plane rows are the honest exception: they can still throw at
-v0 — the §3 partition (the E-04 crash-origin row of §3.1 and the stable-message refusals of §3.4).
-Honesty over completeness: the rows not yet armed (E-07's pending mint, the E-04 crash-origin and
-the E-06 guarded refusal — §3.1/§3.2) and the crashes still latent or refused with a stable
+v0 — the §3 partition (the stable-message refusals of §3.4; the E-04 crash-origin row of §3.1 RETIRED at stage 3's
+commit 4 of the v0.4 build — its origin was the Visib write-back). Honesty over completeness: the rows not yet armed
+(E-07's pending mint and the E-06 guarded refusal — §3.1/§3.2) and the crashes still latent or refused with a stable
 message (§3.4) are documented **as such**, never papered over with a fabricated typed code; the
 other condition-path refusals ARE minted typed since the closed-interpreter flip, the statement still
 aborting at the absorb seam (§3.2's preamble).
@@ -111,8 +111,8 @@ These are part of the documented public surface — declared with Julia's `publi
   missing declaration, `WARN_CAPTURE_UNREADABLE` an unreadable live value — the LIFECYCLE bullet
   below and §3.4); NOT registration-driven at v0.4 (the deferred rows): the QUERY plane's argument floor
   (T3: the getter is called with Symbol literals only; the getter's signature is not yet verified at
-  registration), and the RENDER write-back (today only a Visib-style `settribute` mapping writes back; the
-  write-back is REMOVED at stage 3 of the v0.4 branch, R-V04B-42; the declarations' fate is the owner's word at stage 5). The release contract page states,
+  registration), and the RENDER write-back (the Visib write-back LEFT at stage 3's commit 4 of the v0.4 branch, R-V04B-42 (1) —
+  the Engine writes nothing into the BLS Components; the `settribute` declarations and the derived table stay until the owner's word at stage 5, R-V04B-42 (2)). The release contract page states,
   per slot, which row consumes it.
 - **The registration LIFECYCLE (v0.4):** `RegistryBuilder()` (empty) or
   `RegistryBuilder(DEFAULT_REGISTRY)` (PRELOADED with the four built-ins, copied by the domain
@@ -146,26 +146,17 @@ These are part of the documented public surface — declared with Julia's `publi
   first divergent path is named in the message; `POST_SEAL_MUTATION`), and the
   package-internal callable seam `run_absorb_apply!` (NOT a
   `public` name; consumed by adapters at their own risk, documented in its source) runs the
-  same door. **The seam's STATE LEDGER (v0.4 T3):** each injected parse state is
-  identity-keyed (weakly — a poisoned entry can vanish only when the state itself is
-  unreachable, i.e. nothing can ever re-inject it; a finalizer rides every stamped state) to a
-  lifecycle entry. At entry, after the door (refusal precedence in-flight > poisoned >
-  identity): a state already IN FLIGHT refuses `STATE_REUSE_REFUSED` (two calls must never
-  share one parse state — the caller obligation, now ENFORCED, nested re-injection included);
-  a state POISONED by an earlier call that aborted AFTER it began writing back refuses
-  `STATE_REUSE_REFUSED` (recovery: re-parse the source into a fresh state); a state whose
-  write-backs were produced under a DIFFERENT published registry refuses
-  `STATE_SEAL_MISMATCH` — the REGISTRY-IDENTITY check (`===` on the published object, never a
-  fingerprint compare). A call that WROTE binds the state to its registry at exit; a completed
-  meta-free call leaves no binding; an abort before any write-back leaves the state clean and
-  re-injectable under any registry. This is NOT re-validation (the seam's no-re-validation
-  guarantee stands — an identity/lifecycle check, never the config/registration chain). The
-  seam's guarantee rows (the fodt lane's five, restated): fresh per-call process state ·
-  caller-owned mutated parse state (NARROWED as above — poisoned/in-flight states refuse) ·
-  no re-validation at the entry · a meta-free store on the no-feed path ⇒ `PROCESS_OK` with zero evals rows · the
-  seam parses and renders nothing. A COPY of a poisoned state is a NEW unstamped object
-  possibly carrying partial write-backs — the ledger tracks identities, not content lineage
-  (the caller obligation extends to copies). *The T2-bis honest bound, stated exactly: the snapshot's own members are mutable
+  same door. **The seam's STATE LEDGER (v0.4 T3; NARROWED at stage 3's commit 4 of the v0.4 build, R-V04B-42 (1)):** each injected
+  parse state is identity-keyed (weakly; a finalizer rides every stamped state) to a lifecycle entry holding ONE fact —
+  whether a call is in flight on it: a state already IN FLIGHT refuses `STATE_REUSE_REFUSED` (two calls must never
+  share one parse state — the caller obligation, ENFORCED, nested re-injection included). The registry binding and the
+  poison marker, with their refusals (`STATE_SEAL_MISMATCH`; the POISONED form of `STATE_REUSE_REFUSED`), LEFT with the
+  Visib write-back they guarded: the Engine writes NOTHING into the caller's BLS Components any more — a state can be
+  re-injected under any published registry, before or after an abort. This is NOT re-validation (the seam's
+  no-re-validation guarantee stands). The seam's guarantee rows (the fodt lane's five, restated): fresh per-call process
+  state · the caller-owned parse state READ, not written (in-flight states refuse) · no re-validation at the entry · a
+  meta-free store on the no-feed path ⇒ `PROCESS_OK` with zero evals rows · the seam parses and renders nothing. The
+  ledger's remaining bookkeeping is a candidate for stage 5's tidy-up (R-V04B-42's effects). *The T2-bis honest bound, stated exactly: the snapshot's own members are mutable
   and reachable through the published value, so a mutation through a published container is
   refused UNLESS the same actor also rewrites the corresponding snapshot container — a MIXED
   case (the live half accident-grade, the snapshot half a B-2 reach into an underscored
@@ -602,8 +593,8 @@ arg2)` — parsed with the metaLine and handed to the action when it fires. The 
 ## §3 — The typed error-mode catalogue
 
 `Diagnostic = {code::Symbol, severity, message, context}`; a catalogued failure is a typed
-`Diagnostic` except where its row says otherwise — the E-04 crash-origin and the E-06 GUARDED refusal
-still throw (§3.1; their typed conversion deferred at v0), the condition-path rows are minted typed while
+`Diagnostic` except where its row says otherwise — the E-06 GUARDED refusal
+still throws (§3.1; its typed conversion deferred at v0; the E-04 crash origin RETIRED at stage 3's commit 4), the condition-path rows are minted typed while
 the statement still aborts at the absorb seam (§3.2's preamble), and E-07's mint is pending (§3.2). The
 catalogue's inventory IS the tables of §3.1–§3.5
 below (no aggregate count is maintained by hand — two hand-written counts drifted at v0.4 T2);
@@ -618,13 +609,12 @@ are not catalogued typed codes.
 | `ERR_UNKNOWN_PROFILE` (E-03) | config-time, **armed + typed** | `config.profile` outside the three profile names `{:jl_share_v1, :jl_share_v1_full_parse, :jl_share_v1_full_eval}` — fail-closed `PROCESS_ERROR`, no parse or verdict work attempted (the Engine renders nothing since 0.4.0, §1.3) (an opt-in name passes THIS row and refuses later at profile resolution unless the opt-in extension is explicitly included — the two-act law, §3.2) |
 | `ERR_RANGE_INVALID` (E-08) | config-time, **armed + typed** | `config.parse_range` with `first ≠ 1`, or an empty range |
 | `ERR_UNKNOWN_FLAVOR` | config-time, **armed + typed** | `config.flavor_tag` outside the three armed flavors `{:julia, :c, :latex}` — fail-closed before any parse (selected, never inferred). *(Row added at v0.4 T2 on a CrossReview finding — the code armed it at the flavor arming; the catalogue had not followed.)* |
-| `ERR_VISIB_NO_FLAG` (E-04) | apply-path **crash-origin** (typed conversion deferred) | a Visib verdict carries no set flag at write-back |
+| `ERR_VISIB_NO_FLAG` (E-04) | **RETIRED at 0.4.0** (stage 3's commit 4 of the v0.4 build; R-V04B-42 (1)) | its crash origin was the Visib write-back's flagless read of the winning action; the write-back is gone and the capture's own read is guarded — no apply-path crash origin remains catalogued |
 | `ERR_DEPTH_OUT_OF_WINDOW` (E-06) | **GUARDED** — stable untyped refusal; typed conversion deferred | a `#~9`-style **digit** depth beyond the meta-hierarchy's depth window raises the stable-message `ErrorException` "meta depth out of range …" at the depth lookup (§3.4) |
 
 E-03 / E-08 / `ERR_UNKNOWN_FLAVOR` are armed (the three config-time rows): a bad profile/range/flavor returns a `PROCESS_ERROR` `GoMetaDelivery` carrying the
-typed code, with the development tool's `Main.BasicRenderer.outputs` yielding the empty `(tree, render)` pair (its non-OK contract). E-04 (apply-path) is the
-remaining crash-origin whose **typed conversion is deferred at v0**:
-its current crash-reachability is a documented v0 edge.
+typed code, with the development tool's `Main.BasicRenderer.outputs` yielding the empty `(tree, render)` pair (its non-OK contract). No apply-path crash origin remains: E-04's left
+with the Visib write-back at stage 3's commit 4 (its row above).
 E-06 is **GUARDED**: for a digit depth outside the window the depth lookup refuses with the stable
 message "meta depth out of range …" (§3.4); its typed conversion is likewise deferred
 at v0.
@@ -852,9 +842,9 @@ fabricated typed code:
   before v0.3.1 the vacuous check silently evaluated TRUE.
 
 **Message stability:** every input-reachable engine-layer message a v0 input can trigger through
-the parse/absorb/apply pipeline — and, in the development tool's render plane
-(`devtools/basic_renderer.jl:96`), `GoMeta emit:` — is STABLE and explanatory (stage-honest prefix
-`GoMeta parse:` / `GoMeta absorb:` / `GoMeta apply:` / the tool's `GoMeta emit:`, the offending token
+the parse/absorb/apply pipeline is STABLE and explanatory (stage-honest prefix
+`GoMeta parse:` / `GoMeta absorb:` / `GoMeta apply:` — the development tool's render plane carries no message of its
+own since stage 3's commit 1 of the v0.4 build, the renderer consuming the Engine's answer; the offending token
 bounded, what v0 accepts, this section as the pointer); three catalogued messages are
 parse-plane — the multi-inline-meta refusal and the two directive-adjacency refusals
 (segment grain and line grain, `0.2.3`) above. The not-input-reachable internal checks say
@@ -926,8 +916,8 @@ its parse; at the seam's door before any absorb or apply work).
 | `REG_UNPUBLISHED` (door) | error | an unsealed registry reached `goMeta` or `run_absorb_apply!` — the message names `RegistryBuilder → validate → publish` | `nothing` |
 | `POST_SEAL_MUTATION` (door) | error | a published registry whose live fields no longer match the publish-time snapshot — the message carries "at <path>", the first divergent path; re-publication is the change path | the rendered path |
 | `DEP_MISSING` (v0.4 T3) | error | an `altConstructor` with no zero-argument method — the instance mint's eager dependency closure at publication (was a raw `MethodError` at first apply) | the alterant |
-| `STATE_REUSE_REFUSED` (T3 seam) | error | the injected parse state is refused: POISONED by an earlier aborted call that had begun writing back (the message names `STATE_POISONED`), or already IN FLIGHT in another call (one code, two message variants); recovery: re-parse into a fresh state | `nothing` |
-| `STATE_SEAL_MISMATCH` (T3 seam) | error | the injected parse state's write-backs were produced under a DIFFERENT published registry — the registry-identity check (`===` on the published object, never a fingerprint) | `nothing` |
+| `STATE_REUSE_REFUSED` (T3 seam) | error | the injected parse state is already IN FLIGHT in another call (one code, ONE message since stage 3's commit 4 of the v0.4 build — the POISONED variant left with the Visib write-back, R-V04B-42 (1)); recovery: let the running call return, or re-parse into a fresh state | `nothing` |
+| `STATE_SEAL_MISMATCH` (T3 seam) | **REMOVED at 0.4.0** (stage 3's commit 4 of the v0.4 build; R-V04B-42 (1)) | it guarded the Visib write-backs a run left in the caller's state; nothing is written back any more — the §6 register row | — |
 | `SRC_DIGEST_MISMATCH` (v0.4 T4) | error | a record's `VocabularyRef` digest matches NO loaded artifact — the artifact bytes moved without a declaration update, or the artifact was never loaded (the R-V04-37 publication-time re-verify of the load-time capture; the DEFAULT publishes at module load, so a tampered shipped artifact fails `using GoMeta` here) | the alterant |
 
 Stable-message refusals (NOT typed codes; the §3.4 class): `"GoMeta absorb: meta-hierarchy slot pool
@@ -1039,3 +1029,4 @@ non-silent record under R-V04B-61; the letter of R-V04B-24 (P) does not govern u
 - **`GoMeta.content_fingerprint` — §1.2 public-not-exported since 0.2 — REMOVED at 0.4.0** (stage 2's commit 9b of the v0.4 build; R-V04B-43 — the 4D phrase his word §156 adopted, its clause (1): "the stored copy goes, the public function goes, and no Engine function serves a piece's text — it is read from the BLS Component tree through BLS's own access function"; his questions OWNER-WORDS §154 and his word §156; no deprecation stub — the owner's "as clean as possible NOW"): a 0.3.x caller sees `UndefVarError`; replacement: `GoMeta.BLS.content(delivery.blsComponentTree, component)` for a piece's text, the Component reached through the door (`GoMeta.BLS.children`) or named by the answer function (`GoMeta.answerFor(…).via`, `GoMeta.scanAlterant`); the shipped consumers (`find_by_label.jl`, `notebooks_from_source.jl`) re-routed that way at commit 9a (R-V04B-43 (2)); the same-commit triple (`src/GoMeta.jl`'s `public` line, this document's §1.2/§1.3, the surface oracle `tests/unit/public_surface_tests.jl` — the tier's count 45 → 44); the policy's protection covers exported names only (P).
 - **`EvalRecord.content` (field) — REMOVED from the public record type at 0.4.0** (stage 2's commit 9b; R-V04B-43 (1); R-V04B-43's effects: "a second change to that public type beside the origin field of R-V04B-35 (b), its own register row"): a reader of `.content` sees a field error; the row names its Component by `cell_handle` and carries no copy of its text; the record's fields are `cell_handle`, `attr`, `value`, `polarity`, `decided_by`. The one row without a piece in the tree — a heading fed through the configuration's user profile — carries an empty fifth column in the test layer's derived form (R-V04B-43 (4); his word OWNER-WORDS §277, R-V04B-90).
 - **`GoMeta.serialize_evals(::GoMetaDelivery)` (the five-column method) — REMOVED at 0.4.0** (stage 2's commit 9b; R-V04B-43's effects): the golden layer's five-column form is the TEST layer's since commit 8 — `TestSupport.derive_annotations_golden(delivery)` (`tests/support/derive_annotations.jl`), its fifth column a piece's text through the BLS Component tree and `GoMeta.BLS.content`; the twelve reference files byte-identical by both producers while both existed (R-V04B-43 (3); commit 8's standing proof), unmoved at the removal; the four-column `serialize_evals(ann)` stays the Engine's one serialization; the Engine's internal `cell_content_bytes` superseded by `GoMeta.BLS.content` (R-V04B-24/25's tidy-up list).
+- **The Visib write-back into the BLS Components — REMOVED at 0.4.0** (stage 3's commit 4 of the v0.4 build; R-V04B-42 (1) — his word of 2026-09-22, OWNER-WORDS §153: *"I approve your recommendation: 3A."*, the phrase 3A the session's: "Remove the Visib write-back into the Components, together with the two things in the Engine that exist only for it — the internal marker it raises and the two refusals that read that marker"): the two write sites (the Block grain in the driver loop; the Segment grain onto the Line in the absorb walk), the latch `wrote_back` of the per-call state, the diagnostic code `STATE_SEAL_MISMATCH` and the POISONED variant of `STATE_REUSE_REFUSED` (the ledger's `registry` and `poisoned` fields with them). A consumer that read a Component's `:show`/`:hide`/`:discard` flag reads FALSE for every Component — the Engine's answer is `answerFor` (§1.2; the basic renderer and the development tools read it since this stage's commits 1 and 2). The three flags' declarations STAY until his word (R-V04B-42 (2); stage 5): the registry's `settribute` slots, the derived `action_to_settribute` table, the three names inside BLS, `RenderDecl.materialize`. The E-04 crash origin (§3.1) retired with the write-back's read. Proved by 0 of 7 committed renders moving (R-V04B-42 (3)).

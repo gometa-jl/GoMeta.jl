@@ -88,10 +88,10 @@ extends the label whitelist by a fixed **pictograph vocabulary** (byte-exact nam
   condition-query roles — where the condition is actually evaluated, `docs/public-api.md` §3.4 —,
   malformed action arguments, over-long conditions), catalogued in
   `docs/public-api.md` §3.
-  The documented exceptions — an apply-path crash edge (a flagless-Visib write-back) and the
-  guarded `#~9` depth refusal — are likewise catalogued honestly in `docs/public-api.md`
+  The documented exception — the guarded `#~9` depth refusal — is likewise catalogued honestly in `docs/public-api.md`
   §3.1/§3.2/§3.4 (the condition path itself is minted typed since the closed-interpreter flip, the
-  statement still aborting at the absorb seam — §3.2's preamble).
+  statement still aborting at the absorb seam — §3.2's preamble). The former second exception — the apply-path crash
+  edge, a flagless-Visib write-back — left with the write-back at stage 3's commit 4 of the v0.4 build.
 
 **The language grows by design; the v0 subset forecloses none of it.** `using()` is a reserved
 name.

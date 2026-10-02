@@ -246,7 +246,7 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
         end
         P = GM.publish(GM.default_registry_builder())
         psA = _mkps(); psB = _mkps()                          # equal CONTENT, distinct objects
-        GM.run_absorb_apply!(psA; registry = P)               # hide writes back ⇒ both bind
+        GM.run_absorb_apply!(psA; registry = P)               # every injected state is stamped (the in-flight bookkeeping) ⇒ both have entries
         GM.run_absorb_apply!(psB; registry = P)
         eA, eB = lock(GM._SEAM_LEDGER_LOCK) do
             (get(GM._SEAM_LEDGER, psA, nothing), get(GM._SEAM_LEDGER, psB, nothing))

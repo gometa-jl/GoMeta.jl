@@ -28,8 +28,8 @@
 # REASONING: conditions travel as parsed condition ASTs and arguments as opaque tuples, so there
 #     is one auditable evaluation site (the closed interpreter's `evaluate`), one auditable setter
 #     seam, plus explicit guards ("GoMeta internal invariant violated …", not reachable from any
-#     v0 input) on impossible apply states. Honest edges: the E-04 apply-path crash-origin and
-#     the E-06 absorb-path guarded refusal keep their typed conversion deferred
+#     v0 input) on impossible apply states. Honest edges: the E-06 absorb-path guarded refusal keeps
+#     its typed conversion deferred (the E-04 apply-path crash origin left with the Visib write-back, stage 3's commit 4)
 #     (docs/public-api.md §3.1); the BARE unqueryable condition atom aborts raw at evaluation —
 #     the E-07 pending mint (docs/public-api.md §3.2/§3.4).
 # PURPOSE: a runnable, observable Apply phase whose single evaluation site and single setter seam
@@ -69,7 +69,7 @@ function detAltValuesForSetOfSlots(
     #   `:localOnly` alterants (the Heading — set mode `:localOnly`) NEVER appear
     #   here at all: their actions never enqueue, so neither pass can visit one — the value
     #   applied once, where it stood, at the absorb seam (delivery = `capture_heading!`).
-    # The winner lands in `st.working` (one instance per alterant); the write-backs read from there.
+    # The winner lands in `st.working` (one instance per alterant); the capture reads from there.
     # ──────────────────────────────────────────────────────────────────────────────────────────────
     # The per-call `ProcessState` is hoisted once: the working alterant-instance dict
     # (`st.working`), the registry inventory + action table + accumulate-set (`st.registry.*`),

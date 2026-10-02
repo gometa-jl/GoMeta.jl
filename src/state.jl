@@ -955,17 +955,6 @@ mutable struct ProcessState
                                                # in the finally) — never set on the
                                                # document walk; the capture's second
                                                # (handle, content) source.
-    wrote_back::Bool                           # v0.4 T3 — THE WRITE LATCH (T3-DESIGN §7):
-                                               # raised at the FIRST caller-owned
-                                               # parse-state write of the call (either
-                                               # grain site — the segment-grain write in
-                                               # walk.jl, the block-grain write in the
-                                               # driver loop), NEVER lowered within the
-                                               # call; the seam reads it at exit to bind
-                                               # the registry identity and, on an abort,
-                                               # to poison the state's ledger entry. A
-                                               # plain per-call Bool — no lock touches
-                                               # the hot loop.
 end
 
 """
@@ -1089,7 +1078,6 @@ function init_state(parse_state::BLS.ParseState, config::GoMetaConfig, registry:
         fileMHIdx, fileMHIdx, fileMHIdx,   # crnt_depth_idx / first_parent_idx / crnt_idx
         nothing,                     # meta_context — published per component at the walk handover (step 9)
         nothing,                     # user_context — set only inside the feed routine's bracket
-        false,                       # wrote_back — the T3 write latch (raised at the first caller-state write)
     )
 end
 

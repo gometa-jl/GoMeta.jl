@@ -102,7 +102,7 @@ namespace = config.namespace))`; the row carries no copy of the piece's text —
 PREDICATE is the interim span-validity policy (the door's `BLS.content` empty-return arms — zero/
 out-of-range Block span · Segment idxString==0/invalid span · blank Line ⇒ no capture; population
 identical to the pre-swap engine, probe-proven). Called from the two apply sites immediately after
-`applyAltActionFns` finalizes `st.working` for the cell + its Visib write-back, and BEFORE the next
+`applyAltActionFns` finalizes `st.working` for the cell (the Visib write-back that followed it left at stage 3's commit 4), and BEFORE the next
 `detAltValuesForSetOfSlots` wipes `st.working` (apply.jl). The
 capture is UNCONDITIONAL on Visib (a label-only or Id-only cell is captured too), reading whichever
 alterant instances the apply left in `st.working`:
@@ -111,8 +111,8 @@ alterant instances the apply left in `st.working`:
   (the accumulated union of the cell's own + all inherited scopes; e.g.
   `(cell_h, :label_tracking, true, +)`).
 - **Visib** (`:mutExclusive`, `@namedElement … Bool`): one row for the WINNING action —
-  `(handle, :visib, :hide|:show|:discard, true)` (`keys(Visib)[inst.array][1]`, the proven write-back form;
-  guarded against the flagless `keys(Visib)[all-false]` E-04 case rather than tripping a bare `error()`).
+  `(handle, :visib, :hide|:show|:discard, true)` (`keys(Visib)[inst.array][1]`, the form the former Visib write-back used — gone at stage 3's commit 4;
+  guarded against the flagless `keys(Visib)[all-false]` case — the former write-back's E-04 crash origin, gone with it at stage 3's commit 4 — rather than tripping a bare `error()`).
 - **Id** (`:mutExclusivePerField`, `@namedElement … Int16`): one row per NON-default field —
   `(handle, :id_<name>, value::Int16, true)`. The corpus does NOT exercise Id (SYNTAX-AND-SEMANTICS §13;
   no read site), so this path is contract-completeness ("total over the applied evals rows").

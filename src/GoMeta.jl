@@ -18,8 +18,9 @@
 #     range). The absorb-walk + apply run inside one per-call dynamic scope, `with(STATE =>
 #     init_state(parse_state, config, registry))`, so two
 #     concurrent calls never share state; the driver walk enters each file-level Block, absorbs its
-#     metaLines, applies the queued alterant actions, writes back the Block-grain Visib value,
-#     and captures per-cell evals rows for `readAltValuesEvals(result.altValues_evals)`. The tool's `outputs` pair — the BLS Component tree's print and the render — is the
+#     metaLines, applies the queued alterant actions and captures per-cell evals rows (the Block's Visib
+#     among them; nothing is written into the Components since stage 3's commit 4, R-V04B-42 (1)) for
+#     `readAltValuesEvals(result.altValues_evals)`. The tool's `outputs` pair — the BLS Component tree's print and the render — is the
 #     development tool's — `devtools/basic_renderer.jl`, loaded through `devtools/load_basic_renderer.jl`,
 #     never by the Engine (R-V04B-24, 2026-09-12). The optional
 #     `config.user_mh_profile` seeds the reserved user slot of the meta-hierarchy before the walk
@@ -31,8 +32,8 @@
 #     `:full_eval_v1` extension mode can it read or have effects — README SECURITY),
 #     and TOTAL over the config-time
 #     catalogued surface — non-OK implies non-empty diagnostics. Honest edges: the
-#     E-04 apply-path crash-origin and the E-06 absorb-path guarded refusal are documented but
-#     not yet typed (conversion deferred); the condition-path refusals are MINTED typed since the
+#     E-06 absorb-path guarded refusal is documented but not yet typed (conversion deferred; the E-04
+#     apply-path crash origin LEFT with the Visib write-back at stage 3's commit 4, R-V04B-42); the condition-path refusals are MINTED typed since the
 #     closed-interpreter flip, though the statement still aborts at the absorb seam, with E-07's mint
 #     PENDING (the unqueryable-alt shape still aborts raw). The full honest-edges catalogue:
 #     docs/public-api.md §3.
@@ -203,8 +204,8 @@ Pure + total (never throws): all three checks (profile, parse_range, flavor_tag)
 membership over the typed `GoMetaConfig` fields. The non-config-time codes are intentionally absent here, with the honest partition
 (docs/public-api.md §3): the condition-path refusals (E-01/E-02 + the arg-domain and parse rows) are
 TYPED at their origins in the closed interpreter; E-07's typed mint is PENDING (the unqueryable-alt
-shape still aborts raw); E-04 is the apply-path crash-origin and E-06 the GUARDED absorb-path depth
-refusal (both un-typed, conversion deferred).
+shape still aborts raw); E-06 is the GUARDED absorb-path depth refusal (un-typed, conversion deferred; the
+E-04 apply-path crash origin left with the Visib write-back at stage 3's commit 4).
 
 REASONING: an invalid configuration must never reach the parser or the apply — the three config-time rows are decided by comparison and membership over typed fields, so the check is pure and total and the input bytes are never touched.
 
@@ -357,8 +358,9 @@ at the caller's top level. The config-time error rows are armed + typed; the con
 (the unknown-key, cap, argument-domain and grammar rows) are typed at their own origins in the closed
 condition interpreter, though the statement still ABORTS at the absorb seam (the refusal rethrown raw;
 its routing into the delivered diagnostics a later, separately-gated motion) — E-07's typed mint is
-PENDING (the unqueryable-alt shape still aborts raw) — and the E-04 apply-path crash-origin and the E-06
-absorb-path guarded depth refusal stay un-typed for now (the honest partition — docs/public-api.md §3).
+PENDING (the unqueryable-alt shape still aborts raw) — and the E-06 absorb-path guarded depth refusal stays
+un-typed for now (the honest partition — docs/public-api.md §3; the E-04 apply-path crash origin left with the
+Visib write-back at stage 3's commit 4).
 The full honest-edges catalogue: docs/public-api.md §3.4.
 
 # The marker syntax (short form)
@@ -388,8 +390,8 @@ function goMeta(
     ## GoMetaDelivery carries a parse state built from EMPTY bytes (container sizing only). A VALID
     ## config ⇒ an empty vector ⇒ the pipeline below runs unchanged; an INVALID config ⇒ a fail-closed
     ## PROCESS_ERROR GoMetaDelivery built in the `@noinline` cold `_configErrorDelivery` helper (its `init_state` +
-    ## `GoMetaDelivery` construction stay OUT of this hot path). The E-04 (apply) crash-origin and the
-    ## E-06 (absorb) guarded refusal remain untyped at v0; the condition-path refusals are minted typed
+    ## `GoMetaDelivery` construction stay OUT of this hot path). The E-06 (absorb) guarded refusal remains
+    ## untyped at v0 (the E-04 apply crash origin left with the write-back, stage 3's commit 4); the condition-path refusals are minted typed
     ## in the closed interpreter (E-07's mint pending) but the statement still aborts at the absorb seam
     ## (`absorb_meta.jl`: the refusal rethrown raw — its routing into the delivered diagnostics a later,
     ## separately-gated motion, docs/public-api.md §3).
@@ -442,20 +444,18 @@ function goMeta(
     return run_absorb_apply!(parse_state; config = config, registry = registry)
 end
 
-## v0.4 T3 — THE SEAM LEDGER (T3-DESIGN §7; M-AC-11 + HC-9 under the §12 re-basing).
+## v0.4 T3 — THE SEAM LEDGER (T3-DESIGN §7; M-AC-11 + HC-9 under the §12 re-basing), NARROWED at stage 3's commit 4 of the v0.4 build, R-V04B-42 (1).
 ## One weak-keyed side table maps each CALLER-OWNED parse state (identity-keyed — a
 ## mutable struct; BLS defines no `hash`/`isequal`/`==` on it, pinned by the seam tests)
-## to its lifecycle entry. GC-transparency is NOT a lapsing refusal: a poisoned entry can
-## vanish only when the state itself is unreachable — nothing can re-inject it. The
-## `WeakKeyDict` attaches a finalizer to every stamped state (disclosed). Every access
-## runs under the ONE lock; the hot loop never touches the ledger (the write LATCH is a
-## plain per-call Bool on `ProcessState`). `goMeta` routes through this seam and STAMPS
-## like any caller (the uniform law — it also preserves the identity semantics for states
-## a consumer extracts via `result.blsComponentTree`); the per-call cost is measured and
-## banked at the T3 receipts, never claimed away.
+## to its lifecycle entry, which holds ONE fact: whether a call is in flight on that state (two
+## calls must never share one parse state — the caller obligation, enforced). The registry
+## binding and the poison marker, which guarded the Visib write-backs a run left in the caller's
+## state, LEFT with the write-back: the Engine writes nothing into the caller's Components. The
+## `WeakKeyDict` attaches a finalizer to every stamped state (disclosed). Every access runs under
+## the ONE lock; the hot loop never touches the ledger. `goMeta` routes through this seam and
+## STAMPS like any caller (the uniform law). The ledger's remaining bookkeeping is a candidate for
+## stage 5's tidy-up (R-V04B-42's effects) — shown, not assumed removed.
 mutable struct _SeamEntry
-    registry::Union{Nothing,AlterantRegistry}   # bound at EXIT of the first call that WROTE
-    poisoned::Bool                              # an abort escaped after the write latch rose
     in_flight::Bool                             # a call is currently running on this state
 end
 const _SEAM_LEDGER = WeakKeyDict{Any,_SeamEntry}()
@@ -467,13 +467,13 @@ const _SEAM_LEDGER_LOCK = ReentrantLock()
 IS: the Engine's walk-and-apply over the File's child Blocks — the body `run_absorb_apply!` runs inside its per-call
 STATE scope after the optional user feed: per child Block, the absorb walk of its metaLines (when it carries meta and the
 Block is not deprecated — the `!depricated` guard wraps the absorb walk alone), the apply at the Block grain (when attached
-to meta), the Visib write-back and the capture of its final evals rows before the next apply wipes `st.working`. FACTORED OUT at stage 2's commit 3a (the plan v8.1 :62) with NO change
+to meta) and the capture of its final evals rows before the next apply wipes `st.working` (the Visib write-back left at stage 3's commit 4). FACTORED OUT at stage 2's commit 3a (the plan v8.1 :62) with NO change
 of a line — so a test can run the Engine's own pipeline over a state it prepared (the fallBack consult-order witnesses
 occupy slot `fallBackMHIdx` the way the user feed occupies the user slot; a FEED of that slot in the Engine is the
 `metaLevel` Alterant's, after the branch — R-V04B-55 (4)). Package-internal; not public.
 
-DOES: exactly what the seam's inline loop did (the body moved verbatim, de-indented); it reads `st` as `ctx()` does and
-mutates the parse state's settributes through the write-back as before.
+DOES: exactly what the seam's inline loop did (the body moved verbatim, de-indented); it reads `st` as `ctx()` does; the
+caller's parse state is READ, never written (R-V04B-42 (1), stage 3's commit 4).
 """
 function _walk_and_apply!(st::ProcessState, parse_state::BLS.ParseState)
     crntFileComponent::BLS.File = parse_state.componentsPDict[BLS.File][1][1]
@@ -496,31 +496,8 @@ function _walk_and_apply!(st::ProcessState, parse_state::BLS.ParseState)
         end
         if BLS.getElement(childComponent.componentSettribute, :attachedToMeta)
             applyAltActionFns(childComponent::BLS.Block)
-            # Block-grain Visib write-back, resolved through the per-call state: the alterant index
-            # `st.registry.alt_index[:Visib]` + the working set `st.working` carry the
-            # resolution, and the resolved Visib action maps through the per-call registry's
-            # generic `action_to_settribute` write-back table (v0.4 T1: DERIVED from the declared
-            # per-action `settribute` slots — identity at v0.4.0). BOTH grains use
-            # the Pair-form `=> true` — the Block form here, and the Segment grain in walk.jl.
-            # The driver IS the per-call state producer — `st` (this function's parameter: the per-call state the
-            #   caller's `with(STATE=>st) do` scope installed) === `ctx()` === `STATE[]` — so the write-back reads
-            #   the in-scope `st` instead of repeating the `ctx()` lookup once per iteration.
-            ## The action → settribute-key table is read off the PER-CALL registry
-            ## (`st.registry.action_to_settribute`; the module-global alias is retired), so a
-            ## custom `registry` kwarg's mapping is honored at the Block grain. The `:Visib`
-            ## index literal + the `keys(Alterants.Visib)` read are the T7 write-back cure's scope.
-            ## (cure batch 2, interim until T7) a PUBLISHED custom registry need not carry the
-            ## built-in Visib alterant — guard the literal lookup so such a registry RUNS.
-            if haskey(st.registry.alt_index, :Visib) && st.registry.alt_index[:Visib] ∈ keys(st.working)
-                ## (cure batch 3) a Visib record may declare NO write-back key (`settribute =
-                ## nothing` is schema-legal) — an absent mapping = no write-back, never a KeyError
-                let act = keys(Alterants.Visib)[st.working[st.registry.alt_index[:Visib]].array][1],
-                    key = get(st.registry.action_to_settribute, act, nothing)
-                    ## v0.4 T3 — the write LATCH raises before the block-grain caller-state write too
-                    key === nothing || (st.wrote_back = true;
-                                        BLS.setElement(childComponent.componentSettribute, key => true))
-                end
-            end
+            ## The Block-grain Visib write-back LEFT here (stage 3's commit 4 of the v0.4 build, R-V04B-42 (1)): the Engine writes NOTHING into the caller's BLS
+            ## Components — the Block's Visib is CAPTURED (below) and read through the one answer function (R-V04B-16 (1)).
             # Capture this Block's FINAL evals rows (Labels + Visib + Id) into st.evals BEFORE the
             #   next apply wipes st.working — the cell is this Block. Render-neutral: it reads
             #   st.working, puts or supersedes rows in st.evals and may append warning diagnostics
@@ -541,7 +518,7 @@ grains), the conditions plane, the Alterants/apply plane and the evals plane ove
 
 DOES: The CALLABLE DRIVER SEAM. ONE callable exposes, indivisibly: the absorb WALK plane
 (both grains), the CONDITIONS plane (the closed interpreter via the per-call state),
-the ALTERANTS/APPLY plane (registry + slot tensors + write-backs), and the EVALS
+the ALTERANTS/APPLY plane (registry + slot tensors), and the EVALS
 plane (capture → `altValues_evals`). An adapter never composes them individually.
 Package-INTERNAL (a qualified implementation seam, NOT exported, and deliberately carrying NO `public` declaration
 (`names(GoMeta)` stays byte-stable).
@@ -570,13 +547,15 @@ THE CONTRACT (normative rows):
    goMeta's fail-closed error result carries an EMPTY parse state with the DEFAULT
    flavor record, unread on that path.
 4. ONE ProcessState per call — the seam builds it FRESH (the reset-safe law), so the
-   PER-CALL state is never shared across concurrent calls. The `parse_state` INPUT,
-   by contrast, is caller-owned and MUTATED by the seam (the resolved Visib
-   write-backs land on its component settributes at both grains): two concurrent
-   calls must never share ONE parse_state — sharing stays FORBIDDEN, and since v0.4 T3
-   the seam ledger ENFORCES it: an in-flight re-injection (nested included) is refused
-   `STATE_REUSE_REFUSED`; ownership of the state's lifetime stays the caller's
-   (the T4-milestone-set A5/C6 cure — this row previously said "not re-checked").
+   PER-CALL state is never shared across concurrent calls. The `parse_state` INPUT is
+   caller-owned and READ by the seam — never written since stage 3's commit 4 of the v0.4 build, R-V04B-42 (1)
+   (the Visib write-backs into its component settributes left; the probe at that commit's
+   pre-check: every Component's settribute bytes identical before and after a run): two
+   concurrent calls must still never share ONE parse_state — the per-call state reads it while
+   the walk runs — and since v0.4 T3 the seam ledger ENFORCES it: an in-flight re-injection
+   (nested included) is refused `STATE_REUSE_REFUSED`; ownership of the state's lifetime stays
+   the caller's (the T4-milestone-set A5/C6 cure). A state may be re-injected under ANY published
+   registry, before or after an abort (nothing of a run stays in it).
 5. A meta-free store on the no-feed path ⇒ `PROCESS_OK` with ZERO evals rows (the
    E-05 class — the Office pilot's first gate). With `config.user_mh_profile` set
    the fed profile is itself a metaLine body: its explicit headings record non-cell
@@ -587,8 +566,8 @@ THE CONTRACT (normative rows):
    (`altValues_evals`); the (tree, render) pair is the development tool's.
 
 REASONING: an adapter never composes the planes individually (the seam's indivisibility law), and every call
-builds its `ProcessState` fresh (the reset-safe law) while the caller-owned parse state is mutated by the
-write-backs — hence the seam ledger's refusal of an in-flight re-injection.
+builds its `ProcessState` fresh (the reset-safe law) while the caller-owned parse state is read by the walk —
+hence the seam ledger's refusal of an in-flight re-injection.
 
 PURPOSE: the route by which an adapter package (the Office pilot's carrier profile) runs the Engine over a store
 it built itself, without re-validation — its output the evaluated values, the render nothing of the seam's.
@@ -601,28 +580,22 @@ function run_absorb_apply!(parse_state::BLS.ParseState;
     ## engine around `goMeta`'s door (the CRX after-T2 breaker). Same typed refusals, same
     ## no-work outcome (an EMPTY parse state rides the error result — no parse runs). Row 3
     ## of the contract is untouched: the seam still does NOT re-validate CONFIG. The state-seam
-    ## semantics (seal-bound injected state, the poison marker) are T3's.
+    ## semantics (the in-flight check; the seal binding and the poison marker left with the write-back at stage 3's commit 4) are T3's.
     reg_diags = _registry_door_check(registry)
     isempty(reg_diags) ||
         return _configErrorDelivery(BLS.setUpToProcessFromBytes(UInt8[]), config, registry, reg_diags)
-    ## v0.4 T3 — the LEDGER at seam entry (AFTER the door; T3-DESIGN §7's fixed order).
-    ## Checks + the in-flight flip only — the registry BINDING happens at exit, and only
-    ## for a call that WROTE (so a clean abort leaves the state unbound and re-injectable
-    ## under any registry, and a completed meta-free call leaves no binding). Refusal
-    ## precedence: in-flight > poisoned > identity. The identity check is `===` on the
-    ## published registry OBJECT (T2BIS-DESIGN §12's two-nouns rule — NEVER a fingerprint
-    ## compare). This is NOT re-validation (contract row 3 stands) — an identity/lifecycle
-    ## check, never the config/registration chain.
+    ## v0.4 T3 — the LEDGER at seam entry (AFTER the door; T3-DESIGN §7's fixed order): the in-flight
+    ## check and flip, nothing else since stage 3's commit 4 of the v0.4 build, R-V04B-42 (1) — a run leaves nothing in the
+    ## caller's state, so there is no binding to check and no poison to carry. This is NOT re-validation
+    ## (contract row 3 stands) — a lifecycle check, never the config/registration chain.
     entry = lock(_SEAM_LEDGER_LOCK) do
         e = get(_SEAM_LEDGER, parse_state, nothing)
         if e !== nothing
             e.in_flight && return :in_flight
-            e.poisoned && return :poisoned
-            (e.registry !== nothing && e.registry !== registry) && return :mismatch
             e.in_flight = true
             return e
         end
-        e2 = _SeamEntry(nothing, false, true)
+        e2 = _SeamEntry(true)
         _SEAM_LEDGER[parse_state] = e2
         return e2
     end
@@ -633,34 +606,17 @@ function run_absorb_apply!(parse_state::BLS.ParseState;
             "(STATE_REUSE_REFUSED) — two calls must never share one parse state (the seam ",
             "contract's caller obligation, row 4; nested re-injection included); re-parse ",
             "the source into a fresh state (see docs/public-api.md §3.4)"), nothing)])
-    entry === :poisoned && return _configErrorDelivery(
-        BLS.setUpToProcessFromBytes(UInt8[]), config, registry,
-        [Diagnostic(:STATE_REUSE_REFUSED, :error, string("GoMeta seam: the injected parse ",
-            "state was POISONED (STATE_POISONED) by an earlier aborted call that had begun ",
-            "writing back (STATE_REUSE_REFUSED) — its settributes may be partially ",
-            "mutated; re-parse the source into a fresh state ",
-            "(see docs/public-api.md §3.4)"), nothing)])
-    entry === :mismatch && return _configErrorDelivery(
-        BLS.setUpToProcessFromBytes(UInt8[]), config, registry,
-        [Diagnostic(:STATE_SEAL_MISMATCH, :error, string("GoMeta seam: the injected parse ",
-            "state is bound to a DIFFERENT published registry than the one injected ",
-            "(STATE_SEAL_MISMATCH — the registry-identity check: its write-backs were ",
-            "produced under another publication; identity is the published OBJECT, never ",
-            "a fingerprint) — re-parse the source into a fresh state, or inject the same ",
-            "published registry object (see docs/public-api.md §3.4)"), nothing)])
     ## Build the FRESH per-call `ProcessState` (`init_state` is reset-safe, so neither the slot
     ## tensors nor the cursors leak between calls) + open the per-call
     ## dynamic scope. `STATE => st` carries the per-call state so the eval'd bare-name `getState`/`getAltState`
     ## reach it (`ctx() = STATE[]`). The whole absorb-walk
-    ## + apply runs INSIDE this scope — under the T3 seam bracket: an escape AFTER the
-    ## write latch rose POISONS the entry (M-AC-11's E-row, any unit, either grain);
-    ## a completed call that WROTE binds the registry identity; `in_flight` clears on
-    ## every path.
+    ## + apply runs INSIDE this scope — under the T3 seam bracket: `in_flight` clears on every path
+    ## (the registry binding at a writing call's exit and the poisoning of an aborted one left with
+    ## the write-back at stage 3's commit 4 — the caller's state is READ, never written).
     ## (the T4-milestone-set A2/B3 cure) `init_state` runs INSIDE the seam bracket: a
     ## throw or InterruptException during initialization must still clear `in_flight` in
     ## the `finally` — outside it, the still-reachable state stayed in-flight FOREVER and
-    ## every later injection was wrongly refused. The catch arm guards `@isdefined(st)`
-    ## (an init-time escape has no state and can have written nothing).
+    ## every later injection was wrongly refused.
     local st
     try
     st = init_state(parse_state, config, registry)
@@ -672,17 +628,6 @@ function run_absorb_apply!(parse_state::BLS.ParseState;
         end
         _walk_and_apply!(st, parse_state)   # stage 2's commit 3a: the loop factored out (verbatim) — the fallBack consult-order test drives it
     end
-    lock(_SEAM_LEDGER_LOCK) do                      # normal return: bind iff the call WROTE
-        st.wrote_back && (entry.registry = registry)
-    end
-    catch
-        lock(_SEAM_LEDGER_LOCK) do                  # an escape after the latch rose POISONS
-            if @isdefined(st) && st.wrote_back
-                entry.registry = registry
-                entry.poisoned = true
-            end
-        end
-        rethrow()
     finally
         lock(_SEAM_LEDGER_LOCK) do
             entry.in_flight = false
@@ -694,12 +639,12 @@ function run_absorb_apply!(parse_state::BLS.ParseState;
     ## comment only). `status` is computed from the accumulated diagnostics: `PROCESS_ERROR` iff an `:error` row
     ## exists, else `PROCESS_OK`. On this path no `:error` row is ever pushed (a config-time, door or seam-ledger
     ## refusal fail-closes through `_configErrorDelivery` before the walk; the absorb/apply-path refusals still
-    ## THROW — the condition refusal rethrown at the absorb seam, the E-04/E-06 rows raw), so a run that returns
+    ## THROW — the condition refusal rethrown at the absorb seam, the E-06 row raw), so a run that returns
     ## here is `PROCESS_OK` — but the vector need NOT be empty: the walk's and the capture's `:warning` rows
     ## (`WARN_VERDICT_COLLISION`, `WARN_DEGENERATE_OCCURRENCE_KEY`, the capture-floor codes) ride the delivery
     ## (the type's docstring). The evaluated values are read by `readAltValuesEvals(result.altValues_evals)`; the development tool's
-    ## (tree, render) pair (`Main.BasicRenderer.outputs`) is a pure function of the final `result.blsComponentTree`,
-    ## which the in-`with` absorb-walk + apply has fully mutated.
+    ## (tree, render) pair (`Main.BasicRenderer.outputs`) is a pure function of the delivery — the tree READ, never written
+    ## (stage 3's commit 4), every Visib verdict the Engine's answer (stage 3's commit 1).
     status = any(d -> d.severity === :error, st.diagnostics) ? PROCESS_ERROR : PROCESS_OK
     return GoMetaDelivery(st.parse, st.evals, status, st.diagnostics)   # the field order R-V04B-89
 end

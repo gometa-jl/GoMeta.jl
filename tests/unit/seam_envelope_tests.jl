@@ -3,8 +3,8 @@
 # IS:   the T3 acceptance witnesses — the symmetric query-seam envelope (both call sites),
 #       the consumed handover validation (with the "GoMeta "-prefix pass-through), the eager
 #       DEP_MISSING gate, the three-site ctor-mint envelope, the post-dispatch store-identity
-#       check, and the state-seam ledger (registry-identity · the write latch + poison ·
-#       in-flight enforcement · the re-injection matrix cells).
+#       check, and the state-seam ledger (in-flight enforcement · the re-injection cells — free of any
+#       binding since the Visib write-back left at stage 3's commit 4 of the v0.4 build, R-V04B-42).
 # DOES: publishes DEFECTIVE-callable registries through the sanctioned lifecycle, drives them
 #       through goMeta / run_absorb_apply!, and pins the catalogue-name tokens + codes.
 # REASONING: T3's refusals fire only on defective callables/records/states — no golden or
@@ -150,7 +150,7 @@ end
         @test !occursin("internal invariant", es.msg)      # NOT the wrong-class drift error
     end
 
-    @testset "the state-seam ledger — identity · the write latch + poison · in-flight · the matrix cells" begin
+    @testset "the state-seam ledger — in-flight enforcement; re-injection free of any binding (R-V04B-42, stage 3's commit 4)" begin
         _mkps() = begin
             ps = GM.BLS.setUpToProcessFromBytes(Vector{UInt8}(codeunits("x = 1\n#~ hide\n\ny = 2\n")))
             GM.BLS.parseBLS(ps, 1, -1)
@@ -162,30 +162,31 @@ end
         P2 = GM.publish(GM.default_registry_builder())
         @test P1.seal == P2.seal && P1 !== P2
         ps1 = _mkps()
-        r1 = GM.run_absorb_apply!(ps1; registry = P1)      # hide writes back ⇒ the call binds P1
+        r1 = GM.run_absorb_apply!(ps1; registry = P1)      # the run writes NOTHING into the caller's state (stage 3's commit 4) ⇒ no binding
         @test r1.status === GM.PROCESS_OK
-        r2 = GM.run_absorb_apply!(ps1; registry = P2)
-        @test _codes(r2.diagnostics) == [:STATE_SEAL_MISMATCH]
+        r2 = GM.run_absorb_apply!(ps1; registry = P2)      # (12′) re-injection under ANOTHER published registry: no refusal — nothing to mismatch
+        @test r2.status === GM.PROCESS_OK &&
+              GM.serialize_evals(GM.readAltValuesEvals(r2.altValues_evals)) == GM.serialize_evals(GM.readAltValuesEvals(r1.altValues_evals))
         # (14) clean re-injection, same registry ⇒ silent
         r3 = GM.run_absorb_apply!(ps1; registry = P1)
         @test r3.status === GM.PROCESS_OK
-        # (13) the 2-BLOCK LATCH: block 1 (hide) writes back; block 2's labels setter throws
+        # (13′) an abort mid-run leaves the state UNPOISONED (nothing was written into it): the re-injection runs again
+        # and aborts again at the same defect — no poisoned-state refusal exists any more
         Rb = GM.publish(_labels_builder(; setter = _SeamT.boom_set))
         ps2 = GM.BLS.setUpToProcessFromBytes(Vector{UInt8}(codeunits(
             "x = 1\n#~ hide\n\ny = 2\n#~ :label1\n\nz = 3\n")))
         GM.BLS.parseBLS(ps2, 1, -1)
         eb = try GM.run_absorb_apply!(ps2; registry = Rb); nothing catch err; err end
         @test eb isa ErrorException && occursin("boom-set", eb.msg)   # the abort escapes (loudness-only at T3)
-        rb2 = GM.run_absorb_apply!(ps2; registry = Rb)
-        @test _codes(rb2.diagnostics) == [:STATE_REUSE_REFUSED] &&
-              occursin("STATE_POISONED", rb2.diagnostics[1].message)
+        eb2 = try GM.run_absorb_apply!(ps2; registry = Rb); nothing catch err; err end
+        @test eb2 isa ErrorException && occursin("boom-set", eb2.msg)   # the re-injection RUNS (and aborts again) — not refused
         @test isempty(GM._registry_door_check(Rb))         # the PUBLISHED registry is unchanged
-        # (15) an abort BEFORE any write-back leaves the state UNBOUND + clean: re-injection
+        # (15) an abort leaves the state clean (nothing of a run is written into it): re-injection
         # under a DIFFERENT registry is silent (the T3DB-2 cell)
         ps3 = GM.BLS.setUpToProcessFromBytes(Vector{UInt8}(codeunits("x = 1\n#~ :label1\n\ny = 2\n")))
         GM.BLS.parseBLS(ps3, 1, -1)
         ec = try GM.run_absorb_apply!(ps3; registry = Rb); nothing catch err; err end
-        @test ec isa ErrorException                        # aborted pre-write (labels throws before any Visib write)
+        @test ec isa ErrorException                        # aborted (the labels setter throws)
         rc = GM.run_absorb_apply!(ps3; registry = P1)
         @test rc.status === GM.PROCESS_OK
         # (16) IN-FLIGHT enforcement: a setter re-injecting the SAME state mid-call
