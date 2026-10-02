@@ -10,21 +10,20 @@
 #       FIRST Line is line N (README rule 2). (4) maps every evaluated row to its Component by decoding the
 #       row's occurrence handle (the documented layout of src/occurrence.jl: schema 0x01 · namespace ·
 #       grain · path steps · origin steps; the last path step's ordinal is the cell's store position) and
-#       matching the grain and that ordinal. (5) derives the value that APPLIES to a Component:
-#         - the Component's OWN rows for the Alterant, if it has any;
-#         - else, for a Line, its Block's rows — the owner's indirect-application principle
-#           (OWNER-WORDS §8; README rule 2: a value applies to the Component it was evaluated for and
-#           INDIRECTLY to that Component's children). This is the ONLY derivation the runner makes: it
-#           reads the Engine's rows and applies the owner's stated principle to reach a child; it never
-#           re-evaluates a metaStatement. When the Engine delivers a resolved answer per Component (D-4),
-#           step (5) reads that answer instead (README:63 "and, after D-1, the resolved rows");
-#         - else, no row applies: for Visib the DOCUMENTED default `show` (docs/SYNTAX-AND-SEMANTICS.md
-#           §7 "The default is show"; R-V04B-21 — the Engine declares no default at v0.4; whether it
-#           delivers one is D-4's 3a-DESIGN), for Labels the empty set, for Heading absence.
+#       matching the grain and that ordinal. (5) the value that APPLIES to a Component is THE ENGINE's ANSWER —
+#           `GoMeta.answerFor(delivery, component, alterant)` (stage 3's commit 3 of the v0.4 build; R-V04B-41's
+#           stage-3 content): the Component's own rows, else its parent's up the tree (the owner's
+#           indirect-application principle, OWNER-WORDS §8, as the Engine applies it — README rule 2), else the
+#           Alterant's declared default (Visib `show`, R-V04B-51 (2)) or absence. The runner derives NOTHING of its
+#           own any more (until this commit it read the rows and applied the principle itself — "when the Engine
+#           delivers a resolved answer per Component, step (5) reads that answer instead", as this header said).
 #       (6) compares: a SINGLE value (Visib, Heading) as a string; an ACCUMULATING value (Labels) as the
 #           SET of label names; `present = false` as absence. (7) `decided_by` IS ASSERTED (stage 2's commit 4a of
 #           the v0.4 build; the Engine's provenance since its commit 2, R-V04B-35 (d)): the deciding statements'
-#           Components of the rows that gave the applied value, named by position — a Block `block@N`, a Line
+#           Components of the rows the runner finds on the Component (its own rows for the Alterant, else — for a
+#           Line — its Block's: the runner's OWN search, kept beside the answer because the answer carries ONE
+#           source tag where an accumulating Alterant's expectation names EVERY contributor — 4 of the 27 asserted
+#           sets, Labels; R-V04B-35 (c), Q4 (ii) open; stage 3's commit 3), named by position — a Block `block@N`, a Line
 #           `line@N`, a Segment's statement by ITS LINE (`line@N` — the vocabulary of the confirmed files; the
 #           session's reading, put to the owner), the fed profile `user`, no statement `default` — must equal
 #           the expectation's set (a string or a list); the rows' `decided_by` handles are decoded like the
@@ -141,21 +140,29 @@ function _rows_on(rows, c)
     return out
 end
 
-## --- the value that APPLIES (step 5 of the header) ---
-## returns (value, source, used) — value: a String (Visib/Heading), a Set{String} (Labels), or `nothing` (absent);
-## source: :own | :block | :default; used: the rows the value was read from (empty for :default) — the provenance
-## assertion (step 7; stage 2's commit 4a) reads their `decided_by`
-function _applied(rows, t, c, alterant::AbstractString)
+## --- the value that APPLIES (step 5 of the header): THE ENGINE's ANSWER (stage 3's commit 3) ---
+## returns (value, source, used) — value: the answer's value in the runner's comparison form — a String (Visib/Heading), a
+## Set{String} (Labels), or `nothing` (absent); source: the answer's source tag (:own | :indirect | :user | :file | :default |
+## :none); used: the rows the PROVENANCE assertion (step 7; stage 2's commit 4a) reads — the Component's own rows for the
+## Alterant, else (for a Line) its Block's, else none: the runner's own search, kept beside the answer (header, step 7)
+const ALTERANT_NAME = Dict("Visib" => :Visib, "Labels" => :labels, "Heading" => :heading, "Id" => :id)   # the registered names
+function _answer_form(v, alterant::AbstractString)
+    alterant == "Id" && error("authored: Id's per-field form is not yet defined (README rule 2; D-4)")
+    v === nothing && return nothing
+    alterant == "Labels" && return isempty(v) ? nothing : Set{String}(string.(v))
+    return string(v)
+end
+function _applied(r, rows, t, c, alterant::AbstractString)
+    a = GA.answerFor(r, c, ALTERANT_NAME[alterant])
     mine = _rows_on(rows, c)
-    own = _extract(mine, alterant)
-    own !== nothing && return (own, :own, mine)
-    if c isa GB.Line
-        theirs = _rows_on(rows, _block_of(t, c))
-        viablock = _extract(theirs, alterant)
-        viablock !== nothing && return (viablock, :block, theirs)
+    if _extract(mine, alterant) !== nothing
+        used = mine
+    elseif c isa GB.Line && _extract(_rows_on(rows, _block_of(t, c)), alterant) !== nothing
+        used = _rows_on(rows, _block_of(t, c))
+    else
+        used = eltype(rows)[]
     end
-    alterant == "Visib" && return ("show", :default, eltype(rows)[])        # the documented default (header, step 5)
-    return (nothing, :default, eltype(rows)[])
+    return (_answer_form(a.value, alterant), a.source, used)
 end
 
 ## --- the provenance (step 7; stage 2's commit 4a): the deciding statements' Components of the rows a value was read from, as positions ---
@@ -257,7 +264,7 @@ const CONFIRMED = sort([f for f in readdir(AUTHORED_DIR) if endswith(f, ".toml")
                 n_stmt += 1
                 pos, alt = ex["component"], ex["alterant"]
                 c = _component(t, pos)
-                applied, source, used = _applied(rows, t, c, alt)
+                applied, source, used = _applied(r, rows, t, c, alt)
                 ok = _matches(ex, applied)
                 prov = ""
                 if haskey(ex, "decided_by")                       # step 7 (stage 2's commit 4a): the provenance ASSERTED
@@ -269,7 +276,7 @@ const CONFIRMED = sort([f for f in readdir(AUTHORED_DIR) if endswith(f, ".toml")
                     prov = " — decided_by expected $(_show(want_set)), the rows' provenance gives $(_show(got_set))"
                 end
                 key = (stem, pos, alt)
-                label = "$pos · $alt — expected $(get(ex, "present", true) === false ? "absent" : _show(ex["value"] isa AbstractVector ? Set{String}(String.(ex["value"])) : String(ex["value"]))), the Engine's rows give $(_show(applied)) (via $source)" * prov
+                label = "$pos · $alt — expected $(get(ex, "present", true) === false ? "absent" : _show(ex["value"] isa AbstractVector ? Set{String}(String.(ex["value"])) : String(ex["value"]))), the Engine's answer gives $(_show(applied)) (source $source)" * prov
                 if haskey(EXPECTED_FAILURES, key)
                     @testset "EXPECTED FAILURE — $label — $(EXPECTED_FAILURES[key])" begin
                         @test_broken ok
