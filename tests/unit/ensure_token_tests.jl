@@ -151,4 +151,25 @@ _et_rr(s::AbstractString; cfg = _et_jl) = _et_r(_et_r(s; cfg = cfg); cfg = cfg)
             @test _et_r(r1) == r1
         end
     end
+
+    @testset "[9] the same-result witness (SET REAL-1b row 2; stage 3's commit 3b): ONE delivery rendered twice, its rows serialized twice" begin
+        ## SET-RECORD §4b: "renders ONE result twice and compares" — the basic renderer and the four-column serializer are PURE
+        ## functions of the delivered object: two renders of the SAME delivery are byte-equal in both halves of the pair, two
+        ## serializations of its rows are byte-equal, and the delivery is unchanged by rendering (the same row count, the same
+        ## Line count of the tree). Distinct from `_et_rr` above (the render ∘ ingest ∘ render fixed point re-PARSES the render).
+        ## The input exercises the three Visib actions at two grains and the ensure-token head (an authored marker-headed line).
+        let r = GM.goMeta(_et_bytes("#~ hide\nx = 1\n## #~ hide\ny = 2 #~ show\n\n#~ discard\nz = 3\n\nw = 4\n"); config = _et_jl)
+            @test r.status === GM.PROCESS_OK
+            nrows = length(r.altValues_evals.records)
+            nlines = sum(length(GM.BLS.children(r.blsComponentTree, b)) for b in GM.BLS.children(r.blsComponentTree))
+            p1 = Main.BasicRenderer.outputs(r); p2 = Main.BasicRenderer.outputs(r)
+            @test p1.render_bytes == p2.render_bytes && !isempty(p1.render_bytes)             # the render half, twice, byte-equal
+            @test p1.blsStructure_bytes == p2.blsStructure_bytes && !isempty(p1.blsStructure_bytes)   # the tree half, twice, byte-equal
+            s1 = GM.serialize_evals(GM.readAltValuesEvals(r.altValues_evals))
+            s2 = GM.serialize_evals(GM.readAltValuesEvals(r.altValues_evals))
+            @test s1 == s2 && !isempty(s1)                                                     # the rows' four-column form, twice, byte-equal
+            @test length(r.altValues_evals.records) == nrows && nrows > 0                     # the delivery unchanged by the renders
+            @test sum(length(GM.BLS.children(r.blsComponentTree, b)) for b in GM.BLS.children(r.blsComponentTree)) == nlines
+        end
+    end
 end
