@@ -1660,8 +1660,8 @@ end
 ## `children`, `getElement`, `content`, `flavor`, `isHorizontalSpace` (stage 2's commit 0) — with NO
 ## residue outside it since stage 2's commit 9b (R-V04B-85 (D)): the source-line COUNT that sizes the per-line
 ## output comes from the callers' own bytes (the marked-source writer's line split; the render tier's lines).
-## devtools_selfcheck() pins every read (fate flags, :comment grains, the flavor record, byte offsets,
-## the Line texts) so a drifted engine fails LOUDLY.
+## devtools_selfcheck() pins every read (the fates — the Engine's answer per Line since stage 3's commit 2 —, :comment grains,
+## the flavor record, byte offsets, the Line texts) so a drifted engine fails LOUDLY.
 
 ## first char of the engine's own horizontal-whitespace class ([\h]; includes NBSP) —
 ## the marker-token delimiter, through the door (`isHorizontalSpace`). Returns the byte index AFTER
@@ -1765,18 +1765,13 @@ function _dt_sl_line(F, ps, line, s::AbstractString)
     return runs
 end
 
-## FATE (D1 §a.3): the engine-authored fate ladder — the FIRST grain (Line, owning
-## Block, File root) carrying ANY of :discard/:hide/:show decides, in that fixed
-## order; no grain flagged → :show. Drops are KNOWN (:discard), never inferred.
-function _dt_sl_fate(line, block, file)
-    for c in (line, block, file)
-        d = _DT_BLS.getElement(c, :discard)
-        h = _DT_BLS.getElement(c, :hide)
-        s = _DT_BLS.getElement(c, :show)
-        (d || h || s) && return d ? :discard : h ? :hide : :show
-    end
-    return :show
-end
+## FATE (D1 §a.3): a Line's fate is THE ENGINE's ANSWER for that Line — `answerFor(result, line, :Visib).value`, one of
+## :discard / :hide / :show (the Line's own rows, else its Block's, else the declared default `show`; stage 3's commit 2 of the
+## v0.4 build, R-V04B-16 (1)). The former ladder over the three settribute flags of the Line, its Block and the File (first
+## flagged grain decides) left with it — MEASURED equal to the answer on every Line of the corpus and the authored scenarios
+## before the change (plan `receipts/S8-branch/precheck-s3c1/PROBES-s3-consumer-equivalence.txt`, P5). Drops are KNOWN
+## (:discard), never inferred.
+_dt_sl_fate(result, line) = GoMeta.answerFor(result, line, :Visib).value
 
 ## the shared File→Block→Line walk through the door (`root`, `children`; the insert store's negative
 ## ids are resolved by BLS itself — the former positive-id guards are gone). The callback receives the
@@ -1837,7 +1832,7 @@ function _dt_sl_render_lines_T0(result, renderlines)
         j = Ref(1)
         _dt_sl_walk(ps) do line, block, file, ln
             ok[] || return
-            f = _dt_sl_fate(line, block, file)
+            f = _dt_sl_fate(result, line)
             f === :discard && return
             s = String(_DT_BLS.content(ps, line))   # the Line's text through the door (empty for an out-of-range Line — the byte comparison below degrades; the former range check gone, R-V04B-85 (D))
             if j[] > length(renderlines)
@@ -2340,8 +2335,8 @@ IS: the render-surface file writer — writes the reference render
 discard) of one `goMeta` result to `path`, VERBATIM.
 DOES: byte-copies the engine surface; with `slide` set, additionally emits
 `path * ".slideruns.json"`. Classification is a fate-ladder DERIVATION from the
-originating result's component data (canon R1 — never a regex over raw lines): the
-engine-authored `:discard`/`:hide`/`:show` settributes decide which source lines the
+originating result (canon R1 — never a regex over raw lines): the Engine's ANSWER per Line
+(`answerFor(result, line, :Visib)` — :discard / :hide / :show) decides which source lines the
 render kept, and each kept line is byte-verified against the ≤3 derivable forms
 (identical · whole-line-hidden `hm * line` · inline-tail
 `hm * line[1:m-1] * hm * line[m:end]` at the first Meta-flavor segment). The
@@ -2569,7 +2564,7 @@ function devtools_selfcheck()
         error("devtools_selfcheck: the hide/discard render transformation drifted — REVIEW the slide derivation, then re-pin")
     fates = Tuple{Int,Symbol}[]
     _dt_sl_walk(rf.blsComponentTree) do line, block, file, ln
-        push!(fates, (ln, _dt_sl_fate(line, block, file)))
+        push!(fates, (ln, _dt_sl_fate(rf, line)))
     end
     sort(fates) == [(1, :show), (2, :hide), (3, :discard)] ||
         error("devtools_selfcheck: the fate ladder drifted (got $(sort(fates)))")
