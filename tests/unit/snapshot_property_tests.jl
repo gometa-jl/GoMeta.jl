@@ -267,7 +267,7 @@ end
                 walk(v.second, Any[path; :second], Pair, pf)
             elseif v isa GM._SLOT_STRUCT_UNION
                 flds = fieldnames(typeof(v))
-                if isempty(flds)                                 # NoDefault() — a single-point site
+                if isempty(flds) || (v isa GM.Declared && v.value === nothing)   # NoDefault() — or a `Declared(nothing)` (Heading's default since card C2, R-V04B-92): a single-point site, substituted WHOLE by `_single_substitute(PlugIn, :default, …)` — its `nothing` value is no leaf to vary and no imm site to rebuild
                     push!(sites, (path = path, cat = :slotstruct, kind = :single, pT = pT, pf = pf))
                 else
                     push!(sites, (path = path, cat = :slotstruct, kind = :imm, pT = pT, pf = pf))

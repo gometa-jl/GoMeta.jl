@@ -23,8 +23,9 @@ IS: THE CHILD-DIFFERS SIGNAL (R-V04B-35 (e); his §37 item 4.2) — `true` when 
 (`answerFor`) has a VALUE different from its parent's resolved answer; COMPUTED at the call, never stored.
 DOES: `!isequal(answerFor(c).value, answerFor(parent(c)).value)` — a Segment against its Line, a Line against its Block, a Block
 against the File (which answers `nothing` at v0.4 — NOTHING built for it, card 6 "next" — so a Block with any VALUE, the declared
-default included, differs, and a Block answering `:none` — value `nothing`: an Alterant without a declared default and no rows, Labels
-today — does not); the File itself → `false`. A rowless child, which inherits its parent's rows, never differs; a child with
+default included, differs — Labels', Heading's and Id's declared defaults since card C2's word, R-V04B-92, as Visib's `:show`: a top Block
+differs for Labels and Id, Heading's `nothing` against the File's `nothing` does not — and a Block answering `:none` — value `nothing`: an
+Alterant of a custom registry without a declared default and no rows — does not); the File itself → `false`. A rowless child, which inherits its parent's rows, never differs; a child with
 its own statement differs exactly when that statement's value is another. An unknown Alterant name throws `ArgumentError` (through
 `answerFor`) for every Component but the File, whose `false` precedes the name's check. HIS (ii) BOOLEAN sits beside the PARENT's
 entry and asks whether ANY of its children differ — for a parent P it is `any(c -> childDiffers(delivery, c, alterant),

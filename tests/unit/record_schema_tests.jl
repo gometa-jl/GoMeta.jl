@@ -100,10 +100,12 @@ import GoMeta as GM
         @test !hasfield(GM.AlterantRegistry, :visib_to_settribute)
         @test !isdefined(GM, :VISIB_TO_SETTRIBUTE)
         @test !hasfield(GM.ActionSpec, :default)   # stage 2's commit 3-ii: the per-action slot of T1 GAVE WAY to the Alterant's (R-V04B-51)
-        # stage 2's commit 3 (R-V04B-51 (1)–(2); R-V04B-55 (1)): the default is the ALTERANT's — Visib declares 'show', the
-        # others (Labels, Id, Heading) stay UNDECLARED until the owner's word at stage 2's review
+        # stage 2's commit 3 (R-V04B-51 (1)–(2); R-V04B-55 (1)): the default is the ALTERANT's — Visib declares 'show'; the
+        # others declared on his word at stage 2's review (card C2, R-V04B-92, 2026-10-02): Labels the empty set, Heading none, Id the zero compound
         @test R.plugins[R.alt_index[:Visib]].default === GM.Declared(:show)
-        @test all(p -> p.default === GM.NoDefault(), (p for p in R.plugins if p.altName !== :Visib))
+        @test R.plugins[R.alt_index[:labels]].default isa GM.Declared && R.plugins[R.alt_index[:labels]].default.value == Symbol[]   # a Declared{Vector} compares by its value (the struct's == is identity)
+        @test R.plugins[R.alt_index[:heading]].default === GM.Declared(nothing)
+        @test R.plugins[R.alt_index[:id]].default == GM.Declared((cell = Int16(0), parent = Int16(0), file = Int16(0)))
     end
 
     @testset "DomainRef refuses an un-tagged or mis-shaped digest" begin

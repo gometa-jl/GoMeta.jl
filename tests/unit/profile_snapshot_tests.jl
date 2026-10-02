@@ -152,9 +152,9 @@ import GoMeta as GM
         # pin asserted UNMOVED as always)
         p = GM.resolve_profile(GM.GoMetaConfig())
         @test p.grammar_digest      == 0x12972c9924c2bf2b
-        @test p.registration_digest == 0x0956eed205fef8ac   # stage 2's commit 3-ii: the per-action default leaves the seal (R-V04B-51) — the NINTH re-mint, MEASURED by a probe   # stage 2's commit 3-i: the Alterant's default joins the seal — R-V04B-51/55) — the EIGHTH re-mint, MEASURED by a probe
+        @test p.registration_digest == 0x0e7836ce6e6b53ae   # the TENTH re-mint, MEASURED by a probe (PROBES-rvc2-digest.txt): card C2's three declared defaults enter the seal (R-V04B-92; 0x0956eed205fef8ac → 0x0e7836ce6e6b53ae)   # stage 2's commit 3-ii: the per-action default leaves the seal (R-V04B-51) — the NINTH re-mint, MEASURED by a probe   # stage 2's commit 3-i: the Alterant's default joins the seal — R-V04B-51/55) — the EIGHTH re-mint, MEASURED by a probe
         @test GM.cache_key(p) == string("gometa/v", GM._ENGINE_VERSION,
-            "/jl_share_v1/closed_v1/s3/g12972c9924c2bf2b/r956eed205fef8ac")   # the r-component re-minted with the pin above (stage 2's commit 3 = the eighth)
+            "/jl_share_v1/closed_v1/s3/g12972c9924c2bf2b/re7836ce6e6b53ae")   # the r-component re-minted with the pin above (card C2, R-V04B-92 = the tenth; MEASURED at the first pre-check of this commit)
     end
 
     @testset "test_error_oracle_corrupt_and_incompatible" begin

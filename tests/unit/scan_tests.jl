@@ -81,7 +81,7 @@ _sc_id(c) = _SC_BLS.getElement(c.cmpntNamedInt, :idComponent)
         @test an isa Vector{Pair{Symbol,GM.AltAnswer}}
         @test first.(an) == [p.altName for p in GM.DEFAULT_REGISTRY.plugins] == [:labels, :Visib, :id, :heading]
         @test an[2].second.value === :hide && an[2].second.source === :indirect
-        @test an[1].second.source === :none && an[3].second.source === :none && an[4].second.source === :none
+        @test an[1].second.source === :default && an[3].second.source === :default && an[4].second.source === :default   # the three declared defaults (R-V04B-92, card C2)
         @test all(pr -> pr.second == GM.answerFor(r, bs[2], pr.first), an)
         fa = GM.answersFor(r, _SC_BLS.root(ps)); @test length(fa) == 4 && all(pr -> pr.second.source === :none, fa)
         @test_throws ArgumentError GM.scanAlterant(r, :nosuch)

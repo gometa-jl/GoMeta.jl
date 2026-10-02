@@ -8,8 +8,9 @@
 #       key's origin) counts as the Line's; a rowless child inherits its parent's rows (a Segment its Line's, a Line its Block's
 #       — a rowless child has no statement of its own; whether a child's own row equal to its parent's is recorded is
 #       OQ-148 — today it is: every captured cell's rows are kept; R-V04B-52 (2)); no rows anywhere → the Alterant's declared
-#       default with the source `:default` (R-V04B-55 (2)), or `:none` for an Alterant without a declared one — the session's
-#       interim pending his word (card C2 of stage 2's review: his §196 (i) / R-V04B-55 (1) have each Alterant declare one); the source from the deciding
+#       default with the source `:default` (R-V04B-55 (2)) — every built-in Alterant declares one since card C2's word (R-V04B-92:
+#       Visib `show`, Labels the empty set, Heading none, Id the zero compound); `:none` only for an Alterant without a declared
+#       default in a custom registry, and for the File; the source from the deciding
 #       statements' handles: `:own` when every deciding handle is the asked Component's own, else by the first foreign handle's
 #       class — the user context `:user`, the File `:file` (the File level's room, R-V04B-53; no feed today), a document
 #       Component `:indirect` THROUGH that Component (named in `via`); `:fallBack` RESERVED for the fallBack level's carrier

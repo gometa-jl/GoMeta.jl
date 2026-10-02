@@ -4,7 +4,7 @@
 # IS:   seven witnesses of the answer's value and SOURCE over small inputs whose rows and deciding handles were MEASURED first
 #       (R4b — the evals-tree printouts and the origin probe banked at receipts/S8-branch/precheck-s2c4/PROBES-*).
 # DOES: [A1] Visib — the metaBlock's own statement, the attached Block indirect through it, a rowless Line inherits; [A2] Labels —
-#       the SET with one source; [A3] no rows anywhere — the declared default, `:none` without one, the File `:none`; [A4] a
+#       the SET with one source; [A3] no rows anywhere — the declared default of each built-in Alterant (R-V04B-92), the File `:none`; [A4] a
 #       Segment's statement — its Line indirect through the Segment, the Segment itself own, the heading metaBlock own, its
 #       rowless Line inherits the heading; [A5] the user feed — `:user`; [A6] the refusals and the registry keyword; [A7] the
 #       surface (package-public, not exported; the one method).
@@ -44,14 +44,18 @@ _an_id(c) = _AN_BLS.getElement(c.cmpntNamedInt, :idComponent)
         @test b.via isa _AN_BLS.Block && _an_id(b.via) == _an_id(bs[1])
     end
 
-    @testset "[A3] no rows anywhere: the declared default; `:none` without one; the File answers nothing" begin
+    @testset "[A3] no rows anywhere: the declared default of each built-in Alterant (R-V04B-92); the File answers nothing" begin
         r = GM.goMeta(_an_bytes("x = 1\n")); ps = r.blsComponentTree
         @test r.status === GM.PROCESS_OK && isempty(r.altValues_evals.records)
         bs = _AN_BLS.children(ps); @test length(bs) == 1
         a = GM.answerFor(r, bs[1], :Visib)
         @test a.value === :show && a.source === :default && a.via === nothing     # Visib's ONE declared default (R-V04B-51 (2))
         b = GM.answerFor(r, bs[1], :labels)
-        @test b.value === nothing && b.source === :none && b.via === nothing      # Labels declares no default
+        @test b.value == Symbol[] && b.source === :default && b.via === nothing    # Labels' declared default: the EMPTY SET (R-V04B-92, card C2) — MEASURED, PROBES-rvc2-digest.txt
+        hd = GM.answerFor(r, bs[1], :heading)
+        @test hd.value === nothing && hd.source === :default && hd.via === nothing  # Heading's declared default: NONE (R-V04B-92)
+        id = GM.answerFor(r, bs[1], :id)
+        @test id.value == (cell = Int16(0), parent = Int16(0), file = Int16(0)) && id.source === :default   # Id's declared default: the ZERO compound (R-V04B-92)
         l = GM.answerFor(r, _AN_BLS.children(ps, bs[1])[1], :Visib)
         @test l.value === :show && l.source === :default                          # a rowless Line under a rowless Block: the default too
         f = GM.answerFor(r, _AN_BLS.root(ps), :Visib)
@@ -76,7 +80,7 @@ _an_id(c) = _AN_BLS.getElement(c.cmpntNamedInt, :idComponent)
         l2 = GM.answerFor(r, ls[2], :Visib)                     # "y = 2": neither it nor its Block carries a Visib row
         @test l2.value === :show && l2.source === :default
         n = GM.answerFor(r, bs[2], :heading)
-        @test n.value === nothing && n.source === :none          # Heading declares no default; the code Block carries no heading
+        @test n.value === nothing && n.source === :default       # Heading's declared default: none (R-V04B-92, card C2); the code Block carries no heading
     end
 
     @testset "[A5] the user feed: the source `:user`" begin

@@ -21,7 +21,7 @@ _cd_bytes(s::String) = Vector{UInt8}(codeunits(s))
         @test GM.childDiffers(r, bs[2], :Visib) === true
         ls = _CD_BLS.children(ps, bs[2]); @test length(ls) == 2
         @test all(l -> GM.childDiffers(r, l, :Visib) === false, ls)      # :hide inherited — hidden as PART OF the Block
-        @test GM.childDiffers(r, bs[2], :labels) === false              # nothing against nothing
+        @test GM.childDiffers(r, bs[2], :labels) === true               # Labels' declared default (the empty set, R-V04B-92) against the File's nothing — as Visib's :show does (card C12: a top Block always differs from the File)
     end
 
     @testset "[D2] a Line's own inline statement differs from its Block; its Segment does not differ from the Line" begin
@@ -40,7 +40,7 @@ _cd_bytes(s::String) = Vector{UInt8}(codeunits(s))
         r = GM.goMeta(_cd_bytes("x = 1\n")); ps = r.blsComponentTree
         bs = _CD_BLS.children(ps); @test length(bs) == 1
         @test GM.childDiffers(r, bs[1], :Visib) === true                 # :show (the declared default) against nothing
-        @test GM.childDiffers(r, bs[1], :labels) === false
+        @test GM.childDiffers(r, bs[1], :labels) === true                # the declared empty set against the File's nothing (R-V04B-92; card C12)
         ls = _CD_BLS.children(ps, bs[1]); @test length(ls) == 1
         @test GM.childDiffers(r, ls[1], :Visib) === false
     end

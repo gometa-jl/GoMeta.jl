@@ -489,6 +489,7 @@ function default_registry_builder()
         ## to the keyword form to carry `capture =`.
         PlugIn(; altName = :labels, setMode = :accumulate, altConstructor = Dict{Symbol,Bool},
                  setAltInstance = Alterants.setLabels, getAltInstance = Alterants.checkLabels,
+                 default = Declared(Symbol[]),   # R-V04B-92 (card C2, his word of 2026-10-02 (OWNER-WORDS §287; R-V04B-92: 'I do approve your recommendation: declare.' — provisional, his (ii))): Labels' declared default is the EMPTY SET — the answer's shape, a sorted Vector{Symbol}
                  capture = CaptureDecl(Dict{Symbol,Bool}, :per_key, :many, nothing; attr_stem = :label),
                  vocabulary = VocabularyRef(DomainRef("alterants-std/labels_vocabulary.txt",
                                                       Alterants.LABELS_VOCABULARY_DECLARED_DIGEST)),
@@ -499,6 +500,7 @@ function default_registry_builder()
                  capture = CaptureDecl(Alterants.Visib, :single, :one, nothing; attr_stem = :visib)),
         PlugIn(; altName = :id, setMode = :mutExclusivePerField, altConstructor = Alterants.Id,
                  setAltInstance = Alterants.setId,
+                 default = Declared((cell = Int16(0), parent = Int16(0), file = Int16(0))),   # R-V04B-92 (card C2): Id's declared default is the ZERO compound — every recorded field zero, in the answer's NamedTuple shape
                  capture = CaptureDecl(Alterants.Id, :per_field, :per_field, nothing; attr_stem = :id)),
         # The Heading plugin. setMode `:localOnly` — the `:localOnly` set mode:
         # a localOnly alterant's value applies ONCE, WHERE IT STANDS — its
@@ -510,6 +512,7 @@ function default_registry_builder()
         # recoverable from handles). Deliberately in NEITHER derived set below.
         PlugIn(; altName = :heading, setMode = :localOnly, altConstructor = Alterants.Heading,
                  setAltInstance = Alterants.setHead,
+                 default = Declared(nothing),   # R-V04B-92 (card C2): Heading's declared default is NONE — no heading, delivered as `nothing` with the source `:default`
                  capture = CaptureDecl(Alterants.Heading, :per_occurrence, :many, :localOnly; attr_stem = :head)),
     ]
 
