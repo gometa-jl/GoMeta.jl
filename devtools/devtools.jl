@@ -2706,8 +2706,8 @@ _cf_key(doc, c) = _cf_kind(c) * " " * _cf_span(doc, c)
 
 ## the flags of his approved table that are TRUE on the Component: every ComponentSettribute flag but hide/show/discard,
 ## qualified `component.<name>`, sorted by code point, joined by `,`; `-` when none. The content flag vector
-## (`contentSettributeBitVec`) has no read through the door and no writer in the parser (measured 2026-10-02,
-## receipts/S8-branch/PROBES-s4-form-facts.txt) — no `content.<name>` flag can be emitted today (a question for his word).
+## (`contentSettributeBitVec`) has no read through the door and no writer in the parser (measured 2026-10-02 — the grep banked as
+## receipts/S8-branch/PROBES-s4-content-flags.txt of the build record) — no `content.<name>` flag can be emitted today (a question for his word).
 function _cf_flags(c)
     names = String[]
     for k in keys(_DT_BLS.ComponentSettribute)
