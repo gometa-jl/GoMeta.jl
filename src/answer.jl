@@ -20,7 +20,8 @@
 #       R-V04B-55 (2) (v): an Extension that needs a value where GoMeta provided none may use the Alterant's default).
 # NOT FINAL (put at stage 2's review, R-V04B-40 (2)): the function's NAME (`answerFor` — the branch's working name under his
 #       casing rule R-V04B-31; alternatives there), its TIER (package-public — the session's default), the File's case, the
-#       equal-child rows (OQ-148), the per-call tree walk behind `via` (the cached index, Q6).
+#       equal-child rows (OQ-148), the per-call row scan (the cached index, Q6; the former per-call tree walk behind `via` left at
+#       stage 3's commit 1b — `_component_of` below).
 
 """
     AltAnswer
@@ -107,21 +108,32 @@ function _answer_value(rows::Vector{EvalRecord}, stem::Symbol, scheme::Symbol)
     return rows[1].value                        # :per_occurrence — the first row in attr order (a repeat stays in the rows)
 end
 
-## the Component a deciding handle names — the tree walked through the door (`BLS.root`, `BLS.children`); `nothing` when no
-## Component's own key equals the handle (a non-document class, or a degenerate key).
-function _component_of(ps::BLS.ParseState, h::Vector{UInt8}, ns::Symbol)
-    f = BLS.root(ps)
-    key_bytes(occurrence_key(ps, f; namespace = ns)) == h && return f
-    for b in BLS.children(ps)
-        key_bytes(occurrence_key(ps, b; namespace = ns)) == h && return b
-        for l in BLS.children(ps, b)
-            key_bytes(occurrence_key(ps, l; namespace = ns)) == h && return l
-            for s in BLS.children(ps, l)
-                key_bytes(occurrence_key(ps, s; namespace = ns)) == h && return s
-            end
-        end
-    end
-    return nothing
+## the Component a deciding handle names — read DIRECTLY from the handle's LAST path step (store byte · u32 ordinal: the handle's
+## own layout, `key_bytes` — schema · u16 namespace length · namespace · grain · u16 step count · the steps · the origin steps; the
+## grain byte selects the store family through `_DOC_GRAIN_CODES`); `nothing` for a non-document grain, a TRUNCATED marker step
+## (store 0x00), an unassigned or out-of-bounds slot (a degenerate key) — the totality arm, never a throw. Stage 3's commit 1b of the
+## v0.4 build: the former walk of the whole tree (one key computed per Component until the match, once per :indirect answer) was
+## MEASURED as 98.5 % of this function's cost on a 2,520-line input (16.1 of 16.3 s over its Lines — plan
+## `receipts/S8-branch/precheck-s3c1/PROBES-s3-answer-cost.txt`); the direct read names the same Component for every deciding handle
+## of every measured input (`PROBES-s3-via-direct.txt`).
+function _component_of(ps::BLS.ParseState, h::Vector{UInt8})
+    length(h) >= 3 || return nothing
+    n = (Int(h[2]) << 8) | Int(h[3]); i = 4 + n                        # i = the grain byte's index
+    length(h) >= i + 2 || return nothing
+    g = h[i]
+    T = g == _DOC_GRAIN_CODES.Segment ? BLS.Segment : g == _DOC_GRAIN_CODES.Line ? BLS.Line :
+        g == _DOC_GRAIN_CODES.Block ? BLS.Block : g == _DOC_GRAIN_CODES.File ? BLS.File : nothing
+    T === nothing && return nothing
+    nsteps = (Int(h[i + 1]) << 8) | Int(h[i + 2]); nsteps >= 1 || return nothing
+    j = i + 3 + 5 * (nsteps - 1)                                         # the LAST step: its store byte at j, its ordinal at j+1..j+4
+    length(h) >= j + 4 || return nothing
+    store = Int(h[j]); (store == 1 || store == 2) || return nothing
+    ord = (Int(h[j + 1]) << 24) | (Int(h[j + 2]) << 16) | (Int(h[j + 3]) << 8) | Int(h[j + 4])
+    stores = get(ps.componentsPDict, T, nothing); stores === nothing && return nothing
+    store <= length(stores) || return nothing
+    v = stores[store]
+    (1 <= ord <= length(v) && isassigned(v, ord)) || return nothing
+    return v[ord]
 end
 
 """
@@ -135,7 +147,7 @@ inherits its parent's rows up the tree (Segment → Line → Block; never the Fi
 declared default as `(value, :default)` or `(nothing, :none)` when it declares none; (4) the source: `:own` when every
 deciding handle of the rows is the asked Component's own key; otherwise the first foreign deciding handle's class —
 `USER_CONTEXT_GRAIN` ⇒ `:user`, the File grain ⇒ `:file`, a document grain ⇒ `:indirect` through the Component the handle
-names (`via`; `nothing` when none is found); rows without any recorded origin answer `:own` on the Component itself and
+names (`via`, read from the handle's own path; `nothing` for a degenerate key); rows without any recorded origin answer `:own` on the Component itself and
 `:indirect` through the carrier Component otherwise. The File answers `(nothing, :none)` — NOTHING built for it (card 6
 "next"; his question at the review). An Alterant name outside the registry throws an `ArgumentError` naming the registered
 names; an Alterant without a capture DECLARATION mints no rows and answers its declared default (`:default`) or `:none`; an
@@ -143,8 +155,8 @@ undeclared capture stem is derived as the walk derives it (`lowercase(altName)`)
 REASONING: one function, uniform across Alterants (the value in each Alterant's own shape, the source ONE tag), so an
 Extension asks one question (R-V04B-35 (c); R-V04B-55 (2)); the rows stay the one truth (R-V04B-35 (a)).
 PURPOSE: the Extension-facing read of "what applies here and through whom". Package-public (docs/public-api.md §1.2), NOT
-exported. NOT FINAL: the name, the tier, the File's case, the equal-child rows and the per-call walk are put at stage 2's
-review (R-V04B-40 (2)); nothing here is promised before v0.7 (§6).
+exported. NOT FINAL: the name, the tier, the File's case, the equal-child rows and the per-call row scan are put at stage 2's
+review (R-V04B-40 (2), card C8); nothing here is promised before v0.7 (§6).
 """
 function answerFor(delivery::GoMetaDelivery, component::BLS.AbstractComponent, alterant::Symbol;
                    registry::AlterantRegistry = DEFAULT_REGISTRY)::AltAnswer
@@ -190,5 +202,5 @@ function answerFor(delivery::GoMetaDelivery, component::BLS.AbstractComponent, a
     g = _grain_of(foreign)
     g == USER_CONTEXT_GRAIN && return AltAnswer(value, :user, nothing)
     g == _DOC_GRAIN_CODES.File && return AltAnswer(value, :file, nothing)
-    return AltAnswer(value, :indirect, _component_of(ps, foreign, ns))
+    return AltAnswer(value, :indirect, _component_of(ps, foreign))
 end

@@ -483,7 +483,8 @@ CrossReview set REAL-1 R1 #2; the registry refuses no delimiter in a stem, that 
 ### `answerFor(delivery::GoMetaDelivery, component, alterant::Symbol; registry::AlterantRegistry = DEFAULT_REGISTRY) -> AltAnswer`
 
 THE ONE ANSWER FUNCTION (since 0.4.0's stage-2 commit 4; R-V04B-35 (c); the plan v8.1 :56) — for ONE Component of the
-delivered tree (`result.blsComponentTree`, reached through `BLS.root` / `BLS.children` / `BLS.parent`) and ONE Alterant by
+delivered tree (`result.blsComponentTree`, reached through `BLS.parent` for a rowless child's inheritance; a deciding handle's
+Component read from the handle's own path) and ONE Alterant by
 its registered name (`:Visib`, `:labels`, `:id`, `:heading` in the default registry): the resolved value and its SOURCE,
 derived at the call from the delivered rows and their `decided_by` provenance — never stored, never cached, the delivery
 untouched. `AltAnswer(value, source, via)`: `value` in the Alterant's own shape (Visib a `Symbol`; Labels the SET of names,
@@ -499,7 +500,8 @@ statement decided its Line answers `:own` itself, its statement's row being its 
 Segment its Line's, a Line its Block's — OQ-148; R-V04B-52 (2)); a Segment-carried row (keyed on a Line with the Segment as
 the key's origin) is the Line's. An unknown Alterant name throws `ArgumentError` naming the registered names. **NOT FINAL**
 — the name (`answerFor`, the branch's working name under R-V04B-31), the tier, the File's case, the equal-child rows and
-the per-call tree walk behind `via` are the review's (R-V04B-40 (2)); no compatibility promise before v0.7 (§6).
+the per-call row scan (card C8) are the review's (R-V04B-40 (2); the per-call tree walk behind `via` left at stage 3's commit 1b —
+the Component read from the handle's own path); no compatibility promise before v0.7 (§6).
 
 ### `scanAlterant(delivery, alterant; registry = DEFAULT_REGISTRY)` · `answersFor(delivery, component; registry = DEFAULT_REGISTRY)`
 
