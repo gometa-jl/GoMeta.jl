@@ -83,8 +83,9 @@ These are part of the documented public surface — declared with Julia's `publi
   sibling accessor of the evals surface: per-record `(cell_handle → content)` pairs carrying
   each cell's verbatim content bytes, in the SAME sort order as `readAltValuesEvals(result.altValues_evals)`
   (the contract a consumer may zip on). The occurrence-handle KEY is the identity; the
-  content is the reader-facing text — the shipped `find_by_label.jl` and
-  `notebooks_from_source.jl` tools join exactly this way.
+  content is the reader-facing text. (Since 0.4.0's stage-2 commit 9a the shipped `find_by_label.jl` and
+  `notebooks_from_source.jl` join through the BLS Component tree and the answer function instead — R-V04B-43 (2); this
+  accessor and the stored copy it reads leave at commit 9b.)
 - `EvalRecord` / `EvalStore` — the type of one evals row (`cell_handle`, `attr`, `value`, `polarity`, `content`; since 0.4.0's stage-2 commit 2 THE ONE PROVENANCE FIELD `decided_by::Vector{Vector{UInt8}}` — the handles of the statements that produced the row, in application order: the deciding statement's for a single-valued mode, the contributing statements' for an accumulating one, a heading row's own carrier — R-V04B-35 (b), (d); the name his confirmed scenarios' word, his at stage 2's review), and the type of the part `altValues_evals` that holds them (the reader's argument; its rows unchanged — R-V04B-35 (a)).
 - `GoMeta.answerFor(delivery, component, alterant; registry = DEFAULT_REGISTRY) -> AltAnswer` — THE ONE ANSWER FUNCTION
   (since 0.4.0's stage-2 commit 4; R-V04B-35 (c)): for ONE Component of the delivered tree and ONE Alterant (its registered

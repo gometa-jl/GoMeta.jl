@@ -4,21 +4,21 @@
 # What it does, end to end:
 #   1. runs `GoMeta.goMeta` on the source (trusted committed input — see the SECURITY
 #      section of the README) and requires `PROCESS_OK`;
-#   2. takes each line's EFFECTIVE fate from the engine's own VERDICTS: the `:visib`
-#      rows of `GoMeta.readAltValuesEvals` joined to source spans via
-#      `GoMeta.content_fingerprint` — never from the render bytes (at the render grain
-#      an engine-hidden line and an authored marker-headed line are
-#      byte-INDISTINGUISHABLE, the ensure-token fidelity bound; the render serves only
-#      as a one-directional consistency witness). Ancestry and conditions are the
-#      engine's business, never re-derived here;
+#   2. takes each line's EFFECTIVE fate from the Engine's ANSWER for that line's Line
+#      Component of the BLS Component tree — `GoMeta.answerFor(delivery, line, :Visib)`:
+#      the Component's own Visib rows, else its parent's up the tree, else the declared
+#      default (stage 2's re-route, R-V04B-43 (2)) — never from the render bytes (at the
+#      render grain an engine-hidden line and an authored marker-headed line are
+#      byte-INDISTINGUISHABLE, the ensure-token fidelity bound) and never from a content
+#      match. Ancestry and conditions are the Engine's business, never re-derived here;
 #   3. partitions the source into cells by the documented conventions (blank lines and
 #      text/code type changes bound blocks; `#~` / `#]` metadata lines are consumed as
 #      control AND carried invisibly — the transformation principle: the GoMeta data
 #      travels with the artifact in SOURCE form, as HTML comments in markdown cells and
 #      as `gometa` cell metadata in code cells; hidden content lines travel the same
 #      way; DISCARDED lines never travel) and joins each cell to its evaluated labels
-#      via `GoMeta.readAltValuesEvals` + `GoMeta.content_fingerprint` (occurrence-keyed
-#      rows; the fingerprint carries each cell's verbatim content bytes, same order);
+#      through the tree: the Components that got label values (`GoMeta.scanAlterant(
+#      delivery, :labels)`) attach to the cells whose source-line span they cover;
 #   4. writes one notebook per EDITION — full · student · report · slides — each a pure
 #      function of the marks plus the edition's small policy table below, in
 #      deterministic nbformat 4.5 JSON (fixed key order; content-derived cell ids;
@@ -41,9 +41,8 @@
 
 import GoMeta
 import SHA
-## the basic renderer (a development tool) for the render witness below — loaded at THIS Extension's
-## TOP LEVEL through the ONE path (R-V04B-24 C2 (a): a disclosed, temporary exception until D-4 rules the witness's fate)
-include(joinpath(@__DIR__, "devtools", "load_basic_renderer.jl"))
+## No development tool is loaded by this Extension (R-V04B-56): it consumes the Engine's answer through the
+## delivered object and the BLS Component tree — through BLS's door — and nothing else.
 
 # ── the source registry: file → legend + emitted targets ────────────────────────────────
 const NB_DIR = joinpath(@__DIR__, "notebooks")
@@ -73,114 +72,38 @@ struct LineFate
     fate::Symbol     # :show | :hide | :discard
 end
 
-# THE FATE SOURCE IS THE VERDICT SURFACE, never the render. Under the v0.3 ensure-token
-# rule an authored `## `-headed line inside a hidden block renders AS-IS —
-# byte-indistinguishable from a shown line — so any render walk mis-fates exactly that
-# class SILENTLY (probe-proven). The `:visib` rows of `altValues_evals` carry the
-# winning verdict per governed piece; `content_fingerprint` carries each piece's
-# verbatim source bytes in the same order (the documented same-order contract, asserted
-# below). Pieces overlap on inline-governed lines: a single-line piece's verdict
-# OVERRIDES its containing block's (the engine's inner-wins precedence, probe-verified).
-# Ungoverned lines default :show. Identical piece bytes are attributable only when the
-# row count matches the occurrence count under ONE verdict — anything else refuses
-# loudly (never a silent mis-fate).
-function _find_spans(inl, piece)
-    spans = Int[]
-    m = length(piece)
-    for s in 1:(length(inl) - m + 1)
-        ok = true
-        for k in 1:m
-            if inl[s + k - 1] != piece[k]
-                ok = false
-                break
-            end
-        end
-        ok && push!(spans, s)
-    end
-    return spans
-end
-
-function verdict_fates(input::String, evals, fingerprints)
-    length(evals) == length(fingerprints) ||
-        error("EMIT FAILURE: evals/fingerprint arity diverged — the accessors' contract broke")
+# THE FATE SOURCE IS THE ENGINE's ANSWER, per Line Component of the BLS Component tree — never the
+# render (under the v0.3 ensure-token rule an authored `## `-headed line inside a hidden block
+# renders AS-IS, byte-indistinguishable from a shown line — a render walk mis-fates exactly that
+# class SILENTLY, probe-proven) and never a content match (stage 2's re-route, R-V04B-43 (2): the
+# former join of the `:visib` rows to source spans by their verbatim bytes went with the Engine's
+# stored copy of those bytes). Each source line's Line Component is found through the door by its
+# input line number; its fate is `answerFor(delivery, line, :Visib).value` — the Line's own Visib
+# rows if any (an inline-governed line's verdict overrides its Block's: the Engine's inner-wins
+# precedence), else its Block's, else the declared default `:show`. A source line with no Line
+# Component (the empty tail after a final newline) is :show. A blank line inside a hidden or
+# discarded Block now carries the Block's fate (the content match left it :show) — `partition`
+# reads no blank line's fate. The verdict-domain whitelist stays: this generator's carriage
+# semantics are DEFINED for show/hide/discard — a future verdict family must be adopted
+# deliberately, never silently emitted as visible text.
+function verdict_fates(input::String, delivery)
     inl = split(input, '\n')
-    n = length(inl)
-    fates = Symbol[:show for _ in 1:n]
-    locked = falses(n)
-    # collect the :visib pieces, grouped by verbatim bytes
-    groups = Dict{String,Vector{Symbol}}()
-    for ((h, attr, val, pol), (fp_h, content)) in zip(evals, fingerprints)
-        fp_h == h ||
-            error("EMIT FAILURE: evals/fingerprint order diverged — the accessors' same-order contract broke")
-        attr === :visib || continue
-        # the verdict-domain whitelist (panel V1 MAJOR): this generator's carriage
-        # semantics are DEFINED for show/hide/discard with polarity true (the v0
-        # domain) — a future verdict family or a negated-verdict encoding must be
-        # adopted deliberately, never silently emitted as visible text
-        val in (:show, :hide, :discard) ||
-            error("EMIT FAILURE: unknown visibility verdict :$(val) — the carriage semantics cover show/hide/discard only; verdict-domain evolution must be adopted deliberately, never silently")
-        pol === true ||
-            error("EMIT FAILURE: a non-true polarity on a :visib row — the reserved negated-verdict encoding must be adopted deliberately, never silently")
-        c = String(copy(content))
-        startswith(c, "\n") && (c = String(c[2:end]))   # mark pieces may lead with the detach byte
-        push!(get!(groups, c, Symbol[]), val::Symbol)
+    ps = delivery.blsComponentTree
+    bynum = Dict{Int,Any}()
+    for b in GoMeta.BLS.children(ps), l in GoMeta.BLS.children(ps, b)
+        i = GoMeta.BLS.getElement(l, :inputLineNum)
+        haskey(bynum, i) && error("EMIT FAILURE: two Line Components carry input line $i — the tree's line numbering broke")
+        bynum[i] = l
     end
-    # pass A — multi-line (block) pieces
-    for (bytes, verdicts) in groups
-        occursin('\n', bytes) || continue
-        vs = unique(verdicts)
-        piece = split(bytes, '\n')
-        spans = _find_spans(inl, piece)
-        (length(vs) == 1 && length(spans) == length(verdicts)) ||
-            error("EMIT FAILURE: cannot attribute a block verdict piece unambiguously ($(length(verdicts)) row(s), $(length(spans)) span(s), verdict(s) $(join(vs, '/'))): " * repr(first(bytes, 50)))
-        for s in spans, k in 0:(length(piece) - 1)
-            if locked[s + k] && fates[s + k] !== vs[1]
-                error("EMIT FAILURE: conflicting block verdicts on source line $(s + k) ($(fates[s + k]) vs $(vs[1]))")
-            end
-            fates[s + k] = vs[1]
-            locked[s + k] = true
-        end
+    fates = Symbol[]
+    for i in eachindex(inl)
+        l = get(bynum, i, nothing)
+        f = l === nothing ? :show : GoMeta.answerFor(delivery, l, :Visib).value
+        f in (:show, :hide, :discard) ||
+            error("EMIT FAILURE: unknown visibility verdict :$(f) — the carriage semantics cover show/hide/discard only; verdict-domain evolution must be adopted deliberately, never silently")
+        push!(fates, f)
     end
-    # pass B — single-line pieces (inline-governed lines, one-line blocks, metaLine
-    # marks); the inner verdict overrides the containing block's
-    for (bytes, verdicts) in groups
-        occursin('\n', bytes) && continue
-        vs = unique(verdicts)
-        idxs = findall(==(bytes), inl)
-        (length(vs) == 1 && length(idxs) == length(verdicts)) ||
-            error("EMIT FAILURE: cannot attribute a line verdict piece unambiguously ($(length(verdicts)) row(s), $(length(idxs)) match(es), verdict(s) $(join(vs, '/'))): " * repr(first(bytes, 50)))
-        for i in idxs
-            fates[i] = vs[1]
-        end
-    end
-    return [LineFate(String(inl[i]), fates[i]) for i in 1:n]
-end
-
-# the render as a one-directional WITNESS, never a fate source: every discarded line is
-# absent, every shown line appears verbatim in order, every hidden line appears in a
-# hidden form (`## `-marked post-indent — the prefixed, ensure-token as-is, and
-# inline-marked forms all satisfy the post-indent check). The comparison runs on the
-# NON-BLANK grain: blank lines carry no verdicts, and discarding a whole block swallows
-# an adjacent blank separator in the render (probe-observed), so blanks witness
-# nothing. Divergence refuses loudly.
-function witness_against_render(fates::Vector{LineFate}, render::String)
-    rl = [l for l in split(render, '\n') if !isempty(strip(l))]
-    j = 1
-    for (i, lf) in enumerate(fates)
-        (lf.fate === :discard || isempty(strip(lf.text))) && continue
-        j <= length(rl) ||
-            error("EMIT FAILURE: render witness exhausted at source line $i — verdict/render drift")
-        # the hidden-form class mirrors the engine's fold: `## `-prefixed, PLUS the
-        # ensure-token as-is shapes where the marker is bare `##` before horizontal
-        # whitespace or end-of-line (panel V1: a hidden bare `##` line renders
-        # markerless — the space-demanding check false-redded a legitimate shape)
-        ok = lf.fate === :show ? rl[j] == lf.text :
-             occursin(r"^##(?:[\h]|$)", lstrip(String(rl[j])))
-        ok || error("EMIT FAILURE: render witness mismatch at source line $i (fate $(lf.fate)) against render line " * repr(first(String(rl[j]), 50)))
-        j += 1
-    end
-    j == length(rl) + 1 ||
-        error("EMIT FAILURE: render witness left $(length(rl) + 1 - j) unconsumed render line(s)")
+    return [LineFate(String(inl[i]), fates[i]) for i in eachindex(inl)]
 end
 
 ## The token-delimiter law: only a ws-or-EOL-TERMINATED head
@@ -211,9 +134,9 @@ struct Cell
     kind::Symbol            # :markdown | :code | :carrier (a detached meta block —
                             # no visible lines; renders as nothing)
     lines::Vector{LineFate} # surviving + hidden lines (discarded lines dropped)
-    original::String        # the block's ORIGINAL source bytes — what the content-keyed
-                            # label join matches (`content_fingerprint`); the evals KEY is
-                            # the opaque occurrence handle, not these bytes
+    span::UnitRange{Int}    # the cell's source-line span (input line numbers) — what the
+                            # tree-keyed label join intersects with the Components' spans
+                            # through the door (empty for a carrier cell)
     labels::Set{Symbol}
     depth::Int              # the governing mark's depth, SCRAPED from the source text
                             # (0 = no preceding mark; depth is not on the evals surface
@@ -244,7 +167,7 @@ end
 
 function partition(fates::Vector{LineFate})
     cells = Cell[]
-    cur = LineFate[]; curkind = :none; orig = String[]
+    cur = LineFate[]; curkind = :none; orig = Int[]
     metarun = LineFate[]              # the contiguous run of metaLines awaiting a home
     attach = LineFate[]               # the run attached to the block being built
     dstack = Int[]                    # scraped depth stack; #] pops to the parent scope
@@ -253,20 +176,20 @@ function partition(fates::Vector{LineFate})
     flush!() = begin
         if !isempty(cur)
             kept = [lf for lf in cur if lf.fate !== :discard]
-            push!(cells, Cell(curkind, kept, join(orig, '\n'), Set{Symbol}(), depth(), attach))
+            push!(cells, Cell(curkind, kept, first(orig):last(orig), Set{Symbol}(), depth(), attach))
             attach = LineFate[]
         end
-        cur = LineFate[]; curkind = :none; orig = String[]
+        cur = LineFate[]; curkind = :none; orig = Int[]
     end
     # a meta run separated from content by a blank line is DETACHED (a semantics-bearing
     # distinction — the corpus blankline fixture) and becomes its own carrier cell; a
     # run contiguous with following content attaches to that block's cell
     emit_detached!() = begin
         kept = carried_of(metarun)
-        isempty(kept) || push!(cells, Cell(:carrier, LineFate[], "", Set{Symbol}(), depth(), kept))
+        isempty(kept) || push!(cells, Cell(:carrier, LineFate[], 1:0, Set{Symbol}(), depth(), kept))
         metarun = LineFate[]
     end
-    for lf in fates
+    for (i, lf) in enumerate(fates)
         t = lf.text
         if is_blank_line(t) || is_meta_line(t)
             flush!()
@@ -300,7 +223,7 @@ function partition(fates::Vector{LineFate})
         kind === :markdown && isempty(cur) && startswith(lstrip(t), "# #") && empty!(dstack)
         curkind = kind
         push!(cur, lf)
-        push!(orig, t)
+        push!(orig, i)
     end
     flush!()
     emit_detached!()                              # a trailing meta run gets its own cell
@@ -309,38 +232,38 @@ function partition(fates::Vector{LineFate})
     return cells
 end
 
-# join labels onto cells via each row's verbatim CONTENT bytes (the
-# `content_fingerprint` sibling accessor — same sort order as `readAltValuesEvals`, by
-# contract). The evals KEY is the structural occurrence handle since v0.2 and is opaque
-# here. HONEST SCOPE: an eval row with NO home fails red; the containment match may
-# attach a label to more than one cell on shared bytes — editions treat labels as
-# per-cell hints and EXACT occurrence attribution is deliberately not claimed (the join
-# is content-keyed at this release; the registered limitation).
-function join_labels!(cells::Vector{Cell}, evals, fingerprints)
-    length(evals) == length(fingerprints) ||
-        error("EMIT FAILURE: evals/fingerprint arity diverged — the accessors' contract broke")
+# join labels onto cells THROUGH THE TREE (stage 2's re-route, R-V04B-43 (2)): the Components that got
+# label values — `scanAlterant(delivery, :labels)`, each with its sorted label names — attach to every
+# content cell whose source-line span the Component's own span touches (a Block's line span through
+# the door; a Line's input line; an inline Segment's owning Line). A Meta Component (the metaBlock a
+# metaLine forms) carries labels for the content it governs; its own span holds no content line and
+# joins no cell — by design, not a failure. A CONTENT Component with labels that joins no cell fails
+# red (segmentation drift). Attribution is the tree's: a Block covering a prose run and a code run
+# labels both cells — the Block's labels are the Block's (the former content-keyed containment join,
+# with its registered limitation, went with the Engine's stored copy of the content bytes). The five
+# generic labels this generator's legends bind are joined; the pictograph vocabulary carries no legend.
+function _component_span(ps, c)
+    c isa GoMeta.BLS.Block && return GoMeta.BLS.getElement(c, :startMainStr):GoMeta.BLS.getElement(c, :stopMainStr)
+    c isa GoMeta.BLS.Line && return (i = GoMeta.BLS.getElement(c, :inputLineNum); i:i)
+    c isa GoMeta.BLS.Segment && return (i = GoMeta.BLS.getElement(GoMeta.BLS.parent(ps, c), :inputLineNum); i:i)
+    return 1:0
+end
+function join_labels!(cells::Vector{Cell}, delivery)
+    ps = delivery.blsComponentTree
     unmatched = String[]
-    for ((handle, attr, value, _), (fp_handle, content)) in zip(evals, fingerprints)
-        fp_handle == handle ||
-            error("EMIT FAILURE: evals/fingerprint order diverged — the accessors' same-order contract broke")
-        m = match(r"^label_(label[1-5])$", String(attr))
-        (m !== nothing && value === true) || continue
-        key = strip(String(copy(content)))
-        label = Symbol(m.captures[1])
+    for (c, a) in GoMeta.scanAlterant(delivery, :labels)
+        sp = _component_span(ps, c)
         hit = false
-        for c in cells
-            co = strip(c.original)
-            # exact equality always joins; the containment FALLBACK carries an 8-byte
-            # floor so degenerate fragments cannot attract every handle
-            exact = key == co
-            long_enough = min(length(key), length(co)) >= 8
-            if exact || (long_enough && (occursin(key, co) || occursin(co, key)))
-                push!(c.labels, label); hit = true
+        for cell in cells
+            (cell.kind === :carrier || isempty(intersect(sp, cell.span))) && continue
+            for l in a.value
+                l in (:label1, :label2, :label3, :label4, :label5) && push!(cell.labels, l)
             end
+            hit = true
         end
-        hit || is_meta_line(key) || push!(unmatched, first(key, 60))
+        hit || GoMeta.BLS.kind(c) === :Meta || push!(unmatched, "$(nameof(typeof(c))) at source lines $(sp)")
     end
-    isempty(unmatched) || error("EMIT FAILURE: $(length(unmatched)) evaluated label handle(s) joined no cell — segmentation drift: " * repr(first(unmatched)))
+    isempty(unmatched) || error("EMIT FAILURE: $(length(unmatched)) labelled Component(s) joined no cell — segmentation drift: " * repr(first(unmatched)))
 end
 
 # ── notebook writing (deterministic nbformat 4.5) ───────────────────────────────────────
@@ -472,7 +395,7 @@ function write_cell(io, c::Cell, ordinal::Int; extra_meta::String = "", tags::Ve
     meta_parts = String[]
     isempty(tags) || push!(meta_parts, "\"tags\": [" * join(["\"" * t * "\"" for t in sort(tags)], ", ") * "]")
     isempty(extra_meta) || push!(meta_parts, extra_meta)
-    gm = hidden_code ? gometa_meta(Cell(c.kind, LineFate[], c.original, c.labels, c.depth, LineFate[]); kind_note = true) :
+    gm = hidden_code ? gometa_meta(Cell(c.kind, LineFate[], c.span, c.labels, c.depth, LineFate[]); kind_note = true) :
          (kind == "code" ? gometa_meta(c) : "")
     isempty(gm) || push!(meta_parts, gm)
     meta = "{" * join(meta_parts, ", ") * "}"
@@ -529,7 +452,7 @@ function edition_cells(cells::Vector{Cell}, legend, edition::Symbol)
             # invisible cell is silently destroyable carried GoMeta data
             edition === :student && (extra = "\"editable\": false, \"deletable\": false")
             push!(out, (isempty(c.lines) && c.kind !== :carrier ?
-                        Cell(:carrier, LineFate[], c.original, c.labels, c.depth, c.carried) : c,
+                        Cell(:carrier, LineFate[], c.span, c.labels, c.depth, c.carried) : c,
                         extra, tags))
             continue
         end
@@ -544,7 +467,7 @@ function edition_cells(cells::Vector{Cell}, legend, edition::Symbol)
                 # Layer-2 policy omission: the replaced cell's bytes (solution AND its
                 # meta run) deliberately do NOT travel — a worksheet must not smuggle
                 # the solution in metadata
-                scaffold = Cell(:code, [LineFate("# your solution here", :show)], "# your solution here", Set{Symbol}(), 0, LineFate[])
+                scaffold = Cell(:code, [LineFate("# your solution here", :show)], 1:0, Set{Symbol}(), 0, LineFate[])   # synthetic: no source span
                 push!(out, (scaffold, "", String[]))
                 continue
             end
@@ -1032,12 +955,14 @@ derive(spec::SourceSpec) = derive_from_bytes(read(spec.path), spec)
 function derive_from_bytes(bytes::Vector{UInt8}, spec::SourceSpec)
     r = GoMeta.goMeta(bytes)
     r.status == GoMeta.PROCESS_OK || error("EMIT FAILURE: processing failed for $(spec.path): $(r.status)")
-    fates = verdict_fates(String(copy(bytes)), GoMeta.readAltValuesEvals(r.altValues_evals), GoMeta.content_fingerprint(r))
-    witness_against_render(fates, String(copy(Main.BasicRenderer.outputs(r).render_bytes)))
+    fates = verdict_fates(String(copy(bytes)), r)      # the Engine's answer per Line Component (R-V04B-43 (2)); no render witness (R-V04B-56)
     cells = partition(fates)
-    join_labels!(cells, GoMeta.readAltValuesEvals(r.altValues_evals), GoMeta.content_fingerprint(r))
-    n_discarded = count(lf -> lf.fate === :discard, fates)
-    n_hidden = count(lf -> lf.fate === :hide, fates)
+    join_labels!(cells, r)                              # the labelled Components' spans through the door
+    # the two counts over NON-BLANK source lines: a blank line inside a discarded or hidden Block carries the Block's verdict
+    # since the re-route (R-V04B-43 (2)), but it is no content line — it travels nowhere either way (the former content-keyed
+    # fates left such a line :show, so these counts always meant the content lines)
+    n_discarded = count(lf -> lf.fate === :discard && !is_blank_line(lf.text), fates)
+    n_hidden = count(lf -> lf.fate === :hide && !is_blank_line(lf.text), fates)
     stem = splitext(basename(spec.path))[1]
     digest = bytes2hex(SHA.sha256(Vector{UInt8}(codeunits(String(GoMeta.serialize_evals(GoMeta.readAltValuesEvals(r.altValues_evals)))))))[1:8]
     label_counts = join(sort(["$(l)×$(count(c -> l in c.labels, cells))" for l in Set(l for c in cells for l in c.labels)]), " ")
@@ -1063,7 +988,7 @@ function derive_from_bytes(bytes::Vector{UInt8}, spec::SourceSpec)
             "*Slide dispositions are scraped from the source's depth marks — depth is not on " *
             "the evaluated-values surface at this release; a dedicated slide vocabulary is " *
             "future work.*")
-        footer = Cell(:markdown, [LineFate(l, :show) for l in footer_lines], join(footer_lines, '\n'), Set{Symbol}(), 0, LineFate[])
+        footer = Cell(:markdown, [LineFate(l, :show) for l in footer_lines], 1:0, Set{Symbol}(), 0, LineFate[])   # synthetic: no source span
         push!(ecells, (footer, ed === :slides ? "\"slideshow\": {\"slide_type\": \"skip\"}" : "", String[]))
         name = ed === :full ? "$stem.ipynb" : "$stem-$ed.ipynb"
         push!(outputs, write_notebook(joinpath(NB_DIR, name), ecells))
@@ -1097,9 +1022,7 @@ function run_selfchecks()
     function fates_of(src::String)
         r = GoMeta.goMeta(Vector{UInt8}(codeunits(src)))
         r.status == GoMeta.PROCESS_OK || fail("fixture did not process: $(r.status)")
-        f = verdict_fates(src, GoMeta.readAltValuesEvals(r.altValues_evals), GoMeta.content_fingerprint(r))
-        witness_against_render(f, String(copy(Main.BasicRenderer.outputs(r).render_bytes)))
-        return f
+        return verdict_fates(src, r)
     end
     nb_of(src::String, name::String) =
         last(only(derive_from_bytes(Vector{UInt8}(codeunits(src)), fixspec(name))))
@@ -1132,36 +1055,17 @@ function run_selfchecks()
     # metadata here, so a duplicate COMMENT-form carry is a defect
     occursin("<!-- #~ hide -->", nb) &&
         fail("carriage: a metadata-carried metaLine ALSO traveled as a comment")
-    # the reserved polarity encoding refuses loudly too (reconfirm hardening)
-    pol_fired = try
-        verdict_fates("x = 1\n", [(UInt8[0x01], :visib, :hide, false)],
-                      [(UInt8[0x01], Vector{UInt8}(codeunits("x = 1")))])
-        false
-    catch err
-        err isa ErrorException && occursin("non-true polarity", err.msg)
-    end
-    pol_fired || fail("the polarity guard did not refuse a non-true :visib row loudly")
     occursin("e = 5  #~ show", nb) || fail("inline-override: the shown line left the source")
     occursin("\"text\": \"" * json_escape("c = 3  #~ discard") * "\"", nb) &&
         fail("discard: a discarded line traveled in metadata")
     occursin("c = 3", nb) && fail("discard: discarded bytes present in the artifact")
     # the bare-`##` ensure-token shape: a hidden line that IS the bare marker renders
     # markerless as-is — the witness must accept it (panel V1: the space-demanding
-    # check false-redded this legitimate corpus shape); fates_of runs the witness
+    # check false-redded this legitimate corpus shape); the fate is the Engine's answer
     trap2 = "#~ hide\n##\nx = 1\n#]\ny = 2\n"
     t2 = fates_of(trap2)
     [lf.fate for lf in t2] == [:hide, :hide, :hide, :hide, :show, :show] ||
         fail("bare-## trap fates wrong: " * string([lf.fate for lf in t2]))
-    # the verdict-domain whitelist refuses loudly on an unknown :visib value (panel V1
-    # MAJOR: a future verdict family must never silently emit as visible text)
-    whitelist_fired = try
-        verdict_fates("x = 1\n", [(UInt8[0x01], :visib, :fold, true)],
-                      [(UInt8[0x01], Vector{UInt8}(codeunits("x = 1")))])
-        false
-    catch err
-        err isa ErrorException && occursin("unknown visibility verdict", err.msg)
-    end
-    whitelist_fired || fail("the unknown-verdict whitelist did not refuse :fold loudly")
     # the student worksheet never smuggles solution bytes — an INVISIBLE (fully hidden)
     # solution cell is omitted entirely, while the full edition carries it (panel V2)
     ssrc = "#~ hide{ :label3 }\n\n#~2 :label3\nsecret_solution = 42\n#]\n\nok = 1\n"
@@ -1190,9 +1094,9 @@ function run_selfchecks()
         bytes = Vector{UInt8}(codeunits(src))
         r = GoMeta.goMeta(bytes)
         r.status == GoMeta.PROCESS_OK || fail("page fixture did not process: $(r.status)")
-        fates = verdict_fates(String(copy(bytes)), GoMeta.readAltValuesEvals(r.altValues_evals), GoMeta.content_fingerprint(r))
+        fates = verdict_fates(String(copy(bytes)), r)
         cells = partition(fates)
-        join_labels!(cells, GoMeta.readAltValuesEvals(r.altValues_evals), GoMeta.content_fingerprint(r))
+        join_labels!(cells, r)
         pages = derive_pages(spec, cells)
         return last(pages[1]), last(pages[2])            # full, reader
     end

@@ -5,15 +5,17 @@
 #   1. runs `GoMeta.goMeta` on every input in `examples/InFileFolder/` (trusted committed
 #      input — see the SECURITY section of the README before running GoMeta on files you
 #      did not write);
-#   2. collects each file's evaluated Alterant values via `GoMeta.readAltValuesEvals` (+ the
-#      cells' verbatim content via `GoMeta.content_fingerprint`, same order by contract) —
-#      tuples of (occurrence-handle bytes, attribute, value, polarity), where labels appear as
-#      `:label_label1` .. `:label_label5` and the visibility outcome as `:visib`;
-#   3. builds a label → cells index across all files, remembering each cell's visibility;
-#   4. answers a query: which cells carry the label, in which file, and each cell's OWN
-#      evaluated visibility verdict (`:visib`; `:show` when the cell carries none). The
-#      verdict is per-cell — an enclosing discarded region can remove content beyond a
-#      cell's own verdict (the corpus-documented nesting semantics).
+#   2. asks the Engine, through the BLS Component tree, which Components got label values —
+#      `GoMeta.scanAlterant(delivery, :labels)`, each with its sorted label names — and reads
+#      each piece's text through BLS's door (`GoMeta.BLS.content`); the evals rows themselves
+#      (`GoMeta.readAltValuesEvals`) are counted, not joined (stage 2's re-route, R-V04B-43 (2));
+#   3. builds a label → pieces index across all files, remembering each piece's visibility;
+#   4. answers a query: which pieces carry the label, in which file, and each piece's resolved
+#      visibility — the Engine's ANSWER (`GoMeta.answerFor(delivery, component, :Visib)`: the
+#      piece's own Visib rows, else its parent's up the tree, else the declared default `:show`;
+#      the former literal `:show` for a piece without a row of its own is now the answer's
+#      default source). An enclosing discarded region's verdict reaches a piece through the
+#      answer's inheritance (the corpus-documented nesting semantics).
 #
 # Run from the repository root (after `Pkg.instantiate()`):
 #   julia --startup-file=no --project=. find_by_label.jl            # per-label overview
@@ -29,11 +31,9 @@ import GoMeta
 const EXAMPLES = joinpath(@__DIR__, "examples", "InFileFolder")
 const LABELS   = [:label1, :label2, :label3, :label4, :label5]
 
-# one indexed occurrence: the file it came from, the cell's verbatim CONTENT bytes (from
-# the `content_fingerprint` sibling accessor — the evals KEY is the structural occurrence
-# handle since v0.2 and is opaque here), and the cell's OWN evaluated visibility entry
-# (:show / :hide / :discard; :show when the cell itself carries no :visib entry — the
-# per-cell verdict this demo reports)
+# one indexed occurrence: the file it came from, the piece's verbatim CONTENT bytes (read
+# through BLS's door, `GoMeta.BLS.content`, from the delivered BLS Component tree), and the
+# piece's resolved visibility — the Engine's answer (:show / :hide / :discard)
 struct Hit
     file::String
     cell::Vector{UInt8}
@@ -74,27 +74,16 @@ function index_examples()
             n_skipped += 1
             continue
         end
-        evals = GoMeta.readAltValuesEvals(result.altValues_evals)
-        fps   = GoMeta.content_fingerprint(result)   # same order as evals, by contract
-        length(evals) == length(fps) ||
-            error("find_by_label: evals/fingerprint arity diverged — the accessors' contract broke")
-        content = Dict{Vector{UInt8},Vector{UInt8}}(h => c for (h, c) in fps)
-        n_evals += length(evals)
-        # per cell (keyed by the occurrence handle): the visibility outcome (if any) …
-        visib = Dict{Vector{UInt8},Symbol}()
-        for (cell, attr, value, _) in evals
-            attr === :visib && (visib[cell] = value)
-        end
-        # … and one Hit per (cell × carried label); the Hit carries the cell's CONTENT bytes
-        # (reader-facing); a cell with no :visib entry of its own gets the :show per-cell
-        # verdict here (see the Hit comment for the scope caveat)
-        for (cell, attr, value, _) in evals
-            for l in LABELS
-                if attr === Symbol("label_", l) && value === true
-                    haskey(content, cell) ||
-                        error("find_by_label: evals handle missing from the fingerprint map — the accessors' key contract broke")
-                    push!(index[l], Hit(f, content[cell], get(visib, cell, :show)))
-                end
+        # the pieces that carry labels, THROUGH THE TREE (stage 2's re-route, R-V04B-43 (2)): the Components
+        # that got label values, each with its sorted label names; the piece's text through the door; its
+        # visibility the Engine's answer. The hits per file come in tree order (formerly the rows' order).
+        tree = result.blsComponentTree
+        n_evals += length(GoMeta.readAltValuesEvals(result.altValues_evals))
+        for (c, a) in GoMeta.scanAlterant(result, :labels)
+            visib = GoMeta.answerFor(result, c, :Visib).value
+            for l in a.value
+                l in LABELS || continue
+                push!(index[l], Hit(f, GoMeta.BLS.content(tree, c), visib))
             end
         end
     end
