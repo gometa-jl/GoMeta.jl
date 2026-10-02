@@ -1,13 +1,16 @@
 # answer_tests.jl — stage 2's commit 4 of the v0.4 build: THE ONE ANSWER FUNCTION `answerFor` (R-V04B-35 (c); R-V04B-52 (2);
 # R-V04B-55 (2); the plan v8.1 :56).
 #
-# IS:   seven witnesses of the answer's value and SOURCE over small inputs whose rows and deciding handles were MEASURED first
+# IS:   nine witnesses ([A1]–[A9]) of the answer's value and SOURCE over small inputs whose rows and deciding handles were MEASURED first
 #       (R4b — the evals-tree printouts and the origin probe banked at receipts/S8-branch/precheck-s2c4/PROBES-*).
 # DOES: [A1] Visib — the metaBlock's own statement, the attached Block indirect through it, a rowless Line inherits; [A2] Labels —
 #       the SET with one source; [A3] no rows anywhere — the declared default of each built-in Alterant (R-V04B-92), the File `:none`; [A4] a
-#       Segment's statement — its Line indirect through the Segment, the Segment itself own, the heading metaBlock own, its
-#       rowless Line inherits the heading; [A5] the user feed — `:user`; [A6] the refusals and the registry keyword; [A7] the
-#       surface (package-public, not exported; the one method).
+#       Segment's statement — its Line OWN (the trailing metaSegment applies directly to it, R-V04B-93), its Segments the Line's
+#       answer marked indirect, the heading metaBlock own, its rowless Line inherits the heading; [A5] the user feed — `:user` on
+#       the Blocks, the Line and its Segments alike (a Segment answers as its Line answers); [A6] the refusals and the registry keyword; [A7] the
+#       surface (package-public, not exported; the one method); [A8] a custom registry — an undeclared capture stem derived as the walk
+#       derives it, a capture-less Alterant its declared default; [A9] the Id compound — a NamedTuple of the recorded fields, the nearest
+#       statement's compound as a whole.
 # PURPOSE: the measured consult of the answer's two parts — the value and the source — never inferred from a row's presence.
 
 using Test
@@ -62,7 +65,7 @@ _an_id(c) = _AN_BLS.getElement(c.cmpntNamedInt, :idComponent)
         @test f.value === nothing && f.source === :none && f.via === nothing      # the File: NOTHING built (card 6 "next")
     end
 
-    @testset "[A4] a Segment's statement and a heading: the Line indirect through the Segment; the Segment own; the metaBlock's heading own; its Line inherits" begin
+    @testset "[A4] a Segment's statement and a heading: the Line OWN (the trailing metaSegment applies directly to it), the Segment its Line's answer marked indirect (R-V04B-93); the metaBlock's heading own; its Line inherits" begin
         r = GM.goMeta(_an_bytes("#~ \"Title\"\nx = 1 #~ discard\ny = 2\n")); ps = r.blsComponentTree
         bs = _AN_BLS.children(ps); @test length(bs) == 2
         h = GM.answerFor(r, bs[1], :heading)
@@ -70,13 +73,14 @@ _an_id(c) = _AN_BLS.getElement(c.cmpntNamedInt, :idComponent)
         hl = GM.answerFor(r, _AN_BLS.children(ps, bs[1])[1], :heading)
         @test hl.value == "Title" && hl.source === :indirect && _an_id(hl.via) == _an_id(bs[1])
         ls = _AN_BLS.children(ps, bs[2]); @test length(ls) == 2
-        l = GM.answerFor(r, ls[1], :Visib)                      # "x = 1 #~ discard": the Line-keyed row, decided by Segment #3
-        @test l.value === :discard && l.source === :indirect
-        @test l.via isa _AN_BLS.Segment && _an_id(l.via) == 3
+        l = GM.answerFor(r, ls[1], :Visib)                      # "x = 1 #~ discard": the Line-keyed row, decided by Segment #3 — the Line's OWN statement (R-V04B-93: the trailing metaSegment applies directly to its Line)
+        @test l.value === :discard && l.source === :own && l.via === nothing
         segs = _AN_BLS.children(ps, ls[1]); @test !isempty(segs)
         k = findfirst(s -> _an_id(s) == 3, segs); @test k !== nothing
-        s = GM.answerFor(r, segs[k], :Visib)                     # the Segment: no row keyed on itself — its Line's, decided by ITSELF
-        @test s.value === :discard && s.source === :own && s.via === nothing
+        s = GM.answerFor(r, segs[k], :Visib)                     # the Segment: no row keyed on itself — its Line's answer marked INDIRECT through the Line (his §288: applied to the metaSegment indirectly through its Line)
+        @test s.value === :discard && s.source === :indirect && s.via isa _AN_BLS.Line && _an_id(s.via) == _an_id(ls[1])
+        s0 = GM.answerFor(r, segs[1], :Visib)                    # the Line's first Segment ("x = 1"): the same — its Line's answer, indirect through the Line
+        @test s0.value === :discard && s0.source === :indirect && _an_id(s0.via) == _an_id(ls[1])
         l2 = GM.answerFor(r, ls[2], :Visib)                     # "y = 2": neither it nor its Block carries a Visib row
         @test l2.value === :show && l2.source === :default
         n = GM.answerFor(r, bs[2], :heading)
@@ -88,6 +92,20 @@ _an_id(c) = _AN_BLS.getElement(c.cmpntNamedInt, :idComponent)
         bs = _AN_BLS.children(ps); @test length(bs) == 2
         for b in bs
             a = GM.answerFor(r, b, :Visib)
+            @test a.value === :show && a.source === :user && a.via === nothing
+        end
+        # a Line WITH Segments under the feed (card C24; the decisions seat's F-1): the fed value wins on the Line (:user) and its Segments answer AS
+        # the Line answers — :user, not :indirect through the Line. MEASURED (PROBES-rvc24-user-segment.txt [F1a]): :user on the base and on C2,
+        # :indirect through the Line on C24's first build, :user on the cured tree. ("x = 1" alone has NO Segments — a Segment needs the inline `#~`.)
+        r2 = GM.goMeta(_an_bytes("x = 1 #~ discard
+"); config = GM.GoMetaConfig(; user_mh_profile = "show")); ps2 = r2.blsComponentTree
+        bs2 = _AN_BLS.children(ps2); @test length(bs2) == 1
+        ls2 = _AN_BLS.children(ps2, bs2[1]); @test length(ls2) == 1
+        l2 = GM.answerFor(r2, ls2[1], :Visib)
+        @test l2.value === :show && l2.source === :user && l2.via === nothing  # the feed over the Line's own `discard`
+        segs2 = _AN_BLS.children(ps2, ls2[1]); @test length(segs2) == 2      # "x = 1 " and the metaSegment
+        for sg in segs2
+            a = GM.answerFor(r2, sg, :Visib)
             @test a.value === :show && a.source === :user && a.via === nothing
         end
     end

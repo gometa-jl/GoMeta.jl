@@ -5,7 +5,8 @@
 #       rows (`altValues_evals`) and their provenance (`decided_by`, stage 2's commit 2), never stored; ONE answer shape across
 #       Alterants, so no consumer meets a set mode (R-V04B-35 (c)).
 # DOES: finds the Component's own rows — the rows keyed on it; a Segment-carried row (keyed on a Line with the Segment as the
-#       key's origin) counts as the Line's; a rowless child inherits its parent's rows (a Segment its Line's, a Line its Block's
+#       key's origin) counts as the Line's, and its statement as the Line's OWN (the trailing metaSegment's statement is applied
+#       DIRECTLY to its Line — his §286/§288, R-V04B-93); a rowless child inherits its parent's rows (a Segment its Line's, a Line its Block's
 #       — a rowless child has no statement of its own; whether a child's own row equal to its parent's is recorded is
 #       OQ-148 — today it is: every captured cell's rows are kept; R-V04B-52 (2)); no rows anywhere → the Alterant's declared
 #       default with the source `:default` (R-V04B-55 (2)) — every built-in Alterant declares one since card C2's word (R-V04B-92:
@@ -148,7 +149,11 @@ inherits its parent's rows up the tree (Segment → Line → Block; never the Fi
 declared default as `(value, :default)` or `(nothing, :none)` when it declares none; (4) the source: `:own` when every
 deciding handle of the rows is the asked Component's own key; otherwise the first foreign deciding handle's class —
 `USER_CONTEXT_GRAIN` ⇒ `:user`, the File grain ⇒ `:file`, a document grain ⇒ `:indirect` through the Component the handle
-names (`via`, read from the handle's own path; `nothing` for a degenerate key); rows without any recorded origin answer `:own` on the Component itself and
+names (`via`, read from the handle's own path; `nothing` for a degenerate key) — a handle naming one of the asked LINE's own
+Segments is the Line's own statement (the trailing metaSegment applies DIRECTLY to its Line — R-V04B-93, his §286/§288); a SEGMENT
+without rows of its own answers as the Component whose rows it inherits answers (its Line, or its Block when the Line is rowless too),
+that Component's `:own` becoming `:indirect` through it — its statement was applied to the Line, not to the Segment — and every other
+source (`:indirect` through the same decider, `:user`, `:file`) unchanged, as a rowless Line's relates to its Block's; rows without any recorded origin answer `:own` on the Component itself and
 `:indirect` through the carrier Component otherwise. The File answers `(nothing, :none)` — NOTHING built for it (card 6
 "next"; his question at the review). An Alterant name outside the registry throws an `ArgumentError` naming the registered
 names; an Alterant without a capture DECLARATION mints no rows and answers its declared default (`:default`) or `:none`; an
@@ -189,12 +194,28 @@ function answerFor(delivery::GoMetaDelivery, component::BLS.AbstractComponent, a
         return d isa Declared ? AltAnswer(d.value, :default, nothing) : AltAnswer(nothing, :none, nothing)
     end
     value = _answer_value(rows, stem, scheme)
+    if component isa BLS.Segment && c !== component
+        ## R-V04B-52 (2) in his words (his words of 2026-10-02 — OWNER-WORDS §286 (i)–(iii) and §288 (1)–(2); R-V04B-93): today a metaStatement reaches a Segment INDIRECTLY only — a Segment without rows of
+        ## its own answers the ANSWER of the Component whose rows it inherits (its Line; its Block when the Line is rowless too):
+        ## that Component's OWN statement (the Line's trailing metaSegment's — even when the deciding handle is this Segment's own
+        ## key, the carrier's: the statement was applied DIRECTLY to the Line, not to itself) reaches the Segment INDIRECTLY through
+        ## it; every other source stays as that Component answers it — :indirect through the same decider, the fed profile's :user,
+        ## the File's :file — exactly as a rowless Line relates to its Block (the decisions seat's F-1: the user case unchanged).
+        a = answerFor(delivery, c, alterant; registry = registry)
+        return a.source === :own ? AltAnswer(a.value, :indirect, c) : a
+    end
     ownkey = key_bytes(occurrence_key(ps, component; namespace = ns))
     any_origin = false
     foreign = nothing
     for r in rows, h in r.decided_by
         any_origin = true
         h == ownkey && continue
+        if component isa BLS.Line
+            ## the trailing metaSegment's statement is applied DIRECTLY to its Line (his words of 2026-10-02 — OWNER-WORDS §286 (i)–(iii) and §288 (1)–(2); R-V04B-93): a deciding handle that names one of
+            ## the Line's OWN Segments is the Line's own statement — the Segment is its carrier, not a foreign decider
+            hc = _component_of(ps, h)
+            hc isa BLS.Segment && BLS.parent(ps, hc) === component && continue
+        end
         foreign = h
         break
     end

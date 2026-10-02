@@ -2,7 +2,7 @@
 # his §6 item 9.A), over the inputs whose rows and deciding handles were MEASURED for commit 4 (receipts/S8-branch/precheck-s2c4/PROBES-*).
 #
 # IS:   six witnesses: [S1] the scan lists the recorded Components only, in tree order, each with its answer; [S2] the scan of a Labels
-#       set; [S3] a meta-free input scans empty; [S4] the Segment-carried row lists its Line; [S5] the access by Component in the
+#       set; [S3] a meta-free input scans empty; [S4] the Segment-carried row lists its Line with the Line's OWN answer (R-V04B-93); [S5] the access by Component in the
 #       registry's Alterant order; the refusal; the surface; [S6] two custom registries — a stem-less Visib (the derived stem `:visib`)
 #       lists its two Blocks, a capture-less Visib lists nothing while `answersFor` still answers the declared default.
 # PURPOSE: the two views never disagree with `answerFor` (they are built on it) — measured, not assumed.
@@ -42,12 +42,12 @@ _sc_id(c) = _SC_BLS.getElement(c.cmpntNamedInt, :idComponent)
         end
     end
 
-    @testset "[S4] a Segment-carried row lists its Line (the Segment's statement decided it)" begin
+    @testset "[S4] a Segment-carried row lists its Line — the Line's OWN answer (the trailing metaSegment applies directly to it, R-V04B-93)" begin
         r = GM.goMeta(_sc_bytes("#~ \"Title\"\nx = 1 #~ discard\ny = 2\n")); ps = r.blsComponentTree
         bs = _SC_BLS.children(ps); @test length(bs) == 2
         sc = GM.scanAlterant(r, :Visib); @test length(sc) == 1
         @test sc[1].first isa _SC_BLS.Line && _sc_id(sc[1].first) == _sc_id(_SC_BLS.children(ps, bs[2])[1])
-        @test sc[1].second.value === :discard && sc[1].second.source === :indirect && sc[1].second.via isa _SC_BLS.Segment
+        @test sc[1].second.value === :discard && sc[1].second.source === :own && sc[1].second.via === nothing   # R-V04B-93 (his §286/§288): the Line answers :own — the Segment is the statement's carrier, not a foreign decider
         hs = GM.scanAlterant(r, :heading); @test length(hs) == 1
         @test _sc_id(hs[1].first) == _sc_id(bs[1]) && hs[1].second.value == "Title" && hs[1].second.source === :own
     end

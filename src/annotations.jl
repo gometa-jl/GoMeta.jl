@@ -128,8 +128,9 @@ Each row's `decided_by` (R-V04B-35 (d); stage 2's commit 2) is the list the appl
 (the deciding statement), the contributing statements' for an accumulating one (which statement contributed which
 label stays Q4 (ii)), the applied fields' for the compound; own when it names the row's own Component (a Block's: the entry equals the
 row's handle; a Segment-carried row's: the entry is the Segment's own key — its row is keyed on the Line with the
-Segment as the key's origin — so the SEGMENT answers `:own` and its Line `:indirect` through it: the session's reading,
-put at stage 2's review, card C24), indirect otherwise — MEASURED, never inferred from a row's presence.
+Segment as the key's origin — and the answer function reads that entry as the LINE's own statement, the Segment being its
+carrier: the Line answers `:own`, the Segment its Line's answer marked `:indirect` (his words of 2026-10-02, OWNER-WORDS
+§286/§288, R-V04B-93), indirect otherwise — MEASURED, never inferred from a row's presence.
 
 REASONING: the store is keyed by the normalized structural occurrence key so two distinct cells never share a
 slot, and the capture happens between the apply's finalization and the next wipe because `st.working` is

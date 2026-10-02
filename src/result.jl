@@ -76,9 +76,9 @@ STATED each applied action (the metaBlock a whole-line metaLine forms, the Segme
 the userMH feed the minted user-context handle): one entry for a single-valued mode (the deciding statement — OWN when it names the row's own Component,
 INDIRECT otherwise: for a Block's row own means the entry equals `cell_handle`; for a Segment-carried row — keyed
 on its Line with the Segment as the KEY's origin — the entry is the Segment's own occurrence key, which differs from
-`cell_handle` by construction: the answer function of commit 4 reads it as the SEGMENT's own statement (the Segment
-answers `:own`) and the Line's answer as `:indirect` through the Segment — the session's reading, his word at stage 2's
-review, card C24), the contributing
+`cell_handle` by construction: the answer function reads it as the LINE's own statement (the trailing metaSegment's statement is
+applied DIRECTLY to its Line — his words of 2026-10-02, OWNER-WORDS §286/§288, R-V04B-93; the Line answers `:own`, the Segment its
+Line's answer marked `:indirect`), the contributing
 statements' entries for an accumulating one
 (Labels; which statement contributed which label stays Q4 (ii)), the applied fields' entries for the compound (Id);
 a heading row's its own carrier. MEASURED at the enqueue and the apply, never inferred from a row's presence. The
