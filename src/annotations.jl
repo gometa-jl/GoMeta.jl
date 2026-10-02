@@ -128,7 +128,8 @@ Each row's `decided_by` (R-V04B-35 (d); stage 2's commit 2) is the list the appl
 (the deciding statement), the contributing statements' for an accumulating one (which statement contributed which
 label stays Q4 (ii)), the applied fields' for the compound; own when it names the row's own Component (a Block's: the entry equals the
 row's handle; a Segment-carried row's: the entry is the Segment's own key — its row is keyed on the Line with the
-Segment as the key's origin), indirect otherwise — MEASURED, never inferred from a row's presence.
+Segment as the key's origin — so the SEGMENT answers `:own` and its Line `:indirect` through it: the session's reading,
+put at stage 2's review, card C24), indirect otherwise — MEASURED, never inferred from a row's presence.
 
 REASONING: the store is keyed by the normalized structural occurrence key so two distinct cells never share a
 slot, and the capture happens between the apply's finalization and the next wipe because `st.working` is
@@ -457,7 +458,8 @@ end
 
 ## the ATTR column of the four-column public form, ENCODED (stage 2's commit 7a; the CrossReview set REAL-1 R1 #2): a backslash, tab,
 ## newline or carriage return in an attribute name — a third-party Alterant's stem or member name may carry one; the registry refuses
-## none of them (his §120 defers the hardening, R-V04B-37) — is escaped as \\\\, \\t, \\n, \\r, so one row stays one line and
+## none of them (his §120 defers the hardening, R-V04B-37) — is escaped as a doubled backslash, backslash-t, backslash-n and
+## backslash-r, so one row stays one line and
 ## four columns; the shipped families (`visib`, `label_<name>`, `id_<name>`, `head_<level>`) carry none and serialize byte-identically.
 ## The five-column golden form is the TEST layer's since commit 9b (`tests/support/derive_annotations.jl`); the twelve pins unmoved.
 _attr_encoded(attr::Symbol) = replace(String(attr), "\\" => "\\\\", "\t" => "\\t", "\n" => "\\n", "\r" => "\\r")

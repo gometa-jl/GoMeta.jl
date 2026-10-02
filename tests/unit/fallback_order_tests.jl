@@ -8,7 +8,7 @@
 #       [F2] a document `#~ show` WINS over the fallBack `hide` (the fallBack slot last); [F3] the user feed `discard` WINS over
 #       the fallBack `hide` (the user level precedes); in every case the metaBlock itself follows the same order.
 # REASONING: no feed occupies the fallBack slot in the Engine today (the `metaLevel` Alterant and its feeds come after the branch,
-#       R-V04B-55 (5)); the order is nevertheless BUILT now (R-V04B-55 (4): the room), so the test prepares the slot itself.
+#       R-V04B-55 (4)); the order is nevertheless BUILT now (R-V04B-55 (4): the room), so the test prepares the slot itself.
 # PURPOSE: the test-layer commit 3a (the plan v8.1 :62); the consult order MEASURED, never inferred from the code's shape.
 
 using Test

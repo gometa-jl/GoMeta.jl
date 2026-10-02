@@ -75,8 +75,10 @@ build): the `key_bytes` handles of the statements that PRODUCED the row, in appl
 STATED each applied action (the metaBlock a whole-line metaLine forms, the Segment of an inline one — R-V04B-50; on
 the userMH feed the minted user-context handle): one entry for a single-valued mode (the deciding statement — OWN when it names the row's own Component,
 INDIRECT otherwise: for a Block's row own means the entry equals `cell_handle`; for a Segment-carried row — keyed
-on its Line with the Segment as the KEY's origin — own means the entry is the Segment's own occurrence key, which
-differs from `cell_handle` by construction; the answer function of commit 4 applies that rule), the contributing
+on its Line with the Segment as the KEY's origin — the entry is the Segment's own occurrence key, which differs from
+`cell_handle` by construction: the answer function of commit 4 reads it as the SEGMENT's own statement (the Segment
+answers `:own`) and the Line's answer as `:indirect` through the Segment — the session's reading, his word at stage 2's
+review, card C24), the contributing
 statements' entries for an accumulating one
 (Labels; which statement contributed which label stays Q4 (ii)), the applied fields' entries for the compound (Id);
 a heading row's its own carrier. MEASURED at the enqueue and the apply, never inferred from a row's presence. The

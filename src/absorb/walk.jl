@@ -73,7 +73,7 @@ function applyAbsorbFn(
     local keyComponent = crntComponent isa BLS.Line ? BLS.parent(parse_state, crntComponent) : crntComponent
     local _mc_key = occurrence_key(parse_state, keyComponent;
         namespace = st.config.namespace)
-    local _mc_content = BLS.content(parse_state, keyComponent)   # the degenerate-key diagnostic's payload only — stored nowhere (R-V04B-43 (1), commit 9b)
+    local _mc_content = BLS.content(parse_state, keyComponent)   # the degenerate-key diagnostic's payload only — stored on no row; a copy rides the diagnostic's context when it fires (R-V04B-43 (1), commit 9b; card C18)
     # DEGENERATE-KEY PARITY: the per-cell capture warns loudly on a
     # truncated-walk (degenerate) occurrence key; the metaLine's context-record key
     # gets the SAME diagnostic HERE — capture_heading! receives only the serialized
@@ -82,7 +82,7 @@ function applyAbsorbFn(
     # component later rides a capture as `origin` — both unreachable on real parses
     # (the capture site's note; zero TRUNCATED steps corpus-wide), both loud,
     # non-fatal; the overlap is recorded, not deduplicated. The content read through the
-    # door for the payload only (nothing stores it since commit 9b).
+    # door for the payload only (no row stores it since commit 9b; the diagnostic's context carries a copy when it fires).
     if any(s -> s.store == 0x00, _mc_key.path) || any(s -> s.store == 0x00, _mc_key.origin)
         push!(st.diagnostics, Diagnostic(:WARN_DEGENERATE_OCCURRENCE_KEY, :warning,
             "meta_context: a truncated-walk (degenerate) occurrence key keys this " *

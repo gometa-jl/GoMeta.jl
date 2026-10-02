@@ -465,12 +465,12 @@ const _SEAM_LEDGER_LOCK = ReentrantLock()
     _walk_and_apply!(st::ProcessState, parse_state::BLS.ParseState) -> nothing
 
 IS: the Engine's walk-and-apply over the File's child Blocks — the body `run_absorb_apply!` runs inside its per-call
-STATE scope after the optional user feed: per non-deprecated Block, the absorb walk of its metaLines (when it carries
-meta), the apply at the Block grain (when attached to meta), the Visib write-back and the capture of its final evals
-rows before the next apply wipes `st.working`. FACTORED OUT at stage 2's commit 3a (the plan v8.1 :62) with NO change
+STATE scope after the optional user feed: per child Block, the absorb walk of its metaLines (when it carries meta and the
+Block is not deprecated — the `!depricated` guard wraps the absorb walk alone), the apply at the Block grain (when attached
+to meta), the Visib write-back and the capture of its final evals rows before the next apply wipes `st.working`. FACTORED OUT at stage 2's commit 3a (the plan v8.1 :62) with NO change
 of a line — so a test can run the Engine's own pipeline over a state it prepared (the fallBack consult-order witnesses
 occupy slot `fallBackMHIdx` the way the user feed occupies the user slot; a FEED of that slot in the Engine is the
-`metaLevel` Alterant's, after the branch — R-V04B-55 (5)). Package-internal; not public.
+`metaLevel` Alterant's, after the branch — R-V04B-55 (4)). Package-internal; not public.
 
 DOES: exactly what the seam's inline loop did (the body moved verbatim, de-indented); it reads `st` as `ctx()` does and
 mutates the parse state's settributes through the write-back as before.
@@ -502,8 +502,8 @@ function _walk_and_apply!(st::ProcessState, parse_state::BLS.ParseState)
             # generic `action_to_settribute` write-back table (v0.4 T1: DERIVED from the declared
             # per-action `settribute` slots — identity at v0.4.0). BOTH grains use
             # the Pair-form `=> true` — the Block form here, and the Segment grain in walk.jl.
-            # The driver IS the per-call state producer — `st` (the `init_state` result above, captured
-            #   by this `with(STATE=>st) do` closure) === `ctx()` === `STATE[]` — so the write-back reads
+            # The driver IS the per-call state producer — `st` (this function's parameter: the per-call state the
+            #   caller's `with(STATE=>st) do` scope installed) === `ctx()` === `STATE[]` — so the write-back reads
             #   the in-scope `st` instead of repeating the `ctx()` lookup once per iteration.
             ## The action → settribute-key table is read off the PER-CALL registry
             ## (`st.registry.action_to_settribute`; the module-global alias is retired), so a

@@ -257,7 +257,7 @@ function applyAltActionFns(
     end
     ## 3.: the fallBack level LAST (stage 2's commit 3 — R-V04B-55 (3); his §196 (iv): "it only gets applied
     ##      if no altValue … has been set / evaluated for any of the preceeding meta level"); today never
-    ##      occupied (the metaLevel Alterant and its feeds come after the branch — R-V04B-55 (5)).
+    ##      occupied (the metaLevel Alterant and its feeds come after the branch — R-V04B-55 (4)).
     crntSlot = st.mh.slots[fallBackMHIdx]
     if 0 != crntSlot && st.mh.slot_occupied[crntSlot]
         countEligibleSlots += 1
@@ -299,7 +299,7 @@ function applyAltActionFns(
     end
     ## 3.: the fallBack level LAST (stage 2's commit 3 — R-V04B-55 (3); his §196 (iv): "it only gets applied
     ##      if no altValue … has been set / evaluated for any of the preceeding meta level"); today never
-    ##      occupied (the metaLevel Alterant and its feeds come after the branch — R-V04B-55 (5)).
+    ##      occupied (the metaLevel Alterant and its feeds come after the branch — R-V04B-55 (4)).
     crntSlot = st.mh.slots[fallBackMHIdx]
     if 0 != crntSlot && st.mh.slot_occupied[crntSlot]
         countEligibleSlots += 1

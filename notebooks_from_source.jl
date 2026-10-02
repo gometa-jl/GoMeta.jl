@@ -1060,8 +1060,9 @@ function run_selfchecks()
         fail("discard: a discarded line traveled in metadata")
     occursin("c = 3", nb) && fail("discard: discarded bytes present in the artifact")
     # the bare-`##` ensure-token shape: a hidden line that IS the bare marker renders
-    # markerless as-is — the witness must accept it (panel V1: the space-demanding
-    # check false-redded this legitimate corpus shape); the fate is the Engine's answer
+    # markerless as-is — the fates are the Engine's answer per Line Component (the former render witness,
+    # dropped at commit 9a under R-V04B-56, had to accept that markerless render: panel V1's space-demanding
+    # check false-redded this legitimate corpus shape)
     trap2 = "#~ hide\n##\nx = 1\n#]\ny = 2\n"
     t2 = fates_of(trap2)
     [lf.fate for lf in t2] == [:hide, :hide, :hide, :hide, :show, :show] ||
