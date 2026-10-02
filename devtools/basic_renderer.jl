@@ -5,16 +5,17 @@ Core.eval(Main, :(const _BASIC_RENDERER_LOADED = true))
 # `WriteOutFile`, the emit stage of the Engine — moved out on 2026-09-12 (R-V04B-13 / R-V04B-24).
 #
 # IS: module `BasicRenderer` — the basic renderer, a development tool OUTSIDE the Engine. Its entry point
-#     `render_bytes(parse_state)::Vector{UInt8}` walks the parsed
-#     File→Block→Line→Segment tree through THE DOOR (`BLS.root`, `BLS.children`, `BLS.content`, `BLS.getElement`;
-#     docs/public-api.md §1.2) and writes the share-target bytes into an
+#     `render_bytes(delivery)::Vector{UInt8}` walks the delivered
+#     File→Block→Line→Segment tree (`delivery.blsComponentTree`) through THE DOOR (`BLS.root`, `BLS.children`, `BLS.content`,
+#     `BLS.getElement`; docs/public-api.md §1.2) and writes the share-target bytes into an
 #     in-memory IOBuffer — the render half of the tool's own `outputs` (below; docs/public-api.md §1.3;
-#     docs/CANONICAL-OUTPUT.md §3). The helpers `VisibEnum` and `checkVisib` resolve one
-#     component's own Visib verdict from its `componentSettribute` `:show`/`:hide`/`:discard` keys.
+#     docs/CANONICAL-OUTPUT.md §3). Every Visib verdict it applies is THE ENGINE's ANSWER —
+#     `GoMeta.answerFor(delivery, component, :Visib).value` (stage 3 of the v0.4 build; R-V04B-16 (1)): the renderer
+#     resolves nothing itself.
 # DOES: applies the jl-share-v1 hide/discard rules (docs/CANONICAL-OUTPUT.md §3) during the walk.
-#     Visib precedence is nearest-wins: a Block verdict is the per-line default, a Line verdict
-#     overrides it, and a Segment verdict overrides both, persisting across that line's remaining
-#     segments. `:discard` at any grain skips the whole subtree — zero bytes. `:hide` writes the
+#     The verdict a Line or a Segment gets is the Engine's answer for THAT Component (the Component's own
+#     rows, else its parent's up the tree, else the declared default `show` — the Engine's inner-wins
+#     precedence; a Segment's answer per R-V04B-52 (2)). `:discard` at any grain skips the whole subtree — zero bytes. `:hide` writes the
 #     flavor's hide marker (the literal "## " in the `:julia` flavor) before each rendered
 #     non-empty line and before each rendered segment, ahead of the restored indentation — an
 #     ENSURE-TOKEN write, not exactly-one-prefix: the write is skipped when the source line's
@@ -29,9 +30,7 @@ Core.eval(Main, :(const _BASIC_RENDERER_LOADED = true))
 #     every emitted line is "\n"-terminated, then one trailing 0x0a is trimmed iff
 #     `parse_state.endsWithNewline` is false — for a whole-file parse that is the input's terminal
 #     byte; for a prefix `parse_range` the parser completes the fact (a range stopping before the
-#     last source line ends at a line boundary, so its newline is kept). A component with more
-#     than one Visib key set refuses with a
-#     stable, stage-honest "GoMeta emit:" message (docs/public-api.md §3.4). The insert store's negative
+#     last source line ends at a line boundary, so its newline is kept). The insert store's negative
 #     child ids are resolved by `BLS.children` itself (stage 2's commit 0); this file's former id-sign
 #     dispatch, with its kept latent `[2]`-store defect, is gone.
 # REASONING: the golden layer pins this render byte-for-byte over the committed example corpus
@@ -41,11 +40,11 @@ Core.eval(Main, :(const _BASIC_RENDERER_LOADED = true))
 #     longer part of the Engine (R-V04B-24 B1).
 # PURPOSE: the development tool's deterministic reference render — the render half of the tool's
 #     `outputs`, which the committed corpus and the golden test layer pin byte-for-byte.
-# THE INTERIM (R-V04B-24 A1, dated 2026-09-12 — a dated, temporary exception to R-V04B-13's "never
-#     recompute"; closed by the pure-consumer branch, R-V04B-16 (1)): this renderer still RESOLVES the
-#     Engine's stored Visib flags itself — the precedence, nearest flag wins (`checkVisib`, `finalVisib`) —
-#     it does not re-evaluate the metaStatements; the branch makes it a pure consumer of the Engine's
-#     resolved answers. It reads the delivered part `result.blsComponentTree` (public by name, R-V04B-29) THROUGH THE
+# THE INTERIM CLOSED (R-V04B-24 A1, dated 2026-09-12 — a dated, temporary exception to R-V04B-13's "never
+#     recompute"; closed at stage 3's first commit of the pure-consumer branch, R-V04B-16 (1)): until that commit this
+#     renderer RESOLVED the Engine's stored Visib flags itself (`checkVisib`, nearest flag wins); now every verdict is
+#     the Engine's answer per Component, read from the delivery (`GoMeta.answerFor`) — the renderer re-evaluates nothing
+#     and resolves nothing. It reads the delivered part `result.blsComponentTree` (public by name, R-V04B-29) THROUGH THE
 #     DOOR since stage 2's commit 0 (R-V04B-58, R-V04B-80): BLS's public functions and types — `BLS.root`,
 #     `BLS.children`, `BLS.getElement`, `BLS.content`, `BLS.kind`, `BLS.flavor`, `BLS.endsWithNewline`, the Component
 #     types (docs/public-api.md §1.2) — and no field of a BLS object. ONE RESIDUE read outside the door remains,
@@ -63,94 +62,47 @@ module BasicRenderer
 import GoMeta
 import GoMeta.BLS
 
-## The HIDE-aware render. A component's own Visib verdict lives in its ComponentSettribute
-## :show/:hide/:discard keys (set by the Apply write-back through the registry's generic
-## `action_to_settribute` table — identity at v0.4.0, declared per action; registry.jl):
-## `checkVisib` resolves one component's verdict and `finalVisib` applies
-## nearest-wins precedence (Block ◁ Line ◁ Segment), ported from the origin engine's
-## behaviour oracle (its `checkVisib` + its hide-marker write sites),
-## adapted to parse_state threading, the door's `children` and the pure IOBuffer, and preserving the
-## indent-restore and childless-zero re-pins below. `discard` JOINS the nearest-wins cascade
-## (the origin oracle's law, annotated at both grains
-## in the origin source). ALL THREE Visib verbs resolve through `finalVisib`
-## (Block ◁ Line ◁ Segment) and the `!= discard` test runs AFTER the override: an inner
-## `show` (or `hide`) nested under a discarded ancestor RESURFACES — at every grain.
-## Discarded content is ABSENT entirely (no content, no newline — the inherited `wroteToLine`
-## law); a hidden EMPTY line renders as a BARE empty line (the hide write sits in the
-## non-empty branch). There is NO component-level `:discard` subtree-skip.
+## The HIDE-aware render. Every Visib verdict is THE ENGINE's ANSWER for the Component in hand —
+## `GoMeta.answerFor(delivery, component, :Visib).value`, one of `:show` / `:hide` / `:discard` (the three Visib
+## actions of the default registry): the Component's own rows, else its parent's up the tree (a Line its Block's, a
+## Segment its Line's — R-V04B-52 (2)), else the declared default `show` (R-V04B-51). The renderer resolves nothing
+## itself (R-V04B-16 (1)): the former flag read (`checkVisib` on the settribute keys the Apply wrote back), the
+## nearest-wins precedence and the sticky per-line Segment cascade left at stage 3's first commit — MEASURED equal
+## to the answer on every Block, Line and Segment of the corpus and the authored scenarios before the change
+## (plan `receipts/S8-branch/precheck-s3c1/PROBES-s3-consumer-equivalence.txt`); the renderer's own multi-Visib
+## guard went with the flag read (the Engine's capture refuses multiplicity — src/annotations.jl). What stays is
+## the WRITE side: `discard` is ABSENCE entire (no content, no newline — the inherited `wroteToLine` law); `hide`
+## writes the flavor's marker before each rendered non-empty line and each rendered segment (ensure-token, below);
+## a hidden EMPTY line renders as a BARE empty line; a verdict outside the three renders plain (as the former
+## `notAvailable` did). There is NO component-level `:discard` subtree-skip: an inner `show` (or `hide`) under a
+## discarded ancestor RESURFACES — at every grain — because the inner Component's own answer is its own.
 ## FLAVOR AXIS: the hide marker is the flavor's `hide_marker` ("## " for :julia — the
 ## default, byte-identical for every existing caller — and "//# " for :c), passed as the
 ## `hide_marker` kwarg at the output-assembly site from the delivered tree's FlavorProfile record
 ## (`BLS.flavor(result.blsComponentTree)`). Hide is VISIBILITY-only — the marker is a plain comment
 ## form in its flavor and hidden metadata remains live on re-ingestion, by design.
-@enum VisibEnum notAvailable show hide discard
 
-## checkVisib — the resolved Visib of ONE Component, from its ComponentSettribute :show/:hide/:discard
-## (at most one may be set; >1 is a contradiction). notAvailable ⇒ no own verdict (inherit per precedence).
-function checkVisib(aComponent::Union{BLS.Block,BLS.Line,BLS.Segment})
-    crntVisib::VisibEnum = notAvailable
-    foundKey::Bool = false
-    for visibKey in (show, hide, discard)
-        if BLS.getElement(aComponent, Symbol(visibKey))
-            if !foundKey
-                foundKey = true
-                crntVisib = visibKey
-            else
-                error("GoMeta emit: more than one Visib value set for one component — v0's Visib ",
-                    "actions (show/hide/discard) are mutually exclusive per component ",
-                    "(see docs/public-api.md §3.4)")
-            end
-        end
-    end
-    return crntVisib
-end
-
-## THE CASCADE POLICY FUNCTION — the per-line segment-cascade law,
-## extracted behavior-verbatim from the write loop below: receives the line's ORDERED
-## segment list + the line-level cascade default (the resolved line/block verdict) and
-## returns the per-segment FINAL verdicts the write loop consumes positionally.
-## WP-2's nearest-following-mark cascade replaces EXACTLY this one function (the
-## non-foreclosure design point); FOLDBACK #3's narration-class boundary holds — a
-## future never-meta verb is parse-plane, invisible to emit.
-## THE A2/A5 CONFORMANCE-BY-ABSTINENCE PROPERTY ROW: emit consumes RESOLVED settribute
-## verdicts and component bounds ONLY — no adjacency, no anchor/range geometry, no
-## extent computation. The signature IS the property: ordered segments + one line
-## default in, verdicts out. A2 (close = a statement at a position; anchor ends never
-## semantic) and A5 (destructive verbs require a declared close; reversible hide/show
-## may run on) are attachment/absorb-plane laws whose enforcement point stays free to
-## land there (the Office arm) with ZERO emit change; `discard` stays absence-entire
-## per the `wroteToLine` law in the write loop.
-function segment_cascade_verdicts(orderedSegments::Vector{BLS.Segment},
-                                  lineDefault::VisibEnum)::Vector{VisibEnum}
-    verdicts = Vector{VisibEnum}(undef, length(orderedSegments))
-    finalVisib = lineDefault
-    for (segIdx, crntSegment) in enumerate(orderedSegments)
-        ## A segment verdict overrides the line/block default; the override
-        ## persists across the line's remaining segments.
-        crntSegmentVisib = checkVisib(crntSegment)
-        if crntSegmentVisib != notAvailable
-            finalVisib = crntSegmentVisib
-        end
-        verdicts[segIdx] = finalVisib
-    end
-    return verdicts
-end
+## visib_of — the Engine's resolved Visib verdict for ONE Component of the delivered tree (R-V04B-16 (1)): the value of
+## the one answer function; the SOURCE (own / indirect / user / default) is not the renderer's business.
+visib_of(delivery::GoMeta.GoMetaDelivery, c::Union{BLS.Block,BLS.Line,BLS.Segment})::Symbol =
+    GoMeta.answerFor(delivery, c, :Visib).value
 
 function render_bytes(
-    parse_state;   # the delivered part `result.blsComponentTree`, read through the door (its Julia type is his open item 5 — not named here)
-    ## The per-flavor hide render marker. Default = the TREE's own flavor record (`BLS.flavor(parse_state)`), so a
+    delivery::GoMeta.GoMetaDelivery;   # the delivered object: its tree is walked through the door, its answers decide every verdict
+    ## The per-flavor hide render marker. Default = the TREE's own flavor record (`BLS.flavor(delivery.blsComponentTree)`), so a
     ## caller passing nothing renders with the flavor the tree was parsed under; the
     ## output-assembly site passes the delivered tree's `BLS.flavor(result.blsComponentTree).hide_marker`.
     ## Hide is VISIBILITY-only — the marker is a plain comment form in its flavor and
     ## hidden metadata remains live on re-ingestion, by design.
-    hide_marker::AbstractString = BLS.flavor(parse_state).hide_marker,
+    hide_marker::AbstractString = BLS.flavor(delivery.blsComponentTree).hide_marker,
     ## The comment-aware hide fold's per-flavor eligibility prefix — a comment-CLASSIFIED
     ## component already carrying it (post-indent) takes NO additional marker
     ## (ensure-token). Passed by the output-assembly site from the delivered tree's
     ## flavor record (`BLS.flavor(result.blsComponentTree)`).
-    hide_fold_prefix::AbstractString = BLS.flavor(parse_state).hide_fold_prefix
+    hide_fold_prefix::AbstractString = BLS.flavor(delivery.blsComponentTree).hide_fold_prefix
 )::Vector{UInt8}
 
+    parse_state = delivery.blsComponentTree   # the delivered part, read through the door (its Julia type is his open item 5 — not named here)
     io = IOBuffer()
 
     local stringIdx::Int
@@ -160,11 +112,8 @@ function render_bytes(
     ## the invariant is survival, not bytes-written); a fully-discarded line
     ## is ABSENT (content AND newline).
     local wroteToLine::Bool
-    ## Visib-precedence state (resolved per block/line/segment; Block ◁ Line ◁ Segment).
-    ## The SEGMENT grain resolves inside `segment_cascade_verdicts`.
-    crntBlockVisib::VisibEnum = notAvailable
-    crntLineVisib::VisibEnum = notAvailable
-    finalVisib::VisibEnum = notAvailable
+    ## The Line's verdict — the Engine's answer for the Line (its own rows, else its Block's, else the default).
+    finalVisib::Symbol = :show
     ## repin1_* — per-line indent-restore state (the line's leading columns, emitted once
     ## before the first emitted segment):
     local repin1_indent_sidx::Int   # the source-line index whose leading columns are the line indent
@@ -176,19 +125,15 @@ function render_bytes(
     crntFile::BLS.File = BLS.root(parse_state)
     for crntBlock in BLS.children(parse_state, crntFile)
 
-        ## NO block-grain discard skip — a Block `discard` verdict joins the cascade
-        ## as the per-line default (original :71-75), resurfaceable by an inner
-        ## show/hide at the finer grains below.
-        crntBlockVisib = checkVisib(crntBlock)
+        ## NO block-grain discard skip — a Block's `discard` reaches its Lines through THEIR answers (a rowless
+        ## Line inherits its Block's), and an inner show/hide at a finer grain is that Component's own answer.
 
         for crntLine in BLS.children(parse_state, crntBlock)
 
-            ## R-1: no line-grain discard skip either — resolve the cascade FIRST (a line
-            ## verdict overrides the block default); the `!= discard` test runs AFTER the
-            ## override, per grain below (per the origin engine). wroteToLine = the inherited
+            ## R-1: no line-grain discard skip either — the Line's verdict is the Engine's answer for the Line;
+            ## the `!= :discard` test runs per grain below (per the origin engine). wroteToLine = the inherited
             ## terminator law (original :64/:140).
-            crntLineVisib = checkVisib(crntLine)
-            finalVisib = crntLineVisib != notAvailable ? crntLineVisib : crntBlockVisib
+            finalVisib = visib_of(delivery, crntLine)
             stringIdx = BLS.getElement(crntLine, :idxString)
             wroteToLine = false
 
@@ -197,7 +142,7 @@ function render_bytes(
                 ## R-1: the discard test AFTER the override (original :79) — a discarded
                 ## line is ABSENT entirely: no content, and wroteToLine stays false so no
                 ## newline either.
-                if finalVisib != discard
+                if finalVisib != :discard
                     if BLS.getElement(crntLine, :isEmpty)
                         ## a (possibly hidden) EMPTY line renders BARE — the wroteToLine
                         ## terminator below supplies the "\n"; the hide write sits in the
@@ -219,7 +164,7 @@ function render_bytes(
                         ## fold prefix post-indent takes NO additional marker; metaLines + TEXT lines
                         ## lack :comment and stay marked (the indentation-tolerant classification is
                         ## the parser's own).
-                        if finalVisib == hide
+                        if finalVisib == :hide
                             let s = lineText
                                 ## ENSURE-TOKEN, the second disjunct: the
                                 ## marker is ALSO skipped when the source line's POST-INDENT head
@@ -259,10 +204,10 @@ function render_bytes(
                 repin1_indent_start = 0
                 ## Materialize the line's ORDERED segment list through the door (`BLS.children` of a Line — the
                 ## insert store resolved by BLS itself; this file's former sign-dispatch ternary, with its kept
-                ## `[2]`-store defect, is gone), then resolve the whole per-line cascade through the ONE policy
-                ## function above; the write loop consumes the verdicts positionally.
+                ## `[2]`-store defect, is gone); each Segment's verdict is the Engine's answer for THAT Segment
+                ## (R-V04B-52 (2): its own rows if any, else its Line's); the write loop consumes them positionally.
                 orderedSegments = BLS.children(parse_state, crntLine)
-                segVerdicts = segment_cascade_verdicts(orderedSegments, finalVisib)
+                segVerdicts = Symbol[visib_of(delivery, sg) for sg in orderedSegments]
                 ## The line's full source text through the door, read once: the ensure-token head test and the
                 ## indent restore read the SOURCE LINE (a Segment's `:idxString` names its own Line's line — probe-proven).
                 lineText = String(BLS.content(parse_state, crntLine))
@@ -276,18 +221,15 @@ function render_bytes(
                         repin1_first_seg = false
                     end
 
-                    ## R-1: the segment discard test via the CASCADE result (original
-                    ## :116), AFTER the segment override above — an inner `show` under a
-                    ## discarded ancestor RESURFACES here; a segment's own discard carries
-                    ## to later mark-less segments (the oracle's sticky finalVisib,
-                    ## latent pre-multi-inline).
-                    if segVerdicts[segIdx] != discard
+                    ## R-1: the segment discard test on the Segment's own answer (original
+                    ## :116) — an inner `show` under a discarded ancestor RESURFACES here.
+                    if segVerdicts[segIdx] != :discard
                         if BLS.getElement(crntSegment, :includeInOutFile)
                             ## A hidden segment renders hide-marker-commented BEFORE the restored
                             ## indent (per-segment markers, the flavor's `hide_marker`;
                             ## docs/CANONICAL-OUTPUT.md §3). A hidden trailing comment segment already
                             ## carrying the flavor's fold prefix takes no second marker mid-line.
-                            if segVerdicts[segIdx] == hide
+                            if segVerdicts[segIdx] == :hide
                                 let sl = String(BLS.content(parse_state, crntSegment))   # the segment's own bytes through the door
                                     ## ENSURE-TOKEN at SEGMENT grain (the line-head predicate:
                                     ## "suppression applies at both grains"): the second disjunct
@@ -458,11 +400,10 @@ end
 
 The development tool's pair; the Engine's canonical output is `altValues_evals` (docs/public-api.md §1.3). `blsStructure_bytes` is the verdict-free
 `structural_serialization` (this module's own function since R-V04B-24) of the final parse tree; `render_bytes` is the jl-share-v1 emit
-(docs/CANONICAL-OUTPUT.md). Both are PURE functions of `result.blsComponentTree` (the per-call parse state the
-in-`with` absorb-walk + apply fully mutated), so this accessor is correct OUTSIDE the per-call
-`STATE` scope. Total on any OK result (one documented qualification — the multi-Visib
-render guard: docs/public-api.md §3.4, `devtools/README.md`; the render plane's string indexing is character-safe,
-docs/public-api.md §4, GUARDED); on a non-OK result the contract is
+(docs/CANONICAL-OUTPUT.md). The tree print is a PURE function of `result.blsComponentTree`; the render a PURE function of the
+delivery — the tree walked through the door, every Visib verdict the Engine's answer (`GoMeta.answerFor`; stage 3's first commit) —
+so this accessor is correct OUTSIDE the per-call `STATE` scope. Total on any OK result (the render plane's string indexing is
+character-safe, docs/public-api.md §4, GUARDED); on a non-OK result the contract is
 `(empty tree, empty render)` for EVERY current non-OK result (no post-parse error class exists at v0.4; a
 "tree-if-parse-succeeded" distinction would be a new contract row) — for the config-time path both are empty, because the
 parse never ran. The NamedTuple field order is `(blsStructure_bytes, render_bytes)`.
@@ -486,8 +427,7 @@ function outputs(result::GoMeta.GoMetaDelivery)
     ## (`BLS.flavor(blsComponentTree)`) keeps `outputs` stamping the CORRECT flavor's marker by
     ## construction.
     rendered = let fl = BLS.flavor(result.blsComponentTree)
-        render_bytes(result.blsComponentTree;
-            hide_marker = fl.hide_marker, hide_fold_prefix = fl.hide_fold_prefix)
+        render_bytes(result; hide_marker = fl.hide_marker, hide_fold_prefix = fl.hide_fold_prefix)
     end
     tree     = structural_serialization(result.blsComponentTree)
     return (blsStructure_bytes = tree, render_bytes = rendered)

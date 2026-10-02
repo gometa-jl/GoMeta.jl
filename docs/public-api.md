@@ -540,8 +540,9 @@ the verdict-free tree print + the `jl-share-v1` share render, the SAME field nam
 contract (a `PROCESS_ERROR` result of an entry refusal — at `goMeta` before its parse, at the seam's door or
 ledger before any absorb or apply work — yields the **empty** pair) — is the basic renderer's own function
 `Main.BasicRenderer.outputs(result)`, obtained ONLY after `include("devtools/load_basic_renderer.jl")` at the
-caller's top level. Its render-plane qualifications (the multi-Visib guard, §3.4; the character-safe string
-indexing, §4) are the tool's. See `devtools/README.md` and `docs/CANONICAL-OUTPUT.md`.
+caller's top level. Its render-plane qualification (the character-safe string indexing, §4) is the tool's; since stage 3 of the
+v0.4 build every Visib verdict the render applies is the Engine's answer per Component (`answerFor`, §1.2 — R-V04B-16 (1)), the
+renderer resolving nothing itself. See `devtools/README.md` and `docs/CANONICAL-OUTPUT.md`.
 
 ### The metaLine argument forms (v0)
 
@@ -809,8 +810,9 @@ fabricated typed code:
   state-ref nor a registered action name) · a duplicate argument list or condition block on one
   alterant clause · a misplaced label token · stray punctuation at the action-name position · a
   token glued to a closing `)` or `}` · the over-cap condition (the dedicated entry above).
-  In the basic renderer (a development tool, `devtools/basic_renderer.jl`), more than one surviving Visib verdict on
-  a single cell meets its stable `GoMeta emit:` guard error (see `docs/SYNTAX-AND-SEMANTICS.md` §13 on the multi-Visib surface).
+  The basic renderer (a development tool, `devtools/basic_renderer.jl`) carries no Visib guard of its own since stage 3 of the
+  v0.4 build: it renders the Engine's answer per Component; more than one Visib value on one cell is refused by the Engine at the
+  CAPTURE (`src/annotations.jl` — the stable message `GoMeta capture: more than one Visib value set for one component …`).
   Each refusal is stable and points at this section; most name the offending token, region, or
   bracket count.
 - **The action-args walls — GUARDED:** malformed alterant-action ARGUMENTS — non-parsable or
