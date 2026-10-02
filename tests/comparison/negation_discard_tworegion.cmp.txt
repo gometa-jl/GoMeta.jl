@@ -1,0 +1,42 @@
+# GoMeta comparison form v1 | negation_discard_tworegion | produced by GoMeta v0.4 at b28dc93b | 9 Components | 32 answer lines
+A | Block | 1-1 | Visib | show | default
+A | Block | 1-1 | heading | null | default
+A | Block | 1-1 | id | (cell=0,file=0,parent=0) | default
+A | Block | 1-1 | labels | {label1} | Block 1-1
+A | Block | 2-2 | Visib | show | default
+A | Block | 2-2 | heading | null | default
+A | Block | 2-2 | id | (cell=0,file=0,parent=0) | default
+A | Block | 2-2 | labels | {label1} | Block 1-1
+A | Block | 3-3 | Visib | discard | Block 3-3
+A | Block | 3-3 | heading | null | default
+A | Block | 3-3 | id | (cell=0,file=0,parent=0) | default
+A | Block | 3-3 | labels | {} | default
+A | Block | 4-4 | Visib | discard | Block 3-3
+A | Block | 4-4 | heading | null | default
+A | Block | 4-4 | id | (cell=0,file=0,parent=0) | default
+A | Block | 4-4 | labels | {} | default
+A | Line | 1-1 | Visib | show | default
+A | Line | 1-1 | heading | null | default
+A | Line | 1-1 | id | (cell=0,file=0,parent=0) | default
+A | Line | 1-1 | labels | {label1} | Block 1-1
+A | Line | 2-2 | Visib | show | default
+A | Line | 2-2 | heading | null | default
+A | Line | 2-2 | id | (cell=0,file=0,parent=0) | default
+A | Line | 2-2 | labels | {label1} | Block 1-1
+A | Line | 3-3 | Visib | discard | Block 3-3
+A | Line | 3-3 | heading | null | default
+A | Line | 3-3 | id | (cell=0,file=0,parent=0) | default
+A | Line | 3-3 | labels | {} | default
+A | Line | 4-4 | Visib | discard | Block 3-3
+A | Line | 4-4 | heading | null | default
+A | Line | 4-4 | id | (cell=0,file=0,parent=0) | default
+A | Line | 4-4 | labels | {} | default
+C | Block | 1-1 | File 1-4 | 1 | Line 1-1 | Meta | component.attachedToMeta,component.containsMeta,component.depth1,component.isMeta
+C | Block | 2-2 | File 1-4 | 2 | Line 2-2 | Text | component.attachedToMeta,component.containsText,component.isText
+C | Block | 3-3 | File 1-4 | 3 | Line 3-3 | Meta | component.attachedToMeta,component.containsMeta,component.depth1,component.isMeta
+C | Block | 4-4 | File 1-4 | 4 | Line 4-4 | Text | component.attachedToMeta,component.containsText,component.isText
+C | File | 1-4 | - | - | Block 1-1;Block 2-2;Block 3-3;Block 4-4 | - | component.containsMeta,component.containsText
+C | Line | 1-1 | Block 1-1 | 1 | - | Meta | component.containsMeta,component.depth1,component.hasMetaStr,component.includeInOutFile,component.isMeta
+C | Line | 2-2 | Block 2-2 | 1 | - | Text | component.attachedToMeta,component.containsText,component.includeInOutFile,component.isText
+C | Line | 3-3 | Block 3-3 | 1 | - | Meta | component.attachedToMeta,component.containsMeta,component.depth1,component.hasMetaStr,component.includeInOutFile,component.isMeta
+C | Line | 4-4 | Block 4-4 | 1 | - | Text | component.attachedToMeta,component.containsText,component.includeInOutFile,component.isText

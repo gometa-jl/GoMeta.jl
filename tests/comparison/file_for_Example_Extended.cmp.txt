@@ -1,0 +1,507 @@
+# GoMeta comparison form v1 | file_for_Example_Extended | produced by GoMeta v0.4 at b28dc93b | 102 Components | 404 answer lines
+A | Block | 1-5 | Visib | show | default
+A | Block | 1-5 | heading | null | default
+A | Block | 1-5 | id | (cell=0,file=0,parent=0) | default
+A | Block | 1-5 | labels | {} | default
+A | Block | 11-16 | Visib | show | default
+A | Block | 11-16 | heading | null | default
+A | Block | 11-16 | id | (cell=0,file=0,parent=0) | default
+A | Block | 11-16 | labels | {} | default
+A | Block | 17-19 | Visib | show | default
+A | Block | 17-19 | heading | null | default
+A | Block | 17-19 | id | (cell=0,file=0,parent=0) | default
+A | Block | 17-19 | labels | {label3,label5} | Segment 18:1-36
+A | Block | 20-32 | Visib | discard | Segment 7:1-30
+A | Block | 20-32 | heading | null | default
+A | Block | 20-32 | id | (cell=0,file=0,parent=0) | default
+A | Block | 20-32 | labels | {label3,label5} | Segment 18:1-36
+A | Block | 33-34 | Visib | show | default
+A | Block | 33-34 | heading | null | default
+A | Block | 33-34 | id | (cell=0,file=0,parent=0) | default
+A | Block | 33-34 | labels | {label3,label4,label5} | Segment 18:1-36
+A | Block | 35-49 | Visib | hide | Segment 19:1-17
+A | Block | 35-49 | heading | null | default
+A | Block | 35-49 | id | (cell=0,file=0,parent=0) | default
+A | Block | 35-49 | labels | {label1,label3,label4,label5} | Block 6-10
+A | Block | 50-51 | Visib | discard | Segment 7:1-30
+A | Block | 50-51 | heading | null | default
+A | Block | 50-51 | id | (cell=0,file=0,parent=0) | default
+A | Block | 50-51 | labels | {label2} | Segment 51:1-12
+A | Block | 52-63 | Visib | discard | Segment 7:1-30
+A | Block | 52-63 | heading | null | default
+A | Block | 52-63 | id | (cell=0,file=0,parent=0) | default
+A | Block | 52-63 | labels | {label2} | Segment 51:1-12
+A | Block | 6-10 | Visib | show | default
+A | Block | 6-10 | heading | null | default
+A | Block | 6-10 | id | (cell=0,file=0,parent=0) | default
+A | Block | 6-10 | labels | {} | default
+A | Line | 1-1 | Visib | show | default
+A | Line | 1-1 | heading | null | default
+A | Line | 1-1 | id | (cell=0,file=0,parent=0) | default
+A | Line | 1-1 | labels | {} | default
+A | Line | 10-10 | Visib | show | default
+A | Line | 10-10 | heading | null | default
+A | Line | 10-10 | id | (cell=0,file=0,parent=0) | default
+A | Line | 10-10 | labels | {} | default
+A | Line | 11-11 | Visib | show | default
+A | Line | 11-11 | heading | null | default
+A | Line | 11-11 | id | (cell=0,file=0,parent=0) | default
+A | Line | 11-11 | labels | {} | default
+A | Line | 12-12 | Visib | show | default
+A | Line | 12-12 | heading | null | default
+A | Line | 12-12 | id | (cell=0,file=0,parent=0) | default
+A | Line | 12-12 | labels | {} | default
+A | Line | 13-13 | Visib | show | default
+A | Line | 13-13 | heading | null | default
+A | Line | 13-13 | id | (cell=0,file=0,parent=0) | default
+A | Line | 13-13 | labels | {} | default
+A | Line | 14-14 | Visib | hide | Line 14-14
+A | Line | 14-14 | heading | null | default
+A | Line | 14-14 | id | (cell=0,file=0,parent=0) | default
+A | Line | 14-14 | labels | {} | default
+A | Line | 15-15 | Visib | discard | Line 15-15
+A | Line | 15-15 | heading | null | default
+A | Line | 15-15 | id | (cell=0,file=0,parent=0) | default
+A | Line | 15-15 | labels | {} | default
+A | Line | 16-16 | Visib | show | default
+A | Line | 16-16 | heading | null | default
+A | Line | 16-16 | id | (cell=0,file=0,parent=0) | default
+A | Line | 16-16 | labels | {} | default
+A | Line | 17-17 | Visib | show | default
+A | Line | 17-17 | heading | null | default
+A | Line | 17-17 | id | (cell=0,file=0,parent=0) | default
+A | Line | 17-17 | labels | {label3,label5} | Segment 18:1-36
+A | Line | 18-18 | Visib | show | default
+A | Line | 18-18 | heading | null | default
+A | Line | 18-18 | id | (cell=0,file=0,parent=0) | default
+A | Line | 18-18 | labels | {label3,label5} | Line 18-18
+A | Line | 19-19 | Visib | show | default
+A | Line | 19-19 | heading | null | default
+A | Line | 19-19 | id | (cell=0,file=0,parent=0) | default
+A | Line | 19-19 | labels | {label3,label5} | Segment 18:1-36
+A | Line | 2-2 | Visib | show | default
+A | Line | 2-2 | heading | null | default
+A | Line | 2-2 | id | (cell=0,file=0,parent=0) | default
+A | Line | 2-2 | labels | {} | default
+A | Line | 20-20 | Visib | discard | Segment 7:1-30
+A | Line | 20-20 | heading | null | default
+A | Line | 20-20 | id | (cell=0,file=0,parent=0) | default
+A | Line | 20-20 | labels | {label3,label5} | Segment 18:1-36
+A | Line | 21-21 | Visib | discard | Segment 7:1-30
+A | Line | 21-21 | heading | null | default
+A | Line | 21-21 | id | (cell=0,file=0,parent=0) | default
+A | Line | 21-21 | labels | {label3,label5} | Segment 18:1-36
+A | Line | 22-22 | Visib | discard | Segment 7:1-30
+A | Line | 22-22 | heading | null | default
+A | Line | 22-22 | id | (cell=0,file=0,parent=0) | default
+A | Line | 22-22 | labels | {label3,label5} | Segment 18:1-36
+A | Line | 23-23 | Visib | discard | Segment 7:1-30
+A | Line | 23-23 | heading | null | default
+A | Line | 23-23 | id | (cell=0,file=0,parent=0) | default
+A | Line | 23-23 | labels | {label3,label5} | Segment 18:1-36
+A | Line | 24-24 | Visib | discard | Segment 7:1-30
+A | Line | 24-24 | heading | null | default
+A | Line | 24-24 | id | (cell=0,file=0,parent=0) | default
+A | Line | 24-24 | labels | {label3,label5} | Segment 18:1-36
+A | Line | 25-25 | Visib | discard | Segment 7:1-30
+A | Line | 25-25 | heading | null | default
+A | Line | 25-25 | id | (cell=0,file=0,parent=0) | default
+A | Line | 25-25 | labels | {label3,label5} | Segment 18:1-36
+A | Line | 26-26 | Visib | discard | Segment 7:1-30
+A | Line | 26-26 | heading | null | default
+A | Line | 26-26 | id | (cell=0,file=0,parent=0) | default
+A | Line | 26-26 | labels | {label3,label5} | Segment 18:1-36
+A | Line | 27-27 | Visib | discard | Segment 7:1-30
+A | Line | 27-27 | heading | null | default
+A | Line | 27-27 | id | (cell=0,file=0,parent=0) | default
+A | Line | 27-27 | labels | {label3,label5} | Segment 18:1-36
+A | Line | 28-28 | Visib | discard | Segment 7:1-30
+A | Line | 28-28 | heading | null | default
+A | Line | 28-28 | id | (cell=0,file=0,parent=0) | default
+A | Line | 28-28 | labels | {label3,label5} | Segment 18:1-36
+A | Line | 29-29 | Visib | discard | Segment 7:1-30
+A | Line | 29-29 | heading | null | default
+A | Line | 29-29 | id | (cell=0,file=0,parent=0) | default
+A | Line | 29-29 | labels | {label3,label5} | Segment 18:1-36
+A | Line | 3-3 | Visib | show | default
+A | Line | 3-3 | heading | null | default
+A | Line | 3-3 | id | (cell=0,file=0,parent=0) | default
+A | Line | 3-3 | labels | {} | default
+A | Line | 30-30 | Visib | discard | Segment 7:1-30
+A | Line | 30-30 | heading | null | default
+A | Line | 30-30 | id | (cell=0,file=0,parent=0) | default
+A | Line | 30-30 | labels | {label3,label5} | Segment 18:1-36
+A | Line | 31-31 | Visib | discard | Segment 7:1-30
+A | Line | 31-31 | heading | null | default
+A | Line | 31-31 | id | (cell=0,file=0,parent=0) | default
+A | Line | 31-31 | labels | {label3,label5} | Segment 18:1-36
+A | Line | 32-32 | Visib | discard | Segment 7:1-30
+A | Line | 32-32 | heading | null | default
+A | Line | 32-32 | id | (cell=0,file=0,parent=0) | default
+A | Line | 32-32 | labels | {label3,label5} | Segment 18:1-36
+A | Line | 33-33 | Visib | show | default
+A | Line | 33-33 | heading | null | default
+A | Line | 33-33 | id | (cell=0,file=0,parent=0) | default
+A | Line | 33-33 | labels | {label3,label4,label5} | Segment 18:1-36
+A | Line | 34-34 | Visib | show | default
+A | Line | 34-34 | heading | null | default
+A | Line | 34-34 | id | (cell=0,file=0,parent=0) | default
+A | Line | 34-34 | labels | {label3,label4,label5} | Segment 18:1-36
+A | Line | 35-35 | Visib | hide | Segment 19:1-17
+A | Line | 35-35 | heading | null | default
+A | Line | 35-35 | id | (cell=0,file=0,parent=0) | default
+A | Line | 35-35 | labels | {label1,label3,label4,label5} | Block 6-10
+A | Line | 36-36 | Visib | hide | Segment 19:1-17
+A | Line | 36-36 | heading | null | default
+A | Line | 36-36 | id | (cell=0,file=0,parent=0) | default
+A | Line | 36-36 | labels | {label1,label3,label4,label5} | Block 6-10
+A | Line | 37-37 | Visib | hide | Segment 19:1-17
+A | Line | 37-37 | heading | null | default
+A | Line | 37-37 | id | (cell=0,file=0,parent=0) | default
+A | Line | 37-37 | labels | {label1,label3,label4,label5} | Block 6-10
+A | Line | 38-38 | Visib | hide | Segment 19:1-17
+A | Line | 38-38 | heading | null | default
+A | Line | 38-38 | id | (cell=0,file=0,parent=0) | default
+A | Line | 38-38 | labels | {label1,label3,label4,label5} | Block 6-10
+A | Line | 39-39 | Visib | discard | Segment 34:1-29
+A | Line | 39-39 | heading | null | default
+A | Line | 39-39 | id | (cell=0,file=0,parent=0) | default
+A | Line | 39-39 | labels | {label1,label3,label4,label5} | Block 6-10
+A | Line | 4-4 | Visib | show | default
+A | Line | 4-4 | heading | null | default
+A | Line | 4-4 | id | (cell=0,file=0,parent=0) | default
+A | Line | 4-4 | labels | {} | default
+A | Line | 40-40 | Visib | hide | Segment 19:1-17
+A | Line | 40-40 | heading | null | default
+A | Line | 40-40 | id | (cell=0,file=0,parent=0) | default
+A | Line | 40-40 | labels | {label1,label3,label4,label5} | Block 6-10
+A | Line | 41-41 | Visib | hide | Segment 19:1-17
+A | Line | 41-41 | heading | null | default
+A | Line | 41-41 | id | (cell=0,file=0,parent=0) | default
+A | Line | 41-41 | labels | {label1,label3,label4,label5} | Block 6-10
+A | Line | 42-42 | Visib | hide | Segment 19:1-17
+A | Line | 42-42 | heading | null | default
+A | Line | 42-42 | id | (cell=0,file=0,parent=0) | default
+A | Line | 42-42 | labels | {label1,label3,label4,label5} | Block 6-10
+A | Line | 43-43 | Visib | hide | Segment 19:1-17
+A | Line | 43-43 | heading | null | default
+A | Line | 43-43 | id | (cell=0,file=0,parent=0) | default
+A | Line | 43-43 | labels | {label1,label3,label4,label5} | Block 6-10
+A | Line | 44-44 | Visib | hide | Segment 19:1-17
+A | Line | 44-44 | heading | null | default
+A | Line | 44-44 | id | (cell=0,file=0,parent=0) | default
+A | Line | 44-44 | labels | {label1,label3,label4,label5} | Block 6-10
+A | Line | 45-45 | Visib | hide | Segment 19:1-17
+A | Line | 45-45 | heading | null | default
+A | Line | 45-45 | id | (cell=0,file=0,parent=0) | default
+A | Line | 45-45 | labels | {label1,label3,label4,label5} | Block 6-10
+A | Line | 46-46 | Visib | hide | Segment 19:1-17
+A | Line | 46-46 | heading | null | default
+A | Line | 46-46 | id | (cell=0,file=0,parent=0) | default
+A | Line | 46-46 | labels | {label1,label3,label4,label5} | Block 6-10
+A | Line | 47-47 | Visib | hide | Segment 19:1-17
+A | Line | 47-47 | heading | null | default
+A | Line | 47-47 | id | (cell=0,file=0,parent=0) | default
+A | Line | 47-47 | labels | {label1,label3,label4,label5} | Block 6-10
+A | Line | 48-48 | Visib | hide | Segment 19:1-17
+A | Line | 48-48 | heading | null | default
+A | Line | 48-48 | id | (cell=0,file=0,parent=0) | default
+A | Line | 48-48 | labels | {label1,label3,label4,label5} | Block 6-10
+A | Line | 49-49 | Visib | hide | Segment 19:1-17
+A | Line | 49-49 | heading | null | default
+A | Line | 49-49 | id | (cell=0,file=0,parent=0) | default
+A | Line | 49-49 | labels | {label1,label3,label4,label5} | Block 6-10
+A | Line | 5-5 | Visib | show | default
+A | Line | 5-5 | heading | null | default
+A | Line | 5-5 | id | (cell=0,file=0,parent=0) | default
+A | Line | 5-5 | labels | {} | default
+A | Line | 50-50 | Visib | discard | Segment 7:1-30
+A | Line | 50-50 | heading | null | default
+A | Line | 50-50 | id | (cell=0,file=0,parent=0) | default
+A | Line | 50-50 | labels | {label2} | Segment 51:1-12
+A | Line | 51-51 | Visib | discard | Segment 7:1-30
+A | Line | 51-51 | heading | null | default
+A | Line | 51-51 | id | (cell=0,file=0,parent=0) | default
+A | Line | 51-51 | labels | {label2} | Line 51-51
+A | Line | 52-52 | Visib | discard | Segment 7:1-30
+A | Line | 52-52 | heading | null | default
+A | Line | 52-52 | id | (cell=0,file=0,parent=0) | default
+A | Line | 52-52 | labels | {label2} | Segment 51:1-12
+A | Line | 53-53 | Visib | discard | Segment 7:1-30
+A | Line | 53-53 | heading | null | default
+A | Line | 53-53 | id | (cell=0,file=0,parent=0) | default
+A | Line | 53-53 | labels | {label2} | Segment 51:1-12
+A | Line | 54-54 | Visib | discard | Segment 7:1-30
+A | Line | 54-54 | heading | null | default
+A | Line | 54-54 | id | (cell=0,file=0,parent=0) | default
+A | Line | 54-54 | labels | {label2} | Segment 51:1-12
+A | Line | 55-55 | Visib | discard | Segment 7:1-30
+A | Line | 55-55 | heading | null | default
+A | Line | 55-55 | id | (cell=0,file=0,parent=0) | default
+A | Line | 55-55 | labels | {label2} | Segment 51:1-12
+A | Line | 56-56 | Visib | discard | Segment 7:1-30
+A | Line | 56-56 | heading | null | default
+A | Line | 56-56 | id | (cell=0,file=0,parent=0) | default
+A | Line | 56-56 | labels | {label2} | Segment 51:1-12
+A | Line | 57-57 | Visib | discard | Segment 7:1-30
+A | Line | 57-57 | heading | null | default
+A | Line | 57-57 | id | (cell=0,file=0,parent=0) | default
+A | Line | 57-57 | labels | {label2} | Segment 51:1-12
+A | Line | 58-58 | Visib | discard | Segment 7:1-30
+A | Line | 58-58 | heading | null | default
+A | Line | 58-58 | id | (cell=0,file=0,parent=0) | default
+A | Line | 58-58 | labels | {label2} | Segment 51:1-12
+A | Line | 59-59 | Visib | discard | Segment 7:1-30
+A | Line | 59-59 | heading | null | default
+A | Line | 59-59 | id | (cell=0,file=0,parent=0) | default
+A | Line | 59-59 | labels | {label2} | Segment 51:1-12
+A | Line | 6-6 | Visib | show | default
+A | Line | 6-6 | heading | null | default
+A | Line | 6-6 | id | (cell=0,file=0,parent=0) | default
+A | Line | 6-6 | labels | {} | default
+A | Line | 60-60 | Visib | discard | Segment 7:1-30
+A | Line | 60-60 | heading | null | default
+A | Line | 60-60 | id | (cell=0,file=0,parent=0) | default
+A | Line | 60-60 | labels | {label2} | Segment 51:1-12
+A | Line | 61-61 | Visib | discard | Segment 7:1-30
+A | Line | 61-61 | heading | null | default
+A | Line | 61-61 | id | (cell=0,file=0,parent=0) | default
+A | Line | 61-61 | labels | {label2} | Segment 51:1-12
+A | Line | 62-62 | Visib | discard | Segment 7:1-30
+A | Line | 62-62 | heading | null | default
+A | Line | 62-62 | id | (cell=0,file=0,parent=0) | default
+A | Line | 62-62 | labels | {label2} | Segment 51:1-12
+A | Line | 63-63 | Visib | discard | Segment 7:1-30
+A | Line | 63-63 | heading | null | default
+A | Line | 63-63 | id | (cell=0,file=0,parent=0) | default
+A | Line | 63-63 | labels | {label2} | Segment 51:1-12
+A | Line | 7-7 | Visib | show | default
+A | Line | 7-7 | heading | null | default
+A | Line | 7-7 | id | (cell=0,file=0,parent=0) | default
+A | Line | 7-7 | labels | {} | default
+A | Line | 8-8 | Visib | show | default
+A | Line | 8-8 | heading | null | default
+A | Line | 8-8 | id | (cell=0,file=0,parent=0) | default
+A | Line | 8-8 | labels | {} | default
+A | Line | 9-9 | Visib | show | default
+A | Line | 9-9 | heading | null | default
+A | Line | 9-9 | id | (cell=0,file=0,parent=0) | default
+A | Line | 9-9 | labels | {} | default
+A | Segment | 10:1-22 | Visib | show | default
+A | Segment | 10:1-22 | heading | null | default
+A | Segment | 10:1-22 | id | (cell=0,file=0,parent=0) | default
+A | Segment | 10:1-22 | labels | {} | default
+A | Segment | 10:23-71 | Visib | show | default
+A | Segment | 10:23-71 | heading | null | default
+A | Segment | 10:23-71 | id | (cell=0,file=0,parent=0) | default
+A | Segment | 10:23-71 | labels | {} | default
+A | Segment | 12:1-57 | Visib | show | default
+A | Segment | 12:1-57 | heading | null | default
+A | Segment | 12:1-57 | id | (cell=0,file=0,parent=0) | default
+A | Segment | 12:1-57 | labels | {} | default
+A | Segment | 12:58-77 | Visib | show | default
+A | Segment | 12:58-77 | heading | null | default
+A | Segment | 12:58-77 | id | (cell=0,file=0,parent=0) | default
+A | Segment | 12:58-77 | labels | {} | default
+A | Segment | 14:1-56 | Visib | hide | Line 14-14
+A | Segment | 14:1-56 | heading | null | default
+A | Segment | 14:1-56 | id | (cell=0,file=0,parent=0) | default
+A | Segment | 14:1-56 | labels | {} | default
+A | Segment | 14:57-63 | Visib | hide | Line 14-14
+A | Segment | 14:57-63 | heading | null | default
+A | Segment | 14:57-63 | id | (cell=0,file=0,parent=0) | default
+A | Segment | 14:57-63 | labels | {} | default
+A | Segment | 15:1-60 | Visib | discard | Line 15-15
+A | Segment | 15:1-60 | heading | null | default
+A | Segment | 15:1-60 | id | (cell=0,file=0,parent=0) | default
+A | Segment | 15:1-60 | labels | {} | default
+A | Segment | 15:61-70 | Visib | discard | Line 15-15
+A | Segment | 15:61-70 | heading | null | default
+A | Segment | 15:61-70 | id | (cell=0,file=0,parent=0) | default
+A | Segment | 15:61-70 | labels | {} | default
+A | Segment | 16:1-60 | Visib | show | default
+A | Segment | 16:1-60 | heading | null | default
+A | Segment | 16:1-60 | id | (cell=0,file=0,parent=0) | default
+A | Segment | 16:1-60 | labels | {} | default
+A | Segment | 16:61-80 | Visib | show | default
+A | Segment | 16:61-80 | heading | null | default
+A | Segment | 16:61-80 | id | (cell=0,file=0,parent=0) | default
+A | Segment | 16:61-80 | labels | {} | default
+A | Segment | 18:1-36 | Visib | show | default
+A | Segment | 18:1-36 | heading | null | default
+A | Segment | 18:1-36 | id | (cell=0,file=0,parent=0) | default
+A | Segment | 18:1-36 | labels | {label3,label5} | Segment 18:1-36
+A | Segment | 18:37-56 | Visib | show | default
+A | Segment | 18:37-56 | heading | null | default
+A | Segment | 18:37-56 | id | (cell=0,file=0,parent=0) | default
+A | Segment | 18:37-56 | labels | {label3,label5} | Segment 18:1-36
+A | Segment | 19:1-17 | Visib | show | default
+A | Segment | 19:1-17 | heading | null | default
+A | Segment | 19:1-17 | id | (cell=0,file=0,parent=0) | default
+A | Segment | 19:1-17 | labels | {label3,label5} | Segment 18:1-36
+A | Segment | 19:18-75 | Visib | show | default
+A | Segment | 19:18-75 | heading | null | default
+A | Segment | 19:18-75 | id | (cell=0,file=0,parent=0) | default
+A | Segment | 19:18-75 | labels | {label3,label5} | Segment 18:1-36
+A | Segment | 20:1-12 | Visib | discard | Segment 7:1-30
+A | Segment | 20:1-12 | heading | null | default
+A | Segment | 20:1-12 | id | (cell=0,file=0,parent=0) | default
+A | Segment | 20:1-12 | labels | {label3,label5} | Segment 18:1-36
+A | Segment | 20:13-69 | Visib | discard | Segment 7:1-30
+A | Segment | 20:13-69 | heading | null | default
+A | Segment | 20:13-69 | id | (cell=0,file=0,parent=0) | default
+A | Segment | 20:13-69 | labels | {label3,label5} | Segment 18:1-36
+A | Segment | 20:70-89 | Visib | discard | Segment 7:1-30
+A | Segment | 20:70-89 | heading | null | default
+A | Segment | 20:70-89 | id | (cell=0,file=0,parent=0) | default
+A | Segment | 20:70-89 | labels | {label3,label5} | Segment 18:1-36
+A | Segment | 28:1-41 | Visib | discard | Segment 7:1-30
+A | Segment | 28:1-41 | heading | null | default
+A | Segment | 28:1-41 | id | (cell=0,file=0,parent=0) | default
+A | Segment | 28:1-41 | labels | {label3,label5} | Segment 18:1-36
+A | Segment | 28:42-61 | Visib | discard | Segment 7:1-30
+A | Segment | 28:42-61 | heading | null | default
+A | Segment | 28:42-61 | id | (cell=0,file=0,parent=0) | default
+A | Segment | 28:42-61 | labels | {label3,label5} | Segment 18:1-36
+A | Segment | 34:1-29 | Visib | show | default
+A | Segment | 34:1-29 | heading | null | default
+A | Segment | 34:1-29 | id | (cell=0,file=0,parent=0) | default
+A | Segment | 34:1-29 | labels | {label3,label4,label5} | Segment 18:1-36
+A | Segment | 34:30-79 | Visib | show | default
+A | Segment | 34:30-79 | heading | null | default
+A | Segment | 34:30-79 | id | (cell=0,file=0,parent=0) | default
+A | Segment | 34:30-79 | labels | {label3,label4,label5} | Segment 18:1-36
+A | Segment | 35:1-36 | Visib | hide | Segment 19:1-17
+A | Segment | 35:1-36 | heading | null | default
+A | Segment | 35:1-36 | id | (cell=0,file=0,parent=0) | default
+A | Segment | 35:1-36 | labels | {label1,label3,label4,label5} | Block 6-10
+A | Segment | 35:37-56 | Visib | hide | Segment 19:1-17
+A | Segment | 35:37-56 | heading | null | default
+A | Segment | 35:37-56 | id | (cell=0,file=0,parent=0) | default
+A | Segment | 35:37-56 | labels | {label1,label3,label4,label5} | Block 6-10
+A | Segment | 39:1-65 | Visib | discard | Segment 34:1-29
+A | Segment | 39:1-65 | heading | null | default
+A | Segment | 39:1-65 | id | (cell=0,file=0,parent=0) | default
+A | Segment | 39:1-65 | labels | {label1,label3,label4,label5} | Block 6-10
+A | Segment | 39:66-67 | Visib | discard | Segment 34:1-29
+A | Segment | 39:66-67 | heading | null | default
+A | Segment | 39:66-67 | id | (cell=0,file=0,parent=0) | default
+A | Segment | 39:66-67 | labels | {label1,label3,label4,label5} | Block 6-10
+A | Segment | 51:1-12 | Visib | discard | Segment 7:1-30
+A | Segment | 51:1-12 | heading | null | default
+A | Segment | 51:1-12 | id | (cell=0,file=0,parent=0) | default
+A | Segment | 51:1-12 | labels | {label2} | Segment 51:1-12
+A | Segment | 51:13-69 | Visib | discard | Segment 7:1-30
+A | Segment | 51:13-69 | heading | null | default
+A | Segment | 51:13-69 | id | (cell=0,file=0,parent=0) | default
+A | Segment | 51:13-69 | labels | {label2} | Segment 51:1-12
+A | Segment | 7:1-30 | Visib | show | default
+A | Segment | 7:1-30 | heading | null | default
+A | Segment | 7:1-30 | id | (cell=0,file=0,parent=0) | default
+A | Segment | 7:1-30 | labels | {} | default
+A | Segment | 7:31-73 | Visib | show | default
+A | Segment | 7:31-73 | heading | null | default
+A | Segment | 7:31-73 | id | (cell=0,file=0,parent=0) | default
+A | Segment | 7:31-73 | labels | {} | default
+C | Block | 1-5 | File 1-63 | 1 | Line 1-1;Line 2-2;Line 3-3;Line 4-4;Line 5-5 | Text | component.comment,component.containsText,component.isText
+C | Block | 11-16 | File 1-63 | 3 | Line 11-11;Line 12-12;Line 13-13;Line 14-14;Line 15-15;Line 16-16 | Text | component.containsMeta,component.containsText,component.isText
+C | Block | 17-19 | File 1-63 | 4 | Line 17-17;Line 18-18;Line 19-19 | Meta | component.attachedToMeta,component.containsMeta,component.depth2,component.isMeta
+C | Block | 20-32 | File 1-63 | 5 | Line 20-20;Line 21-21;Line 22-22;Line 23-23;Line 24-24;Line 25-25;Line 26-26;Line 27-27;Line 28-28;Line 29-29;Line 30-30;Line 31-31;Line 32-32 | Code | component.attachedToMeta,component.containsCode,component.isCode
+C | Block | 33-34 | File 1-63 | 6 | Line 33-33;Line 34-34 | Meta | component.attachedToMeta,component.containsMeta,component.depth3,component.isMeta
+C | Block | 35-49 | File 1-63 | 7 | Line 35-35;Line 36-36;Line 37-37;Line 38-38;Line 39-39;Line 40-40;Line 41-41;Line 42-42;Line 43-43;Line 44-44;Line 45-45;Line 46-46;Line 47-47;Line 48-48;Line 49-49 | Text | component.attachedToMeta,component.containsMeta,component.containsText,component.isText
+C | Block | 50-51 | File 1-63 | 8 | Line 50-50;Line 51-51 | Meta | component.attachedToMeta,component.containsMeta,component.depth2,component.isMeta
+C | Block | 52-63 | File 1-63 | 9 | Line 52-52;Line 53-53;Line 54-54;Line 55-55;Line 56-56;Line 57-57;Line 58-58;Line 59-59;Line 60-60;Line 61-61;Line 62-62;Line 63-63 | Text | component.attachedToMeta,component.containsText,component.isText
+C | Block | 6-10 | File 1-63 | 2 | Line 6-6;Line 7-7;Line 8-8;Line 9-9;Line 10-10 | Meta | component.attachedToMeta,component.containsMeta,component.depth1,component.isMeta
+C | File | 1-63 | - | - | Block 1-5;Block 6-10;Block 11-16;Block 17-19;Block 20-32;Block 33-34;Block 35-49;Block 50-51;Block 52-63 | - | component.containsCode,component.containsMeta,component.containsText
+C | Line | 1-1 | Block 1-5 | 1 | - | Text | component.comment,component.containsText,component.includeInOutFile,component.isText
+C | Line | 10-10 | Block 6-10 | 5 | Segment 10:1-22;Segment 10:23-71 | Meta | component.containsMeta,component.depth1,component.ignoreMetaContent,component.isMeta
+C | Line | 11-11 | Block 11-16 | 1 | - | Text | component.containsText,component.includeInOutFile,component.isEmpty,component.isText
+C | Line | 12-12 | Block 11-16 | 2 | Segment 12:1-57;Segment 12:58-77 | Text | component.containsText,component.isText
+C | Line | 13-13 | Block 11-16 | 3 | - | Text | component.containsText,component.includeInOutFile,component.isText
+C | Line | 14-14 | Block 11-16 | 4 | Segment 14:1-56;Segment 14:57-63 | Text | component.containsMeta,component.containsText,component.isText
+C | Line | 15-15 | Block 11-16 | 5 | Segment 15:1-60;Segment 15:61-70 | Text | component.containsMeta,component.containsText,component.isText
+C | Line | 16-16 | Block 11-16 | 6 | Segment 16:1-60;Segment 16:61-80 | Text | component.containsText,component.isText
+C | Line | 17-17 | Block 17-19 | 1 | - | Meta | component.containsMeta,component.includeInOutFile,component.isEmpty,component.isMeta
+C | Line | 18-18 | Block 17-19 | 2 | Segment 18:1-36;Segment 18:37-56 | Meta | component.containsMeta,component.depth2,component.isMeta
+C | Line | 19-19 | Block 17-19 | 3 | Segment 19:1-17;Segment 19:18-75 | Meta | component.containsMeta,component.depth1,component.isMeta
+C | Line | 2-2 | Block 1-5 | 2 | - | Text | component.comment,component.containsText,component.includeInOutFile,component.isText
+C | Line | 20-20 | Block 20-32 | 1 | Segment 20:1-12;Segment 20:13-69;Segment 20:70-89 | Code | component.attachedToMeta,component.containsCode,component.isCode
+C | Line | 21-21 | Block 20-32 | 2 | - | Code | component.comment,component.containsCode,component.includeInOutFile,component.isCode
+C | Line | 22-22 | Block 20-32 | 3 | - | Code | component.comment,component.containsCode,component.includeInOutFile,component.isCode
+C | Line | 23-23 | Block 20-32 | 4 | - | Code | component.comment,component.containsCode,component.includeInOutFile,component.isCode
+C | Line | 24-24 | Block 20-32 | 5 | - | Code | component.comment,component.containsCode,component.includeInOutFile,component.isCode
+C | Line | 25-25 | Block 20-32 | 6 | - | Code | component.comment,component.containsCode,component.includeInOutFile,component.isCode
+C | Line | 26-26 | Block 20-32 | 7 | - | Code | component.containsCode,component.includeInOutFile,component.isCode,component.isEmpty
+C | Line | 27-27 | Block 20-32 | 8 | - | Code | component.comment,component.containsCode,component.includeInOutFile,component.isCode
+C | Line | 28-28 | Block 20-32 | 9 | Segment 28:1-41;Segment 28:42-61 | Code | component.comment,component.containsCode,component.isCode
+C | Line | 29-29 | Block 20-32 | 10 | - | Code | component.containsCode,component.includeInOutFile,component.isCode,component.isEmpty
+C | Line | 3-3 | Block 1-5 | 3 | - | Text | component.comment,component.containsText,component.includeInOutFile,component.isText
+C | Line | 30-30 | Block 20-32 | 11 | - | Code | component.containsCode,component.includeInOutFile,component.isCode
+C | Line | 31-31 | Block 20-32 | 12 | - | Code | component.containsCode,component.includeInOutFile,component.isCode
+C | Line | 32-32 | Block 20-32 | 13 | - | Code | component.comment,component.containsCode,component.includeInOutFile,component.isCode
+C | Line | 33-33 | Block 33-34 | 1 | - | Meta | component.containsMeta,component.includeInOutFile,component.isEmpty,component.isMeta
+C | Line | 34-34 | Block 33-34 | 2 | Segment 34:1-29;Segment 34:30-79 | Meta | component.containsMeta,component.depth3,component.isMeta
+C | Line | 35-35 | Block 35-49 | 1 | Segment 35:1-36;Segment 35:37-56 | Text | component.attachedToMeta,component.containsText,component.isText
+C | Line | 36-36 | Block 35-49 | 2 | - | Text | component.containsText,component.includeInOutFile,component.isText
+C | Line | 37-37 | Block 35-49 | 3 | - | Text | component.containsText,component.includeInOutFile,component.isText
+C | Line | 38-38 | Block 35-49 | 4 | - | Text | component.containsText,component.includeInOutFile,component.isText
+C | Line | 39-39 | Block 35-49 | 5 | Segment 39:1-65;Segment 39:66-67 | Text | component.containsMeta,component.containsText,component.isText
+C | Line | 4-4 | Block 1-5 | 4 | - | Text | component.comment,component.containsText,component.includeInOutFile,component.isText
+C | Line | 40-40 | Block 35-49 | 6 | - | Text | component.containsText,component.includeInOutFile,component.isEmpty,component.isText
+C | Line | 41-41 | Block 35-49 | 7 | - | Text | component.containsText,component.includeInOutFile,component.isText
+C | Line | 42-42 | Block 35-49 | 8 | - | Text | component.containsText,component.includeInOutFile,component.isText
+C | Line | 43-43 | Block 35-49 | 9 | - | Text | component.containsText,component.includeInOutFile,component.isText
+C | Line | 44-44 | Block 35-49 | 10 | - | Text | component.containsText,component.includeInOutFile,component.isText
+C | Line | 45-45 | Block 35-49 | 11 | - | Text | component.containsText,component.includeInOutFile,component.isText
+C | Line | 46-46 | Block 35-49 | 12 | - | Text | component.comment,component.containsText,component.includeInOutFile,component.isText
+C | Line | 47-47 | Block 35-49 | 13 | - | Text | component.comment,component.containsText,component.includeInOutFile,component.isText
+C | Line | 48-48 | Block 35-49 | 14 | - | Text | component.comment,component.containsText,component.includeInOutFile,component.isText
+C | Line | 49-49 | Block 35-49 | 15 | - | Text | component.comment,component.containsText,component.includeInOutFile,component.isText
+C | Line | 5-5 | Block 1-5 | 5 | - | Text | component.comment,component.containsText,component.includeInOutFile,component.isText
+C | Line | 50-50 | Block 50-51 | 1 | - | Meta | component.containsMeta,component.includeInOutFile,component.isEmpty,component.isMeta
+C | Line | 51-51 | Block 50-51 | 2 | Segment 51:1-12;Segment 51:13-69 | Meta | component.containsMeta,component.depth2,component.isMeta
+C | Line | 52-52 | Block 52-63 | 1 | - | Text | component.attachedToMeta,component.containsText,component.includeInOutFile,component.isText
+C | Line | 53-53 | Block 52-63 | 2 | - | Text | component.containsText,component.includeInOutFile,component.isText
+C | Line | 54-54 | Block 52-63 | 3 | - | Text | component.containsText,component.includeInOutFile,component.isEmpty,component.isText
+C | Line | 55-55 | Block 52-63 | 4 | - | Text | component.containsText,component.includeInOutFile,component.isText
+C | Line | 56-56 | Block 52-63 | 5 | - | Text | component.containsText,component.includeInOutFile,component.isText
+C | Line | 57-57 | Block 52-63 | 6 | - | Text | component.containsText,component.includeInOutFile,component.isEmpty,component.isText
+C | Line | 58-58 | Block 52-63 | 7 | - | Text | component.containsText,component.includeInOutFile,component.isText
+C | Line | 59-59 | Block 52-63 | 8 | - | Text | component.containsText,component.includeInOutFile,component.isText
+C | Line | 6-6 | Block 6-10 | 1 | - | Meta | component.containsMeta,component.includeInOutFile,component.isEmpty,component.isMeta
+C | Line | 60-60 | Block 52-63 | 9 | - | Text | component.containsText,component.includeInOutFile,component.isEmpty,component.isText
+C | Line | 61-61 | Block 52-63 | 10 | - | Text | component.containsText,component.includeInOutFile,component.isText
+C | Line | 62-62 | Block 52-63 | 11 | - | Text | component.containsText,component.includeInOutFile,component.isText
+C | Line | 63-63 | Block 52-63 | 12 | - | Text | component.containsText,component.includeInOutFile,component.isText
+C | Line | 7-7 | Block 6-10 | 2 | Segment 7:1-30;Segment 7:31-73 | Meta | component.containsMeta,component.depth1,component.isMeta
+C | Line | 8-8 | Block 6-10 | 3 | - | Meta | component.containsMeta,component.depth1,component.hasMetaStr,component.includeInOutFile,component.isMeta
+C | Line | 9-9 | Block 6-10 | 4 | - | Meta | component.comment,component.containsMeta,component.hasMetaStr,component.ignoreThisMeta,component.includeInOutFile,component.isMeta
+C | Segment | 10:1-22 | Line 10-10 | 1 | - | Meta | component.containsMeta,component.depth1,component.hasMetaStr,component.ignoreMetaContent,component.includeInOutFile,component.isMeta
+C | Segment | 10:23-71 | Line 10-10 | 2 | - | Meta | component.comment,component.containsMeta,component.hasMetaStr,component.ignoreThisMeta,component.includeInOutFile,component.isMeta
+C | Segment | 12:1-57 | Line 12-12 | 1 | - | Text | component.containsText,component.includeInOutFile,component.isText
+C | Segment | 12:58-77 | Line 12-12 | 2 | - | Text | component.comment,component.containsText,component.includeInOutFile,component.isText
+C | Segment | 14:1-56 | Line 14-14 | 1 | - | Text | component.containsText,component.includeInOutFile,component.isText
+C | Segment | 14:57-63 | Line 14-14 | 2 | - | Meta | component.containsMeta,component.depth1,component.hasMetaStr,component.includeInOutFile,component.isMeta
+C | Segment | 15:1-60 | Line 15-15 | 1 | - | Text | component.containsText,component.includeInOutFile,component.isText
+C | Segment | 15:61-70 | Line 15-15 | 2 | - | Meta | component.containsMeta,component.depth1,component.hasMetaStr,component.includeInOutFile,component.isMeta
+C | Segment | 16:1-60 | Line 16-16 | 1 | - | Text | component.containsText,component.includeInOutFile,component.isText
+C | Segment | 16:61-80 | Line 16-16 | 2 | - | Text | component.comment,component.containsText,component.includeInOutFile,component.isText
+C | Segment | 18:1-36 | Line 18-18 | 1 | - | Meta | component.containsMeta,component.depth2,component.hasMetaStr,component.includeInOutFile,component.isMeta
+C | Segment | 18:37-56 | Line 18-18 | 2 | - | Meta | component.comment,component.containsMeta,component.hasMetaStr,component.ignoreThisMeta,component.includeInOutFile,component.isMeta
+C | Segment | 19:1-17 | Line 19-19 | 1 | - | Meta | component.containsMeta,component.depth1,component.hasMetaStr,component.includeInOutFile,component.isMeta
+C | Segment | 19:18-75 | Line 19-19 | 2 | - | Meta | component.comment,component.containsMeta,component.hasMetaStr,component.ignoreThisMeta,component.includeInOutFile,component.isMeta
+C | Segment | 20:1-12 | Line 20-20 | 1 | - | Code | component.attachedToMeta,component.containsCode,component.includeInOutFile,component.isCode
+C | Segment | 20:13-69 | Line 20-20 | 2 | - | Code | component.comment,component.containsCode,component.includeInOutFile,component.isCode
+C | Segment | 20:70-89 | Line 20-20 | 3 | - | Code | component.comment,component.containsCode,component.includeInOutFile,component.isCode
+C | Segment | 28:1-41 | Line 28-28 | 1 | - | Code | component.comment,component.containsCode,component.includeInOutFile,component.isCode
+C | Segment | 28:42-61 | Line 28-28 | 2 | - | Code | component.comment,component.containsCode,component.includeInOutFile,component.isCode
+C | Segment | 34:1-29 | Line 34-34 | 1 | - | Meta | component.containsMeta,component.depth3,component.hasMetaStr,component.includeInOutFile,component.isMeta
+C | Segment | 34:30-79 | Line 34-34 | 2 | - | Meta | component.comment,component.containsMeta,component.hasMetaStr,component.ignoreThisMeta,component.includeInOutFile,component.isMeta
+C | Segment | 35:1-36 | Line 35-35 | 1 | - | Text | component.attachedToMeta,component.containsText,component.includeInOutFile,component.isText
+C | Segment | 35:37-56 | Line 35-35 | 2 | - | Text | component.comment,component.containsText,component.includeInOutFile,component.isText
+C | Segment | 39:1-65 | Line 39-39 | 1 | - | Text | component.containsText,component.includeInOutFile,component.isText
+C | Segment | 39:66-67 | Line 39-39 | 2 | - | Meta | component.containsMeta,component.depth1,component.hasMetaStr,component.includeInOutFile,component.isMeta
+C | Segment | 51:1-12 | Line 51-51 | 1 | - | Meta | component.containsMeta,component.depth2,component.hasMetaStr,component.includeInOutFile,component.isMeta
+C | Segment | 51:13-69 | Line 51-51 | 2 | - | Meta | component.comment,component.containsMeta,component.hasMetaStr,component.ignoreThisMeta,component.includeInOutFile,component.isMeta
+C | Segment | 7:1-30 | Line 7-7 | 1 | - | Meta | component.containsMeta,component.depth1,component.hasMetaStr,component.includeInOutFile,component.isMeta
+C | Segment | 7:31-73 | Line 7-7 | 2 | - | Meta | component.comment,component.containsMeta,component.hasMetaStr,component.ignoreThisMeta,component.includeInOutFile,component.isMeta

@@ -1,0 +1,117 @@
+# GoMeta comparison form v1 | feature_triple_tilde | produced by GoMeta v0.4 at b28dc93b | 24 Components | 92 answer lines
+A | Block | 1-14 | Visib | show | default
+A | Block | 1-14 | heading | null | default
+A | Block | 1-14 | id | (cell=0,file=0,parent=0) | default
+A | Block | 1-14 | labels | {} | default
+A | Block | 15-15 | Visib | hide | Block 15-15
+A | Block | 15-15 | heading | null | default
+A | Block | 15-15 | id | (cell=0,file=0,parent=0) | default
+A | Block | 15-15 | labels | {label1} | Block 15-15
+A | Block | 16-16 | Visib | hide | Block 15-15
+A | Block | 16-16 | heading | null | default
+A | Block | 16-16 | id | (cell=0,file=0,parent=0) | default
+A | Block | 16-16 | labels | {label1} | Block 15-15
+A | Block | 17-17 | Visib | hide | Block 15-15
+A | Block | 17-17 | heading | null | default
+A | Block | 17-17 | id | (cell=0,file=0,parent=0) | default
+A | Block | 17-17 | labels | {label1,label2} | Block 15-15
+A | Block | 18-18 | Visib | hide | Block 15-15
+A | Block | 18-18 | heading | null | default
+A | Block | 18-18 | id | (cell=0,file=0,parent=0) | default
+A | Block | 18-18 | labels | {label1,label2} | Block 15-15
+A | Line | 1-1 | Visib | show | default
+A | Line | 1-1 | heading | null | default
+A | Line | 1-1 | id | (cell=0,file=0,parent=0) | default
+A | Line | 1-1 | labels | {} | default
+A | Line | 10-10 | Visib | show | default
+A | Line | 10-10 | heading | null | default
+A | Line | 10-10 | id | (cell=0,file=0,parent=0) | default
+A | Line | 10-10 | labels | {} | default
+A | Line | 11-11 | Visib | show | default
+A | Line | 11-11 | heading | null | default
+A | Line | 11-11 | id | (cell=0,file=0,parent=0) | default
+A | Line | 11-11 | labels | {} | default
+A | Line | 12-12 | Visib | show | default
+A | Line | 12-12 | heading | null | default
+A | Line | 12-12 | id | (cell=0,file=0,parent=0) | default
+A | Line | 12-12 | labels | {} | default
+A | Line | 13-13 | Visib | show | default
+A | Line | 13-13 | heading | null | default
+A | Line | 13-13 | id | (cell=0,file=0,parent=0) | default
+A | Line | 13-13 | labels | {} | default
+A | Line | 14-14 | Visib | show | default
+A | Line | 14-14 | heading | null | default
+A | Line | 14-14 | id | (cell=0,file=0,parent=0) | default
+A | Line | 14-14 | labels | {} | default
+A | Line | 15-15 | Visib | hide | Block 15-15
+A | Line | 15-15 | heading | null | default
+A | Line | 15-15 | id | (cell=0,file=0,parent=0) | default
+A | Line | 15-15 | labels | {label1} | Block 15-15
+A | Line | 16-16 | Visib | hide | Block 15-15
+A | Line | 16-16 | heading | null | default
+A | Line | 16-16 | id | (cell=0,file=0,parent=0) | default
+A | Line | 16-16 | labels | {label1} | Block 15-15
+A | Line | 17-17 | Visib | hide | Block 15-15
+A | Line | 17-17 | heading | null | default
+A | Line | 17-17 | id | (cell=0,file=0,parent=0) | default
+A | Line | 17-17 | labels | {label1,label2} | Block 15-15
+A | Line | 18-18 | Visib | hide | Block 15-15
+A | Line | 18-18 | heading | null | default
+A | Line | 18-18 | id | (cell=0,file=0,parent=0) | default
+A | Line | 18-18 | labels | {label1,label2} | Block 15-15
+A | Line | 2-2 | Visib | show | default
+A | Line | 2-2 | heading | null | default
+A | Line | 2-2 | id | (cell=0,file=0,parent=0) | default
+A | Line | 2-2 | labels | {} | default
+A | Line | 3-3 | Visib | show | default
+A | Line | 3-3 | heading | null | default
+A | Line | 3-3 | id | (cell=0,file=0,parent=0) | default
+A | Line | 3-3 | labels | {} | default
+A | Line | 4-4 | Visib | show | default
+A | Line | 4-4 | heading | null | default
+A | Line | 4-4 | id | (cell=0,file=0,parent=0) | default
+A | Line | 4-4 | labels | {} | default
+A | Line | 5-5 | Visib | show | default
+A | Line | 5-5 | heading | null | default
+A | Line | 5-5 | id | (cell=0,file=0,parent=0) | default
+A | Line | 5-5 | labels | {} | default
+A | Line | 6-6 | Visib | show | default
+A | Line | 6-6 | heading | null | default
+A | Line | 6-6 | id | (cell=0,file=0,parent=0) | default
+A | Line | 6-6 | labels | {} | default
+A | Line | 7-7 | Visib | show | default
+A | Line | 7-7 | heading | null | default
+A | Line | 7-7 | id | (cell=0,file=0,parent=0) | default
+A | Line | 7-7 | labels | {} | default
+A | Line | 8-8 | Visib | show | default
+A | Line | 8-8 | heading | null | default
+A | Line | 8-8 | id | (cell=0,file=0,parent=0) | default
+A | Line | 8-8 | labels | {} | default
+A | Line | 9-9 | Visib | show | default
+A | Line | 9-9 | heading | null | default
+A | Line | 9-9 | id | (cell=0,file=0,parent=0) | default
+A | Line | 9-9 | labels | {} | default
+C | Block | 1-14 | File 1-18 | 1 | Line 1-1;Line 2-2;Line 3-3;Line 4-4;Line 5-5;Line 6-6;Line 7-7;Line 8-8;Line 9-9;Line 10-10;Line 11-11;Line 12-12;Line 13-13;Line 14-14 | Text | component.comment,component.containsText,component.isText
+C | Block | 15-15 | File 1-18 | 2 | Line 15-15 | Meta | component.attachedToMeta,component.containsMeta,component.depth2,component.isMeta
+C | Block | 16-16 | File 1-18 | 3 | Line 16-16 | Text | component.attachedToMeta,component.containsText,component.isText
+C | Block | 17-17 | File 1-18 | 4 | Line 17-17 | Meta | component.attachedToMeta,component.containsMeta,component.depth3,component.isMeta
+C | Block | 18-18 | File 1-18 | 5 | Line 18-18 | Text | component.attachedToMeta,component.containsText,component.isText
+C | File | 1-18 | - | - | Block 1-14;Block 15-15;Block 16-16;Block 17-17;Block 18-18 | - | component.containsMeta,component.containsText
+C | Line | 1-1 | Block 1-14 | 1 | - | Text | component.comment,component.containsText,component.includeInOutFile,component.isText
+C | Line | 10-10 | Block 1-14 | 10 | - | Text | component.comment,component.containsText,component.includeInOutFile,component.isText
+C | Line | 11-11 | Block 1-14 | 11 | - | Text | component.comment,component.containsText,component.includeInOutFile,component.isText
+C | Line | 12-12 | Block 1-14 | 12 | - | Text | component.comment,component.containsText,component.includeInOutFile,component.isText
+C | Line | 13-13 | Block 1-14 | 13 | - | Text | component.comment,component.containsText,component.includeInOutFile,component.isText
+C | Line | 14-14 | Block 1-14 | 14 | - | Text | component.comment,component.containsText,component.includeInOutFile,component.isText
+C | Line | 15-15 | Block 15-15 | 1 | - | Meta | component.containsMeta,component.depth2,component.hasMetaStr,component.includeInOutFile,component.isMeta
+C | Line | 16-16 | Block 16-16 | 1 | - | Text | component.attachedToMeta,component.containsText,component.includeInOutFile,component.isText
+C | Line | 17-17 | Block 17-17 | 1 | - | Meta | component.attachedToMeta,component.containsMeta,component.depth3,component.hasMetaStr,component.includeInOutFile,component.isMeta
+C | Line | 18-18 | Block 18-18 | 1 | - | Text | component.attachedToMeta,component.containsText,component.includeInOutFile,component.isText
+C | Line | 2-2 | Block 1-14 | 2 | - | Text | component.comment,component.containsText,component.includeInOutFile,component.isText
+C | Line | 3-3 | Block 1-14 | 3 | - | Text | component.comment,component.containsText,component.includeInOutFile,component.isText
+C | Line | 4-4 | Block 1-14 | 4 | - | Text | component.comment,component.containsText,component.includeInOutFile,component.isText
+C | Line | 5-5 | Block 1-14 | 5 | - | Text | component.comment,component.containsText,component.includeInOutFile,component.isText
+C | Line | 6-6 | Block 1-14 | 6 | - | Text | component.comment,component.containsText,component.includeInOutFile,component.isText
+C | Line | 7-7 | Block 1-14 | 7 | - | Text | component.comment,component.containsText,component.includeInOutFile,component.isText
+C | Line | 8-8 | Block 1-14 | 8 | - | Text | component.comment,component.containsText,component.includeInOutFile,component.isText
+C | Line | 9-9 | Block 1-14 | 9 | - | Text | component.comment,component.containsText,component.includeInOutFile,component.isText

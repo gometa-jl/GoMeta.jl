@@ -1,0 +1,77 @@
+# GoMeta comparison form v1 | heading_quoted_first | produced by GoMeta v0.4 at b28dc93b | 16 Components | 60 answer lines
+A | Block | 1-1 | Visib | show | default
+A | Block | 1-1 | heading | "Document title" | Block 1-1
+A | Block | 1-1 | id | (cell=0,file=0,parent=0) | default
+A | Block | 1-1 | labels | {} | default
+A | Block | 2-2 | Visib | show | default
+A | Block | 2-2 | heading | null | default
+A | Block | 2-2 | id | (cell=0,file=0,parent=0) | default
+A | Block | 2-2 | labels | {} | default
+A | Block | 3-3 | Visib | show | default
+A | Block | 3-3 | heading | "Section two" | Block 3-3
+A | Block | 3-3 | id | (cell=0,file=0,parent=0) | default
+A | Block | 3-3 | labels | {} | default
+A | Block | 4-5 | Visib | show | default
+A | Block | 4-5 | heading | null | default
+A | Block | 4-5 | id | (cell=0,file=0,parent=0) | default
+A | Block | 4-5 | labels | {} | default
+A | Block | 6-6 | Visib | show | default
+A | Block | 6-6 | heading | "Canonical" | Block 6-6
+A | Block | 6-6 | id | (cell=0,file=0,parent=0) | default
+A | Block | 6-6 | labels | {} | default
+A | Block | 7-7 | Visib | show | default
+A | Block | 7-7 | heading | null | default
+A | Block | 7-7 | id | (cell=0,file=0,parent=0) | default
+A | Block | 7-7 | labels | {} | default
+A | Line | 1-1 | Visib | show | default
+A | Line | 1-1 | heading | "Document title" | Block 1-1
+A | Line | 1-1 | id | (cell=0,file=0,parent=0) | default
+A | Line | 1-1 | labels | {} | default
+A | Line | 2-2 | Visib | show | default
+A | Line | 2-2 | heading | null | default
+A | Line | 2-2 | id | (cell=0,file=0,parent=0) | default
+A | Line | 2-2 | labels | {} | default
+A | Line | 3-3 | Visib | show | default
+A | Line | 3-3 | heading | "Section two" | Block 3-3
+A | Line | 3-3 | id | (cell=0,file=0,parent=0) | default
+A | Line | 3-3 | labels | {} | default
+A | Line | 4-4 | Visib | show | default
+A | Line | 4-4 | heading | null | default
+A | Line | 4-4 | id | (cell=0,file=0,parent=0) | default
+A | Line | 4-4 | labels | {} | default
+A | Line | 5-5 | Visib | show | default
+A | Line | 5-5 | heading | null | default
+A | Line | 5-5 | id | (cell=0,file=0,parent=0) | default
+A | Line | 5-5 | labels | {} | default
+A | Line | 6-6 | Visib | show | default
+A | Line | 6-6 | heading | "Canonical" | Block 6-6
+A | Line | 6-6 | id | (cell=0,file=0,parent=0) | default
+A | Line | 6-6 | labels | {} | default
+A | Line | 7-7 | Visib | show | default
+A | Line | 7-7 | heading | null | default
+A | Line | 7-7 | id | (cell=0,file=0,parent=0) | default
+A | Line | 7-7 | labels | {} | default
+A | Segment | 5:1-6 | Visib | show | default
+A | Segment | 5:1-6 | heading | null | default
+A | Segment | 5:1-6 | id | (cell=0,file=0,parent=0) | default
+A | Segment | 5:1-6 | labels | {} | default
+A | Segment | 5:7-25 | Visib | show | default
+A | Segment | 5:7-25 | heading | "Inline heading" | Segment 5:7-25
+A | Segment | 5:7-25 | id | (cell=0,file=0,parent=0) | default
+A | Segment | 5:7-25 | labels | {} | default
+C | Block | 1-1 | File 1-7 | 1 | Line 1-1 | Meta | component.attachedToMeta,component.containsMeta,component.depth1,component.isMeta
+C | Block | 2-2 | File 1-7 | 2 | Line 2-2 | Code | component.attachedToMeta,component.containsCode,component.isCode
+C | Block | 3-3 | File 1-7 | 3 | Line 3-3 | Meta | component.attachedToMeta,component.containsMeta,component.depth2,component.isMeta
+C | Block | 4-5 | File 1-7 | 4 | Line 4-4;Line 5-5 | Code | component.attachedToMeta,component.containsCode,component.containsMeta,component.isCode
+C | Block | 6-6 | File 1-7 | 5 | Line 6-6 | Meta | component.attachedToMeta,component.containsMeta,component.depth1,component.isMeta
+C | Block | 7-7 | File 1-7 | 6 | Line 7-7 | Code | component.attachedToMeta,component.containsCode,component.isCode
+C | File | 1-7 | - | - | Block 1-1;Block 2-2;Block 3-3;Block 4-5;Block 6-6;Block 7-7 | - | component.containsCode,component.containsMeta
+C | Line | 1-1 | Block 1-1 | 1 | - | Meta | component.containsMeta,component.depth1,component.hasMetaStr,component.includeInOutFile,component.isMeta
+C | Line | 2-2 | Block 2-2 | 1 | - | Code | component.attachedToMeta,component.containsCode,component.includeInOutFile,component.isCode
+C | Line | 3-3 | Block 3-3 | 1 | - | Meta | component.attachedToMeta,component.containsMeta,component.depth2,component.hasMetaStr,component.includeInOutFile,component.isMeta
+C | Line | 4-4 | Block 4-5 | 1 | - | Code | component.attachedToMeta,component.containsCode,component.includeInOutFile,component.isCode
+C | Line | 5-5 | Block 4-5 | 2 | Segment 5:1-6;Segment 5:7-25 | Code | component.containsCode,component.containsMeta,component.isCode
+C | Line | 6-6 | Block 6-6 | 1 | - | Meta | component.attachedToMeta,component.containsMeta,component.depth1,component.hasMetaStr,component.includeInOutFile,component.isMeta
+C | Line | 7-7 | Block 7-7 | 1 | - | Code | component.attachedToMeta,component.containsCode,component.includeInOutFile,component.isCode
+C | Segment | 5:1-6 | Line 5-5 | 1 | - | Code | component.containsCode,component.includeInOutFile,component.isCode
+C | Segment | 5:7-25 | Line 5-5 | 2 | - | Meta | component.containsMeta,component.depth1,component.hasMetaStr,component.includeInOutFile,component.isMeta
