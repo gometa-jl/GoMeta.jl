@@ -13,7 +13,7 @@ copies of `devtools.jl` and `gometa.jl` since 2026-09-12 (OWNER-WORDS §26; the 
 forwarding stubs are gone).
 
 **What is in this directory (since 2026-09-12, R-V04B-24).** `devtools.jl` — the print tools;
-the command-line entry at its end (the seven verbs; the former `gometa.jl`, folded 2026-09-12); `basic_renderer.jl` — the basic renderer (module
+the command-line entry at its end (the eight verbs — `comparison` since stage 4; the former `gometa.jl`, folded 2026-09-12); `basic_renderer.jl` — the basic renderer (module
 `BasicRenderer`: the share-view render, the tree print and the (tree, render) pair `outputs`),
 formerly `src/emit/emit.jl` inside the Engine; `load_basic_renderer.jl` — THE ONE PATH by which the
 renderer is loaded (include it at the consumer's top level, never inside a function, never
@@ -43,6 +43,7 @@ as the paragraph above says — not from this entry). Status and diagnostics go 
 | `render` | the share-view bytes (the basic renderer's output) |
 | `evals-tree` | **`print_altValues_evals`, the FULL form** — the rows placed in the Component tree, every Component shown, absence labelled `(no evals — defaults apply)`, every row with its decoded handle and the Segment that caused it |
 | `bls-tree` | **`print_BLS_Component_Tree`** (`style=:mix`) — the tree with every Component's typed named-int and settribute dumps |
+| `comparison` | **`comparisonForm`** — the comparison form of R-V04B-36 (stage 4): one line per Component and one per Component per Alterant, sorted; the definition `tests/comparison/README.md` |
 
 ## From Julia (the REPL, a script, a test)
 
@@ -98,3 +99,14 @@ run it with `julia --startup-file=no --project=$GM/tests $GM/devtools/probes/pro
   `plan/2026-08-20-devtools-slide-output/consumer/compset/compset_devtools_demo.pptx`
   (slides 7–9) were produced from `write_altValues_evals_to_file` output
   (`consumer/SOP_slide-production.md`).
+
+## The comparison form (stage 4 of the v0.4 build; R-V04B-36)
+
+`comparisonForm(result; name, at)` returns, and `writeComparisonFormToFile(path, result; name, at)` writes, the
+content-keyed TEXT form by which GoMetaRetro's output is compared with v0.4's reference — one line per Component
+(kind, span, parent key, position, children keys, content type, flags) and one line per Component per Alterant (the
+value and its source as the deciding Component's own key or its level), sorted by code point under one header line.
+The definition and the grammar: `tests/comparison/README.md`; the twelve forms beside it — v0.4's reference altValues in
+his terms of 2026-09-29, not reference files (`regenerate.jl` writes or checks them); the first comparator
+`devtools/compare_forms.sh` (a sorted-text diff). The verb `comparison`
+prints one form to stdout. Pinned by `devtools_selfcheck()` and the battery's §18.

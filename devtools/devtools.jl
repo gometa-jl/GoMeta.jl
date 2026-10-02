@@ -12,7 +12,8 @@
 #                                      `printComponentStates` capability, superseding it)
 #         `print_altValues_evals`     (the evals rows placed IN the component tree /
 #                                      as rows / as per-cell dossiers)
-#       plus their file twins (`write_*_to_file`), the three surface writers (the tool's pair + the marked source)
+#       plus their file twins (`write_*_to_file`), the three surface writers (the tool's pair + the marked source),
+#       the comparison form's producer and writer `comparisonForm` / `writeComparisonFormToFile` (§I — stage 4, R-V04B-36),
 #         `writeBlsStructureToFile` / `writeRenderToFile` / `writeMarkedSourceToFile`
 #         (§H — verbatim surface copies + the slide sidecar), and `devtools_selfcheck()`.
 #       Every tool takes the §H `slide` keyword: print tools render the truecolor ANSI
@@ -2618,15 +2619,212 @@ function devtools_selfcheck()
         end
         endswith(sc, "] }\n") || error("devtools_selfcheck: sidecar must end '] }' + one newline")
     end
+    ## ── §I comparison-form pins (stage 4; R-V04B-36): the form is deterministic, carries one C line per Component and
+    ## four A lines per non-File Component on the inline fixture, names a Segment by its line and CHARACTER span, and is
+    ## sorted — a drifted serializer fails LOUDLY here before the twelve forms (the reference altValues) move ──────────
+    cf = comparisonForm(r; name = "selfcheck", at = "-")
+    cf == comparisonForm(r; name = "selfcheck", at = "-") ||
+        error("devtools_selfcheck: the comparison form is not deterministic")
+    cfl = split(chomp(cf), '\n')
+    startswith(cfl[1], "# GoMeta comparison form v1 | selfcheck | produced by GoMeta v0.4 at - | 9 Components | 32 answer lines") ||
+        error("devtools_selfcheck: the comparison form's header drifted ($(cfl[1]))")
+    (count(l -> startswith(l, "C | "), cfl) == 9 && count(l -> startswith(l, "A | "), cfl) == 32) ||
+        error("devtools_selfcheck: the comparison form's line census drifted (pinned 9 C + 32 A)")
+    cfl[2:end] == sort(cfl[2:end]) || error("devtools_selfcheck: the comparison form's lines are not sorted")
+    occursin("\nC | Segment | 3:7-34 | Line 3-3 | 2 | - | Meta | ", cf) && occursin("\nC | Segment | 3:1-6 | Line 3-3 | 1 | - | Code | ", cf) ||
+        error("devtools_selfcheck: the comparison form's Segment keys drifted (pinned 3:1-6 and 3:7-34 under Line 3-3)")
+    occursin("\nC | File | 1-3 | - | - | Block 1-1;Block 2-2;Block 3-3 | - | ", cf) ||
+        error("devtools_selfcheck: the comparison form's File line drifted")
+    occursin("\nA | Segment | 3:7-34 | heading | \"selfcheck head\" | Segment 3:7-34\n", cf) && occursin("\nA | Line | 3-3 | heading | null | default\n", cf) ||
+        error("devtools_selfcheck: the inline heading's answer lines drifted (pinned on the MEASURED behaviour: the Segment answers by its OWN key; its Line does not carry it — R-V04B-50 leaves the inline arm untouched; the build's sitting item A6 asks his word)")
+    occursin("\nA | Block | 1-1 | labels | {label1} | Block 1-1\n", cf) ||
+        error("devtools_selfcheck: the Labels answer line drifted (pinned: the set {label1}, own)")
+    cfe = comparisonForm(re; name = "emoji", at = "-")
+    occursin("C | Segment | 1:1-9 | ", cfe) && occursin("C | Segment | 1:10-16 | ", cfe) ||
+        error("devtools_selfcheck: the comparison form's Segment spans are not in characters (pinned 1:1-9 and 1:10-16 on the emoji fixture)")
     true
 end
 
 #########################################################################################
+##  §I — THE COMPARISON FORM (stage 4 of the v0.4 build; R-V04B-36 — the reference set's comparison form, so that
+##  GoMetaRetro is compared with v0.4 by CONTENT, never by bytes or Julia types; his §68–§71 of 2026-09-17; the
+##  definition: tests/comparison/README.md — written ONCE, the grammar fixed by what this section emits).
+##  IS:   the v0.4 lane's adapter (R-V04B-36 (c)): ONE content-keyed TEXT form per input — one line per Component
+##        (kind, span, the parent's key, the position among the parent's children, the children's keys, the content
+##        type, the flags of his approved table) and one line per Component per Alterant (the resolved value and its
+##        SOURCE as the deciding Component's own key, or its level: user / file / default); ordinals, ids, handles and
+##        Julia types never appear. The File has its Component line and NO answer lines (the session's narrowing of
+##        R-V04B-36 (a) — nothing is built for the File before his word, card 6 / Q10).
+##  DOES: walks the delivered tree through the door (`root`, `children`, `parent`, `kind`, `content`, `getElement`),
+##        asks the Engine's answer through `answersFor` (= `answerFor` per registered Alterant), and emits the lines
+##        SORTED by code point under one header line that names the input, the producing commit and the counts.
+##  REASONING: the two lanes may deliver different shapes and types (his §70 (1)); only a projection keyed by
+##        content can be compared. A Segment's span is given in CHARACTERS of its line (the parser's byte offsets
+##        converted on the line's own bytes — the definition's recommended unit, his to confirm).
+##  PURPOSE: the twelve forms under tests/comparison/ — v0.4's reference altValues in his terms of 2026-09-29 (`regenerate.jl`) — and the first comparator
+##        `devtools/compare_forms.sh` (a sorted-text diff). A development tool: nothing under src/ reads it.
+#########################################################################################
+const _CF_VERSION = 1
+const _CF_SEP = " | "
+const _CF_EXCLUDED_FLAGS = (:hide, :show, :discard)   # Visib in the BLS tree — not compared (his §69 item 5; D-R-7)
+
+_cf_kind(c) = c isa _DT_BLS.File ? "File" : c isa _DT_BLS.Block ? "Block" : c isa _DT_BLS.Line ? "Line" : "Segment"
+
+## a Segment's span in CHARACTERS of its own line: the parser's byte offsets (1-based; the stop byte is the final
+## character's START byte, as `BLS.content` documents) converted on the line's bytes. (0, 0) for an unlocatable span.
+function _cf_charspan(linebytes::Vector{UInt8}, startb::Int, stopb::Int)
+    (startb >= 1 && stopb >= startb && stopb <= length(linebytes)) || return (0, 0)
+    s = String(copy(linebytes))
+    isvalid(s, startb) && isvalid(s, stopb) || return (0, 0)
+    (length(s[1:prevind(s, startb)]) + 1, length(s[1:stopb]))
+end
+
+## the span field: Block `a-b` and Line `n-n` in input-line numbers; Segment `n:s-e` (its line's number, then the
+## within-line character span); the File `a-b` from the first Block's start to the last Block's stop (the File's own
+## locator fields are the parser's dummy — the span is derived from its Blocks, stated in the README; `0-0` without a Block)
+function _cf_span(doc, c)
+    if c isa _DT_BLS.File
+        isempty(doc.blocks) && return "0-0"
+        lo = minimum(Int(_dt_ni(b, :startMainStr)) for b in doc.blocks)
+        hi = maximum(Int(_dt_ni(b, :stopMainStr)) for b in doc.blocks)
+        return "$(lo)-$(hi)"
+    elseif c isa _DT_BLS.Block
+        return "$(Int(_dt_ni(c, :startMainStr)))-$(Int(_dt_ni(c, :stopMainStr)))"
+    elseif c isa _DT_BLS.Line
+        n = Int(_dt_ni(c, :inputLineNum))
+        return "$(n)-$(n)"
+    end
+    n = Int(_dt_ni(c, :inputLineNum))
+    line = _DT_BLS.parent(doc.ps, c)
+    lb = line === nothing ? UInt8[] : _DT_BLS.content(doc.ps, line)
+    a, b = _cf_charspan(lb, Int(_dt_ni(c, :startMainStr)), Int(_dt_ni(c, :stopMainStr)))
+    return "$(n):$(a)-$(b)"
+end
+
+## the Component's content KEY — its kind and span; the form's only way of naming a Component (never an id or a handle)
+_cf_key(doc, c) = _cf_kind(c) * " " * _cf_span(doc, c)
+
+## the flags of his approved table that are TRUE on the Component: every ComponentSettribute flag but hide/show/discard,
+## qualified `component.<name>`, sorted by code point, joined by `,`; `-` when none. The content flag vector
+## (`contentSettributeBitVec`) has no read through the door and no writer in the parser (measured 2026-10-02,
+## receipts/S8-branch/PROBES-s4-form-facts.txt) — no `content.<name>` flag can be emitted today (a question for his word).
+function _cf_flags(c)
+    names = String[]
+    for k in keys(_DT_BLS.ComponentSettribute)
+        k in _CF_EXCLUDED_FLAGS && continue
+        _dt_ni(c, k) && push!(names, "component." * String(k))
+    end
+    isempty(names) ? "-" : join(sort!(names), ",")
+end
+
+## the VALUE grammar (no Julia type or container name): nothing → `null`; a Bool → `true`/`false`; a Symbol → its
+## name; a text → double-quoted with `\\`, `\"`, `\n`, `\r`, `\t` escapes; an integer → decimal; a set (a Vector) →
+## `{a,b}` with the members' texts sorted; a compound (a NamedTuple) → `(k=v,k=v)` with the fields sorted by name.
+## The four built-in Alterants reach the first six arms (measured on the twelve inputs); the fallback quotes `repr`.
+_cf_esc(s::AbstractString) = "\"" * replace(String(s), "\\" => "\\\\", "\"" => "\\\"", "\n" => "\\n", "\r" => "\\r", "\t" => "\\t") * "\""
+function _cf_value(v)
+    v === nothing && return "null"
+    v isa Bool && return v ? "true" : "false"
+    v isa Symbol && return String(v)
+    v isa AbstractString && return _cf_esc(v)
+    v isa Integer && return string(v)
+    v isa AbstractVector && return "{" * join(sort!([_cf_value(x) for x in v]), ",") * "}"
+    v isa NamedTuple && return "(" * join(["$(k)=$(_cf_value(getfield(v, k)))" for k in sort!(collect(keys(v)))], ",") * ")"
+    return _cf_esc(repr(v))
+end
+
+## the SOURCE field: the deciding Component's own key — the Component itself for `:own`, the Component the answer
+## came through for `:indirect` — or the level word (`user`, `file`, `default`); `:none` prints as `none` (the File has
+## no answer lines; a custom registry's undeclared Alterant would)
+function _cf_source(doc, c, a)
+    a.source === :own && return _cf_key(doc, c)
+    a.source === :indirect && return a.via === nothing ? "indirect" : _cf_key(doc, a.via)
+    a.source === :user && return "user"
+    a.source === :file && return "file"
+    a.source === :default && return "default"
+    return String(a.source)
+end
+
+function _cf_component_line(doc, c, parentkey::String, pos::String)
+    kids = c isa _DT_BLS.Segment ? _DT_BLS.Segment[] : _DT_BLS.children(doc.ps, c)
+    kidkeys = isempty(kids) ? "-" : join([_cf_key(doc, k) for k in kids], ";")
+    ctype = c isa _DT_BLS.File ? "-" : string(_DT_BLS.kind(c))
+    join(["C", _cf_kind(c), _cf_span(doc, c), parentkey, pos, kidkeys, ctype, _cf_flags(c)], _CF_SEP)
+end
+
+function _cf_answer_lines!(lines::Vector{String}, doc, c)
+    n = 0
+    for (alt, a) in GoMeta.answersFor(doc.r, c)
+        push!(lines, join(["A", _cf_kind(c), _cf_span(doc, c), String(alt), _cf_value(a.value), _cf_source(doc, c, a)], _CF_SEP))
+        n += 1
+    end
+    n
+end
+
+"""
+    comparisonForm(result; name = "", at = "-") -> String
+
+IS: the comparison form of ONE `goMeta` result (R-V04B-36; the definition `tests/comparison/README.md`) — the text
+the twelve forms under `tests/comparison/` hold (v0.4's reference altValues, his term of 2026-09-29).
+DOES: one header line `# GoMeta comparison form v1 | <name> | produced by GoMeta v0.4 at <at> | <nC> Components |
+<nA> answer lines`, then every line of the form SORTED by code point: `C | kind | span | parent key | position |
+children keys | content type | flags` per Component, `A | kind | span | Alterant | value | source` per Component
+per Alterant (the File has none). Throws on a delivery whose tree cannot be walked.
+REASONING: the lines carry content keys only, so two lanes' projections compare as text; sorting makes the
+order a non-fact. PURPOSE: `writeComparisonFormToFile`, the `comparison` verb, `tests/comparison/regenerate.jl`.
+"""
+function comparisonForm(result::GoMeta.GoMetaDelivery; name::AbstractString = "", at::AbstractString = "-")
+    doc = _dt_doc(result; name = name)
+    doc.ok || error("comparisonForm: the delivered tree cannot be walked (status $(result.status))")
+    lines = String[]
+    nA = 0
+    f = _DT_BLS.root(doc.ps)
+    push!(lines, _cf_component_line(doc, f, "-", "-"))
+    fkey = _cf_key(doc, f)
+    for (i, b) in enumerate(doc.blocks)
+        push!(lines, _cf_component_line(doc, b, fkey, string(i)))
+        nA += _cf_answer_lines!(lines, doc, b)
+        bkey = _cf_key(doc, b)
+        for (j, l) in enumerate(_DT_BLS.children(doc.ps, b))
+            push!(lines, _cf_component_line(doc, l, bkey, string(j)))
+            nA += _cf_answer_lines!(lines, doc, l)
+            lkey = _cf_key(doc, l)
+            for (k, s) in enumerate(_DT_BLS.children(doc.ps, l))
+                push!(lines, _cf_component_line(doc, s, lkey, string(k)))
+                nA += _cf_answer_lines!(lines, doc, s)
+            end
+        end
+    end
+    nC = length(lines) - nA
+    sort!(lines)
+    header = join(["# GoMeta comparison form v$(_CF_VERSION)", String(name), "produced by GoMeta v0.4 at " * String(at),
+                   "$(nC) Components", "$(nA) answer lines"], _CF_SEP)
+    return header * "\n" * join(lines, "\n") * "\n"
+end
+
+"""
+    writeComparisonFormToFile(path, result; name = basename(path), at = "-") -> path
+
+IS: the comparison form's file writer (the reference set's producer — stage 4 of the v0.4 build; R-V04B-36).
+DOES: writes `comparisonForm(result; name, at)` to `path`, verbatim; returns `path`. No slide keyword — the form is
+a comparison surface, not a share-view. PURPOSE: `tests/comparison/regenerate.jl` writes the twelve through it.
+"""
+function writeComparisonFormToFile(path::AbstractString, result::GoMeta.GoMetaDelivery;
+                                   name::AbstractString = basename(String(path)), at::AbstractString = "-")
+    write(path, comparisonForm(result; name = name, at = at))
+    path
+end
+
+"REPL convenience — `comparisonForm(result)` printed to `io`."
+printComparisonForm(io::IO, result::GoMeta.GoMetaDelivery; kwargs...) = print(io, comparisonForm(result; kwargs...))
+printComparisonForm(result::GoMeta.GoMetaDelivery; kwargs...) = printComparisonForm(stdout, result; kwargs...)
+
+#########################################################################################
 ##  §Z — THE COMMAND-LINE ENTRY (the former one-line command tool devtools/gometa.jl, FOLDED here on
 ##  2026-09-12 — R-V04B-24's tidy-up row, the owner's OWNER-WORDS §18 item 2 "we may remove
-##  'devtools/gometa.jl' entirely?"; the file is deleted): the seven verbs
+##  'devtools/gometa.jl' entirely?"; the file is deleted): the eight verbs (the eighth, `comparison`, since stage 4 of the v0.4 build)
 ##      julia --startup-file=no --project=$GM/tests $GM/devtools/devtools.jl <verb> <file>
-##      tree · segments · evals · render · trace · evals-tree · bls-tree
+##      tree · segments · evals · render · trace · evals-tree · bls-tree · comparison (stage 4, R-V04B-36: the comparison form, §I)
 ##  IS: the smallest complete consumer of the two containers — `altValues_evals` (the excerpts through the
 ##  door: `BLS.content` of each row's resolved Component, since commit 9b) and the development tool's (tree, render) pair (`Main.BasicRenderer.outputs`,
 ##  loaded through the ONE path at this file's top). DOES: runs goMeta on ONE file; status + diagnostics
@@ -2637,7 +2835,7 @@ end
 ##  is `include`d (the Play's frozen copy, the battery, the site's capture script include this file and
 ##  see definitions only). Evaluates, never executes.
 #########################################################################################
-const _DT_VERBS = ("tree", "segments", "evals", "render", "trace", "evals-tree", "bls-tree")
+const _DT_VERBS = ("tree", "segments", "evals", "render", "trace", "evals-tree", "bls-tree", "comparison")
 
 function _dt_cli_usage()
     println(stderr, "usage: devtools.jl <", join(_DT_VERBS, "|"), "> <file>")
@@ -2680,6 +2878,9 @@ function _dt_cli_main(args)
             println(rpad(String(row.attr), 14), " => ", rpad(repr(row.value), 40), " (", row.polarity, ")  \"",
                     first(cell, 60), length(cell) > 60 ? "…\"" : "\"")
         end
+    elseif cmd == "comparison"
+        ## the comparison form (stage 4; R-V04B-36; §I): the header names the input, the producing commit unknown here (`-`)
+        print(comparisonForm(r; name = basename(path), at = "-"))
     elseif cmd == "evals-tree"
         ## the owner's print tool, FULL form (R-DEV-4's option): every Component visible,
         ## absence labelled "(no evals — defaults apply)", every row with its decoded handle

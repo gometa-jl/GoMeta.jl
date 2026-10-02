@@ -568,5 +568,60 @@ for i in seg_rows
 end
 check(ndump17 >= 2, "rails childless-blank: walked only $ndump17 leaf dump rows — degenerate (FX2#2)")
 
+## §18 — the comparison form (stage 4; R-V04B-36; §I): deterministic; one C line per Component (the census + the File)
+## and four A lines per non-File Component (the four registered Alterants); every A line's source is a level word or a
+## key among the C lines; the lines sorted by code point; the Segment spans in CHARACTERS (the emoji input); the file
+## writer writes the same bytes the producer returns (the CLI verb is exercised by the pre-check's run on a corpus input, not here)
+for (fx, fxname) in ((mini, "mini"), (ext, "ext"))
+    cf18 = comparisonForm(fx; name = fxname, at = "-")
+    check(cf18 == comparisonForm(fx; name = fxname, at = "-"), "§18 $fxname: the form is not deterministic")
+    ls18 = split(chomp(cf18), '\n')
+    nb18, nl18, ns18 = _dt_census(_dt_doc(fx; name = fxname))
+    nC18 = count(l -> startswith(l, "C | "), ls18); nA18 = count(l -> startswith(l, "A | "), ls18)
+    check(nC18 == nb18 + nl18 + ns18 + 1, "§18 $fxname: $nC18 C lines, expected $(nb18 + nl18 + ns18 + 1) (the census + the File)")
+    check(nA18 == 4 * (nb18 + nl18 + ns18), "§18 $fxname: $nA18 A lines, expected $(4 * (nb18 + nl18 + ns18))")
+    check(startswith(ls18[1], "# GoMeta comparison form v1 | $fxname | produced by GoMeta v0.4 at - | $nC18 Components | $nA18 answer lines"),
+          "§18 $fxname: the header does not carry the counts ($(ls18[1]))")
+    check(ls18[2:end] == sort(ls18[2:end]), "§18 $fxname: the body is not sorted by code point")
+    check(length(unique(ls18[2:end])) == length(ls18) - 1, "§18 $fxname: a duplicate line (two Components with one key?)")
+    keys18 = Set(String[join(split(l, " | ")[2:3], " ") for l in ls18 if startswith(l, "C | ")])
+    for l in ls18
+        startswith(l, "A | ") || continue
+        fl = split(l, " | ")
+        check(length(fl) == 6, "§18 $fxname: an A line with $(length(fl)) fields: $l")
+        src18 = fl[6]
+        check(src18 in ("user", "file", "default") || src18 in keys18, "§18 $fxname: an A line's source is neither a level nor a Component key: $l")
+        check(fl[2] != "File", "§18 $fxname: the File carries an answer line (the narrowing of R-V04B-36 (a) until his word): $l")
+    end
+    for l in ls18
+        startswith(l, "C | ") || continue
+        fl = split(l, " | ")
+        check(length(fl) == 8, "§18 $fxname: a C line with $(length(fl)) fields: $l")
+        check(fl[4] == "-" || fl[4] in keys18, "§18 $fxname: a C line's parent key is not a Component key: $l")
+        for k in (fl[6] == "-" ? String[] : String.(split(fl[6], ";")))
+            check(k in keys18, "§18 $fxname: a C line names a child key that is no Component: $k in $l")
+        end
+        check(!occursin("component.hide", l) && !occursin("component.show", l) && !occursin("component.discard", l), "§18 $fxname: a Visib flag leaked into the form: $l")
+    end
+    mktempdir() do tmp
+        p18 = joinpath(tmp, fxname * ".cmp.txt")
+        writeComparisonFormToFile(p18, fx; name = fxname, at = "abcdef12")
+        w18 = read(p18, String)
+        check(occursin("produced by GoMeta v0.4 at abcdef12", split(w18, '\n')[1]), "§18 $fxname: the file writer lost the producing commit in the header")
+        check(join(split(w18, '\n')[2:end], '\n') == join(split(cf18, '\n')[2:end], '\n'), "§18 $fxname: the written body differs from the producer's")
+    end
+end
+emoji18 = GoMeta.goMeta(Vector{UInt8}(codeunits("x = \"🍒🍒\" #~ hide\n")))
+cfe18 = comparisonForm(emoji18; name = "emoji", at = "-")
+check(occursin("\nC | Segment | 1:1-9 | Line 1-1 | 1 | - | Code | ", cfe18) && occursin("\nC | Segment | 1:10-16 | Line 1-1 | 2 | - | Meta | ", cfe18),
+      "§18 emoji: the Segment spans are not the character spans 1:1-9 and 1:10-16 (the bytes are 1-15 and 16-22)")
+check(occursin("\nA | Line | 1-1 | Visib | hide | Line 1-1\n", cfe18), "§18 emoji: the Line's own Visib answer (hide, own — its trailing metaSegment's) drifted")
+check(occursin("\nA | Segment | 1:1-9 | Visib | hide | Line 1-1\n", cfe18), "§18 emoji: the Segment's Visib answer (hide, through its Line) drifted")
+## the value grammar on the four Alterants' shapes
+check(_cf_value(nothing) == "null" && _cf_value(true) == "true" && _cf_value(:show) == "show" && _cf_value(7) == "7", "§18: the scalar value grammar drifted")
+check(_cf_value("a \"q\" | b\n") == "\"a \\\"q\\\" | b\\n\"", "§18: the text value grammar drifted ($(_cf_value("a \"q\" | b\n")))")
+check(_cf_value([:label5, :label1]) == "{label1,label5}" && _cf_value(Symbol[]) == "{}", "§18: the set value grammar drifted")
+check(_cf_value((parent = Int16(3), cell = Int16(7))) == "(cell=7,parent=3)", "§18: the compound value grammar drifted")
+
 println(fails == 0 ? "probe_devtools: ALL GREEN" : "probe_devtools: $fails FAILURE(S)")
 exit(fails == 0 ? 0 : 1)
