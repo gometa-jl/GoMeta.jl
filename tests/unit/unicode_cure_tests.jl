@@ -2,7 +2,7 @@
 # THE CURE: the condition scanner's end-of-text test is the CHAR predicate (lastCharInd =
 # lastindex), so end-of-text is just another delimiter — a multibyte-FINAL atom flush
 # against the closing brace takes its ORDINARY vocabulary fate (flush ≡ spaced). The
-# companion U2 cure widens cell_content_bytes' final-character slice (nextind), keeping a
+# companion U2 cure widens the content slice's final character (nextind; the slice is `BLS.content`'s since stage 2), keeping a
 # multibyte final character whole in the verdict store.
 # Every assertion below pins a MEASURED value. GENERATED file:
 # exotic characters are REAL codepoints, byte-verified at authoring.
@@ -67,20 +67,22 @@ _uc_err(s)     = try _uc_full(s); nothing catch e sprint(showerror, e) end
         @test GM.print_condition(_uc_pc(":ab")) == ":ab"   # CAL-12 ASCII control
     end
 
-    @testset "[6] U2: a multibyte FINAL character survives the verdict store whole" begin
-        # store-level integration: the segment's content bytes end with the COMPLETE final
-        # character (NBSP c2 a0), not a lone lead byte — the widened nextind slice.
+    @testset "[6] U2: a multibyte FINAL character survives the derived five-column form whole" begin
+        # the segment's content bytes — through the TEST LAYER's derived five-column form (the fifth column = each row's
+        # Component's content through the door, `BLS.content`; the Engine stores no copy since commit 9b) — end with the
+        # COMPLETE final character (NBSP c2 a0), not a lone lead byte — the widened nextind slice.
         s = "x = 1 #~ \"T\" ## c\ny = 2\n"
         r = _uc_full(s)
         @test r.status == GM.PROCESS_OK
-        fps = GM.content_fingerprint(r)
-        @test !isempty(fps)
+        rows = [split(l, '\t') for l in split(String(TestSupport.derive_annotations_golden(r)), '\n'; keepempty = false) if !startswith(l, "#")]
+        @test !isempty(rows)
         ok = false
-        for (h, c) in fps
+        for cols in rows
+            c = hex2bytes(cols[5])
             if length(c) >= 2 && c[end-1] == 0xc2 && c[end] == 0xa0
                 ok = true
             end
-            # every stored content payload must be valid UTF-8 when the source is
+            # every derived content payload must be valid UTF-8 when the source is
             @test isvalid(String(copy(c)))
         end
         @test ok                                   # at least one payload ends …c2 a0

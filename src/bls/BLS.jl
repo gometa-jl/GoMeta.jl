@@ -438,11 +438,11 @@ whitespace-only Line returns its whitespace bytes; the File, which has no arm he
 empty return is also the Engine's capture predicate (`captureEvals!` skips an empty return),
 so an arm added here would change which Components are captured — a File arm is a question
 for his word, at stage 2.
-REASONING: NEW in BLS — the body of the Engine's `cell_content_bytes` (`src/annotations.jl`)
-COPIED here unchanged but for the argument names and the dropped `BLS.` qualifiers; the
-Engine's copy STAYS at stage 2's commit 0 and leaves at stage 2 (R-V04B-43 (5)), when this
-function serves the reference files' fifth column — byte-equal by construction of the copy
-(the probe's check). Its ancestor: the legacy writer's `SubString(collectedLines[stringIdx],
+REASONING: NEW in BLS at stage 2's commit 0 — the body of the Engine's former `cell_content_bytes`
+(`src/annotations.jl`) COPIED unchanged but for the argument names and the dropped `BLS.` qualifiers;
+the Engine's copy LEFT at stage 2's commit 9b (R-V04B-43 (5)) — this function alone serves a piece's text:
+the capture predicate, the test layer's derivation of the reference files' fifth column (byte-equal to the
+former producer's — the probe's check and commit 8's standing proof), the tools and the consumers. Its ancestor: the legacy writer's `SubString(collectedLines[stringIdx],
 start:stop)` (`WriteOutFile.jl` :129–:134).
 PURPOSE: a piece's text for an Extension (the notebook Extension's join, the demo) and for
 the renderer, from the tree and nothing else.

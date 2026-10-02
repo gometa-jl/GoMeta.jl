@@ -313,7 +313,7 @@ end
         # the public-doc statement in the same commit, superseding the former
         # zero-rows fate): the EXPLICIT head fed on the userMH surface mints exactly
         # ONE row keyed by the minted USER-CONTEXT handle (grain 0xe0 at the fixed
-        # class offset) with the fed profile's verbatim bytes as the fingerprint;
+        # class offset) — no copy of the profile's bytes on the row since commit 9b (R-V04B-43 (1));
         # the deriving form still meets the applicability refusal there
         ru0 = GM.goMeta(Vector{UInt8}(codeunits("x = 1\n"));
             config = GM.GoMetaConfig(user_mh_profile = "head(\"U\", 3)"))
@@ -326,10 +326,12 @@ end
             @test h[3 + Int(nslen) + 1] == 0xe0          # the class grain, fixed offset
             @test h == GM.key_bytes(GM.user_context_key(:default, 1))
         end
-        # …and the CONTENT column carries the fed profile's verbatim bytes (the
-        # 5-column form — the mandated fingerprint half of this witness)
-        @test occursin(bytes2hex(codeunits("head(\"U\", 3)")),
-            String(GM.serialize_evals(ru0)))
+        # …and the fed row's FIFTH COLUMN in the test layer's derived five-column form is EMPTY: no Component of the
+        # tree carries the user-context handle — the profile's bytes live in the configuration, which the delivery does
+        # not carry (R-V04B-43 (4); his word OWNER-WORDS §277, R-V04B-90, on the row shown to him; the Engine stores no copy since
+        # commit 9b, R-V04B-43 (1); the former witness pinned the configuration's bytes in the Engine's five-column form)
+        fed = only(l for l in split(String(TestSupport.derive_annotations_golden(ru0)), '\n'; keepempty = false) if startswith(l, "head_3\t"))
+        @test endswith(fed, string('\t', bytes2hex(u_rows[1][1]), '\t'))   # the four columns, then the empty fifth
         # NEVER-QUEUED: a heading action consumes NO slot capacity — a metaLine
         # carrying the capacity-count of OTHER enqueued actions PLUS a heading still
         # absorbs (the head never occupies a queue row)

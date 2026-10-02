@@ -189,23 +189,20 @@ out = plain(io -> print_BLS_Component_Tree(io, mini; blocks = [big"9999999999999
 check(occursin("skipped", out) && occursin("Block #2", out),
       "oversized blocks= id not reported-and-skipped")
 
-## 15 — warning visibility (unit-level: the renderers must SHOW non-match states)
-mkrow(fp, ost) = DTEvalRow(:visib, :hide, true, nothing, nothing, ost, UInt8[0x01], 0xe0,
-                           "default", [(0x01, UInt32(1))], Tuple{UInt8,UInt32}[], fp, :non_document_grain)
-b = IOBuffer(); _dt_eval_bullet(b, nothing, mkrow(:mismatch, :none)); ub = String(take!(b))
-check(occursin("⚠ fingerprint mismatch", ub), "bullet hides fp=:mismatch")
-b = IOBuffer(); _dt_eval_bullet(b, nothing, mkrow(:missing, :none)); ub = String(take!(b))
-check(occursin("⚠ fingerprint missing", ub), "bullet hides fp=:missing")
+## 15 — warning visibility (unit-level: the renderers must SHOW the origin's non-verified states; the two fingerprint-state
+## probes left with the tools' fingerprint column at stage 2's commit 9b — R-V04B-43 (1): the Engine stores no copy to compare)
+mkrow(ost) = DTEvalRow(:visib, :hide, true, nothing, nothing, ost, UInt8[0x01], 0xe0,
+                       "default", [(0x01, UInt32(1))], Tuple{UInt8,UInt32}[], :non_document_grain)
 docstub = _dt_doc(mini)
-b = IOBuffer(); _dt_print_unanchored(b, docstub, [mkrow(:na, :failed)]); ub = String(take!(b))
+b = IOBuffer(); _dt_print_unanchored(b, docstub, [mkrow(:failed)]); ub = String(take!(b))
 check(occursin("⚠ origin unverified", ub), "unanchored section hides origin_status=:failed")
-b = IOBuffer(); _dt_print_unanchored(b, docstub, [mkrow(:na, :unverifiable)]); ub = String(take!(b))
+b = IOBuffer(); _dt_print_unanchored(b, docstub, [mkrow(:unverifiable)]); ub = String(take!(b))
 check(occursin("origin unverifiable", ub), "unanchored section hides origin_status=:unverifiable")
 
 ## 16 — §H slide option: the seat-D1 grammar + aligner edge pins (each row kills one
 ## attack class from the design record; the corpus sweep proper lives in
 ## slide_sweep.jl + validate_sidecars.py — these are the sharp cases the corpus lacks)
-slsrc(s) = _dt_sl_source_lines(GoMeta.goMeta(Vector{UInt8}(codeunits(s))))
+slsrc(s) = _dt_sl_source_lines(GoMeta.goMeta(Vector{UInt8}(codeunits(s))), length(_dt_sl_splitlines(Vector{UInt8}(codeunits(s)))[1]))   # the count from the probe's own bytes (R-V04B-85 (D))
 slren(s) = (r = GoMeta.goMeta(Vector{UInt8}(codeunits(s)));
             _dt_sl_render_lines(r, copy(Main.BasicRenderer.outputs(r).render_bytes)))
 

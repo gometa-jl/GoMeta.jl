@@ -2,8 +2,8 @@
 
 - **IS:** the record of GoMeta's **canonical observable output** — the single, deterministic,
   content-hashable artifact a golden test or a downstream consumer obtains from a
-  `goMeta(bytes; config)` run: the evaluated values, `altValues_evals` (+ `serialize_evals`,
-  `content_fingerprint`) — the Engine's delivered surface — and, beside it, the DEVELOPMENT TOOL's
+  `goMeta(bytes; config)` run: the evaluated values, `altValues_evals` (+ `serialize_evals`; a piece's text
+  through `GoMeta.BLS.content` — `content_fingerprint` REMOVED at 0.4.0's stage-2 commit 9b, R-V04B-43 (1)) — the Engine's delivered surface — and, beside it, the DEVELOPMENT TOOL's
   `(blsStructure_bytes, render_bytes)` pair (`Main.BasicRenderer.outputs`, `devtools/basic_renderer.jl`,
   loaded through `devtools/load_basic_renderer.jl`; R-V04B-24, 2026-09-12) which the golden layer pins.
   (This document's name — CANONICAL-OUTPUT — predates the move; it kept its name.) **Trust note:**

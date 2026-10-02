@@ -44,7 +44,7 @@ end
             @test r_seam.status === r_go.status
             @test r_seam.blsComponentTree === ps   # the delivered part IS the injected parse state — identity, not a copy (R-V04B-29's effects: the tree MUTABLE, shared)
             @test Main.BasicRenderer.outputs(r_seam) == Main.BasicRenderer.outputs(r_go)
-            @test GM.serialize_evals(r_seam) == GM.serialize_evals(r_go)
+            @test TestSupport.derive_annotations_golden(r_seam) == TestSupport.derive_annotations_golden(r_go)   # the test layer's five-column form (commit 9b)
         end
     end
 

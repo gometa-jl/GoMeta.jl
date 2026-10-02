@@ -37,7 +37,7 @@
 #     PENDING (the unqueryable-alt shape still aborts raw). The full honest-edges catalogue:
 #     docs/public-api.md §3.
 # PURPOSE: the single auditable entry point — bytes in, a typed `GoMetaDelivery` out, with the package's
-#     canonical observable output = `altValues_evals` (+ `serialize_evals`, `content_fingerprint`); the Engine's
+#     canonical observable output = `altValues_evals` (+ `serialize_evals`); the Engine's
 #     delivered surface = the run and the evaluated values (R-V04B-24); the (tree, render) pair is the
 #     development tool's.
 module GoMeta
@@ -144,7 +144,7 @@ include("childdiff.jl")             # stage 2's commit 6 (R-V04B-35 (e); the pla
 # `names(GoMeta)` IS the machine-checkable semver surface (asserted by tests/unit/public_surface_tests.jl).
 # EVERYTHING else stays PACKAGE-PUBLIC (reached qualified, e.g. GoMeta.PROCESS_OK / .Diagnostic):
 # the supporting types (ProcessStatus/Diagnostic/EvalStore/AlterantRegistry),
-# DEFAULT_REGISTRY, serialize_evals, content_fingerprint, EvalRecord, and the PROCESS_OK/PROCESS_ERROR values
+# DEFAULT_REGISTRY, serialize_evals, EvalRecord, and the PROCESS_OK/PROCESS_ERROR values
 # — the names on the `public` lines below (eleven at 0.3.x; thirty-six since v0.4 T2: + the
 #   registration lifecycle incl. `next_plugin_index` + the record vocabulary; thirty-seven since
 #   the v0.4 `Alterant` rename — `Alterant` is the record's canonical name and `PlugIn` its
@@ -152,11 +152,14 @@ include("childdiff.jl")             # stage 2's commit 6 (R-V04B-35 (e); the pla
 #   `vocabulary`/`vocabulary_member`/`vocabulary_queryable`; THIRTY-NINE since R-V04B-24 (2026-09-12):
 #   `outputs` REMOVED with the basic renderer — a development tool; the register row in docs/public-api.md §6;
 #   FORTY since stage 2's commit 0 of the v0.4 build (R-V04B-58): + the parser module `BLS`, its door inside it;
+#   FORTY-FIVE after stage 2's commits 4–6 (`answerFor`, `AltAnswer`, `scanAlterant`, `answersFor`, `childDiffers`);
+#   FORTY-FOUR since stage 2's commit 9b (R-V04B-43 (1)): `content_fingerprint` REMOVED — a piece's text is read from the
+#   BLS Component tree through the door (`BLS.content`), never from the Engine; the register row in docs/public-api.md §6;
 #   docs/public-api.md §1.2 is the mirror).
 # Qualified import (`import GoMeta as GM`) is UNAFFECTED by these exports and remains canonical for namespace
 # hygiene + multi-implementation use; exporting serves the single-implementation `using` convenience only.
 export goMeta, readAltValuesEvals, GoMetaConfig, GoMetaDelivery
-public serialize_evals, content_fingerprint, EvalRecord, EvalStore, ProcessStatus, PROCESS_OK, PROCESS_ERROR, Diagnostic, AlterantRegistry, DEFAULT_REGISTRY,
+public serialize_evals, EvalRecord, EvalStore, ProcessStatus, PROCESS_OK, PROCESS_ERROR, Diagnostic, AlterantRegistry, DEFAULT_REGISTRY,
        RegistryBuilder, register!, next_plugin_index, validate, publish, RegistrationRefused,   # v0.4 T2: the registration lifecycle (docs/public-api.md §1.2)
        Alterant, PlugIn, ActionSpec, ActionOverload, DomainRef, CaptureDecl, DefaultSlot, NoDefault, Declared,   # v0.4 T2 (cure batch 1) + the rename: the record
        EffectRow, RenderDecl, VocabularySlot, InlineVocabulary, VocabularyRef, MutEx, ConditionAtom,   #   VOCABULARY a third-party author
@@ -276,8 +279,8 @@ Seed the RESERVED user slot of the meta-hierarchy (`userMHIdx` in `state.jl` —
 both `applyAltActionFns` walks, and fed by no other call site) with the metaLine-body profile in
 `st.config.user_mh_profile`, BEFORE the absorb walk. Reuses the standard machinery VERBATIM — no parallel
 intake — queued actions enqueue, the localOnly heading class diverts to absorb-seam delivery and an
-explicit `head` RECORDS against the minted user-context handle (grain 0xe0; the profile's verbatim
-bytes as the fingerprint): `updateMetaHierarchy(userMHIdx)` allocates + occupies the slot (its `10..12` branch; the
+explicit `head` RECORDS against the minted user-context handle (grain 0xe0; no copy of the profile's bytes on the
+row since commit 9b, R-V04B-43 (1)): `updateMetaHierarchy(userMHIdx)` allocates + occupies the slot (its `10..12` branch; the
 depth-window wipes at `<10` never touch it, so the fed slot SURVIVES the whole file walk), then `absorbMeta`
 routes the profile's actions through the SAME parseAlt path authored metaLines use; the meta-hierarchy
 cursor is restored so the walk starts exactly as un-fed. First-wins per non-accumulate alterant across the
@@ -293,19 +296,16 @@ function feed_user_mh!(st::ProcessState)
     # This surface has NO document line/component behind it, so the MetaContext record is
     # NULLED — a derived-context action (the quoted-first heading) fed through here meets
     # the TYPED applicability refusal in absorbMeta, never a fabricated context (hd-6).
-    # The content scratch nulls WITH it; the feed's OWN identity rides `user_context`
-    # below: the explicit head records against the minted user-context handle with the
-    # profile's verbatim bytes as the row's fingerprint (the user-context build).
+    # The feed's OWN identity rides `user_context` below: the explicit head records against the
+    # minted user-context handle (the user-context build; no copy of the profile's bytes rides the row
+    # since commit 9b, R-V04B-43 (1)).
     st.meta_context = nothing
-    st.meta_content = UInt8[]
     # The stack-disciplined bracket: save prior, set, restore in the finally (never merely
     # null) — re-entry-safe before any nested-feed path exists, and the restore runs even
     # when a refusal escapes the absorb (the per-call state dies with the aborted call;
     # the finally keeps the leaves-no-residue law total anyway).
     prior_uc = st.user_context
-    st.user_context = UserContext(
-        key_bytes(user_context_key(st.config.namespace, 1)),
-        copy(codeunits(st.config.user_mh_profile)))
+    st.user_context = UserContext(key_bytes(user_context_key(st.config.namespace, 1)))
     try
         absorbMeta(SubString(st.config.user_mh_profile))
     finally
@@ -350,7 +350,7 @@ The `GoMetaDelivery` is `{altValues_evals::EvalStore, blsComponentTree::BLS.Pars
 TOTAL over the CONFIG-TIME catalogued surface (an invalid profile or parse_range never throws uncaught); absorb/apply-plane catalogued failures can still throw at v0 (see below): `status` is
 `PROCESS_OK` (no error diagnostics) or `PROCESS_ERROR` (>=1 error `Diagnostic`; non-OK => non-empty diagnostics).
 Obtain the Engine's output via `readAltValuesEvals(result.altValues_evals)` (the evals map, keyed by (handle, attr); its byte form
-`serialize_evals`, the cell bytes `content_fingerprint`) — with the run itself, the Engine's delivered surface
+`serialize_evals`; a piece's text through `BLS.content`) — with the run itself, the Engine's delivered surface
 after the move (R-V04B-24: "the run and the evaluated values"). The (tree, render) pair is the development
 tool's: `Main.BasicRenderer.outputs`, applied to the result after `include("devtools/load_basic_renderer.jl")`
 at the caller's top level. The config-time error rows are armed + typed; the condition-path refusals

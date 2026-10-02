@@ -2,7 +2,7 @@
 #
 # IS: the evals-plane identity substrate — `OccurrenceKey`, a pure, re-derivable, schema-versioned
 #     STRUCTURAL handle for a parsed cell, and its deterministic byte serialization `key_bytes`.
-#     The evals store keys by THIS handle (content demotes to a per-record fingerprint field).
+#     The evals store keys by THIS handle (a piece's text is read from the BLS Component tree through `BLS.content`, never stored on the row — R-V04B-43 (1), commit 9b).
 # DOES: (1) `occurrence_key(parse, cell; origin=nothing, namespace=:default)::OccurrenceKey` —
 #     TOTAL on parsed cells, NEVER throws: derives the cell's root→cell STORE-EXPLICIT ordinal
 #     path by upward `idParent` walk, normalizing every component to its EXTENSION-CHAIN ROOT

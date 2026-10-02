@@ -32,9 +32,9 @@ import GoMeta as GM
             # the fallBack feed — the user feed's shape (feed_user_mh!), aimed at slot 12
             prev = st.crnt_idx
             GM.CnS.updateMetaHierarchy(GM.fallBackMHIdx)
-            st.meta_context = nothing; st.meta_content = UInt8[]
+            st.meta_context = nothing
             prior = st.user_context
-            st.user_context = GM.UserContext(copy(FALLBACK_CARRIER), _bytes(fb))
+            st.user_context = GM.UserContext(copy(FALLBACK_CARRIER))   # the context carries its handle alone since commit 9b (R-V04B-43 (1): no copy of the statement's bytes)
             try
                 GM.AbsorbMeta.absorbMeta(SubString(fb))
             finally

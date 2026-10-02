@@ -33,7 +33,7 @@
 #       SUPPORTING_PUBLIC sets below MIRROR docs/public-api.md §1.1/§1.2 (the human-facing doc is
 #       the same contract; this test is the code-side enforcement).
 # PURPOSE: the public/export surface stays EXACTLY the declared one; the Engine's output is
-#       `altValues_evals` (+ `serialize_evals`, `content_fingerprint`); the (tree, render) pair is the
+#       `altValues_evals` (+ `serialize_evals`; `content_fingerprint` removed at stage 2's commit 9b, R-V04B-43 (1)); the (tree, render) pair is the
 #       development tool's, reached only through `Main.BasicRenderer.outputs` (the one-path assertions).
 
 using Test
@@ -45,7 +45,7 @@ import TOML
     # The declared semver export set (docs/public-api.md §1.1).
     DECLARED_EXPORTS = Set([:goMeta, :readAltValuesEvals, :GoMetaConfig, :GoMetaDelivery])
     # The supporting PACKAGE-PUBLIC surface (docs/public-api.md §1.2): documented + qualified-access, NOT exported.
-    SUPPORTING_PUBLIC = [:serialize_evals, :content_fingerprint, :EvalRecord, :EvalStore, :ProcessStatus, :PROCESS_OK,
+    SUPPORTING_PUBLIC = [:serialize_evals, :EvalRecord, :EvalStore, :ProcessStatus, :PROCESS_OK,
                          :PROCESS_ERROR, :Diagnostic, :AlterantRegistry, :DEFAULT_REGISTRY,
                          # v0.4 T2 — the registration LIFECYCLE surface (Builder → validate → publish; the
                          # typed refusal) + (cure batch 1) the record VOCABULARY a third-party author
@@ -62,6 +62,8 @@ import TOML
                          # 40 → 42 at stage 2's commit 4 (R-V04B-35 (c)): `answerFor` + `AltAnswer` — THE ONE ANSWER FUNCTION and its record.
                          # 42 → 44 at stage 2's commit 5 (his §6 9.A; the plan :57): `scanAlterant` + `answersFor` — the scan by Alterant, the access by Component.
                          # 44 → 45 at stage 2's commit 6 (R-V04B-35 (e); the plan :58): `childDiffers` — the child-differs signal computed from the answer.
+                         # 45 → 44 at stage 2's commit 9b (R-V04B-43 (1); the plan :61): `content_fingerprint` REMOVED — a piece's text is read from the
+                         # BLS Component tree through the door (`BLS.content`), never from the Engine; the register row in docs/public-api.md §6.
                          :RegistryBuilder, :register!, :next_plugin_index, :validate, :publish, :RegistrationRefused,
                          :Alterant, :PlugIn, :ActionSpec, :ActionOverload, :DomainRef, :CaptureDecl, :DefaultSlot,
                          :NoDefault, :Declared, :EffectRow, :RenderDecl, :VocabularySlot,
@@ -71,13 +73,13 @@ import TOML
                          :BLS,   # 40 since stage 2's commit 0: the parser module `BLS`, R-V04B-58
                          :answerFor, :AltAnswer,   # 42 since stage 2's commit 4: THE ONE ANSWER FUNCTION and its record, R-V04B-35 (c)
                          :scanAlterant, :answersFor,   # 44 since stage 2's commit 5: the scan by Alterant and the access by Component, his §6 9.A
-                         :childDiffers]   # mirrors docs/public-api.md §1.2 EXACTLY (45 since stage 2's commit 6: the child-differs signal, R-V04B-35 (e))
+                         :childDiffers]   # mirrors docs/public-api.md §1.2 EXACTLY (44 since stage 2's commit 9b: `content_fingerprint` removed, R-V04B-43 (1); 45 since commit 6: the child-differs signal, R-V04B-35 (e))
 
     @testset "export set is EXACTLY the declared semver surface" begin
         live = setdiff(Set(names(GM)), Set([:GoMeta]))     # names() on Julia ≥1.11 == exported ∪ `public` (+ the module name)
         exported = Set(filter(n -> Base.isexported(GM, n), collect(live)))
         @test exported == DECLARED_EXPORTS                        # [1] no accidental leak AND no gap (exact equality)
-        @test setdiff(live, exported) == Set(SUPPORTING_PUBLIC)   # [1b] the `public` tier is EXACTLY the declared names (45 since stage 2's commit 6: `childDiffers`; 44 since commit 5: `scanAlterant`, `answersFor`; 42 since commit 4: `answerFor`, `AltAnswer`; 40 since commit 0: `BLS`; 39 since R-V04B-24; 40 before)
+        @test setdiff(live, exported) == Set(SUPPORTING_PUBLIC)   # [1b] the `public` tier is EXACTLY the declared names (44 since stage 2's commit 9b: `content_fingerprint` REMOVED, R-V04B-43 (1); 45 since commit 6: `childDiffers`; 44 since commit 5: `scanAlterant`, `answersFor`; 42 since commit 4: `answerFor`, `AltAnswer`; 40 since commit 0: `BLS`; 39 since R-V04B-24; 40 before)
         @test all(n -> Base.ispublic(GM, n), SUPPORTING_PUBLIC)   # [1c] every supporting name carries the `public` marking
         @test all(n -> !Base.isexported(GM, n), SUPPORTING_PUBLIC) # [1d] …and none is exported (the two-tier partition is real)
         for n in DECLARED_EXPORTS

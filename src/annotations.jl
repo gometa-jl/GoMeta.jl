@@ -7,11 +7,9 @@
 #     either tuple half (the BLS Component tree is evals-free; the render reflects only Visib effects), so
 #     this surface is where label / Visib / Id outcomes become observable — the query-facing
 #     write payload, GoMeta's semantic deliverable.
-# DOES: (1) `cell_content_bytes(parse, component)` — the grain-aware content-fingerprint extractor:
-#     the VERBATIM content bytes of a BLS cell (Block = its joined line span, Line = its full
-#     source line, Segment = a byte-offset slice of its own line), byte-sliced so non-ASCII
-#     content stays byte-faithful, NO hashing core-side (the core stays dependency-free); empty
-#     for a structural cell that addresses no content. (2) `captureEvals!(st, cell)` —
+# DOES: (1) the capture predicate — a cell is captured iff its content through the door (`BLS.content`) is
+#     non-empty (a structural cell that addresses no content is skipped); the Engine stores NO copy of a piece's
+#     text since stage 2's commit 9b (R-V04B-43 (1)). (2) `captureEvals!(st, cell)` —
 #     called from the apply sites right after a cell's alterant state is finalized and BEFORE
 #     the next slot reset wipes it; records the cell's final label / Visib / Id evals rows into
 #     the `EvalStore`, deduped per `(cell_handle, attr)` with later-wins supersede.
@@ -19,14 +17,13 @@
 #     returns the pinned `Vector{Tuple{Vector{UInt8},Symbol,Any,Bool}}` — empty when no metaLine
 #     exists on any surface (the fed profile is a metaLine body; un-fed meta-free input yields
 #     the empty vector) — and is pure + read-only on the store it is given. (4) `serialize_evals` — the
-#     canonical, deterministic, binary-safe byte forms (one evals row per line, hex-encoded
-#     handle; the golden layer's form appends the content-fingerprint hex column) pinned by the
-#     read-side golden tests.
+#     canonical, deterministic, binary-safe four-column byte form (one evals row per line, hex-encoded
+#     handle); the golden layer's five-column form is the TEST layer's (`tests/support/derive_annotations.jl`),
+#     its fifth column derived through the BLS Component tree.
 # REASONING: final results are observable, deterministic, and hash-stable.
 #     The store keys by the row's handle — a NORMALIZED STRUCTURAL occurrence handle (src/occurrence.jl)
 #     or a fed profile's user-context handle — so two distinct cells never share a slot even with
-#     byte-identical content; the verbatim content
-#     bytes ride each record as its find-again fingerprint, and a value-CHANGING re-apply of
+#     byte-identical content; a value-CHANGING re-apply of
 #     the SAME occurrence emits the non-fatal `WARN_VERDICT_COLLISION` diagnostic rather than
 #     masking the supersede (docs/public-api.md §3). A row is recorded for every captured cell —
 #     the evals rows are the Engine's recorded truth of the run; the render is the development
@@ -37,99 +34,14 @@
 #     serialization anchors the annotations goldens read by tests/golden/golden_tests.jl.
 
 # --------------------------------------------------------------------------------------------------------
-# The content fingerprint — the verbatim content bytes of a cell (COMPONENT-grain; no hashing core-side)
-# --------------------------------------------------------------------------------------------------------
-"""
-    cell_content_bytes(parse::BLS.ParseState, component) -> Vector{UInt8}
-
-IS: the grain-aware extractor of a BLS Component's VERBATIM content bytes at its own grain — the bytes an
-evals row carries as its content fingerprint (`EvalRecord.content`), never its `cell_handle` (the
-occurrence-key bytes, `key_bytes(occurrence_key(…))`, src/occurrence.jl).
-
-DOES: The VERBATIM content bytes of a BLS `component` — the row's fingerprint and the capture predicate's
-emptiness test (`captureEvals!` skips an empty return). The bytes are raw content (NOT a hash — the core stays
-dependency-free, not even the SHA stdlib; an adapter layer can wrap the SAME bytes as `CellID(sha256(bytes))`
-without re-extraction). The grain is COMPONENT-grain (Block / Line / Segment); "Segment-else-Line" is the
-LEAF-grain phrasing — a Block-level evals row carries whole-block content as its fingerprint (per-block evals
-rows). Grain-aware extraction, because `:startMainStr`/`:stopMainStr` mean DIFFERENT things per grain:
-
-- **Block** (`Component{70}`): `:idxString == 0`; `:startMainStr`/`:stopMainStr` are the block's LINE-NUMBER
-  range (the Block start/stopMainStr writes in parseBLS) ⇒ the content is `collectedLines[startMainStr:stopMainStr]` joined with `\\n`.
-  Block bounds are COMPLETE when the parse returns (the parse-side CLOSURE law closes the final Block at
-  the effective parsed end); an unfinalized/out-of-range span addresses no content (fail-closed, empty).
-- **Line** (`Component{10}`): the cell is the FULL source line. `:inputLineNum` maps the Line to its source
-  line robustly — even a MULTI-SEGMENT line (`:idxString == 0`, content split into Segments) carries its
-  source-line number in `:inputLineNum` (the addChildComponentTo idNum writes in parseBLS), where `:idxString` cannot. (A single-segment
-  line's `:idxString` equals its `:inputLineNum`, so this is uniform.) The whole source line, including any
-  inline `#~` meta, is the verbatim content the evals row addresses.
-- **Segment** (`Component{1}`) and any other grain: a byte-offset span into its own source line —
-  `codeunits(src)[startMainStr:(nextind(src, stopMainStr) - 1)]`, `src` = `collectedLines[idxString]` (a negative
-  `idxString` ⇒ the `addedStrings` insert-store); `stopMainStr` is the final character's START byte (IV-1) and
-  the slice is widened to that character's last byte, so a multibyte final character stays whole. BYTE-sliced
-  (not char-indexed) so a non-ASCII line is byte-faithful. (The corpus capture path never passes a bare Segment —
-  a Segment-grain evals row is keyed on its Line.)
-
-Returns an empty `Vector{UInt8}` for a structural component that addresses no content (a Block with a `0`/
-out-of-range line span, or a Segment placeholder with no string) — `captureEvals!` skips those. A genuinely
-empty source line (a blank line) is also empty here; the corpus apply never leaves an evals row on a blank line
-(blank lines detach / start new blocks — SYNTAX-AND-SEMANTICS §3), so no real evals row is lost.
-
-REASONING: the core stays dependency-free (no hashing) and byte-faithful (byte-sliced, UTF-8-correct), and an
-unaddressable span returns empty (fail-closed) — the capture predicate's arms.
-
-PURPOSE: the verbatim content bytes each evals row carries as its fingerprint, and the emptiness test that
-decides whether a cell is captured at all.
-"""
-function cell_content_bytes(parse::BLS.ParseState, component::BLS.AbstractComponent)
-    cni       = component.cmpntNamedInt
-    startMain = BLS.getElement(cni, :startMainStr)
-    stopMain  = BLS.getElement(cni, :stopMainStr)
-    if component isa BLS.Block
-        # Block: the span is a LINE-NUMBER range into collectedLines. Block bounds are COMPLETE
-        # when the parse returns (the parse-side CLOSURE law closes the final Block at the
-        # effective parsed end), so an unfinalized 0 bound addresses NO content (fail-CLOSED via
-        # the range guard below) — never expanded to EOF: excluded lines cannot leak in here.
-        stop = stopMain
-        (1 <= startMain && startMain <= stop && stop <= length(parse.collectedLines)) || return UInt8[]
-        return Vector{UInt8}(codeunits(join(view(parse.collectedLines, startMain:stop), '\n')))
-    elseif component isa BLS.Line
-        # Line: the FULL source line. A NEGATIVE idxString is an INSERTED Line — its content lives in the
-        # addedStrings insert-store (symmetric with the Segment branch). Otherwise the source line via
-        # :inputLineNum (robust for multi-segment lines where idxString == 0, where idxString cannot locate it).
-        idxString = BLS.getElement(cni, :idxString)
-        if idxString < 0
-            (-length(parse.addedStrings) <= idxString < 0) || return UInt8[]   # the lower bound closes typemin(Int): -typemin(Int) wraps (R-V04B-80 (2)(iv))
-            return Vector{UInt8}(codeunits(parse.addedStrings[-idxString]))
-        end
-        iln = BLS.getElement(cni, :inputLineNum)
-        (1 <= iln <= length(parse.collectedLines)) || return UInt8[]
-        return Vector{UInt8}(codeunits(parse.collectedLines[iln]))
-    end
-    # Segment (and any other grain): a byte-offset span into its own source line.
-    idxString = BLS.getElement(cni, :idxString)
-    (idxString != 0 && 1 <= startMain && startMain <= stopMain) || return UInt8[]
-    # bounds-guard the store lookup so a malformed idxString returns UInt8[] (the docstring's total-return
-    # contract), never a BoundsError.
-    inbounds = idxString > 0 ? idxString <= length(parse.collectedLines) : -length(parse.addedStrings) <= idxString < 0   # the lower bound closes typemin(Int) (R-V04B-80 (2)(iv))
-    inbounds || return UInt8[]
-    src = idxString > 0 ? parse.collectedLines[idxString] : parse.addedStrings[-idxString]
-    cu  = codeunits(src)
-    stopMain <= length(cu) || return UInt8[]
-    # stopMain is the final character's START byte (IV-1); widen to its LAST byte so a
-    # multibyte final character is kept whole (raw codeunit ranges do not widen the way
-    # String ranges do). nextind is total from any in-bounds byte index, malformed included.
-    return Vector{UInt8}(cu[startMain:(nextind(src, stopMain) - 1)])
-end
-
-# --------------------------------------------------------------------------------------------------------
 # Evals capture — record a cell's FINAL evals rows before the slot wipe (called from the apply sites)
 # --------------------------------------------------------------------------------------------------------
 """
-    _putEval!(st::ProcessState, handle, attr::Symbol, value, polarity::Bool, content, decided_by) -> nothing
+    _putEval!(st::ProcessState, handle, attr::Symbol, value, polarity::Bool, decided_by) -> nothing
 
 IS: the deduped put of ONE final evals row into `st.evals` — the one door into the store.
 
-DOES: records the row `(handle, attr, value, polarity, content, decided_by)`, DEDUPED per `(cell_handle, attr)`: a later put
+DOES: records the row `(handle, attr, value, polarity, decided_by)`, DEDUPED per `(cell_handle, attr)`: a later put
 for the same occurrence+attribute SUPERSEDES the earlier one (later wins), so the store holds at most one record
 per `(cell_handle, attr)` by construction. **Occurrence-addressing + the collision signal.** `handle` is the
 `key_bytes` of the row's handle — a cell's NORMALIZED STRUCTURAL occurrence key (src/occurrence.jl), or a fed
@@ -139,9 +51,7 @@ content-keyed store cannot occur by construction; PRECISE BOUND: this holds for 
 truncated-walk keys could alias each other, a case no real parse produces). A slot match here is therefore the
 SAME occurrence re-applied; a value-CHANGING supersede is a genuine conflicting re-apply (applied-state-wins) and
 still records the non-fatal `:warning` Diagnostic (`WARN_VERDICT_COLLISION` — the code's name unchanged) —
-surfaced, never masked. The verbatim `content` bytes ride each record as the demoted find-again fingerprint
-(plain bytes — no hashing core-side; an adapter layer that wraps handles as digests is the natural home for a
-hashing scheme).
+surfaced, never masked. No copy of the piece's text rides the record (R-V04B-43 (1), stage 2's commit 9b).
 
 REASONING: the surface promises final evals only — one row per `(cell_handle, attr)` — so the put dedupes at
 write time, a later put superseding, rather than by a later pass, and the reader sorts without resolving
@@ -152,7 +62,7 @@ PURPOSE: the single primitive both `captureEvals!` (the apply sites' rows) and `
 seam's heading rows) write through — every evals row a run records enters the store here.
 """
 function _putEval!(st::ProcessState, handle::Vector{UInt8}, attr::Symbol, value, polarity::Bool,
-                       content::Vector{UInt8}, decided_by::Vector{Vector{UInt8}})
+                       decided_by::Vector{Vector{UInt8}})
     recs = st.evals.records
     @inbounds for i in eachindex(recs)
         r = recs[i]
@@ -170,11 +80,11 @@ function _putEval!(st::ProcessState, handle::Vector{UInt8}, attr::Symbol, value,
                     "(later wins; applied-state-wins).",
                     handle))
             end
-            recs[i] = EvalRecord(handle, attr, value, polarity, content, decided_by)   # supersede (later wins)
+            recs[i] = EvalRecord(handle, attr, value, polarity, decided_by)   # supersede (later wins)
             return nothing
         end
     end
-    push!(recs, EvalRecord(handle, attr, value, polarity, content, decided_by))
+    push!(recs, EvalRecord(handle, attr, value, polarity, decided_by))
     return nothing
 end
 
@@ -186,10 +96,10 @@ sites' write path into the store.
 
 DOES: captures `cell`'s FINAL Alterant values from `st.working` into `st.evals`, keyed by the cell's
 NORMALIZED STRUCTURAL occurrence key (v0.2 CH-1: `key_bytes(occurrence_key(parse, cell; origin,
-namespace = config.namespace))` — the verbatim content bytes DEMOTE to each record's fingerprint field).
+namespace = config.namespace))`; the row carries no copy of the piece's text — R-V04B-43 (1), commit 9b).
 `origin` carries the target/origin split: the walk's Segment-grain site passes the SEGMENT while
 `cell` is the owning LINE, so two same-kind inline Segment evals on one Line stay distinct. The CAPTURE
-PREDICATE is the interim span-validity policy (the `cell_content_bytes` empty-return arms — zero/
+PREDICATE is the interim span-validity policy (the door's `BLS.content` empty-return arms — zero/
 out-of-range Block span · Segment idxString==0/invalid span · blank Line ⇒ no capture; population
 identical to the pre-swap engine, probe-proven). Called from the two apply sites immediately after
 `applyAltActionFns` finalizes `st.working` for the cell + its Visib write-back, and BEFORE the next
@@ -236,13 +146,14 @@ seam's flush (its one call in `src/absorb/absorb_meta.jl`). Both writers go thro
 function captureEvals!(st::ProcessState, cell::BLS.AbstractComponent;
                            origin::Union{Nothing,BLS.AbstractComponent} = nothing)
     isempty(st.working) && return nothing
-    # SPAN-VALIDITY POLICY (the interim capture predicate): the CAPTURE decision keeps keying on the
-    # content-addressability arms of `cell_content_bytes` (zero/out-of-range Block span · Segment
+    # SPAN-VALIDITY POLICY (the interim capture predicate): the CAPTURE decision keys on the
+    # content-addressability arms of the door's `BLS.content` (zero/out-of-range Block span · Segment
     # idxString==0/invalid span · blank Line ⇒ empty ⇒ NO capture) — the captured POPULATION is
     # IDENTICAL to the pre-swap engine (probe-verified, decision-instrumented, re-asserted
-    # post-swap). What CHANGED is the KEY: rows are keyed by the normalized structural
-    # occurrence handle; the content bytes DEMOTE to the record's fingerprint field.
-    content = cell_content_bytes(st.parse, cell)
+    # post-swap). The rows are keyed by the normalized structural occurrence handle; the piece's text is
+    # NOT stored (R-V04B-43 (1), stage 2's commit 9b) — read here through the door for the predicate and the
+    # degenerate-key diagnostic's payload only.
+    content = BLS.content(st.parse, cell)
     isempty(content) && return nothing
     k = occurrence_key(st.parse, cell; origin = origin, namespace = st.config.namespace)
     # A DEGENERATE (truncated-walk) key entering the store is NEVER silent (two degenerate keys
@@ -305,7 +216,7 @@ function captureEvals!(st::ProcessState, cell::BLS.AbstractComponent;
                     bad = false
                     for (kk, vv) in inst
                         if kk isa Symbol && _capture_value_leaf(vv)
-                            _putEval!(st, handle, Symbol(stem, :_, kk), vv, true, content, decided)
+                            _putEval!(st, handle, Symbol(stem, :_, kk), vv, true, decided)
                         else
                             bad = true
                         end
@@ -339,7 +250,7 @@ function captureEvals!(st::ProcessState, cell::BLS.AbstractComponent;
                     if !isempty(set_acts)
                         el = set_acts[1]
                         _capture_value_leaf(el) ?
-                            _putEval!(st, handle, stem, el, true, content, decided) :
+                            _putEval!(st, handle, stem, el, true, decided) :
                             _capture_floor!(st, p, :WARN_CAPTURE_UNREADABLE)
                     end
                 else
@@ -360,7 +271,7 @@ function captureEvals!(st::ProcessState, cell::BLS.AbstractComponent;
                     for (fi, name) in enumerate(ks)
                         v = arr[fi]
                         (v isa ET && v != z) &&
-                            _putEval!(st, handle, Symbol(stem, :_, name), v, true, content, decided)
+                            _putEval!(st, handle, Symbol(stem, :_, name), v, true, decided)
                     end
                 else
                     _capture_floor!(st, p, :WARN_CAPTURE_UNREADABLE)
@@ -368,7 +279,7 @@ function captureEvals!(st::ProcessState, cell::BLS.AbstractComponent;
             elseif sch === :per_occurrence
                 # the ungated fifth arm: one presence row per governed cell — the
                 # occurrence handle IS the locus (the value = `true` at v0.4; T11's row)
-                _putEval!(st, handle, stem, true, true, content, decided)
+                _putEval!(st, handle, stem, true, true, decided)
             end
         catch e
             e isa InterruptException && rethrow()
@@ -435,13 +346,12 @@ localOnly plugin) from the absorb seam's REGISTRY-DRIVEN flush (v0.4 T5 — the 
 checks the declared row's gate, the instance shape, and the entries protocol BEFORE
 this call; the Heading typing retired with the re-home, and the four attr spellings
 re-derive from the DECLARED `stem` — byte-identical for the shipped `:head`), minting
-one row per captured entry, keyed to the region's OWN identity. TWO (handle, content)
-sources: the DOCUMENT surface supplies the occurrence handle and the verbatim bytes of the Component
-that CARRIES the heading — the metaBlock a whole-line metaLine forms (R-V04B-50, stage 2's commit 1), the
-Segment of an inline metaSegment — published by the walk as `st.meta_context.handle` + `st.meta_content`;
-the userMH FEED supplies the minted user-context handle +
-the fed profile's verbatim bytes (`st.user_context`). One shared fold/dedup body serves both sources, so the evals
-surface stays uniformly `(cell_handle, attr, value, polarity)`. BOTH sources
+one row per captured entry, keyed to the region's OWN identity. TWO handle
+sources: the DOCUMENT surface supplies the occurrence handle of the Component that CARRIES the heading — the
+metaBlock a whole-line metaLine forms (R-V04B-50, stage 2's commit 1), the Segment of an inline metaSegment —
+published by the walk as `st.meta_context.handle`; the userMH FEED supplies the minted user-context handle
+(`st.user_context`). No copy of the carrier's text rides the row (R-V04B-43 (1), commit 9b). One shared fold/dedup
+body serves both sources, so the evals surface stays uniformly `(cell_handle, attr, value, polarity)`. BOTH sources
 populated at once is an INTERNAL-INVARIANT ERROR (unreachable by construction —
 the feed nulls the document context and the walk never sets the user context; a
 defect that made it reachable gets the loud rejection, never a silent pick).
@@ -454,13 +364,11 @@ function capture_heading!(st::ProcessState, heading, stem::Symbol)
             "both populated at a heading capture — please report this ",
             "(not reachable from any input by construction)")
     end
-    local handle::Vector{UInt8}, content::Vector{UInt8}
+    local handle::Vector{UInt8}
     if st.meta_context !== nothing
-        handle  = (st.meta_context::MetaContext).handle
-        content = st.meta_content
+        handle = (st.meta_context::MetaContext).handle
     elseif st.user_context !== nothing
-        handle  = (st.user_context::UserContext).handle
-        content = (st.user_context::UserContext).content
+        handle = (st.user_context::UserContext).handle
     else
         return nothing
     end
@@ -482,7 +390,7 @@ function capture_heading!(st::ProcessState, heading, stem::Symbol)
         attr = lvl === nothing ?
             (k == 1 ? stem : Symbol(stem, :_u, k)) :
             (k == 1 ? Symbol(stem, :_, lvl) : Symbol(stem, :_, lvl, :_, k))
-        _putEval!(st, handle, attr, text, true, content, [copy(handle)])   # the never-enqueued :localOnly Heading's origin: its own carrier (R-V04B-35 (d))
+        _putEval!(st, handle, attr, text, true, [copy(handle)])   # the never-enqueued :localOnly Heading's origin: its own carrier (R-V04B-35 (d))
     end
     return nothing
 end
@@ -515,7 +423,7 @@ stringifies `attr` and `value` for a total order over the heterogeneous `value::
 value set — the T5 capture value algebra: Bool · Symbol · the machine ints · String (`_capture_value_leaf`);
 the shipped four use Bool for Labels, Symbol for Visib, Int16 for Id, String for heading text;
 `cell_handle::Vector{UInt8}` sorts lexicographically. The first element is the OCCURRENCE-KEY bytes (v0.2
-CH-1); the content bytes are read through `content_fingerprint`.
+CH-1); a piece's text is read from the BLS Component tree through `BLS.content`, never from a row (R-V04B-43 (1)).
 
 REASONING: the GoMeta Engine EVALUATES and records values as data (the boundary law, 2026-08-27); this reader
 is the one core-provided route from a run to those values. It is given the PART and not the delivered object
@@ -541,34 +449,9 @@ function readAltValuesEvals(altValues_evals::EvalStore)
     ## Each returned cell_handle is a COPY — the accessor never aliases the store's byte vectors,
     ## so a caller mutating a returned handle cannot corrupt a later accessor/serialize call.
     ## v0.2 CH-1: the first element is now the OCCURRENCE-KEY bytes (the id-5 INTERIM 4-tuple
-    ## arity stands — same shape, new key semantics); content via `content_fingerprint`.
+    ## arity stands — same shape, new key semantics); a piece's text through `BLS.content`.
     return Tuple{Vector{UInt8},Symbol,Any,Bool}[
         (copy(recs[i].cell_handle), recs[i].attr, recs[i].value, recs[i].polarity) for i in order
-    ]
-end
-
-"""
-    content_fingerprint(result::GoMetaDelivery) -> Vector{Tuple{Vector{UInt8},Vector{UInt8}}}
-
-IS: the SIBLING accessor of the occurrence-key store: the per-record `(cell_handle → content)` pairs in the
-reader's sort order.
-
-DOES: The SIBLING accessor of the occurrence-key store: the per-record
-`(cell_handle → content)` pairs — the demoted verbatim content bytes (the layered find-again
-fingerprint; plain bytes, NO hashing core-side) keyed by the same occurrence-key bytes
-`readAltValuesEvals` returns, in the SAME sort order. Pure + copying, like `readAltValuesEvals`.
-
-REASONING: the content bytes are demoted from the key to a fingerprint so that identity is structural (the
-occurrence handle) while the content stays reviewable beside it.
-
-PURPOSE: the pairs a consumer zips on the reader's rows to find a cell again by its verbatim bytes (the golden
-layer's fifth column; the notebook generator's join).
-"""
-function content_fingerprint(result::GoMetaDelivery)
-    recs  = result.altValues_evals.records
-    order = sortperm(recs; by = r -> (r.cell_handle, string(r.attr), string(r.value)))
-    return Tuple{Vector{UInt8},Vector{UInt8}}[
-        (copy(recs[i].cell_handle), copy(recs[i].content)) for i in order
     ]
 end
 
@@ -576,7 +459,7 @@ end
 ## newline or carriage return in an attribute name — a third-party Alterant's stem or member name may carry one; the registry refuses
 ## none of them (his §120 defers the hardening, R-V04B-37) — is escaped as \\\\, \\t, \\n, \\r, so one row stays one line and
 ## four columns; the shipped families (`visib`, `label_<name>`, `id_<name>`, `head_<level>`) carry none and serialize byte-identically.
-## The five-column golden producer below is UNTOUCHED (the twelve pins unmoved; it is removed at commit 9).
+## The five-column golden form is the TEST layer's since commit 9b (`tests/support/derive_annotations.jl`); the twelve pins unmoved.
 _attr_encoded(attr::Symbol) = replace(String(attr), "\\" => "\\\\", "\t" => "\\t", "\n" => "\\n", "\r" => "\\r")
 
 """
@@ -590,14 +473,14 @@ already-sorted evals row per line, `<attr>\\t<repr(value)>\\t<polarity>\\t<hex(c
 fixed header (`cell_handle` = the occurrence-key bytes, hex — v0.2 CH-1); the `attr` column ENCODED since stage 2's
 commit 7a — a backslash, tab, newline or carriage return in an attribute name escaped as `\\\\`, `\\t`, `\\n`, `\\r`
 (the CrossReview set REAL-1 R1 #2: one row stays one line and four columns; the shipped families carry none and
-serialize byte-identically; the registry refuses no delimiter — his §120 defers that hardening, R-V04B-37). **THE PUBLIC form**, kept
-on the public surface; the GOLDEN layer's write+read sides both use the 5-COLUMN `GoMetaDelivery` method
-below (which appends the content-fingerprint hex column for reviewability + per-fixture
-discrimination) — see that method's docstring. Hashing either form's bytes gives a stable behaviour
+serialize byte-identically; the registry refuses no delimiter — his §120 defers that hardening, R-V04B-37). **THE PUBLIC form**, the Engine's
+only serialization since stage 2's commit 9b; the GOLDEN layer's five-column form (the fifth column a piece's text
+through the BLS Component tree) is the TEST layer's `derive_annotations_golden` (`tests/support/derive_annotations.jl`).
+Hashing the bytes gives a stable behaviour
 digest (the "content-hashable" property; docs/CANONICAL-OUTPUT.md §4).
 
 REASONING: a fixed header and one row per line, hex-encoded handles, make the bytes hash-stable and
-diff-reviewable; the golden layer uses the 5-column `GoMetaDelivery` method beside it.
+diff-reviewable; the golden layer's five-column form is derived in the test layer.
 
 PURPOSE: the byte form a consumer hashes for a behaviour digest (docs/CANONICAL-OUTPUT.md §4) and the notebook
 generator's digest source.
@@ -612,37 +495,6 @@ function serialize_evals(ann)::Vector{UInt8}
     ]
     for (h, attr, val, pol) in ann
         push!(parts, string(_attr_encoded(attr), '\t', repr(val), '\t', pol, '\t', bytes2hex(h), '\n'))   # the attr column encoded (commit 7a; R1 #2)
-    end
-    return Vector{UInt8}(codeunits(join(parts)))
-end
-
-"""
-    serialize_evals(result::GoMetaDelivery) -> Vector{UInt8}
-
-IS: the golden layer's five-column byte form of a delivery's evals rows — the key form plus the content fingerprint.
-
-DOES: The GOLDEN form of the serializer (the golden layer's write+read sides use THIS method): the 4-column
-key form PLUS the demoted content fingerprint as a fifth hex column — the golden stays REVIEWABLE in a
-plain diff (a reviewer sees WHICH cell each row addresses) and per-fixture DISCRIMINATING (two inputs whose
-rows have equal keys and values but different captured content produce different goldens — the fifth column;
-content outside a recorded row, and two empty stores, stay indistinguishable). The ann-vector method
-above keeps the key-only 4-column form (the public form; an adapter's payload concerns are the
-adapter's, not this dev-side golden).
-
-REASONING: a golden that shows WHICH cell each row addresses stays reviewable in a plain diff and separates
-fixtures whose recorded rows differ only in content; the four-column form above stays the public form.
-
-PURPOSE: what the golden runner writes and reads (`tests/golden/golden_tests.jl`) — the twelve annotation pins' producer.
-"""
-function serialize_evals(result::GoMetaDelivery)::Vector{UInt8}
-    ann = readAltValuesEvals(result.altValues_evals)
-    fp  = content_fingerprint(result)
-    parts = String[
-        "# annotations golden — sorted (cell_handle, attr, value); final-verdicts-only.\n",
-        "# columns: <attr>\\t<value>\\t<polarity>\\t<cell_handle = occurrence-key bytes, hex>\\t<content fingerprint, hex>\n",
-    ]
-    for ((h, attr, val, pol), (_, c)) in zip(ann, fp)
-        push!(parts, string(attr, '\t', repr(val), '\t', pol, '\t', bytes2hex(h), '\t', bytes2hex(c), '\n'))
     end
     return Vector{UInt8}(codeunits(join(parts)))
 end

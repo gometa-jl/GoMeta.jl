@@ -57,7 +57,7 @@ Diagnostic(code::Symbol, severity::Symbol, message::AbstractString) =
     Diagnostic(code, severity, String(message), nothing)
 
 """
-    EvalRecord(cell_handle, attr, value, polarity, content, decided_by)
+    EvalRecord(cell_handle, attr, value, polarity, decided_by)
 
 IS: one final evals row — a Component's (keyed by its occurrence handle), a metaLine region's heading row
 (keyed by the metaBlock the metaLine forms — R-V04B-50; an inline metaSegment's by the Segment) or a fed profile's heading row (keyed by the minted user-context
@@ -67,8 +67,8 @@ DOES: One final evals row. `cell_handle::Vector{UInt8}` holds the `key_bytes` of
 Component's row the NORMALIZED STRUCTURAL occurrence handle (`occurrence_key`, src/occurrence.jl; a
 Segment-carried evals row keys on its owning Line with the Segment recorded as the key's origin), for a
 fed profile's heading row the user-context key (`user_context_key`) — so two distinct cells NEVER share a
-slot. The verbatim CONTENT bytes ride in the
-`content` metadata field (the find-again fingerprint — plain bytes, no hashing core-side);
+slot. A piece's text is NOT stored on the row since 0.4.0's stage-2 commit 9b (R-V04B-43 (1)): it is read from the
+BLS Component tree through BLS's own access function `BLS.content` (the test layer derives the reference files' fifth column that way).
 `attr::Symbol` the attribute; `value::Any` its value; `polarity::Bool` the on/off polarity.
 `decided_by::Vector{Vector{UInt8}}` — THE ONE PROVENANCE FIELD (R-V04B-35 (b), (d); stage 2's commit 2 of the v0.4
 build): the `key_bytes` handles of the statements that PRODUCED the row, in application order — the Component that
@@ -82,22 +82,19 @@ statements' entries for an accumulating one
 a heading row's its own carrier. MEASURED at the enqueue and the apply, never inferred from a row's presence. The
 name is the authored set's word (his confirmed scenarios' `decided_by`) — the session's default under R-V04B-40 (2),
 his at stage 2's review (the alternatives `origin`, `source`). Feeds
-`readAltValuesEvals(result.altValues_evals)` (sorted `(cell_handle, attr, value)` — key-bytes order) + the
-`content_fingerprint` sibling accessor.
+`readAltValuesEvals(result.altValues_evals)` (sorted `(cell_handle, attr, value)` — key-bytes order).
 
 REASONING: keyed by the row's handle — a Component's or the metaLine's normalized structural occurrence handle,
-a fed profile's minted user-context handle — so that two distinct cells never share a slot; the verbatim
-content bytes ride as the find-again fingerprint rather than as the key.
+a fed profile's minted user-context handle — so that two distinct cells never share a slot; the row names its
+Component by the handle and carries no copy of its text (R-V04B-43 (1)).
 
-PURPOSE: the record `readAltValuesEvals` delivers as `(cell_handle, attr, value, polarity)` and
-`content_fingerprint` as `(cell_handle → content)`.
+PURPOSE: the record `readAltValuesEvals` delivers as `(cell_handle, attr, value, polarity)`.
 """
 struct EvalRecord
     cell_handle::Vector{UInt8}
     attr::Symbol
     value::Any
     polarity::Bool
-    content::Vector{UInt8}
     decided_by::Vector{Vector{UInt8}}
 end
 

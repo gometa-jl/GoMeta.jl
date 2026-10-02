@@ -107,7 +107,7 @@ end
         @test r.status === GM.PROCESS_OK
         @test t == "{:B-Meta:L-Meta [%~ :label1]}\n{:B-Code:L-Code [x 1]}\n{:B-Meta:L-Meta [%] tail]}\n{:B-Code:L-Code [y 2]}\n"
         ## The label reaches the closer line but NOT past it (:stopAttachmentToMeta).
-        ev = String(copy(GM.serialize_evals(r)))
+        ev = String(TestSupport.derive_annotations_golden(r))   # the test layer's five-column form (the Engine's producer left at commit 9b)
         @test count("label_label1", ev) == 3
         ## Glued %]x = an ordinary comment, never a close event.
         rg, tg, xg = _lx_run("%]x\nx 1\n")

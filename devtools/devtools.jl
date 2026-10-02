@@ -25,7 +25,7 @@
 #       extension-unsafe), per-component named-int + settribute dumps, and the
 #       probe-proven cell_handle → Component resolution (design §1, 27/27) with the §6
 #       defensive contract (root-anchor + parent-link + grain↔leaf + namespace checks;
-#       unanchored rows rendered, never dropped; fingerprint self-check per row).
+#       unanchored rows rendered, never dropped; a row's text through the door's `BLS.content`).
 # REASONING: the released v0.3.0 package deliberately ships no debug printer (e1c
 #       strip) and the run's WORKING state is not delivered at all (R-V04B-28; 0.3.x delivered it as a field) — so the dev tools live PLAY-SIDE, on a
 #       session-writable surface, honestly labeled (see the exemption below), instead
@@ -42,11 +42,11 @@
 # Component), `content` (the verbatim bytes at a Component's grain), `kind` (the flavor word),
 # `flavor` (the record; five fields promised), `endsWithNewline`, `isHorizontalSpace` (the lexer's
 # delimiter), the Component types and `keys` of the two named-element types (docs/public-api.md §1.2) —
-# and no field of a BLS object. TWO RESIDUE reads outside the door remain, marked at their sites and
+# and no field of a BLS object. ONE RESIDUE read outside the door remains, marked at its site and
 # asked for his word: the whole-document text of the File (`collectedLines` joined — `content` has no
-# File arm, a question its docstring names) and the source-line COUNT the slide classifier sizes its
-# output by (`length(collectedLines)`). The former exemption D-6(a) of 2026-08-20 covers those two
-# residues alone now. Consumer code — an Extension — reads the tree the same way, through the door
+# File arm, a question its docstring names); the slide classifier's source-line COUNT comes from the callers' own
+# bytes since stage 2's commit 9b (R-V04B-85 (D)). The former exemption D-6(a) of 2026-08-20 covers that one
+# residue alone now. Consumer code — an Extension — reads the tree the same way, through the door
 # (docs/public-api.md §1.2; R-V04B-45).
 # `devtools_selfcheck()` is the drift alarm: run it after every change under `src/` — a broken surface fails LOUDLY.
 #
@@ -479,10 +479,8 @@ defined only against THIS document's tree, so the origin is never resolved local
 `origin[1:end-1] == path` AND the leaf is a Meta-flavor Segment · `:failed` — present
 on an ANCHORED row but failing verification, rendered as a warning, never silently
 dropped), the decoded grain
-byte + namespace, the per-row fingerprint self-check (`fp` — for ANCHORED rows
-`:match` / `:mismatch` / `:missing`, both non-match states WARN since missing
-comparison data is never a pass; for unanchored rows `:na` — there is no derived
-content to compare, so no fingerprint claim is made either way), and the retained
+byte + namespace (the per-row fingerprint self-check left with the Engine's stored copy at stage 2's
+commit 9b, R-V04B-43 (1) — a row's text is the door's `BLS.content` of its resolved Component), and the retained
 UNANCHORED REASON (`reason` ∈ `:ok` anchored · `:undecoded` schema/short/garbage/
 bad-ns bytes · `:non_document_grain` the 0xd3–0xfe plane incl. USER_CONTEXT ·
 `:foreign_namespace` · `:unknown_grain` an unrecognized byte ≤ 0xd2 ·
@@ -503,7 +501,6 @@ struct DTEvalRow
     path::Vector{Tuple{UInt8,UInt32}}   # decoded path steps (empty when undecoded) —
                                # distinguishes e.g. USER_CONTEXT feeds by ordinal
     origin_steps::Vector{Tuple{UInt8,UInt32}}
-    fp::Symbol
     reason::Symbol
 end
 
@@ -516,7 +513,6 @@ end
 ## must equal the resolved leaf's type; the origin is verified or flagged. PURPOSE:
 ## layout totality — every row reaches a renderer, anchored or not.
 function _dt_eval_rows(doc)
-    fp = Dict{Vector{UInt8},Vector{UInt8}}(h => c for (h, c) in GoMeta.content_fingerprint(doc.r))
     rows = DTEvalRow[]
     nosteps = Tuple{UInt8,UInt32}[]
     for (h, attr, v, pol) in GoMeta.readAltValuesEvals(doc.r.altValues_evals)
@@ -528,12 +524,12 @@ function _dt_eval_rows(doc)
                                   h, dd === nothing ? 0x00 : dd.grain,
                                   dd === nothing ? "?" : dd.namespace,
                                   dd === nothing ? nosteps : dd.path,
-                                  dd === nothing ? nosteps : dd.origin, :na, :no_parse_tree))
+                                  dd === nothing ? nosteps : dd.origin, :no_parse_tree))
             continue
         end
         if d === nothing
             push!(rows, DTEvalRow(attr, v, pol, nothing, nothing, :none, h, 0x00, "?",
-                                  nosteps, nosteps, :na, :undecoded))
+                                  nosteps, nosteps, :undecoded))
             continue
         end
         gt = _dt_graintype(d.grain)
@@ -561,11 +557,8 @@ function _dt_eval_rows(doc)
                     _dt_flavor(oc) == "Meta") ? :verified : :failed
             orig == :failed && (oc = nothing)
         end
-        f = comp === nothing ? :na :
-            !haskey(fp, h) ? :missing :
-            _DT_BLS.content(doc.ps, comp) == fp[h] ? :match : :mismatch   # the door's bytes against the Engine's fingerprint
         push!(rows, DTEvalRow(attr, v, pol, comp, oc, orig, h, d.grain, d.namespace,
-                              d.path, d.origin, f, why))
+                              d.path, d.origin, why))
     end
     rows
 end
@@ -596,8 +589,6 @@ function _dt_eval_bullet(io, doc, row; indent = "", target_tag::String = "")
     end
     row.origin_status == :failed &&
         _dt_sty(io, "  ⚠ origin unverified", color = _DT_C_BAD, bold = true)
-    row.fp in (:mismatch, :missing) &&                 # :na (unanchored) makes no fp claim
-        _dt_sty(io, "  ⚠ fingerprint $(row.fp)", color = _DT_C_BAD, bold = true)
     println(io)
 end
 
@@ -1191,7 +1182,6 @@ function _dt_t2_rows(io, doc, frows, allrows, echo; show_handles::Bool = false)
             _dt_excerpt(strip(_dt_content(doc, row.origin)), 20) * "\"", color = _DT_C_CHROME)
         _dt_sty(io, "  \"" * _dt_excerpt(strip(_dt_content(doc, c)), 36) * "\"")
         row.origin_status == :failed && _dt_sty(io, "  ⚠ origin unverified", color = _DT_C_BAD, bold = true)
-        row.fp != :match && _dt_sty(io, "  ⚠ fingerprint $(row.fp)", color = _DT_C_BAD, bold = true)
         println(io)
         show_handles && _dt_handle_note(io, row, "         ")
     end
@@ -1667,9 +1657,9 @@ end
 
 ## ── the content classifier (marked source / render / structure; seat-D1 spec) ─────────
 ## Everything below reads the delivered tree (`result.blsComponentTree`) THROUGH THE DOOR — `root`,
-## `children`, `getElement`, `content`, `flavor`, `isHorizontalSpace` (stage 2's commit 0) — with ONE
-## residue outside it, marked at its two sites: the source-line COUNT (`length(collectedLines)`) that
-## sizes and range-checks the per-line output (no door name serves it; his word asked).
+## `children`, `getElement`, `content`, `flavor`, `isHorizontalSpace` (stage 2's commit 0) — with NO
+## residue outside it since stage 2's commit 9b (R-V04B-85 (D)): the source-line COUNT that sizes the per-line
+## output comes from the callers' own bytes (the marked-source writer's line split; the render tier's lines).
 ## devtools_selfcheck() pins every read (fate flags, :comment grains, the flavor record, byte offsets,
 ## the Line texts) so a drifted engine fails LOUDLY.
 
@@ -1803,13 +1793,14 @@ end
 
 ## SOURCE surface (D1 §a.4): classify the parsed source's own lines. `hideprefix` is
 ## NEVER emitted here — brief rule 6.1 is a render-only re-cut. Returns the runs
-## lines, or `nothing` to degrade (caller emits whole-file neutral).
-function _dt_sl_source_lines(result)
+## lines, or `nothing` to degrade (caller emits whole-file neutral). `nsrc` = the source-line COUNT from the
+## CALLER's own bytes (R-V04B-85 (D), stage 2's commit 9b: the marked-source writer's line split; the render tier's
+## `renderlines`) — the former `length(collectedLines)` read outside the door is gone.
+function _dt_sl_source_lines(result, nsrc::Int)
     try
         result.status == GoMeta.PROCESS_OK || return nothing
         ps = result.blsComponentTree
         F = _DT_BLS.flavor(ps)
-        nsrc = length(ps.collectedLines)   # RESIDUE outside the door: the source-line COUNT sizes and range-checks the per-line output (no door name; his word asked)
         out = Vector{Union{Nothing,Vector{Tuple{String,String}}}}(nothing, nsrc)
         _dt_sl_walk(ps) do line, block, file, ln
             1 <= ln <= nsrc || throw(ErrorException("slide classifier: inputLineNum $ln outside 1:$nsrc"))
@@ -1841,7 +1832,6 @@ function _dt_sl_render_lines_T0(result, renderlines)
         ps = result.blsComponentTree
         F = _DT_BLS.flavor(ps)
         hm = F.hide_marker
-        nsrc = length(ps.collectedLines)   # RESIDUE outside the door: the source-line COUNT range-checks the walk (see _dt_sl_source_lines)
         out = Vector{Vector{Tuple{String,String}}}()
         ok = Ref(true)
         j = Ref(1)
@@ -1849,8 +1839,7 @@ function _dt_sl_render_lines_T0(result, renderlines)
             ok[] || return
             f = _dt_sl_fate(line, block, file)
             f === :discard && return
-            1 <= ln <= nsrc || throw(ErrorException("slide classifier: inputLineNum $ln outside 1:$nsrc"))
-            s = String(_DT_BLS.content(ps, line))   # the Line's text through the door
+            s = String(_DT_BLS.content(ps, line))   # the Line's text through the door (empty for an out-of-range Line — the byte comparison below degrades; the former range check gone, R-V04B-85 (D))
             if j[] > length(renderlines)
                 ok[] = false; return
             end
@@ -1926,7 +1915,7 @@ function _dt_sl_render_lines(result, renderbytes)
     t0 !== nothing && return t0, fnl, :component
     t1 = try
         r2 = GoMeta.goMeta(copy(renderbytes); config = GoMeta.GoMetaConfig(flavor_tag = _DT_BLS.flavor(result.blsComponentTree).flavor_tag))
-        _dt_sl_source_lines(r2)
+        _dt_sl_source_lines(r2, length(renderlines))   # the count from the render tier's own line split (R-V04B-85 (D))
     catch err
         err isa InterruptException && rethrow()
         nothing
@@ -2464,12 +2453,12 @@ function writeMarkedSourceToFile(path::AbstractString, bytes::AbstractVector{UIn
         err isa InterruptException && rethrow()
         nothing
     end
-    r === nothing || (lr = _dt_sl_source_lines(r))
+    ls, _ = _dt_sl_splitlines(copy(snap))   # the file's OWN line split: the classifier's source-line count (R-V04B-85 (D)) and the fidelity gate's yardstick
+    r === nothing || (lr = _dt_sl_source_lines(r, length(ls)))
     ## fidelity-gate the classification against the WRITTEN bytes (R1#2 — the
     ## same principle as the T1 gate): a drifted engine whose collectedLines
     ## diverge from the file's own line split degrades to neutral, never lies
     if lr !== nothing
-        ls, _ = _dt_sl_splitlines(copy(snap))
         (length(lr) == length(ls) &&
          all(join(first.(lr[i])) == ls[i] for i in eachindex(ls))) || (lr = nothing)
     end
@@ -2498,7 +2487,7 @@ end
 IS: the internal-surface drift alarm (design §2). DOES: runs `goMeta` on a tiny inline
 marked input and asserts, LOUDLY, everything these tools stand on: the walkable
 `result.blsComponentTree` tree + engine-true census, evals rows present and 100%
-anchored with `:match` fingerprints, and both printers rendering non-empty output to
+anchored, each with content through the door, and both printers rendering non-empty output to
 plain AND colored IO without throwing. REASONING: the tools read the delivered part's BLS internals
 — parser names non-public until the door of stage 2 (R-V04B-45; R-V04B-58) — and the package snapshot is refreshed wholesale — after every refresh, RUN THIS; a
 broken internal surface must fail here, not silently mis-render during play.
@@ -2541,8 +2530,8 @@ function devtools_selfcheck()
     sort([_dt_grain(x.comp) for x in rows]) == ["Block", "Block", "Block", "Line", "Segment"] ||
         error("devtools_selfcheck: row anchoring drifted (got " *
               "$(sort([_dt_grain(x.comp) for x in rows])))")
-    all(x -> x.fp === :match, rows) ||
-        error("devtools_selfcheck: fingerprint mismatch — content derivation drifted")
+    all(x -> !isempty(_DT_BLS.content(doc.ps, x.comp)), rows) ||
+        error("devtools_selfcheck: a row's Component has no content through the door — content derivation drifted")
     for renderer in (print_BLS_Component_Tree, print_altValues_evals)
         for colored in (false, true)
             buf = IOBuffer()
@@ -2643,8 +2632,8 @@ end
 ##  'devtools/gometa.jl' entirely?"; the file is deleted): the seven verbs
 ##      julia --startup-file=no --project=$GM/tests $GM/devtools/devtools.jl <verb> <file>
 ##      tree · segments · evals · render · trace · evals-tree · bls-tree
-##  IS: the smallest complete consumer of the two containers — `altValues_evals` (+ `content_fingerprint`
-##  for the excerpts) and the development tool's (tree, render) pair (`Main.BasicRenderer.outputs`,
+##  IS: the smallest complete consumer of the two containers — `altValues_evals` (the excerpts through the
+##  door: `BLS.content` of each row's resolved Component, since commit 9b) and the development tool's (tree, render) pair (`Main.BasicRenderer.outputs`,
 ##  loaded through the ONE path at this file's top). DOES: runs goMeta on ONE file; status + diagnostics
 ##  to stderr, the surface to stdout; exit 0 = PROCESS_OK, 1 = a non-OK result, 2 = usage. The `trace`
 ##  verb decodes each row's cell_handle with the tool's OWN `_dt_decode` (§C) — the former CLI's
@@ -2688,12 +2677,12 @@ function _dt_cli_main(args)
     elseif cmd == "render"
         print(String(copy(Main.BasicRenderer.outputs(r).render_bytes)))
     elseif cmd == "evals"
-        fp = Dict{Vector{UInt8},Vector{UInt8}}(h => c for (h, c) in GoMeta.content_fingerprint(r))
-        rows = GoMeta.readAltValuesEvals(r.altValues_evals)
+        doc = _dt_doc(r; name = basename(path))                 # the rows resolved to their Components (§C); the excerpt through the door
+        rows = _dt_eval_rows(doc)
         isempty(rows) && println(stderr, "(no evals rows — no LIVE metaLine on any surface)")
-        for (h, attr, v, pol) in rows
-            cell = replace(String(copy(fp[h])), '\n' => '⏎')
-            println(rpad(String(attr), 14), " => ", rpad(repr(v), 40), " (", pol, ")  \"",
+        for row in rows
+            cell = replace(row.comp === nothing ? "" : _dt_content(doc, row.comp), '\n' => '⏎')   # an unanchored row (the user-context plane): no piece in the tree
+            println(rpad(String(row.attr), 14), " => ", rpad(repr(row.value), 40), " (", row.polarity, ")  \"",
                     first(cell, 60), length(cell) > 60 ? "…\"" : "\"")
         end
     elseif cmd == "evals-tree"
@@ -2705,14 +2694,14 @@ function _dt_cli_main(args)
         ## the owner's tree printer (R-DEV-1 :mix): tree rows + typed named-int / settribute dumps
         print_BLS_Component_Tree(stdout, r; style = :mix, _name = basename(path))
     elseif cmd == "trace"
-        fp = Dict{Vector{UInt8},Vector{UInt8}}(h => c for (h, c) in GoMeta.content_fingerprint(r))
-        rows = GoMeta.readAltValuesEvals(r.altValues_evals)
+        doc = _dt_doc(r; name = basename(path))                 # the rows resolved to their Components (§C); the excerpt through the door
+        rows = _dt_eval_rows(doc)
         isempty(rows) && println(stderr, "(no evals rows — no LIVE metaLine on any surface)")
-        for (h, attr, v, pol) in rows
-            cell = replace(String(copy(fp[h])), '\n' => '⏎')
-            println(rpad(String(attr), 14), " => ", rpad(repr(v), 40), " (", pol, ")  \"",
+        for row in rows
+            cell = replace(row.comp === nothing ? "" : _dt_content(doc, row.comp), '\n' => '⏎')   # an unanchored row (the user-context plane): no piece in the tree
+            println(rpad(String(row.attr), 14), " => ", rpad(repr(row.value), 40), " (", row.polarity, ")  \"",
                     first(cell, 60), length(cell) > 60 ? "…\"" : "\"")
-            d = _dt_decode(h)
+            d = _dt_decode(row.handle)
             if d === nothing
                 println("    handle: UNDECODED (schema != 0x01) — the excerpt above is the only locator")
                 continue

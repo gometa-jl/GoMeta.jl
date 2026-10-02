@@ -14,8 +14,8 @@
 #       pre-check + byte-compare), a PROCESS_OK clean-run guard, determinism across two fresh
 #       runs, sorted order, all-true verdict polarity, and no WARN_VERDICT_COLLISION diagnostic; the golden's
 #       bytes PRODUCED by the test-layer deriver (TestSupport.derive_annotations_golden — the fifth column through the
-#       BLS Component tree and the door's `BLS.content`; stage 2's commit 8, R-V04B-43 (3)) and, while the Engine's
-#       five-column producer exists, asserted byte-equal to it (the binary proof).
+#       BLS Component tree and the door's `BLS.content`; stage 2's commit 8, R-V04B-43 (3)); the Engine's five-column
+#       producer LEFT at commit 9b — the byte-compare against the pinned files below holds the twelve unmoved.
 #       (5) an oracle-depth gate: at least three byte_identical fixtures sourced from the
 #       reference render corpus. (6) a corpus drift-check: each harvested fixture's input byte-equals
 #       its examples/InFileFolder original, and its render golden equals the examples/OutFileFolder
@@ -160,7 +160,6 @@ end
         @test res.status == G.PROCESS_OK
         ann = G.readAltValuesEvals(res.altValues_evals)
         ser = TestSupport.derive_annotations_golden(res)         # THE TEST-LAYER DERIVER (stage 2's commit 8; R-V04B-43 (3)): the 5-column form, its fifth column through the BLS Component tree and the door's `BLS.content`
-        @test ser == G.serialize_evals(res)                     # THE BINARY PROOF while the Engine's producer exists: both producers give the SAME bytes — one differing byte stops the act (this line goes with the producer at commit 9)
         @test _sha(ser) == fx["annotations_golden_sha256"]             # golden sha pre-check
         @test ser == read(joinpath(REPO, fx["annotations_golden_path"]))   # full byte-compare on the golden file
         # deterministic across a 2nd fresh in-process run; sorted; polarity; totality.

@@ -903,17 +903,14 @@ end
 
 The profile-feed surface's own recordable identity (the user-context build): `handle` =
 the minted user-context key bytes (`user_context_key(config.namespace, region_ordinal)`,
-serialized); `content` = the fed profile's verbatim UTF-8 bytes (the minted row's
-fingerprint column — the analogue of the document rule that a heading row carries the bytes of the
-Component that carries the heading: the metaBlock a whole-line metaLine forms, R-V04B-50; the Segment of an
-inline one). Constructed by the feed routine immediately before its absorb call and
+serialized). The fed profile's bytes are NOT carried on the record since stage 2's commit 9b (R-V04B-43 (1); the
+row has no piece in the tree — its derived fifth column is empty: R-V04B-43 (4), his word OWNER-WORDS §277, R-V04B-90). Constructed by the feed routine immediately before its absorb call and
 RESTORED-to-prior in a `finally` right after (the stack-disciplined bracket); the
 document-side `meta_context` stays `nothing` on the feed, so the deriving-form refusal
 holds by construction. Immutable; per-call config inputs only.
 """
 struct UserContext
     handle::Vector{UInt8}
-    content::Vector{UInt8}
 end
 
 """
@@ -952,19 +949,6 @@ mutable struct ProcessState
     first_parent_idx::Int
     crnt_idx::Int
     meta_context::Union{Nothing,MetaContext}   # v0.2 CH-3 step 9 (see MetaContext above)
-    meta_content::Vector{UInt8}                # v0.2 CH-3 localOnly delivery: the CARRYING
-                                               # Component's verbatim content bytes (the metaBlock a
-                                               # whole-line metaLine forms, R-V04B-50; the Segment of an inline one)
-                                               # (`cell_content_bytes`), published at the
-                                               # walk handover BESIDE `meta_context` and
-                                               # consumed by the absorb-seam heading
-                                               # delivery as the minted row's fingerprint
-                                               # column. EMPTY on the userMH surface (the
-                                               # feed nulls it with the record; the feed's
-                                               # OWN fingerprint rides UserContext.content).
-                                               # A per-call scratch — deliberately NOT a
-                                               # MetaContext field (the record's ratified
-                                               # shape is {grain, depth, level, handle}).
     user_context::Union{Nothing,UserContext}   # the user-context build: non-nothing ONLY
                                                # inside the feed routine's bracket (set
                                                # before its absorb call, restored-to-prior
@@ -1104,7 +1088,6 @@ function init_state(parse_state::BLS.ParseState, config::GoMetaConfig, registry:
         Diagnostic[],                # diagnostics
         fileMHIdx, fileMHIdx, fileMHIdx,   # crnt_depth_idx / first_parent_idx / crnt_idx
         nothing,                     # meta_context — published per component at the walk handover (step 9)
-        UInt8[],                     # meta_content — published beside meta_context (localOnly delivery)
         nothing,                     # user_context — set only inside the feed routine's bracket
         false,                       # wrote_back — the T3 write latch (raised at the first caller-state write)
     )
