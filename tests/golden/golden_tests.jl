@@ -12,7 +12,10 @@
 #       its current render equals the NEW pinned bytes, and its tree golden is held
 #       to the same two-leg check. (4) net_new_surface: the serialized annotations golden (sha
 #       pre-check + byte-compare), a PROCESS_OK clean-run guard, determinism across two fresh
-#       runs, sorted order, all-true verdict polarity, and no WARN_VERDICT_COLLISION diagnostic.
+#       runs, sorted order, all-true verdict polarity, and no WARN_VERDICT_COLLISION diagnostic; the golden's
+#       bytes PRODUCED by the test-layer deriver (TestSupport.derive_annotations_golden — the fifth column through the
+#       BLS Component tree and the door's `BLS.content`; stage 2's commit 8, R-V04B-43 (3)) and, while the Engine's
+#       five-column producer exists, asserted byte-equal to it (the binary proof).
 #       (5) an oracle-depth gate: at least three byte_identical fixtures sourced from the
 #       reference render corpus. (6) a corpus drift-check: each harvested fixture's input byte-equals
 #       its examples/InFileFolder original, and its render golden equals the examples/OutFileFolder
@@ -156,7 +159,8 @@ end
         # headers would MATCH ⇒ this guard is what keeps that case from silently false-greening.
         @test res.status == G.PROCESS_OK
         ann = G.readAltValuesEvals(res.altValues_evals)
-        ser = G.serialize_evals(res)                             # the SINGLE shared serializer (the 5-column form over the delivered object, v0.2's)
+        ser = TestSupport.derive_annotations_golden(res)         # THE TEST-LAYER DERIVER (stage 2's commit 8; R-V04B-43 (3)): the 5-column form, its fifth column through the BLS Component tree and the door's `BLS.content`
+        @test ser == G.serialize_evals(res)                     # THE BINARY PROOF while the Engine's producer exists: both producers give the SAME bytes — one differing byte stops the act (this line goes with the producer at commit 9)
         @test _sha(ser) == fx["annotations_golden_sha256"]             # golden sha pre-check
         @test ser == read(joinpath(REPO, fx["annotations_golden_path"]))   # full byte-compare on the golden file
         # deterministic across a 2nd fresh in-process run; sorted; polarity; totality.

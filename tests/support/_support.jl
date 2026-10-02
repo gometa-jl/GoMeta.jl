@@ -3,9 +3,11 @@
 # IS:   the single source of shared fixtures + helpers for the layers tests/runtests.jl dispatches
 #       (golden · unit). runtests.jl includes this file ONCE, before any layer. The golden layer
 #       (golden_tests.jl) keeps its own manifest reader — it is the byte-parity layer — so this hub
-#       serves the unit layer.
+#       serves the unit layer, and (since stage 2's commit 8) every layer's producer of the five-column annotations form.
 # DOES: (1) the corpus loaders corpus_fixtures() / corpus_inputs() — the manifest's
-#       byte_identical partition as (id, input bytes) pairs. (2) quiet_io(f) — an
+#       byte_identical partition as (id, input bytes) pairs. (1b) derive_annotations_golden(delivery) — the test-layer
+#       deriver of the reference files' five-column annotations form (derive_annotations.jl; stage 2's commit 8,
+#       R-V04B-43 (3)) — the golden runner's producer and, at commit 9, the unit witnesses'. (2) quiet_io(f) — an
 #       fd-level redirect of stdout+stderr to /dev/null (Base.devnull has no backing fd, so a plain
 #       redirect_stdout(devnull) misses fd-level output), suppressing the benign, deterministic notices
 #       the vendored BLS parser prints on over-capacity/deep inputs. (3) _sha, the shared sha256 hex helper.
@@ -60,5 +62,9 @@ function quiet_io(f)
         end
     end
 end
+
+# THE TEST-LAYER DERIVER of the reference files' fifth column (stage 2's commit 8; R-V04B-43 (3)): `derive_annotations_golden(delivery)` —
+# the five-column annotations form, its fifth column through the BLS Component tree and the door's `BLS.content`, never the Engine's copy.
+include(joinpath(@__DIR__, "derive_annotations.jl"))
 
 end # module TestSupport
