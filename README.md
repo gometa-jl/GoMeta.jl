@@ -187,11 +187,11 @@ julia --startup-file=no --project=. -e 'using Pkg; Pkg.instantiate()'   # once, 
 julia --startup-file=no --project=. devtools/run_examples.jl
 ```
 
-A small query demo ships beside the driver — "find it again" over the same committed corpus:
+A small query demo ships under `extensions/` — "find it again" over the same committed corpus (an Extension of GoMeta, not the Engine; R-V04B-27):
 
 ```
-julia --startup-file=no --project=. find_by_label.jl            # per-label overview
-julia --startup-file=no --project=. find_by_label.jl label5     # which cells carry :label5, and
+julia --startup-file=no --project=. extensions/find_by_label.jl            # per-label overview
+julia --startup-file=no --project=. extensions/find_by_label.jl label5     # which cells carry :label5, and
                                                                 # each cell's evaluated visibility verdict
 ```
 

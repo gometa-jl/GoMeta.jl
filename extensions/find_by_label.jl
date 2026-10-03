@@ -18,8 +18,9 @@
 #      answer's inheritance (the corpus-documented nesting semantics).
 #
 # Run from the repository root (after `Pkg.instantiate()`):
-#   julia --startup-file=no --project=. find_by_label.jl            # per-label overview
-#   julia --startup-file=no --project=. find_by_label.jl label5     # one label, all hits
+#   julia --startup-file=no --project=. extensions/find_by_label.jl            # per-label overview
+#   julia --startup-file=no --project=. extensions/find_by_label.jl label5     # one label, all hits
+#   (the file lives under extensions/ since stage 5 of the v0.4 build — R-V04B-27; run it from the code home's root)
 #
 # The corpus-documented labels are `:label1`..`:label5`; since 0.3.0 the closed whitelist also
 # accepts a fixed pictograph vocabulary (this driver's index covers the corpus labels).
@@ -28,7 +29,7 @@
 
 import GoMeta
 
-const EXAMPLES = joinpath(@__DIR__, "examples", "InFileFolder")
+const EXAMPLES = joinpath(@__DIR__, "..", "examples", "InFileFolder")   # the file lives under extensions/ (R-V04B-27)
 const LABELS   = [:label1, :label2, :label3, :label4, :label5]
 
 # one indexed occurrence: the file it came from, the piece's verbatim CONTENT bytes (read

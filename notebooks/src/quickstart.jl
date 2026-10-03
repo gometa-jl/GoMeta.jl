@@ -58,7 +58,7 @@ print(String(copy(out.render_bytes)))
 # ## Find it again
 # The shipped query demo indexes exactly these rows — the part `altValues_evals`, read
 # through the reader — across the whole committed corpus; run it yourself:
-# `julia --startup-file=no --project=. find_by_label.jl label5`
+# `julia --startup-file=no --project=. extensions/find_by_label.jl label5`
 
 count(e -> e[2] === :label_label5 && e[3] === true, evals)
 
