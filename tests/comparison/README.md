@@ -6,7 +6,7 @@
 
 **REASONING.** The two variants may deliver different shapes and Julia types (his §70 (1)), and even successive versions of one line need not deliver the evaluated altValues in the same format (§D51); only a projection keyed by content can be compared. **PURPOSE.** The twelve forms; the comparison of a retro delivery against them.
 
-**THE FREEZE (his word of 2026-09-29, §D52 → R-DOC-31).** The forms are built with today's behaviour and FROZEN as GoMetaRetro's target by his typed word at this stage's review and landing — NO separate per-question word (the content questions of §4 are judged on the branch's code where he did not rule and by his rulings where he did). Each file's header names the v0.4 commit that produced it; a changed body is re-made, never edited, in the commit whose change moved it (§5).
+**THE FREEZE (his word of 2026-09-29, §D52 → R-DOC-31; his word of 2026-10-03, OWNER-WORDS §304 item 2 — R-V04B-94).** The forms are built with today's behaviour and FROZEN as GoMetaRetro's target by his typed word at this stage's review and landing — NO separate per-question word (the content questions of §4 are judged on the branch's code where he did not rule and by his rulings where he did). The review's word was given on 2026-10-03: *"I approve the freeze."* — the twelve forms as landed at `53bed82e` are the target; the landing's word comes with the branch's merge (7A). Each file's header names the v0.4 commit that produced it; a changed body is re-made, never edited, in the commit whose change moved it (§5).
 
 ## 1. "Same content" (the definition — one paragraph; the owner corrects it)
 
@@ -56,3 +56,15 @@ julia --startup-file=no --project=$GM/tests $GM/tests/comparison/regenerate.jl -
 bash $GM/devtools/compare_forms.sh <form A> <form B>                                            # the comparator (exit 0 = same content)
 ```
 A changed body is never edited by hand: it is re-made with `--at <the new short sha>` in the commit whose change moved it, and that commit's message names which forms moved and why.
+
+## 6. Using this yardstick from another variant or version (GoMetaRetro, GoMetaRetroCC, a later GoMeta) — his order of 2026-10-03 (OWNER-WORDS §304 item 1)
+
+The yardstick is the FORM of §2; the twelve files beside this page are version 0.4's reference altValues in that form, FROZEN as the target on his word of 2026-10-03 (§304 item 2; R-DOC-31). A variant uses it so:
+
+1. **The same inputs.** The twelve corpus inputs are the seven `examples/InFileFolder/*.jl` and the five `tests/golden/constructed/InFileFolder/*.jl` of THIS code home at the commit each form's header names (`produced by GoMeta v0.4 at <sha>`). Run your line on the same bytes — read them in place or copy them unchanged; never edit them (they are his examples, the law of the design).
+2. **Your own adapter** (R-V04B-36 (c)): one function in your line's development tools that takes your delivery for one input and writes the form of §2 — the header line with your line's name in place of `GoMeta v0.4` and your producing commit, then every C and A line, sorted by code point (the order of `LC_ALL=C sort`), one newline at the end. The grammar is fixed here: copy it byte for byte — the separator ` | `, the key shapes, the span rules and the character unit, the flag qualification and sorting, the value grammar, the source words. A field your line cannot yet produce (the source as a Component key before your delivery records an origin, say) is written as `-`, and a header comment line (`#`-led, dropped by the comparator) says which field and why — so the comparison shows the gap at the body lines, honestly, instead of hiding it.
+3. **Your twelve** go into a folder of YOUR line (`tests/comparison/` there, the same stems, `.cmp.txt`); nothing is written into this folder but by this line's `regenerate.jl`.
+4. **Compare file by file:** `bash <this code home>/devtools/compare_forms.sh <this line's form> <your form>` — exit 0 = the same content; exit 1 = different, the differing lines printed (`<` this line's, `>` yours); exit 2 = usage. A difference in a `C` line is a difference in the parser's reading of the file (the tree's content); in an `A` line, in the Engine's evaluated value or in where it came from.
+5. **Read a difference against §4 before changing code.** The points listed there are his to decide; a variant does not settle them by matching version 0.4, and version 0.4 does not settle them by having landed first.
+6. **When this line's forms are re-made** (a later word of his moves a value), the new headers name the new commit and that commit's message names what moved and why; re-run step 4 against the new files.
+7. **Record the result as the comparator's output, unabridged** (the canon's R4b), in your line's record — never a retyped summary of it.
