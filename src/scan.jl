@@ -4,7 +4,8 @@
 # must be unambiguous, and informative").
 #
 # IS:   two thin reads over `evaluatedAltValue` (commit 4) — functions of their own (the session's default under R-V04B-40 (2); the alternative,
-#       methods of the reader, is banked as a labelled diff beside this commit and both are shown at the review — card 4, his choice).
+#       methods of the reader, is banked as a labelled diff beside this commit; his word of 2026-10-03 named the functions — §305,
+#       R-V04B-95 — and took no alternative, which stays his to take).
 # DOES: `scanAlterant` lists every Component for which the Engine RECORDED a value of ONE Alterant (its own rows — a Segment-carried row
 #       counting as its Line's), each with its answer, in the tree's order; a rowless Component is not listed (it is covered as PART OF
 #       its Block — his §7 item 2: the children hidden as PART OF their Block, not individually — its answer is `evaluatedAltValue`'s).
@@ -12,7 +13,7 @@
 #       ONE Component, in the registry's Alterant order.
 # REASONING: his 9.A's two views — by Alterant across the tree, by Component across the Alterants — over the one answer function, so the
 #       two views can never disagree with it or with each other.
-# PURPOSE: the Extension-facing scans (R-V04B-35 (c); his 9.A). Package-public; NOT exported; NOT FINAL (the names and the form at the review).
+# PURPOSE: the Extension-facing scans (R-V04B-35 (c); his 9.A). Package-public; NOT exported; the names his word of 2026-10-03 (§305; R-V04B-95), the form standing, its alternative banked.
 
 """
     scanAlterant(delivery::GoMetaDelivery, alterant::Symbol; registry::AlterantRegistry = DEFAULT_REGISTRY) -> Vector{Pair{BLS.AbstractComponent,EvaluatedAltValue}}
@@ -27,7 +28,8 @@ the same refusal `evaluatedAltValue` gives). Pure.
 REASONING: the recorded Components are the ones an Extension must find efficiently (9.A); the inherited ones are implied by their
 Block (his §7 item 2) and derivable on demand.
 PURPOSE: the Extension's "which Components carry this Alterant, and what". Package-public (docs/public-api.md §1.2), NOT exported;
-NOT FINAL until the review (the name, the form — a function of its own or a method of the reader; card 4).
+the name kept by his word of 2026-10-03 (§305; R-V04B-95); the form — a function of its own — stands, its alternative (a method of the
+reader) banked.
 """
 function scanAlterant(delivery::GoMetaDelivery, alterant::Symbol;
                       registry::AlterantRegistry = DEFAULT_REGISTRY)::Vector{Pair{BLS.AbstractComponent,EvaluatedAltValue}}
@@ -66,8 +68,8 @@ when it declares none, an undeclared capture stem derived as the walk derives it
 throughout. Pure.
 REASONING: his 9.A's other view — a Component's whole evaluation at one read, unambiguous (one tag per Alterant) and informative
 (the value, the source, the deciding Component).
-PURPOSE: the Extension's "what applies to this Component, Alterant by Alterant". Package-public, NOT exported; NOT FINAL until the
-review (card 4).
+PURPOSE: the Extension's "what applies to this Component, Alterant by Alterant". Package-public, NOT exported; the name his word of
+2026-10-03 (§305; R-V04B-95: `evaluatedAltValues`); the form stands, its alternative banked.
 """
 function evaluatedAltValues(delivery::GoMetaDelivery, component::BLS.AbstractComponent;
                     registry::AlterantRegistry = DEFAULT_REGISTRY)::Vector{Pair{Symbol,EvaluatedAltValue}}

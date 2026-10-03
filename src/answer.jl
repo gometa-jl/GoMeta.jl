@@ -20,9 +20,10 @@
 #       from the rows at the call, so the delivered rows remain the one truth and no second store can drift from them.
 # PURPOSE: the Extension-facing question "what applies to this Component for this Alterant, and through whom" (R-V04B-35 (c);
 #       R-V04B-55 (2) (v): an Extension that needs a value where GoMeta provided none may use the Alterant's default).
-# NOT FINAL (put at stage 2's review, R-V04B-40 (2)): its TIER (package-public — the session's default), the File's case, the
-#       equal-child rows (OQ-148), the per-call row scan (the cached index, Q6; the former per-call tree walk behind `via` left at
-#       stage 3's commit 1b — `_component_of` below). The NAME is DECIDED: `evaluatedAltValue`, his word of 2026-10-03 (OWNER-WORDS
+# NOT FINAL (put at stage 2's review, R-V04B-40 (2)): its TIER (package-public — the session's default), the File's case and the
+#       equal-child rows (OQ-148) are carried past the branch (the review's C23); the per-call row scan (the cached index, Q6 — card C8;
+#       the former per-call tree walk behind `via` left at stage 3's commit 1b — `_component_of` below) is DEFERRED to the benchmark
+#       phase (his word of 2026-10-03, OWNER-WORDS §307; R-V04B-97). The NAME is DECIDED: `evaluatedAltValue`, his word of 2026-10-03 (OWNER-WORDS
 #       §305; R-V04B-95), replacing the branch's working name `answerFor` (the casing rule R-V04B-31).
 
 """
@@ -35,8 +36,8 @@ Labels the SET of label names, a sorted `Vector{Symbol}`; Id the compound, a `Na
 DOES: carries the answer; `value` is `nothing` for `:none`.
 REASONING: ONE source tag per Component per Alterant (R-V04B-35 (c)) — the deciding statement's for a single-valued mode, the
 SET's for an accumulating one (which Component contributed which label is Q4 (ii), open), the compound's for Id.
-PURPOSE: the return of `evaluatedAltValue`. Package-public (docs/public-api.md §1.2); NOT exported. Stage 2's commit 4; not final
-until his word (the NAME and the TIER at the review).
+PURPOSE: the return of `evaluatedAltValue`. Package-public (docs/public-api.md §1.2); NOT exported. Stage 2's commit 4; the NAME his
+word of 2026-10-03 (OWNER-WORDS §305; R-V04B-95); the TIER carried past the branch (the review's C23).
 """
 struct EvaluatedAltValue
     value::Any
@@ -155,14 +156,15 @@ without rows of its own answers as the Component whose rows it inherits answers 
 that Component's `:own` becoming `:indirect` through it — its statement was applied to the Line, not to the Segment — and every other
 source (`:indirect` through the same decider, `:user`, `:file`) unchanged, as a rowless Line's relates to its Block's; rows without any recorded origin answer `:own` on the Component itself and
 `:indirect` through the carrier Component otherwise. The File answers `(nothing, :none)` — NOTHING built for it (card 6
-"next"; his question at the review). An Alterant name outside the registry throws an `ArgumentError` naming the registered
+"next"; the File's case carried past the branch (the review's C23)). An Alterant name outside the registry throws an `ArgumentError` naming the registered
 names; an Alterant without a capture DECLARATION mints no rows and answers its declared default (`:default`) or `:none`; an
 undeclared capture stem is derived as the walk derives it (`lowercase(altName)`). Pure: no state, no cache, no mutation of the delivery.
 REASONING: one function, uniform across Alterants (the value in each Alterant's own shape, the source ONE tag), so an
 Extension asks one question (R-V04B-35 (c); R-V04B-55 (2)); the rows stay the one truth (R-V04B-35 (a)).
 PURPOSE: the Extension-facing read of "what applies here and through whom". Package-public (docs/public-api.md §1.2), NOT
-exported. NOT FINAL: the name, the tier, the File's case, the equal-child rows and the per-call row scan are put at stage 2's
-review (R-V04B-40 (2), card C8); nothing here is promised before v0.7 (§6).
+exported. The name is his word of 2026-10-03 (OWNER-WORDS §305; R-V04B-95); the per-call row scan (card C8) is DEFERRED to the
+benchmark phase (§307; R-V04B-97); the tier, the File's case and the equal-child rows (OQ-148) are carried past the branch (the review's C23);
+nothing here is promised before v0.7 (§6).
 """
 function evaluatedAltValue(delivery::GoMetaDelivery, component::BLS.AbstractComponent, alterant::Symbol;
                    registry::AlterantRegistry = DEFAULT_REGISTRY)::EvaluatedAltValue

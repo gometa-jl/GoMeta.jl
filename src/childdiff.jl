@@ -10,11 +10,11 @@
 #       no parent and never differs.
 # REASONING: his §37 item 4.2 names the signal as the rule for what a child needs recorded; computed from the one answer function it can
 #       never disagree with the rows; the File's side (today `:none`, so a Block with any VALUE differs and a Block answering `:none` does
-#       not) is the File's case at the review. His (ii) Boolean sits beside a PARENT's entry and asks whether ANY of its children differ —
+#       not) is the File's case, carried past the branch (the review's C23). His (ii) Boolean sits beside a PARENT's entry and asks whether ANY of its children differ —
 #       `any` of this function over the parent's children; this function is the per-child primitive (his §37 item 4.2's question for ONE
 #       child); the aggregate's own form — a function of its own, or the stored flag beside the parent's row — is the benchmark phase's.
 # PURPOSE: the Extension's and the benchmark phase's "does this child need its own record" (R-V04B-35 (e)). Package-public; NOT exported;
-#       NOT FINAL (the name, the Block-against-File reading, at the review).
+#       the name kept by his word of 2026-10-03 (R-V04B-95); the Block-against-File reading carried past the branch (the review's C23).
 
 """
     childDiffers(delivery::GoMetaDelivery, component, alterant::Symbol; registry::AlterantRegistry = DEFAULT_REGISTRY) -> Bool
@@ -36,7 +36,8 @@ REASONING: the signal is what a child needs recorded (his §37 item 4.2, OQ-148)
 disagree with the rows; the VALUE is compared, not the source, because a child hidden "as PART OF" its Block (his §7 item 2) is not a
 difference.
 PURPOSE: the Extension's and the benchmark phase's question (R-V04B-35 (e): "its stored form left to the benchmark phase"). Package-
-public (docs/public-api.md §1.2), NOT exported; NOT FINAL until the review (the name; the Block-against-File reading).
+public (docs/public-api.md §1.2), NOT exported; the name kept by his word of 2026-10-03 (R-V04B-95); the Block-against-File reading
+carried past the branch (the review's C23).
 """
 function childDiffers(delivery::GoMetaDelivery, component::BLS.AbstractComponent, alterant::Symbol;
                       registry::AlterantRegistry = DEFAULT_REGISTRY)::Bool
