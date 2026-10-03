@@ -198,6 +198,16 @@ _tl_nblocks(s; kw...) = length(collect(eachmatch(r"\{:B-", _tl_tree(s; kw...))))
             @test isempty(r.diagnostics)
             @test isempty(Main.BasicRenderer.outputs(r).render_bytes)   # (the terminal-newline fact of the empty input has no witness from the outside — through the door's `endsWithNewline` at stage 2, if door B lands)
         end
+        let r = GM.goMeta(Vector{UInt8}(codeunits("\n")))         # card C14 (c), R-V04B-96 (his §306 of 2026-10-03): the LF-ONLY input beside the empty one — R2 #21's "with and without the terminal newline"; every value MEASURED 2026-10-03 (receipts/S8-branch/PROBES-c14-pins_cd3ee9d3.txt)
+            @test r.status == GM.PROCESS_OK                                                   # [C14c1]
+            @test isempty(GM.readAltValuesEvals(r.altValues_evals))                           # [C14c2] no evals row
+            @test isempty(r.diagnostics)                                                      # [C14c3]
+            @test Main.BasicRenderer.outputs(r).render_bytes == UInt8[0x0a]                  # [C14c4] the render is the one line break back
+            @test length(GM.BLS.children(r.blsComponentTree)) == 1                            # [C14c5] ONE Block — the one empty line — read through the door (measured; the session's presentation had said none)
+            @test GM.BLS.endsWithNewline(r.blsComponentTree)                                  # [C14c6] the terminal-newline fact, through the door (the door landed at stage 2's commit 0)
+            @test isempty(GM.BLS.children(GM.goMeta(UInt8[]).blsComponentTree))               # [C14c7] the EMPTY input beside it: no Block…
+            @test !GM.BLS.endsWithNewline(GM.goMeta(UInt8[]).blsComponentTree)                # [C14c8] …and no terminal newline
+        end
         let s = "x = 1\n#~ hide\ny = 2", r = _tl_r(s)           # row 17: NO terminal newline
             @test r.status == GM.PROCESS_OK
             @test _tl_render(s) == "x = 1\n## #~ hide\n## y = 2"   # the render ends without LF, as the input did (the terminal-newline fact witnessed from the outside)

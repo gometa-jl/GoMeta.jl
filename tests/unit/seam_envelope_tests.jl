@@ -198,6 +198,10 @@ end
         nested = _SeamT.NESTED[]
         @test nested isa GM.GoMetaDelivery && _codes(nested.diagnostics) == [:STATE_REUSE_REFUSED] &&
               occursin("IN FLIGHT", nested.diagnostics[1].message)
+        @test nested.status === GM.PROCESS_ERROR && nested.diagnostics[1].severity === :error   # [C14h4] card C14 (h), R-V04B-96 (his §306): the in-flight refusal's row an :error (MEASURED 2026-10-03, receipts/S8-branch/PROBES-c14-pins_cd3ee9d3.txt)
+        @test nested.blsComponentTree !== ps4                                                    # [C14g4] card C14 (g): the refusal delivers a tree that is NOT the injected state (the one ledger refusal left since stage 3's commit 4 — the in-flight check; the door's is pinned in registry_lifecycle_tests.jl)
+        @test isempty(GM.BLS.children(nested.blsComponentTree))                                 # [C14g5] …with no Block, through the door
+        @test isempty(GM.readAltValuesEvals(nested.altValues_evals))                            # [C14g6] …and an EMPTY store
     end
 
     @testset "the InterruptException arm + the set-seam catalogue tokens" begin

@@ -152,6 +152,38 @@ import TOML
         @test !hasmethod(GM.readAltValuesEvals, Tuple{GM.GoMetaDelivery})   # [8f] and no method over the whole delivered object remains — the clean cut (R-V04B-61)
     end
 
+    @testset "card C14 (R-V04B-96; his word §306 of 2026-10-03) — the delivered object, its show, the reader: (a) (b) (e) (f); every value MEASURED 2026-10-03 (receipts/S8-branch/PROBES-c14-pins_cd3ee9d3.txt)" begin
+        # (a) the four parts by name, in HIS order (R-V04B-89, row 44 — OWNER-WORDS §270): the tree, the evals, the status, the diagnostics
+        @test fieldnames(GM.GoMetaDelivery) == (:blsComponentTree, :altValues_evals, :status, :diagnostics)   # [C14a]
+        # (b) ONE `Base.show` method over the delivered object — one line of counts, never the tree or the rows (src/state.jl); the strings MEASURED
+        @test count(m -> (p = Base.unwrap_unionall(m.sig).parameters; length(p) == 3 && p[3] === GM.GoMetaDelivery), methods(Base.show, (IO, GM.GoMetaDelivery))) == 1   # [C14b1] exactly one method whose third parameter is the delivery itself
+        let d = GM.goMeta(Vector{UInt8}(codeunits("x = 1\n#~ hide\n\ny = 2\n"))), s = sprint(show, d)
+            @test which(Base.show, Tuple{IO, GM.GoMetaDelivery}).module === GM                       # [C14b2] the method dispatched is GoMeta's own
+            @test count(==('\n'), s) == 0                                                             # [C14b3] one line
+            @test s == "GoMetaDelivery(blsComponentTree: BLS.ParseState over 4 source lines; altValues_evals: 1 evals rows; PROCESS_OK; diagnostics: 0)"   # [C14b4] the measured string — the counts, never the tree or the rows
+            @test sprint(show, GM.goMeta(UInt8[])) == "GoMetaDelivery(blsComponentTree: BLS.ParseState over 0 source lines; altValues_evals: 0 evals rows; PROCESS_OK; diagnostics: 0)"   # [C14b5] the empty input's
+        end
+        # (e) the reader's method COUNT — one, over the delivered PART ([8e]/[8f]; R-V04B-61). Its alternative — a convenience method over the whole
+        # delivered object (stage 1's agenda §A 4 (3)) — is HIS, carried past the branch (the review's C23): a later word of his re-cuts this pin
+        # in the commit that adds the method. A test of the present state, not a decision.
+        @test length(methods(GM.readAltValuesEvals)) == 1                                               # [C14e]
+        # (f) the reader's PURITY and the copied handles — a hand-built store, two records pushed in reverse handle order (the closing set's L4
+        # test of 2026-10-01, re-cut without the field `content` removed at stage 2's commit 9b — R-V04B-43 (1))
+        let st = GM.EvalStore(), h2 = UInt8[0x02], h1 = UInt8[0x01]
+            push!(st.records, GM.EvalRecord(h2, :visib, :hide, true, [copy(h2)]))
+            push!(st.records, GM.EvalRecord(h1, :visib, :show, true, [copy(h1)]))
+            snap() = [(copy(e.cell_handle), e.attr, e.value, e.polarity, deepcopy(e.decided_by)) for e in st.records]
+            s1 = snap()
+            rows = GM.readAltValuesEvals(st)
+            @test rows == [(UInt8[0x01], :visib, :show, true), (UInt8[0x02], :visib, :hide, true)]      # [C14f1] sorted by handle, the store's reverse order notwithstanding
+            @test snap() == s1 && length(st.records) == 2 && st.records[1].cell_handle == h2             # [C14f2] the store unchanged by the read — records, order, bytes
+            @test all(rows[i][1] !== e.cell_handle for i in 1:2 for e in st.records)                    # [C14f3] every returned handle is a COPY, never a record's own vector
+            empty!(rows[1][1])
+            @test GM.readAltValuesEvals(st) == [(UInt8[0x01], :visib, :show, true), (UInt8[0x02], :visib, :hide, true)]   # [C14f4] a second read after emptying a returned handle: the same rows
+            @test snap() == s1                                                                            # [C14f5] …and the store still unchanged
+        end
+    end
+
     @testset "surface oracle: an out-of-surface implementation name is NOT bound in the top module" begin
         # The standing oracle for the v0 public surface: a name OUTSIDE the declared surface must
         # not be a binding in the top module (⇒ a fortiori it cannot be exported either, so a separate

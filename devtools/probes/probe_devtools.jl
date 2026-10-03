@@ -265,6 +265,28 @@ lr, _, tier = _dt_sl_render_lines(rt, Vector{UInt8}(codeunits("#~9 :label1\n")))
 check(tier === :neutral && lr[1] == [("#~9 :label1", "neutral")],
       "slide: unparseable perturbed render must fall to R2 all-neutral (got $tier)")
 
+## card C14 (d) — R-V04B-96 (his word §306 of 2026-10-03): the FED-PROFILE T1 probe of the tools. The T1 re-parse rebuilds its configuration
+## from the delivered tree's FLAVOR alone (_dt_sl_render_lines; the configuration is not delivered — R-V04B-28): a fed profile does NOT carry
+## into it. Pinned as MEASURED 2026-10-03 (receipts/S8-branch/PROBES-c14-pins_cd3ee9d3.txt §(d)); whether the tools SHOULD carry the feed is his
+## (stage 1's agenda §A 3 (ii); the closing review's R-c2-10) — these rows record the present behaviour, they decide nothing.
+rtf = GoMeta.goMeta(Vector{UInt8}(codeunits("x = 1 #~ hide\n# t\n")); config = GoMeta.GoMetaConfig(user_mh_profile = "show"))
+rbf = copy(Main.BasicRenderer.outputs(rtf).render_bytes)
+check(String(copy(rbf)) == "x = 1 #~ hide\n# t\n", "slide (fed): the fed 'show' un-hides the line — the render is the input (measured)")
+lr, _, tier = _dt_sl_render_lines(rtf, copy(rbf))
+check(tier === :component && lr == [[("x = 1 ", "code"), ("#~", "marker"), (" hide", "payload")], [("# t", "text")]],
+      "slide (fed): the fed delivery's own render tiles at T0 (got $tier)")
+lr, _, tier = _dt_sl_render_lines(rtf, Vector{UInt8}(codeunits(replace(String(copy(rbf)), "x = 1" => "x  = 1"))))
+check(tier === :reparse && all(r -> r[2] != "hideprefix", Iterators.flatten(lr)) &&
+      lr == [[("x  = 1 ", "code"), ("#~", "marker"), (" hide", "payload")], [("# t", "text")]],
+      "slide (fed): a perturbed render degrades to T1 with no hideprefix (got $tier)")
+r2f = GoMeta.goMeta(Vector{UInt8}(codeunits(replace(String(copy(rbf)), "x = 1" => "x  = 1")));
+                    config = GoMeta.GoMetaConfig(flavor_tag = _DT_BLS.flavor(rtf.blsComponentTree).flavor_tag))
+check([(a, v) for (h, a, v, p) in GoMeta.readAltValuesEvals(r2f.altValues_evals)] == [(:visib, :hide)] &&
+      [(a, v) for (h, a, v, p) in GoMeta.readAltValuesEvals(rtf.altValues_evals)] == [(:visib, :show)],
+      "slide (fed): the T1 re-parse under the flavor-only config does NOT carry the fed profile — :hide where the fed delivery answered :show (measured; R-V04B-28)")
+lr, _, tier = _dt_sl_render_lines(rtf, Vector{UInt8}(codeunits("#~9 :label1\n")))
+check(tier === :neutral, "slide (fed): an unparseable render falls to R2 (got $tier)")
+
 ## error contract — TYPE-EXACT (verification order F2: an any-throw accept would
 ## stay green under a regression from the mandated ArgumentError/TypeError to error())
 expect_exact(f, T, msg) = (try f(); global fails += 1; println("FAIL  no-throw: ", msg)

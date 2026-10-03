@@ -69,6 +69,7 @@ _plugin_with_default(p, d) = GM.PlugIn(; altName = p.altName, setMode = p.setMod
         r = GM.goMeta(Vector{UInt8}(codeunits("x = 1\n#~ hide\n\ny = 2\n")); registry = U)
         @test r.status === GM.PROCESS_ERROR
         @test _codes(r.diagnostics) == [:REG_UNPUBLISHED]
+        @test _errors(r.diagnostics) == [:REG_UNPUBLISHED]                    # [C14h1] card C14 (h), R-V04B-96 (his §306): the refusal's one row is an :error (MEASURED 2026-10-03, receipts/S8-branch/PROBES-c14-pins_cd3ee9d3.txt) — the clause "PROCESS_ERROR ⇒ at least one :error row" (src/state.jl) pinned on the refusal path, where _configErrorDelivery sets PROCESS_ERROR without reading severity
         @test occursin("RegistryBuilder → validate → publish", r.diagnostics[1].message)
         @test isempty(Main.BasicRenderer.outputs(r).render_bytes)           # no parse, no render attempted
         @test isempty(GM.readAltValuesEvals(r.altValues_evals))                # the delivered part carries no rows on the refusal path (REAL-1 R2 #9; measured 2026-09-30: rows 0)
@@ -96,6 +97,7 @@ _plugin_with_default(p, d) = GM.PlugIn(; altName = p.altName, setMode = p.setMod
         r1 = GM.goMeta(Vector{UInt8}(codeunits("x = 1\n#~ hide\n\ny = 2\n")); registry = R)
         @test r1.status === GM.PROCESS_ERROR
         @test _codes(r1.diagnostics) == [:POST_SEAL_MUTATION]
+        @test _errors(r1.diagnostics) == [:POST_SEAL_MUTATION]                 # [C14h2] …and the post-seal refusal's one row an :error (MEASURED)
         @test isempty(Main.BasicRenderer.outputs(r1).render_bytes)
         @test isempty(GM.readAltValuesEvals(r1.altValues_evals))               # the delivered part carries no rows on the refusal path (REAL-1 R2 #9; measured: rows 0)
         @test !isempty(r1.diagnostics)                                         # non-OK ⇒ non-empty diagnostics (measured: 1, :POST_SEAL_MUTATION)
@@ -146,6 +148,10 @@ _plugin_with_default(p, d) = GM.PlugIn(; altName = p.altName, setMode = p.setMod
         GM.BLS.parseBLS(ps, 1, -1)
         rs = GM.run_absorb_apply!(ps; registry = U)
         @test rs.status === GM.PROCESS_ERROR && _codes(rs.diagnostics) == [:REG_UNPUBLISHED]
+        @test _errors(rs.diagnostics) == [:REG_UNPUBLISHED]                     # [C14h3] the seam's door refusal: its one row an :error (MEASURED 2026-10-03)
+        @test rs.blsComponentTree !== ps                                        # [C14g1] card C14 (g), R-V04B-96: the refusal DELIVERS a tree that is not the injected state — a fresh empty parse state rides the error delivery (src/GoMeta.jl, the door at seam entry)
+        @test isempty(GM.BLS.children(rs.blsComponentTree))                     # [C14g2] …with no Block, read through the door
+        @test isempty(GM.readAltValuesEvals(rs.altValues_evals))                # [C14g3] …and an EMPTY store (MEASURED: rows 0)
         @test isempty(Main.BasicRenderer.outputs(rs).render_bytes)
         # the injective slot encoding (cure batch 1): a re-cut vector boundary no longer collides
         @test GM._slot_text([Symbol("a,b")]) != GM._slot_text([:a, :b])
