@@ -10,7 +10,7 @@ Core.eval(Main, :(const _BASIC_RENDERER_LOADED = true))
 #     `BLS.getElement`; docs/public-api.md §1.2) and writes the share-target bytes into an
 #     in-memory IOBuffer — the render half of the tool's own `outputs` (below; docs/public-api.md §1.3;
 #     docs/CANONICAL-OUTPUT.md §3). Every Visib verdict it applies is THE ENGINE's ANSWER —
-#     `GoMeta.answerFor(delivery, component, :Visib).value` (stage 3 of the v0.4 build; R-V04B-16 (1)): the renderer
+#     `GoMeta.evaluatedAltValue(delivery, component, :Visib).value` (stage 3 of the v0.4 build; R-V04B-16 (1)): the renderer
 #     resolves nothing itself.
 # DOES: applies the jl-share-v1 hide/discard rules (docs/CANONICAL-OUTPUT.md §3) during the walk.
 #     The verdict a Line or a Segment gets is the Engine's answer for THAT Component (the Component's own
@@ -43,7 +43,7 @@ Core.eval(Main, :(const _BASIC_RENDERER_LOADED = true))
 # THE INTERIM CLOSED (R-V04B-24 A1, dated 2026-09-12 — a dated, temporary exception to R-V04B-13's "never
 #     recompute"; closed at stage 3's first commit of the pure-consumer branch, R-V04B-16 (1)): until that commit this
 #     renderer RESOLVED the Engine's stored Visib flags itself (`checkVisib`, nearest flag wins); now every verdict is
-#     the Engine's answer per Component, read from the delivery (`GoMeta.answerFor`) — the renderer re-evaluates nothing
+#     the Engine's answer per Component, read from the delivery (`GoMeta.evaluatedAltValue`) — the renderer re-evaluates nothing
 #     and resolves nothing. It reads the delivered part `result.blsComponentTree` (public by name, R-V04B-29) THROUGH THE
 #     DOOR since stage 2's commit 0 (R-V04B-58, R-V04B-80): BLS's public functions and types — `BLS.root`,
 #     `BLS.children`, `BLS.getElement`, `BLS.content`, `BLS.kind`, `BLS.flavor`, `BLS.endsWithNewline`, the Component
@@ -63,7 +63,7 @@ import GoMeta
 import GoMeta.BLS
 
 ## The HIDE-aware render. Every Visib verdict is THE ENGINE's ANSWER for the Component in hand —
-## `GoMeta.answerFor(delivery, component, :Visib).value`, one of `:show` / `:hide` / `:discard` (the three Visib
+## `GoMeta.evaluatedAltValue(delivery, component, :Visib).value`, one of `:show` / `:hide` / `:discard` (the three Visib
 ## actions of the default registry): the Component's own rows, else its parent's up the tree (a Line its Block's, a
 ## Segment its Line's — R-V04B-52 (2)), else the declared default `show` (R-V04B-51). The renderer resolves nothing
 ## itself (R-V04B-16 (1)): the former flag read (`checkVisib` on the settribute keys the Apply wrote back), the
@@ -85,7 +85,7 @@ import GoMeta.BLS
 ## visib_of — the Engine's resolved Visib verdict for ONE Component of the delivered tree (R-V04B-16 (1)): the value of
 ## the one answer function; the SOURCE (own / indirect / user / default) is not the renderer's business.
 visib_of(delivery::GoMeta.GoMetaDelivery, c::Union{BLS.Block,BLS.Line,BLS.Segment})::Symbol =
-    GoMeta.answerFor(delivery, c, :Visib).value
+    GoMeta.evaluatedAltValue(delivery, c, :Visib).value
 
 function render_bytes(
     delivery::GoMeta.GoMetaDelivery;   # the delivered object: its tree is walked through the door, its answers decide every verdict
@@ -401,7 +401,7 @@ end
 The development tool's pair; the Engine's canonical output is `altValues_evals` (docs/public-api.md §1.3). `blsStructure_bytes` is the verdict-free
 `structural_serialization` (this module's own function since R-V04B-24) of the final parse tree; `render_bytes` is the jl-share-v1 emit
 (docs/CANONICAL-OUTPUT.md). The tree print is a PURE function of `result.blsComponentTree`; the render a PURE function of the
-delivery — the tree walked through the door, every Visib verdict the Engine's answer (`GoMeta.answerFor`; stage 3's first commit) —
+delivery — the tree walked through the door, every Visib verdict the Engine's answer (`GoMeta.evaluatedAltValue`; stage 3's first commit) —
 so this accessor is correct OUTSIDE the per-call `STATE` scope. Total on any OK result (the render plane's string indexing is
 character-safe, docs/public-api.md §4, GUARDED); on a non-OK result the contract is
 `(empty tree, empty render)` for EVERY current non-OK result (no post-parse error class exists at v0.4; a

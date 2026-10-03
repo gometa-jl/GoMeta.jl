@@ -11,7 +11,7 @@
 #       row's occurrence handle (the documented layout of src/occurrence.jl: schema 0x01 · namespace ·
 #       grain · path steps · origin steps; the last path step's ordinal is the cell's store position) and
 #       matching the grain and that ordinal. (5) the value that APPLIES to a Component is THE ENGINE's ANSWER —
-#           `GoMeta.answerFor(delivery, component, alterant)` (stage 3's commit 3 of the v0.4 build; R-V04B-41's
+#           `GoMeta.evaluatedAltValue(delivery, component, alterant)` (stage 3's commit 3 of the v0.4 build; R-V04B-41's
 #           stage-3 content): the Component's own rows, else its parent's up the tree (the owner's
 #           indirect-application principle, OWNER-WORDS §8, as the Engine applies it — README rule 2), else the
 #           Alterant's declared default (Visib `show`, R-V04B-51 (2)) or absence. The runner derives NOTHING of its
@@ -153,7 +153,7 @@ function _answer_form(v, alterant::AbstractString)
     return string(v)
 end
 function _applied(r, rows, t, c, alterant::AbstractString)
-    a = GA.answerFor(r, c, ALTERANT_NAME[alterant])
+    a = GA.evaluatedAltValue(r, c, ALTERANT_NAME[alterant])
     mine = _rows_on(rows, c)
     if _extract(mine, alterant) !== nothing
         used = mine

@@ -48,9 +48,9 @@ _uf_bytes(s::String) = Vector{UInt8}(codeunits(s))
         r = GM.goMeta(_uf_bytes("#~ hide\nx = 1\ny = 2\n"); config = GM.GoMetaConfig(; user_mh_profile = "show")); ps = r.blsComponentTree
         bs = _UF_BLS.children(ps); @test length(bs) == 2
         for b in bs
-            a = GM.answerFor(r, b, :Visib); @test a.value === :show && a.source === :user && a.via === nothing
+            a = GM.evaluatedAltValue(r, b, :Visib); @test a.value === :show && a.source === :user && a.via === nothing
         end
         ls = _UF_BLS.children(ps, bs[2]); @test length(ls) == 2
-        @test all(l -> GM.answerFor(r, l, :Visib).source === :user, ls)        # the rowless Lines inherit the fed verdict
+        @test all(l -> GM.evaluatedAltValue(r, l, :Visib).source === :user, ls)        # the rowless Lines inherit the fed verdict
     end
 end

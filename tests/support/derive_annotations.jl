@@ -23,7 +23,7 @@
 # PURPOSE: the golden runner's producer of `ser` (`tests/golden/golden_tests.jl`); at commit 9 the producer of the three
 #       unit witnesses that read the five-column form.
 
-# every Component of the tree in tree order, through the door (`BLS.root`, `BLS.children` — the walk of `answerFor`'s resolver)
+# every Component of the tree in tree order, through the door (`BLS.root`, `BLS.children` — the walk of `evaluatedAltValue`'s resolver)
 function _tree_components(ps)
     out = GM.BLS.AbstractComponent[GM.BLS.root(ps)]
     for b in GM.BLS.children(ps)

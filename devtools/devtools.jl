@@ -1766,13 +1766,13 @@ function _dt_sl_line(F, ps, line, s::AbstractString)
     return runs
 end
 
-## FATE (D1 §a.3): a Line's fate is THE ENGINE's ANSWER for that Line — `answerFor(result, line, :Visib).value`, one of
+## FATE (D1 §a.3): a Line's fate is THE ENGINE's ANSWER for that Line — `evaluatedAltValue(result, line, :Visib).value`, one of
 ## :discard / :hide / :show (the Line's own rows, else its Block's, else the declared default `show`; stage 3's commit 2 of the
 ## v0.4 build, R-V04B-16 (1)). The former ladder over the three settribute flags of the Line, its Block and the File (first
 ## flagged grain decides) left with it — MEASURED equal to the answer on every Line of the corpus and the authored scenarios
 ## before the change (plan `receipts/S8-branch/precheck-s3c1/PROBES-s3-consumer-equivalence.txt`, P5). Drops are KNOWN
 ## (:discard), never inferred.
-_dt_sl_fate(result, line) = GoMeta.answerFor(result, line, :Visib).value
+_dt_sl_fate(result, line) = GoMeta.evaluatedAltValue(result, line, :Visib).value
 
 ## the shared File→Block→Line walk through the door (`root`, `children`; the insert store's negative
 ## ids are resolved by BLS itself — the former positive-id guards are gone). The callback receives the
@@ -2337,7 +2337,7 @@ discard) of one `goMeta` result to `path`, VERBATIM.
 DOES: byte-copies the engine surface; with `slide` set, additionally emits
 `path * ".slideruns.json"`. Classification is a fate-ladder DERIVATION from the
 originating result (canon R1 — never a regex over raw lines): the Engine's ANSWER per Line
-(`answerFor(result, line, :Visib)` — :discard / :hide / :show) decides which source lines the
+(`evaluatedAltValue(result, line, :Visib)` — :discard / :hide / :show) decides which source lines the
 render kept, and each kept line is byte-verified against the ≤3 derivable forms
 (identical · whole-line-hidden `hm * line` · inline-tail
 `hm * line[1:m-1] * hm * line[m:end]` at the first Meta-flavor segment). The
@@ -2656,7 +2656,7 @@ end
 ##        Julia types never appear. The File has its Component line and NO answer lines (the session's narrowing of
 ##        R-V04B-36 (a) — nothing is built for the File before his word, card 6 / Q10).
 ##  DOES: walks the delivered tree through the door (`root`, `children`, `parent`, `kind`, `content`, `getElement`),
-##        asks the Engine's answer through `answersFor` (= `answerFor` per registered Alterant), and emits the lines
+##        asks the Engine's answer through `evaluatedAltValues` (= `evaluatedAltValue` per registered Alterant), and emits the lines
 ##        SORTED by code point under one header line that names the input, the producing commit and the counts.
 ##  REASONING: the two lanes may deliver different shapes and types (his §70 (1)); only a projection keyed by
 ##        content can be compared. A Segment's span is given in CHARACTERS of its line (the parser's byte offsets
@@ -2754,7 +2754,7 @@ end
 
 function _cf_answer_lines!(lines::Vector{String}, doc, c)
     n = 0
-    for (alt, a) in GoMeta.answersFor(doc.r, c)
+    for (alt, a) in GoMeta.evaluatedAltValues(doc.r, c)
         push!(lines, join(["A", _cf_kind(c), _cf_span(doc, c), String(alt), _cf_value(a.value), _cf_source(doc, c, a)], _CF_SEP))
         n += 1
     end

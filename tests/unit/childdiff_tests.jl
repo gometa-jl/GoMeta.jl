@@ -4,7 +4,7 @@
 # IS:   four witnesses: [D1] a rowless Line inheriting its Block's value does NOT differ; a Block differs from the File; [D2] a Line with its
 #       own inline statement differs from its Block, its Segment does not differ from the Line; [D3] a meta-free input — the Lines do not
 #       differ from their Block (both the default), the Block differs from the File; [D4] the File, the refusal, the surface.
-# PURPOSE: the signal measured against `answerFor` on both sides — never inferred from a row's presence.
+# PURPOSE: the signal measured against `evaluatedAltValue` on both sides — never inferred from a row's presence.
 
 using Test
 import GoMeta as GM

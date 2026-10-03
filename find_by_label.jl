@@ -11,7 +11,7 @@
 #      (`GoMeta.readAltValuesEvals`) are counted, not joined (stage 2's re-route, R-V04B-43 (2));
 #   3. builds a label → pieces index across all files, remembering each piece's visibility;
 #   4. answers a query: which pieces carry the label, in which file, and each piece's resolved
-#      visibility — the Engine's ANSWER (`GoMeta.answerFor(delivery, component, :Visib)`: the
+#      visibility — the Engine's ANSWER (`GoMeta.evaluatedAltValue(delivery, component, :Visib)`: the
 #      piece's own Visib rows, else its parent's up the tree, else the declared default `:show`;
 #      the former literal `:show` for a piece without a row of its own is now the answer's
 #      default source). An enclosing discarded region's verdict reaches a piece through the
@@ -80,7 +80,7 @@ function index_examples()
         tree = result.blsComponentTree
         n_evals += length(GoMeta.readAltValuesEvals(result.altValues_evals))
         for (c, a) in GoMeta.scanAlterant(result, :labels)
-            visib = GoMeta.answerFor(result, c, :Visib).value
+            visib = GoMeta.evaluatedAltValue(result, c, :Visib).value
             for l in a.value
                 l in LABELS || continue
                 push!(index[l], Hit(f, GoMeta.BLS.content(tree, c), visib))

@@ -20,13 +20,13 @@
 #       from the rows at the call, so the delivered rows remain the one truth and no second store can drift from them.
 # PURPOSE: the Extension-facing question "what applies to this Component for this Alterant, and through whom" (R-V04B-35 (c);
 #       R-V04B-55 (2) (v): an Extension that needs a value where GoMeta provided none may use the Alterant's default).
-# NOT FINAL (put at stage 2's review, R-V04B-40 (2)): the function's NAME (`answerFor` — the branch's working name under his
-#       casing rule R-V04B-31; alternatives there), its TIER (package-public — the session's default), the File's case, the
+# NOT FINAL (put at stage 2's review, R-V04B-40 (2)): its TIER (package-public — the session's default), the File's case, the
 #       equal-child rows (OQ-148), the per-call row scan (the cached index, Q6; the former per-call tree walk behind `via` left at
-#       stage 3's commit 1b — `_component_of` below).
+#       stage 3's commit 1b — `_component_of` below). The NAME is DECIDED: `evaluatedAltValue`, his word of 2026-10-03 (OWNER-WORDS
+#       §305; R-V04B-95), replacing the branch's working name `answerFor` (the casing rule R-V04B-31).
 
 """
-    AltAnswer
+    EvaluatedAltValue
 
 IS: the Engine's resolved answer for ONE Component and ONE Alterant — `value` (the Alterant's own datum: Visib a `Symbol`;
 Labels the SET of label names, a sorted `Vector{Symbol}`; Id the compound, a `NamedTuple` of the recorded fields; Heading the
@@ -35,10 +35,10 @@ Labels the SET of label names, a sorted `Vector{Symbol}`; Id the compound, a `Na
 DOES: carries the answer; `value` is `nothing` for `:none`.
 REASONING: ONE source tag per Component per Alterant (R-V04B-35 (c)) — the deciding statement's for a single-valued mode, the
 SET's for an accumulating one (which Component contributed which label is Q4 (ii), open), the compound's for Id.
-PURPOSE: the return of `answerFor`. Package-public (docs/public-api.md §1.2); NOT exported. Stage 2's commit 4; not final
+PURPOSE: the return of `evaluatedAltValue`. Package-public (docs/public-api.md §1.2); NOT exported. Stage 2's commit 4; not final
 until his word (the NAME and the TIER at the review).
 """
-struct AltAnswer
+struct EvaluatedAltValue
     value::Any
     source::Symbol
     via::Union{Nothing,BLS.AbstractComponent}
@@ -97,7 +97,7 @@ function _rows_on(store::EvalStore, prefix::Vector{UInt8}, stem::Symbol, scheme:
     return out
 end
 
-## the value in the Alterant's own shape (the AltAnswer docstring): the rows are non-empty and sorted by (handle, attr).
+## the value in the Alterant's own shape (the EvaluatedAltValue docstring): the rows are non-empty and sorted by (handle, attr).
 function _answer_value(rows::Vector{EvalRecord}, stem::Symbol, scheme::Symbol)
     scheme === :single && return rows[1].value
     cut = ncodeunits(String(stem)) + 2          # the stems are ASCII identifiers; the member name follows "<stem>_"
@@ -139,7 +139,7 @@ function _component_of(ps::BLS.ParseState, h::Vector{UInt8})
 end
 
 """
-    answerFor(delivery::GoMetaDelivery, component, alterant::Symbol; registry::AlterantRegistry = DEFAULT_REGISTRY) -> AltAnswer
+    evaluatedAltValue(delivery::GoMetaDelivery, component, alterant::Symbol; registry::AlterantRegistry = DEFAULT_REGISTRY) -> EvaluatedAltValue
 
 IS: THE ONE ANSWER FUNCTION — for ONE Component of the delivered tree and ONE Alterant (its registered name: `:Visib`,
 `:labels`, `:id`, `:heading` in the default registry) the Engine's resolved value and its SOURCE, derived at the call from
@@ -164,17 +164,17 @@ PURPOSE: the Extension-facing read of "what applies here and through whom". Pack
 exported. NOT FINAL: the name, the tier, the File's case, the equal-child rows and the per-call row scan are put at stage 2's
 review (R-V04B-40 (2), card C8); nothing here is promised before v0.7 (§6).
 """
-function answerFor(delivery::GoMetaDelivery, component::BLS.AbstractComponent, alterant::Symbol;
-                   registry::AlterantRegistry = DEFAULT_REGISTRY)::AltAnswer
+function evaluatedAltValue(delivery::GoMetaDelivery, component::BLS.AbstractComponent, alterant::Symbol;
+                   registry::AlterantRegistry = DEFAULT_REGISTRY)::EvaluatedAltValue
     idx = get(registry.alt_index, alterant, nothing)
-    idx === nothing && throw(ArgumentError(string("GoMeta answerFor: no Alterant named `", alterant,
+    idx === nothing && throw(ArgumentError(string("GoMeta evaluatedAltValue: no Alterant named `", alterant,
         "` in the registry — the registered names: ", join(string.(sort!(collect(keys(registry.alt_index)))), ", "))))
     p = registry.plugins[idx]
-    component isa BLS.File && return AltAnswer(nothing, :none, nothing)
+    component isa BLS.File && return EvaluatedAltValue(nothing, :none, nothing)
     cap = p.capture
     if cap === nothing                  # no capture declaration: the capture floor mints NO rows (`_capture_floor!`) — R-V04B-55 (2): the declared default
         d = p.default
-        return d isa Declared ? AltAnswer(d.value, :default, nothing) : AltAnswer(nothing, :none, nothing)
+        return d isa Declared ? EvaluatedAltValue(d.value, :default, nothing) : EvaluatedAltValue(nothing, :none, nothing)
     end
     stem = cap.attr_stem === nothing ? Symbol(lowercase(String(p.altName))) : cap.attr_stem   # the walk's own derivation (annotations.jl's capture; registry.jl's effective stem) — the seat wf-s10-s2c4-check F-1
     scheme = cap.attr_scheme
@@ -191,7 +191,7 @@ function answerFor(delivery::GoMetaDelivery, component::BLS.AbstractComponent, a
     end
     if isempty(rows)
         d = p.default
-        return d isa Declared ? AltAnswer(d.value, :default, nothing) : AltAnswer(nothing, :none, nothing)
+        return d isa Declared ? EvaluatedAltValue(d.value, :default, nothing) : EvaluatedAltValue(nothing, :none, nothing)
     end
     value = _answer_value(rows, stem, scheme)
     if component isa BLS.Segment && c !== component
@@ -201,8 +201,8 @@ function answerFor(delivery::GoMetaDelivery, component::BLS.AbstractComponent, a
         ## key, the carrier's: the statement was applied DIRECTLY to the Line, not to itself) reaches the Segment INDIRECTLY through
         ## it; every other source stays as that Component answers it — :indirect through the same decider, the fed profile's :user,
         ## the File's :file — exactly as a rowless Line relates to its Block (the decisions seat's F-1: the user case unchanged).
-        a = answerFor(delivery, c, alterant; registry = registry)
-        return a.source === :own ? AltAnswer(a.value, :indirect, c) : a
+        a = evaluatedAltValue(delivery, c, alterant; registry = registry)
+        return a.source === :own ? EvaluatedAltValue(a.value, :indirect, c) : a
     end
     ownkey = key_bytes(occurrence_key(ps, component; namespace = ns))
     any_origin = false
@@ -219,10 +219,10 @@ function answerFor(delivery::GoMetaDelivery, component::BLS.AbstractComponent, a
         foreign = h
         break
     end
-    any_origin || return c === component ? AltAnswer(value, :own, nothing) : AltAnswer(value, :indirect, c)
-    foreign === nothing && return AltAnswer(value, :own, nothing)
+    any_origin || return c === component ? EvaluatedAltValue(value, :own, nothing) : EvaluatedAltValue(value, :indirect, c)
+    foreign === nothing && return EvaluatedAltValue(value, :own, nothing)
     g = _grain_of(foreign)
-    g == USER_CONTEXT_GRAIN && return AltAnswer(value, :user, nothing)
-    g == _DOC_GRAIN_CODES.File && return AltAnswer(value, :file, nothing)
-    return AltAnswer(value, :indirect, _component_of(ps, foreign))
+    g == USER_CONTEXT_GRAIN && return EvaluatedAltValue(value, :user, nothing)
+    g == _DOC_GRAIN_CODES.File && return EvaluatedAltValue(value, :file, nothing)
+    return EvaluatedAltValue(value, :indirect, _component_of(ps, foreign))
 end

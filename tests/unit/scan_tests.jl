@@ -4,8 +4,8 @@
 # IS:   six witnesses: [S1] the scan lists the recorded Components only, in tree order, each with its answer; [S2] the scan of a Labels
 #       set; [S3] a meta-free input scans empty; [S4] the Segment-carried row lists its Line with the Line's OWN answer (R-V04B-93); [S5] the access by Component in the
 #       registry's Alterant order; the refusal; the surface; [S6] two custom registries — a stem-less Visib (the derived stem `:visib`)
-#       lists its two Blocks, a capture-less Visib lists nothing while `answersFor` still answers the declared default.
-# PURPOSE: the two views never disagree with `answerFor` (they are built on it) — measured, not assumed.
+#       lists its two Blocks, a capture-less Visib lists nothing while `evaluatedAltValues` still answers the declared default.
+# PURPOSE: the two views never disagree with `evaluatedAltValue` (they are built on it) — measured, not assumed.
 
 using Test
 import GoMeta as GM
@@ -14,17 +14,17 @@ const _SC_BLS = GM.BLS
 _sc_bytes(s::String) = Vector{UInt8}(codeunits(s))
 _sc_id(c) = _SC_BLS.getElement(c.cmpntNamedInt, :idComponent)
 
-@testset "scanAlterant / answersFor (stage 2 commit 5; his 9.A)" begin
+@testset "scanAlterant / evaluatedAltValues (stage 2 commit 5; his 9.A)" begin
 
     @testset "[S1] the scan by Alterant: the recorded Components only, in tree order, with their answers" begin
         r = GM.goMeta(_sc_bytes("#~ hide\nx = 1\ny = 2\n")); ps = r.blsComponentTree
         bs = _SC_BLS.children(ps); @test length(bs) == 2
         sc = GM.scanAlterant(r, :Visib)
-        @test sc isa Vector{Pair{GM.BLS.AbstractComponent,GM.AltAnswer}}
+        @test sc isa Vector{Pair{GM.BLS.AbstractComponent,GM.EvaluatedAltValue}}
         @test length(sc) == 2                                        # the two Blocks carry rows; the three Lines do not
         @test _sc_id(sc[1].first) == _sc_id(bs[1]) && sc[1].second.value === :hide && sc[1].second.source === :own
         @test _sc_id(sc[2].first) == _sc_id(bs[2]) && sc[2].second.value === :hide && sc[2].second.source === :indirect
-        @test all(pr -> pr.second == GM.answerFor(r, pr.first, :Visib), sc)     # never disagrees with the one answer function
+        @test all(pr -> pr.second == GM.evaluatedAltValue(r, pr.first, :Visib), sc)     # never disagrees with the one answer function
         @test isempty(GM.scanAlterant(r, :labels)) && isempty(GM.scanAlterant(r, :heading))
     end
 
@@ -70,22 +70,22 @@ _sc_id(c) = _SC_BLS.getElement(c.cmpntNamedInt, :idComponent)
         R2 = GM.publish(b2)
         r2 = GM.goMeta(_sc_bytes("#~ hide\nx = 1\n"); registry = R2); @test r2.status === GM.PROCESS_OK
         @test isempty(GM.scanAlterant(r2, :Visib; registry = R2))                     # no capture declaration: nothing recorded, nothing listed
-        an2 = GM.answersFor(r2, _SC_BLS.children(r2.blsComponentTree)[2]; registry = R2)
+        an2 = GM.evaluatedAltValues(r2, _SC_BLS.children(r2.blsComponentTree)[2]; registry = R2)
         @test an2[2].first === :Visib && an2[2].second.source === :default           # the access still answers the declared default
     end
 
     @testset "[S5] the access by Component in the registry's Alterant order; the refusal; the surface" begin
         r = GM.goMeta(_sc_bytes("#~ hide\nx = 1\ny = 2\n")); ps = r.blsComponentTree
         bs = _SC_BLS.children(ps); @test length(bs) == 2
-        an = GM.answersFor(r, bs[2])
-        @test an isa Vector{Pair{Symbol,GM.AltAnswer}}
+        an = GM.evaluatedAltValues(r, bs[2])
+        @test an isa Vector{Pair{Symbol,GM.EvaluatedAltValue}}
         @test first.(an) == [p.altName for p in GM.DEFAULT_REGISTRY.plugins] == [:labels, :Visib, :id, :heading]
         @test an[2].second.value === :hide && an[2].second.source === :indirect
         @test an[1].second.source === :default && an[3].second.source === :default && an[4].second.source === :default   # the three declared defaults (R-V04B-92, card C2)
-        @test all(pr -> pr.second == GM.answerFor(r, bs[2], pr.first), an)
-        fa = GM.answersFor(r, _SC_BLS.root(ps)); @test length(fa) == 4 && all(pr -> pr.second.source === :none, fa)
+        @test all(pr -> pr.second == GM.evaluatedAltValue(r, bs[2], pr.first), an)
+        fa = GM.evaluatedAltValues(r, _SC_BLS.root(ps)); @test length(fa) == 4 && all(pr -> pr.second.source === :none, fa)
         @test_throws ArgumentError GM.scanAlterant(r, :nosuch)
         @test Base.ispublic(GM, :scanAlterant) && !Base.isexported(GM, :scanAlterant)
-        @test Base.ispublic(GM, :answersFor) && !Base.isexported(GM, :answersFor)
+        @test Base.ispublic(GM, :evaluatedAltValues) && !Base.isexported(GM, :evaluatedAltValues)
     end
 end

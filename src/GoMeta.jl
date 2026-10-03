@@ -129,12 +129,12 @@ include("absorb/absorb_meta.jl")
 using .AbsorbMeta
 include("absorb/walk.jl")           # goMetaAddOns absorb-half — absorbMeta (above) must precede it
 include("alterants/apply.jl")       # goMetaAddOns apply-half — late-bound from walk, so OK after walk
-include("answer.jl")                # stage 2's commit 4 of the v0.4 build (R-V04B-35 (c)): THE ONE ANSWER FUNCTION `answerFor` + its record
-                                    #   `AltAnswer` — derived at the call from the delivered rows and `decided_by`; after apply.jl (nothing below depends on it)
+include("answer.jl")                # stage 2's commit 4 of the v0.4 build (R-V04B-35 (c)): THE ONE ANSWER FUNCTION `evaluatedAltValue` + its record
+                                    #   `EvaluatedAltValue` — derived at the call from the delivered rows and `decided_by`; after apply.jl (nothing below depends on it)
 include("scan.jl")                  # stage 2's commit 5 (his §6 9.A; the plan :57): THE SCAN BY ALTERANT `scanAlterant` + THE ACCESS BY COMPONENT
-                                    #   `answersFor` — thin reads over `answerFor`; after answer.jl
+                                    #   `evaluatedAltValues` — thin reads over `evaluatedAltValue`; after answer.jl
 include("childdiff.jl")             # stage 2's commit 6 (R-V04B-35 (e); the plan :58): THE CHILD-DIFFERS SIGNAL `childDiffers` — computed from
-                                    #   `answerFor` at the call; its stored form the benchmark phase's; after scan.jl
+                                    #   `evaluatedAltValue` at the call; its stored form the benchmark phase's; after scan.jl
 
 
 #########################################################################################
@@ -153,7 +153,7 @@ include("childdiff.jl")             # stage 2's commit 6 (R-V04B-35 (e); the pla
 #   `vocabulary`/`vocabulary_member`/`vocabulary_queryable`; THIRTY-NINE since R-V04B-24 (2026-09-12):
 #   `outputs` REMOVED with the basic renderer — a development tool; the register row in docs/public-api.md §6;
 #   FORTY since stage 2's commit 0 of the v0.4 build (R-V04B-58): + the parser module `BLS`, its door inside it;
-#   FORTY-FIVE after stage 2's commits 4–6 (`answerFor`, `AltAnswer`, `scanAlterant`, `answersFor`, `childDiffers`);
+#   FORTY-FIVE after stage 2's commits 4–6 (`evaluatedAltValue`, `EvaluatedAltValue`, `scanAlterant`, `evaluatedAltValues`, `childDiffers`);
 #   FORTY-FOUR since stage 2's commit 9b (R-V04B-43 (1)): `content_fingerprint` REMOVED — a piece's text is read from the
 #   BLS Component tree through the door (`BLS.content`), never from the Engine; the register row in docs/public-api.md §6;
 #   docs/public-api.md §1.2 is the mirror).
@@ -167,8 +167,8 @@ public serialize_evals, EvalRecord, EvalStore, ProcessStatus, PROCESS_OK, PROCES
        SugarRow, Provenance, SignatureRecord, PermissionManifest,                                     #   constructs (docs/public-api.md §1.2)
        vocabulary, vocabulary_member, vocabulary_queryable   # v0.4 T4: the G-VOC query surface (the ONE vocabulary read the three planes share; docs/public-api.md §3.4)
 public BLS   # stage 2's commit 0 of the v0.4 build (R-V04B-33/45/58): the parser module public by name — its door of travel / access functions declared INSIDE it (src/bls/BLS.jl; docs/public-api.md §1.2 + §6)
-public answerFor, AltAnswer   # stage 2's commit 4 of the v0.4 build (R-V04B-35 (c)): THE ONE ANSWER FUNCTION and its record — package-public, NOT exported (docs/public-api.md §1.2; the register row §6); NOT FINAL until his word at the review (the name, the tier)
-public scanAlterant, answersFor   # stage 2's commit 5 of the v0.4 build (his §6 9.A; the plan :57): THE SCAN BY ALTERANT and THE ACCESS BY COMPONENT — package-public, NOT exported (docs/public-api.md §1.2; the register row §6); NOT FINAL until his word at the review (card 4: functions of their own, or methods of the reader)
+public evaluatedAltValue, EvaluatedAltValue   # stage 2's commit 4 of the v0.4 build (R-V04B-35 (c)): THE ONE ANSWER FUNCTION and its record — package-public, NOT exported (docs/public-api.md §1.2; the register row §6); NOT FINAL until his word at the review (the name, the tier)
+public scanAlterant, evaluatedAltValues   # stage 2's commit 5 of the v0.4 build (his §6 9.A; the plan :57): THE SCAN BY ALTERANT and THE ACCESS BY COMPONENT — package-public, NOT exported (docs/public-api.md §1.2; the register row §6); NOT FINAL until his word at the review (card 4: functions of their own, or methods of the reader)
 public childDiffers   # stage 2's commit 6 of the v0.4 build (R-V04B-35 (e); his §37 item 4.2): THE CHILD-DIFFERS SIGNAL computed from the answer — the per-child primitive; his (ii) Boolean beside a PARENT's entry is `any` of it over the children (the seat of commit 6, F-3) — package-public, NOT exported (docs/public-api.md §1.2; the register row §6); NOT FINAL until his word at the review (the name; the Block-against-File reading)
 
 #########################################################################################

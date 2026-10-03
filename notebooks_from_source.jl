@@ -5,7 +5,7 @@
 #   1. runs `GoMeta.goMeta` on the source (trusted committed input — see the SECURITY
 #      section of the README) and requires `PROCESS_OK`;
 #   2. takes each line's EFFECTIVE fate from the Engine's ANSWER for that line's Line
-#      Component of the BLS Component tree — `GoMeta.answerFor(delivery, line, :Visib)`:
+#      Component of the BLS Component tree — `GoMeta.evaluatedAltValue(delivery, line, :Visib)`:
 #      the Component's own Visib rows, else its parent's up the tree, else the declared
 #      default (stage 2's re-route, R-V04B-43 (2)) — never from the render bytes (at the
 #      render grain an engine-hidden line and an authored marker-headed line are
@@ -78,7 +78,7 @@ end
 # class SILENTLY, probe-proven) and never a content match (stage 2's re-route, R-V04B-43 (2): the
 # former join of the `:visib` rows to source spans by their verbatim bytes went with the Engine's
 # stored copy of those bytes). Each source line's Line Component is found through the door by its
-# input line number; its fate is `answerFor(delivery, line, :Visib).value` — the Line's own Visib
+# input line number; its fate is `evaluatedAltValue(delivery, line, :Visib).value` — the Line's own Visib
 # rows if any (an inline-governed line's verdict overrides its Block's: the Engine's inner-wins
 # precedence), else its Block's, else the declared default `:show`. A source line with no Line
 # Component (the empty tail after a final newline) is :show. A blank line inside a hidden or
@@ -98,7 +98,7 @@ function verdict_fates(input::String, delivery)
     fates = Symbol[]
     for i in eachindex(inl)
         l = get(bynum, i, nothing)
-        f = l === nothing ? :show : GoMeta.answerFor(delivery, l, :Visib).value
+        f = l === nothing ? :show : GoMeta.evaluatedAltValue(delivery, l, :Visib).value
         f in (:show, :hide, :discard) ||
             error("EMIT FAILURE: unknown visibility verdict :$(f) — the carriage semantics cover show/hide/discard only; verdict-domain evolution must be adopted deliberately, never silently")
         push!(fates, f)
