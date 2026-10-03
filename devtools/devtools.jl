@@ -295,7 +295,7 @@ end
 function _dt_ns_of(result)
     recs = result.altValues_evals.records
     isempty(recs) && return "?"
-    d = _dt_decode(recs[1].cell_handle)
+    d = decode_handle(recs[1].cell_handle)
     return d === nothing ? "?" : String(d.namespace)
 end
 
@@ -385,43 +385,11 @@ _dt_status_tree(io, doc) = doc.ok ||
 ## Layout (src/occurrence.jl docblock; probe-proven 27/27 — design §1): schema 0x01 ·
 ## namespace (u16-BE length + UTF-8) · grain byte · path steps (store byte + u32-BE
 ## GLOBAL-store-index ordinal = abs(idComponent)) · origin steps (same shape).
-## NOTE: this decode duplicates what F-LED-1 wants public (`GoMeta.decode_handle`) —
-## retire it when the engine ships the accessor.
-
-_dt_u16(b, i) = (UInt16(b[i]) << 8) | UInt16(b[i+1])
-_dt_u32(b, i) = (UInt32(b[i]) << 24) | (UInt32(b[i+1]) << 16) | (UInt32(b[i+2]) << 8) | UInt32(b[i+3])
-function _dt_steps(b, i)
-    n = Int(_dt_u16(b, i)); i += 2
-    v = Tuple{UInt8,UInt32}[]
-    for _ in 1:n
-        push!(v, (b[i], _dt_u32(b, i + 1))); i += 5
-    end
-    return v, i
-end
-
-## IS: the schema-gated handle decoder. DOES: rejects (→ `nothing`) on any of: schema
-## byte ≠ 0x01, short/truncated bytes (BoundsError caught), TRAILING GARBAGE (the whole
-## byte vector must be consumed), invalid-UTF-8 namespace. REASONING: §6 — a handle
-## that does not decode CLEANLY renders as unanchored; it must never half-decode into a
-## wrong anchor.
-function _dt_decode(b::Vector{UInt8})
-    (isempty(b) || b[1] != 0x01) && return nothing
-    try
-        i = 2
-        nslen = Int(_dt_u16(b, i)); i += 2
-        nsb = b[i:i+nslen-1]; i += nslen
-        isvalid(String, nsb) || return nothing
-        ns = String(nsb)
-        grain = b[i]; i += 1
-        path, i = _dt_steps(b, i)
-        origin, i = _dt_steps(b, i)
-        i == length(b) + 1 || return nothing
-        return (; namespace = ns, grain, path, origin)
-    catch e
-        e isa BoundsError && return nothing
-        rethrow()
-    end
-end
+## THE DECODER IS SHARED (his word of 2026-10-03, OWNER-WORDS §313; R-V04B-102): `decode_handle` lives in
+## handle_decoder.jl beside this file and serves the authored test runner too — ONE copy; the tools' former
+## private `_dt_decode` family (`_dt_u16`, `_dt_u32`, `_dt_steps`, `_dt_decode`) retired with it. A handle that
+## does not decode cleanly returns `nothing` and renders as unanchored here (§6).
+isdefined(@__MODULE__, :decode_handle) || include(joinpath(@__DIR__, "handle_decoder.jl"))
 
 _dt_grainname(g) = g == 0x01 ? "Segment" : g == 0x0a ? "Line" : g == 0x46 ? "Block" :
                    g == 0xd2 ? "File" : g == 0xe0 ? "USER_CONTEXT" :
@@ -517,7 +485,7 @@ function _dt_eval_rows(doc)
     rows = DTEvalRow[]
     nosteps = Tuple{UInt8,UInt32}[]
     for (h, attr, v, pol) in GoMeta.readAltValuesEvals(doc.r.altValues_evals)
-        d = _dt_decode(h)
+        d = decode_handle(h)
         if !doc.ok           # damaged/absent tree: rows render unanchored, honestly
             dd = d === nothing ? nothing : d
             push!(rows, DTEvalRow(attr, v, pol, nothing, nothing,
@@ -1300,7 +1268,7 @@ function _dt_t2_cells(io, doc, frows, allrows, echo)
     _dt_echo(io, echo)
     for h in order
         grp = groups[h]; c = grp[1].comp
-        d = _dt_decode(h)
+        d = decode_handle(h)
         _dt_sty(io, "\n$(H(78))\n", color = _DT_C_CHROME)
         if c === nothing
             g = _dt_grainname(grp[1].grain)
@@ -2829,7 +2797,7 @@ printComparisonForm(result::GoMeta.GoMetaDelivery; kwargs...) = printComparisonF
 ##  door: `BLS.content` of each row's resolved Component, since commit 9b) and the development tool's (tree, render) pair (`Main.BasicRenderer.outputs`,
 ##  loaded through the ONE path at this file's top). DOES: runs goMeta on ONE file; status + diagnostics
 ##  to stderr, the surface to stdout; exit 0 = PROCESS_OK, 1 = a non-OK result, 2 = usage. The `trace`
-##  verb decodes each row's cell_handle with the tool's OWN `_dt_decode` (§C) — the former CLI's
+##  verb decodes each row's cell_handle with the SHARED `decode_handle` (handle_decoder.jl, §C; R-V04B-102) — the former CLI's
 ##  duplicate decoders (its rd_u16/rd_u32/rd_steps/decode_handle) are gone: ONE copy. REASONING: the
 ##  block runs ONLY when this file is the program (`abspath(PROGRAM_FILE) == @__FILE__`), never when it
 ##  is `include`d (the Play's frozen copy, the battery, the site's capture script include this file and
@@ -2897,7 +2865,7 @@ function _dt_cli_main(args)
             cell = replace(row.comp === nothing ? "" : _dt_content(doc, row.comp), '\n' => '⏎')   # an unanchored row (the user-context plane): no piece in the tree
             println(rpad(String(row.attr), 14), " => ", rpad(repr(row.value), 40), " (", row.polarity, ")  \"",
                     first(cell, 60), length(cell) > 60 ? "…\"" : "\"")
-            d = _dt_decode(row.handle)
+            d = decode_handle(row.handle)
             if d === nothing
                 println("    handle: UNDECODED (schema != 0x01) — the excerpt above is the only locator")
                 continue

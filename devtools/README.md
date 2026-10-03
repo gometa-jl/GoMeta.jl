@@ -17,7 +17,7 @@ the command-line entry at its end (the eight verbs — `comparison` since stage 
 `BasicRenderer`: the share-view render, the tree print and the (tree, render) pair `outputs`),
 formerly `src/emit/emit.jl` inside the Engine; `load_basic_renderer.jl` — THE ONE PATH by which the
 renderer is loaded (include it at the consumer's top level, never inside a function, never
-`basic_renderer.jl` directly — the LOAD-ORDER law); `run_examples.jl` — the corpus driver;
+`basic_renderer.jl` directly — the LOAD-ORDER law); `handle_decoder.jl` — THE ONE decoder of an occurrence handle's bytes, shared by the tools and the authored test runner (his word of 2026-10-03, R-V04B-102); `run_examples.jl` — the corpus driver;
 `probes/` — the tools' assertion battery and its fixtures.
 
 **The rule (canon `GoMetaEcosystem/agent-doc/AGENT-RULES_GoMeta.md` §R4/§R4b):** no claim

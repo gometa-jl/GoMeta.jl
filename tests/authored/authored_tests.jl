@@ -60,27 +60,15 @@ const AUTHORED_DIR = @__DIR__
 ## 2026-09-10 (R-V04B-23))
 const EXPECTED_FAILURES = Dict{Tuple{String,String,String},String}()
 
-## --- the occurrence handle, decoded (the documented layout of src/occurrence.jl; schema 0x01) ---
-_u16(b, i) = (UInt16(b[i]) << 8) | UInt16(b[i+1])
-_u32(b, i) = (UInt32(b[i]) << 24) | (UInt32(b[i+1]) << 16) | (UInt32(b[i+2]) << 8) | UInt32(b[i+3])
-function _steps(b, i)
-    n = Int(_u16(b, i)); i += 2
-    v = Tuple{UInt8,UInt32}[]
-    for _ in 1:n
-        push!(v, (b[i], _u32(b, i + 1))); i += 5
-    end
-    return v, i
-end
-function decode_handle(b::Vector{UInt8})
-    (isempty(b) || b[1] != 0x01) && error("authored: a row's handle does not carry schema 0x01 — the decoder must be revisited")
-    i = 2
-    nslen = Int(_u16(b, i)); i += 2
-    ns = String(b[i:i+nslen-1]); i += nslen
-    grain = b[i]; i += 1
-    path, i = _steps(b, i)
-    origin, i = _steps(b, i)
-    i == length(b) + 1 || error("authored: trailing bytes in a row's handle — the decoder must be revisited")
-    return (; namespace = ns, grain, path, origin)
+## --- the occurrence handle, decoded — THE ONE SHARED DECODER of the development tools (his word of 2026-10-03, OWNER-WORDS §313;
+##     R-V04B-102: one shared decoder for the runner and the tools; devtools/handle_decoder.jl — the documented layout of
+##     src/occurrence.jl, schema 0x01). The runner's ARM: a handle that does not decode cleanly is an ERROR here (the tools
+##     render it unanchored instead) ---
+isdefined(@__MODULE__, :decode_handle) || include(joinpath(@__DIR__, "..", "..", "devtools", "handle_decoder.jl"))
+function decode_handle_strict(b::Vector{UInt8})
+    d = decode_handle(b)
+    d === nothing && error("authored: a row's handle does not decode cleanly (schema 0x01 · the namespace · the grain · the path and origin steps · no trailing bytes) — the decoder must be revisited")
+    return d
 end
 const GRAIN_LINE  = 0x0a
 const GRAIN_BLOCK = 0x46
@@ -134,7 +122,7 @@ function _rows_on(rows, c)
     g, o = _grain(c), _ordinal(c)
     out = eltype(rows)[]
     for r in rows
-        h = decode_handle(r[1])
+        h = decode_handle_strict(r[1])
         (h.grain == g && !isempty(h.path) && last(h.path)[2] == o) && push!(out, r)
     end
     return out
@@ -178,7 +166,7 @@ _pos_of_block(t, b) = "block@" * string(_ni(first(GB.children(t.ps, b)), :inputL
 _pos_of_line(l) = "line@" * string(_ni(l, :inputLineNum))
 ## a deciding handle → the position of the Component whose metaStatement it names; a Segment's statement → ITS LINE
 function _position(t, h::Vector{UInt8})
-    d = decode_handle(h)
+    d = decode_handle_strict(h)
     d.grain == GRAIN_USER && return "user"
     isempty(d.path) && error("authored: a deciding handle with an empty path")
     if d.grain == GRAIN_BLOCK
