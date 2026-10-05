@@ -4,8 +4,8 @@
 #       construction route (the route-U cure; no generated/public positional form accepts a seal —
 #       the token-gated constructor; the token form itself is reachable by loaded code, the
 #       disclosed accident-grade bound; the validation chain of v0.4 T2–T4 left at stage 5's E4 — census
-#       row 3, OWNER-WORDS §317: the domain probe, the capture mode-gate laws and the vocabulary check
-#       remain), the typed diagnostics with FULL collection (validate
+#       row 3, OWNER-WORDS §317: the domain probe and the capture mode-gate laws remain — the vocabulary check
+#       left at stage 5's E9), the typed diagnostics with FULL collection (validate
 #       never throws), atomic domain-copy publication, the fingerprint + the T2-bis ONE-check door
 #       (the eleven `_SNAPSHOT_FIELDS` compared structurally against the publish-time snapshot —
 #       REPRESENTATIVE fields mutated here, not every one; the property file is the proof), the STRICT
@@ -31,7 +31,7 @@ import GoMeta as GM
 
 _plugin_with_default(p, d) = GM.PlugIn(; altName = p.altName, setMode = p.setMode, altConstructor = p.altConstructor,
         setAltInstance = p.setAltInstance, getAltInstance = p.getAltInstance, precedencesTuple = p.precedencesTuple,
-        default = d, capture = p.capture, render = p.render, vocabulary = p.vocabulary, constraints = p.constraints,
+        default = d, capture = p.capture, render = p.render, constraints = p.constraints,
         atoms = p.atoms, contract_version = p.contract_version, requires = p.requires, sugar = p.sugar,
         provenance = p.provenance, permissions = p.permissions)   # stage 2's commit 3-ii: the declared default is the ALTERANT's — the record `p` with the slot `d`, every other field copied
 

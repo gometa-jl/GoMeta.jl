@@ -1,8 +1,8 @@
 # registry.jl — the alterant inventory: the vocabulary-gated setters, state accessors, the default registry
 #
 # IS: the register file of the alterant layer — two nested sub-modules plus a top-level tail. `module
-#     Alterants`: the std vocabulary loader include (v0.4 T4 — the closed label whitelist now lives as
-#     the `alterants-std/labels_vocabulary.txt` ARTIFACT, digest-pinned on the labels record) + the toy
+#     Alterants`: the shipped Labels vocabulary's include (the 38 names of `alterants-std/labels_vocabulary.txt`, a plain
+#     file read at load — its digest pin, capture cache and scope law left at stage 5's E9 of the v0.4 build) + the toy
 #     setters `setLabels`/`checkLabels`/`setVisib`/`setId` over the `@namedElement` types `Visib` (Bool: hide/show/discard)
 #     and `Id` (Int16: cell/parent/file). `module CnS`: the per-call state accessors `wipeAltActionSlots`/
 #     `updateMetaHierarchy`/`getState`/`getAltState`. The tail builds the immutable `AlterantRegistry`
@@ -23,8 +23,9 @@
 #     `:full_eval_v1` extension mode is its one documented replaceable arm.
 # EDGES (honest): the label whitelist is closed and fixed — the corpus-documented labels
 #     :label1..:label5 plus (since 0.3.0) a fixed pictograph vocabulary (byte-exact names, no
-#     normalization); an unknown label meets the stable refusal that
-#     names the accepted set. `setId` parses values into the Int16 domain; the value/arity walls
+#     normalization); an unknown label APPLIED meets the stable refusal that
+#     names the accepted set; a label QUERIED answers false when unknown or unset — the legacy's checker, since stage 5's E9
+#     (the T4 membership refusal and the R-V04-36 write-only valve left, census row 55). `setId` parses values into the Int16 domain; the value/arity walls
 #     around these setters are guarded at the apply seam by the stable "GoMeta apply: invalid arguments"
 #     refusal (docs/public-api.md §3.4; tests/unit/arg_guard_tests.jl). Only the labels
 #     row has a query getter (`checkLabels`); Visib/Id carry none — `cell`/`parent`/`file` as a
@@ -52,14 +53,11 @@ using StaticArrays: SVector
 #########################################################################################
 ## Labels.jl for `alterant` `Labels`:
 
-## v0.4 T4 (R-V04B-6 (a); the ruled BUG-FIX, R-V04-20/29): the label vocabulary is NO
-## LONGER a Core literal — it is the CONTENT of the Labels record's declared vocabulary
-## artifact under `src/alterants-std/` (custody = the Labels lane's, R-LBL-4), loaded by
-## the std file below (capture at load; the declared-vs-captured digest re-verify is
-## `_vocabulary_collect!`'s publication act, R-V04-37). The former `goMetaLabels` +
-## `sortedSetOfLabelsSVec` literals are DELETED; membership reads ride the SCOPE LAW
-## (`_vocabulary_for_action` — the invoked action's owning record's declared vocabulary
-## inside an engine scope; the shipped vocabulary outside any scope).
+## The Labels vocabulary: the 38 shipped names, read from `alterants-std/labels_vocabulary.txt` by the std file
+## below (R-V04B-6 (a): under alterants-std/, never a Core literal). `setLabels` checks a label against them — the
+## legacy's closed check (GoMetaRetro Alterants.jl :73–:78); `checkLabels` answers false for an unset label, as the
+## legacy did (:87–:99). The v0.4 T4 relocation's digest pin, capture cache, scope law, G-VOC read surface and
+## write-only valve left at stage 5's E9 of the v0.4 build (census rows 10, 28 and 55; his §317 mark, R-V04B-105).
 include(joinpath(@__DIR__, "..", "alterants-std", "labels_vocabulary.jl"))
 
 function setLabels(
@@ -79,18 +77,15 @@ function setLabels(
         isempty(labels) && error("GoMeta apply: empty label list — the labels action ':' ",
             "names no label; v0 requires at least one label (e.g. ':label1'); ",
             "see docs/public-api.md §3.4")
-        ## v0.4 T4: membership via the SCOPE LAW; the ∈-scan over `names` is
-        ## ORDER-INDEPENDENT (the C4E-4 law — never `insorted` over declaration order);
-        ## a record declaring NO vocabulary has NO membership gate (T4-DESIGN §9-4);
-        ## the refusal renders a SORTED display copy
-        local vocab = _vocabulary_for_action(actionName)
+        ## the closed check (the legacy's): the ∈-scan over the file's order (never `insorted` over declaration
+        ## order — the C4E-4 law); the refusal renders a SORTED display copy of the accepted set
         for label ∈ labels
-            if vocab === nothing || label ∈ vocab.names
+            if label ∈ LABELS_VOCABULARY
                 crntLabels[label] = true
             else
                 error("GoMeta apply: unknown label ", repr(first(String(label), 40)),
-                    " — not in v0's closed label whitelist (the declared vocabulary = ",
-                    sort(copy(vocab.names)), "); see docs/public-api.md §3.4")
+                    " — not in v0's closed label whitelist (the accepted set = ",
+                    sort(copy(LABELS_VOCABULARY)), "); see docs/public-api.md §3.4")
             end
         end
     else
@@ -112,33 +107,9 @@ function checkLabels(
     isempty(labels) && error("GoMeta apply: empty label query — ':()' names no label to ",
         "check; v0 requires at least one label (e.g. ':(:label1)'); ",
         "see docs/public-api.md §3.4")
-    ## v0.4 T4: the condition-side guards ride the SCOPE LAW, in the FIXED branch order
-    ## (crx C9): membership (unknown-label) FIRST, then the R-V04-36 write-only valve,
-    ## then the store lookup. A record declaring NO vocabulary has neither guard.
-    ## (the T4-milestone-set C1 cure) TWO PASSES at the CALL grain: EVERY supplied label
-    ## is validated (membership + valve) BEFORE any presence outcome — the interleaved
-    ## per-label form returned `false` on an earlier unset member without ever validating
-    ## a later write-only (or unknown) label, bypassing both refusal contracts.
-    local vocab = _vocabulary_for_action(actionName)
-    if vocab !== nothing
-        for label ∈ labels
-            ## a label outside the declared vocabulary refuses loudly (the SAME contract
-            ## as setLabels' guard), never a silent `false` — a query for an unknown
-            ## label is a vocabulary error, not an unset label
-            if label ∉ vocab.names
-                error("GoMeta apply: unknown label ", repr(first(String(label), 40)),
-                    " — not in v0's closed label whitelist (the declared vocabulary = ",
-                    sort(copy(vocab.names)), "); see docs/public-api.md §3.4")
-            end
-            ## the declared write-only valve (R-V04-36): a member flagged `query = false`
-            ## is set-only — the query plane refuses it typed-prose
-            if !get(vocab.flags, label, (query = true,)).query
-                error("GoMeta apply: label ", repr(first(String(label), 40)),
-                    " is declared write-only (query = false) — set-only in this ",
-                    "vocabulary (the declared valve; see docs/public-api.md §3.4)")
-            end
-        end
-    end
+    ## no membership gate, no valve: a label outside the shipped set is simply not set — the query answers false
+    ## (the legacy's checker, GoMetaRetro Alterants.jl :87–:99; the T4 membership refusal and the R-V04-36 write-only
+    ## valve left at stage 5's E9 of the v0.4 build, census row 55)
     for label ∈ labels
         if label ∉ keys(crntLabels)
             return false
@@ -470,7 +441,7 @@ The v0 alterant inventory's DECLARATIONS in DECLARATION order: fresh top-level `
 `labels` / `Visib` / `Id` / `Heading` (the heading alterant — its names are RATIFIED: alterant
 `Heading`, action `head`) in the `state.jl` type + the per-action records, returned as an
 UNVALIDATED `RegistryBuilder`. `publish` runs the remaining checks (the domain probe — R-V04B-4 (iii); the Heading lane's
-mode-gate laws; the vocabulary check — the validation chain of v0.4 T2–T4 left at stage 5's E4, census row 3), derives the
+mode-gate laws — the vocabulary check left at stage 5's E9, the validation chain of v0.4 T2–T4 at E4, census row 3), derives the
 tables (a duplicate action name resolving first-wins), and seals; `DEFAULT_REGISTRY`
 is that published value, consumed READ-ONLY. Pure — no module-load side-effects.
 """
@@ -478,10 +449,6 @@ function default_registry_builder()
     # The closed v0 inventory, in DECLARATION order (deterministic, unlike Dict-iteration
     # order). Plugin index = position here.
     plugins = PlugIn[
-        ## v0.4 T4: the labels record DECLARES its vocabulary (the digest-pinned artifact
-        ## — the DECLARED literal, never the captured value; `_vocabulary_collect!` makes
-        ## them agree or refuses at publication) + the POLICY identity (independent of the
-        ## content digest — the R-FODT-17 referent PAIR; the lane bumps it on a policy move)
         ## v0.4 T5: every DEFAULT record DECLARES its capture row (the registration-driven
         ## capture plane; the stems are DECLARED — byte-compatibility never rides the
         ## derived fallback) — the three former legacy 6-positional declarations migrated
@@ -489,10 +456,7 @@ function default_registry_builder()
         PlugIn(; altName = :labels, setMode = :accumulate, altConstructor = Dict{Symbol,Bool},
                  setAltInstance = Alterants.setLabels, getAltInstance = Alterants.checkLabels,
                  default = Declared(Symbol[]),   # R-V04B-92 (card C2, his word of 2026-10-02 (OWNER-WORDS §287; R-V04B-92: 'I do approve your recommendation: declare.' — provisional, his (ii))): Labels' declared default is the EMPTY SET — the answer's shape, a sorted Vector{Symbol}
-                 capture = CaptureDecl(Dict{Symbol,Bool}, :per_key, :many, nothing; attr_stem = :label),
-                 vocabulary = VocabularyRef(DomainRef("alterants-std/labels_vocabulary.txt",
-                                                      Alterants.LABELS_VOCABULARY_DECLARED_DIGEST)),
-                 provenance = Provenance(; policy_id = "gometa-labels/v0-closed@1")),
+                 capture = CaptureDecl(Dict{Symbol,Bool}, :per_key, :many, nothing; attr_stem = :label)),
         PlugIn(; altName = :Visib, setMode = :mutExclusive, altConstructor = Alterants.Visib,
                  setAltInstance = Alterants.setVisib,
                  default = Declared(:show),   # R-V04B-51 (2): Visib's ONE declared default is 'show' (his lean §11; his word §180)
@@ -589,7 +553,7 @@ function default_registry_builder()
     # The registration (stage 5's E4 — his §317, census rows 3 and 51: the validation chain of v0.4 T2–T4
     # and the clash law with its disposition switch left; his legacy registered unchecked): the declarations
     # above are the DEFAULT BUILDER; `publish` runs the remaining checks (`_validate_registration`: the domain
-    # probe, the Heading lane's mode-gate laws, the vocabulary check), then `_derive_tables` derives the hot-path
+    # probe, the Heading lane's mode-gate laws — the vocabulary check left at stage 5's E9), then `_derive_tables` derives the hot-path
     # tables (the sorted action table, the parallel action→plugin index, the name→index Dicts, the SORTED
     # accumulate/mutExclusive index sets the apply-phase `insorted` consumers depend on, the generic
     # `action_to_settribute` write-back table — a duplicate action name resolving first-wins) from the
@@ -602,7 +566,7 @@ end
     build_default_registry() -> AlterantRegistry
 
 The v0 alterant inventory, PUBLISHED: `publish(default_registry_builder())` — the remaining checks
-(the domain probe · the mode-gate laws · the vocabulary check, inside `publish`) run before the object
+(the domain probe · the mode-gate laws — the vocabulary check left at stage 5's E9 —, inside `publish`) run before the object
 exists, the derived tables come from the declarations, and the seal is minted. Pure — no module-load side-effects beyond the const it feeds.
 """
 build_default_registry() = publish(default_registry_builder())
@@ -750,7 +714,7 @@ function _registration_digest(action_specs::Vector{ActionSpec};
             # v0.4 T2 — every declared per-Alterant slot joins the fold: the seal (HC-9) covers the
             # record + the declared source digests + policy_id.
             "capture", _slot_text(p.capture), "render", _slot_text(p.render),
-            "vocab", _slot_text(p.vocabulary), "constraints", _slot_text(p.constraints),
+            "constraints", _slot_text(p.constraints),
             "atoms", _slot_text(p.atoms), "contract", _slot_text(p.contract_version),
             "requires", _slot_text(p.requires), "sugar", _slot_text(p.sugar),
             "provenance", _slot_text(p.provenance), "permissions", _slot_text(p.permissions))
@@ -877,8 +841,6 @@ _slot_text(x::EffectRow)::String =
     Base.ScopedValues.with(_IN_DATA => true) do; string("Effect", _nsv((String(x.kind), _slot_text(x.payload)))) end
 _slot_text(x::RenderDecl)::String =
     string("Render", _nsv((_slot_text(x.effects), _slot_text(x.resolve_order), _slot_text(x.materialize))))
-_slot_text(x::InlineVocabulary)::String = string("Inline", _nsv((_slot_text(x.names), _slot_text(x.flags))))
-_slot_text(x::VocabularyRef)::String = string("Ref", _ns(_slot_text(x.ref)))
 _slot_text(x::MutEx)::String = string("MutEx", _ns(_slot_text(x.actions)))
 _slot_text(x::ConditionAtom)::String =
     string("Atom", _nsv((String(x.name), _slot_text(x.print_spelling), _slot_text(x.evaluate))))
@@ -946,7 +908,7 @@ _domain_leaf(x)::Bool =
 ## containers (elements of `plugins`/`action_specs`; `ActionOverload` inside
 ## `ActionSpec.overloads`) and are REFUSED anywhere else, declared data included.
 const _WALK_PLUGIN_FIELDS = (:altName, :setMode, :altConstructor, :setAltInstance,
-    :getAltInstance, :precedencesTuple, :default, :capture, :render, :vocabulary, :constraints, :atoms,
+    :getAltInstance, :precedencesTuple, :default, :capture, :render, :constraints, :atoms,
     :contract_version, :requires, :sugar, :provenance, :permissions)
 @assert _WALK_PLUGIN_FIELDS == fieldnames(PlugIn)
 const _WALK_ACTION_FIELDS = (:name, :spelling, :plugin, :overloads, :accepts_string_slot,
@@ -956,13 +918,13 @@ const _WALK_OVERLOAD_FIELDS = (:sig_types, :kinds, :kind_sources, :vararg_kind, 
     :effect, :queryable, :applicability, :phase, :grammar)
 @assert _WALK_OVERLOAD_FIELDS == fieldnames(ActionOverload)
 
-"The 14 record-reachable slot-struct types (walked field-wise GENERICALLY; rebuilt
-positionally at `typeof(x)`)."
+"The 12 record-reachable slot-struct types (walked field-wise GENERICALLY; rebuilt
+positionally at `typeof(x)`; the two vocabulary slot types left at stage 5's E9)."
 const _SLOT_STRUCTS = (DomainRef, CaptureDecl, NoDefault, Declared, EffectRow, RenderDecl,
-                       InlineVocabulary, VocabularyRef, MutEx, ConditionAtom, SugarRow,
+                       MutEx, ConditionAtom, SugarRow,
                        SignatureRecord, PermissionManifest, Provenance)
 const _SLOT_STRUCT_UNION = Union{DomainRef, CaptureDecl, NoDefault, Declared, EffectRow,
-                                 RenderDecl, InlineVocabulary, VocabularyRef, MutEx,
+                                 RenderDecl, MutEx,
                                  ConditionAtom, SugarRow, SignatureRecord,
                                  PermissionManifest, Provenance}
 const _RECORD_STRUCT_UNION = Union{PlugIn, ActionSpec, ActionOverload}
@@ -1280,115 +1242,6 @@ end
 function _callable_text(@nospecialize f)
     nm = String(getfield(getfield(typeof(f), :name), :name))
     return startswith(nm, "#") ? nm[2:end] : nm
-end
-
-"""
-    _vocabulary_collect!(diags, plugins)
-
-(v0.4 T4 — T4-DESIGN §2; the R-V04-37 PUBLICATION-ONLY RE-VERIFY) the vocabulary law at
-the gate: a `VocabularyRef` whose DECLARED digest matches no CAPTURED artifact refuses
-`:SRC_DIGEST_MISMATCH` (the fail-closed pre-flight — the DEFAULT publishes at module
-load, so a tampered shipped artifact fails `using GoMeta` here); an `InlineVocabulary`
-with a duplicate name or a flag key outside its name set refuses (`REG_PROTOCOL` family;
-an ABSENT flag key defaults `query = true`, documented).
-"""
-function _vocabulary_collect!(diags::Vector{Diagnostic}, plugins::Vector{PlugIn})
-    for p in plugins
-        v = p.vocabulary
-        v === nothing && continue
-        if v isa VocabularyRef
-            haskey(Alterants._VOCAB_CACHE, v.ref.digest) ||
-                push!(diags, Diagnostic(:SRC_DIGEST_MISMATCH, :error, string(
-                    "GoMeta registry: alterant ", repr(p.altName), " declares vocabulary ",
-                    "digest ", v.ref.digest, " which matches NO loaded artifact — the ",
-                    "artifact bytes moved without a declaration update, or the artifact ",
-                    "was never loaded (verify-and-capture; publication-only ",
-                    "re-verification per R-V04-37)"), p.altName))
-        elseif v isa InlineVocabulary
-            seen = Set{Symbol}()
-            for n in v.names
-                n in seen ? push!(diags, Diagnostic(:REG_PROTOCOL, :error, string(
-                    "GoMeta registry: alterant ", repr(p.altName), " declares a DUPLICATE ",
-                    "vocabulary name ", repr(n), " (the vocabulary law)"), p.altName)) :
-                    push!(seen, n)
-            end
-            for k in keys(v.flags)
-                k in seen || push!(diags, Diagnostic(:REG_PROTOCOL, :error, string(
-                    "GoMeta registry: alterant ", repr(p.altName), " declares a vocabulary ",
-                    "flag for ", repr(k), " which is not a declared name (the vocabulary ",
-                    "law; an absent flag defaults query = true)"), p.altName))
-            end
-        end
-    end
-    return nothing
-end
-
-# the INTERNAL resolver (no copy — the membership helpers and the scope law read this;
-# the PUBLIC `vocabulary` wraps it in a defensive copy)
-function _resolve_vocabulary_by_index(registry::AlterantRegistry, i::Integer)
-    slot = registry.plugins[i].vocabulary
-    slot === nothing && return nothing
-    slot isa InlineVocabulary && return slot
-    v = get(Alterants._VOCAB_CACHE, slot.ref.digest, nothing)
-    v === nothing && error("GoMeta apply: the declared vocabulary of alterant ",
-        repr(registry.plugins[i].altName), " is UNRESOLVABLE (declared digest ",
-        slot.ref.digest, " has no loaded artifact) — see docs/public-api.md §3.4")
-    return v
-end
-
-"""
-    vocabulary(registry, altName) -> Union{Nothing,InlineVocabulary}
-
-G-VOC (v0.4 T4; package-public — the ONE vocabulary query surface the three planes read;
-consumers adopt at T9): the named record's DECLARED vocabulary, resolved — an
-`InlineVocabulary` slot verbatim, a `VocabularyRef` through the load-time capture cache
-by its declared digest — and returned as a DEFENSIVE COPY (mutating the return changes
-nothing; the membership helpers read only the private representation). `nothing` when
-the record declares no vocabulary (no membership gate — the declared-content law) or the
-alterant is unknown. An unresolvable `VocabularyRef` refuses LOUDLY.
-"""
-function vocabulary(registry::AlterantRegistry, altName::Symbol)
-    i = get(registry.alt_index, altName, nothing)
-    i === nothing && return nothing
-    v = _resolve_vocabulary_by_index(registry, i)
-    v === nothing && return nothing
-    return InlineVocabulary(copy(v.names), copy(v.flags))
-end
-
-"""
-    vocabulary_member(registry, altName, name) -> Bool
-
-G-VOC membership: `true` iff the named record declares a vocabulary containing `name`,
-OR declares none (no gate). An UNKNOWN alterant returns `false` — FAIL-CLOSED (the
-T4-milestone-set B2 cure: a consumer using this as an allow-gate must not admit
-everything on a misspelled or attacker-chosen alterant name; only a KNOWN record's
-absent vocabulary slot means "no gate"). Order-independent (an `∈`-scan over the
-declared names — never a sorted-order assumption).
-"""
-function vocabulary_member(registry::AlterantRegistry, altName::Symbol, name::Symbol)
-    i = get(registry.alt_index, altName, nothing)
-    i === nothing && return false           # unknown alterant: fail CLOSED (B2)
-    v = _resolve_vocabulary_by_index(registry, i)
-    v === nothing && return true
-    return name ∈ v.names
-end
-
-"""
-    vocabulary_queryable(registry, altName, name) -> Bool
-
-G-VOC queryability: `true` iff `name` is a declared member whose flag is `query = true`
-(an absent flag defaults `true`); `false` for a non-member (membership is checked FIRST
-by every conforming caller — the branch order law); `true` when a KNOWN record declares
-no vocabulary (no gate); `false` for an UNKNOWN alterant — FAIL-CLOSED (the B2 cure,
-as `vocabulary_member`).
-"""
-function vocabulary_queryable(registry::AlterantRegistry, altName::Symbol, name::Symbol)
-    i = get(registry.alt_index, altName, nothing)
-    i === nothing && return false           # unknown alterant: fail CLOSED (B2)
-    v = _resolve_vocabulary_by_index(registry, i)
-    v === nothing && return true
-    name ∈ v.names || return false
-    return get(v.flags, name, (query = true,)).query
 end
 
 """
@@ -2117,19 +1970,18 @@ _type_param_text(p)::String =
 ## The registration's remaining checks at `validate` (stage 5's E4, census rows 3 and 51 — his §317; the validation chain of v0.4
 ## T2–T4 left: his legacy registered unchecked and failed at dispatch): the DOMAIN PROBE (R-V04B-4 (iii) — the one domain definition
 ## shared by `validate`, `publish`'s copier and the door's walker; `publish` relies on it), the Heading lane's four mode-gate laws
-## (kept until R-V04B-101) and the vocabulary check (kept for census row 10's commit with the artifact it verifies). Then the derived
+## (kept until R-V04B-101); the vocabulary check left at stage 5's E9, census row 10. Then the derived
 ## tables + the seal + the lifecycle.
 """
     _validate_registration(plugins, action_specs) -> Vector{Diagnostic}
 
-The remaining checks, in fixed order: the domain probe over every declared field, the capture mode-gate laws, the vocabulary
-check. FULL collection: every defect is reported; the caller decides the terminal outcome (error present ⇒ refuse).
+The remaining checks, in fixed order: the domain probe over every declared field, the capture mode-gate laws (the vocabulary
+check left at stage 5's E9). FULL collection: every defect is reported; the caller decides the terminal outcome (error present ⇒ refuse).
 """
 function _validate_registration(plugins::Vector{PlugIn}, action_specs::Vector{ActionSpec})
     diags = Diagnostic[]
     _encodability_collect!(diags, plugins, action_specs)   # the domain probe (R-V04B-4 (iii))
     _mode_gate_collect!(diags, plugins)                    # the Heading lane's laws (R-V04B-101: after the branch)
-    _vocabulary_collect!(diags, plugins)                   # census row 10's (E9)
     return diags
 end
 
@@ -2164,7 +2016,7 @@ _mint_seal(plugins::Vector{PlugIn}, action_specs::Vector{ActionSpec})::String =
 """
     validate(builder::RegistryBuilder) -> Vector{Diagnostic}
 
-Run the remaining checks (the domain probe, the mode-gate laws, the vocabulary check) over the builder's declarations and return
+Run the remaining checks (the domain probe, the mode-gate laws — the vocabulary check left at stage 5's E9) over the builder's declarations and return
 EVERY diagnostic (deterministic order; no remaining check warns since stage 5's E4) — never throws. Empty ⇒ publishable.
 """
 validate(b::RegistryBuilder) = _validate_registration(b.plugins, b.action_specs)

@@ -24,7 +24,6 @@ import GoMeta as GM
         p = GM.PlugIn(:zz, :accumulate, Dict{Symbol,Bool}, identity, nothing, nothing)
         @test p.capture === nothing
         @test p.render === nothing
-        @test p.vocabulary === nothing
         @test isempty(p.constraints) && isempty(p.atoms) && isempty(p.sugar)
         @test p.contract_version === nothing
         @test p.requires === ()
@@ -64,7 +63,7 @@ import GoMeta as GM
                              :show => GM.EffectRow(:pass, nothing)], [:Line, :Block], true)
         p = GM.PlugIn(; altName = :zz, setMode = :accumulate, altConstructor = Dict{Symbol,Bool},
                         setAltInstance = identity, capture = cap, render = rd,
-                        vocabulary = GM.VocabularyRef(ref), constraints = [GM.MutEx([:hide, :show])],
+                        constraints = [GM.MutEx([:hide, :show])],
                         atoms = [GM.ConditionAtom(:zzq, "zzq", nothing)],
                         contract_version = v"0.4.0", requires = (),
                         sugar = [GM.SugarRow(:quoted_first, :head, :localOnly)],
@@ -72,7 +71,6 @@ import GoMeta as GM
                                                      acquisition_mode = :shipped),
                         permissions = GM.PermissionManifest(; ambient = [:file_read]))
         @test p.capture === cap && p.render === rd
-        @test p.vocabulary isa GM.VocabularyRef && p.vocabulary.ref === ref
         @test p.constraints[1].actions == [:hide, :show]
         @test p.atoms[1].name === :zzq
         @test p.contract_version == v"0.4.0"

@@ -54,7 +54,7 @@ by `tests/unit/public_surface_tests.jl`) and of the refusal behavior the shipped
 | `GoMetaConfig` | type | the v0 input options |
 | `GoMetaDelivery` | type | the delivered object of a run — its four public parts, in his pipeline order (R-V04B-89): `blsComponentTree`, `altValues_evals`, `status`, `diagnostics` |
 
-`names(GoMeta)` is exactly this set plus the §1.2 public names (44 since stage 2's commit 9b of the v0.4 build, R-V04B-43 (1) — `content_fingerprint` REMOVED; 45 since commit 6, R-V04B-35 (e) — `childDiffers`; 44 since commit 5 — `scanAlterant`, `evaluatedAltValues`; 42 since commit 4 — `evaluatedAltValue`, `EvaluatedAltValue`; 40 since commit 0, R-V04B-58 — the parser module `BLS`; 39 since R-V04B-24 (2026-09-12): the
+`names(GoMeta)` is exactly this set plus the §1.2 public names (38 since stage 5's E9 of the v0.4 build — the three vocabulary slot types and the G-VOC triple REMOVED, §6; 44 since stage 2's commit 9b of the v0.4 build, R-V04B-43 (1) — `content_fingerprint` REMOVED; 45 since commit 6, R-V04B-35 (e) — `childDiffers`; 44 since commit 5 — `scanAlterant`, `evaluatedAltValues`; 42 since commit 4 — `evaluatedAltValue`, `EvaluatedAltValue`; 40 since commit 0, R-V04B-58 — the parser module `BLS`; 39 since R-V04B-24 (2026-09-12): the
 ten of 0.3.x that remain — `outputs` REMOVED, §6 —, the six lifecycle names, the twenty record-vocabulary names — `Alterant` is the
 record's canonical name and `PlugIn` its PUBLIC 0.4.x deprecation alias, R-V04B-5 — and the
 T4 G-VOC query triple `vocabulary`/`vocabulary_member`/`vocabulary_queryable`; and the module
@@ -122,8 +122,8 @@ These are part of the documented public surface — declared with Julia's `publi
   a position-rule offense in the input refuses typed — the way
   to EXTEND the shipped inventory) + `GoMeta.register!(builder,
   plugin, specs...)` — the mutable declaration site; `GoMeta.validate(builder) ->
-  Vector{Diagnostic}` — the remaining checks (the domain probe · the capture mode-gate laws · the vocabulary
-  check; the validation chain of v0.4 T2–T4 left at stage 5's E4, §6), returning EVERY defect (in
+  Vector{Diagnostic}` — the remaining checks (the domain probe · the capture mode-gate laws; the vocabulary check
+  left at stage 5's E9, the validation chain of v0.4 T2–T4 at E4, §6), returning EVERY defect (in
   deterministic order) and never throwing; `GoMeta.publish(builder) -> AlterantRegistry` — the
   SANCTIONED route to a SEALED registry for conforming callers (the only supported one; see the
   honest bound below — in-process Julia cannot make it the only POSSIBLE one): refuses with `RegistrationRefused` (carrying every
@@ -135,7 +135,7 @@ These are part of the documented public surface — declared with Julia's `publi
   and takes the SNAPSHOT baseline the door compares against.
   `RegistrationRefused <: Exception` — `.diagnostics::Vector{Diagnostic}` with stable codes
   (`REG_PROTOCOL` for a declared value outside the closed encodable domain or a capture mode-gate law;
-  `SRC_DIGEST_MISMATCH` for the vocabulary artifact; `REG_PROTOCOL` and `REG_SLOT_EXHAUSTED` thrown by
+  `REG_PROTOCOL` and `REG_SLOT_EXHAUSTED` thrown by
   `register!` — the eleven inventory, clash, reflection, algebra, reachability and candidacy codes left at
   stage 5's E4, §3.5 + §6). Positional `AlterantRegistry(...)`
   construction from hand-built tables is GATED at v0.4.0 (it runs the same checks and refuses
@@ -212,7 +212,7 @@ These are part of the documented public surface — declared with Julia's `publi
   name identically; the record's FIELD NAMES are unchanged at v0.4 (keyword constructors are
   public); alias removal + field-name normalization land at v0.5:**
   - `PlugIn(; altName, setMode, altConstructor, setAltInstance, getAltInstance = nothing,
-    precedencesTuple = nothing, default = NoDefault(), capture, render, vocabulary, constraints, atoms, contract_version,
+    precedencesTuple = nothing, default = NoDefault(), capture, render, constraints, atoms, contract_version,
     requires, sugar, provenance, permissions)` — the Alterant registration record. `default` = `NoDefault()` |
     `Declared(value)` — the Alterant's ONE declared default value (R-V04B-51 (1)–(2); R-V04B-55 (1): Visib declares
     `:show`; since the owner's word of 2026-10-02 (card C2, R-V04B-92 — provisional) Labels the EMPTY SET `Symbol[]`, Heading
@@ -291,8 +291,7 @@ These are part of the documented public surface — declared with Julia's `publi
     a stem overlapping a shipped family publishes, and same-cell same-attr rows of two plugins collapse to one) ·
     `DefaultSlot` = `NoDefault()` | `Declared(v)` · `EffectRow(kind ∈
     (:drop, :mark, :pass), payload)` + `RenderDecl(effects::Vector{Pair{Symbol,EffectRow}},
-    resolve_order, materialize::Bool)` · `VocabularySlot` = `InlineVocabulary(names, flags)` |
-    `VocabularyRef(ref::DomainRef)` · `MutEx(actions)` · `ConditionAtom(name, print_spelling,
+    resolve_order, materialize::Bool)` · `MutEx(actions)` · `ConditionAtom(name, print_spelling,
     evaluate)` · `SugarRow(pattern, action, mode_gate)` · `Provenance(; sec_schema = v"1.0.0",
     sources = DomainRef[], policy_id = nothing, package_digest = nothing, artifact_manifest =
     nothing, signatures = SignatureRecord[], signer = nothing, source_identity = nothing,
@@ -301,37 +300,20 @@ These are part of the documented public surface — declared with Julia's `publi
     EVERY keyword optional · `SignatureRecord(; algorithm = nothing, key_id = nothing, signature
     = nothing)` (reserved) · `PermissionManifest(; seam = Symbol[], ambient = Symbol[])`
     (reserved, never enforced). `PlugIn`'s keyword form likewise defaults every slot (`capture =
-    nothing`, `render = nothing`, `vocabulary = nothing`, `constraints = MutEx[]`, `atoms =
+    nothing`, `render = nothing`, `constraints = MutEx[]`, `atoms =
     ConditionAtom[]`, `contract_version = nothing`, `requires = ()`, `sugar = SugarRow[]`,
     `provenance = Provenance()`, `permissions = nothing`). At v0.4.0 the slots are CARRIED (validated for shape, sealed);
     their consumers land with the per-plane cures — a slot the engine does not yet consume has no
     effect on a run (the contract page of the release states, per slot, which cure consumes it).
-    **Since v0.4 T4 the `vocabulary` slot is CONSUMED** (the first slot with a live consumer):
-    see the vocabulary law below.
-  - **The VOCABULARY law (v0.4 T4 — the whitelist relocation, R-V04B-6 (a)):** the closed label
-    whitelist is no longer a Core literal — it is the CONTENT of the labels record's declared
-    `vocabulary` slot. The shipped declaration is a `VocabularyRef` onto the digest-pinned
-    artifact `src/alterants-std/labels_vocabulary.txt` (38 names in declaration order; one
-    `<name><TAB>query=false` line — the write-only VALVE); the DECLARED digest is an independent
-    literal, and the loader CAPTURES the bytes as read while the declared-vs-captured comparison
-    is a PUBLICATION act (`SRC_DIGEST_MISMATCH` at `validate`, per the standing R-V04-37 shape) —
-    the DEFAULT registry publishes at module load, so a tampered shipped artifact fails
-    `using GoMeta` (fail-closed). The membership planes read the INVOKED action's owning record's
-    declared vocabulary inside an engine scope (the SCOPE LAW; a record declaring NO vocabulary
-    has NO membership gate — the declaration is load-bearing) and the shipped vocabulary outside
-    any scope. The public read surface is the G-VOC triple — `vocabulary(registry, altName)`
-    (the resolved declaration as a DEFENSIVE COPY, or `nothing`), `vocabulary_member(registry,
-    altName, name)`, `vocabulary_queryable(registry, altName, name)` (membership first, then the
-    `query` flag; an absent flag defaults `true`) — mutating a returned copy changes nothing.
-    Both predicates FAIL CLOSED on an UNKNOWN alterant name (`false` — a misspelled or
-    attacker-chosen `altName` must not read as "no gate"); only a KNOWN record's absent
-    vocabulary slot means no gate (`true`). The query plane validates EVERY supplied label
-    (membership, then the valve) BEFORE any presence verdict — a multi-label query refuses
-    on any unknown or write-only member regardless of the other labels' set state.
-    An `InlineVocabulary` declaration refuses duplicate names and flag keys outside its name set
-    at `validate` (`REG_PROTOCOL`). The labels record's `provenance.policy_id` is the INDEPENDENT
-    policy identity `"gometa-labels/v0-closed@1"` (a content swap moves the artifact digest; a
-    policy change moves this name).
+  - **The Labels vocabulary (since stage 5's E9 of the v0.4 build — census rows 10, 28 and 55, the owner's bulk mark of
+    2026-10-03, OWNER-WORDS §317, R-V04B-105; his §120 on a basic, true Labels Alterant before any hardening):** the 38
+    shipped names live in the plain file `src/alterants-std/labels_vocabulary.txt`, read at load, one per line in the
+    file's order — each line's first TAB field; the file is byte-identical to T4's, its one `query=false` field (the ZWJ
+    name, the owner's R-V04-36 content ruling) inert data now (R-V04B-6 (a): std-Alterant territory, never a Core
+    literal). `setLabels` refuses a name outside them
+    (§3.4); `checkLabels` answers false for an unset or unknown name, as his legacy did. The v0.4 T4 machinery — the record's
+    `vocabulary` slot with its two types, the digest pin, the capture cache, the artifact grammar, the scope law, the G-VOC
+    triple, the `SRC_DIGEST_MISMATCH` row, the write-only valve and the labels record's policy identity — LEFT (§6).
 
 They are not exported; reach them qualified. `tests/unit/public_surface_tests.jl` asserts every
 §1.2 name is `public` and NOT exported (no accidental leak, no silent demotion).
@@ -551,9 +533,9 @@ arg2)` — parsed with the metaLine and handed to the action when it fires. The 
 
 - **Labels (the `:` action) — DOCUMENTED, both forms:** repeated one-word labels
   (`#~ :label1 :label2`) AND the parenthesized list (`#~ :(label1, label2)`) — equivalent; each
-  label is checked against the engine's closed whitelist, in both the label-setting and the
-  condition-query roles (an unknown label ⇒ the §3.4 stable refusal, subject to §3.4's
-  evaluation-scope note). The corpus-documented labels are `:label1`..`:label5`; since `0.3.0`
+  label APPLIED is checked against the engine's closed whitelist (an unknown label ⇒ the §3.4 stable refusal); a
+  label QUERIED in a condition answers false when it is unknown or unset (the legacy's checker; since stage 5's E9 of
+  the v0.4 build). The corpus-documented labels are `:label1`..`:label5`; since `0.3.0`
   the closed whitelist additionally accepts a fixed pictograph vocabulary (e.g. `:💡`, `:📝`,
   `:🔥` — the full set is the refusal message's accepted-set listing; byte-exact names, no
   normalization: an emoji variant with different bytes is a different — unknown — name).
@@ -752,37 +734,13 @@ fabricated typed code:
 - **The unknown-alterant refusal:** an out-of-registry alterant name throws a stable, stage-honest,
   bounded `ErrorException` ("GoMeta absorb: unknown alterant action …"). Its typed-`Diagnostic`
   conversion is deferred (the E-01 family).
-- **The unknown-label refusal:** **label names are validated in BOTH roles** against the
-  governing record's DECLARED vocabulary (since v0.4 T4 — the §1.2 vocabulary law; the shipped
-  content is unchanged: `:label1`..`:label5` plus, since `0.3.0`, the fixed pictograph
-  vocabulary, now carried by the `alterants-std/labels_vocabulary.txt` artifact) — a name
-  APPLIED as a label (`#~ :labelX`, including the conditional form
-  `:labelX{ … }`) and a label QUERIED in a condition (`{ :labelX }`) each raise the stable
-  `ErrorException` `"GoMeta apply: unknown label …"`, which names the accepted set SORTED
-  (the §2 argument-forms contract). A record declaring NO vocabulary has no membership gate.
-  One evaluation-scope
-  note: the condition-role refusal fires where the query is actually consulted — in a region that
-  carries no labels at all (no valid label was ever set there), the query is never consulted and
-  the atom simply evaluates false; likewise a condition-side label after an already-winning true
-  atom in a `,`/`||` chain is not queried (short-circuit), so it is not reached to refuse.
-  Witnesses: `tests/unit/error_message_tests.jl` (both roles).
-- **The write-only-label refusal (v0.4 T4 — the declared VALVE):** querying a vocabulary member
-  whose flag is `query = false` raises the stable `ErrorException` `"GoMeta apply: label … is
-  declared write-only (query = false) — set-only in this vocabulary"`. Trigger: the query plane's
-  `checkLabels` on a valve name (membership is checked FIRST — an unknown name meets the
-  unknown-label refusal above, never this one). Channel: a thrown `ErrorException` out of
-  `goMeta` / the direct package-internal drive. At v0 the shipped valve name (a ZWJ pictograph
-  sequence) cannot ride a DOCUMENT condition — the absorb-plane condition scan refuses its
-  joiner first (`"GoMeta absorb: unparsable condition"`) — so the direct drive is the valve's
-  only reachable seam. Recovery: query a `query = true` member, or set the name instead.
-  Witnesses: `tests/unit/vocabulary_tests.jl` [5].
-- **The malformed-vocabulary-artifact load refusal (v0.4 T4):** a vocabulary artifact violating
-  the fixed byte grammar (UTF-8 no BOM · LF-only · no blank/comment lines · no padding · one
-  final LF · `<name>` or `<name><TAB>query=false` lines · no duplicates) raises `"GoMeta
-  registry: labels vocabulary artifact is MALFORMED (<class>) at line <n> of <origin>"` AT LOAD
-  — for the shipped artifact that means `using GoMeta` itself fails (fail-closed; a digest
-  mismatch is the SEPARATE publication-time `SRC_DIGEST_MISMATCH` row, §3.5). Recovery: restore
-  the artifact bytes (the grammar is fixed; regenerate from the lane's source).
+- **The unknown-label refusal:** a name APPLIED as a label (`#~ :labelX`, including the conditional form
+  `:labelX{ … }`) from outside the shipped set — `:label1`..`:label5` plus, since `0.3.0`, the fixed pictograph
+  vocabulary (`alterants-std/labels_vocabulary.txt`, 38 names) — raises the stable `ErrorException`
+  `"GoMeta apply: unknown label …"`, which names the accepted set SORTED (the §2 argument-forms contract). A label
+  QUERIED in a condition (`{ :labelX }`) is never refused for being unknown: the query answers false, as the legacy's
+  checker did (since stage 5's E9 of the v0.4 build — the T4 membership refusal in the query role and the write-only
+  valve left, census row 55). Witnesses: `tests/unit/error_message_tests.jl` (both roles).
 - **The capture-floor warnings (v0.4 T5; typed, NON-fatal):** `WARN_CAPTURE_FLOOR` — an
   alterant produced applied state but declares NO capture row: its verdicts mint no evals
   rows; the run stays `PROCESS_OK` with the warning ONCE per call per alterant (recovery:
@@ -791,15 +749,6 @@ fabricated typed code:
   value set: the affected rows are not minted, disclosed the same way (recovery: conform
   the store/values to the declared scheme, or re-declare the scheme). Channel: warning
   `Diagnostic`s on the result. Witnesses: `tests/unit/capture_tests.jl`.
-- **The unresolvable-vocabulary refusal (v0.4 T4):** a G-VOC read (or a plane's scope-law read)
-  over a record whose `VocabularyRef` digest matches no loaded artifact raises `"GoMeta apply:
-  the declared vocabulary of alterant … is UNRESOLVABLE"`. Unreachable through the sanctioned
-  lifecycle (`validate` refuses the same condition as `SRC_DIGEST_MISMATCH` before publication);
-  reachable only by post-publication mutation (a B-2-class act the door reports). Recovery:
-  restore the captured artifact (a fresh `using GoMeta` re-runs the load-time capture), or
-  publish a declaration whose vocabulary is resolvable — an `InlineVocabulary`, or a
-  `VocabularyRef` whose digest has a live capture (re-publication ALONE cannot resolve a
-  missing capture: `validate` refuses it `SRC_DIGEST_MISMATCH` first — the same gate).
 - **The store-`[2]` insertion path** — a latent insertion path not exercised by any v0 input.
 - **The absorb-plane grammar refusals (the same stable-message family):** beyond the entries
   above, the metaLine/condition grammar refuses with stable `GoMeta absorb:` messages on: an
@@ -914,7 +863,7 @@ rows; **(iv) DOOR results** — `REG_UNPUBLISHED` / `POST_SEAL_MUTATION` come ba
 | `DEP_MISSING` (v0.4 T3) | **REMOVED at 0.4.0** (stage 5's E4 of the v0.4 build; census row 3) | the eager dependency closure at publication left; an `altConstructor` with no zero-argument method publishes and meets the mint wrap at first apply — `CB_CTOR_THROW` naming the alterant and the `MethodError` (§3.4); the §6 register row | — |
 | `STATE_REUSE_REFUSED` (T3 seam) | **REMOVED at 0.4.0** (stage 5's E2 of the v0.4 build; census row 42) | the seam ledger left with the callable driver seam: `goMeta` builds its parse state itself, one per call — nothing is injected, nothing can be in flight twice; the §6 register row | — |
 | `STATE_SEAL_MISMATCH` (T3 seam) | **REMOVED at 0.4.0** (stage 3's commit 4 of the v0.4 build; R-V04B-42 (1)) | it guarded the Visib write-backs a run left in the caller's state; nothing is written back any more — the §6 register row | — |
-| `SRC_DIGEST_MISMATCH` (v0.4 T4) | error | a record's `VocabularyRef` digest matches NO loaded artifact — the artifact bytes moved without a declaration update, or the artifact was never loaded (the R-V04-37 publication-time re-verify of the load-time capture; the DEFAULT publishes at module load, so a tampered shipped artifact fails `using GoMeta` here) | the alterant |
+| `SRC_DIGEST_MISMATCH` (v0.4 T4) | **REMOVED at 0.4.0** (stage 5's E9 of the v0.4 build; census row 10) | the vocabulary artifact's digest pin left with the record's vocabulary slot — the 38 names are a plain file read at load; the §6 register row | — |
 
 Stable-message refusals (NOT typed codes; the §3.4 class): `"GoMeta absorb: meta-hierarchy slot pool
 exhausted"` — the per-call slot pool (`NUM_MH_LEVELS` = 12 slots) fully occupied at an
@@ -930,7 +879,7 @@ encodings; the shipped suite does not exercise invalid-byte content). The
 **meta-line plane indexes on character boundaries**: non-ASCII inside a metaLine parses
 correctly, and — the ACTION set being ASCII-named at v0, while the label whitelist carries a
 fixed pictograph vocabulary since 0.3.0 (`src/alterants-std/labels_vocabulary.txt`) — a
-non-ASCII label OUTSIDE the governing vocabulary or a non-ASCII action meets the stable
+non-ASCII label APPLIED from outside the shipped set or a non-ASCII action meets the stable
 unknown-label/unknown-action refusal naming the FULL token
 (a GUARDED edge). Goldens are LF. This is a documented normalization, not an error. See
 `docs/CANONICAL-OUTPUT.md`.
@@ -1033,3 +982,4 @@ non-silent record under R-V04B-61; the letter of R-V04B-24 (P) does not govern u
 - **The registration validation chain and the clash-disposition switch — REMOVED at 0.4.0** (stage 5's E4 of the v0.4 build; census rows 3 and 51 of the stage-5 census, the owner's bulk mark of 2026-10-03, OWNER-WORDS §317 — R-V04B-105; his §19 — the public surface 'RESTRICTED TO THE NECESSARY functionality' — and his §20 'RESTRICT THAT INTERFACE TO A MINIMUM'; his §120 no hardening before the framework works): the validation chain of v0.4 T2–T4 — the tier-1 record shape law (the closed enum sets, the kinds/kind_sources, queryable, dispatch-target uniqueness, plugin-index, settribute-key and MutEx rows; the capture identity, stem-shape and stem-clash laws), the tier-2 inventory law (`REG_UNKNOWN_SETMODE`, `REG_DUPLICATE_ALTNAME`, `REG_RESERVED_SHADOW`, `REG_MUTEX_CONFLICT`, `REG_UNINTERPRETED_REQUIRES`, `REG_CONTRACT_VERSION`, the validate-time `REG_SLOT_EXHAUSTED`), the clash law with both arms and the switch (`REG_DUPLICATE_ACTION`), the reflection cross-check (`REG_SIG_MISMATCH`), the value-algebra and reachability refusals (`REG_VALUE_ALGEBRA`, `REG_UNREACHABLE`), the candidacy warning (`REG_CANDIDACY`) and the eager dependency closure (`DEP_MISSING`) — left `src/alterants/registry.jl` (−726/+79 lines) with the four dead closed-set constants of `src/state.jl`; `validate` runs the domain probe (R-V04B-4 (iii) — the one domain definition shared by `validate`, `publish`'s copier and the door's walker), the four capture mode-gate laws of the Heading's :localOnly lane (until R-V04B-101, after the branch) and the vocabulary check (census row 10's commit). MEASURED consequences (the build record's receipts `PROBES-e4-validate_stage1-src-cut_on-1c9d013f.txt`, `PROBES-e4-capture-laws_stage1_on-1c9d013f.txt` and `PROBES-e4-seat-notes_on-1c9d013f.txt`):a duplicate action name resolves FIRST-wins in the derived tables (the legacy's Dict assignment was last-wins); a `:candidate` without activation publishes silently; an `altConstructor` without a zero-arg method publishes and meets `CB_CTOR_THROW` at the first mint, naming the `MethodError`; a capture `instance_type ≠ altConstructor` publishes and floors `WARN_CAPTURE_UNREADABLE`; a stem overlapping a shipped family publishes — on one cell the two plugins' same-attr rows collapse to one row (full structural namespacing is T11's row); a capture scheme outside the walk's four arms with gate `nothing` publishes and falls through the walk — no row, no floor (T11's catalogue row); a kind or source literally named k/s is no longer refused at registration, so such a record's fingerprint can alias another's — a fingerprint-only class inside R-V04B-4 (v)'s disclosed-lossy bound; a builder pushed past 127 plugins or actions, or with a dangling plugin index, DIRECTLY (bypassing `register!`, which refuses both typed) fails raw at `publish` (`InexactError`) or at apply (`BoundsError`) — the honest bound of the bypass; `publish`'s warning path stands with no remaining check that warns.
 - **`GoMeta.BLS.content(tree)` — ADDED (public, not exported) at 0.4.0** (stage 5's s5c8 of the v0.4 build; his word of 2026-10-05, OWNER-WORDS §333, R-V04B-116 (3)(b)): the document's lines joined by a newline, as bytes (no terminal newline — `endsWithNewline` carries that fact; a CRLF line end's CR dropped by the line split), the one-argument method of the door's `content` — not a `(tree, ::File)` arm of the two-argument form, whose empty return for a File is the Engine's capture predicate (untouched); the development tools' last two reads outside the door left with this commit — the File's text through this method, the renderer's whitespace guard before the hide marker through `isHorizontalSpace` (R-V04B-116 (3)(a); over a Char the two predicates differ at \v, \f, \r and U+0085 — stripped by the internal guard alone — and at U+180E — by the public class alone; no corpus input carries any of the five, the build record's receipt `PROBES-s5c8-whitespace-class-bytes_on-450d1476.txt`) — and the texts of the lapsed exemption D-6(a) with them.
 - **`run_absorb_apply!` (the callable driver seam), its state ledger (`STATE_REUSE_REFUSED`), `validate_carrier_state` and the `_walk_and_apply!` factoring — REMOVED at 0.4.0** (stage 5's E2 of the v0.4 build; census rows 21, 42, 23 and 44 of the stage-5 census, the owner's bulk mark of 2026-10-03, OWNER-WORDS §317 — R-V04B-105; his verbatim of R-V04-31 on the seam: "If this is only to the benefit of the .fodt adapter it will eventually have to be removed from the GoMeta engine - if not in v0.4, then in a later GoMeta version."; the legacy was one function): `goMeta(bytes; config, registry)` is the ONE route into the Engine; the driver body (the fresh per-call state, the user feed, the File loop, the delivery) runs inside it; a caller-built store has no entry and no checker; `names(GoMeta)` unchanged (none of the four was a `public` name). The corpus, the 26 pins and the twelve forms byte-identical (the pre-check); the suite count moves by the retired witnesses alone.
+- **The Labels vocabulary machinery — `VocabularySlot`, `InlineVocabulary`, `VocabularyRef` (the record's `vocabulary` slot, field and keyword), the G-VOC triple `vocabulary` / `vocabulary_member` / `vocabulary_queryable`, the `SRC_DIGEST_MISMATCH` code, the digest pin, the capture cache, the artifact grammar, the scope law, the write-only valve and the labels record's policy identity — REMOVED at 0.4.0** (stage 5's E9 of the v0.4 build; census rows 10, 28 and 55 of the stage-5 census, the owner's bulk mark of 2026-10-03, OWNER-WORDS §317 — R-V04B-105; his words of 2026-09-20, OWNER-WORDS §120: "Similarly CC kept on pressuring me into making the Labels Alterant safe before we even could try working with a basic true Labels Alterant."): the 38 names stay in the plain file `src/alterants-std/labels_vocabulary.txt`, read at load (R-V04B-6 (a); the file byte-identical — the ZWJ line's `query=false` field, the owner's R-V04-36 content ruling, inert data now); `setLabels` keeps the closed check (an unknown label APPLIED refuses, naming the accepted set); `checkLabels` answers false for an unset or unknown label — the legacy's (GoMetaRetro Alterants.jl :87–:99); a `PlugIn` keyword `vocabulary = …` is a `MethodError` now; `names(GoMeta)` loses six. The corpus, the 26 pins and the twelve forms byte-identical (the pre-check); the registration digest re-minted (the labels record's slots leave the seal fold — `profile_snapshot_tests.jl`, measured).

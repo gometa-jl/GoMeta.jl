@@ -98,7 +98,7 @@ const fallBackMHIdx = maxDepthMH + 3   # 12 == NUM_MH_LEVELS — the fallBack le
 # --- the v0.4 registration-record SLOTS (the Stage-A T1 schema extension) ---------------------------
 # IS: the DECLARED data slots the v0.4 record carries (the architecture chapter's sec 2.a, slots
 #     (1)–(10)): the per-action settribute mapping · the capture declaration · the presence-typed
-#     explicit default · the render-plane data · the vocabulary slot · constraint rows · contributed
+#     explicit default · the render-plane data · constraint rows · contributed
 #     condition atoms · identity/contract/requires · sugar rows · the schema-versioned provenance
 #     group + the RESERVED permissions manifest.
 # DOES: defines the slot types with their closed enum sets; every slot is NOTHING/EMPTY-defaulted so a
@@ -106,7 +106,7 @@ const fallBackMHIdx = maxDepthMH + 3   # 12 == NUM_MH_LEVELS — the fallBack le
 #     admit; nothing is silently defaulted to a VALUE — absence stays mechanically distinguishable
 #     from every declared value, the G-DEF disjointness law).
 # REASONING: the engine's three measured clean planes (apply, interpreter, absorb dispatch) are
-#     registry-DATA-driven; the dirty planes (capture, defaults, render, vocabulary, diagnostics) were
+#     registry-DATA-driven; the dirty planes (capture, defaults, render, diagnostics) were
 #     hard-coded per Alterant. Moving what those planes need INTO the record as data is the cure's
 #     substrate: Core keeps schema knowledge, never a particular Alterant's content. At T1 the slots
 #     are CARRIED, not consumed — their consumers land with the per-plane cures (T4–T10), each proving
@@ -116,14 +116,13 @@ const fallBackMHIdx = maxDepthMH + 3   # 12 == NUM_MH_LEVELS — the fallBack le
 """
     DomainRef(artifact, digest)
 
-A digest-pinned reference to an artifact OUTSIDE the record (a vocabulary file, an imported
-label set): `artifact` = the artifact's declared coordinate (a path or a name the loader
+A digest-pinned reference to an artifact OUTSIDE the record (an imported label set): `artifact` = the artifact's declared coordinate (a path or a name the loader
 resolves), `digest` = the ALGORITHM-TAGGED content digest of the bytes, `"sha256:<64 lowercase
 hex>"` — per-file SHA-256, tag in the value (the survey's discipline: a digest without its
 algorithm is not comparable). The constructor refuses any other form LOUDLY (a mis-shaped pin
 would otherwise register silently and never verify). Verification against the artifact's bytes
-is the loader's act (typed `SRC_DIGEST_MISMATCH` at the confined loader places), never this
-constructor's.
+is a loader's act, never this constructor's — no loader verifies at v0.4: the vocabulary artifact's pin left at stage 5's
+E9 of the v0.4 build; the slot stays RESERVED for the import digests of R-V04-37 SEC-1.
 """
 struct DomainRef
     artifact::String
@@ -240,30 +239,6 @@ struct RenderDecl
     materialize::Bool
 end
 
-## Slot (5): the vocabulary slot — inline names+flags, or a digest-pinned artifact reference.
-"The vocabulary slot's abstract root: `InlineVocabulary` | `VocabularyRef`."
-abstract type VocabularySlot end
-"""
-    InlineVocabulary(names, flags)
-
-An inline closed vocabulary: `names` (Symbol, byte-exact), `flags` per name — `(query = Bool,)`
-(`query = false` = a write-only name the query plane refuses: the sized valve, declared and
-disclosed rather than discovered).
-"""
-struct InlineVocabulary <: VocabularySlot
-    names::Vector{Symbol}
-    flags::Dict{Symbol,NamedTuple{(:query,),Tuple{Bool}}}
-end
-"""
-    VocabularyRef(ref)
-
-A vocabulary owned OUTSIDE Core: the `DomainRef` to the artifact that carries the names AND
-their per-name flags (content custody stays the Alterant's; the digest is ENFORCED at load).
-"""
-struct VocabularyRef <: VocabularySlot
-    ref::DomainRef
-end
-
 ## Slot (6): constraint rows — VALIDATED (ownership + shape) and SEALED at publication (T2); their
 ## compilation into the two refusal planes lands with the planes' cures (T5 capture / T6 render).
 "A mutual-exclusion constraint over the named actions (one applied value among them per unit)."
@@ -326,8 +301,8 @@ PermissionManifest(; seam = Symbol[], ambient = Symbol[]) = PermissionManifest(s
 The schema-versioned provenance group (the security frame's field UNION, all additive, all
 nothing/empty-defaulted — the ONE non-nothing member is `sec_schema`, the group's own schema
 version, so later rungs land as versioned additions never breaks). Live at v0.4.0 (Rung 0):
-`sources` (the per-source `DomainRef` pins, digest-ENFORCED for label-set imports) and
-`policy_id` (the vocabulary-policy identity the publication mints). RESERVED, records-not-
+`sources` (the per-source `DomainRef` pins — their digest enforcement for label-set imports is RESERVED, R-V04-37 SEC-1: no import loader exists at v0.4) and
+`policy_id` (a policy identity the publication mints). RESERVED, records-not-
 enforces: `package_digest` · `artifact_manifest` · `signatures` + `signer` · `source_identity`
 (a non-name coordinate) · `acquisition_mode` ∈ `(:shipped, :pinned_by_user, :first_use)` ·
 `artifact_version` · `not_before` · `load_act` (the resolved coordinate + digest as loaded) ·
@@ -394,7 +369,6 @@ struct Alterant
     # --- the v0.4 declared slots (T1; all nothing/empty-defaulted; carried at T1, consumed T4–T10) ---
     capture::Union{Nothing,CaptureDecl}            # slot (2): the capture declaration
     render::Union{Nothing,RenderDecl}              # slot (4): render-plane data
-    vocabulary::Union{Nothing,VocabularySlot}      # slot (5): inline table or a DomainRef artifact
     constraints::Vector{MutEx}                     # slot (6): constraint rows
     atoms::Vector{ConditionAtom}                   # slot (7): contributed condition atoms, name-addressed
     contract_version::Union{Nothing,VersionNumber} # slot (8): the contract version the record targets
@@ -412,19 +386,19 @@ PlugIn(altName::Symbol, setMode::Symbol, altConstructor::Type, setAltInstance::F
        getAltInstance::Union{Nothing,Function},
        precedencesTuple::Union{Nothing,NTuple{NUM_MH_LEVELS,Symbol}}) =
     PlugIn(altName, setMode, altConstructor, setAltInstance, getAltInstance, precedencesTuple,
-           NoDefault(), nothing, nothing, nothing, MutEx[], ConditionAtom[], nothing, (), SugarRow[],
+           NoDefault(), nothing, nothing, MutEx[], ConditionAtom[], nothing, (), SugarRow[],
            Provenance(), nothing)
 "The keyword form: every v0.4 slot addressable by name; unnamed slots take their nothing/empty default."
 PlugIn(; altName::Symbol, setMode::Symbol, altConstructor::Type, setAltInstance::Function,
          getAltInstance::Union{Nothing,Function} = nothing,
          precedencesTuple::Union{Nothing,NTuple{NUM_MH_LEVELS,Symbol}} = nothing,
          default::DefaultSlot = NoDefault(),
-         capture = nothing, render = nothing, vocabulary = nothing,
+         capture = nothing, render = nothing,
          constraints = MutEx[], atoms = ConditionAtom[], contract_version = nothing,
          requires::Tuple{Vararg{Symbol}} = (), sugar = SugarRow[],
          provenance::Provenance = Provenance(), permissions = nothing) =
     PlugIn(altName, setMode, altConstructor, setAltInstance, getAltInstance, precedencesTuple,
-           default, capture, render, vocabulary, constraints, atoms, contract_version, requires, sugar,
+           default, capture, render, constraints, atoms, contract_version, requires, sugar,
            provenance, permissions)
 
 """

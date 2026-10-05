@@ -55,12 +55,13 @@ import GoMeta as GM
             "registry.jl"), String)
         chain = src[findfirst("function _validate_registration", src)[1]:end]
         chain = chain[1:findfirst("return diags", chain)[1]]
-        for checkname in ("_encodability_collect!", "_mode_gate_collect!", "_vocabulary_collect!")
+        for checkname in ("_encodability_collect!", "_mode_gate_collect!")
             @test occursin(checkname, chain)   # every remaining check is wired
         end
         for gone in ("_record_wellformed_collect!", "_dependency_collect!", "_inventory_collect!",
                      "_register_actions_collect!", "_reflection_collect!", "_value_algebra_collect!",
-                     "_reachability_collect!", "_candidacy_collect!", "_CLASH_DISPOSITION")
+                     "_reachability_collect!", "_candidacy_collect!", "_CLASH_DISPOSITION",
+                     "_vocabulary_collect!")   # stage 5's E9: the vocabulary check left with the record's vocabulary slot
             @test !occursin(gone, src)         # the retired names never return
         end
         pub = src[findfirst("function publish(", src)[1]:end]

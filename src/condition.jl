@@ -74,7 +74,7 @@
 #      per-call state passed AS AN ARGUMENT (no ambient lookup): a settribute atom reads the
 #      snapshot; a query atom keeps unset ⇒ FALSE (membership on
 #      an absent store is false — no tri-state), and dispatches the registered query exactly
-#      as the engine's query seam does (the unknown-label whitelist refusal included); the
+#      as the engine's query seam does (a label outside the shipped set answers false since stage 5's E9 — the legacy's); the
 #      eager/short-circuit operator split reproduces the engine's query-evaluation COUNTS.
 #      (4) `print_condition(ast)` — the canonical source-vocabulary form; printing and
 #      re-parsing yields the same AST (round-trip law).
@@ -672,8 +672,8 @@ end
 Evaluate a parsed condition against the per-call state — passed AS AN ARGUMENT (the evaluator
 reads no ambient scope itself). A settribute atom reads the per-call snapshot; a query atom
 keeps unset ⇒ FALSE (membership on an absent store is false — no
-tri-state), then dispatches the registered query (the closed label whitelist's loud
-unknown-label refusal included); a raw (non-literal) argument meets the stable invalid-argument
+tri-state), then dispatches the registered query (an unknown label answers false — the legacy's checker, since
+stage 5's E9 of the v0.4 build); a raw (non-literal) argument meets the stable invalid-argument
 refusal at this stage (where the engine's evaluated string crashed raw). The eager ('&'/'|')
 vs short-circuit ('&&'/'||'/',') operator split reproduces the engine's query-evaluation
 counts exactly.

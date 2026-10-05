@@ -6,10 +6,10 @@
 # multibyte final character whole in the verdict store.
 # Every assertion below pins a MEASURED value. GENERATED file:
 # exotic characters are REAL codepoints, byte-verified at authoring.
-# v0.4 T4 HAND-EDIT (declared per T4-DESIGN §6-12; T4B-3): testset [7]'s membership
-# probes now read through the public G-VOC surface (`vocabulary_member`) — the former
-# `sortedSetOfLabelsSVec` const is DELETED with the whitelist relocation. Assert-count
-# neutral. A regeneration of this file must re-apply the [7] G-VOC form.
+# v0.4 T4 HAND-EDIT (T4B-3) and stage 5's E9 HAND-EDIT: testset [7]'s membership probes read the plain
+# shipped list (`GM.Alterants.LABELS_VOCABULARY`; the G-VOC surface left at E9 — census row 28); testset [2]
+# applies its unknown labels instead of querying them (a queried unknown label answers false since E9 —
+# census row 55). Assert-count neutral. A regeneration of this file must re-apply both forms.
 
 using Test
 import GoMeta as GM
@@ -31,9 +31,10 @@ _uc_err(s)     = try _uc_full(s); nothing catch e sprint(showerror, e) end
     @testset "[2] store-present flush trio: apply's unknown-label names the FULL token" begin
         # Witness note: 🔥 joined the pictograph whitelist at 0.3.0, so it can no longer
         # serve as the UNKNOWN-label witness — 🐙 (not whitelisted) carries the
-        # multibyte-final role in its place.
+        # multibyte-final role in its place. Since stage 5's E9 the refusal lives in the SET
+        # role alone (a queried unknown label answers false), so the witness APPLIES the label.
         for (lbl,) in (("é",), ("🐙",), ("aß",))
-            m = _uc_err("#~ :label1 hide{:" * lbl * "}\nx = 1\n")
+            m = _uc_err("#~ :" * lbl * "\nx = 1\n")
             @test m !== nothing
             @test occursin("unknown label", m)
             @test occursin("\"" * lbl * "\"", m)   # the FULL token, never truncated
@@ -94,11 +95,11 @@ _uc_err(s)     = try _uc_full(s); nothing catch e sprint(showerror, e) end
         # regional-indicator pair and a ZWJ sequence; a variation-selector-less base
         # char is a DIFFERENT byte sequence and refuses like any unknown name.
         for name in ("⛔", "💯", "🇨🇭", "⛓️‍💥", "🌛", "💫")
-            @test GM.vocabulary_member(GM.DEFAULT_REGISTRY, :labels, Symbol(name))   # v0.4 T4: through G-VOC
+            @test Symbol(name) ∈ GM.Alterants.LABELS_VOCABULARY   # the plain shipped list (stage 5's E9)
         end
         r = _uc_full("#~ :⛔ hide{ :⛔ }\n# content\n")
         @test r.status == GM.PROCESS_OK           # set role + condition role, end-to-end
-        @test !GM.vocabulary_member(GM.DEFAULT_REGISTRY, :labels, Symbol("⛓"))   # no VS16 ⇒ unknown
+        @test Symbol("⛓") ∉ GM.Alterants.LABELS_VOCABULARY   # no VS16 ⇒ unknown
         m = _uc_err("#~ :⛓\n# content\n")
         @test m !== nothing && occursin("unknown label", m)
     end

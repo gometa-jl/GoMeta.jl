@@ -298,14 +298,12 @@ content-only block across the blank.
 ## 5. Labels
 
 - **IS** — labels are accumulative tags a metaLine applies to the content in its scope. **Label
-  names are validated in BOTH roles** against the engine's closed whitelist — the
+  names are validated when APPLIED** against the engine's closed whitelist — the
   corpus-documented set `:label1` … `:label5` plus, since `0.3.0`, a fixed pictograph
   vocabulary (byte-exact names like `:💡`, `:🔥`; the refusal message lists the full accepted
-  set): applying a label from outside the whitelist AND
-  querying one in a condition each refuse with a stable message naming the accepted set (a
-  condition-side label after an already-winning true atom in a `,`/`||` chain is not queried —
-  short-circuit — and in a region that carries no labels at all, the query is never consulted
-  and simply evaluates false).
+  set): applying a label from outside the whitelist refuses with a stable message naming the
+  accepted set; a label QUERIED in a condition answers false when it is unknown or unset (the
+  legacy's checker; since stage 5's E9 of the v0.4 build).
 - **Conditional application** — `:labelN{ condition }` applies the label **only** to components satisfying the
   condition. Cite: `Extended L8` `#~ :label1{ isText && containsMeta }` — `:label1` reaches only text that
   contains meta; `Proposal L3` `#~ :label1{ (isText && containsMeta), isMeta }`.
@@ -463,8 +461,8 @@ drops `:label1` from depth 1 to depth 2. One blank line, two flips, two reasons.
 
 - **Labels (the `:` action) — documented, both forms:** repeated one-word labels
   (`#~ :label1 :label2`) AND the parenthesized list (`#~ :(label1, label2)`) are equivalent; each
-  label is checked against the closed whitelist, in both the label-setting and the condition-query
-  roles (an unknown label refuses with a stable message where the query is consulted —
+  label APPLIED is checked against the closed whitelist (an unknown label refuses with a stable
+  message); a label QUERIED answers false when unknown or unset (since stage 5's E9 —
   `docs/public-api.md` §3.4).
 - **Id actions (`cell` / `parent` / `file`) — EXPERIMENTAL at this release:** one integer value
   argument (`#~ cell(7)`), Int16 domain. The Id alterant is a v0 placeholder implementation; this
@@ -538,14 +536,13 @@ To keep the verified claims honest, these are **known but not established here**
 - **Engine limits** — metaLines live in comments (`#`/`##`), not as executable code. The label
   whitelist is closed: the corpus-documented `:label1`..`:label5` plus (since `0.3.0`) the fixed
   pictograph vocabulary — byte-exact names, no normalization —
-  and **label names are validated against it in BOTH roles** — applying a label and querying one
-  in a condition each refuse with the stable `GoMeta apply: unknown label …` message, which names
-  the accepted set (a condition-side label after an already-winning true atom in a `,`/`||` chain
-  is not queried — short-circuit — and in a region that carries no labels at all, the query is
-  never consulted and simply evaluates false). At most 7 actions accumulate per meta-hierarchy slot
+  and **label names are validated against it when APPLIED** — an unknown label refuses with the stable
+  `GoMeta apply: unknown label …` message, which names the accepted set; a label QUERIED in a condition
+  answers false when it is unknown or unset (the legacy's checker; since stage 5's E9 of the v0.4
+  build). At most 7 actions accumulate per meta-hierarchy slot
   (exceeding it refuses with a stable message — see `docs/public-api.md` §3.4). The
-  authorable depth window is 1–8 in the digit form (§2). Custom label names in either role (where
-  the query is consulted — `docs/public-api.md` §3.4), and
+  authorable depth window is 1–8 in the digit form (§2). Custom label names applied (a queried one
+  answers false — `docs/public-api.md` §3.4), and
   predicates outside the state-ref/action whitelists, are refused.
 
 > Status: this is the verified working reference for the v0 subset of the GoMeta language. The

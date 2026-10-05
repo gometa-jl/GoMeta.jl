@@ -1,38 +1,19 @@
-# vocabulary_tests.jl — v0.4 T4: the WHITELIST-RELOCATION witnesses (T4-DESIGN §6).
+# vocabulary_tests.jl — the Labels vocabulary witnesses (v0.4 T4's whitelist relocation, trimmed at stage 5's E9 of the v0.4
+# build: the digest pin, the capture cache, the artifact grammar, the scope law, the G-VOC read surface and the write-only
+# valve left with their subjects — census rows 10, 28 and 55, OWNER-WORDS §317; the 38 names stay in the plain file).
 #
-# IS:   the T4 acceptance witnesses — the digest-pinned artifact loads and the DEFAULT
-#       publishes through the `_vocabulary_collect!` gate; membership is unchanged and
-#       ORDER-INDEPENDENT; the registration-surface FLIP (a record's declared vocabulary
-#       governs, zero code edits — M-AC-12); the ZWJ write-only valve at its REACHABLE
-#       seam (direct checkLabels) + the absorb-shape sibling pin; the stale-pin and
-#       malformed-artifact refusal classes; the G-VOC read surface with its
-#       DEFENSIVE-COPY ownership rule; and the zero-literal law in its DECIDABLE form (the re-homed T3
-#       checkpoint-(7) ledger-keying assert, [8], left with the seam ledger at stage 5's E2 of the v0.4 build).
-# DOES: drives the shipped vocabulary end-to-end through goMeta, publishes builders whose
-#       labels record carries a DIFFERENT vocabulary declaration (inline · stale
-#       VocabularyRef), calls the loader's parse seam on malformed temp bytes, and greps
-#       the src tree against the ENUMERATED survivor census.
-# REASONING: the relocation is a BUG-FIX with a byte-identical corpus (R-V04-20/29) — no
-#       golden or corpus path can distinguish a Core literal from a declared artifact, so
-#       these witnesses are the only proof the declaration is LOAD-BEARING (the flip),
-#       the pin is INDEPENDENT (the stale-pin row), and the planes read ONE source.
-# PURPOSE: the T4 acceptance rows (Σ = 18 asserts here + the [11] milestone-set cure
-#       witnesses (6) + the [12] reconfirm/closure-cure witnesses (4) + the [13] family-
-#       cure witnesses (6) + the [14] s-wave cure witness (1) + the [15] r3 identity/
-#       getfield witnesses (6) + the [16] r4 structural-callable witnesses (3) + the
-#       [17] r5 String-only/guarded-render witnesses (2) + the [18] r6 numeric-leaf/
-#       declared-render witnesses (2 + the r7-C1 strengthening 1 = 3) = 49, − 9 at stage 5's E4 of the
-#       v0.4 build ([12] −3, [13] −4, [17] −1, [18] −1: the DEP_MISSING, SIG_MISMATCH and VALUE_ALGEBRA
-#       render arms left with their subjects; [11] A3 and [15] A3 re-cut, one assert each; [13] A5, [15]
-#       A4 and A6, [16] weakened by a conjunct each, count unchanged) = 40, − 1 at stage 5's E2 ([8]) = 39; +2 in
-#       snapshot_property_tests' VocabularyRef named case + the 3 appended collector
-#       names in registration_tests' atomicity loop = the T4-DESIGN §6 Σ = 20 + the
-#       crx-t3t4 cure batch + the crx-t3t4r/r2 hardenings + the zero-dispatch family +
-#       the s-wave cures).
+# IS:   the membership witnesses over the plain file ([2] the set role refuses an unknown name; [3] the late-order name in
+#       both roles — the ∈-scan, never `insorted`), the zero-literal law in its DECIDABLE form ([10]: no Core literal of the
+#       names re-enters src outside alterants-std/), and the crx-t3t4 cure witnesses that live here by history ([11]'s A3,
+#       [12]–[18]: the zero-dispatch validate chain, the DomainRef read-once law, the identity/getfield hardening, the
+#       structural callable name, the String-only encoder, the getfield numeric leaf).
+# DOES: drives the shipped vocabulary through goMeta and the direct setter, publishes hostile builders through validate,
+#       and greps the src tree against the ENUMERATED survivor census.
+# PURPOSE: the T4 acceptance rows that survive E9 (the retired testsets, with their counts: [1] 2, [4] 2, [5] 3, [6] 2, [7] 2,
+#       [9] 1, [11]'s A4/B4/C2 3, C1 1 and B2 1 — 17 asserts — and the earlier [8] 1 at E2).
 
 using Test
 import GoMeta as GM
-import SHA
 
 # the [12]/[13] fixtures: types whose `show(::IO, ::Type)` / `nameof(::Type)` /
 # `hasmethod(::Type, ...)` specializations THROW — the zero-dispatch validate chain must
@@ -141,11 +122,10 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
 
 @testset "vocabulary (v0.4 T4)" begin
 
-    _zwj = Symbol("⛓️‍💥")
     _doc(s) = Vector{UInt8}(codeunits(s))
     _plugin_with_default(p, d) = GM.PlugIn(; altName = p.altName, setMode = p.setMode, altConstructor = p.altConstructor,
         setAltInstance = p.setAltInstance, getAltInstance = p.getAltInstance, precedencesTuple = p.precedencesTuple,
-        default = d, capture = p.capture, render = p.render, vocabulary = p.vocabulary, constraints = p.constraints,
+        default = d, capture = p.capture, render = p.render, constraints = p.constraints,
         atoms = p.atoms, contract_version = p.contract_version, requires = p.requires, sugar = p.sugar,
         provenance = p.provenance, permissions = p.permissions)   # stage 2's commit 3-ii: the declared default is the ALTERANT's — the record `p` with the slot `d`, every other field copied
     _drive(s; R = GM.DEFAULT_REGISTRY) = try
@@ -153,24 +133,8 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
     catch e
         e
     end
-    # a DEFAULT-derived builder with the labels record's vocabulary slot REPLACED
-    _vocab_builder(slot) = begin
-        b = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
-        b.plugins[1] = GM.PlugIn(; altName = :labels, setMode = :accumulate,
-            altConstructor = Dict{Symbol,Bool}, setAltInstance = GM.Alterants.setLabels,
-            getAltInstance = GM.Alterants.checkLabels, vocabulary = slot)
-        b
-    end
 
-    @testset "[1] the DEFAULT publishes through the gate; the door is silent" begin
-        # `import GoMeta` ran the load-time capture AND the publication-time re-verify
-        # (`_vocabulary_collect!` on the DEFAULT's VocabularyRef) — the fail-closed law:
-        # a tampered shipped artifact would have failed `using GoMeta` before this line.
-        @test GM.DEFAULT_REGISTRY isa GM.AlterantRegistry
-        @test isempty(GM._registry_door_check(GM.DEFAULT_REGISTRY))
-    end
-
-    @testset "[2] membership UNCHANGED end-to-end (the relocation is behavior-zero)" begin
+    @testset "[2] membership over the plain file: a shipped name applies, an unknown name refuses in the SET role" begin
         r = _drive("x = 1\n#~ :label1\n\ny = 2\n")
         @test r isa GM.GoMetaDelivery && r.status === GM.PROCESS_OK
         e = _drive("x = 1\n#~ :nope\n\ny = 2\n")
@@ -185,67 +149,6 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
         @test rs isa GM.GoMetaDelivery && rs.status === GM.PROCESS_OK
         rq = _drive("x = 1\n#~1 :💫 hide{ :💫 }\n\ny = 2\n")
         @test rq isa GM.GoMetaDelivery && rq.status === GM.PROCESS_OK
-    end
-
-    @testset "[4] the registration-surface FLIP (M-AC-12: the declaration is load-bearing)" begin
-        Rz = GM.publish(_vocab_builder(GM.InlineVocabulary([:zz1],
-            Dict(:zz1 => (query = true,)))))
-        rz = _drive("x = 1\n#~ :zz1\n\ny = 2\n"; R = Rz)
-        @test rz isa GM.GoMetaDelivery && rz.status === GM.PROCESS_OK
-        ez = _drive("x = 1\n#~ :label1\n\ny = 2\n"; R = Rz)   # the SHIPPED name is now foreign
-        @test ez isa ErrorException && occursin("unknown label", ez.msg) &&
-              occursin("zz1", ez.msg)
-    end
-
-    @testset "[5] the ZWJ write-only valve at its REACHABLE seam + the absorb-shape sibling" begin
-        d = Dict{Symbol,Bool}()
-        GM.Alterants.setLabels(d, :(:), _zwj)                 # setting the valve name works
-        @test d[_zwj] === true
-        eq = try GM.Alterants.checkLabels(d, :(:), _zwj); nothing catch err; err end
-        @test eq isa ErrorException && occursin("write-only", eq.msg)
-        # the SIBLING pin (C4E-3, probe-measured): the ZWJ name cannot ride a DOCUMENT
-        # condition — the absorb-shape refusal PRECEDES the valve (the U+200D joiner
-        # breaks the condition scan), so direct checkLabels above is the valve's ONLY
-        # reachable seam at v0.
-        ea = _drive("x = 1\n#~1 :⛓️‍💥 hide{ :⛓️‍💥 }\n\ny = 2\n")
-        @test ea isa ErrorException && occursin("unparsable condition", ea.msg) &&
-              !occursin("write-only", ea.msg)
-    end
-
-    @testset "[6] the refusal classes: the STALE pin (publication) · the MALFORMED copy (load)" begin
-        # a TAMPERED artifact copy against the ORIGINAL declared pin: the captured cache
-        # holds only the shipped digest, so a builder declaring the tampered bytes' digest
-        # (any digest the loader never captured) meets the publication-time
-        # `:SRC_DIGEST_MISMATCH` row — the R-V04-37 re-verify, NON-circular by the
-        # independent declared literal.
-        tam = copy(GM.Alterants._LABELS_ARTIFACT_BYTES)
-        append!(tam, _doc("zzz\n"))
-        stale = "sha256:" * Base.bytes2hex(SHA.sha256(tam))
-        dt = GM.validate(_vocab_builder(GM.VocabularyRef(
-            GM.DomainRef("alterants-std/labels_vocabulary.txt", stale))))
-        @test any(x -> x.code === :SRC_DIGEST_MISMATCH && x.context === :labels &&
-                       occursin("matches NO loaded artifact", x.message), dt)
-        # a MALFORMED copy fails at the PARSE arm (its own digest would verify — crx
-        # C11's argument law: the parse witness must not be masked by a digest mismatch,
-        # so the parser seam is driven DIRECTLY on the malformed bytes).
-        em = try GM.Alterants._parse_labels_vocabulary(_doc("ok\n\nbad\n"), "tmp-malformed")
-            nothing
-        catch err; err end
-        @test em isa ErrorException && occursin("MALFORMED (blank line)", em.msg) &&
-              occursin("line 2", em.msg)
-    end
-
-    @testset "[7] the G-VOC read surface over the DEFAULT" begin
-        v = GM.vocabulary(GM.DEFAULT_REGISTRY, :labels)
-        @test v isa GM.InlineVocabulary && length(v.names) == 38 && v.names[1] === :label1
-        @test v.flags[_zwj] == (query = false,)               # the declared valve, disclosed
-    end
-
-    @testset "[9] the DEFENSIVE-COPY ownership rule (mutating a returned copy changes nothing)" begin
-        v = GM.vocabulary(GM.DEFAULT_REGISTRY, :labels)
-        push!(v.names, :evil); v.flags[:evil] = (query = true,)
-        @test !GM.vocabulary_member(GM.DEFAULT_REGISTRY, :labels, :evil) &&
-              length(GM.vocabulary(GM.DEFAULT_REGISTRY, :labels).names) == 38
     end
 
     @testset "[10] the zero-literal law (the C4E-7 DECIDABLE form)" begin
@@ -289,25 +192,9 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
     end
 
     @testset "[11] the crx-t3t4 milestone-set cure witnesses" begin
-        # (A4/B4/C2) the written grammar now ENFORCED beyond ASCII: a comment-form line,
-        # a Unicode-whitespace-padded name, and a U+FEFF past the leading-BOM bytes each
-        # refuse the fail-closed load class (all three ACCEPTED pre-cure; probe-measured).
-        for (frag, s) in (("comment line", "#c\nok\n"),
-                          ("whitespace-padded", string(Char(0x00A0)) * "x\n"),
-                          ("U+FEFF byte", "ok\n" * string(Char(0xFEFF)) * "x\n"))
-            e = try GM.Alterants._parse_labels_vocabulary(_doc(s), "tmp-cure"); nothing
-            catch err; err end
-            @test e isa ErrorException && occursin("MALFORMED", e.msg) && occursin(frag, e.msg)
-        end
-        # (C1) the CALL-grain two-pass law: every supplied label is validated BEFORE any
-        # presence verdict — an earlier unset member no longer masks a later write-only
-        # (pre-cure this returned `false` without refusing the valve).
-        ec = try GM.Alterants.checkLabels(Dict{Symbol,Bool}(), :(:), :label1, _zwj); nothing
-        catch err; err end
-        @test ec isa ErrorException && occursin("write-only", ec.msg)
-        # (B2) the G-VOC predicates FAIL CLOSED on an unknown alterant (pre-cure: true).
-        @test !GM.vocabulary_member(GM.DEFAULT_REGISTRY, :noSuchAlt, :label1) &&
-              !GM.vocabulary_queryable(GM.DEFAULT_REGISTRY, :noSuchAlt, :label1)
+        # (A4/B4/C2 — the artifact grammar's three refusal classes; C1 — the call-grain two-pass law of the valve; B2 — the
+        # G-VOC predicates' fail-closed law) were CONSCIOUSLY RETIRED at stage 5's E9 of the v0.4 build with their
+        # subjects: the artifact grammar, the write-only valve and the G-VOC read surface (census rows 10, 28, 55).
         # (A3; re-cut at stage 5's E4 — the DEP_MISSING row left with the eager dependency closure) `validate`
         # is total over a Union-typed altConstructor: it RETURNS (the domain probe walks the type)
         bu = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)

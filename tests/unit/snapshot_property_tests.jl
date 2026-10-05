@@ -9,8 +9,8 @@
 # DOES: N = 1024 iterations — each takes a FRESH publish of the fixed generator builder, checks
 #       the door EMPTY, applies one site mutation (sites cycle deterministically; the rng picks
 #       only replacement values), and checks ONE fire at a segment-prefix-comparable path — plus
-#       the 8 false-positive rebuild cases, the named cases (Σ = 46 asserts since the v0.4 T4
-#       VocabularyRef case), and 5 aggregate
+#       the 8 false-positive rebuild cases, the named cases (Σ = 44 asserts — the v0.4 T4 VocabularyRef case's
+#       two left at stage 5's E9 of the v0.4 build), and 5 aggregate
 #       coverage asserts. P = 1024×3 + 8 + 44 + 5 = 3129 (T2BIS-DESIGN §9's closed arithmetic).
 # REASONING: the enumerated door witnesses cannot prove coverage over the whole walked domain;
 #       the site-cycling property can — full site coverage is guaranteed by |sites| ≤ N.
@@ -68,8 +68,6 @@ end
             capture = GM.CaptureDecl(Dict{Symbol,Bool}, :per_key, :many, nothing),
             render = GM.RenderDecl([Symbol(":") => GM.EffectRow(:drop, nothing),
                                     Symbol(":") => GM.EffectRow(:mark, "mk")], [:Line, :Block], true),
-            vocabulary = GM.InlineVocabulary([:aa, :bb],
-                Dict(:aa => (query = true,), :bb => (query = false,))),
             constraints = [GM.MutEx([Symbol(":")])],
             atoms = [GM.ConditionAtom(:atomA, "atomA", _atom_named),
                      GM.ConditionAtom(:atomB, "atomB", _closure_isbits)],
@@ -199,8 +197,6 @@ end
         pT === GM.PlugIn && pf === :precedencesTuple && return ntuple(i -> Symbol("p", i), GM.NUM_MH_LEVELS)
         pT === GM.PlugIn && pf === :capture && return GM.CaptureDecl(Dict{Symbol,Bool}, :single, :one, nothing)
         pT === GM.PlugIn && pf === :render && return GM.RenderDecl(Pair{Symbol,GM.EffectRow}[], nothing, false)
-        pT === GM.PlugIn && pf === :vocabulary && return GM.InlineVocabulary(Symbol[],
-            Dict{Symbol,NamedTuple{(:query,),Tuple{Bool}}}())
         pT === GM.PlugIn && pf === :contract_version && return v"0.4.2"
         pT === GM.PlugIn && pf === :requires && return (:cap,)
         pT === GM.PlugIn && pf === :permissions && return GM.PermissionManifest()
@@ -446,9 +442,16 @@ end
         _set_at!(R, Any[:plugins, 1, :constraints], GM.MutEx[e for e in c])
         @test isempty(GM._registry_door_check(R))
     end
-    let R = GM.publish(_mk_prop_builder())                       # (2) Dict rebuilt fresh
-        fl = R.plugins[1].vocabulary.flags
-        _set_at!(R, Any[:plugins, 1, :vocabulary, :flags], Dict(k => v for (k, v) in fl))
+    let b = _mk_prop_builder()                                   # (2) Dict rebuilt fresh (the vocabulary flags Dict left at stage 5's E9;
+        k = Int(b.action_specs[4].plugin); p = b.plugins[k]      #     a Dict declared as plugin k's default carries the case)
+        b.plugins[k] = GM.PlugIn(; altName = p.altName, setMode = p.setMode, altConstructor = p.altConstructor,
+            setAltInstance = p.setAltInstance, getAltInstance = p.getAltInstance, precedencesTuple = p.precedencesTuple,
+            default = GM.Declared(Dict{Any,Any}(:a => 1, :b => 2)), capture = p.capture, render = p.render,
+            constraints = p.constraints, atoms = p.atoms, contract_version = p.contract_version, requires = p.requires,
+            sugar = p.sugar, provenance = p.provenance, permissions = p.permissions)
+        R = GM.publish(b)
+        d = R.plugins[k].default.value
+        _set_at!(R, Any[:plugins, k, :default, :value], Dict(k2 => v for (k2, v) in d))
         @test isempty(GM._registry_door_check(R))
     end
     let R = GM.publish(_mk_prop_builder())                       # (3) Tuple rebuilt
@@ -478,7 +481,7 @@ end
         k = Int(b.action_specs[i].plugin); p = b.plugins[k]
         b.plugins[k] = GM.PlugIn(; altName = p.altName, setMode = p.setMode, altConstructor = p.altConstructor,
             setAltInstance = p.setAltInstance, getAltInstance = p.getAltInstance, precedencesTuple = p.precedencesTuple,
-            default = GM.Declared(v), capture = p.capture, render = p.render, vocabulary = p.vocabulary,
+            default = GM.Declared(v), capture = p.capture, render = p.render,
             constraints = p.constraints, atoms = p.atoms, contract_version = p.contract_version, requires = p.requires,
             sugar = p.sugar, provenance = p.provenance, permissions = p.permissions)
         b
@@ -503,7 +506,7 @@ end
         push!(dagseen, :join)
     end
 
-    # ═══ the NAMED cases (§9): Σ = 46 asserts (44 at T2-bis + the T4 VocabularyRef case) ═══
+    # ═══ the NAMED cases (§9): Σ = 44 asserts (44 at T2-bis; the T4 VocabularyRef case's two left at stage 5's E9) ═══
     _with_ctor(b, T) = (b.plugins[2] = GM.PlugIn(; altName = :Visib, setMode = :mutExclusive,
         altConstructor = T, setAltInstance = GM.Alterants.setVisib); b)
     _swap_ctor!(R, T) = (R.plugins[2] = GM.PlugIn(; altName = :Visib, setMode = :mutExclusive,
@@ -545,25 +548,6 @@ end
     end
     let d = GM.validate(_with_default(_mk_prop_builder(), 4, SubString("ab", 1, 1)))
         @test any(x -> x.code === :REG_PROTOCOL && occursin("slot default", x.message), d)
-    end
-    # (v0.4 T4 — the VocabularyRef case, T4-DESIGN §6-11: the declared digest is a String
-    # LEAF inside the vocabulary slot — an equal-content REBUILD of the whole slot is
-    # SILENT (the FP law over immutable-struct chains), and a digest swap fires at the
-    # ELEMENT path `plugins[2].vocabulary.ref.digest` (probe-measured). The digest must be
-    # a CAPTURED one — `_vocabulary_collect!` refuses any pin absent from the cache.) (2)
-    _with_vocab!(R, dig) = (R.plugins[2] = GM.PlugIn(; altName = :Visib,
-        setMode = :mutExclusive, altConstructor = GM.Alterants.Visib,
-        setAltInstance = GM.Alterants.setVisib,
-        vocabulary = GM.VocabularyRef(GM.DomainRef("labels_vocabulary.txt", dig))); R)
-    let b = _mk_prop_builder()
-        _with_vocab!(b, GM.Alterants.LABELS_VOCABULARY_DECLARED_DIGEST)
-        R = GM.publish(b)
-        _with_vocab!(R, GM.Alterants.LABELS_VOCABULARY_DECLARED_DIGEST)   # equal-content rebuild
-        @test isempty(GM._registry_door_check(R))
-        _with_vocab!(R, "sha256:" * "0"^64)                               # the digest-leaf swap
-        ds = GM._registry_door_check(R)
-        @test _codesp(ds) == [:POST_SEAL_MUTATION] &&
-              occursin("plugins[2].vocabulary.ref.digest", ds[1].message)
     end
     # Dict ops with their path classes: key added (2) · deleted (2) · type-swapped 1 → 1.0
     # (2, CONTAINER) · -0.0 ↔ 0.0 (2, CONTAINER) · element appended (2) · removed (2)
@@ -770,7 +754,7 @@ end
         s.pT in (GM.PlugIn, GM.ActionSpec, GM.ActionOverload) && s.path[end] isa Symbol &&
             push!(recfields, (s.pT, s.path[end]))
     end
-    @test length(recfields) == 36                                # every §1 record field exercised (36: the Alterant's default slot joined at commit 3, the action's left at 3-ii — R-V04B-51)
+    @test length(recfields) == 35                                # every §1 record field exercised (35: the Alterant's default slot joined at commit 3, the action's left at 3-ii — R-V04B-51; the vocabulary slot left at stage 5's E9)
     leafcats = Set(s.cat for s in sites if s.kind in (:leaf, :single, :dictkey))
     @test issubset(Set([:bool, :symbol, :int, :float, :string, :type, :function, :version,
                         :complex, :rational, :nothing_leaf]), leafcats)

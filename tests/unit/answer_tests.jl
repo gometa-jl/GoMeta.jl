@@ -121,7 +121,7 @@ _an_id(c) = _AN_BLS.getElement(c.cmpntNamedInt, :idComponent)
         # the seat wf-s10-s2c4-check F-1: the Engine mints a stem-less Alterant's rows under lowercase(altName) and a capture-less Alterant's none
         _with_capture(p, cap) = GM.PlugIn(; altName = p.altName, setMode = p.setMode, altConstructor = p.altConstructor,
             setAltInstance = p.setAltInstance, getAltInstance = p.getAltInstance, precedencesTuple = p.precedencesTuple,
-            default = p.default, capture = cap, render = p.render, vocabulary = p.vocabulary, constraints = p.constraints,
+            default = p.default, capture = cap, render = p.render, constraints = p.constraints,
             atoms = p.atoms, contract_version = p.contract_version, requires = p.requires, sugar = p.sugar,
             provenance = p.provenance, permissions = p.permissions)
         k = findfirst(p -> p.altName === :Visib, GM.DEFAULT_REGISTRY.plugins); @test k !== nothing

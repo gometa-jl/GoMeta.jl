@@ -84,8 +84,8 @@ extends the label whitelist by a fixed **pictograph vocabulary** (byte-exact nam
 - **Robustness:** no raw crash on the witnessed metaLine ACTION surface — extreme or
   malformed input gets a **stable, documented refusal** (slot capacity, malformed metaLines —
   including stray punctuation at the action position and tokens glued to a closing `)`/`}` —,
-  unknown action, an out-of-whitelist label name in both the label-setting and the
-  condition-query roles — where the condition is actually evaluated, `docs/public-api.md` §3.4 —,
+  unknown action, an out-of-whitelist label name in the label-setting role (a queried unknown label answers
+  false since stage 5's E9 of the v0.4 build — `docs/public-api.md` §3.4),
   malformed action arguments, over-long conditions), catalogued in
   `docs/public-api.md` §3.
   The documented exception — the guarded `#~9` depth refusal — is likewise catalogued honestly in `docs/public-api.md`
@@ -222,11 +222,9 @@ never a silent fallback.
 Documented v0 limits (each refuses with a stable message rather than crashing): at most 7 actions
 per meta-hierarchy slot; malformed metaLines are refused — including stray punctuation at the
 action position and tokens glued to a closing `)`/`}`; malformed
-action arguments are refused; label names are validated against the engine's closed whitelist in
-BOTH roles — applying a label and querying one in a condition each refuse an out-of-whitelist
-name (a condition-side label after an already-winning true atom in a `,`/`||` chain is not
-queried, and in a region that carries no labels at all the query is never consulted — it simply
-evaluates false). The corpus-documented labels are
+action arguments are refused; label names are validated against the engine's closed whitelist when
+APPLIED — an out-of-whitelist name refuses; a label QUERIED in a condition answers false when it is unknown
+or unset (the legacy's checker; since stage 5's E9 of the v0.4 build). The corpus-documented labels are
 `:label1`..`:label5`; since `0.3.0` the closed whitelist also accepts the fixed pictograph
 vocabulary (byte-exact names — the refusal message lists the full accepted set). The full
 catalogue: `docs/public-api.md` §3.

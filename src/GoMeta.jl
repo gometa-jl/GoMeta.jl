@@ -156,6 +156,8 @@ include("childdiff.jl")             # stage 2's commit 6 (R-V04B-35 (e); the pla
 #   FORTY-FIVE after stage 2's commits 4–6 (`evaluatedAltValue`, `EvaluatedAltValue`, `scanAlterant`, `evaluatedAltValues`, `childDiffers`);
 #   FORTY-FOUR since stage 2's commit 9b (R-V04B-43 (1)): `content_fingerprint` REMOVED — a piece's text is read from the
 #   BLS Component tree through the door (`BLS.content`), never from the Engine; the register row in docs/public-api.md §6;
+#   THIRTY-EIGHT since stage 5's E9 of the v0.4 build (census rows 10, 28 and 55; R-V04B-105): the three vocabulary slot
+#   types and the G-VOC query triple REMOVED — the Labels vocabulary a plain file; the register row in docs/public-api.md §6;
 #   docs/public-api.md §1.2 is the mirror).
 # Qualified import (`import GoMeta as GM`) is UNAFFECTED by these exports and remains canonical for namespace
 # hygiene + multi-implementation use; exporting serves the single-implementation `using` convenience only.
@@ -163,9 +165,8 @@ export goMeta, readAltValuesEvals, GoMetaConfig, GoMetaDelivery
 public serialize_evals, EvalRecord, EvalStore, ProcessStatus, PROCESS_OK, PROCESS_ERROR, Diagnostic, AlterantRegistry, DEFAULT_REGISTRY,
        RegistryBuilder, register!, next_plugin_index, validate, publish, RegistrationRefused,   # v0.4 T2: the registration lifecycle (docs/public-api.md §1.2)
        Alterant, PlugIn, ActionSpec, ActionOverload, DomainRef, CaptureDecl, DefaultSlot, NoDefault, Declared,   # v0.4 T2 (cure batch 1) + the rename: the record
-       EffectRow, RenderDecl, VocabularySlot, InlineVocabulary, VocabularyRef, MutEx, ConditionAtom,   #   VOCABULARY a third-party author
-       SugarRow, Provenance, SignatureRecord, PermissionManifest,                                     #   constructs (docs/public-api.md §1.2)
-       vocabulary, vocabulary_member, vocabulary_queryable   # v0.4 T4: the G-VOC query surface (the ONE vocabulary read the three planes share; docs/public-api.md §3.4)
+       EffectRow, RenderDecl, MutEx, ConditionAtom,   #   VOCABULARY a third-party author
+       SugarRow, Provenance, SignatureRecord, PermissionManifest                                      #   constructs (docs/public-api.md §1.2; the three vocabulary slot types and the G-VOC triple left at stage 5's E9)
 public BLS   # stage 2's commit 0 of the v0.4 build (R-V04B-33/45/58): the parser module public by name — its door of travel / access functions declared INSIDE it (src/bls/BLS.jl; docs/public-api.md §1.2 + §6)
 public evaluatedAltValue, EvaluatedAltValue   # stage 2's commit 4 of the v0.4 build (R-V04B-35 (c)): THE ONE ANSWER FUNCTION and its record — package-public, NOT exported (docs/public-api.md §1.2; the register row §6); the name his word of 2026-10-03 (OWNER-WORDS §305; R-V04B-95); the tier carried past the branch (the review's C23)
 public scanAlterant, evaluatedAltValues   # stage 2's commit 5 of the v0.4 build (his §6 9.A; the plan :57): THE SCAN BY ALTERANT and THE ACCESS BY COMPONENT — package-public, NOT exported (docs/public-api.md §1.2; the register row §6); the names his word of 2026-10-03 (§305; R-V04B-95); the form — functions of their own — stands, its alternative (methods of the reader) banked
@@ -338,7 +339,7 @@ actions) -> Apply (evaluate conditions + apply), run inside one per-call dynamic
 
 Arguments:
 - `bytes` — the input document as raw bytes. Line ENDINGS normalize to LF (CRLF is chomped — documented, not an
-  error; see `docs/CANONICAL-OUTPUT.md`); content bytes are preserved faithfully for arbitrary bytes, including invalid UTF-8; non-ASCII inside a META line parses character-safely, a non-ASCII label OUTSIDE the governing vocabulary or a non-ASCII action meeting the stable unknown-label/unknown-action refusal (docs/public-api.md §4).
+  error; see `docs/CANONICAL-OUTPUT.md`); content bytes are preserved faithfully for arbitrary bytes, including invalid UTF-8; non-ASCII inside a META line parses character-safely, a non-ASCII label APPLIED from outside the shipped set or a non-ASCII action meeting the stable unknown-label/unknown-action refusal (docs/public-api.md §4).
 - `config::GoMetaConfig` — the v0 input options (profile / flavor_tag / parse_range / user_mh_profile; see `GoMetaConfig`).
   An invalid profile, flavor_tag, or parse_range fail-closes into a `PROCESS_ERROR` `GoMetaDelivery` carrying typed
   `Diagnostic`s BEFORE any parse — the input bytes are never touched (`ERR_UNKNOWN_PROFILE` /
