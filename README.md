@@ -245,9 +245,9 @@ Three references, in reading order:
 The docs site also carries a **derived manual** pair — two pages generated from ONE
 marked Julia source file, where the `#~` marks choose the content AND which `jldoctest`
 blocks each page carries (the docs build runs exactly the tests the marks kept). The
-same pipeline derives the notebook family under [`notebooks/`](notebooks/README.md):
-one source file, four notebook editions (full · student · report · slides), plus one
-executed twin. Every GENERATED file regenerates byte-identically —
+same pipeline derives the notebook under [`notebooks/`](notebooks/README.md): one
+source file, one notebook (the full edition) plus one executed twin (the student, report and
+slides editions left at stage 5's N1 of the v0.4 build). Every GENERATED file regenerates byte-identically —
 `julia --startup-file=no --project=. notebooks_from_source.jl --check` — while the
 executed twin carries real kernel outputs and is validated separately, outside that
 byte gate.
