@@ -249,15 +249,13 @@ end
 
 IS: the cold constructor of the fail-closed `PROCESS_ERROR` `GoMetaDelivery` — reached ONLY on an ENTRY
 refusal — before any absorb or apply work of the refused call, and at `goMeta` before its parse: a
-non-empty `validate_config` vector, the registry door's diagnostics at `goMeta` / `run_absorb_apply!`, or the seam
-ledger's refusals of an injected parse state.
+non-empty `validate_config` vector or the registry door's diagnostics (the callable seam that ran the door too, and its
+state ledger's refusals of an injected parse state, left at stage 5's E2 of the v0.4 build).
 
 DOES: builds a per-call `ProcessState` by `init_state` (container SIZING only — no parse content is read, no
 `parseBLS` / absorb-walk runs), appends the typed `config_diags`, and hands back the delivery's four parts taken
 from that state: the EMPTY store `st.evals` as `altValues_evals`; the unparsed `parse_state` — the caller passes
-one built from EMPTY bytes: on `goMeta`'s route validation pre-empts touching the input, and the seam's own
-refusals (the door and the ledger) hand in a fresh empty state rather than the caller's, which this call never
-parses or reads — as `blsComponentTree`; `PROCESS_ERROR`;
+one built from EMPTY bytes, since the validation pre-empts touching the input — as `blsComponentTree`; `PROCESS_ERROR`;
 the diagnostics. The working state itself is not delivered (R-V04B-28).
 
 REASONING: `@noinline` + cold, so its `init_state` and the construction never perturb the byte-exact,
@@ -438,187 +436,15 @@ function goMeta(
     ## `devtools/basic_renderer.jl`, a pure function of `parse_state` after the run) — the pipeline
     ## writes no file anywhere; `parseBLS` above is called purely for its parse side-effect.
 
-    ## The CALLABLE DRIVER SEAM — the absorb/apply driver body lives in
-    ## `run_absorb_apply!` (the next function). goMeta = validate → setup → parse →
-    ## seam, and is the seam's FIRST CONSUMER.
-    return run_absorb_apply!(parse_state; config = config, registry = registry)
-end
-
-## v0.4 T3 — THE SEAM LEDGER (T3-DESIGN §7; M-AC-11 + HC-9 under the §12 re-basing), NARROWED at stage 3's commit 4 of the v0.4 build, R-V04B-42 (1).
-## One weak-keyed side table maps each CALLER-OWNED parse state (identity-keyed — a
-## mutable struct; BLS defines no `hash`/`isequal`/`==` on it, pinned by the seam tests)
-## to its lifecycle entry, which holds ONE fact: whether a call is in flight on that state (two
-## calls must never share one parse state — the caller obligation, enforced). The registry
-## binding and the poison marker, which guarded the Visib write-backs a run left in the caller's
-## state, LEFT with the write-back: the Engine writes nothing into the caller's Components. The
-## `WeakKeyDict` attaches a finalizer to every stamped state (disclosed). Every access runs under
-## the ONE lock; the hot loop never touches the ledger. `goMeta` routes through this seam and
-## STAMPS like any caller (the uniform law). The ledger's remaining bookkeeping is a candidate for
-## stage 5's tidy-up (R-V04B-42's effects) — shown, not assumed removed.
-mutable struct _SeamEntry
-    in_flight::Bool                             # a call is currently running on this state
-end
-const _SEAM_LEDGER = WeakKeyDict{Any,_SeamEntry}()
-const _SEAM_LEDGER_LOCK = ReentrantLock()
-
-"""
-    _walk_and_apply!(st::ProcessState, parse_state::BLS.ParseState) -> nothing
-
-IS: the Engine's walk-and-apply over the File's child Blocks — the body `run_absorb_apply!` runs inside its per-call
-STATE scope after the optional user feed: per child Block, the absorb walk of its metaLines (when it carries meta and the
-Block is not deprecated — the `!depricated` guard wraps the absorb walk alone), the apply at the Block grain (when attached
-to meta) and the capture of its final evals rows before the next apply wipes `st.working` (the Visib write-back left at stage 3's commit 4). FACTORED OUT at stage 2's commit 3a (the plan v8.1 :62) with NO change
-of a line — so a test can run the Engine's own pipeline over a state it prepared (the fallBack consult-order witnesses
-occupy slot `fallBackMHIdx` the way the user feed occupies the user slot; a FEED of that slot in the Engine is the
-`metaLevel` Alterant's, after the branch — R-V04B-55 (4)). Package-internal; not public.
-
-DOES: exactly what the seam's inline loop did (the body moved verbatim, de-indented); it reads `st` as `ctx()` does; the
-caller's parse state is READ, never written (R-V04B-42 (1), stage 3's commit 4).
-"""
-function _walk_and_apply!(st::ProcessState, parse_state::BLS.ParseState)
-    crntFileComponent::BLS.File = parse_state.componentsPDict[BLS.File][1][1]
-    local metaEnvInt::Int = BLS.orderedComponentTypesNamedT[:noMetaEnvYet]
-    local childComponent::BLS.Block
-    for childId in BLS.eachchildid(crntFileComponent, parse_state.componentsPDict[BLS.File][1])
-        if childId > 0
-            childComponent = parse_state.componentsPDict[BLS.Block][1][childId]
-        else
-            childId *= -1
-            childComponent = parse_state.componentsPDict[BLS.Block][2][childId]
-        end
-        if !BLS.getElement(childComponent.componentSettribute, :depricated)
-            if BLS.getElement(childComponent.componentSettribute, :containsMeta) &&
-               !BLS.getElement(childComponent.componentSettribute, :ignoreThisMeta)
-
-                metaEnvInt = BLS.orderedComponentTypesNamedT[:noMetaEnvYet]
-                metaEnvInt = absorbWalk(parse_state, childComponent::BLS.Block, metaEnvInt)
-            end
-        end
-        if BLS.getElement(childComponent.componentSettribute, :attachedToMeta)
-            applyAltActionFns(childComponent::BLS.Block)
-            ## The Block-grain Visib write-back LEFT here (stage 3's commit 4 of the v0.4 build, R-V04B-42 (1)): the Engine writes NOTHING into the caller's BLS
-            ## Components — the Block's Visib is CAPTURED (below) and read through the one answer function (R-V04B-16 (1)).
-            # Capture this Block's FINAL evals rows (Labels + Visib + Id) into st.evals BEFORE the
-            #   next apply wipes st.working — the cell is this Block. Render-neutral: it reads
-            #   st.working, puts or supersedes rows in st.evals and may append warning diagnostics
-            #   (no parse-tree or render mutation).
-            captureEvals!(st, childComponent)
-        end
-    end
-    return nothing
-end
-
-"""
-    run_absorb_apply!(parse_state::BLS.ParseState;
-                      config::GoMetaConfig = GoMetaConfig(),
-                      registry::AlterantRegistry = DEFAULT_REGISTRY) -> GoMetaDelivery
-
-IS: the CALLABLE DRIVER SEAM — one package-internal callable exposing, indivisibly, the absorb walk (both
-grains), the conditions plane, the Alterants/apply plane and the evals plane over a caller-owned `ParseState`.
-
-DOES: The CALLABLE DRIVER SEAM. ONE callable exposes, indivisibly: the absorb WALK plane
-(both grains), the CONDITIONS plane (the closed interpreter via the per-call state),
-the ALTERANTS/APPLY plane (registry + slot tensors), and the EVALS
-plane (capture → `altValues_evals`). An adapter never composes them individually.
-Package-INTERNAL (a qualified implementation seam, NOT exported, and deliberately carrying NO `public` declaration
-(`names(GoMeta)` stays byte-stable).
-
-THE CONTRACT (normative rows):
-1. INPUT: a `ParseState` whose four channels (`collectedLines` · `addedStrings` ·
-   `componentsPDict` · `endsWithNewline`) are coherent, whose `flavor` field names
-   the profile the store was ACTUALLY built under, and whose components obey the
-   flag laws — incl. the invariant: a component typed Meta WITHOUT a `:depthN` flag
-   MUST set `:ignoreThisMeta` (flavor.jl's record mint guard owns it). Store
-   construction goes through `BLS.addChildComponentTo`/`BLS.createExtensionFor` —
-   never hand-assembled vectors.
-2. ENFORCEMENT GRAIN: every meta-flagged slice must match
-   `parse_state.flavor.re_meta_leaded` from its
-   `:startMainStr` byte; the walk's typed internal error enforces this on the FIRST
-   ABSORBED META UNIT AT EITHER GRAIN (Line or Segment). A store whose metadata is
-   entirely absent or inert never consults the flavor record and renders
-   byte-identically under any record (no hide value can exist without an absorbed
-   meta unit); `validate_carrier_state` (below) reports a wrong-record pairing
-   UNCONDITIONALLY — the standing check for exactly that class.
-3. VALIDATION ASYMMETRY (a contract row, not a footnote): `goMeta` validates config
-   and refuses unknown flavor tags BEFORE this seam; `run_absorb_apply!`
-   deliberately does NOT re-validate — the adapter package owns its input legality,
-   so a carrier profile can run the seam WITHOUT being armed in `validate_config`.
-   Corollary (the config-error path): an invalid config never reaches this seam —
-   goMeta's fail-closed error result carries an EMPTY parse state with the DEFAULT
-   flavor record, unread on that path.
-4. ONE ProcessState per call — the seam builds it FRESH (the reset-safe law), so the
-   PER-CALL state is never shared across concurrent calls. The `parse_state` INPUT is
-   caller-owned and READ by the seam — never written since stage 3's commit 4 of the v0.4 build, R-V04B-42 (1)
-   (the Visib write-backs into its component settributes left; the probe at that commit's
-   pre-check: every Component's settribute bytes identical before and after a run): two
-   concurrent calls must still never share ONE parse_state — the per-call state reads it while
-   the walk runs — and since v0.4 T3 the seam ledger ENFORCES it: an in-flight re-injection
-   (nested included) is refused `STATE_REUSE_REFUSED`; ownership of the state's lifetime stays
-   the caller's (the T4-milestone-set A5/C6 cure). A state may be re-injected under ANY published
-   registry, before or after an abort (nothing of a run stays in it).
-5. A meta-free store on the no-feed path ⇒ `PROCESS_OK` with ZERO evals rows (the
-   E-05 class — the Office pilot's first gate). With `config.user_mh_profile` set
-   the fed profile is itself a metaLine body: its explicit headings record non-cell
-   rows against the user-context handle, and a refusal-carrying feed aborts, whether
-   or not the store carries a metaLine (`ProcessStatus`'s and `readAltValuesEvals`'s
-   docstrings).
-6. The seam parses NOTHING and renders NOTHING; its output is the evaluated values
-   (`altValues_evals`); the (tree, render) pair is the development tool's.
-
-REASONING: an adapter never composes the planes individually (the seam's indivisibility law), and every call
-builds its `ProcessState` fresh (the reset-safe law) while the caller-owned parse state is read by the walk —
-hence the seam ledger's refusal of an in-flight re-injection.
-
-PURPOSE: the route by which an adapter package (the Office pilot's carrier profile) runs the Engine over a store
-it built itself, without re-validation — its output the evaluated values, the render nothing of the seam's.
-"""
-function run_absorb_apply!(parse_state::BLS.ParseState;
-                           config::GoMetaConfig = GoMetaConfig(),
-                           registry::AlterantRegistry = DEFAULT_REGISTRY)::GoMetaDelivery
-    ## v0.4 T2 (cure batch 1) — THE DOOR RUNS HERE TOO: the seam is a package-internal callable entry that accepts a
-    ## registry, so an unpublished or post-publication-mutated registry could otherwise drive the
-    ## engine around `goMeta`'s door (the CRX after-T2 breaker). Same typed refusals, same
-    ## no-work outcome (an EMPTY parse state rides the error result — no parse runs). Row 3
-    ## of the contract is untouched: the seam still does NOT re-validate CONFIG. The state-seam
-    ## semantics (the in-flight check; the seal binding and the poison marker left with the write-back at stage 3's commit 4) are T3's.
-    reg_diags = _registry_door_check(registry)
-    isempty(reg_diags) ||
-        return _configErrorDelivery(BLS.setUpToProcessFromBytes(UInt8[]), config, registry, reg_diags)
-    ## v0.4 T3 — the LEDGER at seam entry (AFTER the door; T3-DESIGN §7's fixed order): the in-flight
-    ## check and flip, nothing else since stage 3's commit 4 of the v0.4 build, R-V04B-42 (1) — a run leaves nothing in the
-    ## caller's state, so there is no binding to check and no poison to carry. This is NOT re-validation
-    ## (contract row 3 stands) — a lifecycle check, never the config/registration chain.
-    entry = lock(_SEAM_LEDGER_LOCK) do
-        e = get(_SEAM_LEDGER, parse_state, nothing)
-        if e !== nothing
-            e.in_flight && return :in_flight
-            e.in_flight = true
-            return e
-        end
-        e2 = _SeamEntry(true)
-        _SEAM_LEDGER[parse_state] = e2
-        return e2
-    end
-    entry === :in_flight && return _configErrorDelivery(
-        BLS.setUpToProcessFromBytes(UInt8[]), config, registry,
-        [Diagnostic(:STATE_REUSE_REFUSED, :error, string("GoMeta seam: the injected parse ",
-            "state is already IN FLIGHT in another `run_absorb_apply!` call ",
-            "(STATE_REUSE_REFUSED) — two calls must never share one parse state (the seam ",
-            "contract's caller obligation, row 4; nested re-injection included); re-parse ",
-            "the source into a fresh state (see docs/public-api.md §3.4)"), nothing)])
-    ## Build the FRESH per-call `ProcessState` (`init_state` is reset-safe, so neither the slot
-    ## tensors nor the cursors leak between calls) + open the per-call
-    ## dynamic scope. `STATE => st` carries the per-call state so the eval'd bare-name `getState`/`getAltState`
-    ## reach it (`ctx() = STATE[]`). The whole absorb-walk
-    ## + apply runs INSIDE this scope — under the T3 seam bracket: `in_flight` clears on every path
-    ## (the registry binding at a writing call's exit and the poisoning of an aborted one left with
-    ## the write-back at stage 3's commit 4 — the caller's state is READ, never written).
-    ## (the T4-milestone-set A2/B3 cure) `init_state` runs INSIDE the seam bracket: a
-    ## throw or InterruptException during initialization must still clear `in_flight` in
-    ## the `finally` — outside it, the still-reachable state stayed in-flight FOREVER and
-    ## every later injection was wrongly refused.
-    local st
-    try
+    ## The absorb/apply driver — ONE function again since stage 5's E2 of the v0.4 build (census rows 21, 42, 44 and 23,
+    ## his §317 mark, R-V04B-105; his verbatim of R-V04-31 on the callable driver seam of v0.3.2/T3: a seam serving the
+    ## .fodt adapter alone "will eventually have to be removed from the GoMeta engine" — his legacy was one function,
+    ## GoMetaRetro's src/GoMeta.jl :26–:113: the parse, then the File loop). Build the FRESH per-call `ProcessState`
+    ## (`init_state` is reset-safe, so neither the slot tensors nor the cursors leak between calls) + open the per-call
+    ## dynamic scope: `STATE => st` carries the per-call state so the eval'd bare-name `getState`/`getAltState` reach it
+    ## (`ctx() = STATE[]`). The whole absorb-walk + apply runs INSIDE this scope; the parse state is READ, never written
+    ## (stage 3's commit 4, R-V04B-42 (1)); one parse state per call by construction — the seam ledger that enforced it
+    ## for injected states left with the seam.
     st = init_state(parse_state, config, registry)
     with(STATE => st) do
         ## Seed the reserved user slot of the meta-hierarchy BEFORE the walk iff configured — the
@@ -626,19 +452,47 @@ function run_absorb_apply!(parse_state::BLS.ParseState;
         if !isnothing(config.user_mh_profile)
             feed_user_mh!(st)
         end
-        _walk_and_apply!(st, parse_state)   # stage 2's commit 3a: the loop factored out (verbatim) — the fallBack consult-order test drives it
-    end
-    finally
-        lock(_SEAM_LEDGER_LOCK) do
-            entry.in_flight = false
+        ## The File loop (the legacy's; its `_walk_and_apply!` factoring of stage 2's commit 3a left at stage 5's E2 —
+        ## the fallBack test it served carries its own copy of the loop): per child Block, the absorb walk of its
+        ## metaLines (when it carries meta and the Block is not deprecated — the `!depricated` guard wraps the absorb
+        ## walk alone), the apply at the Block grain (when attached to meta) and the capture of its final evals rows
+        ## before the next apply wipes `st.working`.
+        crntFileComponent::BLS.File = parse_state.componentsPDict[BLS.File][1][1]
+        local metaEnvInt::Int = BLS.orderedComponentTypesNamedT[:noMetaEnvYet]
+        local childComponent::BLS.Block
+        for childId in BLS.eachchildid(crntFileComponent, parse_state.componentsPDict[BLS.File][1])
+            if childId > 0
+                childComponent = parse_state.componentsPDict[BLS.Block][1][childId]
+            else
+                childId *= -1
+                childComponent = parse_state.componentsPDict[BLS.Block][2][childId]
+            end
+            if !BLS.getElement(childComponent.componentSettribute, :depricated)
+                if BLS.getElement(childComponent.componentSettribute, :containsMeta) &&
+                   !BLS.getElement(childComponent.componentSettribute, :ignoreThisMeta)
+
+                    metaEnvInt = BLS.orderedComponentTypesNamedT[:noMetaEnvYet]
+                    metaEnvInt = absorbWalk(parse_state, childComponent::BLS.Block, metaEnvInt)
+                end
+            end
+            if BLS.getElement(childComponent.componentSettribute, :attachedToMeta)
+                applyAltActionFns(childComponent::BLS.Block)
+                ## The Block-grain Visib write-back LEFT here (stage 3's commit 4 of the v0.4 build, R-V04B-42 (1)): the Engine writes NOTHING into the caller's BLS
+                ## Components — the Block's Visib is CAPTURED (below) and read through the one answer function (R-V04B-16 (1)).
+                # Capture this Block's FINAL evals rows (Labels + Visib + Id) into st.evals BEFORE the
+                #   next apply wipes st.working — the cell is this Block. Render-neutral: it reads
+                #   st.working, puts or supersedes rows in st.evals and may append warning diagnostics
+                #   (no parse-tree or render mutation).
+                captureEvals!(st, childComponent)
+            end
         end
     end
 
     ## The typed `GoMetaDelivery` supersedes the original three-field NamedTuple (render, tree, configDict)
     ## (the historical field name `tree_bytes` predates the `blsStructure_bytes` rename; kept verbatim in this
     ## comment only). `status` is computed from the accumulated diagnostics: `PROCESS_ERROR` iff an `:error` row
-    ## exists, else `PROCESS_OK`. On this path no `:error` row is ever pushed (a config-time, door or seam-ledger
-    ## refusal fail-closes through `_configErrorDelivery` before the walk; the absorb/apply-path refusals still
+    ## exists, else `PROCESS_OK`. On this path no `:error` row is ever pushed (a config-time or door
+    ## refusal fail-closes through `_configErrorDelivery` before the parse; the absorb/apply-path refusals still
     ## THROW — the condition refusal rethrown at the absorb seam, the E-06 row raw), so a run that returns
     ## here is `PROCESS_OK` — but the vector need NOT be empty: the walk's and the capture's `:warning` rows
     ## (`WARN_VERDICT_COLLISION`, the capture-floor codes) ride the delivery
@@ -648,134 +502,5 @@ function run_absorb_apply!(parse_state::BLS.ParseState;
     status = any(d -> d.severity === :error, st.diagnostics) ? PROCESS_ERROR : PROCESS_OK
     return GoMetaDelivery(st.parse, st.evals, status, st.diagnostics)   # the field order R-V04B-89
 end
-
-"""
-    validate_carrier_state(parse_state::BLS.ParseState) -> Vector{String}
-
-The seam's OPTIONAL gate/debug-mode carrier-store checker — the carrier-store
-legality argument as an executable check; the twin-parity gate's cheap
-precondition. NEVER called on the hot path; package-
-public, NOT exported. Returns human-readable issue strings (empty = no issue FOUND —
-a clean return is NOT a legality proof). Checks EXACTLY three laws, REPORTING (never
-throwing) on breach:
-1. the FLAG INVARIANT — a component whose `contentType` is Meta with NO `:depth0`…
-   `:depth9` flag MUST carry `:ignoreThisMeta`;
-2. the INTRODUCER LAW — every `:hasMetaStr` component's main slice must match
-   `parse_state.flavor.re_meta_leaded` (the walk enforces this only on ABSORBED meta
-   units; this check covers every `:hasMetaStr` component REACHABLE from the File
-   root, absorbed or not — the standing check for exactly a wrong-record pairing;
-   an orphaned mint outside the tree is outside this traversal
-   AND outside every output surface; the slot-1 File root itself is a constructor
-   DUMMY — Meta-typed with no flags by construction — and is deliberately not
-   checked);
-3. STORE COHERENCE — every child id reachable from the File root dereferences within
-   its component store's bounds (positive id = the primary store, negative = the
-   `[2]` insert store — the driver's own sign convention; the insert stores are
-   trap-9 dormant at v0 but the convention is checked, not assumed), and extension
-   chains are PRE-VALIDATED with guarded steps — a corrupted or cyclic
-   `:idExtension` link is REPORTED, never thrown on and never hung on; the shared
-   iterator runs only over validated chains (the
-   no-raw-childwalk gate's discipline — reconciled, not bypassed). Chain
-   validation covers the levels whose children are iterated (File/Block/Line
-   heads); a Segment's own chain is never followed by this walk and is outside
-   its scope.
-NOT a total store validator: laws the walk/apply enforce loudly themselves stay
-theirs (the honest-edges partition).
-"""
-function validate_carrier_state(parse_state::BLS.ParseState)::Vector{String}
-    issues = String[]
-    pd = parse_state.componentsPDict
-    ## Bounds-checked deref per the driver's sign convention; reports + returns
-    ## `nothing` on breach (the checker REPORTS incoherence — it never throws on it).
-    function _vcs_deref(T, id::Int, label::String)
-        vecs = pd[T]
-        v = id > 0 ? vecs[1] : vecs[2]
-        k = abs(id)
-        if !(1 <= k <= length(v)) || !isassigned(v, k)
-            push!(issues, "store coherence: $label id $id does not dereference in the $(nameof(T)) store (bounds 1:$(length(v)))")
-            return nothing
-        end
-        return v[k]
-    end
-    function _vcs_check!(comp, label::String)
-        cs = comp.componentSettribute
-        if comp.contentType == BLS.Meta &&
-           !any(BLS.getElement(cs, Symbol("depth", i)) for i in 0:9) &&
-           !BLS.getElement(cs, :ignoreThisMeta)
-            push!(issues, "flag invariant: $label is Meta-typed with no :depthN flag and no :ignoreThisMeta")
-        end
-        if BLS.getElement(cs, :hasMetaStr)
-            ok = try
-                stringIdx = BLS.getElement(comp.cmpntNamedInt, :idxString)
-                s = stringIdx > 0 ? parse_state.collectedLines[stringIdx] :
-                                    parse_state.addedStrings[-stringIdx]
-                lo = BLS.getElement(comp.cmpntNamedInt, :startMainStr)
-                hi = BLS.getElement(comp.cmpntNamedInt, :stopMainStr)
-                slice = SubString(s)[lo:hi]
-                match(parse_state.flavor.re_meta_leaded, slice) !== nothing
-            catch e
-                ## Only the extraction's own breach classes convert to a report
-                ## (corrupt indices ⇒ BoundsError; a mid-codepoint boundary ⇒
-                ## StringIndexError); everything else — InterruptException,
-                ## StackOverflowError, … — RETHROWS (the mis-attribution hazard:
-                ## a Ctrl-C must never read as a breach).
-                e isa Union{BoundsError, StringIndexError} || rethrow()
-                false
-            end
-            ok || push!(issues, "introducer law: $label carries :hasMetaStr but its main slice does not match the flavor's leaded grammar (or the slice is unextractable)")
-        end
-        return nothing
-    end
-    ## Guarded extension-chain PRE-VALIDATION: the shared `eachchildid` iterator
-    ## derefs `:idExtension` UNGUARDED (BLS.jl's iterate), so a corrupted extension
-    ## link would THROW (BoundsError / UndefRefError) or HANG (a cycle) inside the
-    ## checker, falsifying the reports-never-throws contract. The chain is therefore
-    ## validated FIRST — reading ONLY `:idExtension` + the chain store's bounds,
-    ## never raw child slots (the no-raw-childwalk gate's discipline) — with steps
-    ## capped at the chain store's length + 1 (a longer chain must revisit a slot,
-    ## i.e. a cycle). The shared iterator then runs ONLY over a validated chain, so
-    ## its unguarded deref is unreachable-by-construction; every breach is REPORTED
-    ## and that component's children are conservatively skipped.
-    function _vcs_chain_ok(comp, chainVec, label::String)::Bool
-        crnt = comp
-        steps = 0
-        while true
-            steps += 1
-            if steps > length(chainVec) + 1
-                push!(issues, "store coherence: $label extension chain exceeds its chain store's size (a cycle or runaway chain)")
-                return false
-            end
-            extId = BLS.getElement(crnt.cmpntNamedInt, :idExtension)
-            extId == 0 && return true
-            if !(1 <= extId <= length(chainVec)) || !isassigned(chainVec, extId)
-                push!(issues, "store coherence: $label extension id $extId does not dereference in its chain store (bounds 1:$(length(chainVec)))")
-                return false
-            end
-            crnt = chainVec[extId]
-        end
-    end
-    _vcs_ids(comp, chainVec, label::String) =
-        _vcs_chain_ok(comp, chainVec, label) ?
-            collect(BLS.eachchildid(comp, chainVec)) : Int[]
-    fileC = _vcs_deref(BLS.File, 1, "File root")
-    fileC === nothing && return issues
-    for blockId in _vcs_ids(fileC, pd[BLS.File][1], "File root")
-        blockC = _vcs_deref(BLS.Block, blockId, "Block child")
-        blockC === nothing && continue
-        _vcs_check!(blockC, "Block $(blockId)")
-        for lineId in _vcs_ids(blockC, pd[BLS.Block][1], "Block $(blockId)")
-            lineC = _vcs_deref(BLS.Line, lineId, "Line child")
-            lineC === nothing && continue
-            _vcs_check!(lineC, "Line $(lineId)")
-            for segId in _vcs_ids(lineC, pd[BLS.Line][1], "Line $(lineId)")
-                segC = _vcs_deref(BLS.Segment, segId, "Segment child")
-                segC === nothing && continue
-                _vcs_check!(segC, "Segment $(segId)")
-            end
-        end
-    end
-    return issues
-end
-
 
 end # module GoMeta

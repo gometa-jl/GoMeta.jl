@@ -3,7 +3,9 @@
 #
 # IS:   three witnesses of the apply's slot order with the fallBack slot OCCUPIED — the way the user feed occupies the user slot
 #       (`updateMetaHierarchy(fallBackMHIdx)` + `absorbMeta`, a minted user-context identity as the statement's carrier); the Engine's
-#       own pipeline then runs over the prepared state (`_walk_and_apply!`, factored out at this commit).
+#       own absorb walk, apply and capture then run over the prepared state through the test's OWN copy of goMeta's File loop
+#       (the Engine's `_walk_and_apply!` factoring, cut for this test at this commit, left at stage 5's E2 of the v0.4 build —
+#       census row 44, against R-V04B-15; the loop below is that body, verbatim).
 # DOES: [F1] a Block under a metaLine WITHOUT Visib takes the fallBack value (hide), its row's `decided_by` the fallBack carrier;
 #       [F2] a document `#~ show` WINS over the fallBack `hide` (the fallBack slot last); [F3] the user feed `discard` WINS over
 #       the fallBack `hide` (the user level precedes); in every case the metaBlock itself follows the same order.
@@ -41,7 +43,29 @@ import GoMeta as GM
                 st.user_context = prior
             end
             st.crnt_idx = prev
-            GM._walk_and_apply!(st, ps)
+            # the File loop — goMeta's own body, copied verbatim (stage 5's E2): per child Block the absorb walk, the apply and the capture
+            crntFileComponent::GM.BLS.File = ps.componentsPDict[GM.BLS.File][1][1]
+            local metaEnvInt::Int = GM.BLS.orderedComponentTypesNamedT[:noMetaEnvYet]
+            local childComponent::GM.BLS.Block
+            for childId in GM.BLS.eachchildid(crntFileComponent, ps.componentsPDict[GM.BLS.File][1])
+                if childId > 0
+                    childComponent = ps.componentsPDict[GM.BLS.Block][1][childId]
+                else
+                    childId *= -1
+                    childComponent = ps.componentsPDict[GM.BLS.Block][2][childId]
+                end
+                if !GM.BLS.getElement(childComponent.componentSettribute, :depricated)
+                    if GM.BLS.getElement(childComponent.componentSettribute, :containsMeta) &&
+                       !GM.BLS.getElement(childComponent.componentSettribute, :ignoreThisMeta)
+                        metaEnvInt = GM.BLS.orderedComponentTypesNamedT[:noMetaEnvYet]
+                        metaEnvInt = GM.absorbWalk(ps, childComponent::GM.BLS.Block, metaEnvInt)
+                    end
+                end
+                if GM.BLS.getElement(childComponent.componentSettribute, :attachedToMeta)
+                    GM.applyAltActionFns(childComponent::GM.BLS.Block)
+                    GM.captureEvals!(st, childComponent)
+                end
+            end
         end
         return st, ps
     end

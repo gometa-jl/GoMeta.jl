@@ -963,8 +963,8 @@ end
 """
     GoMetaDelivery(blsComponentTree, altValues_evals, status, diagnostics)
 
-IS: the ONE object a GoMeta run hands back — the delivery of `goMeta(bytes; config, registry)` and of the
-seam `run_absorb_apply!` — with its FOUR public parts, read by name (the owner's rulings R-V04B-28 the content,
+IS: the ONE object a GoMeta run hands back — the delivery of `goMeta(bytes; config, registry)` — with its FOUR public
+parts, read by name (the owner's rulings R-V04B-28 the content,
 R-V04B-29 the shape, R-V04B-30 the name, 2026-09-15/16; docs/public-api.md §1.1, §2):
 
 - `blsComponentTree::BLS.ParseState` — the BLS Component tree the run was evaluated over, provided by BLS itself;
@@ -981,14 +981,11 @@ R-V04B-29 the shape, R-V04B-30 the name, 2026-09-15/16; docs/public-api.md §1.1
 
 DOES: carries these four and NOTHING internal — the per-call working state (`ProcessState`) never leaves the
 core (R-V04B-28). The parts are plain fields, in his pipeline order (R-V04B-89): `d.blsComponentTree`, `d.altValues_evals`,
-`d.status`, `d.diagnostics`. The BLS Component tree is the SAME object the run wrote into (`init_state` keeps the caller's
-parse state by identity; the apply writes its Visib settributes back into it), and it is MUTABLE: every reader
-of one delivery shares that one object, and a caller that injected its own parse state through the seam holds
-it too — a discipline, not a copy. On a fail-closed run (`PROCESS_ERROR` before any parse of that call — an
-invalid config or a refused registry, refused at the entry before any absorb or apply work; or an injected
-parse state the seam ledger refuses — the caller's own state, which an earlier or concurrent call may have
-written into) the tree is a container built from EMPTY bytes — never the injected state — and the store is
-empty.
+`d.status`, `d.diagnostics`. The BLS Component tree is the SAME object the run read (`init_state` keeps the parse state by
+identity; the Engine writes nothing into it since stage 3's commit 4 of the v0.4 build, R-V04B-42 (1)), and it is MUTABLE:
+every reader of one delivery shares that one object — a discipline, not a copy. On a fail-closed run (`PROCESS_ERROR`
+before any parse of that call — an invalid config or a refused registry, refused at the entry) the tree is a container
+built from EMPTY bytes and the store is empty.
 
 REASONING: his words and his selections — `altValues_evals` and the BLS Component tree are "BY FAR the two MOST
 IMPORTANT DATA CONTAINERS produced during the GoMeta process" (the owner's words, 2026-09-11); it is "NOW VERY

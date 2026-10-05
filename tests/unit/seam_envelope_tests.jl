@@ -3,14 +3,15 @@
 # IS:   the T3 acceptance witnesses — the symmetric query-seam envelope (both call sites),
 #       the consumed handover validation (with the "GoMeta "-prefix pass-through), the three-site
 #       ctor-mint envelope (also the absent zero-arg method, since the eager DEP_MISSING gate left at
-#       stage 5's E4 of the v0.4 build), the post-dispatch store-identity
-#       check, and the state-seam ledger (in-flight enforcement · the re-injection cells — free of any
-#       binding since the Visib write-back left at stage 3's commit 4 of the v0.4 build, R-V04B-42).
+#       stage 5's E4 of the v0.4 build) and the post-dispatch store-identity
+#       check (the state-seam ledger's witnesses — in-flight enforcement, the re-injection cells — left with the
+#       ledger and the callable driver seam at stage 5's E2 of the v0.4 build, census rows 42 and 21).
 # DOES: publishes DEFECTIVE-callable registries through the sanctioned lifecycle, drives them
-#       through goMeta / run_absorb_apply!, and pins the catalogue-name tokens + codes.
+#       through goMeta, and pins the catalogue-name tokens + codes.
 # REASONING: T3's refusals fire only on defective callables/records/states — no golden or
 #       corpus path reaches them; these witnesses are the only proof the envelopes fire.
-# PURPOSE: the T3 acceptance rows (Σ = 34 asserts; T3-DESIGN §8's closed arithmetic).
+# PURPOSE: the T3 acceptance rows (Σ = 34 asserts at T3 — T3-DESIGN §8's closed arithmetic; the ledger testset's 14 — ten of
+#       T3's and the four C14 pins (g4)–(g6), (h4) — left at stage 5's E2).
 
 using Test
 import GoMeta as GM
@@ -24,10 +25,6 @@ import GoMeta as GM
     BoomH() = error("boom-ctor-h")
     # exact-signature setters (the reflection cross-check matches per-signature):
     boom_set(store::Dict{Symbol,Bool}, a::Symbol, rest::Symbol...) = error("boom-set")
-    const PSREF = Base.RefValue{Any}(nothing)         # the nested re-injection fixture's channel
-    const NESTED = Base.RefValue{Any}(nothing)
-    nested_set(store::Dict{Symbol,Bool}, a::Symbol, rest::Symbol...) =
-        (NESTED[] = GM.run_absorb_apply!(PSREF[]); store[a] = true; nothing)
 end
 
 @testset "seam_envelope (v0.4 T3)" begin
@@ -150,60 +147,6 @@ end
         es = _drive(_LDOC, Rs)
         @test es isa ErrorException && occursin("RES_FOREIGN_STORE", es.msg)
         @test !occursin("internal invariant", es.msg)      # NOT the wrong-class drift error
-    end
-
-    @testset "the state-seam ledger — in-flight enforcement; re-injection free of any binding (R-V04B-42, stage 3's commit 4)" begin
-        _mkps() = begin
-            ps = GM.BLS.setUpToProcessFromBytes(Vector{UInt8}(codeunits("x = 1\n#~ hide\n\ny = 2\n")))
-            GM.BLS.parseBLS(ps, 1, -1)
-            ps
-        end
-        # (12) REGISTRY-IDENTITY: two INDEPENDENT publishes of the same content — equal
-        # fingerprints, distinct objects — so ONLY `===` discriminates (the fixture law)
-        P1 = GM.publish(GM.default_registry_builder())
-        P2 = GM.publish(GM.default_registry_builder())
-        @test P1.seal == P2.seal && P1 !== P2
-        ps1 = _mkps()
-        r1 = GM.run_absorb_apply!(ps1; registry = P1)      # the run writes NOTHING into the caller's state (stage 3's commit 4) ⇒ no binding
-        @test r1.status === GM.PROCESS_OK
-        r2 = GM.run_absorb_apply!(ps1; registry = P2)      # (12′) re-injection under ANOTHER published registry: no refusal — nothing to mismatch
-        @test r2.status === GM.PROCESS_OK &&
-              GM.serialize_evals(GM.readAltValuesEvals(r2.altValues_evals)) == GM.serialize_evals(GM.readAltValuesEvals(r1.altValues_evals))
-        # (14) clean re-injection, same registry ⇒ silent
-        r3 = GM.run_absorb_apply!(ps1; registry = P1)
-        @test r3.status === GM.PROCESS_OK
-        # (13′) an abort mid-run leaves the state UNPOISONED (nothing was written into it): the re-injection runs again
-        # and aborts again at the same defect — no poisoned-state refusal exists any more
-        Rb = GM.publish(_labels_builder(; setter = _SeamT.boom_set))
-        ps2 = GM.BLS.setUpToProcessFromBytes(Vector{UInt8}(codeunits(
-            "x = 1\n#~ hide\n\ny = 2\n#~ :label1\n\nz = 3\n")))
-        GM.BLS.parseBLS(ps2, 1, -1)
-        eb = try GM.run_absorb_apply!(ps2; registry = Rb); nothing catch err; err end
-        @test eb isa ErrorException && occursin("boom-set", eb.msg)   # the abort escapes (loudness-only at T3)
-        eb2 = try GM.run_absorb_apply!(ps2; registry = Rb); nothing catch err; err end
-        @test eb2 isa ErrorException && occursin("boom-set", eb2.msg)   # the re-injection RUNS (and aborts again) — not refused
-        @test isempty(GM._registry_door_check(Rb))         # the PUBLISHED registry is unchanged
-        # (15) an abort leaves the state clean (nothing of a run is written into it): re-injection
-        # under a DIFFERENT registry is silent (the T3DB-2 cell)
-        ps3 = GM.BLS.setUpToProcessFromBytes(Vector{UInt8}(codeunits("x = 1\n#~ :label1\n\ny = 2\n")))
-        GM.BLS.parseBLS(ps3, 1, -1)
-        ec = try GM.run_absorb_apply!(ps3; registry = Rb); nothing catch err; err end
-        @test ec isa ErrorException                        # aborted (the labels setter throws)
-        rc = GM.run_absorb_apply!(ps3; registry = P1)
-        @test rc.status === GM.PROCESS_OK
-        # (16) IN-FLIGHT enforcement: a setter re-injecting the SAME state mid-call
-        Rn = GM.publish(_labels_builder(; setter = _SeamT.nested_set))
-        ps4 = GM.BLS.setUpToProcessFromBytes(Vector{UInt8}(codeunits("x = 1\n#~ :label1\n\ny = 2\n")))
-        GM.BLS.parseBLS(ps4, 1, -1)
-        _SeamT.PSREF[] = ps4
-        GM.run_absorb_apply!(ps4; registry = Rn)
-        nested = _SeamT.NESTED[]
-        @test nested isa GM.GoMetaDelivery && _codes(nested.diagnostics) == [:STATE_REUSE_REFUSED] &&
-              occursin("IN FLIGHT", nested.diagnostics[1].message)
-        @test nested.status === GM.PROCESS_ERROR && nested.diagnostics[1].severity === :error   # [C14h4] card C14 (h), R-V04B-96 (his §306): the in-flight refusal's row an :error (MEASURED 2026-10-03, receipts/S8-branch/PROBES-c14-pins_cd3ee9d3.txt)
-        @test nested.blsComponentTree !== ps4                                                    # [C14g4] card C14 (g): the refusal delivers a tree that is NOT the injected state (the one ledger refusal left since stage 3's commit 4 — the in-flight check; the door's is pinned in registry_lifecycle_tests.jl)
-        @test isempty(GM.BLS.children(nested.blsComponentTree))                                 # [C14g5] …with no Block, through the door
-        @test isempty(GM.readAltValuesEvals(nested.altValues_evals))                            # [C14g6] …and an EMPTY store
     end
 
     @testset "the InterruptException arm + the set-seam catalogue tokens" begin

@@ -9,8 +9,8 @@
 #       never throws), atomic domain-copy publication, the fingerprint + the T2-bis ONE-check door
 #       (the eleven `_SNAPSHOT_FIELDS` compared structurally against the publish-time snapshot —
 #       REPRESENTATIVE fields mutated here, not every one; the property file is the proof), the STRICT
-#       published-only door at `goMeta(bytes; registry)` AND at the internal callable seam (an
-#       unpublished value refuses typed NAMING the sanctioned path), the real freeze gate
+#       published-only door at `goMeta(bytes; registry)` (an unpublished value refuses typed NAMING the
+#       sanctioned path; the internal callable seam that ran the door too left at stage 5's E2), the real freeze gate
 #       (`POST_SEAL_MUTATION` on declared, derived, re-ordered, cyclic and callable-identity mutations by
 #       conforming code), `register!`'s binding + pool refusals, the slot encoding's distinctions
 #       (length-prefixed boundaries, concrete numeric types incl. bit-exact floats, vectors vs tuples,
@@ -75,6 +75,7 @@ _plugin_with_default(p, d) = GM.PlugIn(; altName = p.altName, setMode = p.setMod
         @test occursin("RegistryBuilder → validate → publish", r.diagnostics[1].message)
         @test isempty(Main.BasicRenderer.outputs(r).render_bytes)           # no parse, no render attempted
         @test isempty(GM.readAltValuesEvals(r.altValues_evals))                # the delivered part carries no rows on the refusal path (REAL-1 R2 #9; measured 2026-09-30: rows 0)
+        @test isempty(GM.BLS.children(r.blsComponentTree))                     # [C14g2] card C14 (g), R-V04B-96: the refusal delivers a tree built from EMPTY bytes — no Block, read through the door (re-cut from the callable seam's door block, which left with the seam at stage 5's E2; its (g1) "not the injected state" and (h3) rows retired with the injection — goMeta's door refusal is pinned here, [C14h1])
         @test !isempty(r.diagnostics)                                          # non-OK ⇒ non-empty diagnostics — the documented contract (src/state.jl; measured: 1, :REG_UNPUBLISHED)
         # route U REFUSES inconsistent hand-built tables (never a silently misrouting registry)
         bad_idx = copy(D.action_index); bad_idx[:hide] = Int8(99)
@@ -142,19 +143,6 @@ _plugin_with_default(p, d) = GM.PlugIn(; altName = p.altName, setMode = p.setMod
         @test_throws MethodError GM.AlterantRegistry(D.plugins, D.sorted_alt_actions, D.action_to_plugin,
             D.action_index, D.alt_index, D.accum_alt_idxs, D.mutex_alt_idxs, D.action_to_settribute,
             D.action_specs, D.spec_index, D.seal, D._snapshot)   # (T2-bis: the second named exception — the field is `_snapshot` now)
-        # the callable SEAM runs the door too (cure batch 1): an unpublished registry cannot drive it
-        U = GM.AlterantRegistry(D.plugins, D.sorted_alt_actions, D.action_to_plugin, D.action_index,
-                                D.alt_index, D.accum_alt_idxs, D.mutex_alt_idxs, D.action_to_settribute,
-                                D.action_specs, D.spec_index)
-        ps = GM.BLS.setUpToProcessFromBytes(Vector{UInt8}(codeunits("x = 1\n#~ hide\n\ny = 2\n")))
-        GM.BLS.parseBLS(ps, 1, -1)
-        rs = GM.run_absorb_apply!(ps; registry = U)
-        @test rs.status === GM.PROCESS_ERROR && _codes(rs.diagnostics) == [:REG_UNPUBLISHED]
-        @test _errors(rs.diagnostics) == [:REG_UNPUBLISHED]                     # [C14h3] the seam's door refusal: its one row an :error (MEASURED 2026-10-03)
-        @test rs.blsComponentTree !== ps                                        # [C14g1] card C14 (g), R-V04B-96: the refusal DELIVERS a tree that is not the injected state — a fresh empty parse state rides the error delivery (src/GoMeta.jl, the door at seam entry)
-        @test isempty(GM.BLS.children(rs.blsComponentTree))                     # [C14g2] …with no Block, read through the door
-        @test isempty(GM.readAltValuesEvals(rs.altValues_evals))                # [C14g3] …and an EMPTY store (MEASURED: rows 0)
-        @test isempty(Main.BasicRenderer.outputs(rs).render_bytes)
         # the injective slot encoding (cure batch 1): a re-cut vector boundary no longer collides
         @test GM._slot_text([Symbol("a,b")]) != GM._slot_text([:a, :b])
         @test GM._slot_text(GM.Declared(Symbol[:a, :b])) != GM._slot_text(GM.Declared(Symbol[Symbol("a,b")]))

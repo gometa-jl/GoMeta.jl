@@ -17,7 +17,7 @@
 #   - condition_cap_tests.jl  — witnesses for the condition-length-cap refusal.
 #   … and every further member in the include list below (the list IS the index: token law · ws alphabet ·
 #   unicode cures · textlaw · reserved adjacency · condition modes · heading recognizer · registration ·
-#   profile snapshot · flavor profile · carrier seam · latex flavor · ensure token · inert semantics ·
+#   profile snapshot · flavor profile · latex flavor · ensure token · inert semantics ·
 #   record schema (v0.4 T1) · registry lifecycle (v0.4 T2)); each include line carries its one-liner.
 # REASONING: the byte-exact golden layer cannot see these concerns — the introspected public surface and
 #       the stable refusal messages — so each lives in its own self-contained file.
@@ -42,14 +42,13 @@ using Test
     include(joinpath(@__DIR__, "registration_tests.jl"))            # v0.2 registration build: the record + the arming guard (APPEND-ONLY; the clash law and the atomic refusals left at stage 5's E4)
     include(joinpath(@__DIR__, "profile_snapshot_tests.jl"))        # v0.2 full arming: profile snapshot digests + error oracle (APPEND-ONLY)
     include(joinpath(@__DIR__, "flavor_profile_tests.jl"))          # WP1-W1 (F-17): FlavorProfile record + threading witnesses (APPEND-ONLY)
-    include(joinpath(@__DIR__, "carrier_seam_tests.jl"))            # WP1-W2: run_absorb_apply! seam + validate_carrier_state witnesses (APPEND-ONLY)
     include(joinpath(@__DIR__, "latex_flavor_tests.jl"))            # WP1-W5 (F-22): the FLAVOR_LATEX pure-data acceptance battery (APPEND-ONLY)
     include(joinpath(@__DIR__, "ensure_token_tests.jl"))            # WP1-W6 step (b): the ensure-token witness battery (K1 second disjunct; APPEND-ONLY)
     include(joinpath(@__DIR__, "inert_semantics_tests.jl"))         # v0.3.1: the R-INERT-4 differential oracle + §4.1 refusal + §4.8 Alterant guards (APPEND-ONLY)
     include(joinpath(@__DIR__, "record_schema_tests.jl"))           # v0.4 T1: the registration-record schema extension witnesses (APPEND-ONLY)
     include(joinpath(@__DIR__, "registry_lifecycle_tests.jl"))      # v0.4 T2: Builder → validate → publish, the one chain, the STRICT door, the seal gate, the exhaustion refusals (APPEND-ONLY)
     include(joinpath(@__DIR__, "snapshot_property_tests.jl"))       # v0.4 T2-bis: the snapshot door's PROPERTY proof (N=1024 site mutations + FP rebuilds + named cases; T2BIS-DESIGN §9)
-    include(joinpath(@__DIR__, "seam_envelope_tests.jl"))           # v0.4 T3: the seams — query/validate/ctor envelopes, store identity, the state-seam ledger (T3-DESIGN §8; DEP_MISSING left at stage 5's E4)
+    include(joinpath(@__DIR__, "seam_envelope_tests.jl"))           # v0.4 T3: the seams — query/validate/ctor envelopes, store identity (T3-DESIGN §8; DEP_MISSING left at stage 5's E4, the state-seam ledger at E2)
     include(joinpath(@__DIR__, "vocabulary_tests.jl"))              # v0.4 T4: the whitelist relocation — the digest-pinned artifact, the registration-surface flip, G-VOC, the valve, the zero-literal law (T4-DESIGN §6)
     include(joinpath(@__DIR__, "fallback_order_tests.jl"))          # stage 2 commit 3a (R-V04B-55 (3)): the fallBack level consulted LAST — three witnesses over a prepared slot
     include(joinpath(@__DIR__, "userfeed_visib_tests.jl"))        # stage 2 commit 7b (REAL-1 R2 #13): the fed Visib verdict against an authored one — four witnesses at the public entry

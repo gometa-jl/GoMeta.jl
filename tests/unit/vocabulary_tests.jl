@@ -6,8 +6,8 @@
 #       governs, zero code edits — M-AC-12); the ZWJ write-only valve at its REACHABLE
 #       seam (direct checkLabels) + the absorb-shape sibling pin; the stale-pin and
 #       malformed-artifact refusal classes; the G-VOC read surface with its
-#       DEFENSIVE-COPY ownership rule; the re-homed T3 checkpoint-(7) ledger-keying
-#       assert; and the zero-literal law in its DECIDABLE form.
+#       DEFENSIVE-COPY ownership rule; and the zero-literal law in its DECIDABLE form (the re-homed T3
+#       checkpoint-(7) ledger-keying assert, [8], left with the seam ledger at stage 5's E2 of the v0.4 build).
 # DOES: drives the shipped vocabulary end-to-end through goMeta, publishes builders whose
 #       labels record carries a DIFFERENT vocabulary declaration (inline · stale
 #       VocabularyRef), calls the loader's parse seam on malformed temp bytes, and greps
@@ -24,7 +24,7 @@
 #       declared-render witnesses (2 + the r7-C1 strengthening 1 = 3) = 49, − 9 at stage 5's E4 of the
 #       v0.4 build ([12] −3, [13] −4, [17] −1, [18] −1: the DEP_MISSING, SIG_MISMATCH and VALUE_ALGEBRA
 #       render arms left with their subjects; [11] A3 and [15] A3 re-cut, one assert each; [13] A5, [15]
-#       A4 and A6, [16] weakened by a conjunct each, count unchanged) = 40; +2 in
+#       A4 and A6, [16] weakened by a conjunct each, count unchanged) = 40, − 1 at stage 5's E2 ([8]) = 39; +2 in
 #       snapshot_property_tests' VocabularyRef named case + the 3 appended collector
 #       names in registration_tests' atomicity loop = the T4-DESIGN §6 Σ = 20 + the
 #       crx-t3t4 cure batch + the crx-t3t4r/r2 hardenings + the zero-dispatch family +
@@ -239,22 +239,6 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
         v = GM.vocabulary(GM.DEFAULT_REGISTRY, :labels)
         @test v isa GM.InlineVocabulary && length(v.names) == 38 && v.names[1] === :label1
         @test v.flags[_zwj] == (query = false,)               # the declared valve, disclosed
-    end
-
-    @testset "[8] the seam ledger keys by IDENTITY (the re-homed T3 checkpoint-(7) assert)" begin
-        _mkps() = begin
-            ps = GM.BLS.setUpToProcessFromBytes(_doc("x = 1\n#~ hide\n\ny = 2\n"))
-            GM.BLS.parseBLS(ps, 1, -1)
-            ps
-        end
-        P = GM.publish(GM.default_registry_builder())
-        psA = _mkps(); psB = _mkps()                          # equal CONTENT, distinct objects
-        GM.run_absorb_apply!(psA; registry = P)               # every injected state is stamped (the in-flight bookkeeping) ⇒ both have entries
-        GM.run_absorb_apply!(psB; registry = P)
-        eA, eB = lock(GM._SEAM_LEDGER_LOCK) do
-            (get(GM._SEAM_LEDGER, psA, nothing), get(GM._SEAM_LEDGER, psB, nothing))
-        end
-        @test eA isa GM._SeamEntry && eB isa GM._SeamEntry && eA !== eB
     end
 
     @testset "[9] the DEFENSIVE-COPY ownership rule (mutating a returned copy changes nothing)" begin

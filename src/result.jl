@@ -1,7 +1,7 @@
 # src/result.jl — the typed result-support types: ProcessStatus, Diagnostic, EvalStore.
 #
 # IS: the dep-free pieces of the public `GoMetaDelivery` surface — the run status (set at the delivery,
-#     never stored on `ProcessState` — the seam computes it from the diagnostics at its exit), the typed
+#     never stored on `ProcessState` — `goMeta` computes it from the diagnostics at its exit), the typed
 #     diagnostic record (the typed form of the DELIVERED errors and warnings — the partition below), and the evals store (these two embedded in
 #     `ProcessState`). (The top-level `GoMetaDelivery` aggregate is defined in `state.jl`, AFTER
 #     `ProcessState` — the run builds it from the state's own pieces at exit; the two the state embeds must
@@ -9,7 +9,7 @@
 # DOES: declares `ProcessStatus` (the OK/non-OK enum), `Diagnostic` (`{code, severity, message, context}`),
 #     and `EvalStore` (a growable set of `EvalRecord`s) + its empty constructor.
 # REASONING: catalogued failures surface as typed `Diagnostic`s (E-01..E-08): the config-time rows and the
-#     seam's refusals are DELIVERED typed; the condition-path rows (E-01/E-02 and the arg-domain and parse
+#     registry door's refusals are DELIVERED typed; the condition-path rows (E-01/E-02 and the arg-domain and parse
 #     rows) are MINTED typed in the closed interpreter, but the statement still ABORTS at the absorb seam
 #     (`absorb_meta.jl`: the refusal rethrown as a raw `ErrorException`, its code and context dropped — the
 #     routing into the delivered diagnostics a later, separately-gated motion), E-07's mint is pending, and

@@ -415,9 +415,9 @@ parse never ran. The NamedTuple field order is `(blsStructure_bytes, render_byte
 function outputs(result::GoMeta.GoMetaDelivery)
     ## The non-OK output contract. A fail-closed PROCESS_ERROR GoMetaDelivery — an ENTRY refusal: at v0.3 the
     ## only source was a config-time validation error; at v0.4 the registry DOOR
-    ## (`REG_UNPUBLISHED` / `POST_SEAL_MUTATION`) and the seam ledger's refusal of an in-flight injected parse state
-    ## (`STATE_REUSE_REFUSED`; `STATE_SEAL_MISMATCH` left with the write-back at stage 3's commit 4) are the further sources — every one before any absorb
-    ## or apply work, `goMeta`'s before its parse — yields an EMPTY (tree, render): "no render attempted",
+    ## (`REG_UNPUBLISHED` / `POST_SEAL_MUTATION`) is the further source (the seam ledger's `STATE_REUSE_REFUSED` left with the
+    ## callable seam at stage 5's E2 of the v0.4 build; `STATE_SEAL_MISMATCH` with the write-back at stage 3's commit 4) —
+    ## before any parse — yields an EMPTY (tree, render): "no render attempted",
     ## and the delivered tree is a container built from EMPTY bytes ⇒ an empty tree. `render_bytes` is NOT
     ## invoked (the emit path stays untriggered). No post-parse error class exists at v0.4: this branch
     ## returns two EMPTY vectors unconditionally (a "tree-if-parse-succeeded" distinction would be a new
@@ -425,11 +425,9 @@ function outputs(result::GoMeta.GoMetaDelivery)
     if result.status === GoMeta.PROCESS_ERROR
         return (blsStructure_bytes = UInt8[], render_bytes = UInt8[])
     end
-    ## The hide marker rides the PARSE STATE's own FlavorProfile, never the config —
-    ## under a carrier-constructed store (the `run_absorb_apply!` seam) the config
-    ## need not name the flavor the store was parsed under; reading the tree's record through the door
-    ## (`BLS.flavor(blsComponentTree)`) keeps `outputs` stamping the CORRECT flavor's marker by
-    ## construction.
+    ## The hide marker rides the PARSE STATE's own FlavorProfile, never the config: reading the tree's record
+    ## through the door (`BLS.flavor(blsComponentTree)`) stamps the flavor the store was parsed under (the
+    ## carrier-constructed store of the callable seam, which made this matter, left at stage 5's E2 of the v0.4 build).
     rendered = let fl = BLS.flavor(result.blsComponentTree)
         render_bytes(result; hide_marker = fl.hide_marker, hide_fold_prefix = fl.hide_fold_prefix)
     end
