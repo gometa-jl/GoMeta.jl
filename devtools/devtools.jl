@@ -15,7 +15,7 @@
 #       plus their file twins (`write_*_to_file`), the three surface writers (the tool's pair + the marked source),
 #       the comparison form's producer and writer `comparisonForm` / `writeComparisonFormToFile` (§I — stage 4, R-V04B-36),
 #         `writeBlsStructureToFile` / `writeRenderToFile` / `writeMarkedSourceToFile`
-#         (§H — verbatim surface copies + the slide sidecar), and `devtools_selfcheck()`.
+#         (§H — verbatim surface copies + the slide sidecar).
 #       Every tool takes the §H `slide` keyword: print tools render the truecolor ANSI
 #       slide preview; file tools additionally emit the `X.slideruns.json` colored-run
 #       sidecar under one of the four SCHEMES.json schemes.
@@ -49,7 +49,8 @@
 # bytes since stage 2's commit 9b (R-V04B-85 (D)). The former exemption D-6(a) of 2026-08-20 covers that one
 # residue alone now. Consumer code — an Extension — reads the tree the same way, through the door
 # (docs/public-api.md §1.2; R-V04B-45).
-# `devtools_selfcheck()` is the drift alarm: run it after every change under `src/` — a broken surface fails LOUDLY.
+# The battery `devtools/probes/probe_devtools.jl` is the drift alarm (his §26; the tools' own self-check left at stage 5's T1,
+# R-V04B-111): run it after every change under `src/` — a broken surface fails LOUDLY.
 #
 # ── Use ─────────────────────────────────────────────────────────────────────────────────
 #   julia> include("run_play.jl")           # or directly: include("devtools.jl")
@@ -1629,8 +1630,8 @@ end
 ## `children`, `getElement`, `content`, `flavor`, `isHorizontalSpace` (stage 2's commit 0) — with NO
 ## residue outside it since stage 2's commit 9b (R-V04B-85 (D)): the source-line COUNT that sizes the per-line
 ## output comes from the callers' own bytes (the marked-source writer's line split; the render tier's lines).
-## devtools_selfcheck() pins every read (the fates — the Engine's answer per Line since stage 3's commit 2 —, :comment grains,
-## the flavor record, byte offsets, the Line texts) so a drifted engine fails LOUDLY.
+## the battery devtools/probes/probe_devtools.jl pins the reads (the fates — the Engine's answer per Line since stage 3's commit 2 —,
+## :comment grains, the flavor record, byte offsets, the Line texts) so a drifted engine fails LOUDLY (the tools' self-check left at T1).
 
 ## first char of the engine's own horizontal-whitespace class ([\h]; includes NBSP) —
 ## the marker-token delimiter, through the door (`isHorizontalSpace`). Returns the byte index AFTER
@@ -2329,7 +2330,7 @@ PARAMETERS — which behavior each triggers:
 - `path::AbstractString` — the output file; sidecar at `path * ".slideruns.json"`.
 - `result::GoMeta.GoMetaDelivery` — the ONE `goMeta` result whose render is written;
   its delivered tree's BLS internals (`blsComponentTree`) feed the derivation (D-6(a) exemption surface, pinned by
-  `devtools_selfcheck()`).
+  the battery `devtools/probes/probe_devtools.jl`).
 - `slide::Union{Nothing,Symbol} = nothing` — as [`writeBlsStructureToFile`](@ref):
   `nothing` = X only AND a stale `X.slideruns.json` beside the path is RETIRED
   (removed — F5); a scheme Symbol = X + sidecar published as a staged pair (border
@@ -2439,179 +2440,6 @@ function writeMarkedSourceToFile(path::AbstractString, bytes::AbstractVector{UIn
     end
     _dt_slide_publish_pair(apath, xtmp, sctmp)
     path
-end
-
-#########################################################################################
-##  §G — the drift alarm
-#########################################################################################
-
-"""
-    devtools_selfcheck() -> true
-
-IS: the internal-surface drift alarm (design §2). DOES: runs `goMeta` on a tiny inline
-marked input and asserts, LOUDLY, everything these tools stand on: the walkable
-`result.blsComponentTree` tree + engine-true census, evals rows present and 100%
-anchored, each with content through the door, and both printers rendering non-empty output to
-plain AND colored IO without throwing. REASONING: the tools read the delivered part's BLS internals
-— parser names non-public until the door of stage 2 (R-V04B-45; R-V04B-58) — and the package snapshot is refreshed wholesale — after every refresh, RUN THIS; a
-broken internal surface must fail here, not silently mis-render during play.
-"""
-function devtools_selfcheck()
-    ## the one-path checks (R-V04B-24 obligation 7): the basic renderer is loaded through
-    ## devtools/load_basic_renderer.jl, once, as Main.BasicRenderer, with ONE `outputs` method
-    (isdefined(Main, :BasicRenderer) && isdefined(Main, :_BASIC_RENDERER_LOADED)) ||
-        error("devtools_selfcheck: the basic renderer is not loaded through devtools/load_basic_renderer.jl")
-    length(methods(Main.BasicRenderer.outputs)) == 1 ||
-        error("devtools_selfcheck: BasicRenderer.outputs has more than one method")
-    parentmodule(only(methods(Main.BasicRenderer.outputs))) === Main.BasicRenderer ||
-        error("devtools_selfcheck: BasicRenderer.outputs is not defined in Main.BasicRenderer")
-    # :label1 = whitelist member; the inline head(…) metaSegment mints a LINE-keyed row with the Segment as the key's
-    # origin (R-V04B-98, stage 5's E1) — keeping the inline path under the drift alarm too
-    src = "#~1 :label1\n# a Text line\nx = 1 #~ head(\"selfcheck head\", 2)\n"
-    r = GoMeta.goMeta(Vector{UInt8}(codeunits(src)))
-    r.status == GoMeta.PROCESS_OK || error("devtools_selfcheck: PROCESS_ERROR on the inline input")
-    doc = _dt_doc(r; name = "selfcheck")
-    doc.ok || error("devtools_selfcheck: File root not walkable")
-    # EXACT pins for the fixed inline fixture (impl CrossReview T1-L3 #6: a weakened
-    # census / dropped rows / shrunk key set must RED here, not render silently thinner)
-    _dt_census(doc) == (3, 3, 2) ||
-        error("devtools_selfcheck: census drifted (got $(_dt_census(doc)), pinned (3, 3, 2))")
-    length(keys(_DT_BLS.CmpntNamedInt)) == 9 ||
-        error("devtools_selfcheck: CmpntNamedInt key census changed (pinned 9, got " *
-              "$(length(keys(_DT_BLS.CmpntNamedInt)))) — REVIEW the tools, then re-pin")
-    ## re-pinned 44 -> 45 at the v0.3.1 snapshot refresh (the new :ignoreMetaContent
-    ## inert-marker flag; reviewed: _dt_trueflags iterates keys() dynamically — no
-    ## positional assumption anywhere in the tools).
-    length(keys(_DT_BLS.ComponentSettribute)) == 45 ||
-        error("devtools_selfcheck: ComponentSettribute key census changed (pinned 45, got " *
-              "$(length(keys(_DT_BLS.ComponentSettribute)))) — REVIEW the tools, then re-pin")
-    rows = _dt_eval_rows(doc)
-    all(x -> x.comp !== nothing, rows) ||
-        error("devtools_selfcheck: unanchored row — handle resolution drifted")
-    sort([string(x.attr) for x in rows]) ==
-        ["head_2", "label_label1", "label_label1", "label_label1", "label_label1"] ||
-        error("devtools_selfcheck: evals rows drifted (attrs = $(sort([string(x.attr) for x in rows])))")
-    sort([_dt_grain(x.comp) for x in rows]) == ["Block", "Block", "Block", "Line", "Line"] ||   # R-V04B-98: the inline head row keyed on its Line (MEASURED 2026-10-03)
-        error("devtools_selfcheck: row anchoring drifted (got " *
-              "$(sort([_dt_grain(x.comp) for x in rows])))")
-    all(x -> !isempty(_DT_BLS.content(doc.ps, x.comp)), rows) ||
-        error("devtools_selfcheck: a row's Component has no content through the door — content derivation drifted")
-    for renderer in (print_BLS_Component_Tree, print_altValues_evals)
-        for colored in (false, true)
-            buf = IOBuffer()
-            renderer(IOContext(buf, :color => colored), r)
-            position(buf) > 0 || error("devtools_selfcheck: empty render from $renderer (colored=$colored)")
-        end
-    end
-    buf = IOBuffer()
-    print_altValues_evals(buf, r; include_empty = true)
-    out = String(take!(buf))
-    occursin("← Segment #", out) && occursin("head_2", out) ||
-        error("devtools_selfcheck: the :tree render lost the inline head row's Segment origin (R-V04B-98: the row under its Line, the origin arrow naming the Segment)")
-    occursin("Int64", (buf2 = IOBuffer(); print_BLS_Component_Tree(buf2, r); String(take!(buf2)))) ||
-        error("devtools_selfcheck: the MIX typed dump lines vanished")
-
-    ## ── §H slide-surface pins (D-6(a) rider: every NEW internal read the slide path
-    ## adds is pinned here or battery-covered — T1's re-parse arm lives in probe §16 —
-    ## so a drifted engine fails LOUDLY, never mis-roles) ─────────────────────────────
-    F = _DT_BLS.flavor(r.blsComponentTree)   # the record through the door; the five promised fields pinned
-    (F.lead == "#" && F.hide_marker == "## " && F.hide_fold_prefix isa AbstractString && F.re_meta_leaded isa Regex &&
-     F.flavor_tag === :julia) ||
-        error("devtools_selfcheck: the flavor record drifted (lead/hide_marker/hide_fold_prefix/re_meta_leaded/flavor_tag)")
-    _DT_BLS.endsWithNewline(r.blsComponentTree) isa Bool ||
-        error("devtools_selfcheck: BLS.endsWithNewline drifted")
-    (_DT_BLS.isHorizontalSpace(' ') && _DT_BLS.isHorizontalSpace('\t') && _DT_BLS.isHorizontalSpace('\u00a0') &&
-     !_DT_BLS.isHorizontalSpace('x') && !_DT_BLS.isHorizontalSpace('\n')) ||
-        error("devtools_selfcheck: the engine [\\h] delimiter class drifted (isHorizontalSpace, the door's name; NBSP must delimit)")
-    (F.flavor_tag in (:julia, :c, :latex) &&   # the registry identity (`flavor_for`) left the self-check at commit 0 — a parser-internal read (R-V04B-80 (2)(iii))
-     isempty(GoMeta.validate_config(GoMeta.GoMetaConfig(flavor_tag = F.flavor_tag)))) ||
-        error("devtools_selfcheck: the delivered tree's flavor record does not round-trip through its flavor_tag into a valid config (the T1 re-parse arm rebuilds its config from it)")
-    ## fate ladder + render transformation classes (the render writer's derivation)
-    rf = GoMeta.goMeta(Vector{UInt8}(codeunits("#~ discard{ isCode }\nx = 1 #~ hide\ny = 2\n")))
-    rf.status == GoMeta.PROCESS_OK || error("devtools_selfcheck: fate fixture refused")
-    String(copy(Main.BasicRenderer.outputs(rf).render_bytes)) == "#~ discard{ isCode }\n## x = 1 ## #~ hide\n" ||
-        error("devtools_selfcheck: the hide/discard render transformation drifted — REVIEW the slide derivation, then re-pin")
-    fates = Tuple{Int,Symbol}[]
-    _dt_sl_walk(rf.blsComponentTree) do line, block, file, ln
-        push!(fates, (ln, _dt_sl_fate(rf, line)))
-    end
-    sort(fates) == [(1, :show), (2, :hide), (3, :discard)] ||
-        error("devtools_selfcheck: the fate ladder drifted (got $(sort(fates)))")
-    ## :comment settribute at Line grain, julia strictness split
-    rc = GoMeta.goMeta(Vector{UInt8}(codeunits("## c\n### banner\n")))
-    ccm = Bool[]
-    _dt_sl_walk(rc.blsComponentTree) do line, block, file, ln
-        push!(ccm, _DT_BLS.getElement(line, :comment))
-    end
-    ccm == [true, false] ||
-        error("devtools_selfcheck: the :comment settribute strictness drifted (got $ccm)")
-    ## segment byte offsets (1-based inclusive; emoji multi-byte pin) + the Line texts through the door
-    re = GoMeta.goMeta(Vector{UInt8}(codeunits("x = \"🍒🍒\" #~ hide\n")))
-    spans = Tuple{Int,Int}[]
-    texts = String[]
-    _dt_sl_walk(re.blsComponentTree) do line, block, file, ln
-        push!(texts, String(_DT_BLS.content(re.blsComponentTree, line)))
-        for seg in _DT_BLS.children(re.blsComponentTree, line)
-            push!(spans, (Int(_DT_BLS.getElement(seg, :startMainStr)),
-                          Int(_DT_BLS.getElement(seg, :stopMainStr))))
-        end
-    end
-    spans == [(1, 15), (16, 22)] ||
-        error("devtools_selfcheck: segment byte offsets drifted (got $spans, pinned [(1,15),(16,22)])")
-    texts == ["x = \"🍒🍒\" #~ hide"] ||
-        error("devtools_selfcheck: the Line texts through the door (BLS.content) drifted")
-    ## capture smoke: the run annotation is TOTAL — concat of runs+newlines == the
-    ## plain render of the same call, byte-for-byte; roles stay in the closed set
-    capr = _dt_slide_cap()
-    print_BLS_Component_Tree(_dt_slide_capio(capr), r)
-    lr, fnl = _dt_slide_lines(capr)
-    plainb = IOBuffer(); print_BLS_Component_Tree(IOContext(plainb, :color => false), r)
-    join([join(first.(l)) for l in lr], "\n") * (fnl ? "\n" : "") == String(take!(plainb)) ||
-        error("devtools_selfcheck: slide capture lost bytes (concat != plain render)")
-    all(role in _DT_SLIDE_ROLE_ORDER for l in lr for (_, role) in l) ||
-        error("devtools_selfcheck: slide capture emitted a role outside the closed vocabulary")
-    ## sidecar smoke (the FULL byte gold lives in the battery's python sweep): the
-    ## §4.4-shaped micro fixture through the source writer, key pins + marker run
-    mktempdir() do tmp
-        p = joinpath(tmp, "m.jl")
-        writeMarkedSourceToFile(p, Vector{UInt8}(codeunits("#~2\n")); slide = :gometa_dark)
-        read(p) == Vector{UInt8}(codeunits("#~2\n")) ||
-            error("devtools_selfcheck: writeMarkedSourceToFile changed the written bytes")
-        sc = read(p * ".slideruns.json", String)
-        for pin in ("\"format_version\": 1", "\"tool\": \"writeMarkedSourceToFile\"",
-                    "\"scheme\": \"gometa-dark\"", "\"background\": \"201D1D\"",
-                    "\"blank\": \"FFD6D6\"", "\"border\": \"usual\"", "\"final_newline\": true",
-                    "{ \"text\": \"#~2\", \"role\": \"marker\", \"color\": \"FF1FA9\", \"bold\": false, \"size_pt\": 13 }",
-                    "{ \"text\": \" 1 \", \"role\": \"gutter\", \"color\": \"706D6D\", \"bold\": false, \"size_pt\": 13, \"synthetic\": true }")
-            occursin(pin, sc) || error("devtools_selfcheck: sidecar smoke lost the pin $(repr(pin))")
-        end
-        endswith(sc, "] }\n") || error("devtools_selfcheck: sidecar must end '] }' + one newline")
-    end
-    ## ── §I comparison-form pins (stage 4; R-V04B-36): the form is deterministic, carries one C line per Component and
-    ## four A lines per non-File Component on the inline fixture, names a Segment by its line and CHARACTER span, and is
-    ## sorted — a drifted serializer fails LOUDLY here before the twelve forms (the reference altValues) move ──────────
-    cf = comparisonForm(r; name = "selfcheck", at = "-")
-    cf == comparisonForm(r; name = "selfcheck", at = "-") ||
-        error("devtools_selfcheck: the comparison form is not deterministic")
-    cfl = split(chomp(cf), '\n')
-    startswith(cfl[1], "# GoMeta comparison form v1 | selfcheck | produced by GoMeta v0.4 at - | 9 Components | 32 answer lines") ||
-        error("devtools_selfcheck: the comparison form's header drifted ($(cfl[1]))")
-    (count(l -> startswith(l, "C | "), cfl) == 9 && count(l -> startswith(l, "A | "), cfl) == 32) ||
-        error("devtools_selfcheck: the comparison form's line census drifted (pinned 9 C + 32 A)")
-    cfl[2:end] == sort(cfl[2:end]) || error("devtools_selfcheck: the comparison form's lines are not sorted")
-    occursin("\nC | Segment | 3:7-34 | Line 3-3 | 2 | - | Meta | ", cf) && occursin("\nC | Segment | 3:1-6 | Line 3-3 | 1 | - | Code | ", cf) ||
-        error("devtools_selfcheck: the comparison form's Segment keys drifted (pinned 3:1-6 and 3:7-34 under Line 3-3)")
-    occursin("\nC | File | 1-3 | - | - | Block 1-1;Block 2-2;Block 3-3 | - | ", cf) ||
-        error("devtools_selfcheck: the comparison form's File line drifted")
-    occursin("\nA | Line | 3-3 | heading | \"selfcheck head\" | Line 3-3\n", cf) && occursin("\nA | Segment | 3:7-34 | heading | \"selfcheck head\" | Line 3-3\n", cf) &&
-    occursin("\nA | Segment | 3:1-6 | heading | \"selfcheck head\" | Line 3-3\n", cf) ||
-        error("devtools_selfcheck: the inline heading's answer lines drifted (pinned on the MEASURED behaviour under R-V04B-98, his §309: the Line answers its trailing metaSegment's heading as its OWN; both its Segments through the Line)")
-    occursin("\nA | Block | 1-1 | labels | {label1} | Block 1-1\n", cf) ||
-        error("devtools_selfcheck: the Labels answer line drifted (pinned: the set {label1}, own)")
-    cfe = comparisonForm(re; name = "emoji", at = "-")
-    occursin("C | Segment | 1:1-9 | ", cfe) && occursin("C | Segment | 1:10-16 | ", cfe) ||
-        error("devtools_selfcheck: the comparison form's Segment spans are not in characters (pinned 1:1-9 and 1:10-16 on the emoji fixture)")
-    true
 end
 
 #########################################################################################

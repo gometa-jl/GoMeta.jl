@@ -17,7 +17,7 @@
 #       drives both printers and all slide paths through the filter/error tiers into
 #       IOBuffers/tempfiles, and counts failed checks.
 # PURPOSE: re-runnable ANY session (esp. after a change under src/ or devtools/, together
-#       with devtools_selfcheck()); exit code 0 = all green.
+#       as THE drift alarm — the tools' own self-check left at stage 5's T1, R-V04B-111); exit code 0 = all green.
 #
 #   GM=/home/fido/Dropbox/_01_Crypto_Dropbox/07_Claude/GoMetaEcosystem/GoMeta
 #   julia --startup-file=no --project=$GM/tests $GM/devtools/probes/probe_devtools.jl
@@ -35,8 +35,7 @@ plain(f) = (b = IOBuffer(); f(b); String(take!(b)))
 mini = GoMeta.goMeta(read(joinpath(_PB_FIX, "mini-Documenter-Source-File.jl")))
 ext  = GoMeta.goMeta(read(joinpath(_PB_HOME, "examples", "InFileFolder", "file_for_Example_Extended.jl")))
 
-## 1 — the drift alarm itself
-check(devtools_selfcheck() === true, "devtools_selfcheck() did not return true")
+## 1 — the drift alarm is this battery itself (the tools' self-check `devtools_selfcheck()` left at stage 5's T1 — R-V04B-111, census row 18)
 
 ## 2 — attrs filter: count agreement with the raw surface + explicit never-minted state
 raw_visib = count(r -> r[2] === :visib, GoMeta.readAltValuesEvals(ext.altValues_evals))

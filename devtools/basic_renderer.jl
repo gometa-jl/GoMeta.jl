@@ -51,7 +51,7 @@ Core.eval(Main, :(const _BASIC_RENDERER_LOADED = true))
 #     marked at its two sites: `BLS._isspace_valid`, the parser's own whitespace guard for the ensure-token head
 #     read (no door name serves it — `BLS.isHorizontalSpace` is the `[\h]` class and differs at \f and \v; his word
 #     is asked). The former interim (D-6(a) of 2026-08-20, widened 2026-09-11, R-V04B-24 C1 (a); lapsed 2026-09-16,
-#     R-V04B-29) covered the reads this commit migrated; it covers the residue alone now. `devtools_selfcheck()` is the drift alarm.
+#     R-V04B-29) covered the reads this commit migrated; it covers the residue alone now. the battery `devtools/probes/probe_devtools.jl` is the drift alarm.
 # THE LOAD-ORDER LAW: include `devtools/load_basic_renderer.jl` at the consumer's TOP LEVEL — never this
 #     file (the sentinel at the top refuses a second load) and never inside a function (Julia's world age:
 #     a method defined while a function is already running is invisible to that function).

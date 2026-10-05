@@ -27,7 +27,7 @@ From Julia: `include(joinpath(pkgdir(GoMeta), "devtools", "devtools.jl"))` then
 `print_BLS_Component_Tree(result)`. **The rule:** what a run evaluated, for which Component,
 is stated from these printouts — never re-derived from raw text (canon R1) and never asserted
 from memory (canon R3). Put the tool's output, unabridged, into any page or record that makes
-such a claim. `devtools_selfcheck()` must return `true` after every change under `src/`.
+such a claim. The battery `devtools/probes/probe_devtools.jl` must print ALL GREEN after every change under `src/`.
 
 ## Standing rules for this repository
 

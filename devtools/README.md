@@ -61,7 +61,7 @@ print_BLS_Component_Tree(result; style = :tree, detail = :full)    # plain tree 
 
 write_altValues_evals_to_file("evals.html", result; include_empty = true)   # .html / .txt twins
 write_BLS_Component_Tree_to_file("tree.html", result)
-devtools_selfcheck()          # the drift alarm — must return true after any engine change
+# the drift alarm is the battery devtools/probes/probe_devtools.jl (below) — ALL GREEN after any engine change
 ```
 Keywords of `print_altValues_evals`: `layout` (`:tree` | `:rows` | `:cells`), `include_empty`
 (`:tree` only — `false` compact, `true` full), `show_handles`, `attrs` (`:all` | a Symbol | a
@@ -83,8 +83,8 @@ source-line COUNT comes from the callers' own bytes since stage 2's commit 9b (R
 C1 (a); lapsed 2026-09-16, R-V04B-29) covers those two residues alone; its texts are deleted at stage 5 of the v0.4
 branch (the plan's stage 5 (1); R-V04B-48 (1)). Consumer code — an Extension — reads the tree the same way, through the door
 (`docs/public-api.md` §1.2; R-V04B-45).
-`devtools_selfcheck()` is the drift alarm: if the surface changes, it fails loudly. Run it after every change to `src/`. Their assertion battery,
-`devtools/probes/probe_devtools.jl`, lives beside them since 2026-09-12 (OWNER-WORDS §26 of the
+The assertion battery
+`devtools/probes/probe_devtools.jl` is the drift alarm: if the surface changes, it fails loudly. Run it after every change to `src/` (the tools' own self-check left at stage 5's T1 — R-V04B-111). It lives beside them since 2026-09-12 (OWNER-WORDS §26 of the
 build record: the play became a self-contained fork and keeps its own frozen copy of the tools and
 of the battery; its fixture inputs are `devtools/probes/fixtures/` and `examples/InFileFolder/`);
 run it with `julia --startup-file=no --project=$GM/tests $GM/devtools/probes/probe_devtools.jl`
@@ -109,4 +109,4 @@ value and its source as the deciding Component's own key or its level), sorted b
 The definition and the grammar: `tests/comparison/README.md`; the twelve forms beside it — v0.4's reference altValues in
 his terms of 2026-09-29, not reference files (`regenerate.jl` writes or checks them); the first comparator
 `devtools/compare_forms.sh` (a sorted-text diff). The verb `comparison`
-prints one form to stdout. Pinned by `devtools_selfcheck()` and the battery's §18.
+prints one form to stdout. Pinned by the battery's §18.
