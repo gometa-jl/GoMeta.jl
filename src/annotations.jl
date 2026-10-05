@@ -181,8 +181,8 @@ function captureEvals!(st::ProcessState, cell::BLS.AbstractComponent;
         decided = get(st.working_origin, idx8, Vector{UInt8}[])   # R-V04B-35 (d): the applied statements' handles
         stem = p.capture.attr_stem === nothing ?
             Symbol(lowercase(String(p.altName))) : p.capture.attr_stem
-        ## defense-in-depth (tier 1's identity law makes a mismatch lifecycle-unreachable;
-        ## a post-publication mutation still floor-routes rather than mis-reads)
+        ## the identity law left at stage 5's E4: a declared mismatch, like a post-publication
+        ## mutation, floor-routes here rather than mis-reads (measured: WARN_CAPTURE_UNREADABLE)
         if !(inst isa p.capture.instance_type)
             _capture_floor!(st, p, :WARN_CAPTURE_UNREADABLE)
             continue
@@ -275,7 +275,9 @@ function captureEvals!(st::ProcessState, cell::BLS.AbstractComponent;
             _capture_floor!(st, p, :WARN_CAPTURE_UNREADABLE)
         end
         # `multiplicity` is CARRIED, not consumed, at v0.4 (its consumer = the T11
-        # catalogue); every other (scheme, gate) cell is refused at tier 1.
+        # catalogue); a scheme outside the four arms with gate `nothing` publishes since stage 5's
+        # E4 (the closed-set row left) and falls through here — no row, no floor (measured:
+        # PROBES-e4-seat-notes [c]); T11's catalogue row.
     end
     # the FIRST floor arm: applied state whose plugin declares NO capture row — the
     # registration is legal, its evals-invisibility must be DISCLOSED (the anti-T1 cure)

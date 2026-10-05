@@ -1,226 +1,100 @@
 # tests/unit/registration_tests.jl — v0.2 registration build: the registration record + the
-# clash law + the atomic load-time refusals (APPEND-ONLY).
+# runtime arming guard (APPEND-ONLY; the clash law with its disposition switch, the reflection
+# cross-check, the value-algebra and reachability refusals, the candidacy diagnostic and the record
+# shape law were CONSCIOUSLY RETIRED with their subjects at stage 5's E4 of the v0.4 build —
+# census rows 3 and 51, OWNER-WORDS §317; the retirement notes stand where the testsets stood).
 #
-# IS:   the witnesses of the DECLARED registration machinery: the clash law
-#       (both arms behind the disposition switch — the terminal disposition itself
-#       is the owner's owed confirmation), the reflection cross-check
-#       (verify-not-derive: declared ≡ executable, both directions), the
-#       value-algebra + reachability refusals, the unactivated-candidacy
-#       diagnostic, ATOMICITY (a failing build leaves no partial registry), the
-#       operator-token spelling parity, the commissioned capability
-#       consults, and the dispatch-boundary RETURN-TYPE validation rows (the
-#       declared return types verified against real invocations).
-# PURPOSE: plan row 11's gate — "registration + atomicity tests green".
+# IS:   the witnesses of the DECLARED registration record as the Engine still reads it: the
+#       remaining checks wired at `validate` (source order), the FIRST-wins derived tables, the
+#       operator-token spelling, the commissioned capability consults, the dispatch-boundary
+#       RETURN-TYPE validation rows (the declared return types verified against real invocations)
+#       and the full-arming guard at the set-invocation seam.
+# PURPOSE: plan row 11's gate — "registration + atomicity tests green" (re-scoped at E4).
 
 using Test
 import GoMeta as GM
 
-@testset "the registration build — record + clash law" begin
+@testset "the registration build — the record + the remaining checks" begin
 
-    _mkspec(name, plugin; spelling = :identifier) = GM.ActionSpec(
-        name, spelling, Int8(plugin),
-        [GM.ActionOverload(Type[GM.Alterants.Visib, Symbol], Symbol[], Symbol[],
-            nothing, Bool, :set, false, :context_free, :apply, true)],
-        0, :none, nothing, nothing)
+    # (test_clash_check_always_fires was CONSCIOUSLY RETIRED at stage 5's E4 of the v0.4 build with its
+    # subject: the clash law and its disposition switch left — census rows 3 and 51, OWNER-WORDS §317;
+    # a duplicate action name resolves FIRST-wins in `_derive_tables`, witnessed below.)
 
-    @testset "test_clash_check_always_fires — both arms behind the one-line switch" begin
-        dup = [_mkspec(:alpha, 1), _mkspec(:alpha, 2)]
-        # ARM R (refusal — the LIVE arm): the typed refusal names BOTH owners
-        eR = try
-            GM._register_actions!(Dict{Symbol,Int8}(), dup; disposition = :refuse)
-            nothing
-        catch er; er end
-        @test eR isa ErrorException
-        @test occursin("duplicate alterant action name", eR.msg)
-        @test occursin("plugin index 1", eR.msg) && occursin("plugin index 2", eR.msg)
-        @test occursin("remedy", eR.msg)
-        # ARM W (warning + deterministic FIRST-writer-wins): the check still fires
-        # (the warning names both owners) and the FIRST declaration survives
-        owners = @test_logs (:warn, r"duplicate alterant action name.*first.*wins"i) begin
-            GM._register_actions!(Dict{Symbol,Int8}(), dup; disposition = :warn)
-        end
-        @test owners[:alpha] == Int8(1)
-        # the clean fill assigns declaration-order owners (the retired interim
-        # assert's positive half, carried forward)
-        m = GM._register_actions!(Dict{Symbol,Int8}(),
-            [_mkspec(:a, 1), _mkspec(:b, 2)]; disposition = :refuse)
-        @test m[:a] == Int8(1) && m[:b] == Int8(2)
-    end
-
-    @testset "test_operator_token_spelling — ad-4: identical collision checks over both kinds" begin
-        dup = [_mkspec(Symbol(":"), 1; spelling = :operator),
-               _mkspec(Symbol(":"), 2; spelling = :operator)]
-        eO = try
-            GM._register_actions!(Dict{Symbol,Int8}(), dup; disposition = :refuse)
-            nothing
-        catch er; er end
-        @test eO isa ErrorException && occursin("duplicate alterant action name", eO.msg)
+    @testset "test_operator_token_spelling — ad-4: the live record's operator tag" begin
+        # (the clash arm over operator tokens left with the clash law at stage 5's E4)
         # the live record declares the colon action with the OPERATOR tag
         colon_spec = GM.DEFAULT_REGISTRY.action_specs[
             GM.DEFAULT_REGISTRY.spec_index[Symbol(":")]]
         @test colon_spec.spelling === :operator
     end
 
-    @testset "the reflection cross-check — declared ≡ executable, both directions" begin
-        # (a) declared-but-unimplemented refuses: a spec declaring a signature no
-        # method carries
-        ghost = GM.ActionSpec(:ghost, :identifier, Int8(2),
-            [GM.ActionOverload(Type[GM.Alterants.Visib, Symbol, Float64],
-                Symbol[], Symbol[], nothing, Bool, :set, false,
-                :context_free, :apply, true)],
-            0, :none, nothing, nothing)
-        eA = try
-            GM._reflection_cross_check([ghost], GM.DEFAULT_REGISTRY.plugins)
-            nothing
-        catch er; er end
-        @test eA isa ErrorException && occursin("no executable method", eA.msg)
-        # (b) implemented-but-undeclared raises the loud drift refusal: declaring
-        # ONLY the Symbol overload of setVisib leaves the inherited SubString method
-        # unmatched
-        partial = [_mkspec(:hide, 2)]
-        eB = try
-            GM._reflection_cross_check(partial, GM.DEFAULT_REGISTRY.plugins)
-            nothing
-        catch er; er end
-        @test eB isa ErrorException && occursin("no declared overload", eB.msg)
-        # (c) kind/type agreement: a :symbol kind against an AbstractString slot
-        bad = GM.ActionSpec(:head, :identifier, Int8(4),
-            [GM.ActionOverload(Type[GM.Alterants.Heading, Symbol, AbstractString],
-                Symbol[:symbol], Symbol[:declared], nothing, Nothing, :set,
-                false, :context_required, :absorb, true)],
-            1, :activated, nothing, nothing)
-        eC = try
-            GM._reflection_cross_check([bad], GM.DEFAULT_REGISTRY.plugins)
-            nothing
-        catch er; er end
-        @test eC isa ErrorException && occursin("literal-kind/type disagreement", eC.msg)
-        # …and the LIVE inventory passes the whole chain (it built — but assert
-        # directly so the witness is self-contained)
-        @test GM._reflection_cross_check(GM.DEFAULT_REGISTRY.action_specs,
-            GM.DEFAULT_REGISTRY.plugins) === nothing
-    end
+    # (the reflection cross-check testset was CONSCIOUSLY RETIRED at stage 5's E4 with its subject —
+    # census row 3: a declared signature is the author's statement; a drifted one meets the live seam's
+    # INTERNAL drift arm, witnessed in test_drift_and_return_guard_internal_arms below.)
 
-    @testset "test_value_algebra_refusal + test_reachability_refusal" begin
-        badrt = GM.ActionSpec(:bad, :identifier, Int8(2),
-            [GM.ActionOverload(Type[GM.Alterants.Visib, Symbol], Symbol[],
-                Symbol[], nothing, Vector{UInt8}, :set, false,
-                :context_free, :apply, true)],
-            0, :none, nothing, nothing)
-        eV = try GM._value_algebra_check([badrt]); nothing catch er; er end
-        @test eV isa ErrorException && occursin("closed", eV.msg) &&
-              occursin("serializable", eV.msg)
-        badk = GM.ActionSpec(:bad, :identifier, Int8(2),
-            [GM.ActionOverload(Type[GM.Alterants.Visib, Symbol, Any],
-                Symbol[:integer], Symbol[:declared], nothing, Bool, :set, false,
-                :context_free, :apply, true)],
-            0, :none, nothing, nothing)
-        eK = try GM._reachability_check([badk]); nothing catch er; er end
-        @test eK isa ErrorException && occursin("unreachable", eK.msg)
-        # internal (grammar=false) rows are OUTSIDE the reachability law
-        internal = GM.ActionSpec(:inherited_row, :identifier, Int8(2),
-            [GM.ActionOverload(Type[GM.Alterants.Visib, SubString{String}],
-                Symbol[:raw], Symbol[:declared], nothing, Bool, :set, false,
-                :context_free, :apply, false)],
-            0, :none, nothing, nothing)
-        @test GM._reachability_check([internal]) === nothing
-    end
+    # (test_value_algebra_refusal + test_reachability_refusal were CONSCIOUSLY RETIRED at stage 5's E4
+    # with their subjects — census row 3; the live seam's return-type guard stands, witnessed below.)
 
-    @testset "test_unactivated_candidacy_diagnostic — x-8, loud not silent" begin
-        cand = GM.ActionSpec(:wish, :identifier, Int8(2),
-            [GM.ActionOverload(Type[GM.Alterants.Visib, Symbol], Symbol[],
-                Symbol[], nothing, Bool, :set, false, :context_free, :apply, true)],
-            0, :candidate, nothing, nothing)
-        @test_logs (:warn, r"sugar CANDIDACY without user activation") GM._candidacy_check([cand])
+    @testset "the activated grants — the live register's two" begin
+        # (the candidacy diagnostic left at stage 5's E4: a :candidate without activation publishes
+        # silently — witnessed in registry_lifecycle_tests)
         # the LIVE register stays closed at exactly TWO activated grants
         activated = [s.name for s in GM.DEFAULT_REGISTRY.action_specs
                      if s.sugar_candidacy === :activated]
         @test sort(activated) == sort([Symbol(":"), :head])
     end
 
-    @testset "atomicity — checks precede construction; the record is total" begin
-        # HONESTLY RE-SCOPED (a review round graded the first version vacuous for
-        # its named property — the standalone check call never touched the const):
-        # atomicity here is STRUCTURAL — every check runs before the registry
-        # constructor, so no partial registry can exist — witnessed by a
-        # source-ORDER assertion (crude but discriminating against a reordering
-        # regression), plus the refusal-throws half and the record-totality half.
+    @testset "the remaining checks precede construction; the record is total" begin
+        # (re-scoped at stage 5's E4 — the validation chain of v0.4 T2–T4 left, census row 3, OWNER-WORDS
+        # §317; the referents moved — recorded, not silently re-pinned) two source-order assertions:
+        # (i) the three remaining collectors are wired inside `_validate_registration` and the retired
+        # ones never return; (ii) `publish` calls `validate(` before `return AlterantRegistry(` and
+        # derives its tables through `_derive_tables`, whose spec index is FIRST-wins (the clash law
+        # that refused a duplicate left; the legacy's Dict assignment was last-wins).
         src = read(joinpath(dirname(dirname(@__DIR__)), "src", "alterants",
             "registry.jl"), String)
-        # v0.4 T2 (re-scoped, the referents moved — recorded, not silently re-pinned): the ONE
-        # chain now lives in `_validate_registration` (the accumulating `_*_collect!` forms) and
-        # `publish` runs it BEFORE the constructor. Two source-order assertions replace the old
-        # single body: (i) every collect! form is wired inside `_validate_registration`;
-        # (ii) `publish` calls `validate(` (the chain) before `return AlterantRegistry(`, and
-        # derives its tables through `_derive_tables` (which pins `_first_wins_spec_index`).
         chain = src[findfirst("function _validate_registration", src)[1]:end]
         chain = chain[1:findfirst("return diags", chain)[1]]
-        # (the crx-t3t4s C1 cure — a DECLARED amendment to this APPEND-ONLY file's
-        # existing witness: the hardcoded list had drifted three collectors behind the
-        # chain — `_encodability_collect!` (T2 cure batch 4), `_dependency_collect!`
-        # (T3), `_vocabulary_collect!` (T4) — so unwiring a NEW correctness gate would
-        # have left this "whole-chain" assertion green.)
-        for checkname in ("_record_wellformed_collect!", "_encodability_collect!",
-                          "_dependency_collect!", "_vocabulary_collect!",
-                          "_inventory_collect!",
-                          "_register_actions_collect!", "_reflection_collect!",
-                          "_value_algebra_collect!", "_reachability_collect!",
-                          "_candidacy_collect!")
-            @test occursin(checkname, chain)   # every check is wired in the ONE chain
+        for checkname in ("_encodability_collect!", "_mode_gate_collect!", "_vocabulary_collect!")
+            @test occursin(checkname, chain)   # every remaining check is wired
+        end
+        for gone in ("_record_wellformed_collect!", "_dependency_collect!", "_inventory_collect!",
+                     "_register_actions_collect!", "_reflection_collect!", "_value_algebra_collect!",
+                     "_reachability_collect!", "_candidacy_collect!", "_CLASH_DISPOSITION")
+            @test !occursin(gone, src)         # the retired names never return
         end
         pub = src[findfirst("function publish(", src)[1]:end]
         pub = pub[1:findfirst("return AlterantRegistry(", pub)[1]]
-        @test occursin("validate(b)", pub)              # the chain runs BEFORE the constructor
+        @test occursin("validate(b)", pub)              # the checks run BEFORE the constructor
         @test occursin("_derive_tables(", pub)          # the tables come from the declarations
         derive = src[findfirst("function _derive_tables", src)[1]:end]
         derive = derive[1:findfirst("\nend", derive)[1]]
-        @test occursin("_first_wins_spec_index", derive)   # the USE-SITE wiring pinned
-                                                          # (delta-caught: reverting to
-                                                          # a naive comprehension was
-                                                          # battery-invisible)
-        # a failing check THROWS (nothing constructed) …
-        dup = [_mkspec(:alpha, 1), _mkspec(:alpha, 2)]
-        @test (try
-            GM._register_actions!(Dict{Symbol,Int8}(), dup; disposition = :refuse)
-            false
-        catch; true end)
-        # … and the LIVE record is total: every registered action has its spec
+        @test occursin("haskey(spec_index, s.name) || (spec_index[s.name] = i)", derive)   # first-wins, pinned at the use site
+        # the LIVE record is total: every registered action has its spec
         for a in GM.DEFAULT_REGISTRY.sorted_alt_actions
             @test haskey(GM.DEFAULT_REGISTRY.spec_index, a)
         end
     end
 
-    @testset "arm-W consistency — spec_index is FIRST-writer-wins (the convergent cure)" begin
-        dup = [_mkspec(:alpha, 1), _mkspec(:alpha, 2), _mkspec(:beta, 2)]
-        idx = GM._first_wins_spec_index(dup)
-        @test idx[:alpha] == 1                 # the FIRST declaration — matching
-        @test idx[:beta] == 3                  # the arm-W owner survivor
-        owners = @test_logs (:warn, r"duplicate") begin
-            GM._register_actions!(Dict{Symbol,Int8}(), dup; disposition = :warn)
-        end
-        @test owners[:alpha] == Int8(dup[idx[:alpha]].plugin)   # index ≡ owner tables
+    @testset "a duplicate action name resolves FIRST-wins at publish (stage 5's E4; the legacy was last-wins)" begin
+        # (replaces arm-W consistency, retired with the clash law; measured on the E4 scratch —
+        # PROBES-e4-validate_stage1-src-cut_on-1c9d013f.txt [4])
+        b = GM.RegistryBuilder()
+        GM.register!(b, GM.PlugIn(:bag, :accumulate, Dict{Symbol,Bool}, GM.Alterants.setLabels, GM.Alterants.checkLabels, nothing),
+            GM.ActionSpec(; name = :alpha, spelling = :identifier, plugin = Int8(1),
+                overloads = [GM.ActionOverload(; sig_types = Type[Dict{Symbol,Bool}, Symbol], vararg_kind = :symbol, queryable = true)]),
+            GM.ActionSpec(; name = :alpha, spelling = :identifier, plugin = Int8(1),
+                overloads = [GM.ActionOverload(; sig_types = Type[Dict{Symbol,Bool}, Symbol], vararg_kind = :symbol, queryable = false)]))
+        @test isempty(GM.validate(b))                        # no clash law refuses it
+        R = GM.publish(b)
+        @test R.spec_index[:alpha] == 1                      # the FIRST declaration is the one dispatched
+        @test R.action_specs[R.spec_index[:alpha]].overloads[1].queryable === true
+        @test R.sorted_alt_actions == [:alpha] && R.action_to_plugin == Int8[1]
     end
 
-    @testset "the record shape law — closed enums refuse loudly (panel cure)" begin
-        typo = GM.ActionSpec(:oops, :identifer, Int8(2),      # mis-spelled tag
-            [GM.ActionOverload(Type[GM.Alterants.Visib, Symbol], Symbol[],
-                Symbol[], nothing, Bool, :set, false, :context_free, :apply, true)],
-            0, :none, nothing, nothing)
-        eT = try GM._record_wellformed_check([typo], GM.DEFAULT_REGISTRY.plugins); nothing catch er; er end
-        @test eT isa ErrorException && occursin("unknown spelling tag", eT.msg)
-        # queryable=true without a plugin getter refuses (the query-seam crash class)
-        qbad = GM.ActionSpec(:qbad, :identifier, Int8(2),
-            [GM.ActionOverload(Type[GM.Alterants.Visib, Symbol], Symbol[],
-                Symbol[], nothing, Bool, :set, true, :context_free, :apply, true)],
-            0, :none, nothing, nothing)
-        eQ = try GM._record_wellformed_check([qbad], GM.DEFAULT_REGISTRY.plugins); nothing catch er; er end
-        @test eQ isa ErrorException && occursin("no getter", eQ.msg)
-        # the LIVE inventory is wellformed
-        @test GM._record_wellformed_check(GM.DEFAULT_REGISTRY.action_specs,
-            GM.DEFAULT_REGISTRY.plugins) === nothing
-        # the live disposition switch is the refusal arm (this pin flips WITH the
-        # owner's ad-6 ruling — deliberately)
-        @test GM._CLASH_DISPOSITION === :refuse
-    end
+    # (the record shape law testset was CONSCIOUSLY RETIRED at stage 5's E4 with its subject — census
+    # row 3; the domain probe, the law's one remaining row, is witnessed in registry_lifecycle_tests and
+    # snapshot_property_tests.)
 
     @testset "the commissioned capability consults — literals retired" begin
         # the head spec carries the accepting slot + the validate seam
@@ -286,50 +160,8 @@ import GoMeta as GM
         _reg = GM.DEFAULT_REGISTRY
         _err(f) = (try f(); nothing catch e; e end)
 
-        @testset "test_dispatch_target_uniqueness_law" begin
-            # the external-review-commissioned law: per action, at most ONE
-            # Symbol-addressable declared row per reachable arity — the guard's
-            # arity-compatible set is a singleton, so dispatch can never select a
-            # form-rejected row and the return guard checks the selected row's own
-            # declaration. The check runs inside _record_wellformed_check.
-            _plugs = GM.DEFAULT_REGISTRY.plugins
-            _row(sig; vk = nothing) = GM.ActionOverload(sig, Symbol[], Symbol[],
-                vk, Bool, :set, false, :context_free, :apply, true)
-            _spec2(rows) = [GM.ActionSpec(:zz, :identifier, Int8(2), rows,
-                0, :none, nothing, nothing)]
-            # two fixed rows, SAME arity ⇒ refuse ( _err = the enclosing testset's)
-            e = _err(() -> GM._record_wellformed_check(_spec2(
-                [_row(Type[GM.Alterants.Visib, Symbol, Symbol]),
-                 _row(Type[GM.Alterants.Visib, Symbol, Any])]), _plugs))
-            @test e isa ErrorException && occursin("uniqueness law", e.msg)
-            # a fixed row at/above a vararg base ⇒ refuse (the vararg covers it)
-            e = _err(() -> GM._record_wellformed_check(_spec2(
-                [_row(Type[GM.Alterants.Visib, Symbol]; vk = :symbol),
-                 _row(Type[GM.Alterants.Visib, Symbol, Symbol])]), _plugs))
-            @test e isa ErrorException && occursin("uniqueness law", e.msg)
-            # two vararg rows always overlap ⇒ refuse
-            e = _err(() -> GM._record_wellformed_check(_spec2(
-                [_row(Type[GM.Alterants.Visib, Symbol]; vk = :symbol),
-                 _row(Type[GM.Alterants.Visib, Symbol, Symbol]; vk = :symbol)]),
-                _plugs))
-            @test e isa ErrorException && occursin("uniqueness law", e.msg)
-            # DISJOINT arities pass; a non-addressable (inherited-shape) row never
-            # collides with an addressable one — the SHIPPED record is the standing
-            # positive witness (build_default_registry runs the chain and is green)
-            @test GM._record_wellformed_check(_spec2(
-                [_row(Type[GM.Alterants.Visib, Symbol, Symbol]),
-                 _row(Type[GM.Alterants.Visib, Symbol, Any, Any])]), _plugs) === nothing
-            # a fixed row STRICTLY BELOW a vararg base passes (the law's green side
-            # for the mixed pair — delta-commissioned witness)
-            @test GM._record_wellformed_check(_spec2(
-                [_row(Type[GM.Alterants.Visib, Symbol]),
-                 _row(Type[GM.Alterants.Visib, Symbol, Symbol]; vk = :symbol)]),
-                _plugs) === nothing
-            @test GM._record_wellformed_check(_spec2(
-                [_row(Type[GM.Alterants.Visib, Symbol, Symbol]),
-                 _row(Type[GM.Alterants.Visib, SubString{String}, Symbol])]),
-                _plugs) === nothing
-        end
+        # (test_dispatch_target_uniqueness_law was CONSCIOUSLY RETIRED at stage 5's E4 with its subject,
+        # the record shape law's uniqueness row — census row 3.)
 
         @testset "test_kind_type_shared_map_total" begin
             # total over the closed kind set — the one map both consults share
@@ -395,22 +227,17 @@ import GoMeta as GM
         end
 
         @testset "test_drift_and_return_guard_internal_arms" begin
-            # a hand-built registry BYPASSES the load-time check chain on purpose. The
-            # two arms differ in reachability (panel-trued): the MethodError-drift arm
-            # is unreachable through `build_default_registry` (the (a) cross-check
-            # refuses a declared-but-unimplemented signature first) — the bypass is the
-            # only road to it. The RETURN-guard arm is a LIVE production wall: the
-            # load-time checks verify the DECLARED return type's membership and the
-            # signature's existence, never the setter's actual return behavior — a
-            # setter lying about its return type passes load fully and is caught ONLY
-            # here (the dispatch-boundary tests measure the four SHIPPED setters, which
-            # is a test-time fact, not a load-time refusal).
-            # v0.4 T2: positional `AlterantRegistry(...)` is GATED (route U runs the one chain, which
-            # refuses these deliberately-drifted shapes by design) — the witness rides the INTERNAL
-            # `_unchecked_registry` test seam instead (unsealed; never a consumer route).
+            # a hand-built registry carries the drifted shapes on purpose. Since stage 5's E4 the
+            # remaining checks at `validate` refuse neither: a declared-but-unimplemented signature
+            # and a lying return type both publish and are caught ONLY here, at the live seam — the
+            # two INTERNAL arms are production walls (the dispatch-boundary tests measure the four
+            # SHIPPED setters, a test-time fact).
+            # v0.4 T2: positional `AlterantRegistry(...)` is GATED (route U compares the hand-built
+            # tables) — the witness rides the INTERNAL `_unchecked_registry` test seam (unsealed;
+            # never a consumer route).
             _mini(specs) = GM._unchecked_registry(GM.PlugIn[], Symbol[], Int8[],
                 Dict{Symbol,Int8}(), Dict{Symbol,Int8}(), Int8[], Int8[],
-                Dict{Symbol,Symbol}(), specs, GM._first_wins_spec_index(specs))
+                Dict{Symbol,Symbol}(), specs, Dict{Symbol,Int}(sp.name => i for (i, sp) in enumerate(specs)))
             _row(sig, rt) = GM.ActionOverload(sig, Symbol[], Symbol[], nothing, rt,
                 :set, false, :context_free, :apply, true)
             # (1) declared-but-unimplemented shape ⇒ the pre-checks pass, dispatch

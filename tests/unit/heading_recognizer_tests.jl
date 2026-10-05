@@ -420,7 +420,7 @@ end
     end
 
     # (The step-9 interim duplicate-action assert testset was CONSCIOUSLY RETIRED
-    # at the registration build with its subject: `_register_actions!` carries the full clash law —
-    # both arms, typed both-owner naming — witnessed in
-    # tests/unit/registration_tests.jl `test_clash_check_always_fires`.)
+    # at the registration build with its subject; its successor, the clash law, left at stage 5's E4 —
+    # a duplicate action name resolves first-wins in `_derive_tables`, witnessed in
+    # tests/unit/registration_tests.jl.)
 end

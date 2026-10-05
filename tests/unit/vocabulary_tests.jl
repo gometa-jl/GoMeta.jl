@@ -21,7 +21,10 @@
 #       cure witnesses (6) + the [14] s-wave cure witness (1) + the [15] r3 identity/
 #       getfield witnesses (6) + the [16] r4 structural-callable witnesses (3) + the
 #       [17] r5 String-only/guarded-render witnesses (2) + the [18] r6 numeric-leaf/
-#       declared-render witnesses (2 + the r7-C1 strengthening 1 = 3) = 49; +2 in
+#       declared-render witnesses (2 + the r7-C1 strengthening 1 = 3) = 49, − 9 at stage 5's E4 of the
+#       v0.4 build ([12] −3, [13] −4, [17] −1, [18] −1: the DEP_MISSING, SIG_MISMATCH and VALUE_ALGEBRA
+#       render arms left with their subjects; [11] A3 and [15] A3 re-cut, one assert each; [13] A5, [15]
+#       A4 and A6, [16] weakened by a conjunct each, count unchanged) = 40; +2 in
 #       snapshot_property_tests' VocabularyRef named case + the 3 appended collector
 #       names in registration_tests' atomicity loop = the T4-DESIGN §6 Σ = 20 + the
 #       crx-t3t4 cure batch + the crx-t3t4r/r2 hardenings + the zero-dispatch family +
@@ -321,74 +324,31 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
         # (B2) the G-VOC predicates FAIL CLOSED on an unknown alterant (pre-cure: true).
         @test !GM.vocabulary_member(GM.DEFAULT_REGISTRY, :noSuchAlt, :label1) &&
               !GM.vocabulary_queryable(GM.DEFAULT_REGISTRY, :noSuchAlt, :label1)
-        # (A3) `validate` is total over a Union-typed altConstructor: the DEP_MISSING row
-        # RETURNS (pre-cure the diagnostic's own `nameof` render threw a raw MethodError
-        # out of the never-throws chain).
+        # (A3; re-cut at stage 5's E4 — the DEP_MISSING row left with the eager dependency closure) `validate`
+        # is total over a Union-typed altConstructor: it RETURNS (the domain probe walks the type)
         bu = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
         bu.plugins[2] = GM.PlugIn(; altName = :Visib, setMode = :mutExclusive,
             altConstructor = Union{Int,String}, setAltInstance = GM.Alterants.setVisib)
-        du = GM.validate(bu)
-        @test any(x -> x.code === :DEP_MISSING && occursin("Union{Int64, String}", x.message), du)
+        @test GM.validate(bu) isa Vector{GM.Diagnostic}
     end
 
     @testset "[12] the crx-t3t4r reconfirm cure — the NON-DISPATCHING ctor renderer" begin
-        # (t3t4r seat A, MAJOR) the first A3 cure's `string(::Type)` fallback dispatched
-        # `show` over a Union's member types — a member with a throwing user
-        # `show(::IO, ::Type{T})` specialization made `validate` throw AGAIN while
-        # rendering its own DEP_MISSING row (probe-confirmed). The structural renderer
-        # never dispatches: validate RETURNS the row naming the hostile member — a mere
-        # return here PROVES the user show never ran (it throws when invoked).
-        bh = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
-        bh.plugins[2] = GM.PlugIn(; altName = :Visib, setMode = :mutExclusive,
-            altConstructor = Union{_VocHostile.Hostile, Int},
-            setAltInstance = GM.Alterants.setVisib)
-        dh = GM.validate(bh)
-        @test any(x -> x.code === :DEP_MISSING && occursin("Hostile", x.message) &&
-                       occursin("Union{", x.message), dh)
+        # (the three DEP_MISSING render arms were CONSCIOUSLY RETIRED at stage 5's E4 with their subject, the
+        # eager dependency closure — census row 3; the structural renderer stays for the localOnly store
+        # law's row — its bottom leaf pinned)
         @test GM._ctor_type_name(Union{}) == "Union{}"   # the bottom leaf, pinned total
-        # (t3t4r2 seat B) `nameof` is itself an extensible generic — a pirated
-        # `Base.nameof(::Type{Hostile2})` must never run either (the zero-dispatch law;
-        # pre-cure validate threw "nameof-pirated" through the render).
-        bn = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
-        bn.plugins[2] = GM.PlugIn(; altName = :Visib, setMode = :mutExclusive,
-            altConstructor = Union{_VocHostile.Hostile2, Int},
-            setAltInstance = GM.Alterants.setVisib)
-        dn = GM.validate(bn)
-        @test any(x -> x.code === :DEP_MISSING && occursin("Hostile2", x.message), dn)
-        # (t3t4r2 seat C) a UnionAll whose BODY is a Union (with a TypeVar member) broke
-        # `nameof(::UnionAll)` — the structural unwrap renders it (pre-cure validate
-        # threw a raw MethodError).
-        bu2 = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
-        bu2.plugins[2] = GM.PlugIn(; altName = :Visib, setMode = :mutExclusive,
-            altConstructor = (Union{S, AbstractMatrix{Int}} where S <: AbstractMatrix),
-            setAltInstance = GM.Alterants.setVisib)
-        du2 = GM.validate(bu2)
-        @test any(x -> x.code === :DEP_MISSING && occursin("Union{", x.message) &&
-                       occursin("AbstractArray", x.message), du2)
     end
 
     @testset "[13] the t3t4r2 FAMILY cures — the zero-dispatch validate chain" begin
         _vis(alt) = GM.PlugIn(; altName = :Visib, setMode = :mutExclusive,
             altConstructor = alt, setAltInstance = GM.Alterants.setVisib)
-        # (A3, probes P51/P53) a registered `Base.hasmethod(::Type{T}, ::Type{Tuple{}})`
-        # specialization must never dispatch — the gate is invoke-pinned to the Base
-        # fallback (pre-cure validate threw "hostile-hasmethod-invoked"). Hostile3 has a
-        # REAL zero-arg ctor, so the pinned lookup passes and NO DEP row mints.
-        b3 = GM.RegistryBuilder(GM.DEFAULT_REGISTRY); b3.plugins[2] = _vis(_VocHostile.Hostile3)
-        @test !any(x -> x.code === :DEP_MISSING && x.context === :Visib, GM.validate(b3))
-        # (A4, probe P52) `Union{}`'s `hasmethod` is a FALSE true (the Core vararg ctor)
-        # while `Union{}()` always throws — pre-cure validate returned ZERO rows and the
-        # registry PUBLISHED with an unmintable ctor; the eager gate now refuses.
-        b4 = GM.RegistryBuilder(GM.DEFAULT_REGISTRY); b4.plugins[2] = _vis(Union{})
-        @test any(x -> x.code === :DEP_MISSING && occursin("Union{}", x.message) &&
-                       occursin("NO instances", x.message), GM.validate(b4))
-        # (A5) a budget-refused ctor type SKIPS the method lookup (the unbounded-
-        # `hasmethod` class): the 300-member Union is over the 256-node budget — the
-        # registration refuses on the encodability row, with NO DEP row and NO lookup.
+        # (A3/A4 — the invoke-pinned `hasmethod` gate and the Union{} refusal — were CONSCIOUSLY RETIRED at
+        # stage 5's E4 with their subject, the eager dependency closure.)
+        # (A5) a budget-refused ctor type: the 300-member Union is over the 256-node budget — the
+        # registration refuses on the encodability row.
         bigU = reduce((a, i) -> Union{a, Val{i}}, 1:300; init = Union{})
         b5 = GM.RegistryBuilder(GM.DEFAULT_REGISTRY); b5.plugins[2] = _vis(bigU)
-        d5 = GM.validate(b5)
-        @test any(x -> x.code === :REG_PROTOCOL, d5) && !any(x -> x.code === :DEP_MISSING, d5)
+        @test any(x -> x.code === :REG_PROTOCOL, GM.validate(b5))
         # (A6, probe P54) a declared VALUE outside the encodable domain renders its type
         # STRUCTURALLY — pre-cure the REG_PROTOCOL row's own interpolation ran the
         # hostile `show` and validate threw "hostileP-show".
@@ -403,40 +363,8 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
         b6.plugins[2] = _plugin_with_default(b6.plugins[2], GM.Declared(_VocHostile.HostileP()))   # the hostile value rides the Alterant's slot (commit 3-ii)
         d6 = GM.validate(b6)
         @test any(x -> x.code === :REG_PROTOCOL && occursin("HostileP", x.message), d6)
-        # (A7) the reflection cross-check renders a hostile-typed DECLARED signature
-        # structurally (a well-formed no-literal overload with no executable method):
-        # REG_SIG_MISMATCH returns naming HostileS — the render never dispatches.
-        b7 = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
-        s7 = b7.action_specs[1]
-        hov = GM.ActionOverload(; sig_types = Type[Dict{Symbol,Bool}, _VocHostile.HostileS],
-            kinds = Symbol[], kind_sources = Symbol[], vararg_kind = nothing,
-            return_type = Nothing, effect = :set, queryable = false,
-            applicability = :context_free, phase = :apply, grammar = false)
-        b7.action_specs[1] = GM.ActionSpec(; name = s7.name, spelling = s7.spelling,
-            plugin = s7.plugin, overloads = [s7.overloads..., hov],
-            accepts_string_slot = s7.accepts_string_slot,
-            sugar_candidacy = s7.sugar_candidacy, validate = s7.validate,
-            keyed_slot = s7.keyed_slot, settribute = s7.settribute)
-        d7 = GM.validate(b7)
-        @test any(x -> x.code === :REG_SIG_MISMATCH && occursin("HostileS", x.message), d7)
-        # (A8) the value-algebra refusal renders a hostile declared return_type
-        # structurally: REG_VALUE_ALGEBRA returns naming HostileS.
-        b8 = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
-        # a DISTINCT no-literal sig (a duplicate of an existing overload's sig trips the
-        # tier-1 dispatch-target uniqueness law, and the BROKEN spec would then be
-        # SKIPPED by the tier-2 algebra collector — the broken-record law)
-        rov = GM.ActionOverload(; sig_types = Type[Dict{Symbol,Bool}, Float32],
-            kinds = Symbol[], kind_sources = Symbol[], vararg_kind = nothing,
-            return_type = _VocHostile.HostileS,
-            effect = :set, queryable = false, applicability = :context_free,
-            phase = :apply, grammar = false)
-        b8.action_specs[1] = GM.ActionSpec(; name = s7.name, spelling = s7.spelling,
-            plugin = s7.plugin, overloads = [s7.overloads..., rov],
-            accepts_string_slot = s7.accepts_string_slot,
-            sugar_candidacy = s7.sugar_candidacy, validate = s7.validate,
-            keyed_slot = s7.keyed_slot, settribute = s7.settribute)
-        d8 = GM.validate(b8)
-        @test any(x -> x.code === :REG_VALUE_ALGEBRA && occursin("HostileS", x.message), d8)
+        # (A7/A8 — the hostile-typed SIG_MISMATCH and VALUE_ALGEBRA renders — were CONSCIOUSLY RETIRED at
+        # stage 5's E4 with their subjects, the reflection cross-check and the value-algebra refusal.)
     end
 
     @testset "[14] the crx-t3t4s cures — the DomainRef read-once law" begin
@@ -459,15 +387,13 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
                 altConstructor = GM.Alterants.Visib, setAltInstance = setter)
             b
         end
-        # (A3=B1=C2, probe P60) the reflection pooling is IDENTITY-keyed: a setter whose
-        # hash/isequal/== all throw pools and dedupes without dispatching (pre-cure the
-        # first get! threw "hash-pirated"). validate RETURNS rows (SIG_MISMATCH ones —
-        # the swapped setter mismatches Visib's declared overloads — never a raw throw).
+        # (A3=B1=C2, probe P60; re-cut at stage 5's E4 — the reflection pooling left with the cross-check) a
+        # setter whose hash/isequal/== all throw: validate RETURNS without dispatching them
         d60 = GM.validate(_vset(_VocR3.HFn()))
-        @test d60 isa Vector && any(x -> x.code === :REG_SIG_MISMATCH, d60)
-        # (A4=B2) the exact-signature match is `===`: a throwing == specialization on
-        # the setter's OWN signature-tuple type never dispatches; the matching overload
-        # is found by identity and validate returns WITHOUT a sig row for it.
+        @test d60 isa Vector
+        # (A4=B2; the exact-signature `===` match left with the cross-check at stage 5's E4) a
+        # throwing == specialization on the setter's OWN signature-tuple type never dispatches:
+        # validate returns and the pirated == is never SELECTED.
         bq = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
         sq = bq.action_specs[1]
         qov = GM.ActionOverload(; sig_types = Type[Dict{Symbol,Bool}, Symbol],
@@ -483,9 +409,7 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
             sugar_candidacy = sq.sugar_candidacy, validate = sq.validate,
             keyed_slot = sq.keyed_slot, settribute = sq.settribute)
         dq = GM.validate(bq)
-        @test dq isa Vector && !any(x -> x.code === :REG_SIG_MISMATCH &&
-                                         occursin("declared overload has no", x.message), dq) &&
-              _VocR3.EQCALLS[] == 0     # (r4-B2) the piracy was never SELECTED under ===
+        @test dq isa Vector && _VocR3.EQCALLS[] == 0     # (r4-B2) the piracy was never SELECTED under ===
         # (A2, probe P62) the budget walkers read the type graph via getfield only: a
         # type whose getproperty throws walks clean (pre-cure the walk itself threw).
         @test GM._type_budget_check(_VocR3.HG)[1] === :ok &&
@@ -506,9 +430,8 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
         @test dk isa Vector && any(x -> x.code === :REG_PROTOCOL, dk) &&
               _VocR3.KCALLS[] == 0      # (r4-B1) the key's nameof never EXECUTED (the
                                         # order budget blocks Function keys outright)
-        # (A6, probe P64) an encodability-refused record is BROKEN for tier 2: the
-        # over-budget sig gets its REG_PROTOCOL row and the reflection SKIPS the spec
-        # (pre-cure: a SIG_MISMATCH row minted on the very overload the budget refused).
+        # (A6, probe P64) an over-budget sig type is refused on the encodability row (the
+        # reflection that once skipped the broken spec left at stage 5's E4 — no SIG row exists).
         bigU2 = reduce((a, i) -> Union{a, Val{i}}, 1:300; init = Union{})
         bb = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
         sb = bb.action_specs[1]
@@ -522,8 +445,7 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
             sugar_candidacy = sb.sugar_candidacy, validate = sb.validate,
             keyed_slot = sb.keyed_slot, settribute = sb.settribute)
         db = GM.validate(bb)
-        @test any(x -> x.code === :REG_PROTOCOL, db) &&
-              !any(x -> x.code === :REG_SIG_MISMATCH, db)
+        @test any(x -> x.code === :REG_PROTOCOL, db)
         # (A5; the r4-B3 cure of this scan) the reflection unwrap is LOCAL: the
         # IDENTIFIER itself — under ANY qualification or bare import — no longer
         # appears in registry.jl (a decidable source scan, the [10] pattern).
@@ -537,12 +459,13 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
         # declared signature (`Store{tag}`): reflection's param render reached
         # `_slot_text(::Function)` whose nameof dispatched a pirated specialization
         # raw out of validate. The structural `_callable_text` render cures the whole
-        # route: validate RETURNS rows.
+        # route: validate RETURNS (since stage 5's E4, with no reflection row to mint; the
+        # pirated nameof still never runs).
         bs = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
         bs.plugins[2] = GM.PlugIn(; altName = :Visib, setMode = :mutExclusive,
             altConstructor = _VocR4.Store{_VocR4.tag}, setAltInstance = _VocR4.setS)
         ds = GM.validate(bs)
-        @test ds isa Vector && !isempty(ds) && _VocR4.TCALLS[] == 0
+        @test ds isa Vector && _VocR4.TCALLS[] == 0
         # (r4-B1) the order budget BLOCKS a Function anywhere in a key graph — the
         # direct predicate pin (the prepass never encodes such a key).
         @test !GM._key_order_budget(_VocR4.tag) &&
@@ -573,26 +496,8 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
         d5 = GM.validate(bs5)
         @test d5 isa Vector && any(x -> x.code === :REG_PROTOCOL, d5) &&
               _VocR5.SCALLS[] == c0     # zero validate-time conversions
-        # (seat A row 2, probe P81) an UNDECLARED executable method whose sig carries a
-        # Char parameter: the guarded render buckets it and the SIG_MISMATCH row MINTS
-        # (pre-cure: a raw engine-internal _UnencodableSlot(Char) escaped validate).
-        bu5 = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
-        su = bu5.action_specs[1]
-        uov = GM.ActionOverload(; sig_types = Type[Dict{Symbol,Bool}, Symbol],
-            kinds = Symbol[], kind_sources = Symbol[], vararg_kind = nothing,
-            return_type = Nothing, effect = :set, queryable = false,
-            applicability = :context_free, phase = :apply, grammar = false)
-        bu5.plugins[1] = GM.PlugIn(; altName = :labels, setMode = :accumulate,
-            altConstructor = Dict{Symbol,Bool}, setAltInstance = _VocR5.vset,
-            getAltInstance = GM.Alterants.checkLabels)
-        bu5.action_specs[1] = GM.ActionSpec(; name = su.name, spelling = su.spelling,
-            plugin = su.plugin, overloads = [uov],
-            accepts_string_slot = su.accepts_string_slot,
-            sugar_candidacy = su.sugar_candidacy, validate = su.validate,
-            keyed_slot = su.keyed_slot, settribute = su.settribute)
-        du5 = GM.validate(bu5)
-        @test du5 isa Vector && any(x -> x.code === :REG_SIG_MISMATCH &&
-              occursin("outside the encodable domain", x.message), du5)
+        # (seat A row 2, probe P81 — the guarded SIG_MISMATCH render — was CONSCIOUSLY RETIRED at stage 5's E4
+        # with its subject, the reflection cross-check.)
     end
 
     @testset "[18] the crx-t3t4r6 cures — the getfield numeric leaf + the guarded declared render" begin
@@ -615,26 +520,7 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
         er = try GM._slot_text(rq); nothing catch err; err end
         @test ec isa GM._UnencodableSlot && er isa GM._UnencodableSlot &&
               GM._numeric_leaf(rq) === false && _VocR6.RCALLS[] == r0
-        # (r6-A2, probe P91) a parameterized Function-SUBTYPE setter (`SetterX{'x'}`)
-        # with a declared-but-unimplemented overload: the (a)-side render buckets the
-        # signature and the SIG_MISMATCH row MINTS (pre-cure: a raw engine-internal
-        # _UnencodableSlot(Char) escaped validate).
-        b6 = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
-        s6 = b6.action_specs[1]
-        xov = GM.ActionOverload(; sig_types = Type[Dict{Symbol,Bool}, Symbol, Float64],
-            kinds = Symbol[], kind_sources = Symbol[], vararg_kind = nothing,
-            return_type = Nothing, effect = :set, queryable = false,
-            applicability = :context_free, phase = :apply, grammar = false)
-        b6.plugins[1] = GM.PlugIn(; altName = :labels, setMode = :accumulate,
-            altConstructor = Dict{Symbol,Bool}, setAltInstance = _VocR6.SetterX{'x'}(),
-            getAltInstance = GM.Alterants.checkLabels)
-        b6.action_specs[1] = GM.ActionSpec(; name = s6.name, spelling = s6.spelling,
-            plugin = s6.plugin, overloads = [xov],
-            accepts_string_slot = s6.accepts_string_slot,
-            sugar_candidacy = s6.sugar_candidacy, validate = s6.validate,
-            keyed_slot = s6.keyed_slot, settribute = s6.settribute)
-        d6 = GM.validate(b6)
-        @test d6 isa Vector && any(x -> x.code === :REG_SIG_MISMATCH &&
-              occursin("outside the encodable domain", x.message), d6)
+        # (r6-A2, probe P91 — the guarded declared-sig render — was CONSCIOUSLY RETIRED at stage 5's E4 with
+        # its subject, the reflection cross-check.)
     end
 end

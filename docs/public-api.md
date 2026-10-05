@@ -104,8 +104,8 @@ These are part of the documented public surface — declared with Julia's `publi
   non-throwing diagnostic record.
 - `AlterantRegistry` + the `const DEFAULT_REGISTRY` — the deterministic alterant inventory (the
   `goMeta` default registry), a PUBLISHED (validated + sealed) value since v0.4. **What a custom
-  registry can do at THIS build state (v0.4.0-candidate; Stage-A rows T0–T5 landed; the getter's
-  registration-time signature reflection a deferred row, T11's catalogue sitting):** it is
+  registry can do at THIS build state (v0.4.0-candidate; Stage-A rows T0–T5 landed; no registration-time
+  signature reflection since stage 5's E4 of the v0.4 build; T11's catalogue sitting):** it is
   built through the lifecycle below, its declared record + derived tables + callables are
   sealed and door-checked, its setters DISPATCH (the apply plane is registry-data-driven) and a
   registry without the built-in Visib RUNS; the CAPTURE plane is registration-driven since T5 (a
@@ -122,7 +122,8 @@ These are part of the documented public surface — declared with Julia's `publi
   a position-rule offense in the input refuses typed — the way
   to EXTEND the shipped inventory) + `GoMeta.register!(builder,
   plugin, specs...)` — the mutable declaration site; `GoMeta.validate(builder) ->
-  Vector{Diagnostic}` — the ONE validation chain, returning EVERY defect (errors and warnings, in
+  Vector{Diagnostic}` — the remaining checks (the domain probe · the capture mode-gate laws · the vocabulary
+  check; the validation chain of v0.4 T2–T4 left at stage 5's E4, §6), returning EVERY defect (in
   deterministic order) and never throwing; `GoMeta.publish(builder) -> AlterantRegistry` — the
   SANCTIONED route to a SEALED registry for conforming callers (the only supported one; see the
   honest bound below — in-process Julia cannot make it the only POSSIBLE one): refuses with `RegistrationRefused` (carrying every
@@ -133,11 +134,11 @@ These are part of the documented public surface — declared with Julia's `publi
   residue is closed; derives the hot-path tables from the declarations, seals (the fingerprint),
   and takes the SNAPSHOT baseline the door compares against.
   `RegistrationRefused <: Exception` — `.diagnostics::Vector{Diagnostic}` with stable codes
-  (`REG_PROTOCOL` for structural defects; `REG_UNKNOWN_SETMODE`, `REG_DUPLICATE_ALTNAME`,
-  `REG_DUPLICATE_ACTION`, `REG_RESERVED_SHADOW`, `REG_SIG_MISMATCH`, `REG_VALUE_ALGEBRA`,
-  `REG_UNREACHABLE`, `REG_MUTEX_CONFLICT`, `REG_UNINTERPRETED_REQUIRES`, `REG_CONTRACT_VERSION`,
-  `REG_SLOT_EXHAUSTED`; `REG_CANDIDACY` is a warning). Positional `AlterantRegistry(...)`
-  construction from hand-built tables is GATED at v0.4.0 (it runs the same chain and refuses
+  (`REG_PROTOCOL` for a declared value outside the closed encodable domain or a capture mode-gate law;
+  `SRC_DIGEST_MISMATCH` for the vocabulary artifact; `REG_PROTOCOL` and `REG_SLOT_EXHAUSTED` thrown by
+  `register!` — the eleven inventory, clash, reflection, algebra, reachability and candidacy codes left at
+  stage 5's E4, §3.5 + §6). Positional `AlterantRegistry(...)`
+  construction from hand-built tables is GATED at v0.4.0 (it runs the same checks and refuses
   inconsistent tables with `REG_DERIVED_TABLES`) and yields an UNPUBLISHED value that `goMeta`
   refuses — build through the lifecycle; positional construction is removed at v0.5. No positional
   form accepts a seal (the generated all-fields constructor is suppressed by a construction
@@ -228,7 +229,8 @@ These are part of the documented public surface — declared with Julia's `publi
     action record below GAVE WAY to it at commit 3-ii). Required:
     `altName::Symbol`; `setMode ∈ (:accumulate, :mutExclusive, :mutExclusivePerField, :localOnly)`;
     `altConstructor::Type` (the instance type); `setAltInstance::Function` (the setter — its
-    method signatures are the record's overloads, verified by reflection). Optional, every one
+    method signatures are the record's overloads, stated by the author — the reflection cross-check
+    left at stage 5's E4). Optional, every one
     nothing/empty-defaulted: `getAltInstance` (the query getter; required iff an overload is
     `queryable`); the v0.4 declared slots below. The 6-positional 0.3.x form
     `PlugIn(altName, setMode, altConstructor, setAltInstance, getAltInstance, precedencesTuple)`
@@ -260,8 +262,8 @@ These are part of the documented public surface — declared with Julia's `publi
     getter throw of any class converts to the stable `CB_QUERY_THROW` refusal (the engine's own
     `GoMeta `-prefixed refusals and `InterruptException` pass through verbatim), and a non-`Bool`
     return refuses `RES_RETURN_TYPE` — at BOTH query call sites (the closed interpreter's atoms
-    and `getAltState`). The registration-time signature reflection for getters is a deferred row
-    (T11's catalogue sitting).
+    and `getAltState`). No registration-time signature reflection runs since stage 5's E4 (T11's
+    catalogue sitting).
   - **The validate contract** (`ActionSpec.validate`, the handover validation of the accepting
     String slot): called as `validate(text::String) -> Bool` — `true` accepts; `false` refuses with the
     catalogue-named stable message (`REG_VALIDATE_FALSE` — an `ErrorException` carrying the name, the §3.4 T3
@@ -273,9 +275,10 @@ These are part of the documented public surface — declared with Julia's `publi
     through the envelope verbatim (the shipped heading validator's ratified empty-text refusal
     is exactly this class); any other throw is a validator DEFECT.
   - **The constructor dependency** (`PlugIn.altConstructor`): must be ZERO-ARG constructible —
-    `validate` refuses `DEP_MISSING` at the gate (eager dependency closure; previously a raw
-    `MethodError` at first apply). A ctor whose zero-arg method exists but THROWS converts at
-    the mint to the stable `CB_CTOR_THROW` refusal naming the alterant; a minted instance
+    an absent zero-arg method meets the mint wrap at first apply as the stable `CB_CTOR_THROW`
+    refusal naming the alterant and the `MethodError` (the eager `DEP_MISSING` gate at `validate` left at
+    stage 5's E4). A ctor whose zero-arg method exists but THROWS converts at
+    the mint to the same `CB_CTOR_THROW` refusal; a minted instance
     foreign to the matched overload's declared store type refuses `RES_FOREIGN_STORE` at every
     set-invocation.
   - **The plugin index rule:** `ActionSpec.plugin` is the declaration-order index of the owning
@@ -290,9 +293,10 @@ These are part of the documented public surface — declared with Julia's `publi
     Alterant's applied state mint evals rows; a record WITHOUT one is disclosed by the typed
     `WARN_CAPTURE_FLOOR` warning, never silently evals-invisible; a declared row whose live
     instance/value falls outside the scheme's readable shape or the closed capture value set
-    {Bool, Symbol, machine ints, String} meets `WARN_CAPTURE_UNREADABLE`); tier 1 enforces the
-    capture laws (the gate's closed set · the bidirectional setMode⟺gate coherence ·
-    `instance_type === altConstructor` · the stem shape and the cross-plugin stem-clash law) ·
+    {Bool, Symbol, machine ints, String} meets `WARN_CAPTURE_UNREADABLE`); `validate` enforces the
+    capture mode-gate laws (the gate's closed set · the bidirectional setMode⟺gate coherence · the
+    :localOnly scheme and store laws; the identity, stem-shape and stem-clash laws left at stage 5's E4 —
+    a stem overlapping a shipped family publishes, and same-cell same-attr rows of two plugins collapse to one) ·
     `DefaultSlot` = `NoDefault()` | `Declared(v)` · `EffectRow(kind ∈
     (:drop, :mark, :pass), payload)` + `RenderDecl(effects::Vector{Pair{Symbol,EffectRow}},
     resolve_order, materialize::Bool)` · `VocabularySlot` = `InlineVocabulary(names, flags)` |
@@ -895,9 +899,9 @@ well-formed occurrence keys (`_putEval!`, `src/annotations.jl`).
 ### §3.5 — Registration + door codes (v0.4; typed `Diagnostic`s)
 
 Every row below is a `Diagnostic{code, severity, message, context}`. FOUR delivery channels (a
-trigger/site matrix — two CODES appear on two channels: `REG_PROTOCOL` and `REG_SLOT_EXHAUSTED`
-are immediate `register!`/`next_plugin_index` throws for their two entry checks AND validation
-rows for every other trigger, e.g. a directly-pushed builder): **(i) `register!`-time THROWS** — immediate and atomic (nothing appended), a thrown
+trigger/site matrix — one CODE appears on two channels: `REG_PROTOCOL` is an immediate `register!` throw
+for the plugin-index binding AND a validation row for the domain probe and the mode-gate laws;
+`REG_SLOT_EXHAUSTED` is a `register!`/`next_plugin_index` throw alone since stage 5's E4): **(i) `register!`-time THROWS** — immediate and atomic (nothing appended), a thrown
 `RegistrationRefused`: the plugin-index binding (`REG_PROTOCOL`) and the plugin/action pool
 overflow (`REG_SLOT_EXHAUSTED`; also `next_plugin_index` at capacity) — wrap `register!` in a
 `try`; **(ii) VALIDATION-time rows** — every other `REG_*` row below comes back from
@@ -910,23 +914,13 @@ its parse; at the seam's door before any absorb or apply work).
 
 | Code | Severity | Trigger | Context |
 |---|---|---|---|
-| `REG_PROTOCOL` | error | a STRUCTURAL defect of the record (tier 1): an enum tag outside its closed set, a kinds/kind_sources mismatch, an overlong kinds vector, a `queryable` row on a getter-less plugin, the dispatch-target uniqueness law, a dangling plugin index, a declared `settribute` key the component does not carry, an empty `MutEx`, a record passed to `register!` that names another plugin; (v0.4 T2 cure batches 4–5) a declared value outside the CLOSED encodable domain — a cyclic container, a `Function` inside a data value, a non-`Vector`/`Dict` container (range, view, user container), any type without an encoder, a `Type` whose parameter tree exceeds the type-encoder budget, or (T2-bis) any domain-walk membership failure over the FULL field lists — one row per record SLOT, naming it | the action or alterant name |
-| `REG_UNKNOWN_SETMODE` | error | `setMode` outside `(:accumulate, :mutExclusive, :mutExclusivePerField, :localOnly)` | the alterant |
-| `REG_DUPLICATE_ALTNAME` | error | two records with the same `altName` | the alterant |
-| `REG_DUPLICATE_ACTION` | error (`:refuse` arm) / warning (`:warn` arm, first-writer-wins) | two action records with the same `name` | the action |
-| `REG_RESERVED_SHADOW` | error | an action named like a `ComponentSettribute` key without declaring it as its own `settribute` | the action |
-| `REG_SIG_MISMATCH` | error | the reflection cross-check: a declared overload with no executable method, an executable method matching no declared overload, or a literal-kind/type disagreement | the action (or the setter's name) |
-| `REG_VALUE_ALGEBRA` | error | a declared `return_type` outside `(Nothing, Bool, Int16)` | the action |
-| `REG_UNREACHABLE` | error | a grammar overload's literal kind outside the active literal floor `(:symbol, :string)` | the action |
-| `REG_CANDIDACY` | warning | `sugar_candidacy = :candidate` without activation — registered, not active; `publish` proceeds and emits the warning | the action |
-| `REG_MUTEX_CONFLICT` | error | a `MutEx` naming an action the alterant does not register | the alterant |
-| `REG_UNINTERPRETED_REQUIRES` | error | any `requires` token the v0.4.0 roster does not interpret — the WHOLE record refuses | the alterant |
-| `REG_CONTRACT_VERSION` | error | a `contract_version` outside the v0.4.x family | the alterant |
-| `REG_SLOT_EXHAUSTED` | error | more than 127 alterants or actions (the Int8 index space) — at `register!`'s 128th append, or at `validate` for directly-pushed builders | the alterant / `nothing` |
+| `REG_PROTOCOL` | error | a STRUCTURAL defect of the record: a record passed to `register!` that names another plugin; (v0.4 T2 cure batches 4–5) a declared value outside the CLOSED encodable domain — a cyclic container, a `Function` inside a data value, a non-`Vector`/`Dict` container (range, view, user container), any type without an encoder, a `Type` whose parameter tree exceeds the type-encoder budget, or (T2-bis) any domain-walk membership failure over the FULL field lists — one row per record SLOT, naming it; a capture mode-gate law (the gate's closed set, the setMode⟺gate coherence, the :localOnly scheme and store laws). The tier-1 enum, kinds, queryable, uniqueness, plugin-index, settribute-key, MutEx, capture-identity and stem rows left at stage 5's E4 (§6) | the action or alterant name |
+| `REG_UNKNOWN_SETMODE` · `REG_DUPLICATE_ALTNAME` · `REG_DUPLICATE_ACTION` · `REG_RESERVED_SHADOW` · `REG_SIG_MISMATCH` · `REG_VALUE_ALGEBRA` · `REG_UNREACHABLE` · `REG_CANDIDACY` · `REG_MUTEX_CONFLICT` · `REG_UNINTERPRETED_REQUIRES` · `REG_CONTRACT_VERSION` | **REMOVED at 0.4.0** (stage 5's E4 of the v0.4 build; census rows 3 and 51 — OWNER-WORDS §317, R-V04B-105) | the validation chain of v0.4 T2–T4 — the typed inventory, the clash law with its disposition switch, the reflection cross-check, the value-algebra and reachability refusals, the candidacy warning — left; his legacy registered unchecked; a duplicate action name resolves FIRST-wins in the derived tables; the §6 register row | — |
+| `REG_SLOT_EXHAUSTED` | error | more than 127 alterants or actions (the Int8 index space) — at `register!`'s 128th append (the validate-time row for a directly-pushed builder left at stage 5's E4: such a builder fails at `publish` with Julia's `InexactError`, the honest bound of bypassing `register!`) | the alterant |
 | `REG_DERIVED_TABLES` | error | positional (route-U) construction whose hand-built tables differ from the tables derived from the declarations | `nothing` |
 | `REG_UNPUBLISHED` (door) | error | an unsealed registry reached `goMeta` or `run_absorb_apply!` — the message names `RegistryBuilder → validate → publish` | `nothing` |
 | `POST_SEAL_MUTATION` (door) | error | a published registry whose live fields no longer match the publish-time snapshot — the message carries "at <path>", the first divergent path; re-publication is the change path | the rendered path |
-| `DEP_MISSING` (v0.4 T3) | error | an `altConstructor` with no zero-argument method — the instance mint's eager dependency closure at publication (was a raw `MethodError` at first apply) | the alterant |
+| `DEP_MISSING` (v0.4 T3) | **REMOVED at 0.4.0** (stage 5's E4 of the v0.4 build; census row 3) | the eager dependency closure at publication left; an `altConstructor` with no zero-argument method publishes and meets the mint wrap at first apply — `CB_CTOR_THROW` naming the alterant and the `MethodError` (§3.4); the §6 register row | — |
 | `STATE_REUSE_REFUSED` (T3 seam) | error | the injected parse state is already IN FLIGHT in another call (one code, ONE message since stage 3's commit 4 of the v0.4 build — the POISONED variant left with the Visib write-back, R-V04B-42 (1)); recovery: let the running call return, or re-parse into a fresh state | `nothing` |
 | `STATE_SEAL_MISMATCH` (T3 seam) | **REMOVED at 0.4.0** (stage 3's commit 4 of the v0.4 build; R-V04B-42 (1)) | it guarded the Visib write-backs a run left in the caller's state; nothing is written back any more — the §6 register row | — |
 | `SRC_DIGEST_MISMATCH` (v0.4 T4) | error | a record's `VocabularyRef` digest matches NO loaded artifact — the artifact bytes moved without a declaration update, or the artifact was never loaded (the R-V04-37 publication-time re-verify of the load-time capture; the DEFAULT publishes at module load, so a tampered shipped artifact fails `using GoMeta` here) | the alterant |
@@ -1045,3 +1039,4 @@ non-silent record under R-V04B-61; the letter of R-V04B-24 (P) does not govern u
 - **The answer function's SOURCE for a Line decided by its own trailing metaSegment, and for that Line's Segments — CHANGED at 0.4.0** (card C24 of stage 2's review; the owner's words of 2026-10-02, OWNER-WORDS §286 and §288 — R-V04B-93; the letter of R-V04B-52 (2)): the Line answers `:own` (before: `:indirect` through the Segment); a Segment without rows of its own answers AS its Line answers — the Line's `:own` marked `:indirect` through the Line (before: `:own` when the deciding handle was the Segment's own key; `:indirect` through that metaSegment for the Line's other Segments), every other source unchanged as before (`:indirect` through the Line's own decider, `:user` under a fed profile, `:file`). An inline heading's row stays keyed on its Segment (R-V04B-50) — not touched by this commit. The VALUES, the rows and their `decided_by` are unchanged.
 - **`answerFor`, `answersFor` and `AltAnswer` — RENAMED at 0.4.0 to `evaluatedAltValue`, `evaluatedAltValues` and `EvaluatedAltValue`** (card C4 of stage 2's review; the owner's word of 2026-10-03, OWNER-WORDS §305: *"I approve C4: evaluatedAltValue"* — R-V04B-95; his §295 of 2026-10-02: "that is what you get when calling that function"): the names only — the signatures `evaluatedAltValue(delivery, component, alterant; registry)` and `evaluatedAltValues(delivery, component; registry)`, the record's fields `value`, `source`, `via`, the seven source tags, the tier (package-public, not exported) and every behaviour unchanged; `scanAlterant` and `childDiffers` keep their names; the file names `src/answer.jl` and `tests/unit/answer_tests.jl` stay. The earlier entries of this page read the new names (a living page, renamed with the code — its §6 row for card C2 among them; the two NOT FINAL notes — `src/answer.jl`'s header and this page's entry on the function — name `answerFor` as the former working name); the build record's rows, the commit messages and the receipts that say `answerFor` describe the same function under its former name.
 - **The inline heading's KEY and the commented metaLine's carrier — CHANGED at 0.4.0** (item A6 of the stage-3 close sitting; the owner's word of 2026-10-03, OWNER-WORDS §309: *"1.: I approve your recommendation: (b)"* — R-V04B-98; stage 5's commit E1; the three forms on his word of 2026-10-05, OWNER-WORDS §324 — R-V04B-109; the golden re-pin on his §323 — R-V04B-108): the heading stated in a Code Line's trailing metaSegment is keyed on the LINE with the Segment as the key's origin, as every inline statement is, and the Line answers it `:own`, its Segments `:indirect` through the Line (before: keyed on the Segment, which answered `:own` while its Line answered the default); a metaLine split by a trailing `##` comment hands its statement Segment over with the metaBlock as the carrier, so its heading row is keyed on the metaBlock and EVERY statement on such a metaLine records the metaBlock as its deciding statement (before: the statement Segment — a defect against R-V04B-50; the answer function's source for the two legacy examples' rows moves from `Segment n:s-e` to `Block a-b`); the level constant `head_10` unchanged; the degenerate-key warning `WARN_DEGENERATE_OCCURRENCE_KEY` (both sites) REMOVED (census row 52, his §317); the golden `heading_quoted_first.jl.ann.txt` re-derived and the comparison forms `heading_quoted_first`, `file_for_Example_Extended`, `file_for_Example_Proposal_JuliaCon` re-made (the header's sha = the parent 79ea54cd).
+- **The registration validation chain and the clash-disposition switch — REMOVED at 0.4.0** (stage 5's E4 of the v0.4 build; census rows 3 and 51 of the stage-5 census, the owner's bulk mark of 2026-10-03, OWNER-WORDS §317 — R-V04B-105; his §19 — the public surface 'RESTRICTED TO THE NECESSARY functionality' — and his §20 'RESTRICT THAT INTERFACE TO A MINIMUM'; his §120 no hardening before the framework works): the validation chain of v0.4 T2–T4 — the tier-1 record shape law (the closed enum sets, the kinds/kind_sources, queryable, dispatch-target uniqueness, plugin-index, settribute-key and MutEx rows; the capture identity, stem-shape and stem-clash laws), the tier-2 inventory law (`REG_UNKNOWN_SETMODE`, `REG_DUPLICATE_ALTNAME`, `REG_RESERVED_SHADOW`, `REG_MUTEX_CONFLICT`, `REG_UNINTERPRETED_REQUIRES`, `REG_CONTRACT_VERSION`, the validate-time `REG_SLOT_EXHAUSTED`), the clash law with both arms and the switch (`REG_DUPLICATE_ACTION`), the reflection cross-check (`REG_SIG_MISMATCH`), the value-algebra and reachability refusals (`REG_VALUE_ALGEBRA`, `REG_UNREACHABLE`), the candidacy warning (`REG_CANDIDACY`) and the eager dependency closure (`DEP_MISSING`) — left `src/alterants/registry.jl` (−726/+79 lines) with the four dead closed-set constants of `src/state.jl`; `validate` runs the domain probe (R-V04B-4 (iii) — the one domain definition shared by `validate`, `publish`'s copier and the door's walker), the four capture mode-gate laws of the Heading's :localOnly lane (until R-V04B-101, after the branch) and the vocabulary check (census row 10's commit). MEASURED consequences (the build record's receipts `PROBES-e4-validate_stage1-src-cut_on-1c9d013f.txt`, `PROBES-e4-capture-laws_stage1_on-1c9d013f.txt` and `PROBES-e4-seat-notes_on-1c9d013f.txt`):a duplicate action name resolves FIRST-wins in the derived tables (the legacy's Dict assignment was last-wins); a `:candidate` without activation publishes silently; an `altConstructor` without a zero-arg method publishes and meets `CB_CTOR_THROW` at the first mint, naming the `MethodError`; a capture `instance_type ≠ altConstructor` publishes and floors `WARN_CAPTURE_UNREADABLE`; a stem overlapping a shipped family publishes — on one cell the two plugins' same-attr rows collapse to one row (full structural namespacing is T11's row); a capture scheme outside the walk's four arms with gate `nothing` publishes and falls through the walk — no row, no floor (T11's catalogue row); a kind or source literally named k/s is no longer refused at registration, so such a record's fingerprint can alias another's — a fingerprint-only class inside R-V04B-4 (v)'s disclosed-lossy bound; a builder pushed past 127 plugins or actions, or with a dangling plugin index, DIRECTLY (bypassing `register!`, which refuses both typed) fails raw at `publish` (`InexactError`) or at apply (`BoundsError`) — the honest bound of the bypass; `publish`'s warning path stands with no remaining check that warns.

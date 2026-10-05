@@ -1,8 +1,9 @@
 # seam_envelope_tests.jl — v0.4 T3: the SEAMS witnesses (T3-DESIGN §8's fixture table).
 #
 # IS:   the T3 acceptance witnesses — the symmetric query-seam envelope (both call sites),
-#       the consumed handover validation (with the "GoMeta "-prefix pass-through), the eager
-#       DEP_MISSING gate, the three-site ctor-mint envelope, the post-dispatch store-identity
+#       the consumed handover validation (with the "GoMeta "-prefix pass-through), the three-site
+#       ctor-mint envelope (also the absent zero-arg method, since the eager DEP_MISSING gate left at
+#       stage 5's E4 of the v0.4 build), the post-dispatch store-identity
 #       check, and the state-seam ledger (in-flight enforcement · the re-injection cells — free of any
 #       binding since the Visib write-back left at stage 3's commit 4 of the v0.4 build, R-V04B-42).
 # DOES: publishes DEFECTIVE-callable registries through the sanctioned lifecycle, drives them
@@ -116,15 +117,16 @@ end
               occursin("ratified standing decision", ep.msg) && !occursin("CB_VALIDATE_THROW", ep.msg)
     end
 
-    @testset "the eager dependency closure (DEP_MISSING at the gate)" begin
+    @testset "an absent zero-arg method publishes and meets the mint wrap (the eager DEP_MISSING gate left at stage 5's E4)" begin
+        # (measured on the E4 scratch: PROBES-e4-validate_stage1-src-cut_on-1c9d013f.txt [6])
         b = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
         b.plugins[2] = GM.PlugIn(; altName = :Visib, setMode = :mutExclusive,
                                    altConstructor = SubString{String},
                                    setAltInstance = GM.Alterants.setVisib)
-        d = GM.validate(b)
-        @test any(x -> x.code === :DEP_MISSING && x.context === :Visib &&
-                       occursin("no zero-argument method", x.message), d)
-        @test_throws GM.RegistrationRefused GM.publish(b)
+        @test isempty(GM.validate(b))
+        e = _drive(Vector{UInt8}(codeunits("x = 1\n#~ hide\n\ny = 2\n")), GM.publish(b))
+        @test e isa ErrorException && occursin("CB_CTOR_THROW", e.msg) && occursin("MethodError", e.msg) &&
+              occursin("Visib", e.msg)
     end
 
     @testset "the ctor-mint envelope — the apply mint AND the absorb heading mint (CB_CTOR_THROW)" begin

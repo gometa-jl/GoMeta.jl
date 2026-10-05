@@ -33,9 +33,9 @@ import GoMeta as GM
     const HASH_COUNT = Base.RefValue(0)
     Base.hash(::Type{CountKey}, h::UInt) = (HASH_COUNT[] += 1; h ⊻ 0x9e3779b97f4a7c15)
     # the Ref-backed SETTER (the captured-state silence class): an anonymous function over a
-    # module-global Ref — a LOCAL-capture closure cannot be a setter at all under the ratified
-    # reflection law (its method sig carries the UnionAll closure type, so the EXACT
-    # per-signature match refuses it — recorded at the T2-bis commit, §S2.9); the semantics
+    # module-global Ref — a LOCAL-capture closure could not be a setter under the reflection
+    # law of the time (left at stage 5's E4; its method sig carried the UnionAll closure type, so the EXACT
+    # per-signature match refused it — recorded at the T2-bis commit, §S2.9); the semantics
     # under test — behavior moving through a Ref while `===` identity stands — are identical
     const SETTER_REF = Base.RefValue(0)
     const setclo = (store::Dict{Symbol,Bool}, name::Symbol) ->
@@ -510,7 +510,7 @@ end
         altConstructor = T, setAltInstance = GM.Alterants.setVisib); R)
     # (v0.4 T3 — the case-(iv) migration; RE-HOMED at T5: `SubString{String}` and its
     # swap target `String` are the ONLY named-case types without a zero-argument method,
-    # so under the eager DEP_MISSING gate case (iv)'s TYPE half cannot ride the ctor
+    # so under the eager DEP_MISSING gate of the time (left at stage 5's E4) case (iv)'s TYPE half could not ride the ctor
     # slot. T3 parked it on `capture.instance_type` while that slot was CARRIED; T5
     # CONSUMES the slot and its identity law (`instance_type === altConstructor`)
     # correctly refuses the old vehicle — the Type half now rides a DECLARED default

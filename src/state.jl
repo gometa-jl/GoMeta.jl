@@ -145,9 +145,7 @@ struct DomainRef
 end
 
 ## Slot (2): the capture declaration — HOW an Alterant's applied value becomes evals rows.
-const _CAPTURE_SCHEMES        = (:per_key, :single, :per_field, :per_occurrence)
-const _CAPTURE_MULTIPLICITIES = (:many, :one, :per_field)
-const _CAPTURE_MODE_GATES     = (nothing, :localOnly)   # v0.4 T5: the closed gate set
+const _CAPTURE_MODE_GATES = (nothing, :localOnly)   # v0.4 T5: the closed gate set (the scheme and multiplicity sets left with their enum checks at stage 5's E4)
 """
     CaptureDecl(instance_type, attr_scheme, multiplicity, mode_gate[, attr_stem]; attr_stem = nothing)
 
@@ -156,7 +154,8 @@ value becomes evals rows.
 
 DOES: The declared capture row (CONSUMED by the capture walk since v0.4 T5 — the registration-
 driven re-home of the retired alt-name ladder): `instance_type` = the Alterant instance
-type the walk keys on (tier 1 requires it `===` the record's own `altConstructor`);
+type the walk keys on (the identity law that required it `===` the record's own `altConstructor` left at
+stage 5's E4; a mismatch floors `WARN_CAPTURE_UNREADABLE` at the walk);
 `attr_scheme` ∈ `(:per_key, :single, :per_field, :per_occurrence)` = how attr names mint
 (`<stem>_<key>` per admitted Dict entry · one `<stem>` row for a NamedElements-shaped
 single evals row · `<stem>_<field>` per non-default numeric field · one presence row per
@@ -205,7 +204,6 @@ struct Declared{T} <: DefaultSlot
 end
 
 ## Slot (4): render-plane data — effect rows + declared resolve order + the materialize flag.
-const _EFFECT_ROW_KINDS = (:drop, :mark, :pass)
 """
     EffectRow(kind, payload)
 
@@ -296,7 +294,6 @@ struct SugarRow
 end
 
 ## Slot (10): the schema-versioned PROVENANCE group + the RESERVED permissions manifest.
-const _ACQUISITION_MODES = (:shipped, :pinned_by_user, :first_use)
 """
     SignatureRecord(; algorithm, key_id, signature)
 
@@ -437,8 +434,9 @@ IS: ONE row of the DECLARED registration record — a per-overload declaration o
 literal kinds, return type, effect, queryability, applicability and phase.
 
 DOES: ONE row of the DECLARED registration record (v0.2 registration build, the reflection-memo
-bindings): a per-overload declaration the registration-time REFLECTION CROSS-CHECK
-verifies against the executable method table (verify-not-derive — the memo outcome).
+bindings): a per-overload declaration of the action's method signature, stated by the
+author (the registration-time reflection cross-check that verified it against the executable
+method table left at stage 5's E4).
 Fields: `sig_types` — the method signature's argument types AFTER the function
 type (store · action name · literal slots), stated as the METHOD declares them;
 `kinds` — the GRAMMAR-level literal kind per literal slot (`:symbol` | `:string`;
@@ -447,17 +445,16 @@ structural slots excluded), parallel to the literal tail of `sig_types`;
 tag: `:reflected` where the signature slot is typed enough to carry the kind);
 `vararg_kind` — a trailing `Vararg` literal kind or `nothing`; `return_type` — the
 DECLARED return type (never compiler inference — the ad-2/ad-5 determinism law;
-the id-5 value-algebra refusal reads it); `effect` (`:set` — the v0.2 closed
+the live seam's return-type guard reads it); `effect` (`:set` — the v0.2 closed
 effect set); `queryable`; `applicability` (`:context_free` | `:context_required`);
 `phase` (`:apply` | `:absorb` — mode-derived, the localOnly delta); `grammar` —
-`false` marks an INTERNAL row (the probe-surfaced inherited shapes, declared so the
-implemented-but-undeclared diagnostic stays armed for FUTURE drift).
+`false` marks an INTERNAL row (the probe-surfaced inherited shapes, declared for the
+implemented-but-undeclared diagnostic of the time — the reflection cross-check left at stage 5's E4).
 
-REASONING: verify-not-derive — the registration-time reflection cross-check verifies the declared row against the
-executable method table and never derives it from the compiler (the determinism law), so the record stays a
-declaration a reader can check.
+REASONING: the record is a declaration a reader can check — stated by the author, never derived from the
+compiler (the determinism law).
 
-PURPOSE: the row the registration check chain, the grammar and the value-algebra refusal read.
+PURPOSE: the row the grammar, the domain probe and the live seam's return-type guard read.
 """
 struct ActionOverload
     sig_types::Vector{Type}
@@ -484,14 +481,14 @@ ActionOverload(; sig_types::Vector{Type}, kinds::Vector{Symbol} = Symbol[],
     ActionSpec
 
 The DECLARED per-action registration record: action `name` + `spelling` tag
-(`:identifier` | `:operator` — a CLOSED spelling inventory, both kinds under
-identical collision checks; the hyphen class can never mint) + the owning
+(`:identifier` | `:operator` — a CLOSED spelling inventory; the hyphen class can never
+mint; the collision checks over both kinds left at stage 5's E4) + the owning
 `plugin` index + the per-overload rows + the CAPABILITIES (`accepts_string_slot`
 — 0 = no String literal slot; N = the accepting literal-slot position, retiring
 the former name literals at the absorb seams) + `sugar_candidacy` (`:none` |
 `:activated` — the grant register, CLOSED AT TWO grants: the Labels colon + the
-quoted-first heading; `:candidate` raises the loud unactivated-candidacy
-diagnostic at registration) + the `validate` slot (Alterant-owned handover
+quoted-first heading; a `:candidate` registers unchecked since stage 5's E4 — the
+unactivated-candidacy diagnostic left) + the `validate` slot (Alterant-owned handover
 validation; `nothing` when absent) + the RESERVED `keyed_slot` (`nothing` at
 v0.2).
 """
@@ -580,7 +577,7 @@ struct AlterantRegistry
     action_to_settribute::Dict{Symbol,Symbol}   # v0.4 T1: generic, derived from declarations
     # v0.2 registration build: the DECLARED registration record — one ActionSpec per
     # registered action, DECLARATION order (the parallel derived tables above stay
-    # the hot-path lookups; the record is the authority the cross-check verified).
+    # the hot-path lookups; the record is the authority — the author's statement since stage 5's E4).
     # `spec_index`: action name → index into `action_specs`.
     action_specs::Vector{ActionSpec}
     spec_index::Dict{Symbol,Int}
@@ -631,9 +628,9 @@ end
                      accum_alt_idxs, mutex_alt_idxs, action_to_settribute, action_specs, spec_index)
 
 ROUTE U — positional construction from hand-built tables — is GATED at v0.4.0 (the route-U cure:
-every public construction route runs the ONE validation chain; removal = v0.5): the full chain runs
-over `(plugins, action_specs)` AND the hand-built derived tables must equal the tables derived from
-the declarations (`REG_DERIVED_TABLES`, collected ALONGSIDE the chain's diagnostics — full
+every public construction route runs the remaining checks; removal = v0.5): they run over
+`(plugins, action_specs)` AND the hand-built derived tables must equal the tables derived from
+the declarations (`REG_DERIVED_TABLES`, collected ALONGSIDE their diagnostics — full
 collection); any error-severity defect throws `RegistrationRefused` with EVERY collected
 diagnostic. A conforming construction yields an UNSEALED registry (`seal === nothing`) — the
 `goMeta` door refuses it typed, naming the sanctioned path (`RegistryBuilder → validate →

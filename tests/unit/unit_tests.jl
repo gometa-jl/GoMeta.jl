@@ -39,7 +39,7 @@ using Test
     include(joinpath(@__DIR__, "reserved_adjacency_tests.jl"))      # directive-adjacency SHIP-CLASS tripwire (the 0.2.3 cure; ships)
     include(joinpath(@__DIR__, "condition_modes_tests.jl"))         # the dual-mode law (safe default + explicit opt-in)
     include(joinpath(@__DIR__, "heading_recognizer_tests.jl"))      # v0.2 CH-3 step 8: String-lane widening + quote negative rows (APPEND-ONLY)
-    include(joinpath(@__DIR__, "registration_tests.jl"))            # v0.2 registration build: the record + clash law + atomic refusals (APPEND-ONLY)
+    include(joinpath(@__DIR__, "registration_tests.jl"))            # v0.2 registration build: the record + the arming guard (APPEND-ONLY; the clash law and the atomic refusals left at stage 5's E4)
     include(joinpath(@__DIR__, "profile_snapshot_tests.jl"))        # v0.2 full arming: profile snapshot digests + error oracle (APPEND-ONLY)
     include(joinpath(@__DIR__, "flavor_profile_tests.jl"))          # WP1-W1 (F-17): FlavorProfile record + threading witnesses (APPEND-ONLY)
     include(joinpath(@__DIR__, "carrier_seam_tests.jl"))            # WP1-W2: run_absorb_apply! seam + validate_carrier_state witnesses (APPEND-ONLY)
@@ -49,7 +49,7 @@ using Test
     include(joinpath(@__DIR__, "record_schema_tests.jl"))           # v0.4 T1: the registration-record schema extension witnesses (APPEND-ONLY)
     include(joinpath(@__DIR__, "registry_lifecycle_tests.jl"))      # v0.4 T2: Builder → validate → publish, the one chain, the STRICT door, the seal gate, the exhaustion refusals (APPEND-ONLY)
     include(joinpath(@__DIR__, "snapshot_property_tests.jl"))       # v0.4 T2-bis: the snapshot door's PROPERTY proof (N=1024 site mutations + FP rebuilds + named cases; T2BIS-DESIGN §9)
-    include(joinpath(@__DIR__, "seam_envelope_tests.jl"))           # v0.4 T3: the seams — query/validate/ctor envelopes, DEP_MISSING, store identity, the state-seam ledger (T3-DESIGN §8)
+    include(joinpath(@__DIR__, "seam_envelope_tests.jl"))           # v0.4 T3: the seams — query/validate/ctor envelopes, store identity, the state-seam ledger (T3-DESIGN §8; DEP_MISSING left at stage 5's E4)
     include(joinpath(@__DIR__, "vocabulary_tests.jl"))              # v0.4 T4: the whitelist relocation — the digest-pinned artifact, the registration-surface flip, G-VOC, the valve, the zero-literal law (T4-DESIGN §6)
     include(joinpath(@__DIR__, "fallback_order_tests.jl"))          # stage 2 commit 3a (R-V04B-55 (3)): the fallBack level consulted LAST — three witnesses over a prepared slot
     include(joinpath(@__DIR__, "userfeed_visib_tests.jl"))        # stage 2 commit 7b (REAL-1 R2 #13): the fed Visib verdict against an authored one — four witnesses at the public entry

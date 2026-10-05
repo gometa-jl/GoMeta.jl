@@ -1,9 +1,11 @@
 # registry_lifecycle_tests.jl — v0.4 T2: the registry LIFECYCLE witnesses (APPEND-ONLY).
 #
-# IS:   the unit witnesses of Builder → validate → PUBLISH, the ONE validation chain on every public
+# IS:   the unit witnesses of Builder → validate → PUBLISH, the remaining checks on every public
 #       construction route (the route-U cure; no generated/public positional form accepts a seal —
 #       the token-gated constructor; the token form itself is reachable by loaded code, the
-#       disclosed accident-grade bound), the two-tier typed diagnostics with FULL collection (validate
+#       disclosed accident-grade bound; the validation chain of v0.4 T2–T4 left at stage 5's E4 — census
+#       row 3, OWNER-WORDS §317: the domain probe, the capture mode-gate laws and the vocabulary check
+#       remain), the typed diagnostics with FULL collection (validate
 #       never throws), atomic domain-copy publication, the fingerprint + the T2-bis ONE-check door
 #       (the eleven `_SNAPSHOT_FIELDS` compared structurally against the publish-time snapshot —
 #       REPRESENTATIVE fields mutated here, not every one; the property file is the proof), the STRICT
@@ -15,9 +17,9 @@
 #       the CLOSED domain — data slots hold concrete data, the refusals witnessed below; the
 #       fingerprint is a lossy CACHE KEY since T2-bis — its residual collision classes are
 #       fingerprint-only, each caught at the door by the snapshot's `===` leaf compare; the former
-#       (iv)/(v) hard-stop classes are CLOSED — docs/public-api.md §1.2), the 0.4.x contract family, warnings emitted at publish, the two
-#       exhaustion refusals (the typed registry-grain diagnostic + the stable-message per-call slot-pool
-#       guard), and full collection at the entry (config + registry diagnostics in ONE result).
+#       (iv)/(v) hard-stop classes are CLOSED — docs/public-api.md §1.2), `register!`'s pool refusal + the
+#       stable-message per-call slot-pool guard, and full collection at the entry (config + registry
+#       diagnostics in ONE result).
 # DOES: builds registries through every route, mutates published values, drives the door, and pins
 #       the codes and the messages' load-bearing substrings.
 # REASONING: the golden layer proves the PUBLISHED default is byte-neutral; only these witnesses prove
@@ -173,15 +175,7 @@ _plugin_with_default(p, d) = GM.PlugIn(; altName = p.altName, setMode = p.setMod
                                                                       kinds = Symbol[:symbol])]))
         dp = GM.validate(bp)                                  # must return, not throw
         @test dp isa Vector{GM.Diagnostic}
-        # (cure batch 2) broken records are skipped by INDEX: a malformed duplicate does not hide a
-        # well-formed duplicate's tier-2 defect
-        bd = GM.RegistryBuilder(copy(base.plugins), copy(base.action_specs))
-        push!(bd.action_specs, GM.ActionSpec(:zzdup, :bogusspelling, Int8(2),
-            [_ov(Type[GM.Alterants.Visib, Symbol]; rt = Bool)], 0, :none, nothing, nothing))       # malformed
-        push!(bd.action_specs, GM.ActionSpec(:zzdup, :identifier, Int8(2),
-            [_ov(Type[GM.Alterants.Visib, Symbol]; rt = Float64)], 0, :none, nothing, nothing))    # well-formed, bad algebra
-        dd = GM.validate(bd)
-        @test :REG_PROTOCOL in _errors(dd) && :REG_VALUE_ALGEBRA in _errors(dd)
+        # (the cure-batch-2 broken-record index witness left at stage 5's E4 with the tier-1/tier-2 chain)
         # (cure batch 2) register! refuses the ACTION pool too
         ba = GM.RegistryBuilder()
         many = [GM.ActionSpec(Symbol("act", i), :identifier, Int8(1),
@@ -191,31 +185,17 @@ _plugin_with_default(p, d) = GM.PlugIn(; altName = p.altName, setMode = p.setMod
         @test e isa GM.RegistrationRefused && _errors(e.diagnostics) == [:REG_SLOT_EXHAUSTED]
         @test isempty(ba.plugins) && isempty(ba.action_specs)
         @test GM.next_plugin_index(ba) == 1 && GM.next_plugin_index(GM.default_registry_builder()) == 5
-        # (cure batch 2) route U reports REG_DERIVED_TABLES ALONGSIDE an independent record defect
+        # (cure batch 2; re-cut at stage 5's E4 — the setMode enum check left) route U reports REG_DERIVED_TABLES
+        # ALONGSIDE an independent defect of the domain probe (measured: PROBES-e4-validate_stage1-src-cut [2b])
         D = GM.DEFAULT_REGISTRY
-        badp = copy(D.plugins); badp[1] = GM.PlugIn(:labels, :bogus, Dict{Symbol,Bool}, GM.Alterants.setLabels,
-                                                    GM.Alterants.checkLabels, nothing)
+        badp = copy(D.plugins); badp[2] = _plugin_with_default(badp[2], GM.Declared(1:3))
         bad_idx = copy(D.action_index); bad_idx[:hide] = Int8(99)
         e = try GM.AlterantRegistry(badp, D.sorted_alt_actions, D.action_to_plugin, bad_idx, D.alt_index,
                                     D.accum_alt_idxs, D.mutex_alt_idxs, D.action_to_settribute,
                                     D.action_specs, D.spec_index); nothing catch err; err end
         @test e isa GM.RegistrationRefused
-        @test :REG_UNKNOWN_SETMODE in _errors(e.diagnostics) && :REG_DERIVED_TABLES in _errors(e.diagnostics)
-        # (cure batch 2) reflection diagnostics come in DECLARATION order across two setters, twice
-        @eval module _TwoSetters
-            s1(::Dict{Symbol,Bool}, ::Symbol) = nothing; s1(::Dict{Symbol,Bool}, ::Symbol, ::Int) = nothing
-            s2(::Dict{Symbol,Int}, ::Symbol) = nothing;  s2(::Dict{Symbol,Int}, ::Symbol, ::Int) = nothing
-        end
-        b2 = GM.RegistryBuilder()
-        GM.register!(b2, GM.PlugIn(:one, :accumulate, Dict{Symbol,Bool}, _TwoSetters.s1, nothing, nothing),
-                     GM.ActionSpec(; name = :o1, spelling = :identifier, plugin = Int8(1),
-                                     overloads = [GM.ActionOverload(; sig_types = Type[Dict{Symbol,Bool}, Symbol])]))
-        GM.register!(b2, GM.PlugIn(:two, :accumulate, Dict{Symbol,Int}, _TwoSetters.s2, nothing, nothing),
-                     GM.ActionSpec(; name = :o2, spelling = :identifier, plugin = Int8(2),
-                                     overloads = [GM.ActionOverload(; sig_types = Type[Dict{Symbol,Int}, Symbol])]))
-        r1 = [(d.code, d.context) for d in GM.validate(b2) if d.code === :REG_SIG_MISMATCH]
-        r2 = [(d.code, d.context) for d in GM.validate(b2) if d.code === :REG_SIG_MISMATCH]
-        @test r1 == r2 && [c for (_, c) in r1] == [:s1, :s2]   # the undeclared extra methods, setters in declaration order
+        @test _errors(e.diagnostics) == [:REG_PROTOCOL, :REG_DERIVED_TABLES]
+        # (the cure-batch-2 reflection-order witness left at stage 5's E4 with the reflection cross-check)
         # (cure batch 2, interim until T7) a PUBLISHED custom registry WITHOUT the built-in Visib RUNS
         bc = GM.RegistryBuilder()
         GM.register!(bc, GM.PlugIn(:bag, :accumulate, Dict{Symbol,Bool}, GM.Alterants.setLabels, GM.Alterants.checkLabels, nothing),
@@ -226,18 +206,16 @@ _plugin_with_default(p, d) = GM.PlugIn(; altName = p.altName, setMode = p.setMod
         Rc = GM.publish(bc)
         rc = GM.goMeta(Vector{UInt8}(codeunits("x = 1\n#~ :label1\n\ny = 2\n")); registry = Rc)
         @test rc.status === GM.PROCESS_OK && !isempty(Main.BasicRenderer.outputs(rc).render_bytes)
-        # (cure batch 3) the attacked shape "a Visib record declaring NO write-back key" is REFUSED by
-        # the record's own shadow law before it can run — the resolved Visib key is always one of the
-        # instance's field names (hide/show/discard), all settribute keys, so `settribute = nothing`
-        # on them is `REG_RESERVED_SHADOW`; the driver's `get(action_to_settribute, …)` guard is
-        # NECESSARY even for a VALIDATED registry (t2r3 A-4 / t2r4 A-7: a validated CUSTOM Visib-plugin
-        # action with no `settribute` can map onto a built-in field) — cured BY the guard, not refuted
+        # (cure batch 3; re-cut at stage 5's E4 — the shadow law left) a Visib record declaring NO write-back
+        # key PUBLISHES; the driver's `get(action_to_settribute, …)` guard carries the run (measured:
+        # PROBES-e4-validate_stage1-src-cut [5] — PROCESS_OK)
         bv = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
         h = bv.action_specs[2]
         bv.action_specs[2] = GM.ActionSpec(; name = :hide, spelling = :identifier, plugin = Int8(2),
                                              overloads = h.overloads, settribute = nothing)
-        e = try GM.publish(bv); nothing catch err; err end
-        @test e isa GM.RegistrationRefused && :REG_RESERVED_SHADOW in _errors(e.diagnostics)
+        Rv = GM.publish(bv)
+        @test Rv isa GM.AlterantRegistry
+        @test GM.goMeta(Vector{UInt8}(codeunits("x = 1\n#~ hide\n\ny = 2\n")); registry = Rv).status === GM.PROCESS_OK
         # (cure batch 3) floats fold BIT-EXACTLY: two NaN payloads with different bits differ
         nan1 = reinterpret(Float64, 0x7ff8000000000001); nan2 = reinterpret(Float64, 0x7ff8000000000002)
         @test string(nan1) == string(nan2) && GM._slot_text(nan1) != GM._slot_text(nan2)
@@ -247,16 +225,7 @@ _plugin_with_default(p, d) = GM.PlugIn(; altName = p.altName, setMode = p.setMod
         Rcy = GM.publish(bcy)
         v = Rcy.plugins[2].default.value; push!(v, v)
         @test _codes(GM._registry_door_check(Rcy)) == [:POST_SEAL_MUTATION]
-        # (cure batch 3) a PLUGIN-level structural defect does not mark the actions broken: a sound
-        # action's tier-2 defect is still reported
-        bpl = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
-        bpl.plugins[1] = GM.PlugIn(; altName = :labels, setMode = :accumulate, altConstructor = Dict{Symbol,Bool},
-                                     setAltInstance = GM.Alterants.setLabels, getAltInstance = GM.Alterants.checkLabels,
-                                     capture = GM.CaptureDecl(Dict{Symbol,Bool}, :per_bogus, :many, nothing))
-        push!(bpl.action_specs, GM.ActionSpec(:zzalg, :identifier, Int8(2),
-            [_ov(Type[GM.Alterants.Visib, Symbol]; rt = Float64)], 0, :none, nothing, nothing))
-        dpl = GM.validate(bpl)
-        @test :REG_PROTOCOL in _errors(dpl) && :REG_VALUE_ALGEBRA in _errors(dpl)
+        # (the cure-batch-3 plugin-level/tier-2 witness left at stage 5's E4 with the chain)
         # (cure batch 4) the encodable domain is CLOSED — composite numbers fold structurally, an
         # unknown value type is REFUSED at validation, never folded by a lossy fallback
         @test GM._slot_text(complex(nan1, 0.0)) != GM._slot_text(complex(nan2, 0.0))
@@ -353,66 +322,16 @@ _plugin_with_default(p, d) = GM.PlugIn(; altName = p.altName, setMode = p.setMod
         Rx = GM.publish(bx)
         rx = GM.goMeta(Vector{UInt8}(codeunits("x = 1\n#~ hide\n\ny = 2\n")); registry = Rx)
         @test rx.status === GM.PROCESS_OK
-        # warnings are emitted by the sanctioned publish route (cure batch 1), never swallowed
-        bw = GM.default_registry_builder()
-        bw.action_specs[3] = GM.ActionSpec(; name = :show, spelling = :identifier, plugin = Int8(2),
-                                             overloads = bw.action_specs[3].overloads,
-                                             sugar_candidacy = :candidate, settribute = :show)
-        @test_logs (:warn, r"sugar CANDIDACY") GM.publish(bw)
+        # (the publish-time warning witness left at stage 5's E4 with the candidacy diagnostic — no remaining
+        # check warns; publish's warning path stands unexercised)
     end
 
-    @testset "typed inventory refusals — each code, FULL collection, deterministic order" begin
+    @testset "register!'s refusals + the remaining validate rows (re-cut at stage 5's E4: the typed inventory refusals left with the chain)" begin
         base = GM.default_registry_builder()
-        # unknown setMode (FM-REG-1: silent misroute on v0.3.2)
-        b = GM.RegistryBuilder(copy(base.plugins), copy(base.action_specs))
-        b.plugins[1] = GM.PlugIn(:labels, :bogus, Dict{Symbol,Bool}, GM.Alterants.setLabels,
-                                 GM.Alterants.checkLabels, nothing)
-        @test :REG_UNKNOWN_SETMODE in _errors(GM.validate(b))
-        @test_throws GM.RegistrationRefused GM.publish(b)
-        # duplicate altName (FM-REG-6: silent last-wins on v0.3.2)
-        b = GM.RegistryBuilder(copy(base.plugins), copy(base.action_specs))
-        GM.register!(b, GM.PlugIn(:labels, :accumulate, Dict{Symbol,Bool}, GM.Alterants.setLabels,
-                                  GM.Alterants.checkLabels, nothing))
-        @test :REG_DUPLICATE_ALTNAME in _errors(GM.validate(b))
-        # uninterpreted `requires` — WHOLE-record (R-V04-12 / HC-2 refusal half)
-        b = GM.RegistryBuilder(copy(base.plugins), copy(base.action_specs))
-        GM.register!(b, GM.PlugIn(; altName = :exec, setMode = :accumulate, altConstructor = Dict{Symbol,Bool},
-                                    setAltInstance = GM.Alterants.setLabels, requires = (:execute,)))
-        d = GM.validate(b)
-        @test :REG_UNINTERPRETED_REQUIRES in _errors(d)
-        @test occursin("WHOLE record", only(filter(x -> x.code === :REG_UNINTERPRETED_REQUIRES, d)).message)
-        # MutEx naming an action the alterant does not register
-        b = GM.RegistryBuilder(copy(base.plugins), copy(base.action_specs))
-        b.plugins[2] = GM.PlugIn(; altName = :Visib, setMode = :mutExclusive, altConstructor = GM.Alterants.Visib,
-                                   setAltInstance = GM.Alterants.setVisib, constraints = [GM.MutEx([:hide, :vanish])])
-        @test :REG_MUTEX_CONFLICT in _errors(GM.validate(b))
-        # contract version outside the accepted set
-        b = GM.RegistryBuilder(copy(base.plugins), copy(base.action_specs))
-        b.plugins[3] = GM.PlugIn(; altName = :id, setMode = :mutExclusivePerField, altConstructor = GM.Alterants.Id,
-                                   setAltInstance = GM.Alterants.setId, contract_version = v"9.0.0")
-        @test :REG_CONTRACT_VERSION in _errors(GM.validate(b))
-        # reserved-vocabulary shadowing (FM-REG-3): an action named like a settribute key it does not
-        # declare as its own write-back target
-        b = GM.RegistryBuilder(copy(base.plugins), copy(base.action_specs))
-        GM.register!(b, GM.PlugIn(:sh, :mutExclusive, GM.Alterants.Visib, GM.Alterants.setVisib, nothing, nothing),
-                     GM.ActionSpec(:containsMeta, :identifier, Int8(5),
-                                   [_ov(Type[GM.Alterants.Visib, Symbol]; rt = Bool)], 0, :none, nothing, nothing))
-        @test :REG_RESERVED_SHADOW in _errors(GM.validate(b))
-        # a dangling plugin index is STRUCTURAL (REG_PROTOCOL), never a BoundsError — pushed DIRECTLY
-        # (register! itself refuses the mismatch since cure batch 1; validate must still be total)
-        b = GM.RegistryBuilder(copy(base.plugins), copy(base.action_specs))
-        push!(b.plugins, GM.PlugIn(:p5, :accumulate, Dict{Symbol,Bool}, GM.Alterants.setLabels, nothing, nothing))
-        push!(b.action_specs, GM.ActionSpec(:zzq, :identifier, Int8(42),
-                                            [_ov(Type[Dict{Symbol,Bool}, Symbol])], 0, :none, nothing, nothing))
-        d = GM.validate(b)
-        @test :REG_PROTOCOL in _errors(d)
-        # a declared write-back key ComponentSettribute does not carry
-        b = GM.RegistryBuilder(copy(base.plugins), copy(base.action_specs))
-        b.action_specs[2] = GM.ActionSpec(; name = :hide, spelling = :identifier, plugin = Int8(2),
-                                            overloads = base.action_specs[2].overloads, settribute = :nowhere)
-        @test :REG_PROTOCOL in _errors(GM.validate(b))
-        # slot-pool exhaustion at the REGISTRY grain (the Int8 index space): `register!` refuses the
-        # 128th append (cure batch 1); a builder whose fields were pushed directly is caught by validate
+        # slot-pool exhaustion at the REGISTRY grain (the Int8 index space): `register!` refuses the 128th
+        # append (cure batch 1); the validate-time pool row for a directly-pushed builder left at E4 — such a
+        # builder fails at `publish` with Julia's InexactError (measured: PROBES-e4-validate_stage1-src-cut [8]),
+        # the honest bound of bypassing `register!`
         b = GM.RegistryBuilder(copy(base.plugins), copy(base.action_specs))
         for i in 1:123
             GM.register!(b, GM.PlugIn(Symbol("zz", i), :accumulate, Dict{Symbol,Bool},
@@ -422,9 +341,6 @@ _plugin_with_default(p, d) = GM.PlugIn(; altName = p.altName, setMode = p.setMod
         e = try GM.register!(b, GM.PlugIn(:zz128, :accumulate, Dict{Symbol,Bool}, GM.Alterants.setLabels,
                                           GM.Alterants.checkLabels, nothing)); nothing catch err; err end
         @test e isa GM.RegistrationRefused && _errors(e.diagnostics) == [:REG_SLOT_EXHAUSTED]
-        push!(b.plugins, GM.PlugIn(:zz128, :accumulate, Dict{Symbol,Bool}, GM.Alterants.setLabels,
-                                   GM.Alterants.checkLabels, nothing))   # the direct-push bypass
-        @test :REG_SLOT_EXHAUSTED in _errors(GM.validate(b))
         # `register!` binds the records to the appended plugin (cure batch 1): a record naming another
         # index refuses loudly instead of leaving the appended alterant silently actionless
         b = GM.RegistryBuilder(copy(base.plugins), copy(base.action_specs))
@@ -434,49 +350,19 @@ _plugin_with_default(p, d) = GM.PlugIn(; altName = p.altName, setMode = p.setMod
         catch err; err end
         @test e isa GM.RegistrationRefused && _errors(e.diagnostics) == [:REG_PROTOCOL]
         @test length(b.plugins) == 4                         # nothing appended on refusal
-        # the 0.4.x contract family is accepted (the design's rule; cure batch 1)
+        # validate NEVER throws (cure batch 1): an odd vararg_kind row RETURNS (the enum check left at E4)
         b = GM.RegistryBuilder(copy(base.plugins), copy(base.action_specs))
-        b.plugins[3] = GM.PlugIn(; altName = :id, setMode = :mutExclusivePerField, altConstructor = GM.Alterants.Id,
-                                   setAltInstance = GM.Alterants.setId, contract_version = v"0.4.7")
-        @test :REG_CONTRACT_VERSION ∉ _errors(GM.validate(b))
-        # validate NEVER throws on a structurally broken row (cure batch 1): tier 2 skips it
-        b = GM.RegistryBuilder(copy(base.plugins), copy(base.action_specs))
-        h = base.action_specs[2]
         b.action_specs[2] = GM.ActionSpec(; name = :hide, spelling = :identifier, plugin = Int8(2),
             overloads = [GM.ActionOverload(Type[GM.Alterants.Visib, Symbol], Symbol[], Symbol[], :bogus,
                                            Bool, :set, false, :context_free, :apply, true)], settribute = :hide)
-        d = GM.validate(b)
-        @test :REG_PROTOCOL in _errors(d) && !any(x -> x.code === :REG_SIG_MISMATCH && x.context === :hide, d)
-        b.action_specs[2] = GM.ActionSpec(; name = :hide, spelling = :identifier, plugin = Int8(2),
-            overloads = [GM.ActionOverload(Type[GM.Alterants.Visib, Symbol], Symbol[:symbol, :symbol, :symbol],
-                                           Symbol[:declared, :declared, :declared], nothing, Bool, :set, false,
-                                           :context_free, :apply, true)], settribute = :hide)
-        @test :REG_PROTOCOL in _errors(GM.validate(b))       # a kinds vector longer than the arity — no throw
-        # FULL collection: two independent defects ⇒ both reported, in the chain's deterministic order
-        b = GM.RegistryBuilder(copy(base.plugins), copy(base.action_specs))
-        b.plugins[1] = GM.PlugIn(:labels, :bogus, Dict{Symbol,Bool}, GM.Alterants.setLabels,
-                                 GM.Alterants.checkLabels, nothing)
-        b.plugins[3] = GM.PlugIn(; altName = :id, setMode = :mutExclusivePerField, altConstructor = GM.Alterants.Id,
-                                   setAltInstance = GM.Alterants.setId, contract_version = v"9.0.0")
-        d1 = GM.validate(b); d2 = GM.validate(b)
-        @test _errors(d1) == [:REG_UNKNOWN_SETMODE, :REG_CONTRACT_VERSION]
-        @test _codes(d1) == _codes(d2)                       # A/A-stable refusal
-        e = try GM.publish(b); nothing catch err; err end
-        @test e isa GM.RegistrationRefused && length(e.diagnostics) == 2
-        # the clash law under both arms, through the accumulating form
-        specs = [GM.ActionSpec(:alpha, :identifier, Int8(1), [_ov(Type[Dict{Symbol,Bool}, Symbol])], 0, :none, nothing, nothing),
-                 GM.ActionSpec(:alpha, :identifier, Int8(2), [_ov(Type[GM.Alterants.Visib, Symbol]; rt = Bool)], 0, :none, nothing, nothing)]
-        dR = GM.Diagnostic[]; GM._register_actions_collect!(dR, Dict{Symbol,Int8}(), specs)
-        @test [(d.code, d.severity) for d in dR] == [(:REG_DUPLICATE_ACTION, :error)]
-        dW = GM.Diagnostic[]; own = GM._register_actions_collect!(dW, Dict{Symbol,Int8}(), specs; disposition = :warn)
-        @test [(d.code, d.severity) for d in dW] == [(:REG_DUPLICATE_ACTION, :warning)] && own[:alpha] == Int8(1)
-        # candidacy is a WARNING: validate reports it, publish proceeds
+        @test GM.validate(b) isa Vector{GM.Diagnostic}
+        # a :candidate sugar_candidacy without activation publishes SILENTLY (the candidacy warning left at
+        # E4; measured: PROBES-e4-validate_stage1-src-cut [3])
         b = GM.RegistryBuilder(copy(base.plugins), copy(base.action_specs))
         b.action_specs[3] = GM.ActionSpec(; name = :show, spelling = :identifier, plugin = Int8(2),
                                             overloads = base.action_specs[3].overloads, sugar_candidacy = :candidate,
                                             settribute = :show)
-        d = GM.validate(b)
-        @test [(x.code, x.severity) for x in d] == [(:REG_CANDIDACY, :warning)]
+        @test isempty(GM.validate(b))
         @test GM.publish(b) isa GM.AlterantRegistry
     end
 
@@ -589,8 +475,8 @@ _plugin_with_default(p, d) = GM.PlugIn(; altName = p.altName, setMode = p.setMod
             struct Poison{T} end
             Base.show(io::IO, ::Type{Poison}) = error("A1-BOOM")
             # (v0.4 T3, the round's T3P-C3 cure — an append-only line, disclosed §S2.15):
-            # the UnionAll `Poison` had no zero-argument method and would trip T3's eager
-            # DEP_MISSING gate; this ctor keeps `altConstructor = Poison` — and with it the
+            # the UnionAll `Poison` had no zero-argument method and would have tripped T3's eager
+            # DEP_MISSING gate (left at stage 5's E4); this ctor keeps `altConstructor = Poison` — and with it the
             # only UnionAll-at-altConstructor fold coverage — while the witness itself
             # never calls the constructor (publish + door only).
             Poison() = Poison{Int}()

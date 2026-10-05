@@ -457,7 +457,7 @@ end # module CnS
 #     table + the parallel `action_to_plugin` index
 #     + the `Dict` lookups + the SORTED `accum_alt_idxs` + the generic `action_to_settribute` table
 #     (DERIVED from the declared per-action `settribute` slots — v0.4 T1) through the CHECKED owner
-#     fill (a duplicate action name refuses at load — no silent last-writer-wins), and returns
+#     fill (a duplicate action name resolves FIRST-wins since stage 5's E4 — the clash law that refused it left), and returns
 #     `const DEFAULT_REGISTRY`.
 # REASONING: alterant/action indices are fixed by declaration order, never by `Dict` iteration order —
 #     those indices are baked into the eval'd condition strings.
@@ -469,10 +469,9 @@ end # module CnS
 The v0 alterant inventory's DECLARATIONS in DECLARATION order: fresh top-level `PlugIn` instances for
 `labels` / `Visib` / `Id` / `Heading` (the heading alterant — its names are RATIFIED: alterant
 `Heading`, action `head`) in the `state.jl` type + the per-action records, returned as an
-UNVALIDATED `RegistryBuilder`. `publish` runs the ONE chain (the clash law — a duplicate action
-name refuses, naming both owners, never silent last-writer-wins; the record shape law; the
-reflection cross-check — declared ≡ executable, both directions; the value algebra; the
-reachability refusal; the candidacy diagnostic), derives the tables, and seals; `DEFAULT_REGISTRY`
+UNVALIDATED `RegistryBuilder`. `publish` runs the remaining checks (the domain probe — R-V04B-4 (iii); the Heading lane's
+mode-gate laws; the vocabulary check — the validation chain of v0.4 T2–T4 left at stage 5's E4, census row 3), derives the
+tables (a duplicate action name resolving first-wins), and seals; `DEFAULT_REGISTRY`
 is that published value, consumed READ-ONLY. Pure — no module-load side-effects.
 """
 function default_registry_builder()
@@ -517,13 +516,11 @@ function default_registry_builder()
     ]
 
     # v0.2 registration build: THE DECLARED REGISTRATION RECORD — one ActionSpec per action,
-    # declaration order (the reflection-memo bindings; the parallel derived tables below
-    # stay the hot-path lookups). Internal (grammar=false) rows declare the
-    # probe-surfaced INHERITED setter shapes so the implemented-but-undeclared
-    # diagnostic stays armed for FUTURE drift; they attach to the plugin's first
-    # action (the cross-check walks methods per SETTER, pooling every spec that
-    # shares it). Return types are DECLARED (never inference) and verified by the
-    # dispatch-boundary tests.
+    # declaration order (the parallel derived tables below stay the hot-path lookups).
+    # Internal (grammar=false) rows declare the probe-surfaced INHERITED setter shapes
+    # (declared for the implemented-but-undeclared diagnostic of the time — the reflection
+    # cross-check left at stage 5's E4); they attach to the plugin's first action. Return
+    # types are DECLARED (never inference) and verified by the dispatch-boundary tests.
     _ov(sig, kinds, srcs; vk=nothing, rt=Nothing, q=false, app=:context_free,
         ph=:apply, gr=true) =
         ActionOverload(sig, kinds, srcs, vk, rt, :set, q, app, ph, gr)
@@ -589,461 +586,82 @@ function default_registry_builder()
             1, :activated, Alterants._heading_validate_text, nothing),
     ]
 
-    # THE CLASH LAW (the registration build; replaces the interim uniqueness assert): the
-    # collision CHECK always fires; the terminal disposition sits behind the
-    # ONE-LINE SWITCH `_CLASH_DISPOSITION` with BOTH arms built and tested. ad-6
-    # (refusal-vs-warning) is the OWNER's confirmation — presented at this step's
-    # close, deferred owner-owed; arm R (refusal) is the LIVE arm, continuous with
-    # the interim assert's refusal shape. Then the registration-time CHECK CHAIN
-    # (each fail-closed BEFORE the registry object exists — the ATOMICITY law: no
-    # partial registry is ever observable): the reflection cross-check (a)/(b)/(c)
-    # (the memo verify-not-derive outcome) · the value-algebra refusal (id-5) · the
-    # reachability refusal · the unactivated-candidacy diagnostic (x-8).
-    # v0.4 T2 — the declarations above are the DEFAULT BUILDER; the chain (the clash law + the
-    # record shape law + the reflection cross-check + the value algebra + the reachability
-    # refusal + the candidacy diagnostic, each fail-closed BEFORE the registry object exists —
-    # the ATOMICITY law) now runs inside `publish` as the ONE validation chain
-    # (`_validate_registration`); the derived hot-path tables (the sorted action table, the
-    # parallel action→plugin index, the name→index Dicts, the SORTED accumulate/mutExclusive
-    # index sets the apply-phase `insorted` consumers depend on, the generic
-    # `action_to_settribute` write-back table) come from `_derive_tables` — declarations only,
-    # never hand-supplied; `:mutExclusivePerField` (the `id` compound) sits in NEITHER mode set
-    # by design (its per-field semantics are deferred).
+    # The registration (stage 5's E4 — his §317, census rows 3 and 51: the validation chain of v0.4 T2–T4
+    # and the clash law with its disposition switch left; his legacy registered unchecked): the declarations
+    # above are the DEFAULT BUILDER; `publish` runs the remaining checks (`_validate_registration`: the domain
+    # probe, the Heading lane's mode-gate laws, the vocabulary check), then `_derive_tables` derives the hot-path
+    # tables (the sorted action table, the parallel action→plugin index, the name→index Dicts, the SORTED
+    # accumulate/mutExclusive index sets the apply-phase `insorted` consumers depend on, the generic
+    # `action_to_settribute` write-back table — a duplicate action name resolving first-wins) from the
+    # declarations only, never hand-supplied; `:mutExclusivePerField` (the `id` compound) sits in NEITHER
+    # mode set by design (its per-field semantics are deferred).
     return RegistryBuilder(plugins, action_specs)
 end
 
 """
     build_default_registry() -> AlterantRegistry
 
-The v0 alterant inventory, PUBLISHED: `publish(default_registry_builder())` — the ONE validation
-chain (`_register_actions!` clash law · `_record_wellformed_check` · `_reflection_cross_check` ·
-`_value_algebra_check` · `_reachability_check` · `_candidacy_check`, all inside `publish`) runs
-fail-closed before the object exists, the derived tables come from the declarations, and the seal
-is minted. Pure — no module-load side-effects beyond the const it feeds.
+The v0 alterant inventory, PUBLISHED: `publish(default_registry_builder())` — the remaining checks
+(the domain probe · the mode-gate laws · the vocabulary check, inside `publish`) run before the object
+exists, the derived tables come from the declarations, and the seal is minted. Pure — no module-load side-effects beyond the const it feeds.
 """
 build_default_registry() = publish(default_registry_builder())
 
-## THE CLASH DISPOSITION SWITCH (the registration build): `:refuse` = arm R (load-time refusal — the
-## LIVE arm, promotion-framed per the architecture, continuous with the interim
-## assert's shape) · `:warn` = arm W (ratified warning + remedy + deterministic
-## FIRST-writer-wins). BOTH arms are built and tested; flipping is this one line.
-## The disposition itself is ad-6 — the OWNER's owed confirmation, presented at
-## the registration build's close (deferred owner-owed).
-const _CLASH_DISPOSITION = :refuse
-
 """
-    _register_actions!(owner_of_action, action_specs; disposition) -> owner_of_action
+    _mode_gate_collect!(diags, plugins) -> nothing
 
-The clash law (successor of the interim uniqueness assert): assigns each
-declared action its owning plugin index in declaration order. The collision CHECK
-always fires and names BOTH owners; the terminal disposition is the caller's
-`disposition` (default `_CLASH_DISPOSITION`): `:refuse` throws the typed load-time
-refusal; `:warn` emits the ratified warning WITH the remedy and keeps the FIRST
-writer (deterministic — never last-writer-wins). Identical over both spelling
-kinds (ad-4: the operator token `:(:)` collides exactly like an identifier).
+The four capture MODE-GATE laws of the Heading's :localOnly lane — the gate's closed set, the setMode⟺gate coherence, the one
+implemented scheme and the entries protocol of a :localOnly store (the former tier-1 plugin-level collector's four gate rows) — KEPT at
+`validate` until the Heading runs through the apply loop and the lane retires (R-V04B-101, after the branch); the rest of the tier-1 record shape
+law left at stage 5's E4 (census row 3, his §317). Accumulating: every row a `REG_PROTOCOL` diagnostic; never throws.
 """
-function _register_actions!(owner_of_action::Dict{Symbol,Int8},
-                            action_specs::Vector{ActionSpec};
-                            disposition::Symbol = _CLASH_DISPOSITION)
-    diags = Diagnostic[]
-    _register_actions_collect!(diags, owner_of_action, action_specs; disposition = disposition)
-    _throw_first(diags)
-    return owner_of_action
-end
-
-## v0.4 T2 — THE ACCUMULATING FORMS. Every chain check has a `_*_collect!(diags, …)` form that
-## records EVERY defect as a typed `Diagnostic` (stable `code`, the SAME message text the throwing
-## form used) and never throws — the full-collection-then-terminal law (R-FODT-16): a registration
-## with three defects reports three, in deterministic order (check order × declaration order).
-## The throwing forms above/below are thin wrappers (`_throw_first`) kept for their callers.
-"Replay collected diagnostics as the legacy throw-on-first behavior (warnings via @warn, the first error thrown)."
-function _throw_first(diags::Vector{Diagnostic})
-    for d in diags
-        d.severity === :warning && @warn d.message
-        d.severity === :error && error(d.message)
-    end
-    return nothing
-end
-
-function _register_actions_collect!(diags::Vector{Diagnostic}, owner_of_action::Dict{Symbol,Int8},
-                                    action_specs::Vector{ActionSpec};
-                                    disposition::Symbol = _CLASH_DISPOSITION)
-    for spec in action_specs
-        if haskey(owner_of_action, spec.name)
-            msg = string("GoMeta registry: duplicate alterant action name ",
-                repr(spec.name), " — already owned by plugin index ",
-                owner_of_action[spec.name], ", re-declared by plugin index ",
-                spec.plugin, " (the clash law; disposition = ", disposition, ")")
-            if disposition === :refuse
-                push!(diags, Diagnostic(:REG_DUPLICATE_ACTION, :error, string(msg,
-                    "; the registration REFUSES at load — remedy: rename ",
-                    "one action or retire one declaration (no action ever ",
-                    "registers through silent last-writer-wins)"), spec.name))
-            else
-                push!(diags, Diagnostic(:REG_DUPLICATE_ACTION, :warning, string(msg,
-                    "; keeping the FIRST declaration ",
-                    "(deterministic first-writer-wins) — remedy: rename one ",
-                    "action or retire one declaration"), spec.name))
-            end
-            continue
-        end
-        owner_of_action[spec.name] = spec.plugin
-    end
-    return owner_of_action
-end
-
-"""
-    _first_wins_spec_index(action_specs) -> Dict{Symbol,Int}
-
-FIRST-writer-wins name→index construction, matching the clash law's
-`:warn`-arm survivor (a naive Dict comprehension would keep the LAST
-colliding spec, so under `:warn` the dispatch tables and the capability
-consult would read DIFFERENT declarations; under the live `:refuse` arm
-duplicates never reach this point, and first-wins is correct under BOTH
-arms). Extracted so the arm-consistency property is directly witnessed.
-"""
-function _first_wins_spec_index(action_specs::Vector{ActionSpec})
-    spec_index = Dict{Symbol,Int}()
-    for (i, s) in enumerate(action_specs)
-        haskey(spec_index, s.name) || (spec_index[s.name] = i)
-    end
-    return spec_index
-end
-
-## The closed serializable RETURN-TYPE algebra (id-5): a declared return type
-## outside this set refuses at registration (the value-algebra law). Grown only by
-## a conscious registry edit.
-const _CLOSED_RETURN_TYPES = Type[Nothing, Bool, Int16]
-
-## The record's CLOSED ENUM sets (the wellformed check below): every tag field is
-## validated at registration, so a typo registers loudly, never silently.
-const _SPELLING_KINDS  = (:identifier, :operator)
-const _LITERAL_KINDS   = (:symbol, :string, :raw)     # :raw = internal-row bytes
-const _KIND_SOURCES    = (:declared, :reflected)
-const _EFFECT_KINDS    = (:set,)
-const _APPLICABILITIES = (:context_free, :context_required)
-const _PHASES          = (:apply, :absorb)
-const _CANDIDACIES     = (:none, :candidate, :activated)
-
-"""
-    _record_wellformed_check(action_specs, plugins) -> nothing
-
-The record's own shape law (a mis-spelled tag would otherwise register
-silently, against the loud posture): every enum-tagged field must sit in its
-closed set; the kinds/kind_sources vectors must be parallel; a `queryable=true`
-row requires its plugin to carry a getter (`getAltInstance !== nothing` — the
-query seam calls it unguarded once the plugin enters the working set).
-"""
-function _record_wellformed_check(action_specs::Vector{ActionSpec},
-                                  plugins::Vector{PlugIn})
-    diags = Diagnostic[]
-    _record_wellformed_collect!(diags, action_specs, plugins)
-    _throw_first(diags)
-    return nothing
-end
-
-"The indices of the action records tier 1 finds structurally broken (the tier-2 skip set; cure batch 2). Cure batch 3: the ACTION-level law only — a plugin-level defect never marks an action broken."
-function _broken_record_indices(action_specs::Vector{ActionSpec}, plugins::Vector{PlugIn})
-    broken = Set{Int}()
-    for (i, spec) in enumerate(action_specs)
-        d = Diagnostic[]
-        _record_wellformed_actions_collect!(d, [spec], plugins)
-        # (the t3t4r3 A6 cure) an ENCODABILITY-refused record is BROKEN for tier 2 too:
-        # a well-shaped overload carrying an over-budget/unencodable type got its
-        # REG_PROTOCOL row yet stayed in `sound`, so the reflection collector re-walked
-        # the very type the budget had refused (probe P64: a SIG_MISMATCH row minted on
-        # the refused overload — unbounded at pathological depth). The per-spec probe
-        # re-runs the same bounded domain walk the chain runs.
-        if isempty(d)
-            for slot in _WALK_ACTION_FIELDS
-                _domain_slot_probe!(d, "action", spec.name, slot, getfield(spec, slot),
-                                    slot === :validate, slot === :overloads)
-            end
-        end
-        any(x -> x.code === :REG_PROTOCOL, d) && push!(broken, i)
-    end
-    return broken
-end
-
-"The tier-1 STRUCTURAL law, accumulating: every row a `REG_PROTOCOL` diagnostic (the `protocol` class) — the action-level law then the plugin-level law."
-function _record_wellformed_collect!(diags::Vector{Diagnostic}, action_specs::Vector{ActionSpec},
-                                     plugins::Vector{PlugIn})
-    _record_wellformed_actions_collect!(diags, action_specs, plugins)
-    _record_wellformed_plugins_collect!(diags, plugins)
-    return nothing
-end
-
-"Tier 1, the ACTION-level rows (cure batch 3: split from the plugin-level rows so the tier-2 skip set is per action)."
-function _record_wellformed_actions_collect!(diags::Vector{Diagnostic}, action_specs::Vector{ActionSpec},
-                                             plugins::Vector{PlugIn})
+function _mode_gate_collect!(diags::Vector{Diagnostic}, plugins::Vector{PlugIn})
     proto(msg, ctx) = push!(diags, Diagnostic(:REG_PROTOCOL, :error, msg, ctx))
-    for spec in action_specs
-        # the owning-plugin index must exist BEFORE any dependent check reads `plugins[spec.plugin]`
-        # (a hand-built record with a dangling index is a STRUCTURAL defect, never a BoundsError)
-        plugin_ok = 1 <= spec.plugin <= length(plugins)
-        plugin_ok || proto(string("GoMeta registry: action ", repr(spec.name), " names plugin index ",
-            spec.plugin, " but the record declares ", length(plugins), " alterant(s) (the record ",
-            "shape law)"), spec.name)
-        spec.spelling in _SPELLING_KINDS ||
-            proto(string("GoMeta registry: unknown spelling tag ", repr(spec.spelling),
-                " on action ", repr(spec.name), " (the record shape law)"), spec.name)
-        spec.sugar_candidacy in _CANDIDACIES ||
-            proto(string("GoMeta registry: unknown sugar-candidacy tag ",
-                repr(spec.sugar_candidacy), " on action ", repr(spec.name),
-                " (the record shape law)"), spec.name)
-        for ov in spec.overloads
-            length(ov.kinds) == length(ov.kind_sources) ||
-                proto(string("GoMeta registry: kinds/kind_sources arity mismatch on ",
-                    repr(spec.name), " (the record shape law)"), spec.name)
-            all(k in _LITERAL_KINDS for k in ov.kinds) &&
-                (ov.vararg_kind === nothing || ov.vararg_kind in _LITERAL_KINDS) ||
-                proto(string("GoMeta registry: unknown literal kind on ", repr(spec.name),
-                    " (the record shape law)"), spec.name)
-            length(ov.kinds) <= length(ov.sig_types) - 2 ||
-                proto(string("GoMeta registry: the kinds vector on ", repr(spec.name),
-                    " is longer than the overload's user arity — leading kinds ",
-                    "would silently describe the dispatch preamble (the record ",
-                    "shape law; the kinds tail-align to the LAST user slots)"), spec.name)
-            all(s in _KIND_SOURCES for s in ov.kind_sources) ||
-                proto(string("GoMeta registry: unknown kind source on ", repr(spec.name),
-                    " (the record shape law)"), spec.name)
-            ov.effect in _EFFECT_KINDS ||
-                proto(string("GoMeta registry: unknown effect class ", repr(ov.effect),
-                    " on ", repr(spec.name), " (the record shape law)"), spec.name)
-            ov.applicability in _APPLICABILITIES ||
-                proto(string("GoMeta registry: unknown applicability ",
-                    repr(ov.applicability), " on ", repr(spec.name),
-                    " (the record shape law)"), spec.name)
-            ov.phase in _PHASES ||
-                proto(string("GoMeta registry: unknown delivery phase ", repr(ov.phase),
-                    " on ", repr(spec.name), " (the record shape law)"), spec.name)
-            plugin_ok && ov.queryable && plugins[spec.plugin].getAltInstance === nothing &&
-                proto(string("GoMeta registry: action ", repr(spec.name),
-                    " declares queryable=true but its plugin carries no getter ",
-                    "(the query seam would crash — the I20 class; the record ",
-                    "shape law)"), spec.name)
-        end
-        # THE DISPATCH-TARGET UNIQUENESS LAW (external-review-commissioned): per
-        # action, at most ONE Symbol-addressable declared row per reachable arity —
-        # two fixed rows must differ in arity; a fixed row must sit BELOW every
-        # vararg row's base; two vararg rows always overlap and refuse. With this
-        # law the set-invocation guard's arity-compatible row set is a SINGLETON at
-        # every reachable call, so (a) Julia dispatch can never select a row the
-        # form-matcher rejected (the wrong-overload/ambiguity class is load-time
-        # impossible), and (b) the return guard provably checks the SELECTED row's
-        # own declaration (no masking via an unrelated same-arity row).
-        addr = [ov for ov in spec.overloads if length(ov.sig_types) >= 2 && Symbol <: ov.sig_types[2]]
-        for i in eachindex(addr), j in (i + 1):lastindex(addr)
-            a, b = addr[i], addr[j]
-            na, nb = length(a.sig_types) - 2, length(b.sig_types) - 2
-            overlap = a.vararg_kind === nothing && b.vararg_kind === nothing ?
-                    na == nb :
-                a.vararg_kind !== nothing && b.vararg_kind !== nothing ?
-                    true :
-                a.vararg_kind === nothing ? na >= nb : nb >= na
-            overlap && proto(string("GoMeta registry: action ", repr(spec.name),
-                " declares two Symbol-addressable rows with overlapping arity ",
-                "sets — the dispatch-target uniqueness law refuses (one declared ",
-                "form per arity; the guard's row set must be a singleton)"), spec.name)
-        end
-        # v0.4 T2 — a declared write-back key must be a settribute key the component carries
-        spec.settribute === nothing || spec.settribute in keys(BLS.ComponentSettribute) ||
-            proto(string("GoMeta registry: action ", repr(spec.name), " declares the write-back ",
-                "settribute key ", repr(spec.settribute), " which ComponentSettribute does not carry ",
-                "(the record shape law)"), spec.name)
-    end
-    return nothing
-end
-
-"Tier 1, the PLUGIN-level rows (the v0.4 T1 slot shapes)."
-function _record_wellformed_plugins_collect!(diags::Vector{Diagnostic}, plugins::Vector{PlugIn})
-    proto(msg, ctx) = push!(diags, Diagnostic(:REG_PROTOCOL, :error, msg, ctx))
-    # v0.4 T1 — the per-Alterant slots' shape (additive): every enum-tagged member of the new
-    # slots sits in its closed set; a mis-spelled tag registers LOUDLY, never silently.
-    # (v0.4 T5) the effective stem, shared with the walk: declared, else the derived fallback
-    _stem(p) = p.capture.attr_stem === nothing ?
-        Symbol(lowercase(String(p.altName))) : p.capture.attr_stem
-    seen_stems = Dict{Symbol,Symbol}()   # stem => first-declaring altName (the clash law)
     for p in plugins
-        # stage 2's commit 3 — the Alterant's default slot's shape (R-V04B-51 (1); the closed slot types of state.jl):
-        p.default isa DefaultSlot ||
-            proto(string("GoMeta registry: the default slot on alterant ", repr(p.altName),
-                " is not a DefaultSlot (NoDefault() | Declared(v)) (the record shape law)"), p.altName)
-        if p.capture !== nothing
-            p.capture.attr_scheme in _CAPTURE_SCHEMES ||
-                proto(string("GoMeta registry: unknown capture attr scheme ", repr(p.capture.attr_scheme),
-                    " on alterant ", repr(p.altName), " (the record shape law; the closed set is ",
-                    _CAPTURE_SCHEMES, ")"), p.altName)
-            p.capture.multiplicity in _CAPTURE_MULTIPLICITIES ||
-                proto(string("GoMeta registry: unknown capture multiplicity ", repr(p.capture.multiplicity),
-                    " on alterant ", repr(p.altName), " (the record shape law; the closed set is ",
-                    _CAPTURE_MULTIPLICITIES, ")"), p.altName)
-            ## v0.4 T5 (the T5-round tier-1 family — every row free under the SEVENTH
-            ## re-mint): the gate's closed set; the BIDIRECTIONAL setMode⟺gate coherence
-            ## (either one-way hole was a NEW silent-no-rows class — the anti-T1 disease);
-            ## the instance_type≡altConstructor law (the mint IS `altConstructor()`, so a
-            ## mismatch would read one type's store through another's name table); the
-            ## stem's shape; the cross-plugin stem-clash law (same stem ⇒ same
-            ## `(handle, attr)` families ⇒ silent cross-plugin supersede).
-            p.capture.mode_gate in _CAPTURE_MODE_GATES ||
-                proto(string("GoMeta registry: unknown capture mode gate ", repr(p.capture.mode_gate),
-                    " on alterant ", repr(p.altName), " (the record shape law; the closed set is ",
-                    _CAPTURE_MODE_GATES, ")"), p.altName)
-            ((p.setMode === :localOnly) == (p.capture.mode_gate === :localOnly)) ||
-                proto(string("GoMeta registry: capture mode gate ", repr(p.capture.mode_gate),
-                    " is INCOHERENT with setMode ", repr(p.setMode), " on alterant ",
-                    repr(p.altName), " — a :localOnly record captures at the absorb seam and",
-                    " MUST gate :localOnly; a queued record must not (either mismatch is a",
-                    " silent zero-rows class — the capture coherence law)"), p.altName)
-            ## (the crx-t5 A5 cure) the localOnly seam implements ONE scheme — a gated
-            ## row declaring any other scheme would be heading-folded against its own
-            ## declaration (or falsely floored): refuse at publish.
-            (p.capture.mode_gate !== :localOnly || p.capture.attr_scheme === :per_occurrence) ||
-                proto(string("GoMeta registry: a :localOnly capture row on alterant ",
-                    repr(p.altName), " declares scheme ", repr(p.capture.attr_scheme),
-                    " — the absorb-seam delivery implements :per_occurrence only at v0.4",
-                    " (the localOnly scheme law)"), p.altName)
-            ## (the crx-t5 A4/C3 cure — STATIC) a localOnly store must carry the
-            ## CONCRETE entries protocol the seam folds; anything else would be
-            ## registrable-then-floored, and the relay's "any lane" claim narrows to
-            ## exactly this protocol (the correction relayed).
-            (p.capture.mode_gate !== :localOnly ||
-             (hasfield(p.capture.instance_type, :entries) &&
-              fieldtype(p.capture.instance_type, :entries) === Vector{Tuple{String,Union{Nothing,Int}}})) ||
-                proto(string("GoMeta registry: a :localOnly capture row on alterant ",
-                    repr(p.altName), " declares instance type ",
-                    _ctor_type_name(p.capture.instance_type), " without the entries",
-                    " protocol (`entries::Vector{Tuple{String,Union{Nothing,Int}}}`) — the",
-                    " absorb-seam fold reads exactly that shape (the localOnly store law)"), p.altName)
-            p.capture.instance_type === p.altConstructor ||
-                proto(string("GoMeta registry: capture instance_type ",
-                    _ctor_type_name(p.capture.instance_type), " differs from altConstructor ",
-                    _ctor_type_name(p.altConstructor), " on alterant ", repr(p.altName),
-                    " — the walk would read one type's store through another's name table",
-                    " (the capture identity law)"), p.altName)
-            (p.capture.attr_stem === nothing ||
-             (p.capture.attr_stem isa Symbol && !isempty(String(p.capture.attr_stem)))) ||
-                proto(string("GoMeta registry: capture attr_stem on alterant ", repr(p.altName),
-                    " is empty — a stem must be a non-empty Symbol or nothing (the record",
-                    " shape law)"), p.altName)
-            let s = _stem(p)
-                ## (the crx-t5 A6 cure) the clash law covers the PREFIX FAMILY, not just
-                ## exact stems: stem `:a` with key `:b_c` and stem `:a_b` with key `:c`
-                ## both mint `:a_b_c` — an underscore-prefix relationship either way is a
-                ## cross-plugin attr-namespace overlap (full structural namespacing is
-                ## T11's row; this refusal closes the constructible collision class).
-                for (s2, owner) in seen_stems
-                    clash = s === s2 ||
-                        startswith(String(s), String(s2) * "_") ||
-                        startswith(String(s2), String(s) * "_")
-                    clash && proto(string("GoMeta registry: capture attr stem ", repr(s),
-                        " on ", repr(p.altName), " overlaps the stem family of ", repr(s2),
-                        " on ", repr(owner),
-                        " — overlapping families mint colliding (handle, attr) rows and",
-                        " silently supersede across plugins (the stem-clash law)"), p.altName)
-                end
-                haskey(seen_stems, s) || (seen_stems[s] = p.altName)
-            end
-        end
-        if p.render !== nothing
-            for (act, row) in p.render.effects
-                row.kind in _EFFECT_ROW_KINDS ||
-                    proto(string("GoMeta registry: unknown effect kind ", repr(row.kind), " on action ",
-                        repr(act), " of alterant ", repr(p.altName),
-                        " (the record shape law; the closed set is ", _EFFECT_ROW_KINDS, ")"), p.altName)
-                row.kind === :mark || row.payload === nothing ||
-                    proto(string("GoMeta registry: effect row ", repr(act), " of alterant ", repr(p.altName),
-                        " carries a payload but is not a :mark row (the record shape law)"), p.altName)
-            end
-        end
-        p.provenance.acquisition_mode === nothing ||
-            p.provenance.acquisition_mode in _ACQUISITION_MODES ||
-            proto(string("GoMeta registry: unknown acquisition mode ", repr(p.provenance.acquisition_mode),
-                " on alterant ", repr(p.altName), " (the record shape law; the closed set is ",
-                _ACQUISITION_MODES, ")"), p.altName)
-        for c in p.constraints
-            isempty(c.actions) &&
-                proto(string("GoMeta registry: an empty MutEx constraint on alterant ", repr(p.altName),
-                    " (the record shape law)"), p.altName)
-        end
+        p.capture === nothing && continue
+        p.capture.mode_gate in _CAPTURE_MODE_GATES ||
+            proto(string("GoMeta registry: unknown capture mode gate ", repr(p.capture.mode_gate),
+                " on alterant ", repr(p.altName), " (the mode-gate law; the closed set is ",
+                _CAPTURE_MODE_GATES, ")"), p.altName)
+        ((p.setMode === :localOnly) == (p.capture.mode_gate === :localOnly)) ||
+            proto(string("GoMeta registry: capture mode gate ", repr(p.capture.mode_gate),
+                " is INCOHERENT with setMode ", repr(p.setMode), " on alterant ",
+                repr(p.altName), " — a :localOnly record captures at the absorb seam and",
+                " MUST gate :localOnly; a queued record must not (either mismatch is a",
+                " silent zero-rows class — the capture coherence law)"), p.altName)
+        ## (the crx-t5 A5 cure) the localOnly seam implements ONE scheme — a gated
+        ## row declaring any other scheme would be heading-folded against its own
+        ## declaration (or falsely floored): refuse at publish.
+        (p.capture.mode_gate !== :localOnly || p.capture.attr_scheme === :per_occurrence) ||
+            proto(string("GoMeta registry: a :localOnly capture row on alterant ",
+                repr(p.altName), " declares scheme ", repr(p.capture.attr_scheme),
+                " — the absorb-seam delivery implements :per_occurrence only at v0.4",
+                " (the localOnly scheme law)"), p.altName)
+        ## (the crx-t5 A4/C3 cure — STATIC) a localOnly store must carry the
+        ## CONCRETE entries protocol the seam folds; anything else would be
+        ## registrable-then-floored, and the relay's "any lane" claim narrows to
+        ## exactly this protocol (the correction relayed).
+        (p.capture.mode_gate !== :localOnly ||
+         (hasfield(p.capture.instance_type, :entries) &&
+          fieldtype(p.capture.instance_type, :entries) === Vector{Tuple{String,Union{Nothing,Int}}})) ||
+            proto(string("GoMeta registry: a :localOnly capture row on alterant ",
+                repr(p.altName), " declares instance type ",
+                _ctor_type_name(p.capture.instance_type), " without the entries",
+                " protocol (`entries::Vector{Tuple{String,Union{Nothing,Int}}}`) — the",
+                " absorb-seam fold reads exactly that shape (the localOnly store law)"), p.altName)
     end
     return nothing
 end
 
-## v0.4 T2 — the INVENTORY law (tier 2, the record-level semantics the failure matrix measured
-## silent on v0.3.2): unknown set modes (FM-REG-1), duplicate alterant names (FM-REG-6),
-## reserved-vocabulary shadowing (FM-REG-3), uninterpreted `requires` (whole-record, R-V04-12),
-## MutEx conflicts, the contract version, and slot-pool exhaustion at the registry grain.
-const _SET_MODES = (:accumulate, :mutExclusive, :mutExclusivePerField, :localOnly)
-const _INTERPRETED_REQUIRES = ()            # the v0.4.0 roster interprets NO capability token
-const _CONTRACT_VERSIONS = (v"0.4.0",)      # the family's anchor (display); the accepted set = the 0.4 MINOR family
-"The accepted `contract_version` family: `nothing` (undeclared) or any v0.4.x (the design's 0.4.x rule; cure batch 1)."
-_contract_accepts(v::VersionNumber) = v.major == 0 && v.minor == 4
-const _SLOT_POOL = Int(typemax(Int8))       # the Int8 index space of plugins/actions (127)
-function _inventory_collect!(diags::Vector{Diagnostic}, plugins::Vector{PlugIn},
-                             action_specs::Vector{ActionSpec};
-                             sound::Vector{ActionSpec} = action_specs)   # (cure batch 3) ownership from SOUND records only
-    seen = Dict{Symbol,Int}()
-    for (i, p) in enumerate(plugins)
-        p.setMode in _SET_MODES ||
-            push!(diags, Diagnostic(:REG_UNKNOWN_SETMODE, :error, string("GoMeta registry: unknown ",
-                "setMode ", repr(p.setMode), " on alterant ", repr(p.altName), " — the closed set is ",
-                _SET_MODES, " (an unknown mode would silently enter neither mode set and misroute ",
-                "at apply)"), p.altName))
-        if haskey(seen, p.altName)
-            push!(diags, Diagnostic(:REG_DUPLICATE_ALTNAME, :error, string("GoMeta registry: duplicate ",
-                "alterant name ", repr(p.altName), " at plugin indices ", seen[p.altName], " and ", i,
-                " (a Dict comprehension would silently keep the last)"), p.altName))
-        else
-            seen[p.altName] = i
-        end
-        isempty(p.requires) ||
-            all(r -> r in _INTERPRETED_REQUIRES, p.requires) ||
-            push!(diags, Diagnostic(:REG_UNINTERPRETED_REQUIRES, :error, string("GoMeta registry: ",
-                "alterant ", repr(p.altName), " requires ", p.requires, " — the v0.4.0 roster ",
-                "interprets none of it; the WHOLE record refuses (no partial admission; the ",
-                "Execute room is a later contract version)"), p.altName))
-        p.contract_version === nothing || _contract_accepts(p.contract_version) ||
-            push!(diags, Diagnostic(:REG_CONTRACT_VERSION, :error, string("GoMeta registry: alterant ",
-                repr(p.altName), " targets contract version ", p.contract_version, " — the accepted ",
-                "family is v0.4.x (anchor ", _CONTRACT_VERSIONS[1], "; or undeclared)"), p.altName))
-        own = Set(s.name for s in sound if Int(s.plugin) == i)   # never Int8(i): i may exceed the pool; a malformed record owns nothing
-        for c in p.constraints
-            for a in c.actions
-                a in own || push!(diags, Diagnostic(:REG_MUTEX_CONFLICT, :error, string(
-                    "GoMeta registry: the MutEx constraint ", c.actions, " on alterant ",
-                    repr(p.altName), " names ", repr(a), ", which is not one of that alterant's ",
-                    "registered actions"), p.altName))
-            end
-        end
-    end
-    for s in action_specs
-        # reserved-vocabulary shadowing: an action named like a settribute key it does not itself
-        # declare as its write-back target would shadow the key in the interpreter's state arm.
-        s.name in keys(BLS.ComponentSettribute) && s.settribute !== s.name &&
-            push!(diags, Diagnostic(:REG_RESERVED_SHADOW, :error, string("GoMeta registry: action ",
-                repr(s.name), " shadows the reserved settribute key of the same name without ",
-                "declaring it as its own write-back target (the interpreter's state arm would ",
-                "resolve the key, never the action's query)"), s.name))
-    end
-    (length(plugins) > _SLOT_POOL || length(action_specs) > _SLOT_POOL) &&
-        push!(diags, Diagnostic(:REG_SLOT_EXHAUSTED, :error, string("GoMeta registry: the inventory (",
-            length(plugins), " alterants, ", length(action_specs), " actions) exceeds the slot pool ",
-            "of ", _SLOT_POOL, " (the Int8 index space) — silent index aliasing refused at ",
-            "registration"), nothing))
-    return nothing
-end
+const _LITERAL_KINDS = (:symbol, :string, :raw)     # :raw = internal-row bytes — the closed kind set `_kind_type` is total over
 
 """
     _kind_type(k::Symbol) -> Type
 
 The ONE declared-kind → runtime-type map, TOTAL over the closed `_LITERAL_KINDS` set
-(`:symbol` → `Symbol` · `:string` → `AbstractString` · `:raw` → `SubString{String}`), shared
-by the load-time reflection cross-check's VARARG construction AND the runtime arming consult
-in the set-invocation guard. (The (c) loop's per-slot kind/type AGREEMENT predicate remains
-its own encoding — it answers a subtler question than kind→type, e.g. `:string` accepts any
-`<:AbstractString` slot.) An unknown kind is an internal defect (the record shape law already
-refuses it at registration).
+(`:symbol` → `Symbol` · `:string` → `AbstractString` · `:raw` → `SubString{String}`), used by
+the runtime arming consult in the set-invocation guard (its load-time partner, the reflection
+cross-check, left at stage 5's E4). An unknown kind meets the error below.
 """
 _kind_type(k::Symbol)::Type =
     k === :symbol ? Symbol :
@@ -1056,8 +674,8 @@ _kind_type(k::Symbol)::Type =
     _user_arity(ov::ActionOverload) -> Int
 
 The overload's USER-argument arity. Every declared `sig_types` vector INCLUDES the
-`(alterant, actionName)` dispatch preamble (the record shape the exact-signature cross-check
-constructs against), so the user arity is `length(sig_types) - 2` — pinned here so the
+`(alterant, actionName)` dispatch preamble (the record shape the setters' methods carry),
+so the user arity is `length(sig_types) - 2` — pinned here so the
 convention cannot silently skew between the record and its consumers.
 """
 _user_arity(ov::ActionOverload)::Int = length(ov.sig_types) - 2
@@ -1067,8 +685,9 @@ _user_arity(ov::ActionOverload)::Int = length(ov.sig_types) - 2
 
 The canonicalized fingerprint of the EFFECTIVE declared registration record — the profile's
 registration provenance/cache-key component. Canonicalization: first-owner-per-name dedup
-FIRST (so a clash-arm-W loser spec never moves the fingerprint — the effective record is
-first-wins; which spec WON is meaning-bearing and correctly stays visible), then specs
+FIRST (so a duplicate-named loser spec never moves the fingerprint — the effective record is
+first-wins, as `_derive_tables` resolves it since stage 5's E4; which spec WON is meaning-bearing
+and correctly stays visible), then specs
 sorted by action name; within a spec, overload rows sorted by their own serialized text — so
 the digest is invariant under registration/declaration ORDER (multi-order determinism). The
 `validate` slot folds by FUNCTION NAME (a swapped validator is USUALLY a result-affecting
@@ -1107,9 +726,11 @@ function _registration_digest(action_specs::Vector{ActionSpec};
             end
             # in-band marker discipline (delta-recorded): the "k"/"s" list markers
             # separate two SPLATTED variable-length lists; boundary aliasing would
-            # need a kind or source literally named k/s — impossible, both sets are
-            # CLOSED enums the record shape law enforces, and kinds/kind_sources are
-            # parallel-length by the same law. Revisit if either set ever opens.
+            # need a kind or source literally named k/s — no longer refused at registration
+            # (the enum check left at stage 5's E4; `_kind_type` runs only at the arming
+            # consult, after the digest is minted), so such a record's fingerprint can alias
+            # another's: a fingerprint-only collision class inside R-V04B-4 (v)'s disclosed-lossy
+            # bound — the door's snapshot compare does not depend on the fingerprint.
             h = _fold_parts(h, "k", ov.kinds..., "s", ov.kind_sources...,
                 ov.vararg_kind, _type_text(ov.return_type), ov.effect,
                 ov.queryable, ov.applicability, ov.phase, ov.grammar)
@@ -1617,22 +1238,6 @@ function _domain_slot_probe!(diags::Vector{Diagnostic}, label::String, ctx, slot
     return nothing
 end
 
-"""
-    _dependency_collect!(diags, plugins)
-
-(v0.4 T3 — T3-DESIGN §4; FM-DEP-1's eager closure; CE 2.g class C) every plugin's
-`altConstructor` must be ZERO-ARG CONSTRUCTIBLE at the gate — the instance mint calls it
-bare at the three mint sites, and an absent method was a RAW `MethodError` at first apply.
-ONE `:DEP_MISSING` error row per offending plugin (record grain; the type name via the
-structural zero-dispatch renderer). Hardened at the t3t4r2 closure set (the T3-era claim
-"`hasmethod` is total over `Type`" was REFUTED three ways, each probe-confirmed):
-`Union{}` refuses eagerly (its `hasmethod` is a FALSE true — probe P52); a
-budget-refused ctor type SKIPS the lookup (the unbounded-`hasmethod` class — the
-encodability row already refuses the registration); the lookup itself is
-`invoke`-pinned to the Base `(Any, Any)` fallback (a registered
-`Base.hasmethod(::Type{Theirs}, ::Type{Tuple{}})` specialization threw through the
-gate — probes P51/P53).
-"""
 # (the T4-milestone-set A3 cure; hardened at t3t4r; STRUCTURAL-TOTAL at the t3t4r2
 # closure set — seats B + C) the TOTAL, ZERO-DISPATCH ctor-type renderer. The onion,
 # each layer probe-confirmed: `nameof` covers only DataType/UnionAll (the raw
@@ -1675,58 +1280,6 @@ end
 function _callable_text(@nospecialize f)
     nm = String(getfield(getfield(typeof(f), :name), :name))
     return startswith(nm, "#") ? nm[2:end] : nm
-end
-
-# (the t3t4r5-A2 cure) the executable METHOD TABLE is caller-owned: an UNDECLARED
-# method's signature can carry parameters outside the encodable domain (`Val{'x'}` —
-# probe P81: the render threw a raw engine-internal `_UnencodableSlot(Char)` out of
-# validate) or past the type budget. The guarded text buckets both classes to CONSTANT
-# strings — the row still mints (implemented-but-undeclared is the CORRECT outcome),
-# the render never throws, and the sort stays deterministic (equal-key methods keep
-# the method-table's stable definition order within a run).
-function _sig_guarded_text(@nospecialize msig)
-    verdict = _type_budget_check(msig)[1]
-    verdict === :over_budget && return "(an over-budget signature)"
-    verdict === :bad_param && return "(a signature outside the encodable domain)"
-    try
-        return _type_text(msig)
-    catch e
-        (e isa _UnencodableSlot || e isa _CyclicSlot) || rethrow()
-        return "(a signature outside the encodable domain)"
-    end
-end
-
-function _dependency_collect!(diags::Vector{Diagnostic}, plugins::Vector{PlugIn})
-    for p in plugins
-        C = p.altConstructor
-        # (the t3t4r2 family cure, seat A row 4 — probe P52) `Union{}` is storable and
-        # `hasmethod(Union{}, Tuple{})` is TRUE (Core's vararg ctor), yet `Union{}()`
-        # ALWAYS throws — the eager gate refuses the false admission here, not at the
-        # first apply's guarded mint.
-        if C === Union{}
-            push!(diags, Diagnostic(:DEP_MISSING, :error, string(
-                "GoMeta registry: alterant ", repr(p.altName), " declares altConstructor ",
-                "Union{} — the bottom type has NO instances, so the mint can never ",
-                "succeed (DEP_MISSING; eager dependency closure at publication)"), p.altName))
-            continue
-        end
-        # (row 5) a ctor type past the encoder budget already refuses the WHOLE
-        # registration at the encodability collector — running an UNBOUNDED method
-        # lookup on it here is pure exposure (a 10^4-member Union stalls `hasmethod`);
-        # the budget walk is the bound.
-        _type_budget_check(C)[1] === :ok || continue
-        # (row 3 — probe P51/P53) `hasmethod` is an EXTENSIBLE generic: a registered
-        # `Base.hasmethod(::Type{Theirs}, ::Type{Tuple{}})` specialization threw through
-        # the gate. `invoke` pins the Base `(Any, Any)` fallback — the specialization
-        # cannot run.
-        invoke(hasmethod, Tuple{Any,Any}, C, Tuple{}) ||
-            push!(diags, Diagnostic(:DEP_MISSING, :error, string(
-                "GoMeta registry: alterant ", repr(p.altName), " declares altConstructor ",
-                _ctor_type_name(C), " with no zero-argument method — the ",
-                "instance mint's dependency (DEP_MISSING; eager dependency closure at ",
-                "publication)"), p.altName))
-    end
-    return nothing
 end
 
 """
@@ -1841,7 +1394,8 @@ end
 """
     _encodability_collect!(diags, plugins, action_specs)
 
-(T2-bis, replacing the cure-batch-4/5 `_slot_text` probe) tier 1's DOMAIN row — the ONE
+(T2-bis, replacing the cure-batch-4/5 `_slot_text` probe) the DOMAIN probe (R-V04B-4 (iii); the
+record shape law's one remaining row since stage 5's E4) — the ONE
 walk with TWO predicates over EVERY record field (plugin × 16, spec × 10, overloads walked
 within over all 10 overload fields — T2BIS-DESIGN §2): predicate 1 = membership AT
 POSITION (leaves via `_domain_leaf`; the value-domain containers; the record structs only
@@ -2560,223 +2114,22 @@ _type_param_text(p)::String =
                                      isdefined(p, :N) ? _type_param_text(getfield(p, :N)) : "-", ")") :
     p isa Type ? _type_text(p) : _slot_text(p)
 
-"""
-    _reflection_cross_check(action_specs, plugins) -> nothing
-
-The reflection memo's VERIFY-NOT-DERIVE cross-check, run at registration time (atomic —
-any failure aborts the whole build): (a) every DECLARED overload must match an
-executable method on its plugin's setter (`hasmethod` over the declared signature)
-— declared-but-unimplemented refuses; (b) every executable method on a declared
-setter must match some declared overload's signature — implemented-but-undeclared
-raises the LOUD load-time diagnostic (the x-8 class; the probe-surfaced inherited
-shapes are declared as internal rows precisely so this arm stays armed for future
-drift); (c) where a declared `:string`/`:symbol` kind meets a TYPED signature
-slot, the types must agree (`:string` ⇒ `<:AbstractString`, `:symbol` ⇒
-`Symbol`; an `Any` slot carries a `:declared` kind by definition).
-"""
-function _reflection_cross_check(action_specs::Vector{ActionSpec},
-                                 plugins::Vector{PlugIn})
-    diags = Diagnostic[]
-    _reflection_collect!(diags, action_specs, plugins)
-    _throw_first(diags)
-    return nothing
-end
-
-"The reflection cross-check, accumulating (`REG_SIG_MISMATCH` per defect; specs with a dangling plugin index are skipped — tier 1 already reported them)."
-function _reflection_collect!(diags::Vector{Diagnostic}, action_specs::Vector{ActionSpec},
-                              plugins::Vector{PlugIn})
-    sigm(msg, ctx) = push!(diags, Diagnostic(:REG_SIG_MISMATCH, :error, msg, ctx))
-    # (the t3t4r3 A3=B1=C2 cure) IDENTITY pooling: a plain Dict{Function} dispatched
-    # `hash`/`isequal` on the caller-owned setter — a legitimate throwing specialization
-    # broke validate at the very first `get!` (probe P60). IdDict keys by `objectid`
-    # (builtin) — no user method can run.
-    declared_by_setter = IdDict{Any,Vector{Vector{Any}}}()
-    for spec in action_specs
-        1 <= spec.plugin <= length(plugins) || continue
-        setter = plugins[spec.plugin].setAltInstance
-        sigs = get!(declared_by_setter, setter, Vector{Any}[])
-        for ov in spec.overloads
-            # a trailing Vararg is a Core.TypeofVararg, not a Type — the signature
-            # containers are Any-typed on purpose. The vararg's DECLARED kind is
-            # honored over the WHOLE closed kind set via the SHARED `_kind_type`
-            # map (delta-caught: a two-way local map collapsed :raw onto
-            # AbstractString; the shared total map keeps this load-time consult
-            # and the runtime arming consult in lockstep — they cannot drift).
-            # The vararg slot's kind↔type agreement is enforced HERE, by the (a)
-            # exact-signature construction — not by the (c) loop below.
-            local _vt = ov.vararg_kind === nothing ? nothing : _kind_type(ov.vararg_kind)
-            full = _vt === nothing ? Any[ov.sig_types...] :
-                Any[ov.sig_types..., Vararg{_vt}]
-            # (a) declared ≡ executable, the declared→executable direction — by
-            # EXACT method-signature match, not hasmethod subtyping (a mis-declared row
-            # on a shared setter could ride a sibling's method through subtype dispatch
-            # while the pooled (b) walk stayed green)
-            sig_tuple = Tuple{typeof(setter), full...}
-            # (the t3t4r2 family cure, seat A row 7) `methods` is invoke-pinned to the
-            # Base fallback, and the diagnostic renders the signature + the setter
-            # STRUCTURALLY — interpolating `sig_tuple`/`setter` ran `show` over
-            # caller-owned types, so a legitimate throwing display specialization broke
-            # the never-throws chain inside this very refusal.
-            # (the t3t4r3 A4=B2 cure) the exact match is IDENTITY (`===`): `==` on Types
-            # is the extensible subtype-equivalence generic, interceptable through a
-            # specialization on the caller's own signature tuple type; the constructed
-            # tuple and a normally-defined method's `sig` are both interned canonical
-            # objects, so `===` IS the exact-match semantics the (a) direction ruled.
-            any(m.sig === sig_tuple for m in invoke(methods, Tuple{Any}, setter)) ||
-                sigm(string("GoMeta registry: declared overload has no executable ",
-                    "method — action ", repr(spec.name), " declared ", _sig_guarded_text(sig_tuple),   # (t3t4r6-A2) guarded: typeof(setter) can carry out-of-domain parameters (Setter{'x'} — P91)
-                    " on ", _callable_text(setter), " (declared-but-unimplemented refuses at ",
-                    "load; the reflection cross-check; the match is EXACT ",
-                    "per-signature, never subtype dispatch)"), spec.name)
-            push!(sigs, full)
-            # (c) kind ↔ type agreement on the literal tail (the vararg slot's
-            # agreement lives in the (a) construction above — delta-trued)
-            lit = ov.sig_types[(length(ov.sig_types) - length(ov.kinds) + 1):end]
-            for (k, t) in zip(ov.kinds, lit)
-                ok = t === Any ||
-                     (k === :string && t <: AbstractString) ||
-                     (k === :symbol && t === Symbol) ||
-                     k === :raw
-                ok || sigm(string("GoMeta registry: literal-kind/type disagreement — ",
-                    "action ", repr(spec.name), " kind ", repr(k),
-                    " vs signature slot type ", _type_text(t),   # (t3t4r2) structural render
-                    " (the reflection cross-check)"), spec.name)
-            end
-        end
-    end
-    # (b) executable ≡ declared, the executable→declared direction — in DECLARATION order of the
-    # setters (first-seen), methods in a stable signature-text order (cure batch 1: a
-    # `Dict{Function}` iteration made this row's order hash-dependent, against the deterministic-
-    # order contract)
-    order = Function[]
-    for spec in action_specs
-        1 <= spec.plugin <= length(plugins) || continue
-        f = plugins[spec.plugin].setAltInstance
-        # (the t3t4r3 A3=B1=C2 cure) `f in order` dispatched `==` on the caller-owned
-        # setter — the identity search dispatches nothing
-        any(x -> x === f, order) || push!(order, f)
-    end
-    for setter in order
-        sigs = declared_by_setter[setter]
-        # (the t3t4r2 family cure) the stable ordering key is the STRUCTURAL signature
-        # text (`string(m.sig)` ran `show` over caller-owned sig types during the SORT —
-        # a throwing display specialization broke validate before any row was built);
-        # `methods` invoke-pinned; the message + context render structurally.
-        for m in sort!(collect(invoke(methods, Tuple{Any}, setter)); by = m -> _sig_guarded_text(m.sig))   # (t3t4r5-A2) guarded
-            # (cure batch 2) a `where`-parametric method's `sig` is a UnionAll — unwrap it, never
-            # index `.parameters` on it (validate must not throw on a parametric setter)
-            # (the t3t4r3 A5 cure) the unwrap is LOCAL and structural — Base's unwrap
-            # helper is an extensible generic on the caller-influenced signature;
-            # getfield-only reads instead (the [15] source scan pins its absence)
-            msig = m.sig
-            while msig isa UnionAll
-                msig = getfield(msig, :body)
-            end
-            m_argtypes = collect(getfield(msig, :parameters)[2:end])
-            matched = any(sigs) do full
-                length(full) == length(m_argtypes) &&
-                    all(a === b for (a, b) in zip(full, m_argtypes))
-            end
-            matched || sigm(string("GoMeta registry: executable method matches no ",
-                "declared overload — ", _sig_guarded_text(m.sig), " on ", _callable_text(setter),   # (t3t4r5-A2) guarded
-                " (implemented-but-undeclared: declare it — as an internal ",
-                "grammar=false row if it is not action grammar; the loud ",
-                "drift diagnostic)"), Symbol(_callable_text(setter)))
-        end
-    end
-    return nothing
-end
-
-"The id-5 value-algebra refusal: declared return types must sit in the closed serializable set."
-function _value_algebra_check(action_specs::Vector{ActionSpec})
-    diags = Diagnostic[]
-    _value_algebra_collect!(diags, action_specs)
-    _throw_first(diags)
-    return nothing
-end
-function _value_algebra_collect!(diags::Vector{Diagnostic}, action_specs::Vector{ActionSpec})
-    for spec in action_specs, ov in spec.overloads
-        any(ov.return_type === t for t in _CLOSED_RETURN_TYPES) ||
-            push!(diags, Diagnostic(:REG_VALUE_ALGEBRA, :error, string(
-                "GoMeta registry: declared return type ", _ctor_type_name(ov.return_type),   # (t3t4r2) structural render
-                " of action ", repr(spec.name), " is outside the closed ",
-                "serializable set ", _CLOSED_RETURN_TYPES,
-                " (the value-algebra refusal, id-5)"), spec.name))
-    end
-    return nothing
-end
-
-"The reachability refusal: every GRAMMAR overload's literal kinds must be expressible from the active literal floor (AlterantArgT = Symbol|String)."
-function _reachability_check(action_specs::Vector{ActionSpec})
-    diags = Diagnostic[]
-    _reachability_collect!(diags, action_specs)
-    _throw_first(diags)
-    return nothing
-end
-function _reachability_collect!(diags::Vector{Diagnostic}, action_specs::Vector{ActionSpec})
-    for spec in action_specs, ov in spec.overloads
-        ov.grammar || continue
-        for k in vcat(ov.kinds, ov.vararg_kind === nothing ? Symbol[] : [ov.vararg_kind])
-            k in (:symbol, :string) ||
-                push!(diags, Diagnostic(:REG_UNREACHABLE, :error, string(
-                    "GoMeta registry: literal kind ", repr(k), " of action ",
-                    repr(spec.name), " is unreachable from the active literal ",
-                    "floor (Symbol|String) — the reachability refusal"), spec.name))
-        end
-    end
-    return nothing
-end
-
-"The x-8 unactivated-candidacy diagnostic: sugar candidacy without user activation is LOUD at load (the grant register stays closed at two ACTIVATED grants)."
-function _candidacy_check(action_specs::Vector{ActionSpec})
-    diags = Diagnostic[]
-    _candidacy_collect!(diags, action_specs)
-    _throw_first(diags)
-    return nothing
-end
-function _candidacy_collect!(diags::Vector{Diagnostic}, action_specs::Vector{ActionSpec})
-    for spec in action_specs
-        spec.sugar_candidacy === :candidate &&
-            push!(diags, Diagnostic(:REG_CANDIDACY, :warning, string(
-                "GoMeta registry: action ", repr(spec.name),
-                " declares sugar CANDIDACY without user activation — the ",
-                "candidacy is REGISTERED, not active (activation is a user ",
-                "ruling; the grant list is closed at two; x-8)"), spec.name))
-    end
-    return nothing
-end
-
-## v0.4 T2 — THE ONE VALIDATION CHAIN (every public construction route runs it) + the derived
+## The registration's remaining checks at `validate` (stage 5's E4, census rows 3 and 51 — his §317; the validation chain of v0.4
+## T2–T4 left: his legacy registered unchecked and failed at dispatch): the DOMAIN PROBE (R-V04B-4 (iii) — the one domain definition
+## shared by `validate`, `publish`'s copier and the door's walker; `publish` relies on it), the Heading lane's four mode-gate laws
+## (kept until R-V04B-101) and the vocabulary check (kept for census row 10's commit with the artifact it verifies). Then the derived
 ## tables + the seal + the lifecycle.
 """
     _validate_registration(plugins, action_specs) -> Vector{Diagnostic}
 
-The ONE chain, in fixed order: tier 1 (`_record_wellformed_collect!`, the `protocol` class) →
-tier 2 (the inventory law · the clash law · the reflection cross-check · the value algebra · the
-reachability refusal · the candidacy warning). FULL collection: every defect is reported; the caller
-decides the terminal outcome (error present ⇒ refuse). Deterministic order ⇒ A/A-stable refusals.
+The remaining checks, in fixed order: the domain probe over every declared field, the capture mode-gate laws, the vocabulary
+check. FULL collection: every defect is reported; the caller decides the terminal outcome (error present ⇒ refuse).
 """
 function _validate_registration(plugins::Vector{PlugIn}, action_specs::Vector{ActionSpec})
     diags = Diagnostic[]
-    n0 = length(diags)
-    _record_wellformed_collect!(diags, action_specs, plugins)
-    _encodability_collect!(diags, plugins, action_specs)   # (cure batch 4) the seal must be mintable
-    _dependency_collect!(diags, plugins)                   # (T3) the mint's eager dependency closure
-    _vocabulary_collect!(diags, plugins)                   # (T4) the vocabulary law + the R-V04-37 re-verify
-    # (cure batch 1) tier 2 SKIPS every action record tier 1 found structurally broken: the semantic
-    # collectors index and consult closed maps on the record's own data, and a malformed row would
-    # otherwise THROW out of the accumulator (the CRX after-T2 set: `vararg_kind = :bogus` reached
-    # `_kind_type`). `validate` never throws; every well-formed row is still fully checked.
-    # (cure batch 2) broken records are tracked by INDEX, never by name: a duplicate-named or
-    # plugin-named record must not shadow a well-formed one's tier-2 defects.
-    broken = _broken_record_indices(action_specs, plugins)
-    sound = ActionSpec[s for (i, s) in enumerate(action_specs) if !(i in broken)]
-    _inventory_collect!(diags, plugins, action_specs; sound = sound)
-    _register_actions_collect!(diags, Dict{Symbol,Int8}(), action_specs)
-    _reflection_collect!(diags, sound, plugins)
-    _value_algebra_collect!(diags, sound)
-    _reachability_collect!(diags, sound)
-    _candidacy_collect!(diags, action_specs)
+    _encodability_collect!(diags, plugins, action_specs)   # the domain probe (R-V04B-4 (iii))
+    _mode_gate_collect!(diags, plugins)                    # the Heading lane's laws (R-V04B-101: after the branch)
+    _vocabulary_collect!(diags, plugins)                   # census row 10's (E9)
     return diags
 end
 
@@ -2787,6 +2140,10 @@ function _derive_tables(plugins::Vector{PlugIn}, action_specs::Vector{ActionSpec
         haskey(owner_of_action, spec.name) || (owner_of_action[spec.name] = spec.plugin)   # first-wins
     end
     sorted_alt_actions = sort!(collect(keys(owner_of_action)))
+    spec_index = Dict{Symbol,Int}()
+    for (i, s) in enumerate(action_specs)
+        haskey(spec_index, s.name) || (spec_index[s.name] = i)   # first-wins, as owner_of_action above (the legacy's Dict assignment was last-wins)
+    end
     return (
         sorted_alt_actions   = sorted_alt_actions,
         action_to_plugin     = Int8[owner_of_action[a] for a in sorted_alt_actions],
@@ -2796,7 +2153,7 @@ function _derive_tables(plugins::Vector{PlugIn}, action_specs::Vector{ActionSpec
         mutex_alt_idxs       = sort!(Int8[i for (i, p) in enumerate(plugins) if p.setMode === :mutExclusive]),
         action_to_settribute = Dict{Symbol,Symbol}(s.name => s.settribute for s in action_specs
                                                    if s.settribute !== nothing),
-        spec_index           = _first_wins_spec_index(action_specs),
+        spec_index           = spec_index,
     )
 end
 
@@ -2807,8 +2164,8 @@ _mint_seal(plugins::Vector{PlugIn}, action_specs::Vector{ActionSpec})::String =
 """
     validate(builder::RegistryBuilder) -> Vector{Diagnostic}
 
-Run the ONE validation chain over the builder's declarations and return EVERY diagnostic (errors AND
-warnings, deterministic order) — never throws. Empty ⇒ publishable.
+Run the remaining checks (the domain probe, the mode-gate laws, the vocabulary check) over the builder's declarations and return
+EVERY diagnostic (deterministic order; no remaining check warns since stage 5's E4) — never throws. Empty ⇒ publishable.
 """
 validate(b::RegistryBuilder) = _validate_registration(b.plugins, b.action_specs)
 
@@ -2919,10 +2276,6 @@ function _registry_door_check(registry::AlterantRegistry)
     end
     return diags
 end
-
-## (The interim `_fill_action_owners!` uniqueness assert was RETIRED at the registration build
-## — `_register_actions!` above is its successor, carrying the full clash law with
-## both arms behind the disposition switch; its unit test flipped with it.)
 
 """
     const DEFAULT_REGISTRY :: AlterantRegistry

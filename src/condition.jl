@@ -745,7 +745,7 @@ function _eval_node(st::ProcessState, n::CondQueryAtom)
         ## v0.4 T3 — the SYMMETRIC QUERY-SEAM ENVELOPE (T3-DESIGN §2; FM-CB-2/FM-RES-2).
         ## The engine lookups are HOISTED above the try so the wrapped region is user-only;
         ## the envelope contains EVERY class typed — no getter pre-check exists at
-        ## registration (unlike the reflection-verified setters), so a query MethodError is
+        ## registration (nor a setter one since stage 5's E4), so a query MethodError is
         ## closure material, never internal drift. The engine's own "GoMeta "-prefixed
         ## typed-prose refusals pass through VERBATIM (the T3 pass-through law); the
         ## containment guarantee is scoped to exceptions DELIVERED to the handler

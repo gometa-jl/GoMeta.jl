@@ -4,11 +4,12 @@
 #       nothing/empty-defaulted; the v0.3.2 positional constructors still admit (the additive-extension
 #       law); the generic `action_to_settribute` table DERIVES from the declared per-action
 #       `settribute` slots (the Alterant-named `visib_to_settribute` field and the `===` alias
-#       `VISIB_TO_SETTRIBUTE` are GONE); the new closed enums refuse LOUDLY at the record shape law;
+#       `VISIB_TO_SETTRIBUTE` are GONE); the new closed enums (their record-shape refusals left at stage 5's
+#       E4 of the v0.4 build);
 #       the registration digest's fold COVERS the new slots (flipped at T2 when the publication seal
 #       was minted — at T1 this file witnessed the fold's blindness by name, as the T2 flip target).
-# DOES: constructs records positionally and by keyword, inspects DEFAULT_REGISTRY, drives the shape
-#       law with mis-tagged slots, and pins the digest-COVERAGE witness (the former blindness witness,
+# DOES: constructs records positionally and by keyword, inspects DEFAULT_REGISTRY, and pins the
+#       digest-COVERAGE witness (the former blindness witness,
 #       flipped at T2).
 # REASONING: the golden layer proves T1 is BEHAVIOR-NEUTRAL (byte-identical renders); only unit
 #       introspection can prove the schema carries what the later cures consume.
@@ -130,31 +131,8 @@ import GoMeta as GM
         @test isempty(pm.seam) && isempty(pm.ambient)
     end
 
-    @testset "the record shape law refuses mis-tagged new-slot enums LOUDLY" begin
-        plugs = GM.DEFAULT_REGISTRY.plugins
-        specs = GM.DEFAULT_REGISTRY.action_specs
-        bad_cap = GM.PlugIn(; altName = :zz, setMode = :accumulate, altConstructor = Dict{Symbol,Bool},
-                              setAltInstance = identity,
-                              capture = GM.CaptureDecl(Dict{Symbol,Bool}, :per_bogus, :many, nothing))
-        @test_throws ErrorException GM._record_wellformed_check(specs, [plugs; bad_cap])
-        bad_eff = GM.PlugIn(; altName = :zz, setMode = :accumulate, altConstructor = Dict{Symbol,Bool},
-                              setAltInstance = identity,
-                              render = GM.RenderDecl([:hide => GM.EffectRow(:vanish, nothing)], nothing, false))
-        @test_throws ErrorException GM._record_wellformed_check(specs, [plugs; bad_eff])
-        bad_pay = GM.PlugIn(; altName = :zz, setMode = :accumulate, altConstructor = Dict{Symbol,Bool},
-                              setAltInstance = identity,
-                              render = GM.RenderDecl([:hide => GM.EffectRow(:drop, "payload")], nothing, false))
-        @test_throws ErrorException GM._record_wellformed_check(specs, [plugs; bad_pay])
-        bad_acq = GM.PlugIn(; altName = :zz, setMode = :accumulate, altConstructor = Dict{Symbol,Bool},
-                              setAltInstance = identity,
-                              provenance = GM.Provenance(; acquisition_mode = :downloaded))
-        @test_throws ErrorException GM._record_wellformed_check(specs, [plugs; bad_acq])
-        bad_mx = GM.PlugIn(; altName = :zz, setMode = :accumulate, altConstructor = Dict{Symbol,Bool},
-                             setAltInstance = identity, constraints = [GM.MutEx(Symbol[])])
-        @test_throws ErrorException GM._record_wellformed_check(specs, [plugs; bad_mx])
-        # and the DEFAULT record passes the extended law unchanged
-        @test GM._record_wellformed_check(specs, plugs) === nothing
-    end
+    # (the record shape law testset was CONSCIOUSLY RETIRED at stage 5's E4 of the v0.4 build with its
+    # subject — census row 3, OWNER-WORDS §317: a mis-tagged enum slot registers unchecked, as the legacy did.)
 
     @testset "the registration digest COVERS the new slots (flipped at T2 — the seal covers the record)" begin
         # WITNESS, flipped at T2 as registered at T1: at T1 the fold read the v0.3.2 fields only

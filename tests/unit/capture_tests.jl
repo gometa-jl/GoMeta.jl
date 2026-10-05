@@ -3,7 +3,8 @@
 # IS:   the T5 acceptance rows — the registration-driven walk mints for a CONFORMING
 #       mock (the sadd2 anti-T1 cure), the typed capture floor's two arms, the scheme
 #       conformance gates, the value algebra, the per-plugin localOnly flush, the ctor
-#       triple, the tier-1 coherence/identity/stem laws, and the `:per_field` positive
+#       triple, the mode-gate laws (coherence · scheme · store; the identity and stem-clash laws left
+#       at stage 5's E4 of the v0.4 build — the measured consequences pinned at [9] and [11]), and the `:per_field` positive
 #       fixture the corpus never reaches.
 # DOES: registers mock Alterants through the sanctioned lifecycle (the PROBE-proven
 #       shapes: register! varargs; the vararg-tail overload matching the setter's
@@ -16,7 +17,9 @@
 #       23 at the T5 commit + [11]'s 6 + the [1] end-to-end algebra drive + the [7]
 #       cross-stem pin − the [7] runtime pair made lifecycle-unreachable by the tier-1
 #       store law; + 4 in record_schema_tests (the T5 3 + the B8 seal pin) —
-#       4749 + 29 + 4 = 4782, every movement declared).
+#       4749 + 29 + 4 = 4782, every movement declared; at stage 5's E4 of the v0.4 build the 29 here
+#       stand — [9]'s identity and stem-clash arms and [11]'s A6 re-cut to the measured consequences,
+#       one assert each — and record_schema_tests' shape-law testset (6 asserts) left with its subject).
 
 using Test
 import GoMeta as GM
@@ -179,16 +182,24 @@ Base.eltype(::Type{_CapF.KStore}) = Bool     # eltype passes; keys(KStore) does 
         @test c5.instance_type === Dict{Symbol,Bool} && ck.multiplicity === :many
     end
 
-    @testset "[9] the tier-1 laws (coherence · identity · stem clash)" begin
+    @testset "[9] the mode-gate coherence law (the identity and stem-clash laws left at stage 5's E4)" begin
         # gate/setMode incoherence: an :accumulate record gating :localOnly refuses
         bi = _mockb(; capture = GM.CaptureDecl(Dict{Symbol,Bool}, :per_key, :many, :localOnly; attr_stem = :zi))
         @test any(x -> x.code === :REG_PROTOCOL && occursin("INCOHERENT", x.message), GM.validate(bi))
-        # instance_type ≠ altConstructor refuses
+        # instance_type ≠ altConstructor PUBLISHES since E4; the walk's scheme gate floors it typed
+        # (measured: PROBES-e4-capture-laws_stage1_on-1c9d013f.txt [a])
         bt = _mockb(; capture = GM.CaptureDecl(Vector{Symbol}, :per_key, :many, nothing; attr_stem = :zt))
-        @test any(x -> x.code === :REG_PROTOCOL && occursin("capture identity law", x.message), GM.validate(bt))
-        # the stem-clash law: a mock declaring the shipped :label stem refuses
+        rt = GM.goMeta(_doc("x = 1\n#~ zmark(aa)\n\ny = 2\n"); registry = GM.publish(bt))
+        @test rt.status === GM.PROCESS_OK &&
+              any(d -> d.code === :WARN_CAPTURE_UNREADABLE && d.context === :zmock, rt.diagnostics) &&
+              !any(t -> startswith(String(t[2]), "zt"), GM.readAltValuesEvals(rt.altValues_evals))
+        # a mock declaring the shipped :label stem PUBLISHES since E4; on ONE cell the two plugins' same-attr
+        # rows collapse to one `label_label1` row — the silent cross-plugin supersede the stem-clash law refused
+        # (measured: [b]; full structural namespacing is T11's row)
         bc = _mockb(; capture = GM.CaptureDecl(Dict{Symbol,Bool}, :per_key, :many, nothing; attr_stem = :label))
-        @test any(x -> x.code === :REG_PROTOCOL && occursin("stem-clash law", x.message), GM.validate(bc))
+        rc = GM.goMeta(_doc("x = 1\n#~ :label1 zmark(label1)\n\ny = 2\n"); registry = GM.publish(bc))
+        @test rc.status === GM.PROCESS_OK &&
+              [t[2] for t in GM.readAltValuesEvals(rc.altValues_evals)] == [:label_label1]
     end
 
     @testset "[10] the derived-fallback stem (a mock with attr_stem = nothing)" begin
@@ -228,9 +239,12 @@ Base.eltype(::Type{_CapF.KStore}) = Bool     # eltype passes; keys(KStore) does 
                     return_type = Nothing, effect = :set, queryable = false,
                     applicability = :context_free, phase = :absorb, grammar = true)]))
         @test any(x -> x.code === :REG_PROTOCOL && occursin("localOnly store law", x.message), GM.validate(b4))
-        # (A6) the stem PREFIX-FAMILY clash: :label_x overlaps the shipped :label family
+        # (A6; re-cut at stage 5's E4 — the stem-clash law left) :label_x beside the shipped :label family
+        # PUBLISHES; distinct keys mint distinct rows (measured: PROBES-e4-capture-laws [b2] — label_label1 · label_x_aa)
         bp = _mockb(; capture = GM.CaptureDecl(Dict{Symbol,Bool}, :per_key, :many, nothing; attr_stem = :label_x))
-        @test any(x -> x.code === :REG_PROTOCOL && occursin("stem-clash law", x.message), GM.validate(bp))
+        rp = GM.goMeta(_doc("x = 1\n#~ :label1 zmark(aa)\n\ny = 2\n"); registry = GM.publish(bp))
+        @test rp.status === GM.PROCESS_OK &&
+              sort([t[2] for t in GM.readAltValuesEvals(rp.altValues_evals)]) == [:label_label1, :label_x_aa]
         # (A2/B1 narrowing) a Float-eltype :per_field mock floors typed (the machine-int
         # gate) — a foreign @namedElement Float64 store registers and floors, no row
         Rn = GM.publish(_mockb(; capture = GM.CaptureDecl(_CapF.FStore, :per_field, :per_field, nothing; attr_stem = :zn),

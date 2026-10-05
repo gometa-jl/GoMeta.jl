@@ -320,11 +320,11 @@ end
 #       whose actionName slot cannot carry a `Symbol` are unreachable from this seam and skipped).
 #       Refusals are typed and name the failing class. THEN invokes `setAltInstance` (real Julia
 #       dispatch — the matcher is a CHECK, never a dispatcher) and guards the RETURN against the
-#       ARITY-compatible addressable rows' declared return types — under the registration
-#       chain's dispatch-target uniqueness law (one addressable declared form per arity) that
-#       set is a SINGLETON at every reachable call, so dispatch can never select a row the
-#       form-matcher rejected and the guard checks the selected row's own declaration (an
-#       off-declaration return is an INTERNAL defect, loud).
+#       ARITY-compatible addressable rows' declared return types (for the shipped record, whose
+#       rows differ in arity, that set is a singleton; the registration-time uniqueness law that
+#       made it one for every record left at stage 5's E4 — a custom record with two same-arity
+#       rows is guarded against the union of their declared types; an off-declaration return is
+#       an INTERNAL defect, loud).
 #       The catch is the value-level backstop: ArgumentError/OverflowError (arity+form
 #       pass, the VALUE itself fails — pre-checks cannot see values) keep the stable
 #       "GoMeta apply: invalid arguments" refusal, raised OUTSIDE the catch so the refusal is the
@@ -333,8 +333,8 @@ end
 #       (attribution wanted for defects). Anything else RETHROWS.
 # REASONING: the bar is "no raw crash on any input; extreme input gets a typed, documented
 #       refusal" at the argument surface. The guard sits at the SEAM, not inside the alterant
-#       bodies — the same declared data the load-time cross-check proves ≡ the executable methods
-#       guards every live invocation. CALLER INVARIANT (documented, unenforced here): the store
+#       bodies — the declared data (the author's statement; the load-time cross-check left at
+#       stage 5's E4) guards every live invocation. CALLER INVARIANT (documented, unenforced here): the store
 #       passed as the alterant is built by the OWNING plugin's constructor; the matcher does not
 #       check the alterant slot. The pass path is one Dict lookup + two small row loops of `isa`
 #       checks (once to admit the args, once to bound the return), allocation-free; refusal text
@@ -367,8 +367,8 @@ Whether one declared overload row accepts the user-args tuple AT THE SET-INVOCAT
 (where the actionName is always a `Symbol`): row addressable (its actionName slot carries
 `Symbol`) · arity (fixed == / vararg ≥ the user arity) · per-slot form (typed slots by
 signature type; untyped `Any` slots by the DECLARED kind where the kind vector covers them —
-the kinds tail-align to the LAST `length(kinds)` user slots, the record shape the load-time
-(c) check walks; uncovered `Any` slots accept anything) · vararg tail by the shared kind map.
+the kinds tail-align to the LAST `length(kinds)` user slots; uncovered `Any` slots accept
+anything) · vararg tail by the shared kind map.
 A CHECK, not a dispatcher — on pass, the real call still runs ordinary Julia dispatch.
 """
 function _args_match(ov::ActionOverload, args::Tuple)::Bool
@@ -398,8 +398,8 @@ end
 
 THE ONE instance-mint wrap, used at all THREE bare-`altConstructor()` sites (the two
 apply-loop mints + the absorb-seam localOnly heading mint): a THROW from a user ctor
-whose zero-arg method exists (the absent-method arm is refused at the gate by
-`DEP_MISSING`; this wrap covers it only as defense-in-depth for door-bypassing values)
+(an absent zero-arg method — the bare call's `MethodError` — meets this wrap too since the
+gate's eager dependency closure left at stage 5's E4)
 converts to the typed refusal naming `CB_CTOR_THROW` with record attribution via
 `altName`. `InterruptException` and the engine's own `"GoMeta "`-prefixed refusals
 rethrow (the T3 pass-through law); the guarantee is scoped to exceptions delivered to
