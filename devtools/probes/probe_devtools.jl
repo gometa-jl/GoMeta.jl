@@ -5,7 +5,7 @@
 #   Documenter source, copied from the play) and examples/InFileFolder/file_for_Example_Extended.jl.
 #
 # IS:   the empirical check of every devtools surface the byte-parity sweep cannot
-#       cover — filters, checked fetch, dispatch validation, format inference, the
+#       cover — filters, dispatch validation, format inference, the
 #       drift alarm. (Byte parity
 #       vs the owner-approved mockups is the OTHER half of verification:
 #       plan/2026-08-19-gometa-dev-print-tools/, 34/34 at build.)
@@ -50,10 +50,9 @@ out = plain(io -> print_altValues_evals(io, uctx; layout = :rows, lines = 1:1))
 check(occursin("USER_CONTEXT", out), "lines= hid an unanchored row (must never)")
 check(!occursin("label_🍻", out), "lines=1:1 leaked a row outside the range")
 
-## 4 — tool-1 checked blocks= fetch: invalid ids reported, valid ones render
+## 4 — blocks= selects the named Blocks; an id that names no Block selects nothing (the checked fetch left at stage 5's T3)
 out = plain(io -> print_BLS_Component_Tree(io, mini; blocks = [999, 2]))
-check(occursin("requested Block id 999 is not a valid File-census Block", out), "invalid blocks= id not reported")
-check(occursin("Block #2", out), "valid blocks= id did not render")
+check(occursin("Block #2", out) && !occursin("999", out), "blocks= did not select the named Block alone")
 
 ## 5 — dispatch validation: conflicting kwargs ERROR, never silently no-op
 expect_throw(f, msg) = (try f(); global fails += 1; println("FAIL  no-throw: ", msg)
@@ -137,7 +136,7 @@ badr = GoMeta.goMeta(raw)
 out = plain(io -> print_BLS_Component_Tree(io, badr))
 check(!isempty(out), "invalid-UTF-8 input rendered empty")
 
-## 11 — a namespace=:other run's OWN rows anchor (native, not foreign)
+## 11 — a namespace=:other run's rows anchor (no namespace check since stage 5's T3)
 nsr = GoMeta.goMeta(read(joinpath(_PB_FIX, "mini-Documenter-Source-File.jl"));
                     config = GoMeta.GoMetaConfig(namespace = :other))
 out = plain(io -> print_altValues_evals(io, nsr; layout = :rows))
@@ -161,11 +160,13 @@ check(occursin("USER_CONTEXT #1", out), "USER_CONTEXT ordinal tag missing in the
 out = plain(io -> print_altValues_evals(io, uctx2; layout = :rows, show_handles = true))
 check(occursin("path=[(direct,1)]", out), "show_handles did not print the full decoded path for the unanchored row")
 
-## 13 — PROCESS_ERROR: status precedes everything; empty docs show the File summary in EVERY style
+## 13 — an error delivery prints as the empty document its tree is (the status-first banner left at stage 5's T3 — the
+## command-line entry prints the status to stderr); empty docs show the File summary in EVERY style
 err = GoMeta.goMeta(read(joinpath(_PB_FIX, "mini-Documenter-Source-File.jl"));
                     config = GoMeta.GoMetaConfig(profile = :no_such_profile))
 out = plain(io -> print_BLS_Component_Tree(io, err))
-check(startswith(out, "status: PROCESS_ERROR"), "status banner is not FIRST on PROCESS_ERROR")
+check(err.status == GoMeta.PROCESS_ERROR && occursin("0 Blocks", out) && !occursin("status", out),
+      "an error delivery does not print as the empty document")
 emptyr = GoMeta.goMeta(UInt8[])
 for st in (:mix, :tree, :legacy, :banner)
     o = plain(io -> print_BLS_Component_Tree(io, emptyr; style = st))
@@ -178,21 +179,6 @@ for st in (:mix, :tree, :legacy, :banner)
 end
 out = plain(io -> print_BLS_Component_Tree(io, mini; lines = 9999:9999))
 check(occursin("no Blocks matched the lines= range", out), "lines= no-match stayed silent")
-
-## 14 — oversized / bogus blocks= ids are reported, never thrown
-out = plain(io -> print_BLS_Component_Tree(io, mini; blocks = [big"99999999999999999999", 2]))
-check(occursin("skipped", out) && occursin("Block #2", out),
-      "oversized blocks= id not reported-and-skipped")
-
-## 15 — warning visibility (unit-level: the renderers must SHOW the origin's non-verified states; the two fingerprint-state
-## probes left with the tools' fingerprint column at stage 2's commit 9b — R-V04B-43 (1): the Engine stores no copy to compare)
-mkrow(ost) = DTEvalRow(:visib, :hide, true, nothing, nothing, ost, UInt8[0x01], 0xe0,
-                       "default", [(0x01, UInt32(1))], Tuple{UInt8,UInt32}[], :non_document_grain)
-docstub = _dt_doc(mini)
-b = IOBuffer(); _dt_print_unanchored(b, docstub, [mkrow(:failed)]); ub = String(take!(b))
-check(occursin("⚠ origin unverified", ub), "unanchored section hides origin_status=:failed")
-b = IOBuffer(); _dt_print_unanchored(b, docstub, [mkrow(:unverifiable)]); ub = String(take!(b))
-check(occursin("origin unverifiable", ub), "unanchored section hides origin_status=:unverifiable")
 
 ## 17 — owner fix-order 2026-08-21 (#2B): rails (fix-order #1, the reference-true structure slide runs, left with the slide option at stage 5's T2 — census rows 2 and 9, his §317)
 

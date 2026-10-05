@@ -17,12 +17,13 @@
 #       (The `slide` output option and the three surface writers left at stage 5's T2 — census rows 2 and 9, his §317.)
 # DOES: renders — from the BLS component data of ONE `goMeta(bytes)` result, and only
 #       as deep as the selected style/detail/filters ask —
-#       (canon R1 — never re-derived from raw text): the guarded engine-true Block
-#       census (the door's `children` of the File root — the legacy `2:numChildren+1` census is
-#       extension-unsafe), per-component named-int + settribute dumps, and the
-#       probe-proven cell_handle → Component resolution (design §1, 27/27) with the §6
-#       defensive contract (root-anchor + parent-link + grain↔leaf + namespace checks;
-#       unanchored rows rendered, never dropped; a row's text through the door's `BLS.content`).
+#       (canon R1 — never re-derived from raw text): the engine-true Block census (the door's
+#       `children` of the File root — the legacy `2:numChildren+1` census is extension-unsafe),
+#       per-component named-int + settribute dumps, and the cell_handle → Component resolution
+#       (the shared decoder, R-V04B-102; a plain walk through the door; a row's text through the
+#       door's `BLS.content`). The design note's §6 defensive contract — the resolver's gates, the
+#       origin states, the unanchored reasons, the guarded context, the status-first law, the
+#       checked blocks= fetch — left at stage 5's T3 of the v0.4 build (census rows 8 and 19, his §317 mark).
 # REASONING: the released v0.3.0 package deliberately ships no debug printer (e1c
 #       strip) and the run's WORKING state is not delivered at all (R-V04B-28; 0.3.x delivered it as a field) — so the dev tools live PLAY-SIDE, on a
 #       session-writable surface, honestly labeled (the development tools', not the Engine's), instead
@@ -64,9 +65,9 @@
 # - Non-ASCII typography in PLAIN sinks: Block spans use an en-dash (`L35–L49`) and
 #   the reserved polarity marker a typographic minus (`(−)`, dead at v0) — byte-pinned
 #   to the owner-approved mockups; grep with the literal characters (or `grep -P`).
-# - Unanchored rows render their reason, a non-native namespace, and (for
-#   non-document grains) their path ordinal; `show_handles` prints the full decoded
-#   handle for them too (§6).
+# - Rows outside the document tree (the user-context plane — grain > 0xd2, the plane law of
+#   src/occurrence.jl) render in the `unanchored rows` section with their grain and path ordinal;
+#   `show_handles` prints their decoded handle too.
 # - `detail` validation is STRICTER than a pure conflict rule: any explicit value for
 #   a non-:tree style errors, even one naming the style's inherent detail — inherent
 #   details are only ever selected via :auto (no silent no-op, no lookalike accept).
@@ -85,7 +86,7 @@
 #   reference-true structure slide runs, left with the slide option at stage 5's T2.)
 #
 # Design + review record: plan/2026-08-19-gometa-dev-print-tools/DESIGN_dev-print-tools.md
-# (§0 owner rulings R-DEV-1..8; §6 the binding contract; §8 the full review chain).
+# (§0 owner rulings R-DEV-1..10; §6 the former binding contract, left at stage 5's T3; §8 the full review chain).
 # Canon: GoMetaEcosystem/agent-doc/AGENT-RULES_GoMeta.md.
 
 import GoMeta
@@ -199,7 +200,7 @@ function _dt_excerpt(s::AbstractString, maxw::Int = 48)
 end
 
 #########################################################################################
-##  §B — guarded tree access
+##  §B — the tree through the door
 #########################################################################################
 
 ## The door's walk (`BLS.children`) resolves the insert store's negative ids itself (owner ruling D-15's
@@ -208,76 +209,21 @@ end
 _dt_children(doc, c) = _DT_BLS.children(doc.ps, c)
 _dt_id(c) = Int(_dt_ni(c, :idComponent))
 
-## IS: the check of USER-SUPPLIED Block ids (`blocks=` requests). DOES: enforces membership in the
-## File root's logical Block census (the ids of the Blocks the door's walk yields — the walk covers
-## dummy-at-1, bounds and self-id). Returns `(valid_blocks, invalid_ids)` — the valid ids as their
-## Block Components, in the request's order. PURPOSE: §6 — invalid requests are REPORTED, never
-## silently rendered or crashed on.
-function _dt_check_blocks(requested, blocks)
-    byid = Dict(_dt_id(b) => b for b in blocks)
-    valid = Any[]; invalid = Any[]
-    for id in requested
-        if !(id isa Bool) && id isa Integer && 1 <= id <= typemax(Int) && haskey(byid, Int(id))
-            push!(valid, byid[Int(id)])
-        else
-            push!(invalid, id)
-        end
-    end
-    (valid, invalid)
-end
-
 """
 IS: the per-call render context — one `goMeta` result opened for printing.
-DOES: carries the result, its delivered tree (`blsComponentTree`), the ENGINE-TRUE Block census as
-the Block Components the door's walk yields (`BLS.children` of the tree: the basic renderer's form,
-devtools/basic_renderer.jl — the legacy `2:numChildren+1` census breaks on extension chains), and the
-display name.
-GUARDED: a damaged/absent File root yields an EMPTY census (`ok=false`) instead of a
-throw — status/diagnostics always print first (§6 status-first law).
+DOES: carries the result, its delivered tree (`blsComponentTree`), the Block Components the door's walk
+yields (`BLS.children` of the tree: the basic renderer's form, devtools/basic_renderer.jl — the legacy
+`2:numChildren+1` census breaks on extension chains), and the display name.
 """
 struct DTDoc
     r::Any
     ps::Any
     blocks::Vector{Any}
     name::String
-    ok::Bool
-    ns::String      # THIS delivery's occurrence-key namespace, read off its own rows (the
-                    # configuration is not delivered — R-V04B-28); rows anchor against it (a
-                    # namespace=:other run's own rows anchor; only a row FOREIGN to the delivery
-                    # stays unanchored)
-end
-## THIS delivery's occurrence-key namespace, read off its own rows — the configuration is not a part of the
-## delivered object (R-V04B-28: four parts and nothing else); the first row's decoded key names it; a delivery
-## with no rows anchors nothing ("?"). One run mints every key with one namespace, so the `:foreign_namespace`
-## arm below now compares each row against the FIRST row's — an internal-consistency check on the store. What it
-## can no longer catch is a store whose rows UNIFORMLY carry a namespace other than the run's configuration:
-## the configuration is not delivered, so nothing in the delivery names it. And if the FIRST row's key does not
-## decode, `ns` is "?": every decoded row of a DOCUMENT grain whose namespace is not itself "?" then lands in
-## that arm (a decoded non-document grain still lands in `:non_document_grain` first, as ever; a row whose
-## decoded namespace IS "?" passes), and the undecoded rows — their own `ns` "?" too — print no `ns=:?` suffix:
-## a malformed store only (an ordinary run's rows all decode), a schema-drift case
-## the self-check's anchoring pin catches.
-function _dt_ns_of(result)
-    recs = result.altValues_evals.records
-    isempty(recs) && return "?"
-    d = decode_handle(recs[1].cell_handle)
-    return d === nothing ? "?" : String(d.namespace)
 end
 
-function _dt_doc(result; name::AbstractString = "")
-    # EVERY read guarded (§6 status-first: the caller prints status BEFORE this runs, and a
-    # drifted/partial delivery must yield ok=false, not a throw). The door's `root` and `children`
-    # throw on a damaged tree (BoundsError / UndefRefError) — caught here into ok=false.
-    ps, blocks, ok, ns = try
-        ps = result.blsComponentTree
-        ns = _dt_ns_of(result)
-        _DT_BLS.root(ps)
-        (ps, Any[b for b in _DT_BLS.children(ps)], true, ns)
-    catch
-        (nothing, Any[], false, "?")
-    end
-    DTDoc(result, ps, blocks, String(name), ok, ns)
-end
+_dt_doc(result; name::AbstractString = "") =
+    DTDoc(result, result.blsComponentTree, Any[b for b in _DT_BLS.children(result.blsComponentTree)], String(name))
 
 _dt_ni(c, k)    = _DT_BLS.getElement(c, k)      # a named integer or a flag, by key, through the door
 _dt_grain(c)    = c isa _DT_BLS.Block ? "Block" : c isa _DT_BLS.Line ? "Line" :
@@ -310,13 +256,12 @@ _dt_spanrange(c) = c isa _DT_BLS.Block ?
     (_dt_ni(c, :startMainStr):_dt_ni(c, :stopMainStr)) :
     (_dt_ni(c, :inputLineNum):_dt_ni(c, :inputLineNum))
 ## The File root spans the WHOLE document (its locator fields are the dummy hack), so a
-## File-anchored row intersects every lines= range — never hidden by a line filter (§6).
+## File-anchored row intersects every lines= range — never hidden by a line filter.
 _dt_intersects(c, r) = r === nothing || c isa _DT_BLS.File ||
     !isempty(intersect(_dt_spanrange(c), r))
 
-## Guarded census walk through the door (`children` at each grain).
+## The census walk through the door (`children` at each grain).
 function _dt_census(doc)
-    doc.ok || return (0, 0, 0)     # damaged tree: never walk it (§6)
     nl = 0; ns = 0
     for b in doc.blocks, l in _dt_children(doc, b)
         nl += 1
@@ -327,24 +272,8 @@ end
 
 _dt_plural(n, w) = "$n $w" * (n == 1 ? "" : "s")
 
-## §6 status-first law, HARD form (impl CrossReview T1-L3 #1): the entry points call
-## _dt_status_result — which reads ONLY the stable `result` fields — BEFORE any
-## parse-tree access, so a drifted/partial internal surface can never throw ahead of
-## the diagnostics; _dt_status_tree reports a damaged tree AFTER guarded construction.
-## A debug tool must not refuse exactly when debugging is needed.
-function _dt_status_result(io, result)
-    result.status == GoMeta.PROCESS_OK && return
-    _dt_sty(io, "status: $(result.status)\n", color = _DT_C_BAD, bold = true)
-    for d in result.diagnostics
-        _dt_sty(io, "  diagnostic: $(d.code) ($(d.severity)) $(d.message)\n", color = _DT_C_BAD)
-    end
-end
-_dt_status_tree(io, doc) = doc.ok ||
-    _dt_sty(io, "(no parse tree — the File root is absent or damaged)\n",
-            color = _DT_C_BAD, bold = true)
-
 #########################################################################################
-##  §C — cell_handle decode + resolution (the §6 resolver contract)
+##  §C — the handle's decode and the path's resolution
 #########################################################################################
 ## Layout (src/occurrence.jl docblock; probe-proven 27/27 — design §1): schema 0x01 ·
 ## namespace (u16-BE length + UTF-8) · grain byte · path steps (store byte + u32-BE
@@ -352,73 +281,34 @@ _dt_status_tree(io, doc) = doc.ok ||
 ## THE DECODER IS SHARED (his word of 2026-10-03, OWNER-WORDS §313; R-V04B-102): `decode_handle` lives in
 ## handle_decoder.jl beside this file and serves the authored test runner too — ONE copy; the tools' former
 ## private `_dt_decode` family (`_dt_u16`, `_dt_u32`, `_dt_steps`, `_dt_decode`) retired with it. A handle that
-## does not decode cleanly returns `nothing` and renders as unanchored here (§6).
+## does not decode cleanly returns `nothing` and renders as unanchored here.
 isdefined(@__MODULE__, :decode_handle) || include(joinpath(@__DIR__, "handle_decoder.jl"))
 
 _dt_grainname(g) = g == 0x01 ? "Segment" : g == 0x0a ? "Line" : g == 0x46 ? "Block" :
                    g == 0xd2 ? "File" : g == 0xe0 ? "USER_CONTEXT" :
                    "grain-0x" * string(g, base = 16)
-const _DT_LADDER = (_DT_BLS.File, _DT_BLS.Block, _DT_BLS.Line, _DT_BLS.Segment)
-_dt_graintype(g) = g == 0x01 ? _DT_BLS.Segment : g == 0x0a ? _DT_BLS.Line :
-                   g == 0x46 ? _DT_BLS.Block : g == 0xd2 ? _DT_BLS.File : nothing
 
-## IS: the defensive path resolver, through the door. DOES (§6 contract, each violation ⇒ `nothing` =
-## unanchored, NEVER a wrong anchor): ladder-length gate · `path[1] == (direct, 1)` = the File root
-## anchor · per step: direct-store byte only (0x00 TRUNCATED / 0x02 insert / unknown reject — the v0
-## engine cannot mint 0x02: occurrence keys read the POSITIVE idComponent, the engine-side identity
-## gap of ledger motion (v)) · the step's ordinal must name a LOGICAL child of the previous step's
-## Component: the door's `children` walks each Component's extension chain and yields the chain's
-## children flattened (occurrence keys normalize extension components to their chain root — impl
-## CrossReview T2-L1 #1), so a child found among `children(parent)` has that parent as its logical
-## parent, and a chain root alone carries `idExtended == 0` (handles name chain ROOTS only) · the
-## grain of the found Component is the ladder's. A damaged tree throws out of the door's walk and
-## resolves to unanchored, never a wrong anchor.
+## The path's resolution through the door: the walk from the File root (the first step), each further step the child
+## whose id is the step's ordinal (`children` walks a Component's extension chain and yields the chain's children
+## flattened — handles name chain roots). A step with no such child resolves to `nothing`: the row renders unanchored.
 function _dt_resolve(doc, steps)
-    (isempty(steps) || length(steps) > length(_DT_LADDER)) && return nothing
-    steps[1] == (0x01, UInt32(1)) || return nothing
-    doc.ps === nothing && return nothing
-    try
-        comp = nothing
-        for (j, (store, ord)) in enumerate(steps)
-            store == 0x01 || return nothing
-            if j == 1
-                comp = _DT_BLS.root(doc.ps)
-                _dt_id(comp) == Int(ord) || return nothing
-            else
-                kids = _dt_children(doc, comp)
-                k = findfirst(c -> _dt_id(c) == Int(ord), kids)
-                k === nothing && return nothing
-                comp = kids[k]
-            end
-            comp isa _DT_LADDER[j] || return nothing
-            Int(_dt_ni(comp, :idExtended)) == 0 || return nothing   # handles name chain ROOTS only
-        end
-        return comp
-    catch e   # damaged parse surfaces resolve to unanchored, never crash mid-diagnosis
-        e isa Union{KeyError, BoundsError, UndefRefError} && return nothing
-        rethrow()
+    comp = _DT_BLS.root(doc.ps)
+    for (_, ord) in steps[2:end]
+        kids = _dt_children(doc, comp)
+        k = findfirst(c -> _dt_id(c) == Int(ord), kids)
+        k === nothing && return nothing
+        comp = kids[k]
     end
+    comp
 end
 
 """
 IS: one evals row, resolved for rendering.
-DOES: carries the evals row (`attr`, `value`, `polarity` — polarity is constant `true`
-at v0, a reserved field, so it renders DIM), the resolved target Component (`comp`;
-`nothing` = unanchored), the origin metaSegment with its VERIFICATION state
-(`origin_status` ∈ `:none` — no origin steps (or an undecodable handle) ·
-`:unverifiable` — the row is UNANCHORED yet carries origin steps: verification is
-defined only against THIS document's tree, so the origin is never resolved locally
-(no false provenance) and a dim marker renders instead · `:verified` —
-`origin[1:end-1] == path` AND the leaf is a Meta-flavor Segment · `:failed` — present
-on an ANCHORED row but failing verification, rendered as a warning, never silently
-dropped), the decoded grain
-byte + namespace (the per-row fingerprint self-check left with the Engine's stored copy at stage 2's
-commit 9b, R-V04B-43 (1) — a row's text is the door's `BLS.content` of its resolved Component), and the retained
-UNANCHORED REASON (`reason` ∈ `:ok` anchored · `:undecoded` schema/short/garbage/
-bad-ns bytes · `:non_document_grain` the 0xd3–0xfe plane incl. USER_CONTEXT ·
-`:foreign_namespace` · `:unknown_grain` an unrecognized byte ≤ 0xd2 ·
-`:unresolved_path` any resolver-gate failure incl. grain↔leaf disagreement —
-rendered dim in the unanchored section, §6).
+DOES: carries the evals row (`attr`, `value`, `polarity` — polarity is constant `true` at v0, a reserved field, so it
+renders DIM), the resolved target Component (`comp`; `nothing` = unanchored: the user-context plane, grain > 0xd2, has
+no document tree position), the origin metaSegment (`origin`; `nothing` when the key carries no origin steps), the raw
+occurrence-handle bytes (`handle` — row identity, cell grouping) and the decoded key (`key` — the shared decoder's named
+tuple; `nothing` when the bytes do not decode). A row's text is the door's `BLS.content` of its resolved Component.
 """
 struct DTEvalRow
     attr::Symbol
@@ -426,72 +316,19 @@ struct DTEvalRow
     polarity::Bool
     comp::Any
     origin::Any
-    origin_status::Symbol
-    handle::Vector{UInt8}      # the raw occurrence-handle bytes — row identity, cell
-                               # grouping/counting, decode + optional display source
-    grain::UInt8
-    ns::String
-    path::Vector{Tuple{UInt8,UInt32}}   # decoded path steps (empty when undecoded) —
-                               # distinguishes e.g. USER_CONTEXT feeds by ordinal
-    origin_steps::Vector{Tuple{UInt8,UInt32}}
-    reason::Symbol
+    handle::Vector{UInt8}
+    key::Any
 end
 
-## IS: the row builder. DOES: decodes + resolves EVERY `altValues_evals` row, applying
-## the §6 gates — the non-document grain PLANE (byte > 0xd2, incl. USER_CONTEXT 0xe0)
-## never walks the ladder; a namespace differing from this delivery's own (`doc.ns`, read
-## off its first row — the configuration is not delivered, R-V04B-28) never resolves against
-## THIS document's tree (it stays unanchored WITH its namespace shown); the
-## decoded grain
-## must equal the resolved leaf's type; the origin is verified or flagged. PURPOSE:
-## layout totality — every row reaches a renderer, anchored or not.
+## The row builder: every `altValues_evals` row decoded (the shared decoder) and resolved through the door. The
+## user-context plane (grain > 0xd2 — the plane law of src/occurrence.jl) has no document tree position.
 function _dt_eval_rows(doc)
     rows = DTEvalRow[]
-    nosteps = Tuple{UInt8,UInt32}[]
     for (h, attr, v, pol) in GoMeta.readAltValuesEvals(doc.r.altValues_evals)
         d = decode_handle(h)
-        if !doc.ok           # damaged/absent tree: rows render unanchored, honestly
-            dd = d === nothing ? nothing : d
-            push!(rows, DTEvalRow(attr, v, pol, nothing, nothing,
-                                  dd === nothing || isempty(dd.origin) ? :none : :unverifiable,
-                                  h, dd === nothing ? 0x00 : dd.grain,
-                                  dd === nothing ? "?" : dd.namespace,
-                                  dd === nothing ? nosteps : dd.path,
-                                  dd === nothing ? nosteps : dd.origin, :no_parse_tree))
-            continue
-        end
-        if d === nothing
-            push!(rows, DTEvalRow(attr, v, pol, nothing, nothing, :none, h, 0x00, "?",
-                                  nosteps, nosteps, :undecoded))
-            continue
-        end
-        gt = _dt_graintype(d.grain)
-        # rows anchor against THIS delivery's namespace (doc.ns, read off its rows) — a
-        # namespace=:other run's own rows are native, not foreign (impl CrossReview)
-        comp, why = d.grain > 0xd2         ? (nothing, :non_document_grain) :
-                    d.namespace != doc.ns  ? (nothing, :foreign_namespace) :
-                    gt === nothing         ? (nothing, :unknown_grain) :       # §6: reject, never guess
-                    ((c = _dt_resolve(doc, d.path);
-                      c === nothing ? (nothing, :unresolved_path) :
-                      !(c isa gt)   ? (nothing, :unresolved_path) :            # grain↔leaf disagreement
-                      (c, :ok)))
-        # ORIGIN verification is defined ONLY for rows anchored in THIS document's tree;
-        # an UNANCHORED row that carries origin steps gets :unverifiable (visible dim —
-        # never silently dropped, §6), with the raw steps under show_handles
-        # (impl CrossReview T2-L3/T2-L1 HIGH: resolving a foreign/unanchored row's origin
-        # ordinals against the local tree could mint FALSE provenance); the raw decoded
-        # origin steps stay available via origin_steps/show_handles either way.
-        orig = (why !== :ok && !isempty(d.origin)) ? :unverifiable : :none
-        oc = nothing
-        if why === :ok && !isempty(d.origin)
-            oc = _dt_resolve(doc, d.origin)
-            orig = (oc !== nothing && length(d.origin) == length(d.path) + 1 &&
-                    d.origin[1:length(d.path)] == d.path && oc isa _DT_BLS.Segment &&
-                    _dt_flavor(oc) == "Meta") ? :verified : :failed
-            orig == :failed && (oc = nothing)
-        end
-        push!(rows, DTEvalRow(attr, v, pol, comp, oc, orig, h, d.grain, d.namespace,
-                              d.path, d.origin, why))
+        comp = (d === nothing || d.grain > 0xd2) ? nothing : _dt_resolve(doc, d.path)
+        orig = (d === nothing || isempty(d.origin)) ? nothing : _dt_resolve(doc, d.origin)
+        push!(rows, DTEvalRow(attr, v, pol, comp, orig, h, d))
     end
     rows
 end
@@ -520,8 +357,6 @@ function _dt_eval_bullet(io, doc, row; indent = "", target_tag::String = "")
         _dt_sty(io, "   ← $(_dt_grain(row.origin)) #$(_dt_ni(row.origin, :idComponent)) \"" *
                 _dt_excerpt(strip(_dt_content(doc, row.origin)), 24) * "\"", color = _DT_C_CHROME)
     end
-    row.origin_status == :failed &&
-        _dt_sty(io, "  ⚠ origin unverified", color = _DT_C_BAD, bold = true)
     println(io)
 end
 
@@ -529,20 +364,13 @@ function _dt_print_unanchored(io, doc, rows; show_handles::Bool = false)
     isempty(rows) && return
     _dt_sty(io, "\nunanchored rows (no document tree position):\n", color = _DT_C_BAD, bold = true)
     for row in rows
-        # non-document-plane rows carry their first path ordinal (e.g. USER_CONTEXT #1)
-        # so distinct feeds stay distinguishable (impl CrossReview T2-L3/T2-L1)
-        ordtag = (row.grain > 0xd2 && !isempty(row.path)) ? " #$(Int(row.path[1][2]))" : ""
-        _dt_sty(io, "  [" * _dt_grainname(row.grain) * ordtag *
-                    (row.ns == doc.ns ? "" : "  ns=:$(row.ns)") * "]  ", color = _DT_C_BAD)
+        d = row.key   # the plane's rows carry their first path ordinal (e.g. USER_CONTEXT #1): distinct feeds stay distinguishable
+        tag = d === nothing ? "?" : _dt_grainname(d.grain) * (d.grain > 0xd2 && !isempty(d.path) ? " #$(Int(d.path[1][2]))" : "")
+        _dt_sty(io, "  [" * tag * "]  ", color = _DT_C_BAD)
         _dt_sty(io, _dt_tpad(string(row.attr), 12), color = _DT_C_ATTR, bold = true)
         _dt_sty(io, " => ")
         _dt_sty(io, repr(row.value), color = _dt_vcolor(row), bold = true)
         _dt_sty(io, row.polarity ? "  (+)" : "  (−)", color = _DT_C_CHROME)
-        row.reason != :ok && _dt_sty(io, "  ($(row.reason))", color = _DT_C_CHROME)   # §6: reason rendered
-        row.origin_status == :failed &&
-            _dt_sty(io, "  ⚠ origin unverified", color = _DT_C_BAD, bold = true)
-        row.origin_status == :unverifiable &&
-            _dt_sty(io, "  (origin unverifiable — row unanchored)", color = _DT_C_CHROME)
         println(io)
         show_handles && _dt_handle_note(io, row, "      ")
     end
@@ -600,8 +428,7 @@ PARAMETERS (each names the METHOD BEHAVIOR it selects):
   rows (inline flags + every content string) and APPENDS the typed dump pair under
   each component.
 - `blocks = :all` — or a `Vector{Int}` of Block ids (the legacy Block-subset
-  precedent). Ids are CHECKED against the engine census; invalid ids are reported in
-  red and skipped, never guessed at.
+  precedent): the named Blocks in census order; an id that names no Block selects nothing.
 - `lines = nothing` — an input-line range (e.g. `5:12`): a component renders iff its
   input-line span INTERSECTS the range; a partially-overlapping Block keeps its full
   span label while its children clip to the range.
@@ -614,10 +441,9 @@ PARAMETERS (each names the METHOD BEHAVIOR it selects):
   set it for a labeled header).
 
 The two `print_BLS_Component_Tree` methods return `nothing`;
-`write_BLS_Component_Tree_to_file` returns `path`. On `PROCESS_ERROR` the status +
-diagnostics banner prints FIRST — read directly from the stable `result` fields,
-before any parse-tree access — and rendering continues over whatever parse state
-exists (§6 status-first law).
+`write_BLS_Component_Tree_to_file` returns `path`. The delivery's status is not printed here (the
+command-line entry prints it to stderr): an error delivery carries the tree of empty bytes and prints
+as the empty document.
 """
 function print_BLS_Component_Tree(io::IO, result::GoMeta.GoMetaDelivery;
         color::Symbol = :auto, style::Symbol = :mix, detail::Symbol = :auto,
@@ -642,23 +468,14 @@ function print_BLS_Component_Tree(io::IO, result::GoMeta.GoMetaDelivery;
     lines === nothing || lines isa AbstractUnitRange{<:Integer} ||
         error("print_BLS_Component_Tree: lines must be nothing or an integer range like 5:12 (got $(repr(lines)))")
     io = color === :auto ? io : IOContext(io, :color => (color === :always))
-    _dt_status_result(io, result)          # status FIRST — before ANY parse-tree access
     doc = _dt_doc(result; name = _name)
-    _dt_status_tree(io, doc)
-    sel, invalid = blocks === :all ? (doc.blocks, Any[]) :
-                   (doc.ok ? _dt_check_blocks(blocks, doc.blocks) :
-                             (Any[], Any[]))
-    for id in invalid
-        _dt_sty(io, "requested Block id $(repr(id)) is not a valid File-census Block — skipped\n",
-                color = _DT_C_BAD, bold = true)
-    end
+    sel = blocks === :all ? doc.blocks : Any[b for b in doc.blocks if _dt_id(b) in blocks]
     if isempty(sel) && style !== :legacy   # :legacy keeps its frozen chrome (D-14);
                                            # the other styles get the File summary + reason
         nb, nl, ns2 = _dt_census(doc)
         _dt_sty(io, "File  ", bold = true); _dt_sty(io, doc.name, bold = true)
         _dt_sty(io, "  —  $nb Blocks · $nl Lines · $ns2 Segments\n", color = _DT_C_CHROME)
-        _dt_sty(io, !doc.ok ? "(no Blocks — no parse tree)\n" :
-                    isempty(doc.blocks) ? "(no Blocks — empty document)\n" :
+        _dt_sty(io, isempty(doc.blocks) ? "(no Blocks — empty document)\n" :
                     "(no Blocks — nothing matched the blocks= request)\n", color = _DT_C_CHROME)
         return nothing
     end
@@ -900,7 +717,7 @@ PARAMETERS:
            R-V04B-98, stage 5's E1: keyed on its Line, grain 0x0a, the Segment its origin); a
            Segment-grain row, were one minted (none by the default registry since E1), would attach
            to its owning Line with a dim `[Segment #N]` target tag; File-grain rows render at a `[File]` bullet
-           under the header. Every counted row renders somewhere (§6 totality).
+           under the header. Every counted row renders somewhere.
            Segment STRUCTURE questions belong to `print_BLS_Component_Tree`.
   `:rows`  — one line per eval, input-line span first: THE grep/census form.
   `:cells` — per-cell dossiers with the decoded handle (ns · grain · path · origin).
@@ -930,11 +747,9 @@ The "why NOT" companion: when a label/action you expected is ABSENT here, the ne
 step is the canon-R4 command-line entry `devtools.jl trace <file>` (evals rows + decoded handles) and
 `print_BLS_Component_Tree` (the settribute state the conditions tested).
 
-Every row is accounted for in every layout (§6 totality): rows that do not anchor in
-THIS document's tree (USER_CONTEXT feeds, foreign namespaces, undecodable handles)
-are never dropped — `:rows`/`:tree` render them in a red `unanchored rows` section
-(with the retained reason, and headers count them); `:cells` renders each as a red
-`### CELL (… no document tree position; reason)` dossier of its own.
+Every row renders in every layout: a row outside the document tree (the user-context plane)
+is never dropped — `:rows`/`:tree` render it in a red `unanchored rows` section (the headers
+count it); `:cells` renders it as a red `### CELL (… no document tree position)` dossier of its own.
 The two `print_altValues_evals` methods return `nothing`;
 `write_altValues_evals_to_file` returns `path`.
 """
@@ -956,9 +771,7 @@ function print_altValues_evals(io::IO, result::GoMeta.GoMetaDelivery;
         error("print_altValues_evals: lines must be nothing or an integer range like 5:12 (got $(repr(lines)))")
     inc = include_empty === nothing ? false : include_empty      # R-DEV-4 default
     io = color === :auto ? io : IOContext(io, :color => (color === :always))
-    _dt_status_result(io, result)          # status FIRST — before ANY parse-tree access
     doc = _dt_doc(result; name = _name)
-    _dt_status_tree(io, doc)
     rows = _dt_eval_rows(doc)
     frows, echo, filtered = _dt_filter_rows(rows, attrs, lines)
     if isempty(rows)
@@ -1024,11 +837,11 @@ _dt_fmtsteps(v) = "[" * join(["(" * (st == 0x01 ? "direct" : st == 0x02 ? "inser
                                      "unknown-store-0x" * string(st, base = 16)) *
                               ",$(Int(o)))" for (st, o) in v], " ") * "]"
 function _dt_handle_note(io, row, indent)
-    body = isempty(row.path) ?
-        "handle UNDECODED ($(row.reason)) raw=0x" * bytes2hex(row.handle[1:min(end, 16)]) *
-            (length(row.handle) > 16 ? "…" : "") :
-        "handle ns=:$(row.ns)  grain=$(_dt_grainname(row.grain))  path=$(_dt_fmtsteps(row.path))" *
-            (isempty(row.origin_steps) ? "" : "  origin=$(_dt_fmtsteps(row.origin_steps))")
+    d = row.key
+    body = d === nothing ?
+        "handle UNDECODED raw=0x" * bytes2hex(row.handle[1:min(end, 16)]) * (length(row.handle) > 16 ? "…" : "") :
+        "handle ns=:$(d.namespace)  grain=$(_dt_grainname(d.grain))  path=$(_dt_fmtsteps(d.path))" *
+            (isempty(d.origin) ? "" : "  origin=$(_dt_fmtsteps(d.origin))")
     _dt_sty(io, indent * body * "\n", color = _DT_C_CHROME)
 end
 
@@ -1055,7 +868,6 @@ function _dt_t2_rows(io, doc, frows, allrows, echo; show_handles::Bool = false)
         row.origin !== nothing && _dt_sty(io, "  ← $(_dt_grain(row.origin)) #$(_dt_ni(row.origin,:idComponent)) \"" *
             _dt_excerpt(strip(_dt_content(doc, row.origin)), 20) * "\"", color = _DT_C_CHROME)
         _dt_sty(io, "  \"" * _dt_excerpt(strip(_dt_content(doc, c)), 36) * "\"")
-        row.origin_status == :failed && _dt_sty(io, "  ⚠ origin unverified", color = _DT_C_BAD, bold = true)
         println(io)
         show_handles && _dt_handle_note(io, row, "         ")
     end
@@ -1063,7 +875,7 @@ function _dt_t2_rows(io, doc, frows, allrows, echo; show_handles::Bool = false)
 end
 
 ## ── :tree — evals AT their Components (default layout) ────────────────────────────────
-## Layout totality (§6): an inline metaSegment's head row is LINE-anchored since R-V04B-98 (stage 5's E1:
+## Layout totality: an inline metaSegment's head row is LINE-anchored since R-V04B-98 (stage 5's E1:
 ## grain 0x0a, the Segment its origin, shown by the `← Segment #N` tag); a Segment-anchored row, were one minted
 ## (none by the default registry since E1), would attach to its OWNING LINE with a dim `[Segment #N]` target tag; File-anchored rows render at a File node
 ## right under the header. Headers therefore never count a row the body omits.
@@ -1092,10 +904,6 @@ function _dt_t2_tree(io, doc, frows, allrows, echo;
     for row in fileRows                      # File-anchored rows: the document-root node
         _dt_eval_bullet(io, doc, row; target_tag = "[File]")
         show_handles && _dt_handle_note(io, row, "    ")
-    end
-    if !doc.ok
-        _dt_print_unanchored(io, doc, _dt_unanchored(frows); show_handles)
-        return
     end
     # with a filter active, an absence label must not assert "no evals" — rows may
     # simply be filtered out (impl-panel adversary finding)
@@ -1172,12 +980,11 @@ function _dt_t2_cells(io, doc, frows, allrows, echo)
     _dt_sty(io, "altValues_evals — per-cell  ", bold = true); _dt_sty(io, doc.name * "\n", bold = true)
     _dt_echo(io, echo)
     for h in order
-        grp = groups[h]; c = grp[1].comp
-        d = decode_handle(h)
+        grp = groups[h]; c = grp[1].comp; d = grp[1].key
         _dt_sty(io, "\n$(H(78))\n", color = _DT_C_CHROME)
         if c === nothing
-            g = _dt_grainname(grp[1].grain)
-            _dt_sty(io, "### CELL  ($g — no document tree position; $(grp[1].reason))\n",
+            g = d === nothing ? "?" : _dt_grainname(d.grain)
+            _dt_sty(io, "### CELL  ($g — no document tree position)\n",
                     color = _DT_C_BAD, bold = true)
         else
             _dt_sty(io, "### CELL  ", color = _dt_gcolor(c), bold = true)
@@ -1392,13 +1199,12 @@ the twelve forms under `tests/comparison/` hold (v0.4's reference altValues, his
 DOES: one header line `# GoMeta comparison form v1 | <name> | produced by GoMeta v0.4 at <at> | <nC> Components |
 <nA> answer lines`, then every line of the form SORTED by code point: `C | kind | span | parent key | position |
 children keys | content type | flags` per Component, `A | kind | span | Alterant | value | source` per Component
-per Alterant (the File has none). Throws on a delivery whose tree cannot be walked.
+per Alterant (the File has none). Throws (the door's own throw) on a delivery whose tree cannot be walked.
 REASONING: the lines carry content keys only, so two lanes' projections compare as text; sorting makes the
 order a non-fact. PURPOSE: `writeComparisonFormToFile`, the `comparison` verb, `tests/comparison/regenerate.jl`.
 """
 function comparisonForm(result::GoMeta.GoMetaDelivery; name::AbstractString = "", at::AbstractString = "-")
     doc = _dt_doc(result; name = name)
-    doc.ok || error("comparisonForm: the delivered tree cannot be walked (status $(result.status))")
     lines = String[]
     nA = 0
     f = _DT_BLS.root(doc.ps)
