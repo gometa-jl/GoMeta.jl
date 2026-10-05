@@ -65,8 +65,7 @@ write_BLS_Component_Tree_to_file("tree.html", result)
 ```
 Keywords of `print_altValues_evals`: `layout` (`:tree` | `:rows` | `:cells`), `include_empty`
 (`:tree` only — `false` compact, `true` full), `show_handles`, `attrs` (`:all` | a Symbol | a
-Vector), `lines` (an input-line range), `color` (`:auto` | `:always` | `:never`), `slide` (a
-colour scheme for slide previews; the write twins emit a `.slideruns.json` sidecar). The full
+Vector), `lines` (an input-line range), `color` (`:auto` | `:always` | `:never`). The full
 docstrings are in `devtools.jl`.
 
 ## What they read, and the alarm
@@ -78,8 +77,7 @@ v0.4 build (R-V04B-58, R-V04B-80): BLS's public functions and types — `GoMeta.
 named-element types (`docs/public-api.md` §1.2) — and no field of a BLS object. TWO RESIDUE reads outside the door
 remain, each marked at its site and asked for the owner's word: the renderer's `BLS._isspace_valid` (the parser's own
 whitespace guard for the ensure-token head read; `isHorizontalSpace` is the `[\h]` class and differs at \f and \v) and the
-tools' whole-document text of the File (`collectedLines` joined — `content` has no File arm); the slide classifier's
-source-line COUNT comes from the callers' own bytes since stage 2's commit 9b (R-V04B-85 (D)). The former exemption D-6(a) of 2026-08-20 (widened 2026-09-11, R-V04B-24
+tools' whole-document text of the File (`collectedLines` joined — `content` has no File arm). The former exemption D-6(a) of 2026-08-20 (widened 2026-09-11, R-V04B-24
 C1 (a); lapsed 2026-09-16, R-V04B-29) covers those two residues alone; its texts are deleted at stage 5 of the v0.4
 branch (the plan's stage 5 (1); R-V04B-48 (1)). Consumer code — an Extension — reads the tree the same way, through the door
 (`docs/public-api.md` §1.2; R-V04B-45).
@@ -97,8 +95,9 @@ run it with `julia --startup-file=no --project=$GM/tests $GM/devtools/probes/pro
   unabridged (byte-checked by `embed-traces.py --check`).
 - The JuliaCon talk deck's dev-tool slides (2026-08-22/23) and the demo deck
   `plan/2026-08-20-devtools-slide-output/consumer/compset/compset_devtools_demo.pptx`
-  (slides 7–9) were produced from `write_altValues_evals_to_file` output
-  (`consumer/SOP_slide-production.md`).
+  (slides 7–9) were produced from `write_altValues_evals_to_file` output with the tools' former
+  `slide` option (`consumer/SOP_slide-production.md`) — the option and the three surface writers left
+  at stage 5's T2 (census rows 2 and 9, his §317); the deck and its record stand.
 
 ## The comparison form (stage 4 of the v0.4 build; R-V04B-36)
 

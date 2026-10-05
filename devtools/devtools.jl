@@ -12,13 +12,9 @@
 #                                      `printComponentStates` capability, superseding it)
 #         `print_altValues_evals`     (the evals rows placed IN the component tree /
 #                                      as rows / as per-cell dossiers)
-#       plus their file twins (`write_*_to_file`), the three surface writers (the tool's pair + the marked source),
-#       the comparison form's producer and writer `comparisonForm` / `writeComparisonFormToFile` (§I — stage 4, R-V04B-36),
-#         `writeBlsStructureToFile` / `writeRenderToFile` / `writeMarkedSourceToFile`
-#         (§H — verbatim surface copies + the slide sidecar).
-#       Every tool takes the §H `slide` keyword: print tools render the truecolor ANSI
-#       slide preview; file tools additionally emit the `X.slideruns.json` colored-run
-#       sidecar under one of the four SCHEMES.json schemes.
+#       plus their file twins (`write_*_to_file`) and
+#       the comparison form's producer and writer `comparisonForm` / `writeComparisonFormToFile` (§I — stage 4, R-V04B-36).
+#       (The `slide` output option and the three surface writers left at stage 5's T2 — census rows 2 and 9, his §317.)
 # DOES: renders — from the BLS component data of ONE `goMeta(bytes)` result, and only
 #       as deep as the selected style/detail/filters ask —
 #       (canon R1 — never re-derived from raw text): the guarded engine-true Block
@@ -45,8 +41,7 @@
 # delimiter), the Component types and `keys` of the two named-element types (docs/public-api.md §1.2) —
 # and no field of a BLS object. ONE RESIDUE read outside the door remains, marked at its site and
 # asked for his word: the whole-document text of the File (`collectedLines` joined — `content` has no
-# File arm, a question its docstring names); the slide classifier's source-line COUNT comes from the callers' own
-# bytes since stage 2's commit 9b (R-V04B-85 (D)). The former exemption D-6(a) of 2026-08-20 covers that one
+# File arm, a question its docstring names). The former exemption D-6(a) of 2026-08-20 covers that one
 # residue alone now. Consumer code — an Extension — reads the tree the same way, through the door
 # (docs/public-api.md §1.2; R-V04B-45).
 # The battery `devtools/probes/probe_devtools.jl` is the drift alarm (his §26; the tools' own self-check left at stage 5's T1,
@@ -58,8 +53,6 @@
 #   julia> print_BLS_Component_Tree(result)
 #   julia> print_altValues_evals(result)
 #   julia> write_altValues_evals_to_file("evals.html", result)
-#   julia> print_BLS_Component_Tree(result; slide = :gometa_dark)      # slide preview
-#   julia> writeRenderToFile("render.jl", result; slide = :gometa_dark) # + sidecar
 #   (iterating on this file itself: `using Revise; includet("devtools.jl")` — a plain
 #    include is not Revise-tracked.)
 #
@@ -86,22 +79,13 @@
 # - Explicit per-Alterant DEFAULT values do not exist in the engine (R-DEV-6 →
 #   friction-ledger row F-LED-20, GoMeta v0.4); absence renders as
 #   "(no evals — defaults apply)" without asserting a value.
-# - §H `slide` option (owner order 2026-08-20): print tools REPLACE their output with
-#   the ANSI preview when `slide` is set (BRIEF §4.1's on-arm is re-encoded as the
-#   battery's strip-assertion); the sidecar `roles` header = run_colors ∪
-#   {"blank": payload} (the only reading satisfying BRIEF §2.3 + §2.5); .html twins'
-#   sidecars describe the PLAIN view; sidecar styles are role-derived ONLY (§2.4 —
-#   emitter bold is not carried); structure sidecars say border "tree" (the BRIEF §2
-#   example's "usual" is a recorded erratum). Full ledger:
-#   plan/2026-08-20-devtools-slide-output/DESIGN_slide-option.md §5.
-# - Owner fix-orders 2026-08-21: structure-view slide runs are REFERENCE-TRUE
-#   (scaffold=tree + §2.6 interiors, mirrored + byte-verified, whole-line-tree
-#   fallback — DESIGN §5-bis.15) and the :mix/:tree dump rows carry parent→first-
-#   child RAILS (│ at the child connector column; §5-bis.16; evals ● view
-#   deliberately NOT extended — the ● occupies that column).
+# - Owner fix-order 2026-08-21 (#2B): the :mix/:tree dump rows carry parent→first-
+#   child RAILS (│ at the child connector column; §5-bis.16 of
+#   plan/2026-08-20-devtools-slide-output/DESIGN_slide-option.md; evals ● view
+#   deliberately NOT extended — the ● occupies that column). (Fix-order #1, the
+#   reference-true structure slide runs, left with the slide option at stage 5's T2.)
 #
 # Design + review record: plan/2026-08-19-gometa-dev-print-tools/DESIGN_dev-print-tools.md
-# Slide option design record: plan/2026-08-20-devtools-slide-output/DESIGN_slide-option.md
 # (§0 owner rulings R-DEV-1..8; §6 the binding contract; §8 the full review chain).
 # Canon: GoMetaEcosystem/agent-doc/AGENT-RULES_GoMeta.md.
 
@@ -158,33 +142,14 @@ const _DT_HTML_COLORS = Dict{Any,String}(
 
 _dt_htmlesc(s) = replace(s, '&' => "&amp;", '<' => "&lt;", '>' => "&gt;")
 
-## IS: the ONE styled-run emitter every renderer uses. DOES: routes a flat run to the
-## slide-capture recorder (IOContext key :gm_sliderec, checked FIRST — plain bytes
-## into the capture buffer + a byte-offset role span, §H), to the HTML sink
+## IS: the ONE styled-run emitter every renderer uses. DOES: routes a flat run to the HTML sink
 ## (IOContext key :gm_html), to `printstyled` (only when the io carries
 ## :color=>true AND the run is actually styled), or to plain `print` — so plain runs
 ## emit ZERO escape bytes. REASONING: printstyled closers reset to terminal defaults,
 ## so runs are FLAT, never nested; `:normal`-unbold runs bypass printstyled entirely
-## (ANSI hygiene). PURPOSE: one source of truth for terminal/plain/HTML/slide parity.
+## (ANSI hygiene). PURPOSE: one source of truth for terminal/plain/HTML parity.
 function _dt_sty(io, txt; color = nothing, bold::Bool = false)
     s = string(txt)
-    cap = get(io, :gm_sliderec, nothing)
-    if cap isa _DTSlideCap && _dt_slide_sink(io) === cap.buf
-        ## slide-capture arm (§H, "Design B′"): the capture context is colorless by
-        ## construction, so this arm writes PLAIN bytes and brackets them with byte
-        ## offsets + the slide role; checked FIRST so no re-wrap can ever route a
-        ## captured write through printstyled (escape bytes must never enter the
-        ## capture). `bold` is deliberately NOT recorded — slide styles are
-        ## role-derived only (§2.4). GUARDS (review L3#4): the arm activates only
-        ## for a REAL capture record whose buffer IS the io's actual sink — a
-        ## foreign :gm_sliderec value (wrong type, or a cap re-wrapped over a
-        ## different io) is ignored and the run renders normally, never crashes,
-        ## never records false offsets.
-        lo = position(cap.buf)
-        print(io, s)
-        push!(cap.spans, _DTSlideSpan(lo, position(cap.buf), _dt_slide_role_of(color)))
-        return
-    end
     if get(io, :gm_html, false)
         css = String[]
         color !== nothing && push!(css, "color:" * get(_DT_HTML_COLORS, color, _DT_HTML_COLORS[:normal]))
@@ -646,22 +611,6 @@ PARAMETERS (each names the METHOD BEHAVIOR it selects):
   `:segment`. In `:mix`, a string prints at the deepest DISPLAYED owner — with
   `grain = :line` the Line shows its string even when Segments exist (they are not
   displayed; the print-once law R-DEV-1(iii) binds displayed components).
-- `slide::Union{Nothing,Symbol} = nothing` — `nothing` (default): no effect, output
-  byte-identical to before the option existed. A scheme Symbol (`:gometa_dark` |
-  `:cvd_dark` | `:light` | `:cvd_light` (the full-CVD light variant — THE scheme
-  for color-blind viewers) | `:projector`, per the embedded SCHEMES.json authority)
-  REPLACES the normal paint with the ANSI slide preview of the SAME configured view
-  (all view kwargs still apply): truecolor scheme colors on the scheme background +
-  a synthetic line-number gutter — what the slide box will look like (§H). Requires
-  `color = :auto`: an explicit `:always`/`:never` with `slide` is an ArgumentError
-  (the preview replaces the very stream `color` governs — no lookalike accept, the
-  `detail=` precedent). The preview always emits truecolor escape bytes, even to a
-  non-tty/NO_COLOR sink — an explicit slide request IS the color consent. Unknown
-  Symbol ⇒ ArgumentError naming the five supported
-  values. On the write twin, `slide` instead leaves the file byte-identical and
-  emits the `path * ".slideruns.json"` sidecar (border `"tree"`) describing this
-  call's PLAIN view — `slide` is consumed by the twin, never forwarded; a twin
-  call WITHOUT `slide` retires a stale sidecar beside the path (F5).
 - `_name::AbstractString = ""` — the display name in the `File` header line (an
   internal-ish kwarg: the write twins default it to `basename(path)`; REPL calls may
   set it for a labeled header).
@@ -675,7 +624,6 @@ exists (§6 status-first law).
 function print_BLS_Component_Tree(io::IO, result::GoMeta.GoMetaDelivery;
         color::Symbol = :auto, style::Symbol = :mix, detail::Symbol = :auto,
         blocks = :all, lines = nothing, grain::Symbol = :segment,
-        slide::Union{Nothing,Symbol} = nothing,
         _name::AbstractString = "")
     style in _DT_T1_STYLES ||
         error("print_BLS_Component_Tree: unknown style=:$style (one of $(_DT_T1_STYLES))")
@@ -695,21 +643,6 @@ function print_BLS_Component_Tree(io::IO, result::GoMeta.GoMetaDelivery;
         error("print_BLS_Component_Tree: blocks must be :all or a Vector of Integer Block ids (got $(repr(blocks)))")
     lines === nothing || lines isa AbstractUnitRange{<:Integer} ||
         error("print_BLS_Component_Tree: lines must be nothing or an integer range like 5:12 (got $(repr(lines)))")
-    if slide !== nothing
-        ## §H: the ANSI slide preview REPLACES the normal paint (recorded §4.1
-        ## re-encoding — the plain content is still byte-exact inside the preview's
-        ## runs, battery-asserted). Validation FIRST, before any byte is written.
-        color === :auto || throw(ArgumentError(
-            "print_BLS_Component_Tree: slide= replaces the very stream color= governs — " *
-            "pass color=:auto (got color=:$color)"))
-        sid, sch = _dt_slide_resolve(slide)
-        capr = _dt_slide_cap()
-        print_BLS_Component_Tree(_dt_slide_capio(capr), result;
-                                 color = :auto, style, detail, blocks, lines, grain, _name)
-        lr, _fnl = _dt_slide_lines(capr)
-        _dt_slide_preview(io, "print_BLS_Component_Tree", sid, sch, lr, "tree")
-        return nothing
-    end
     io = color === :auto ? io : IOContext(io, :color => (color === :always))
     _dt_status_result(io, result)          # status FIRST — before ANY parse-tree access
     doc = _dt_doc(result; name = _name)
@@ -992,17 +925,6 @@ PARAMETERS:
   unrelated empty subtrees collapse).
 - `show_handles::Bool = false` — `:cells` always shows decoded handles; `:rows`/`:tree`
   add them per row when `true`.
-- `slide::Union{Nothing,Symbol} = nothing` — `nothing` (default): no effect, output
-  byte-identical to before the option existed. A scheme Symbol (`:gometa_dark` |
-  `:cvd_dark` | `:light` | `:cvd_light` | `:projector`) REPLACES the normal paint with the ANSI
-  slide preview of the SAME configured view (all view kwargs still apply; §H).
-  Requires `color = :auto` (explicit `:always`/`:never` + `slide` ⇒ ArgumentError);
-  the preview always emits truecolor escape bytes, even to a non-tty/NO_COLOR sink.
-  Unknown Symbol ⇒ ArgumentError naming the five supported values. On the write
-  twin, `slide` instead leaves the file byte-identical and emits the
-  `path * ".slideruns.json"` sidecar (border `"accent"`) describing this call's
-  PLAIN view — `slide` is consumed by the twin, never forwarded; a twin call
-  WITHOUT `slide` retires a stale sidecar beside the path (F5).
 - `_name::AbstractString = ""` — the display name in the header line (internal-ish;
   the write twin defaults it to `basename(path)`).
 
@@ -1022,7 +944,6 @@ function print_altValues_evals(io::IO, result::GoMeta.GoMetaDelivery;
         color::Symbol = :auto, layout::Symbol = :tree,
         include_empty::Union{Bool,Nothing} = nothing,
         attrs = :all, lines = nothing, show_handles::Bool = false,
-        slide::Union{Nothing,Symbol} = nothing,
         _name::AbstractString = "")
     layout in _DT_T2_LAYOUTS ||
         error("print_altValues_evals: unknown layout=:$layout (one of $(_DT_T2_LAYOUTS))")
@@ -1036,21 +957,6 @@ function print_altValues_evals(io::IO, result::GoMeta.GoMetaDelivery;
     lines === nothing || lines isa AbstractUnitRange{<:Integer} ||
         error("print_altValues_evals: lines must be nothing or an integer range like 5:12 (got $(repr(lines)))")
     inc = include_empty === nothing ? false : include_empty      # R-DEV-4 default
-    if slide !== nothing
-        ## §H: the ANSI slide preview REPLACES the normal paint (recorded §4.1
-        ## re-encoding); validation FIRST, before any byte is written.
-        color === :auto || throw(ArgumentError(
-            "print_altValues_evals: slide= replaces the very stream color= governs — " *
-            "pass color=:auto (got color=:$color)"))
-        sid, sch = _dt_slide_resolve(slide)
-        capr = _dt_slide_cap()
-        print_altValues_evals(_dt_slide_capio(capr), result;
-                              color = :auto, layout, include_empty, attrs, lines,
-                              show_handles, _name)
-        lr, _fnl = _dt_slide_lines(capr)
-        _dt_slide_preview(io, "print_altValues_evals", sid, sch, lr, "accent")
-        return nothing
-    end
     io = color === :auto ? io : IOContext(io, :color => (color === :always))
     _dt_status_result(io, result)          # status FIRST — before ANY parse-tree access
     doc = _dt_doc(result; name = _name)
@@ -1327,57 +1233,19 @@ convention). `format` selects the sink: `:auto` (default) infers from the extens
 `color=:never` (plain, grep-friendly); `color=:always` writes ANSI escape bytes
 (view with `less -R`). `title` is the HTML page's `<title>` (ignored for text output).
 The rendered `File` header uses `basename(path)` as the document name unless `_name`
-is passed explicitly. `slide` (a scheme Symbol; see the printer's docstring) leaves
-the written file byte-identical and ADDITIONALLY emits the
-`path * ".slideruns.json"` slide-run sidecar (border `"tree"`) — consumed here,
-never forwarded to the printer; X and the sidecar publish as a staged PAIR, and a
-call WITHOUT `slide` retires a stale sidecar beside the path (F4/F5).
-All other kwargs pass through. Returns `path`.
+is passed explicitly. All other kwargs pass through. Returns `path`.
 """
 function write_BLS_Component_Tree_to_file(path::AbstractString, result::GoMeta.GoMetaDelivery;
         format::Symbol = :auto, color::Symbol = :never,
         title::AbstractString = "print_BLS_Component_Tree",
-        slide::Union{Nothing,Symbol} = nothing,
         _name::AbstractString = basename(path), kwargs...)
-    sr = slide === nothing ? nothing : _dt_slide_resolve(slide)   # validate FIRST (§H)
-    renderX(p) = _dt_resolve_format(path, format) === :html ?
-        _dt_write_html(p, io -> print_BLS_Component_Tree(io, result; _name, kwargs...), title) :
-        open(p, "w") do f
+    if _dt_resolve_format(path, format) === :html
+        _dt_write_html(path, io -> print_BLS_Component_Tree(io, result; _name, kwargs...), title)
+    else
+        open(path, "w") do f
             print_BLS_Component_Tree(f, result; color, _name, kwargs...)
         end
-    if sr === nothing
-        _dt_slide_retire_sidecar(path)   # F5: retire FIRST — a failing render must
-        renderX(path)                    # never leave a stale claim beside partial X
-        return path
     end
-    apath = abspath(String(path))        # ONE resolution for every fs op (L3#10)
-    _dt_slide_check_dest("write_BLS_Component_Tree_to_file", apath)
-    ## §H: `slide` is consumed HERE, never forwarded to the printer (the main file
-    ## X stays byte-identical — §4.1). The sidecar describes the PLAIN render of
-    ## this call's view, independent of `format`/`color` (D3 R4). Pair publication
-    ## (F4): capture + classify FIRST, stage X and the sidecar as exclusive temps,
-    ## then publish X → sidecar (DESIGN §5-bis.13).
-    capr = _dt_slide_cap()
-    print_BLS_Component_Tree(_dt_slide_capio(capr), result; _name, kwargs...)
-    lr, fnl = _dt_slide_lines(capr)
-    sctmp = _dt_slide_stage_sidecar(apath * ".slideruns.json", "write_BLS_Component_Tree_to_file",
-                                    sr[1], sr[2], lr, fnl, "tree")
-    xtmp = try
-        xt, xio = mktemp(dirname(apath); cleanup = false)
-        close(xio)
-        xt
-    catch
-        isfile(sctmp) && rm(sctmp; force = true)   # FR1#2: no one-sided orphan
-        rethrow()
-    end
-    try
-        renderX(xtmp)
-    catch
-        rm(xtmp; force = true)
-        isfile(sctmp) && rm(sctmp; force = true)
-        rethrow()
-    end
-    _dt_slide_publish_pair(apath, xtmp, sctmp)
     path
 end
 
@@ -1385,1060 +1253,20 @@ end
     write_altValues_evals_to_file(path, result; format=:auto, color=:never,
                                   title=..., kwargs...)
 
-The file twin of [`print_altValues_evals`](@ref) — same format/color/title/_name/slide
-rules as [`write_BLS_Component_Tree_to_file`](@ref) (its sidecar border is
-`"accent"`). Returns `path`.
+The file twin of [`print_altValues_evals`](@ref) — same format/color/title/_name
+rules as [`write_BLS_Component_Tree_to_file`](@ref). Returns `path`.
 """
 function write_altValues_evals_to_file(path::AbstractString, result::GoMeta.GoMetaDelivery;
         format::Symbol = :auto, color::Symbol = :never,
         title::AbstractString = "print_altValues_evals",
-        slide::Union{Nothing,Symbol} = nothing,
         _name::AbstractString = basename(path), kwargs...)
-    sr = slide === nothing ? nothing : _dt_slide_resolve(slide)   # validate FIRST (§H)
-    renderX(p) = _dt_resolve_format(path, format) === :html ?
-        _dt_write_html(p, io -> print_altValues_evals(io, result; _name, kwargs...), title) :
-        open(p, "w") do f
+    if _dt_resolve_format(path, format) === :html
+        _dt_write_html(path, io -> print_altValues_evals(io, result; _name, kwargs...), title)
+    else
+        open(path, "w") do f
             print_altValues_evals(f, result; color, _name, kwargs...)
         end
-    if sr === nothing
-        _dt_slide_retire_sidecar(path)   # F5: retire FIRST — a failing render must
-        renderX(path)                    # never leave a stale claim beside partial X
-        return path
     end
-    apath = abspath(String(path))        # ONE resolution for every fs op (L3#10)
-    _dt_slide_check_dest("write_altValues_evals_to_file", apath)
-    ## §H: as the tree twin — slide consumed here, plain-view sidecar, pair
-    ## publication (F4); border "accent" (owner register row 1, ratified R6).
-    capr = _dt_slide_cap()
-    print_altValues_evals(_dt_slide_capio(capr), result; _name, kwargs...)
-    lr, fnl = _dt_slide_lines(capr)
-    sctmp = _dt_slide_stage_sidecar(apath * ".slideruns.json", "write_altValues_evals_to_file",
-                                    sr[1], sr[2], lr, fnl, "accent")
-    xtmp = try
-        xt, xio = mktemp(dirname(apath); cleanup = false)
-        close(xio)
-        xt
-    catch
-        isfile(sctmp) && rm(sctmp; force = true)   # FR1#2: no one-sided orphan
-        rethrow()
-    end
-    try
-        renderX(xtmp)
-    catch
-        rm(xtmp; force = true)
-        isfile(sctmp) && rm(sctmp; force = true)
-        rethrow()
-    end
-    _dt_slide_publish_pair(apath, xtmp, sctmp)
-    path
-end
-
-#########################################################################################
-##  §H — the `slide` output option (owner order 2026-08-20; BRIEF + DESIGN_slide-option
-##  in plan/2026-08-20-devtools-slide-output/). One runs model, two sinks: the
-##  `X.slideruns.json` sidecar (file writers) and the ANSI slide preview (print tools).
-##  Recorded deviations (full ledger: DESIGN_slide-option.md §5): the §2 brief example's
-##  border "usual" on a structure sidecar is an erratum (§2.7 wins → "tree"); the roles
-##  header = run_colors ∪ {"blank": payload} (the only reading satisfying §2.3 + §2.5);
-##  print tools REPLACE their output with the preview when `slide` is set (§4.1's
-##  on-arm becomes the strip-assertion); .html twins' sidecars describe the PLAIN view;
-##  styles are role-derived ONLY (§2.4: hideprefix bold 14, everything else regular 13).
-#########################################################################################
-
-## THE COLOR AUTHORITY EMBED — generated from SCHEMES.json (plan dir
-## 2026-08-20-devtools-slide-output, format_version 1) by gen_schemes_embed.py.
-## NEVER edit by hand: regenerate (the script emits THIS ENTIRE BLOCK incl. the
-## caveat comments below — F8), then run the authority-drift gate: the plan dir's
-## validate_sidecars.py compares the embed (via slide_sweep.jl's consts_dump.json)
-## against a fresh SCHEMES.json read.
-## REASONING for embedding (not runtime-reading SCHEMES.json): devtools.jl is
-## play-side and must work in a bare play checkout; the authority file lives in a
-## session plan dir — a runtime cross-tree read would couple the surfaces and add an
-## I/O failure mode to a print tool. Scheme caveats carried per BRIEF §3: cvd-dark's
-## brand colors never appear inside code boxes; in cvd-dark, payload/code/neutral
-## co-occurring in one box are partly structure-distinguished BY DESIGN.
-const _DT_SLIDE_FONT = (name = "JetBrains Mono", size_pt = 13)
-const _DT_SLIDE_SYMBOLS = Dict{Symbol,String}(:cvd_dark => "cvd-dark", :cvd_light => "cvd-light", :gometa_dark => "gometa-dark", :light => "light", :projector => "projector")
-const _DT_SLIDE_SCHEMES = Dict{String,NamedTuple}(
-    "gometa-dark" => (
-        name = "GoMeta Deck (current, frozen)",
-        background = "201D1D",
-        run_colors = Dict{String,String}("gutter" => "706D6D", "marker" => "FF1FA9", "payload" => "FFD6D6", "text" => "FFE994", "code" => "96EFBE", "comment" => "5EB91E", "tree" => "7BC4DC", "hideprefix" => "FFD21F", "neutral" => "E8E6E3"),
-        border_colors = Dict{String,String}("usual" => "FFD6D6", "accent" => "FF1FA9", "tree" => "7BC4DC"),
-        hideprefix_bold = true, hideprefix_size_pt = 14),
-    "cvd-dark" => (
-        name = "Okabe-Ito Dark Deck Palette",
-        background = "201D1D",
-        run_colors = Dict{String,String}("gutter" => "8D8989", "marker" => "FF7BC1", "payload" => "FFD6D6", "text" => "FFE994", "code" => "96EFD6", "comment" => "3CCA90", "tree" => "A8BEF7", "hideprefix" => "E69F00", "neutral" => "E8E6E3"),
-        border_colors = Dict{String,String}("usual" => "FFD6D6", "accent" => "FF7BC1", "tree" => "A8BEF7"),
-        hideprefix_bold = true, hideprefix_size_pt = 14),
-    "light" => (
-        name = "GoMeta Website Light",
-        background = "F1E6D2",
-        run_colors = Dict{String,String}("gutter" => "7A5F6E", "marker" => "B80074", "payload" => "4B3421", "text" => "7A5C00", "code" => "157554", "comment" => "35690E", "tree" => "066374", "hideprefix" => "8F3500", "neutral" => "6A533C"),
-        border_colors = Dict{String,String}("usual" => "8A6F4D", "accent" => "B80074", "tree" => "066374"),
-        hideprefix_bold = true, hideprefix_size_pt = 14),
-    "cvd-light" => (
-        name = "GoMeta CVD Light",
-        background = "F1E6D2",
-        run_colors = Dict{String,String}("gutter" => "776068", "marker" => "8D277F", "payload" => "382625", "text" => "332800", "code" => "043540", "comment" => "4F6A3C", "tree" => "064AC2", "hideprefix" => "8F5D00", "neutral" => "34302C"),
-        border_colors = Dict{String,String}("usual" => "8A6F4D", "accent" => "8D277F", "tree" => "064AC2"),
-        hideprefix_bold = true, hideprefix_size_pt = 14),
-    "projector" => (
-        name = "GoMeta Projector High-Vis",
-        background = "201D1D",
-        run_colors = Dict{String,String}("gutter" => "B5A78E", "marker" => "FF85C2", "payload" => "FFE0E0", "text" => "FFE994", "code" => "ACF5CA", "comment" => "7CC24E", "tree" => "88C8F4", "hideprefix" => "FFC93F", "neutral" => "F0EEEB"),
-        border_colors = Dict{String,String}("usual" => "FFE0E0", "accent" => "FF85C2", "tree" => "88C8F4"),
-        hideprefix_bold = true, hideprefix_size_pt = 14),
-)
-
-## The closed §2.5 role vocabulary in its FIXED emission order — the sidecar `roles`
-## map and every checker iterate THIS tuple, never a Dict (determinism law; the
-## brief's own per-scheme run_colors orders differ, so SCHEMES.json order is not
-## usable — DESIGN §1 / seat-D3 E-4).
-const _DT_SLIDE_ROLE_ORDER = ("gutter", "blank", "marker", "payload", "text", "code",
-                              "comment", "tree", "hideprefix", "neutral")
-
-## IS: the devtools-color → slide-role map (the ONE taste call of the order; DESIGN §2,
-## owner-sample-gated). DOES: totalizes every paint value that can reach the _dt_sty
-## gate into the closed role vocabulary. REASONING per row: chrome → gutter (the
-## scheme's only de-emphasis role); the three grain colors → tree (grain labels ARE
-## BLS-tree scaffold — the terminal's Block/Line/Segment hue triple deliberately
-## collapses on slides, the deck has ONE scaffold color); attr → payload (an evals
-## attr is the evaluated meaning of a metaSegment payload — the metaLine-payload
-## family); the flavor triple → the content roles (Meta → marker: the meta-family
-## SIGNAL color, keeping the flavor words mutually distinct on slides; Code → code;
-## Text → text); GOOD/WARN/BAD and the archival legacy yellow → neutral (NO honest
-## role exists — the closed vocabulary has no status colors; `:hide`→hideprefix was
-## REJECTED because §2.4 forces hideprefix bold 14pt, which would ripple line height
-## mid-row). PURPOSE: devtools' own views (both print tools + both write twins)
-## become deck-ready runs without a single semantic lie.
-_dt_slide_role_of(color) =
-    color === _DT_C_CHROME ? "gutter" :
-    (color === _DT_C_BLOCK || color === _DT_C_LINE || color === _DT_C_SEG) ? "tree" :
-    color === _DT_C_ATTR   ? "payload" :
-    color === _DT_C_META_F ? "marker" :
-    color === _DT_C_CODE_F ? "code" :
-    color === _DT_C_TEXT_F ? "text" :
-    "neutral"   # GOOD/WARN/BAD, legacy :yellow, :normal, nothing, and any future value
-
-## role → (bold, size_pt) — §2.4 verbatim: styles are functions of ROLE ONLY. The
-## emitters' own terminal bold is deliberately NOT carried (DESIGN §5.8): a devtools
-## `tree` run is regular 13pt on slides even where the terminal shows it bold.
-_dt_slide_style(role::String) = role == "hideprefix" ? (true, 14) : (false, 13)
-
-_dt_slide_role_hex(sch, role::String) =
-    role == "blank" ? sch.run_colors["payload"] : sch.run_colors[role]
-
-## IS: the slide-kwarg validator. DOES: maps the public Symbol (`:gometa_dark` |
-## `:cvd_dark` | `:light` | `:cvd_light` | `:projector`) to its scheme id + record; throws
-## ArgumentError NAMING all four on anything else (BRIEF §1 mandates ArgumentError,
-## deliberately unlike the neighboring error() validations). Validation runs before
-## any byte is written by every caller. PURPOSE: one gate, one message, greppable.
-function _dt_slide_resolve(slide::Symbol)
-    haskey(_DT_SLIDE_SYMBOLS, slide) || throw(ArgumentError(
-        "slide=:$slide is not a supported slide scheme — supported: " *
-        ":gometa_dark, :cvd_dark, :light, :cvd_light, :projector"))
-    id = _DT_SLIDE_SYMBOLS[slide]
-    return id, _DT_SLIDE_SCHEMES[id]
-end
-
-## ── run capture at the _dt_sty gate (devtools' own views; DESIGN §1 "Design B′") ──────
-## IS: the recording state for one plain render pass. DOES: _dt_sty brackets every
-## styled write with byte offsets into `buf` (see the gate's capture arm); gap bytes
-## (bare `println(io)` newlines and any future un-gated print) become `neutral` runs
-## in the post-pass — totality by construction: the run list is a total annotation of
-## the plain byte stream, never a parallel reconstruction. REASONING: `buf` is held
-## RAW (never a wrapper) so `position(buf)` is byte-exact; the capture context carries
-## no `:color`/`:gm_html`, so _dt_sty's capture arm always prints PLAIN bytes.
-struct _DTSlideSpan
-    lo::Int          # 0-based byte offset, half-open [lo, hi)
-    hi::Int
-    role::String
-end
-mutable struct _DTSlideCap
-    buf::IOBuffer
-    spans::Vector{_DTSlideSpan}
-end
-_dt_slide_cap() = _DTSlideCap(IOBuffer(), _DTSlideSpan[])
-_dt_slide_capio(cap::_DTSlideCap) = IOContext(cap.buf, :gm_sliderec => cap)
-
-## unwrap an IOContext chain to its raw sink — the capture arm's identity guard
-## (a :gm_sliderec key on a context whose sink is NOT the cap's buffer is foreign
-## and must be ignored, never trusted for offsets).
-_dt_slide_sink(io) = io isa IOContext ? _dt_slide_sink(io.io) : io
-
-## IS: the capture post-pass. DOES: turns (bytes, spans) into the per-line runs model —
-## `lines::Vector{Vector{Tuple{String,String}}}` of (text, role) content runs (synthetic
-## gutter/blank are the SINKS' business) + `final_newline`. Gap bytes → "neutral";
-## spans are split at '\n' (the :legacy style writes newlines INSIDE styled runs);
-## adjacent same-role pieces coalesce; zero-length runs are never emitted. Every run
-## text must decode as valid UTF-8 (run boundaries are write/newline boundaries, never
-## mid-char) — a malformed surface throws ArgumentError rather than emitting a lying
-## sidecar (DESIGN §6.3, owner-vetoable).
-function _dt_slide_lines(cap::_DTSlideCap)
-    bytes = take!(cap.buf)
-    spans = cap.spans
-    cap.spans = _DTSlideSpan[]   # ONE-SHOT (review L3#5): a reused cap starts clean —
-                                 # stale spans can never pair with a fresh buffer
-    isempty(bytes) && return Vector{Vector{Tuple{String,String}}}(), false
-    fnl = bytes[end] == 0x0a
-    ## totalize: ordered (lo, hi, role) covering [0, length) — gaps become neutral;
-    ## overlap/out-of-bounds spans are internal-error loud (they would duplicate or
-    ## invent bytes — fidelity must fail closed, never silently)
-    total = _DTSlideSpan[]
-    pos = 0
-    for sp in spans
-        sp.lo == sp.hi && continue
-        (sp.lo >= pos && sp.hi >= sp.lo && sp.hi <= length(bytes)) ||
-            throw(ErrorException("slide capture: non-monotonic or out-of-bounds span [$(sp.lo),$(sp.hi)) at pos $pos"))
-        sp.lo > pos && push!(total, _DTSlideSpan(pos, sp.lo, "neutral"))
-        push!(total, sp)
-        pos = sp.hi
-    end
-    pos < length(bytes) && push!(total, _DTSlideSpan(pos, length(bytes), "neutral"))
-    lines = Vector{Vector{Tuple{String,String}}}()
-    cur = Vector{Tuple{String,String}}()
-    piece(lo, hi, role) = begin   # append bytes[lo+1:hi] to the current line
-        lo == hi && return
-        s = String(bytes[lo+1:hi])
-        isvalid(s) || throw(ArgumentError(
-            "slide capture: the rendered view is not valid UTF-8 near byte $(lo + 1) — no sidecar/preview emitted"))
-        if !isempty(cur) && cur[end][2] == role
-            cur[end] = (cur[end][1] * s, role)
-        else
-            push!(cur, (s, role))
-        end
-    end
-    for sp in total
-        lo = sp.lo
-        for k in sp.lo:sp.hi-1
-            if bytes[k+1] == 0x0a
-                piece(lo, k, sp.role)
-                push!(lines, cur); cur = Vector{Tuple{String,String}}()
-                lo = k + 1
-            end
-        end
-        piece(lo, sp.hi, sp.role)
-    end
-    (isempty(cur) && fnl) || push!(lines, cur)
-    return lines, fnl
-end
-
-## ── the content classifier (marked source / render / structure; seat-D1 spec) ─────────
-## Everything below reads the delivered tree (`result.blsComponentTree`) THROUGH THE DOOR — `root`,
-## `children`, `getElement`, `content`, `flavor`, `isHorizontalSpace` (stage 2's commit 0) — with NO
-## residue outside it since stage 2's commit 9b (R-V04B-85 (D)): the source-line COUNT that sizes the per-line
-## output comes from the callers' own bytes (the marked-source writer's line split; the render tier's lines).
-## the battery devtools/probes/probe_devtools.jl pins the reads (the fates — the Engine's answer per Line since stage 3's commit 2 —,
-## :comment grains, the flavor record, byte offsets, the Line texts) so a drifted engine fails LOUDLY (the tools' self-check left at T1).
-
-## first char of the engine's own horizontal-whitespace class ([\h]; includes NBSP) —
-## the marker-token delimiter, through the door (`isHorizontalSpace`). Returns the byte index AFTER
-## the token, or 0 if none.
-function _dt_sl_token_end(txt::AbstractString)
-    i = firstindex(txt)
-    while i <= lastindex(txt)
-        _DT_BLS.isHorizontalSpace(txt[i]) && return i
-        i = nextind(txt, i)
-    end
-    return 0
-end
-
-## SEG-CLASSIFY (D1 §a.1): one engine segment (or a whole single-segment line) → runs.
-## Precedence: engine `:comment` settribute FIRST (covers Text comments, Code-flavor
-## comments, and Meta comment tails uniformly — flavor alone does not decide the
-## role); then Meta → marker token (validated against the flavor's OWN anchored
-## grammar `re_meta_leaded`, or the close-marker `lead * "]"`) + payload (the
-## delimiter char BELONGS to the payload); then Code → code; else Text → text.
-function _dt_sl_seg(F, isMeta::Bool, isCode::Bool, iscomment::Bool, txt::AbstractString)
-    runs = Tuple{String,String}[]
-    isempty(txt) && return runs
-    if iscomment
-        push!(runs, (String(txt), "comment"))
-    elseif isMeta
-        t = _dt_sl_token_end(txt)
-        token = t == 0 ? String(txt) : String(txt[1:prevind(txt, t)])
-        if occursin(F.re_meta_leaded, token) || token == F.lead * "]"
-            push!(runs, (token, "marker"))
-            rest = t == 0 ? "" : String(txt[t:end])
-            isempty(rest) || push!(runs, (rest, "payload"))
-        else
-            push!(runs, (String(txt), "payload"))   # defensive: unreachable for engine-minted S-Meta
-        end
-    elseif isCode
-        push!(runs, (String(txt), "code"))
-    else
-        push!(runs, (String(txt), "text"))
-    end
-    return runs
-end
-
-_dt_sl_flags(c) = (_DT_BLS.getElement(c, :isMeta),
-                   _DT_BLS.getElement(c, :isCode),
-                   _DT_BLS.getElement(c, :comment))
-
-## byte-exact slice of the GAPS and TAILS of a line (the pieces no Segment covers): `a`..`b` are
-## inclusive BYTE offsets. A Segment's OWN bytes come through the door's `content` since stage 2's
-## commit 0: a Segment's `:stopMainStr` is its final character's START byte (IV-1), so a byte slice
-## `a:stopMainStr` cut a multibyte final character short — the classifier's former read.
-_dt_sl_bslice(s::AbstractString, a::Int, b::Int) =
-    a > b ? "" : String(Vector{UInt8}(codeunits(s)[a:b]))
-
-## LINE-CLASSIFY (D1 §a.2): one source line → content runs, tiling-exact. Segment
-## offsets are 1-based inclusive BYTE offsets into the line; segments do NOT cover
-## indentation (probe-proven), so uncovered gaps are merged: a line-leading gap
-## prepends to the first run unless that run is a `marker` (then the gap stands as
-## `neutral`); interior/trailing gaps append to the last run — this keeps every Meta
-## segment's run starting exactly at `startMainStr`, the aligner's cut point. The
-## byte-concat invariant (runs == line) is asserted by the callers' degrade guard.
-function _dt_sl_line(F, ps, line, s::AbstractString)
-    isempty(s) && return Tuple{String,String}[]
-    segs = _DT_BLS.children(ps, line)   # the Line's Segments through the door (the insert store resolved by BLS itself)
-    if isempty(segs)
-        m, c, k = _dt_sl_flags(line)
-        return _dt_sl_seg(F, m, c, k, s)
-    end
-    runs = Tuple{String,String}[]
-    pos = 1
-    for seg in segs
-        a = Int(_DT_BLS.getElement(seg, :startMainStr))
-        b = Int(_DT_BLS.getElement(seg, :stopMainStr))
-        (1 <= a && a <= b + 1 && b <= ncodeunits(s)) ||
-            throw(ErrorException("slide classifier: segment span [$a:$b] outside line ($(ncodeunits(s)) bytes)"))
-        gap = _dt_sl_bslice(s, pos, a - 1)
-        m, c, k = _dt_sl_flags(seg)
-        segtxt = String(_DT_BLS.content(ps, seg))   # the Segment's bytes through the door — its final character WHOLE (`b` is that character's START byte, IV-1; the former byte slice `a:b` cut it short)
-        segruns = _dt_sl_seg(F, m, c, k, segtxt)
-        if !isempty(gap)
-            if isempty(runs)
-                if !isempty(segruns) && segruns[1][2] == "marker"
-                    push!(runs, (gap, "neutral"))
-                elseif !isempty(segruns)
-                    segruns[1] = (gap * segruns[1][1], segruns[1][2])
-                else
-                    push!(runs, (gap, "neutral"))
-                end
-            else
-                runs[end] = (runs[end][1] * gap, runs[end][2])
-            end
-        end
-        append!(runs, segruns)
-        pos = a + ncodeunits(segtxt)   # past the Segment's whole final character
-    end
-    if pos <= ncodeunits(s)
-        tail = _dt_sl_bslice(s, pos, ncodeunits(s))
-        isempty(runs) ? push!(runs, (tail, "neutral")) : (runs[end] = (runs[end][1] * tail, runs[end][2]))
-    end
-    join(first.(runs)) == s ||
-        throw(ErrorException("slide classifier: tiling concat mismatch"))
-    return runs
-end
-
-## FATE (D1 §a.3): a Line's fate is THE ENGINE's ANSWER for that Line — `evaluatedAltValue(result, line, :Visib).value`, one of
-## :discard / :hide / :show (the Line's own rows, else its Block's, else the declared default `show`; stage 3's commit 2 of the
-## v0.4 build, R-V04B-16 (1)). The former ladder over the three settribute flags of the Line, its Block and the File (first
-## flagged grain decides) left with it — MEASURED equal to the answer on every Line of the corpus and the authored scenarios
-## before the change (plan `receipts/S8-branch/precheck-s3c1/PROBES-s3-consumer-equivalence.txt`, P5). Drops are KNOWN
-## (:discard), never inferred.
-_dt_sl_fate(result, line) = GoMeta.evaluatedAltValue(result, line, :Visib).value
-
-## the shared File→Block→Line walk through the door (`root`, `children`; the insert store's negative
-## ids are resolved by BLS itself — the former positive-id guards are gone). The callback receives the
-## Line, its Block, the File and the Line's input line number.
-function _dt_sl_walk(f, ps)
-    file = _DT_BLS.root(ps)
-    for block in _DT_BLS.children(ps, file)
-        for line in _DT_BLS.children(ps, block)
-            ln = Int(_DT_BLS.getElement(line, :inputLineNum))
-            f(line, block, file, ln)
-        end
-    end
-end
-
-## SOURCE surface (D1 §a.4): classify the parsed source's own lines. `hideprefix` is
-## NEVER emitted here — brief rule 6.1 is a render-only re-cut. Returns the runs
-## lines, or `nothing` to degrade (caller emits whole-file neutral). `nsrc` = the source-line COUNT from the
-## CALLER's own bytes (R-V04B-85 (D), stage 2's commit 9b: the marked-source writer's line split; the render tier's
-## `renderlines`) — the former `length(collectedLines)` read outside the door is gone.
-function _dt_sl_source_lines(result, nsrc::Int)
-    try
-        result.status == GoMeta.PROCESS_OK || return nothing
-        ps = result.blsComponentTree
-        F = _DT_BLS.flavor(ps)
-        out = Vector{Union{Nothing,Vector{Tuple{String,String}}}}(nothing, nsrc)
-        _dt_sl_walk(ps) do line, block, file, ln
-            1 <= ln <= nsrc || throw(ErrorException("slide classifier: inputLineNum $ln outside 1:$nsrc"))
-            out[ln] === nothing || throw(ErrorException("slide classifier: line $ln visited twice"))
-            out[ln] = _dt_sl_line(F, ps, line, String(_DT_BLS.content(ps, line)))   # the Line's text through the door (its source line by `:inputLineNum`)
-        end
-        any(x -> x === nothing, out) && return nothing
-        return Vector{Vector{Tuple{String,String}}}(out)
-    catch err
-        err isa InterruptException && rethrow()
-        return nothing
-    end
-end
-
-## RENDER surface tier T0 (D1 §a.5, the fate-ladder DERIVATION — no re-parse, no
-## search): fates decide consume-vs-skip; the ≤3 candidate byte-forms are GENERATED
-## from the source line + its first Meta-flavor segment offset and byte-verified
-## against the actual render line (mutually exclusive by length — never a tie):
-##   IDENT       r == s            (shown lines, blanks, comment-hidden ensure-token)
-##   WHOLEHIDE   r == hm * s       (fate :hide only)
-##   INLINE-TAIL r == hm * s[1:m-1] * hm * s[m:end]   (fate :hide, non-Meta line)
-## hideprefix is asserted ONLY on a fate-:hide byte-match (false provenance is
-## structurally impossible); the mid-inserted hm is role `comment` (rule 6.3 — the
-## render-inserted and source-authored mid marks paint alike). ANY mismatch returns
-## nothing → tier T1. Probe-proven: 32/32 corpus files reconstruct byte-exactly.
-function _dt_sl_render_lines_T0(result, renderlines)
-    try
-        result.status == GoMeta.PROCESS_OK || return nothing
-        ps = result.blsComponentTree
-        F = _DT_BLS.flavor(ps)
-        hm = F.hide_marker
-        out = Vector{Vector{Tuple{String,String}}}()
-        ok = Ref(true)
-        j = Ref(1)
-        _dt_sl_walk(ps) do line, block, file, ln
-            ok[] || return
-            f = _dt_sl_fate(result, line)
-            f === :discard && return
-            s = String(_DT_BLS.content(ps, line))   # the Line's text through the door (empty for an out-of-range Line — the byte comparison below degrades; the former range check gone, R-V04B-85 (D))
-            if j[] > length(renderlines)
-                ok[] = false; return
-            end
-            r = renderlines[j[]]; j[] += 1
-            base = _dt_sl_line(F, ps, line, s)
-            if r == s
-                push!(out, base)
-            elseif f === :hide && r == hm * s
-                push!(out, vcat([(hm, "hideprefix")], base))
-            elseif f === :hide && !_DT_BLS.getElement(line, :isMeta)
-                segs = _DT_BLS.children(ps, line)
-                k = findfirst(sg -> _DT_BLS.getElement(sg, :isMeta), segs)
-                if k === nothing
-                    ok[] = false; return
-                end
-                m = Int(_DT_BLS.getElement(segs[k], :startMainStr))
-                if r != hm * _dt_sl_bslice(s, 1, m - 1) * hm * _dt_sl_bslice(s, m, ncodeunits(s))
-                    ok[] = false; return
-                end
-                ## split `base` at the byte where the first Meta segment starts — a run
-                ## boundary by LINE-CLASSIFY construction (gaps merge backwards).
-                ## m == 1 (a Meta segment at byte 1 of a non-Meta line) is engine-
-                ## unreachable (such a line IS a metaLine); if it ever occurred, cut
-                ## stays 0 and the file DEGRADES to T1 — never wrong bytes (P1#6).
-                cut = 0; acc = 0
-                for (i, run) in enumerate(base)
-                    acc += ncodeunits(run[1])
-                    acc == m - 1 && (cut = i; break)
-                    acc > m - 1 && break
-                end
-                if cut == 0
-                    ok[] = false; return
-                end
-                push!(out, vcat([(hm, "hideprefix")], base[1:cut], [(hm, "comment")], base[cut+1:end]))
-            else
-                ok[] = false; return
-            end
-        end
-        (ok[] && j[] == length(renderlines) + 1) || return nothing
-        return out
-    catch err
-        err isa InterruptException && rethrow()
-        return nothing
-    end
-end
-
-## RENDER tier T1 (whole-file degradation; D1 §d.R1): re-parse the RENDER bytes as
-## their own document under the ORIGINATING FLAVOR, rebuilt from the delivered tree
-## (`BLS.flavor(blsComponentTree).flavor_tag`; the configuration is not delivered — R-V04B-28: the
-## namespace, the profile, a fed profile and a parse range do not carry — the tiling reads
-## structure and flavor, never a handle, and the render bytes are a whole document of their own) and
-## classify per the source procedure — leading/mid hide marks classify `comment` via
-## their :comment settributes; hideprefix is NEVER asserted (rule 6.1 needs an input
-## to compare, and T1 has none). T1 failing too → R2: whole-file neutral.
-## split written bytes into content lines per the §2.1 pinned model: split on '\n',
-## drop exactly one trailing empty element iff the bytes end with '\n' (recorded as
-## final_newline); zero bytes ⇒ zero lines.
-function _dt_sl_splitlines(bytes)
-    isempty(bytes) && return SubString{String}[], false
-    ls = split(String(copy(bytes)), "\n")
-    fnl = bytes[end] == 0x0a
-    fnl && pop!(ls)
-    return ls, fnl
-end
-
-_dt_sl_wholeline(ls, role) =
-    Vector{Vector{Tuple{String,String}}}([isempty(l) ? Tuple{String,String}[] :
-        Tuple{String,String}[(String(l), role)] for l in ls])
-
-function _dt_sl_render_lines(result, renderbytes)
-    renderlines, fnl = _dt_sl_splitlines(renderbytes)
-    t0 = _dt_sl_render_lines_T0(result, renderlines)
-    t0 !== nothing && return t0, fnl, :component
-    t1 = try
-        r2 = GoMeta.goMeta(copy(renderbytes); config = GoMeta.GoMetaConfig(flavor_tag = _DT_BLS.flavor(result.blsComponentTree).flavor_tag))
-        _dt_sl_source_lines(r2, length(renderlines))   # the count from the render tier's own line split (R-V04B-85 (D))
-    catch err
-        err isa InterruptException && rethrow()
-        nothing
-    end
-    ## T1 acceptance is FIDELITY-GATED (review P1#3): the re-parse tiles ITS OWN
-    ## collectedLines — accept only if every line's run concat reproduces the actual
-    ## render line byte-for-byte; a drifted engine whose collectedLines diverge from
-    ## the written bytes falls to R2 instead of emitting a lying sidecar.
-    if t1 !== nothing && length(t1) == length(renderlines) &&
-       all(join(first.(t1[i])) == renderlines[i] for i in eachindex(renderlines))
-        return t1, fnl, :reparse
-    end
-    return _dt_sl_wholeline(renderlines, "neutral"), fnl, :neutral
-end
-
-## STRUCTURE surface fallback: whole-line `tree` runs (the original v1 rule-6.5
-## reading — now the DEGRADE tier under the 2026-08-21 owner fix-order #1, which
-## rules reference-true segment-interior coloring; see _dt_sl_structure_runs).
-function _dt_sl_structure_lines(bytes)
-    ls, fnl = _dt_sl_splitlines(bytes)
-    return _dt_sl_wholeline(ls, "tree"), fnl
-end
-
-## IS: the REFERENCE-TRUE structure-view classifier (owner fix-order #1,
-## 2026-08-21; run-exact reference banked at
-## plan/2026-08-20-devtools-slide-output/reference-tree-coloring.md).
-## DOES: rebuilds each `{:B-X:L-Y […]}` structure line as runs by MIRRORING the
-## engine's serialization walk over the component data (canon R1 — never a regex
-## over the serialized text): every scaffold token (`{:B-X`, `{       `, `:L-Y [`,
-## `{:S-F [`, `]}`) is role `tree`; every segment/line INTERIOR is classified by
-## the standard §2.6 content rules via `_dt_sl_seg` (comment settribute wins
-## inside any flavor — the reference's precedence); blank lines stay
-## gutter+filler. Every rebuilt line is BYTE-VERIFIED against the actual
-## structure bytes; ANY mismatch (or any walk surprise) returns `nothing` and the
-## caller degrades to the whole-line-`tree` fallback — fidelity can never lie.
-## PURPOSE: structure boxes on slides match the reference talk slides s13-18
-## token-for-token, in every scheme, for every flavor family.
-function _dt_sl_structure_runs(result, bytes)
-    try
-        result.status == GoMeta.PROCESS_OK || return nothing
-        actual, _ = _dt_sl_splitlines(bytes)
-        ps = result.blsComponentTree
-        F = _DT_BLS.flavor(ps)
-        out = Vector{Vector{Tuple{String,String}}}()
-        pushrun!(runs, txt, role) = begin
-            isempty(txt) && return
-            if !isempty(runs) && runs[end][2] == role
-                runs[end] = (runs[end][1] * txt, role)
-            else
-                push!(runs, (String(txt), role))
-            end
-        end
-        for b in _DT_BLS.children(ps)   # the walk through the door (mirrors the serialization walk of the basic renderer)
-            newBlock = true
-            for line in _DT_BLS.children(ps, b)
-                if _DT_BLS.getElement(line, :includeInOutFile) &&
-                   _DT_BLS.getElement(line, :isEmpty)
-                    length(out) < length(actual) && isempty(actual[length(out) + 1]) ||
-                        return nothing
-                    push!(out, Tuple{String,String}[])
-                    continue
-                end
-                runs = Tuple{String,String}[]
-                pushrun!(runs, newBlock ? "{:B-" * _dt_flavor(b) : "{       ", "tree")
-                pushrun!(runs, ":L-" * _dt_flavor(line) * " [", "tree")
-                if _DT_BLS.getElement(line, :includeInOutFile)
-                    m, c, k = _dt_sl_flags(line)
-                    for r in _dt_sl_seg(F, m, c, k, String(_DT_BLS.content(ps, line)))   # the Line's text through the door
-                        pushrun!(runs, r[1], r[2])
-                    end
-                elseif _dt_ni(line, :numChildren) != 0
-                    for seg in _DT_BLS.children(ps, line)
-                        _DT_BLS.getElement(seg, :includeInOutFile) || continue
-                        pushrun!(runs, "{:S-" * _dt_flavor(seg) * " [", "tree")
-                        m, c, k = _dt_sl_flags(seg)
-                        for r in _dt_sl_seg(F, m, c, k, String(_DT_BLS.content(ps, seg)))   # the Segment's byte span through the door (the bytes the serialization writes)
-                            pushrun!(runs, r[1], r[2])
-                        end
-                        pushrun!(runs, "]}", "tree")
-                    end
-                end
-                pushrun!(runs, "]}", "tree")
-                length(out) < length(actual) || return nothing
-                join(first.(runs)) == actual[length(out) + 1] || return nothing
-                push!(out, runs)
-                newBlock = false
-            end
-        end
-        length(out) == length(actual) || return nothing
-        return out
-    catch err
-        err isa InterruptException && rethrow()
-        return nothing
-    end
-end
-
-## whole-file neutral (tier R0/R2): the honest floor — never an error (rule 6.6).
-function _dt_sl_neutral_lines(bytes)
-    ls, fnl = _dt_sl_splitlines(bytes)
-    return _dt_sl_wholeline(ls, "neutral"), fnl
-end
-
-## IS: the UTF-8 preflight of a slide-enabled surface (the shipped decision — owner
-## register: invalid-UTF-8 surface ⇒ ArgumentError, never a lying sidecar; found
-## unenforced on the writer paths by all three CrossReview seats). DOES: throws the
-## documented ArgumentError BEFORE anything is written when `slide` is set; the
-## byte-faithful non-slide paths never call it. The sidecar contract §2.1
-## presupposes UTF-8 decode; rule 6.6's "never an error" covers CLASSIFICATION,
-## not undecodable bytes.
-function _dt_sl_utf8_preflight(tool::String, bytes)
-    s = String(Vector{UInt8}(bytes))   # the constructor materializes a fresh copy
-                                       # (takeover-safe; R1#5: no double copy)
-    isvalid(s) || throw(ArgumentError(
-        "$tool: slide= requires a UTF-8-decodable surface — the bytes are not " *
-        "valid UTF-8; nothing was written (drop slide= for the byte-faithful copy)"))
-    nothing
-end
-
-## ── sink 1: the X.slideruns.json sidecar (hand-rolled deterministic JSON) ─────────────
-
-## the ONE JSON string escaper: `\` `"` named escapes, \b\t\n\f\r, other C0 controls
-## and DEL as lowercase \u00xx; emoji and all other non-ASCII stay RAW UTF-8 (§4.6).
-function _dt_sl_jesc(s::AbstractString)
-    buf = IOBuffer()
-    for c in s
-        if c == '\\';     print(buf, "\\\\")
-        elseif c == '"';  print(buf, "\\\"")
-        elseif c == '\b'; print(buf, "\\b")
-        elseif c == '\t'; print(buf, "\\t")
-        elseif c == '\n'; print(buf, "\\n")
-        elseif c == '\f'; print(buf, "\\f")
-        elseif c == '\r'; print(buf, "\\r")
-        elseif c < ' ' || c == '\x7f'
-            print(buf, "\\u00", string(UInt32(c), base = 16, pad = 2))
-        else
-            print(buf, c)
-        end
-    end
-    String(take!(buf))
-end
-
-function _dt_sl_run_json(text::String, role::String, sch; synthetic::Bool = false)
-    bold, pt = _dt_slide_style(role)
-    "{ \"text\": \"" * _dt_sl_jesc(text) * "\", \"role\": \"" * role *
-    "\", \"color\": \"" * _dt_slide_role_hex(sch, role) * "\", \"bold\": " *
-    (bold ? "true" : "false") * ", \"size_pt\": " * string(pt) *
-    (synthetic ? ", \"synthetic\": true" : "") * " }"
-end
-
-## IS: the pair-publication primitives (verification order F3/F4/F5 + the F-wave
-## reconfirm hardening; DESIGN §5-bis.12-13). The invariant they buy: A SIDECAR,
-## WHEN PRESENT, DESCRIBES THE X BESIDE IT — guaranteed for the PLAY contract's
-## SINGLE WRITER PER DESTINATION (the turn-rules law) across every crash window;
-## concurrent same-destination writers/readers are OUT OF CONTRACT (exclusive
-## temps prevent staging collisions, but the retire→publish sequence is not
-## serialized — a per-path lock/generation protocol is the recorded future option,
-## DESIGN §5-bis.13). Local-filesystem semantics; Dropbox/NFS sync the two names
-## independently (caveat recorded).
-## DOES: staging writes to EXCLUSIVE same-directory temps (Julia mktemp —
-## kernel-exclusive create; temps stay 0600 until publication); publication uses
-## `Base.rename` — the RAW atomic-replace syscall, never `mv(force=true)` (whose
-## fallback RECURSIVELY DELETES an existing directory destination and can degrade
-## to copy+delete — Base file.jl's own warning; reconfirm FR1#1). A directory or
-## symlink destination is rejected up front (`_dt_slide_check_dest`): the off-arm
-## writes THROUGH a symlink, publication would REPLACE it — divergence refused,
-## never silent. Modes at publication: X keeps an existing destination's mode,
-## else 0o666 minus the process umask; the sidecar is never more permissive than
-## X (and never executable). Crash windows (kill -9): staged temps only · old X +
-## no sidecar · new X + no sidecar — always "no claim", never a mismatched pair;
-## orphaned `jl_*` temps in the destination directory are the documented kill-9
-## residue (scavenge by age).
-function _dt_slide_check_dest(tool::String, path::AbstractString)
-    (isdir(path) || endswith(String(path), '/')) && throw(ArgumentError(
-        "$tool: the destination $(repr(String(path))) is a DIRECTORY — pass a file path"))
-    islink(path) && throw(ArgumentError(
-        "$tool: the destination is a SYMLINK — slide publication would replace the " *
-        "link itself (the non-slide arm writes through it); pass the resolved target"))
-    nothing
-end
-
-function _dt_slide_stage_bytes(neardir::AbstractString, bytes)
-    tmp, io = mktemp(isempty(neardir) ? "." : neardir; cleanup = false)
-    try
-        write(io, bytes)
-        close(io)
-        return tmp
-    catch
-        try close(io) catch end   # non-masking (FR1#2): the ORIGINAL error survives
-        rm(tmp; force = true)
-        rethrow()
-    end
-end
-
-function _dt_slide_retire_sidecar(path::AbstractString)
-    sc = path * ".slideruns.json"
-    isfile(sc) && rm(sc; force = true)
-    nothing
-end
-
-## stage the sidecar (validated + serialized + exclusive temp) — publication is the
-## caller's last step. The central UTF-8 belt stays (defense in depth behind the
-## writers' preflight): a malformed run text must NEVER reach the JSON.
-## `_dt_slide_emit_sidecar` (below) is the FORMAT: pinned top-level key order
-## (format_version · tool · scheme · background · font · roles · border ·
-## final_newline · lines), roles = run_colors ∪ {"blank": payload-hex} in the fixed
-## vocabulary order, one physical line per line-object, the synthetic gutter +
-## blank-filler runs, integers bare, exactly one trailing newline — a pure
-## function of its arguments (no clock/paths/Dict iteration), which is what makes
-## §4.5 cross-process idempotence hold.
-function _dt_slide_stage_sidecar(scpath::AbstractString, tool::String, sid::String,
-                                 sch, lines, fnl::Bool, border::String)
-    gw = max(2, ndigits(length(lines)))
-    for runs in lines, (text, _) in runs
-        isvalid(text) || throw(ArgumentError(
-            "$tool: slide sidecar run text is not valid UTF-8 — no sidecar emitted"))
-    end
-    buf = IOBuffer()
-    _dt_slide_emit_sidecar(buf, tool, sid, sch, lines, fnl, border, gw)
-    _dt_slide_stage_bytes(dirname(scpath), take!(buf))
-end
-
-## the destination-mode policy (reconfirm L1#4/L3#6): an existing X keeps its
-## mode; a new X gets 0o666 minus the process umask (read-and-restore); the
-## sidecar = X's mode with execute bits stripped, never more permissive.
-function _dt_slide_dest_mode(path::AbstractString)
-    isfile(path) && return filemode(path) & 0o7777
-    um = ccall(:umask, UInt32, (UInt32,), UInt32(0o022))
-    ccall(:umask, UInt32, (UInt32,), um)
-    return 0o666 & ~Int(um)
-end
-
-## publish a staged (X?, sidecar) pair: chmod at the last moment, retire the stale
-## sidecar, `Base.rename` X, then the sidecar. `xtmp === nothing` = the caller's X
-## is already in place (the off-arms never come here).
-function _dt_slide_publish_pair(path::AbstractString, xtmp, sctmp::AbstractString)
-    try
-        xmode = _dt_slide_dest_mode(path)
-        xtmp === nothing || chmod(xtmp, xmode)
-        chmod(sctmp, xmode & 0o666)
-        _dt_slide_retire_sidecar(path)
-        xtmp === nothing || Base.rename(xtmp, path)
-        Base.rename(sctmp, path * ".slideruns.json")
-    catch
-        xtmp !== nothing && isfile(xtmp) && rm(xtmp; force = true)
-        isfile(sctmp) && rm(sctmp; force = true)
-        rethrow()
-    end
-    path
-end
-
-function _dt_slide_emit_sidecar(f::IO, tool::String, sid::String,
-                                sch, lines, fnl::Bool, border::String, gw::Int)
-    let
-        print(f, "{\n")
-        print(f, " \"format_version\": 1,\n")
-        print(f, " \"tool\": \"", tool, "\",\n")
-        print(f, " \"scheme\": \"", sid, "\",\n")
-        print(f, " \"background\": \"", sch.background, "\",\n")
-        print(f, " \"font\": { \"name\": \"", _DT_SLIDE_FONT.name,
-              "\", \"size_pt\": ", _DT_SLIDE_FONT.size_pt, " },\n")
-        print(f, " \"roles\": { ",
-              join(["\"" * r * "\": \"" * _dt_slide_role_hex(sch, r) * "\""
-                    for r in _DT_SLIDE_ROLE_ORDER], ", "), " },\n")
-        print(f, " \"border\": \"", border, "\",\n")
-        print(f, " \"final_newline\": ", fnl ? "true" : "false", ",\n")
-        if isempty(lines)
-            print(f, " \"lines\": [] }\n")
-        else
-            print(f, " \"lines\": [\n")
-            for (n, runs) in enumerate(lines)
-                parts = [_dt_sl_run_json(lpad(string(n), gw) * " ", "gutter", sch; synthetic = true)]
-                if isempty(runs)
-                    push!(parts, _dt_sl_run_json(" ", "blank", sch; synthetic = true))
-                else
-                    for (text, role) in runs
-                        push!(parts, _dt_sl_run_json(text, role, sch))
-                    end
-                end
-                print(f, "  { \"n\": ", n, ", \"runs\": [ ", join(parts, ", "), " ] }",
-                      n == length(lines) ? "\n" : ",\n")
-            end
-            print(f, " ] }\n")
-        end
-    end
-    nothing
-end
-
-## ── sink 2: the ANSI slide preview (print tools; truecolor) ───────────────────────────
-
-function _dt_sl_rgb(hex::String)
-    parse(Int, hex[1:2]; base = 16), parse(Int, hex[3:4]; base = 16), parse(Int, hex[5:6]; base = 16)
-end
-_dt_sl_bgseq(hex) = (t = _dt_sl_rgb(hex); "\e[48;2;$(t[1]);$(t[2]);$(t[3])m")
-_dt_sl_fgseq(hex) = (t = _dt_sl_rgb(hex); "\e[38;2;$(t[1]);$(t[2]);$(t[3])m")
-
-## IS: the slide preview renderer — what the slide box will look like, in the
-## terminal. DOES: paints every line on the scheme background (explicit space padding
-## to the box width — never \e[K, background-color-erase is terminal-dependent) with
-## truecolor per-run reset-then-set SGR discipline (\e[0m + bg + [bold] + fg + text;
-## flat runs, never nested; full \e[0m before every newline — safe under less -R and
-## partial copies); a synthetic right-aligned line-number gutter; exactly ONE header
-## and ONE trailer frame line (border-variant foreground) naming the tool, scheme,
-## background, and font so the viewer knows what they see and what ANSI cannot show
-## (size_pt is sidecar-only). Blank-line fillers are NOT printed (strip decidability).
-## Bold renders only via role — i.e. hideprefix runs; devtools views have none.
-## REASONING: truecolor escapes are theme-immune and never remapped (the R-DEV-10
-## lesson); the preview REPLACES the tool's normal output when slide= is set, and the
-## §4.1 obligation becomes the battery's strip-assertion (non-synthetic run bytes ==
-## the same call's slide=nothing output). PURPOSE: judge any scheme on any view with
-## one keyword, no deck round-trip.
-function _dt_slide_preview(io, tool::String, sid::String, sch, lines, border::String)
-    gw = max(2, ndigits(length(lines)))
-    ## CONTROL-BYTE GUARD (review L3#2 — the terminal-forging class): run text is
-    ## written raw into the ANSI stream, so ESC/CR/C0/C1/DEL in a run (reachable via
-    ## a hostile `_name`; the renderers themselves escape content controls) could
-    ## rewrite the gutter, frames, or later terminal output. Reject loudly — the
-    ## preview never renders forgeable bytes, and the strip-assertion stays honest.
-    for runs in lines, (text, _) in runs, c in text
-        if c < ' ' || c == '\x7f' || ('\u80' <= c <= '\u9f')
-            throw(ArgumentError("$tool: slide preview run text carries the control " *
-                                "character $(repr(c)) — refusing to render it into " *
-                                "the terminal stream (check _name and view inputs)"))
-        end
-    end
-    head = "── slide preview · $tool · scheme $sid · bg #$(sch.background) · " *
-           "$(_DT_SLIDE_FONT.name) $(_DT_SLIDE_FONT.size_pt) pt (size_pt: sidecar-only) ──"
-    tail = "── end preview · $(length(lines)) lines ──"
-    W = max(textwidth(head), textwidth(tail),
-            maximum(vcat([gw + 1 + sum(textwidth(t) for (t, _) in l; init = 0) for l in lines], [0]))) + 1
-    bg = _dt_sl_bgseq(sch.background)
-    bhex = sch.border_colors[border]
-    pad(w) = ' '^max(0, w)
-    frame(s) = (print(io, "\e[0m", bg, _dt_sl_fgseq(bhex), s, pad(W - textwidth(s)), "\e[0m\n"))
-    frame(head)
-    for (n, runs) in enumerate(lines)
-        print(io, "\e[0m", bg, _dt_sl_fgseq(_dt_slide_role_hex(sch, "gutter")),
-              lpad(string(n), gw), " ")
-        w = gw + 1
-        for (text, role) in runs
-            bold, _ = _dt_slide_style(role)
-            print(io, "\e[0m", bg, bold ? "\e[1m" : "", _dt_sl_fgseq(_dt_slide_role_hex(sch, role)), text)
-            w += textwidth(text)
-        end
-        print(io, "\e[0m", bg, pad(W - w), "\e[0m\n")
-    end
-    frame(tail)
-    nothing
-end
-
-## ── the three surface writers (the `writeBlsStructureToFile` class: the tool's pair + the marked source) ──
-
-"""
-    writeBlsStructureToFile(path, result; slide=nothing) -> path
-
-IS: the structure-surface file writer — writes THE BLS structure view
-(`Main.BasicRenderer.outputs(result).blsStructure_bytes`, line-mapped 1:1 to the input) of one
-`goMeta` result to `path`, VERBATIM. The name deliberately revives the February
-parser-side `writeBlsStructureToFile(path)` serialization, now fed from the development
-tool's pair (`Main.BasicRenderer.outputs`; same output, new plumbing).
-DOES: byte-copies the tool's surface; with `slide` set, additionally emits
-`path * ".slideruns.json"` — the slide-run sidecar (contract: BRIEF §2 in
-plan/2026-08-20-devtools-slide-output/): REFERENCE-TRUE runs per the owner
-fix-order of 2026-08-21 (DESIGN §5-bis.15) — scaffold tokens are role `tree`,
-segment/line INTERIORS carry the standard content roles (marker/payload/comment/
-code/text; the comment settribute wins inside any flavor), rebuilt by mirroring
-the engine's serialization walk over the component data and BYTE-VERIFIED per
-line (any mismatch degrades the whole file to the original whole-line-`tree`
-reading — never a lying run). Empty lines carry the synthetic gutter + blank
-filler; the box border is `"tree"` (the structure variant; the BRIEF §2 example's
-`"usual"` on a structure sidecar is a recorded erratum — §2.7 wins).
-REASONING: the structure box is the debugging anchor (BLS-structure-first law), and
-slides need it with the deck's scaffold color, not a re-derivation. PURPOSE: one
-command turns any play structure view into deck-ready colored-run data.
-
-PARAMETERS — which behavior each triggers:
-- `path::AbstractString` — the output file; the sidecar lands beside it as
-  `path * ".slideruns.json"` (X keeps its extension: `t.jl` → `t.jl.slideruns.json`).
-- `result::GoMeta.GoMetaDelivery` — the ONE `goMeta` result whose structure is written.
-- `slide::Union{Nothing,Symbol} = nothing` — `nothing`: write X only, byte-identical
-  to today, no sidecar; a stale `X.slideruns.json` sitting beside the path is
-  RETIRED (removed — F5: a sidecar, when present, describes the X beside it). One of
-  `:gometa_dark` (the deck default) | `:cvd_dark` | `:light` | `:cvd_light` |
-  `:projector`: also
-  emit the sidecar under that scheme. Any other Symbol ⇒ ArgumentError naming these
-  five (validated BEFORE any byte is written); a non-Symbol ⇒ TypeError at the call
-  boundary (typed kwarg).
-"""
-function writeBlsStructureToFile(path::AbstractString, result::GoMeta.GoMetaDelivery;
-                                 slide::Union{Nothing,Symbol} = nothing)
-    sr = slide === nothing ? nothing : _dt_slide_resolve(slide)
-    bytes = copy(Main.BasicRenderer.outputs(result).blsStructure_bytes)
-    if sr === nothing
-        _dt_slide_retire_sidecar(path)   # F5: retire FIRST — a failing write must
-        write(path, bytes)               # never leave a stale claim beside partial X
-        return path
-    end
-    apath = abspath(String(path))        # ONE resolution for every fs op (L3#10)
-    _dt_slide_check_dest("writeBlsStructureToFile", apath)
-    _dt_sl_utf8_preflight("writeBlsStructureToFile", bytes)
-    ## owner fix-order #1 (2026-08-21): reference-true runs from the component
-    ## mirror; ANY mismatch degrades to the original whole-line-tree reading
-    lr = _dt_sl_structure_runs(result, bytes)
-    fnl = !isempty(bytes) && bytes[end] == 0x0a
-    lr === nothing && ((lr, fnl) = _dt_sl_structure_lines(bytes))   # THE degrade tier
-    xtmp = _dt_slide_stage_bytes(dirname(apath), bytes)
-    sctmp = try
-        _dt_slide_stage_sidecar(apath * ".slideruns.json", "writeBlsStructureToFile",
-                                sr[1], sr[2], lr, fnl, "tree")
-    catch
-        rm(xtmp; force = true)           # FR1#2: no one-sided temp orphan
-        rethrow()
-    end
-    _dt_slide_publish_pair(apath, xtmp, sctmp)
-    path
-end
-
-"""
-    writeRenderToFile(path, result; slide=nothing) -> path
-
-IS: the render-surface file writer — writes the reference render
-(`Main.BasicRenderer.outputs(result).render_bytes`: show / hide via the flavor's hide marker /
-discard) of one `goMeta` result to `path`, VERBATIM.
-DOES: byte-copies the engine surface; with `slide` set, additionally emits
-`path * ".slideruns.json"`. Classification is a fate-ladder DERIVATION from the
-originating result (canon R1 — never a regex over raw lines): the Engine's ANSWER per Line
-(`evaluatedAltValue(result, line, :Visib)` — :discard / :hide / :show) decides which source lines the
-render kept, and each kept line is byte-verified against the ≤3 derivable forms
-(identical · whole-line-hidden `hm * line` · inline-tail
-`hm * line[1:m-1] * hm * line[m:end]` at the first Meta-flavor segment). The
-render-added leading hide marker classifies `hideprefix` (bold 14pt, the scheme's
-hideprefix color); the
-mid-inserted one classifies `comment` (rule 6.3 — source-authored and
-render-inserted mid marks paint alike). Any mismatch (e.g. a future engine changing
-render surfaces) degrades WHOLE-FILE to a re-parse of the render bytes under a
-config REBUILT from the delivered tree's flavor
-(`GoMetaConfig(flavor_tag = BLS.flavor(result.blsComponentTree).flavor_tag)` — the
-originating configuration is not delivered, R-V04B-28; the tier-T1 comment
-`## RENDER tier T1 (whole-file degradation; D1 §d.R1)` above `_dt_sl_splitlines`
-names what does not carry) (hide marks then classify `comment`; `hideprefix` is
-never asserted without an input to compare) and, failing that too, to whole-line
-`neutral` — the sidecar never errors on content and never lies about provenance.
-REASONING: the deck's output boxes are renders; hideprefix-vs-comment is exactly
-the distinction slides must show, and only the fate derivation can make it without
-false provenance. PURPOSE: any play render becomes deck-ready colored-run data.
-
-PARAMETERS — which behavior each triggers:
-- `path::AbstractString` — the output file; sidecar at `path * ".slideruns.json"`.
-- `result::GoMeta.GoMetaDelivery` — the ONE `goMeta` result whose render is written;
-  its delivered tree's BLS internals (`blsComponentTree`) feed the derivation (D-6(a) exemption surface, pinned by
-  the battery `devtools/probes/probe_devtools.jl`).
-- `slide::Union{Nothing,Symbol} = nothing` — as [`writeBlsStructureToFile`](@ref):
-  `nothing` = X only AND a stale `X.slideruns.json` beside the path is RETIRED
-  (removed — F5); a scheme Symbol = X + sidecar published as a staged pair (border
-  `"usual"`); unknown Symbol ⇒ ArgumentError naming the five supported values.
-"""
-function writeRenderToFile(path::AbstractString, result::GoMeta.GoMetaDelivery;
-                           slide::Union{Nothing,Symbol} = nothing)
-    sr = slide === nothing ? nothing : _dt_slide_resolve(slide)
-    bytes = copy(Main.BasicRenderer.outputs(result).render_bytes)
-    if sr === nothing
-        _dt_slide_retire_sidecar(path)   # F5: retire FIRST — a failing write must
-        write(path, bytes)               # never leave a stale claim beside partial X
-        return path
-    end
-    apath = abspath(String(path))        # ONE resolution for every fs op (L3#10)
-    _dt_slide_check_dest("writeRenderToFile", apath)
-    _dt_sl_utf8_preflight("writeRenderToFile", bytes)
-    lr, fnl, _tier = _dt_sl_render_lines(result, bytes)   # classify FIRST (F4)
-    xtmp = _dt_slide_stage_bytes(dirname(apath), bytes)
-    sctmp = try
-        _dt_slide_stage_sidecar(apath * ".slideruns.json", "writeRenderToFile",
-                                sr[1], sr[2], lr, fnl, "usual")
-    catch
-        rm(xtmp; force = true)           # FR1#2: no one-sided temp orphan
-        rethrow()
-    end
-    _dt_slide_publish_pair(apath, xtmp, sctmp)
-    path
-end
-
-"""
-    writeMarkedSourceToFile(path, bytes; config=GoMeta.GoMetaConfig(), slide=nothing) -> path
-
-IS: the marked-source file writer — writes the given source `bytes` (a GoMeta-marked
-file: metaLines, inline metaSegments, content) to `path`, VERBATIM byte-copy.
-DOES: with `slide` set, additionally emits `path * ".slideruns.json"` from its OWN
-`goMeta(bytes; config)` parse: marker tokens (`#~`, `#~2`, `#~!`, close-marker `#]`,
-and the cfam/latex families under their configs) → `marker`; the rest of the
-metaSegment → `payload`; engine-`:comment` segments (incl. comment tails inside
-metaLines) → `comment`; Code → `code`; Text → `text`; indentation joins its
-segment's run. `hideprefix` is NEVER emitted here — rule 6.1 is render-only (a
-source line beginning with the hide marker IS a comment). A refused or thrown parse
-(e.g. a malformed metaLine) degrades to whole-line `neutral` — the file is still
-written, the sidecar never errors on content.
-REASONING: the deck's input boxes show marked SOURCE; the §4.4 fixture's
-"`#~2` = a single marker run" is satisfiable only on this surface (the render shows
-`## #~2`). PURPOSE: any marked input becomes deck-ready colored-run data.
-
-PARAMETERS — which behavior each triggers:
-- `path::AbstractString` — the output file; sidecar at `path * ".slideruns.json"`.
-- `bytes::AbstractVector{UInt8}` — the EXACT source bytes (pass `read(file)`);
-  written verbatim; `final_newline` is read from them.
-- `config::GoMeta.GoMetaConfig = GoMeta.GoMetaConfig()` — the parse config for the
-  sidecar's classification pass ONLY (the written bytes are untouched). Selects the
-  comment/marker family: the default parses julia-flavor (`#~` / `## `); pass e.g.
-  `GoMetaConfig(flavor_tag = :c)` for `//~` / `//# ` sources or `:latex` for
-  `%~` / `%% ` (live v0.3 surfaces — classification is flavor-generic, never
-  extension-inferred).
-- `slide::Union{Nothing,Symbol} = nothing` — as [`writeBlsStructureToFile`](@ref):
-  `nothing` = X only AND a stale `X.slideruns.json` beside the path is RETIRED
-  (removed — F5); a scheme Symbol = X + sidecar published as a staged pair (border
-  `"usual"`); unknown Symbol ⇒ ArgumentError naming the five supported values.
-"""
-function writeMarkedSourceToFile(path::AbstractString, bytes::AbstractVector{UInt8};
-                                 config::GoMeta.GoMetaConfig = GoMeta.GoMetaConfig(),
-                                 slide::Union{Nothing,Symbol} = nothing)
-    sr = slide === nothing ? nothing : _dt_slide_resolve(slide)
-    ## F6: snapshot the caller's (possibly mutable/aliased) vector ONCE at entry;
-    ## every later stage uses `snap` — and still copies per goMeta call (the
-    ## String-takeover class lives inside the engine; snapshot-once ≠ hand it out)
-    snap = Vector{UInt8}(bytes)
-    if sr === nothing
-        _dt_slide_retire_sidecar(path)   # F5: retire FIRST — a failing write must
-        write(path, snap)                # never leave a stale claim beside partial X
-        return path
-    end
-    apath = abspath(String(path))        # ONE resolution for every fs op (L3#10)
-    _dt_slide_check_dest("writeMarkedSourceToFile", apath)
-    _dt_sl_utf8_preflight("writeMarkedSourceToFile", snap)
-    lr = nothing
-    fnl = !isempty(snap) && snap[end] == 0x0a
-    r = try
-        GoMeta.goMeta(copy(snap); config)
-    catch err
-        err isa InterruptException && rethrow()
-        nothing
-    end
-    ls, _ = _dt_sl_splitlines(copy(snap))   # the file's OWN line split: the classifier's source-line count (R-V04B-85 (D)) and the fidelity gate's yardstick
-    r === nothing || (lr = _dt_sl_source_lines(r, length(ls)))
-    ## fidelity-gate the classification against the WRITTEN bytes (R1#2 — the
-    ## same principle as the T1 gate): a drifted engine whose collectedLines
-    ## diverge from the file's own line split degrades to neutral, never lies
-    if lr !== nothing
-        (length(lr) == length(ls) &&
-         all(join(first.(lr[i])) == ls[i] for i in eachindex(ls))) || (lr = nothing)
-    end
-    if lr === nothing
-        lr, fnl = _dt_sl_neutral_lines(copy(snap))
-    end
-    xtmp = _dt_slide_stage_bytes(dirname(apath), snap)   # classify-first done (F4)
-    sctmp = try
-        _dt_slide_stage_sidecar(apath * ".slideruns.json", "writeMarkedSourceToFile",
-                                sr[1], sr[2], lr, fnl, "usual")
-    catch
-        rm(xtmp; force = true)           # FR1#2: no one-sided temp orphan
-        rethrow()
-    end
-    _dt_slide_publish_pair(apath, xtmp, sctmp)
     path
 end
 
@@ -2603,7 +1431,7 @@ end
     writeComparisonFormToFile(path, result; name = basename(path), at = "-") -> path
 
 IS: the comparison form's file writer (the reference set's producer — stage 4 of the v0.4 build; R-V04B-36).
-DOES: writes `comparisonForm(result; name, at)` to `path`, verbatim; returns `path`. No slide keyword — the form is
+DOES: writes `comparisonForm(result; name, at)` to `path`, verbatim; returns `path`. The form is
 a comparison surface, not a share-view. PURPOSE: `tests/comparison/regenerate.jl` writes the twelve through it.
 """
 function writeComparisonFormToFile(path::AbstractString, result::GoMeta.GoMetaDelivery;
