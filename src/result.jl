@@ -60,7 +60,7 @@ Diagnostic(code::Symbol, severity::Symbol, message::AbstractString) =
     EvalRecord(cell_handle, attr, value, polarity, decided_by)
 
 IS: one final evals row — a Component's (keyed by its occurrence handle), a metaLine region's heading row
-(keyed by the metaBlock the metaLine forms — R-V04B-50; an inline metaSegment's by the Segment) or a fed profile's heading row (keyed by the minted user-context
+(keyed by the metaBlock the metaLine forms — R-V04B-50, a metaLine split by a trailing comment included; an inline metaSegment's by its Line with the Segment as the key's origin — R-V04B-98) or a fed profile's heading row (keyed by the minted user-context
 handle) — the element of `EvalStore`.
 
 DOES: One final evals row. `cell_handle::Vector{UInt8}` holds the `key_bytes` of the row's handle: for a

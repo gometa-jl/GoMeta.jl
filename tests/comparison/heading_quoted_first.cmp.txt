@@ -1,4 +1,4 @@
-# GoMeta comparison form v1 | heading_quoted_first | produced by GoMeta v0.4 at b28dc93b | 16 Components | 60 answer lines
+# GoMeta comparison form v1 | heading_quoted_first | produced by GoMeta v0.4 at 79ea54cd | 16 Components | 60 answer lines
 A | Block | 1-1 | Visib | show | default
 A | Block | 1-1 | heading | "Document title" | Block 1-1
 A | Block | 1-1 | id | (cell=0,file=0,parent=0) | default
@@ -40,7 +40,7 @@ A | Line | 4-4 | heading | null | default
 A | Line | 4-4 | id | (cell=0,file=0,parent=0) | default
 A | Line | 4-4 | labels | {} | default
 A | Line | 5-5 | Visib | show | default
-A | Line | 5-5 | heading | null | default
+A | Line | 5-5 | heading | "Inline heading" | Line 5-5
 A | Line | 5-5 | id | (cell=0,file=0,parent=0) | default
 A | Line | 5-5 | labels | {} | default
 A | Line | 6-6 | Visib | show | default
@@ -52,11 +52,11 @@ A | Line | 7-7 | heading | null | default
 A | Line | 7-7 | id | (cell=0,file=0,parent=0) | default
 A | Line | 7-7 | labels | {} | default
 A | Segment | 5:1-6 | Visib | show | default
-A | Segment | 5:1-6 | heading | null | default
+A | Segment | 5:1-6 | heading | "Inline heading" | Line 5-5
 A | Segment | 5:1-6 | id | (cell=0,file=0,parent=0) | default
 A | Segment | 5:1-6 | labels | {} | default
 A | Segment | 5:7-25 | Visib | show | default
-A | Segment | 5:7-25 | heading | "Inline heading" | Segment 5:7-25
+A | Segment | 5:7-25 | heading | "Inline heading" | Line 5-5
 A | Segment | 5:7-25 | id | (cell=0,file=0,parent=0) | default
 A | Segment | 5:7-25 | labels | {} | default
 C | Block | 1-1 | File 1-7 | 1 | Line 1-1 | Meta | component.attachedToMeta,component.containsMeta,component.depth1,component.isMeta

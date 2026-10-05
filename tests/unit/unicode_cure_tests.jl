@@ -67,25 +67,26 @@ _uc_err(s)     = try _uc_full(s); nothing catch e sprint(showerror, e) end
         @test GM.print_condition(_uc_pc(":ab")) == ":ab"   # CAL-12 ASCII control
     end
 
-    @testset "[6] U2: a multibyte FINAL character survives the derived five-column form whole" begin
-        # the segment's content bytes — through the TEST LAYER's derived five-column form (the fifth column = each row's
-        # Component's content through the door, `BLS.content`; the Engine stores no copy since commit 9b) — end with the
-        # COMPLETE final character (NBSP c2 a0), not a lone lead byte — the widened nextind slice.
+    @testset "[6] U2: a multibyte FINAL character survives the content slice whole (the Segment through the door; every derived payload valid UTF-8)" begin
+        # the metaSegment's content bytes through the door (`BLS.content` — the slice the cure widened; the Engine stores no copy
+        # since commit 9b) end with the COMPLETE final character (NBSP c2 a0), not a lone lead byte — the widened nextind slice.
+        # Since stage 5's E1 (R-V04B-98) no row is keyed on a Segment — the inline heading's row keys on its LINE with the Segment
+        # as the key's origin — so the TEST LAYER's derived five-column form shows the LINE's content for it (ending in `c`); the
+        # Segment's slice is read here through the door (MEASURED 2026-10-03: Line 1's Segments [x = 1 ] [#~ "T" + NBSP] [## c]),
+        # and every derived payload is still checked for valid UTF-8.
         s = "x = 1 #~ \"T\" ## c\ny = 2\n"
         r = _uc_full(s)
         @test r.status == GM.PROCESS_OK
+        t = r.blsComponentTree
+        seg = GM.BLS.children(t, first(GM.BLS.children(t, first(GM.BLS.children(t)))))[2]   # Line 1's metaSegment
+        c = GM.BLS.content(t, seg)
+        @test length(c) >= 2 && c[end-1] == 0xc2 && c[end] == 0xa0                          # the slice ends with the whole NBSP
         rows = [split(l, '\t') for l in split(String(TestSupport.derive_annotations_golden(r)), '\n'; keepempty = false) if !startswith(l, "#")]
         @test !isempty(rows)
-        ok = false
         for cols in rows
-            c = hex2bytes(cols[5])
-            if length(c) >= 2 && c[end-1] == 0xc2 && c[end] == 0xa0
-                ok = true
-            end
             # every derived content payload must be valid UTF-8 when the source is
-            @test isvalid(String(copy(c)))
+            @test isvalid(String(copy(hex2bytes(cols[5]))))
         end
-        @test ok                                   # at least one payload ends …c2 a0
     end
 
     @testset "[7] the pictograph label vocabulary (0.3.0): byte-exact, both roles" begin

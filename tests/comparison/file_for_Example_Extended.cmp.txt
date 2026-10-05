@@ -1,4 +1,4 @@
-# GoMeta comparison form v1 | file_for_Example_Extended | produced by GoMeta v0.4 at b28dc93b | 102 Components | 404 answer lines
+# GoMeta comparison form v1 | file_for_Example_Extended | produced by GoMeta v0.4 at 79ea54cd | 102 Components | 404 answer lines
 A | Block | 1-5 | Visib | show | default
 A | Block | 1-5 | heading | null | default
 A | Block | 1-5 | id | (cell=0,file=0,parent=0) | default
@@ -10,27 +10,27 @@ A | Block | 11-16 | labels | {} | default
 A | Block | 17-19 | Visib | show | default
 A | Block | 17-19 | heading | null | default
 A | Block | 17-19 | id | (cell=0,file=0,parent=0) | default
-A | Block | 17-19 | labels | {label3,label5} | Segment 18:1-36
-A | Block | 20-32 | Visib | discard | Segment 7:1-30
+A | Block | 17-19 | labels | {label3,label5} | Block 17-19
+A | Block | 20-32 | Visib | discard | Block 6-10
 A | Block | 20-32 | heading | null | default
 A | Block | 20-32 | id | (cell=0,file=0,parent=0) | default
-A | Block | 20-32 | labels | {label3,label5} | Segment 18:1-36
+A | Block | 20-32 | labels | {label3,label5} | Block 17-19
 A | Block | 33-34 | Visib | show | default
 A | Block | 33-34 | heading | null | default
 A | Block | 33-34 | id | (cell=0,file=0,parent=0) | default
-A | Block | 33-34 | labels | {label3,label4,label5} | Segment 18:1-36
-A | Block | 35-49 | Visib | hide | Segment 19:1-17
+A | Block | 33-34 | labels | {label3,label4,label5} | Block 17-19
+A | Block | 35-49 | Visib | hide | Block 17-19
 A | Block | 35-49 | heading | null | default
 A | Block | 35-49 | id | (cell=0,file=0,parent=0) | default
 A | Block | 35-49 | labels | {label1,label3,label4,label5} | Block 6-10
-A | Block | 50-51 | Visib | discard | Segment 7:1-30
+A | Block | 50-51 | Visib | discard | Block 6-10
 A | Block | 50-51 | heading | null | default
 A | Block | 50-51 | id | (cell=0,file=0,parent=0) | default
-A | Block | 50-51 | labels | {label2} | Segment 51:1-12
-A | Block | 52-63 | Visib | discard | Segment 7:1-30
+A | Block | 50-51 | labels | {label2} | Block 50-51
+A | Block | 52-63 | Visib | discard | Block 6-10
 A | Block | 52-63 | heading | null | default
 A | Block | 52-63 | id | (cell=0,file=0,parent=0) | default
-A | Block | 52-63 | labels | {label2} | Segment 51:1-12
+A | Block | 52-63 | labels | {label2} | Block 50-51
 A | Block | 6-10 | Visib | show | default
 A | Block | 6-10 | heading | null | default
 A | Block | 6-10 | id | (cell=0,file=0,parent=0) | default
@@ -70,100 +70,100 @@ A | Line | 16-16 | labels | {} | default
 A | Line | 17-17 | Visib | show | default
 A | Line | 17-17 | heading | null | default
 A | Line | 17-17 | id | (cell=0,file=0,parent=0) | default
-A | Line | 17-17 | labels | {label3,label5} | Segment 18:1-36
+A | Line | 17-17 | labels | {label3,label5} | Block 17-19
 A | Line | 18-18 | Visib | show | default
 A | Line | 18-18 | heading | null | default
 A | Line | 18-18 | id | (cell=0,file=0,parent=0) | default
-A | Line | 18-18 | labels | {label3,label5} | Line 18-18
+A | Line | 18-18 | labels | {label3,label5} | Block 17-19
 A | Line | 19-19 | Visib | show | default
 A | Line | 19-19 | heading | null | default
 A | Line | 19-19 | id | (cell=0,file=0,parent=0) | default
-A | Line | 19-19 | labels | {label3,label5} | Segment 18:1-36
+A | Line | 19-19 | labels | {label3,label5} | Block 17-19
 A | Line | 2-2 | Visib | show | default
 A | Line | 2-2 | heading | null | default
 A | Line | 2-2 | id | (cell=0,file=0,parent=0) | default
 A | Line | 2-2 | labels | {} | default
-A | Line | 20-20 | Visib | discard | Segment 7:1-30
+A | Line | 20-20 | Visib | discard | Block 6-10
 A | Line | 20-20 | heading | null | default
 A | Line | 20-20 | id | (cell=0,file=0,parent=0) | default
-A | Line | 20-20 | labels | {label3,label5} | Segment 18:1-36
-A | Line | 21-21 | Visib | discard | Segment 7:1-30
+A | Line | 20-20 | labels | {label3,label5} | Block 17-19
+A | Line | 21-21 | Visib | discard | Block 6-10
 A | Line | 21-21 | heading | null | default
 A | Line | 21-21 | id | (cell=0,file=0,parent=0) | default
-A | Line | 21-21 | labels | {label3,label5} | Segment 18:1-36
-A | Line | 22-22 | Visib | discard | Segment 7:1-30
+A | Line | 21-21 | labels | {label3,label5} | Block 17-19
+A | Line | 22-22 | Visib | discard | Block 6-10
 A | Line | 22-22 | heading | null | default
 A | Line | 22-22 | id | (cell=0,file=0,parent=0) | default
-A | Line | 22-22 | labels | {label3,label5} | Segment 18:1-36
-A | Line | 23-23 | Visib | discard | Segment 7:1-30
+A | Line | 22-22 | labels | {label3,label5} | Block 17-19
+A | Line | 23-23 | Visib | discard | Block 6-10
 A | Line | 23-23 | heading | null | default
 A | Line | 23-23 | id | (cell=0,file=0,parent=0) | default
-A | Line | 23-23 | labels | {label3,label5} | Segment 18:1-36
-A | Line | 24-24 | Visib | discard | Segment 7:1-30
+A | Line | 23-23 | labels | {label3,label5} | Block 17-19
+A | Line | 24-24 | Visib | discard | Block 6-10
 A | Line | 24-24 | heading | null | default
 A | Line | 24-24 | id | (cell=0,file=0,parent=0) | default
-A | Line | 24-24 | labels | {label3,label5} | Segment 18:1-36
-A | Line | 25-25 | Visib | discard | Segment 7:1-30
+A | Line | 24-24 | labels | {label3,label5} | Block 17-19
+A | Line | 25-25 | Visib | discard | Block 6-10
 A | Line | 25-25 | heading | null | default
 A | Line | 25-25 | id | (cell=0,file=0,parent=0) | default
-A | Line | 25-25 | labels | {label3,label5} | Segment 18:1-36
-A | Line | 26-26 | Visib | discard | Segment 7:1-30
+A | Line | 25-25 | labels | {label3,label5} | Block 17-19
+A | Line | 26-26 | Visib | discard | Block 6-10
 A | Line | 26-26 | heading | null | default
 A | Line | 26-26 | id | (cell=0,file=0,parent=0) | default
-A | Line | 26-26 | labels | {label3,label5} | Segment 18:1-36
-A | Line | 27-27 | Visib | discard | Segment 7:1-30
+A | Line | 26-26 | labels | {label3,label5} | Block 17-19
+A | Line | 27-27 | Visib | discard | Block 6-10
 A | Line | 27-27 | heading | null | default
 A | Line | 27-27 | id | (cell=0,file=0,parent=0) | default
-A | Line | 27-27 | labels | {label3,label5} | Segment 18:1-36
-A | Line | 28-28 | Visib | discard | Segment 7:1-30
+A | Line | 27-27 | labels | {label3,label5} | Block 17-19
+A | Line | 28-28 | Visib | discard | Block 6-10
 A | Line | 28-28 | heading | null | default
 A | Line | 28-28 | id | (cell=0,file=0,parent=0) | default
-A | Line | 28-28 | labels | {label3,label5} | Segment 18:1-36
-A | Line | 29-29 | Visib | discard | Segment 7:1-30
+A | Line | 28-28 | labels | {label3,label5} | Block 17-19
+A | Line | 29-29 | Visib | discard | Block 6-10
 A | Line | 29-29 | heading | null | default
 A | Line | 29-29 | id | (cell=0,file=0,parent=0) | default
-A | Line | 29-29 | labels | {label3,label5} | Segment 18:1-36
+A | Line | 29-29 | labels | {label3,label5} | Block 17-19
 A | Line | 3-3 | Visib | show | default
 A | Line | 3-3 | heading | null | default
 A | Line | 3-3 | id | (cell=0,file=0,parent=0) | default
 A | Line | 3-3 | labels | {} | default
-A | Line | 30-30 | Visib | discard | Segment 7:1-30
+A | Line | 30-30 | Visib | discard | Block 6-10
 A | Line | 30-30 | heading | null | default
 A | Line | 30-30 | id | (cell=0,file=0,parent=0) | default
-A | Line | 30-30 | labels | {label3,label5} | Segment 18:1-36
-A | Line | 31-31 | Visib | discard | Segment 7:1-30
+A | Line | 30-30 | labels | {label3,label5} | Block 17-19
+A | Line | 31-31 | Visib | discard | Block 6-10
 A | Line | 31-31 | heading | null | default
 A | Line | 31-31 | id | (cell=0,file=0,parent=0) | default
-A | Line | 31-31 | labels | {label3,label5} | Segment 18:1-36
-A | Line | 32-32 | Visib | discard | Segment 7:1-30
+A | Line | 31-31 | labels | {label3,label5} | Block 17-19
+A | Line | 32-32 | Visib | discard | Block 6-10
 A | Line | 32-32 | heading | null | default
 A | Line | 32-32 | id | (cell=0,file=0,parent=0) | default
-A | Line | 32-32 | labels | {label3,label5} | Segment 18:1-36
+A | Line | 32-32 | labels | {label3,label5} | Block 17-19
 A | Line | 33-33 | Visib | show | default
 A | Line | 33-33 | heading | null | default
 A | Line | 33-33 | id | (cell=0,file=0,parent=0) | default
-A | Line | 33-33 | labels | {label3,label4,label5} | Segment 18:1-36
+A | Line | 33-33 | labels | {label3,label4,label5} | Block 17-19
 A | Line | 34-34 | Visib | show | default
 A | Line | 34-34 | heading | null | default
 A | Line | 34-34 | id | (cell=0,file=0,parent=0) | default
-A | Line | 34-34 | labels | {label3,label4,label5} | Segment 18:1-36
-A | Line | 35-35 | Visib | hide | Segment 19:1-17
+A | Line | 34-34 | labels | {label3,label4,label5} | Block 17-19
+A | Line | 35-35 | Visib | hide | Block 17-19
 A | Line | 35-35 | heading | null | default
 A | Line | 35-35 | id | (cell=0,file=0,parent=0) | default
 A | Line | 35-35 | labels | {label1,label3,label4,label5} | Block 6-10
-A | Line | 36-36 | Visib | hide | Segment 19:1-17
+A | Line | 36-36 | Visib | hide | Block 17-19
 A | Line | 36-36 | heading | null | default
 A | Line | 36-36 | id | (cell=0,file=0,parent=0) | default
 A | Line | 36-36 | labels | {label1,label3,label4,label5} | Block 6-10
-A | Line | 37-37 | Visib | hide | Segment 19:1-17
+A | Line | 37-37 | Visib | hide | Block 17-19
 A | Line | 37-37 | heading | null | default
 A | Line | 37-37 | id | (cell=0,file=0,parent=0) | default
 A | Line | 37-37 | labels | {label1,label3,label4,label5} | Block 6-10
-A | Line | 38-38 | Visib | hide | Segment 19:1-17
+A | Line | 38-38 | Visib | hide | Block 17-19
 A | Line | 38-38 | heading | null | default
 A | Line | 38-38 | id | (cell=0,file=0,parent=0) | default
 A | Line | 38-38 | labels | {label1,label3,label4,label5} | Block 6-10
-A | Line | 39-39 | Visib | discard | Segment 34:1-29
+A | Line | 39-39 | Visib | discard | Block 33-34
 A | Line | 39-39 | heading | null | default
 A | Line | 39-39 | id | (cell=0,file=0,parent=0) | default
 A | Line | 39-39 | labels | {label1,label3,label4,label5} | Block 6-10
@@ -171,43 +171,43 @@ A | Line | 4-4 | Visib | show | default
 A | Line | 4-4 | heading | null | default
 A | Line | 4-4 | id | (cell=0,file=0,parent=0) | default
 A | Line | 4-4 | labels | {} | default
-A | Line | 40-40 | Visib | hide | Segment 19:1-17
+A | Line | 40-40 | Visib | hide | Block 17-19
 A | Line | 40-40 | heading | null | default
 A | Line | 40-40 | id | (cell=0,file=0,parent=0) | default
 A | Line | 40-40 | labels | {label1,label3,label4,label5} | Block 6-10
-A | Line | 41-41 | Visib | hide | Segment 19:1-17
+A | Line | 41-41 | Visib | hide | Block 17-19
 A | Line | 41-41 | heading | null | default
 A | Line | 41-41 | id | (cell=0,file=0,parent=0) | default
 A | Line | 41-41 | labels | {label1,label3,label4,label5} | Block 6-10
-A | Line | 42-42 | Visib | hide | Segment 19:1-17
+A | Line | 42-42 | Visib | hide | Block 17-19
 A | Line | 42-42 | heading | null | default
 A | Line | 42-42 | id | (cell=0,file=0,parent=0) | default
 A | Line | 42-42 | labels | {label1,label3,label4,label5} | Block 6-10
-A | Line | 43-43 | Visib | hide | Segment 19:1-17
+A | Line | 43-43 | Visib | hide | Block 17-19
 A | Line | 43-43 | heading | null | default
 A | Line | 43-43 | id | (cell=0,file=0,parent=0) | default
 A | Line | 43-43 | labels | {label1,label3,label4,label5} | Block 6-10
-A | Line | 44-44 | Visib | hide | Segment 19:1-17
+A | Line | 44-44 | Visib | hide | Block 17-19
 A | Line | 44-44 | heading | null | default
 A | Line | 44-44 | id | (cell=0,file=0,parent=0) | default
 A | Line | 44-44 | labels | {label1,label3,label4,label5} | Block 6-10
-A | Line | 45-45 | Visib | hide | Segment 19:1-17
+A | Line | 45-45 | Visib | hide | Block 17-19
 A | Line | 45-45 | heading | null | default
 A | Line | 45-45 | id | (cell=0,file=0,parent=0) | default
 A | Line | 45-45 | labels | {label1,label3,label4,label5} | Block 6-10
-A | Line | 46-46 | Visib | hide | Segment 19:1-17
+A | Line | 46-46 | Visib | hide | Block 17-19
 A | Line | 46-46 | heading | null | default
 A | Line | 46-46 | id | (cell=0,file=0,parent=0) | default
 A | Line | 46-46 | labels | {label1,label3,label4,label5} | Block 6-10
-A | Line | 47-47 | Visib | hide | Segment 19:1-17
+A | Line | 47-47 | Visib | hide | Block 17-19
 A | Line | 47-47 | heading | null | default
 A | Line | 47-47 | id | (cell=0,file=0,parent=0) | default
 A | Line | 47-47 | labels | {label1,label3,label4,label5} | Block 6-10
-A | Line | 48-48 | Visib | hide | Segment 19:1-17
+A | Line | 48-48 | Visib | hide | Block 17-19
 A | Line | 48-48 | heading | null | default
 A | Line | 48-48 | id | (cell=0,file=0,parent=0) | default
 A | Line | 48-48 | labels | {label1,label3,label4,label5} | Block 6-10
-A | Line | 49-49 | Visib | hide | Segment 19:1-17
+A | Line | 49-49 | Visib | hide | Block 17-19
 A | Line | 49-49 | heading | null | default
 A | Line | 49-49 | id | (cell=0,file=0,parent=0) | default
 A | Line | 49-49 | labels | {label1,label3,label4,label5} | Block 6-10
@@ -215,66 +215,66 @@ A | Line | 5-5 | Visib | show | default
 A | Line | 5-5 | heading | null | default
 A | Line | 5-5 | id | (cell=0,file=0,parent=0) | default
 A | Line | 5-5 | labels | {} | default
-A | Line | 50-50 | Visib | discard | Segment 7:1-30
+A | Line | 50-50 | Visib | discard | Block 6-10
 A | Line | 50-50 | heading | null | default
 A | Line | 50-50 | id | (cell=0,file=0,parent=0) | default
-A | Line | 50-50 | labels | {label2} | Segment 51:1-12
-A | Line | 51-51 | Visib | discard | Segment 7:1-30
+A | Line | 50-50 | labels | {label2} | Block 50-51
+A | Line | 51-51 | Visib | discard | Block 6-10
 A | Line | 51-51 | heading | null | default
 A | Line | 51-51 | id | (cell=0,file=0,parent=0) | default
-A | Line | 51-51 | labels | {label2} | Line 51-51
-A | Line | 52-52 | Visib | discard | Segment 7:1-30
+A | Line | 51-51 | labels | {label2} | Block 50-51
+A | Line | 52-52 | Visib | discard | Block 6-10
 A | Line | 52-52 | heading | null | default
 A | Line | 52-52 | id | (cell=0,file=0,parent=0) | default
-A | Line | 52-52 | labels | {label2} | Segment 51:1-12
-A | Line | 53-53 | Visib | discard | Segment 7:1-30
+A | Line | 52-52 | labels | {label2} | Block 50-51
+A | Line | 53-53 | Visib | discard | Block 6-10
 A | Line | 53-53 | heading | null | default
 A | Line | 53-53 | id | (cell=0,file=0,parent=0) | default
-A | Line | 53-53 | labels | {label2} | Segment 51:1-12
-A | Line | 54-54 | Visib | discard | Segment 7:1-30
+A | Line | 53-53 | labels | {label2} | Block 50-51
+A | Line | 54-54 | Visib | discard | Block 6-10
 A | Line | 54-54 | heading | null | default
 A | Line | 54-54 | id | (cell=0,file=0,parent=0) | default
-A | Line | 54-54 | labels | {label2} | Segment 51:1-12
-A | Line | 55-55 | Visib | discard | Segment 7:1-30
+A | Line | 54-54 | labels | {label2} | Block 50-51
+A | Line | 55-55 | Visib | discard | Block 6-10
 A | Line | 55-55 | heading | null | default
 A | Line | 55-55 | id | (cell=0,file=0,parent=0) | default
-A | Line | 55-55 | labels | {label2} | Segment 51:1-12
-A | Line | 56-56 | Visib | discard | Segment 7:1-30
+A | Line | 55-55 | labels | {label2} | Block 50-51
+A | Line | 56-56 | Visib | discard | Block 6-10
 A | Line | 56-56 | heading | null | default
 A | Line | 56-56 | id | (cell=0,file=0,parent=0) | default
-A | Line | 56-56 | labels | {label2} | Segment 51:1-12
-A | Line | 57-57 | Visib | discard | Segment 7:1-30
+A | Line | 56-56 | labels | {label2} | Block 50-51
+A | Line | 57-57 | Visib | discard | Block 6-10
 A | Line | 57-57 | heading | null | default
 A | Line | 57-57 | id | (cell=0,file=0,parent=0) | default
-A | Line | 57-57 | labels | {label2} | Segment 51:1-12
-A | Line | 58-58 | Visib | discard | Segment 7:1-30
+A | Line | 57-57 | labels | {label2} | Block 50-51
+A | Line | 58-58 | Visib | discard | Block 6-10
 A | Line | 58-58 | heading | null | default
 A | Line | 58-58 | id | (cell=0,file=0,parent=0) | default
-A | Line | 58-58 | labels | {label2} | Segment 51:1-12
-A | Line | 59-59 | Visib | discard | Segment 7:1-30
+A | Line | 58-58 | labels | {label2} | Block 50-51
+A | Line | 59-59 | Visib | discard | Block 6-10
 A | Line | 59-59 | heading | null | default
 A | Line | 59-59 | id | (cell=0,file=0,parent=0) | default
-A | Line | 59-59 | labels | {label2} | Segment 51:1-12
+A | Line | 59-59 | labels | {label2} | Block 50-51
 A | Line | 6-6 | Visib | show | default
 A | Line | 6-6 | heading | null | default
 A | Line | 6-6 | id | (cell=0,file=0,parent=0) | default
 A | Line | 6-6 | labels | {} | default
-A | Line | 60-60 | Visib | discard | Segment 7:1-30
+A | Line | 60-60 | Visib | discard | Block 6-10
 A | Line | 60-60 | heading | null | default
 A | Line | 60-60 | id | (cell=0,file=0,parent=0) | default
-A | Line | 60-60 | labels | {label2} | Segment 51:1-12
-A | Line | 61-61 | Visib | discard | Segment 7:1-30
+A | Line | 60-60 | labels | {label2} | Block 50-51
+A | Line | 61-61 | Visib | discard | Block 6-10
 A | Line | 61-61 | heading | null | default
 A | Line | 61-61 | id | (cell=0,file=0,parent=0) | default
-A | Line | 61-61 | labels | {label2} | Segment 51:1-12
-A | Line | 62-62 | Visib | discard | Segment 7:1-30
+A | Line | 61-61 | labels | {label2} | Block 50-51
+A | Line | 62-62 | Visib | discard | Block 6-10
 A | Line | 62-62 | heading | null | default
 A | Line | 62-62 | id | (cell=0,file=0,parent=0) | default
-A | Line | 62-62 | labels | {label2} | Segment 51:1-12
-A | Line | 63-63 | Visib | discard | Segment 7:1-30
+A | Line | 62-62 | labels | {label2} | Block 50-51
+A | Line | 63-63 | Visib | discard | Block 6-10
 A | Line | 63-63 | heading | null | default
 A | Line | 63-63 | id | (cell=0,file=0,parent=0) | default
-A | Line | 63-63 | labels | {label2} | Segment 51:1-12
+A | Line | 63-63 | labels | {label2} | Block 50-51
 A | Line | 7-7 | Visib | show | default
 A | Line | 7-7 | heading | null | default
 A | Line | 7-7 | id | (cell=0,file=0,parent=0) | default
@@ -330,71 +330,71 @@ A | Segment | 16:61-80 | labels | {} | default
 A | Segment | 18:1-36 | Visib | show | default
 A | Segment | 18:1-36 | heading | null | default
 A | Segment | 18:1-36 | id | (cell=0,file=0,parent=0) | default
-A | Segment | 18:1-36 | labels | {label3,label5} | Segment 18:1-36
+A | Segment | 18:1-36 | labels | {label3,label5} | Block 17-19
 A | Segment | 18:37-56 | Visib | show | default
 A | Segment | 18:37-56 | heading | null | default
 A | Segment | 18:37-56 | id | (cell=0,file=0,parent=0) | default
-A | Segment | 18:37-56 | labels | {label3,label5} | Segment 18:1-36
+A | Segment | 18:37-56 | labels | {label3,label5} | Block 17-19
 A | Segment | 19:1-17 | Visib | show | default
 A | Segment | 19:1-17 | heading | null | default
 A | Segment | 19:1-17 | id | (cell=0,file=0,parent=0) | default
-A | Segment | 19:1-17 | labels | {label3,label5} | Segment 18:1-36
+A | Segment | 19:1-17 | labels | {label3,label5} | Block 17-19
 A | Segment | 19:18-75 | Visib | show | default
 A | Segment | 19:18-75 | heading | null | default
 A | Segment | 19:18-75 | id | (cell=0,file=0,parent=0) | default
-A | Segment | 19:18-75 | labels | {label3,label5} | Segment 18:1-36
-A | Segment | 20:1-12 | Visib | discard | Segment 7:1-30
+A | Segment | 19:18-75 | labels | {label3,label5} | Block 17-19
+A | Segment | 20:1-12 | Visib | discard | Block 6-10
 A | Segment | 20:1-12 | heading | null | default
 A | Segment | 20:1-12 | id | (cell=0,file=0,parent=0) | default
-A | Segment | 20:1-12 | labels | {label3,label5} | Segment 18:1-36
-A | Segment | 20:13-69 | Visib | discard | Segment 7:1-30
+A | Segment | 20:1-12 | labels | {label3,label5} | Block 17-19
+A | Segment | 20:13-69 | Visib | discard | Block 6-10
 A | Segment | 20:13-69 | heading | null | default
 A | Segment | 20:13-69 | id | (cell=0,file=0,parent=0) | default
-A | Segment | 20:13-69 | labels | {label3,label5} | Segment 18:1-36
-A | Segment | 20:70-89 | Visib | discard | Segment 7:1-30
+A | Segment | 20:13-69 | labels | {label3,label5} | Block 17-19
+A | Segment | 20:70-89 | Visib | discard | Block 6-10
 A | Segment | 20:70-89 | heading | null | default
 A | Segment | 20:70-89 | id | (cell=0,file=0,parent=0) | default
-A | Segment | 20:70-89 | labels | {label3,label5} | Segment 18:1-36
-A | Segment | 28:1-41 | Visib | discard | Segment 7:1-30
+A | Segment | 20:70-89 | labels | {label3,label5} | Block 17-19
+A | Segment | 28:1-41 | Visib | discard | Block 6-10
 A | Segment | 28:1-41 | heading | null | default
 A | Segment | 28:1-41 | id | (cell=0,file=0,parent=0) | default
-A | Segment | 28:1-41 | labels | {label3,label5} | Segment 18:1-36
-A | Segment | 28:42-61 | Visib | discard | Segment 7:1-30
+A | Segment | 28:1-41 | labels | {label3,label5} | Block 17-19
+A | Segment | 28:42-61 | Visib | discard | Block 6-10
 A | Segment | 28:42-61 | heading | null | default
 A | Segment | 28:42-61 | id | (cell=0,file=0,parent=0) | default
-A | Segment | 28:42-61 | labels | {label3,label5} | Segment 18:1-36
+A | Segment | 28:42-61 | labels | {label3,label5} | Block 17-19
 A | Segment | 34:1-29 | Visib | show | default
 A | Segment | 34:1-29 | heading | null | default
 A | Segment | 34:1-29 | id | (cell=0,file=0,parent=0) | default
-A | Segment | 34:1-29 | labels | {label3,label4,label5} | Segment 18:1-36
+A | Segment | 34:1-29 | labels | {label3,label4,label5} | Block 17-19
 A | Segment | 34:30-79 | Visib | show | default
 A | Segment | 34:30-79 | heading | null | default
 A | Segment | 34:30-79 | id | (cell=0,file=0,parent=0) | default
-A | Segment | 34:30-79 | labels | {label3,label4,label5} | Segment 18:1-36
-A | Segment | 35:1-36 | Visib | hide | Segment 19:1-17
+A | Segment | 34:30-79 | labels | {label3,label4,label5} | Block 17-19
+A | Segment | 35:1-36 | Visib | hide | Block 17-19
 A | Segment | 35:1-36 | heading | null | default
 A | Segment | 35:1-36 | id | (cell=0,file=0,parent=0) | default
 A | Segment | 35:1-36 | labels | {label1,label3,label4,label5} | Block 6-10
-A | Segment | 35:37-56 | Visib | hide | Segment 19:1-17
+A | Segment | 35:37-56 | Visib | hide | Block 17-19
 A | Segment | 35:37-56 | heading | null | default
 A | Segment | 35:37-56 | id | (cell=0,file=0,parent=0) | default
 A | Segment | 35:37-56 | labels | {label1,label3,label4,label5} | Block 6-10
-A | Segment | 39:1-65 | Visib | discard | Segment 34:1-29
+A | Segment | 39:1-65 | Visib | discard | Block 33-34
 A | Segment | 39:1-65 | heading | null | default
 A | Segment | 39:1-65 | id | (cell=0,file=0,parent=0) | default
 A | Segment | 39:1-65 | labels | {label1,label3,label4,label5} | Block 6-10
-A | Segment | 39:66-67 | Visib | discard | Segment 34:1-29
+A | Segment | 39:66-67 | Visib | discard | Block 33-34
 A | Segment | 39:66-67 | heading | null | default
 A | Segment | 39:66-67 | id | (cell=0,file=0,parent=0) | default
 A | Segment | 39:66-67 | labels | {label1,label3,label4,label5} | Block 6-10
-A | Segment | 51:1-12 | Visib | discard | Segment 7:1-30
+A | Segment | 51:1-12 | Visib | discard | Block 6-10
 A | Segment | 51:1-12 | heading | null | default
 A | Segment | 51:1-12 | id | (cell=0,file=0,parent=0) | default
-A | Segment | 51:1-12 | labels | {label2} | Segment 51:1-12
-A | Segment | 51:13-69 | Visib | discard | Segment 7:1-30
+A | Segment | 51:1-12 | labels | {label2} | Block 50-51
+A | Segment | 51:13-69 | Visib | discard | Block 6-10
 A | Segment | 51:13-69 | heading | null | default
 A | Segment | 51:13-69 | id | (cell=0,file=0,parent=0) | default
-A | Segment | 51:13-69 | labels | {label2} | Segment 51:1-12
+A | Segment | 51:13-69 | labels | {label2} | Block 50-51
 A | Segment | 7:1-30 | Visib | show | default
 A | Segment | 7:1-30 | heading | null | default
 A | Segment | 7:1-30 | id | (cell=0,file=0,parent=0) | default

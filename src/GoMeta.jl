@@ -641,7 +641,7 @@ function run_absorb_apply!(parse_state::BLS.ParseState;
     ## refusal fail-closes through `_configErrorDelivery` before the walk; the absorb/apply-path refusals still
     ## THROW — the condition refusal rethrown at the absorb seam, the E-06 row raw), so a run that returns
     ## here is `PROCESS_OK` — but the vector need NOT be empty: the walk's and the capture's `:warning` rows
-    ## (`WARN_VERDICT_COLLISION`, `WARN_DEGENERATE_OCCURRENCE_KEY`, the capture-floor codes) ride the delivery
+    ## (`WARN_VERDICT_COLLISION`, the capture-floor codes) ride the delivery
     ## (the type's docstring). The evaluated values are read by `readAltValuesEvals(result.altValues_evals)`; the development tool's
     ## (tree, render) pair (`Main.BasicRenderer.outputs`) is a pure function of the delivery — the tree READ, never written
     ## (stage 3's commit 4), every Visib verdict the Engine's answer (stage 3's commit 1).

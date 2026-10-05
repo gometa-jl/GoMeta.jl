@@ -85,17 +85,17 @@ out = plain(io -> print_BLS_Component_Tree(io, mini; grain = :line))
 check(occursin("\"# Manual: the area of a circle", out) || occursin("# Manual", out),
       ":mix grain=:line suppressed multi-segment Line strings (print-once at deepest DISPLAYED owner)")
 
-## 6b — Segment-grain rows (inline head) attach to the owning Line in :tree; totality holds
+## 6b — the inline head row (keyed on its Line since R-V04B-98, the Segment its origin) shows under the Line in :tree; totality holds
 seg = GoMeta.goMeta(Vector{UInt8}(codeunits("x = 1 #~ head(\"Inline head\", 2)\n# a Text line\n")))
 out = plain(io -> print_altValues_evals(io, seg; include_empty = true))
-check(occursin("[Segment #", out) && occursin("head_2", out),
-      "Segment-grain head row not attached with a [Segment #N] tag in :tree")
-check(!occursin("unanchored rows", out), "Segment-grain head row fell to the unanchored section")
+check(occursin("← Segment #", out) && occursin("head_2", out),
+      "the inline head row does not show under its Line with its Segment origin (← Segment #N) in :tree")
+check(!occursin("unanchored rows", out), "the inline head row fell to the unanchored section")
 nbullets = count(l -> occursin("●", l), split(out, '\n'))
 nrows = length(GoMeta.readAltValuesEvals(seg.altValues_evals))
 check(nbullets == nrows, ":tree rendered $nbullets bullets for $nrows rows — totality broken")
 out = plain(io -> print_altValues_evals(io, seg; layout = :cells))
-check(occursin("head_2", out), "Segment-grain head row missing from :cells")
+check(occursin("head_2", out), "the inline head row missing from :cells")
 
 ## 6c — elision labels stay truthful under filters (never assert engine-level absence)
 out = plain(io -> print_altValues_evals(io, ext; lines = 14:14))

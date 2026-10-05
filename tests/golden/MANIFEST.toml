@@ -178,7 +178,7 @@ source = "captured"   # CONSTRUCTED regression fixture (no oracle file).
 input_path = "tests/golden/constructed/InFileFolder/heading_quoted_first.jl"
 input_sha256 = "ed5ddabaef2d94d3b332e4f458b4ec0de8fa17fc7bf1e608380b484fb27fb09e"
 annotations_golden_path = "tests/golden/corpus/annotations/heading_quoted_first.jl.ann.txt"
-annotations_golden_sha256 = "9e6000667ba04cca1d56b7e29b9666dc023b824bdb00aed51930d0aa259f6324"
+annotations_golden_sha256 = "41b7ed3f30cc8167cebfca8e9a9e5b8b5abfe0df46f9f14dd7356eee7787ec3f"
 
 [[fixture.repin]]
 date = "2026-10-01"
@@ -187,6 +187,14 @@ reason = "the heading re-key (R-V04B-50; stage 2's commit 1 of the v0.4 build): 
 old_sha256 = "0459799d9f9b0f4ef40dbe640933923acb30c378a538a7f61d1f8e91b080dc21"
 new_sha256 = "9e6000667ba04cca1d56b7e29b9666dc023b824bdb00aed51930d0aa259f6324"
 ratified_by = "the owner's typed re-mint order, OWNER-WORDS §269 (2026-10-01); R-V04B-50's effects; R-V04B-15 (a)"
+
+[[fixture.repin]]
+date = "2026-10-05"
+category = "engine-ruled"
+reason = "the inline heading's key moves to the Line (R-V04B-98; stage 5's E1 of the v0.4 build; his word of 2026-10-03, OWNER-WORDS §309 '(b)'): the one inline row head_10 of this fixture, keyed to the inline metaSegment (grain Segment, Segment 5:7-25), is keyed to its LINE (grain Line, Line 5-5) with the Segment as the key's origin — that row's handle column and its content column (the Line's bytes now) move; the three Block-keyed head_ rows unchanged"
+old_sha256 = "9e6000667ba04cca1d56b7e29b9666dc023b824bdb00aed51930d0aa259f6324"
+new_sha256 = "41b7ed3f30cc8167cebfca8e9a9e5b8b5abfe0df46f9f14dd7356eee7787ec3f"
+ratified_by = "R-V04B-108 (his typed word of 2026-10-05, OWNER-WORDS §323 item 3: 'I approve E1's golden re-pin.'); R-V04B-98 (3); R-V04B-15 (a)"
 
 [[fixture]]
 id = "annotations@negation_discard_tworegion.jl"

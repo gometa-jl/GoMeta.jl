@@ -964,10 +964,10 @@ PARAMETERS:
   `:tree`  (default): the component-tree skeleton with eval bullets attached AT their
            Components. The skeleton's NODES stop at the Line grain, and rows anchor
            accordingly: label/visib rows key on the owning Line/Block (the causing
-           metaSegment rides the `← Segment #N` origin tag) — but Segment-grain rows
-           DO exist (an inline metaSegment `head("…", N)` mints grain 0x01,
-           probe-proven 2026-08-20) and attach to their owning Line with a dim
-           `[Segment #N]` target tag; File-grain rows render at a `[File]` bullet
+           metaSegment rides the `← Segment #N` origin tag — the inline head row too since
+           R-V04B-98, stage 5's E1: keyed on its Line, grain 0x0a, the Segment its origin); a
+           Segment-grain row, were one minted (none by the default registry since E1), would attach
+           to its owning Line with a dim `[Segment #N]` target tag; File-grain rows render at a `[File]` bullet
            under the header. Every counted row renders somewhere (§6 totality).
            Segment STRUCTURE questions belong to `print_BLS_Component_Tree`.
   `:rows`  — one line per eval, input-line span first: THE grep/census form.
@@ -1158,9 +1158,9 @@ function _dt_t2_rows(io, doc, frows, allrows, echo; show_handles::Bool = false)
 end
 
 ## ── :tree — evals AT their Components (default layout) ────────────────────────────────
-## Layout totality (§6): Segment-anchored rows (REACHABLE — an inline metaSegment
-## `#~ head("…",N)` mints grain 0x01, probe-proven 2026-08-20) attach to their OWNING
-## LINE with a dim `[Segment #N]` target tag; File-anchored rows render at a File node
+## Layout totality (§6): an inline metaSegment's head row is LINE-anchored since R-V04B-98 (stage 5's E1:
+## grain 0x0a, the Segment its origin, shown by the `← Segment #N` tag); a Segment-anchored row, were one minted
+## (none by the default registry since E1), would attach to its OWNING LINE with a dim `[Segment #N]` target tag; File-anchored rows render at a File node
 ## right under the header. Headers therefore never count a row the body omits.
 function _dt_t2_tree(io, doc, frows, allrows, echo;
                      include_empty::Bool, lines_r, show_handles::Bool = false,
@@ -2465,8 +2465,8 @@ function devtools_selfcheck()
         error("devtools_selfcheck: BasicRenderer.outputs has more than one method")
     parentmodule(only(methods(Main.BasicRenderer.outputs))) === Main.BasicRenderer ||
         error("devtools_selfcheck: BasicRenderer.outputs is not defined in Main.BasicRenderer")
-    # :label1 = whitelist member; the inline head(…) metaSegment mints a Segment-grain
-    # (0x01) row — keeping the Segment-attachment path under the drift alarm too
+    # :label1 = whitelist member; the inline head(…) metaSegment mints a LINE-keyed row with the Segment as the key's
+    # origin (R-V04B-98, stage 5's E1) — keeping the inline path under the drift alarm too
     src = "#~1 :label1\n# a Text line\nx = 1 #~ head(\"selfcheck head\", 2)\n"
     r = GoMeta.goMeta(Vector{UInt8}(codeunits(src)))
     r.status == GoMeta.PROCESS_OK || error("devtools_selfcheck: PROCESS_ERROR on the inline input")
@@ -2491,7 +2491,7 @@ function devtools_selfcheck()
     sort([string(x.attr) for x in rows]) ==
         ["head_2", "label_label1", "label_label1", "label_label1", "label_label1"] ||
         error("devtools_selfcheck: evals rows drifted (attrs = $(sort([string(x.attr) for x in rows])))")
-    sort([_dt_grain(x.comp) for x in rows]) == ["Block", "Block", "Block", "Line", "Segment"] ||
+    sort([_dt_grain(x.comp) for x in rows]) == ["Block", "Block", "Block", "Line", "Line"] ||   # R-V04B-98: the inline head row keyed on its Line (MEASURED 2026-10-03)
         error("devtools_selfcheck: row anchoring drifted (got " *
               "$(sort([_dt_grain(x.comp) for x in rows])))")
     all(x -> !isempty(_DT_BLS.content(doc.ps, x.comp)), rows) ||
@@ -2506,8 +2506,8 @@ function devtools_selfcheck()
     buf = IOBuffer()
     print_altValues_evals(buf, r; include_empty = true)
     out = String(take!(buf))
-    occursin("[Segment #", out) && occursin("head_2", out) ||
-        error("devtools_selfcheck: the :tree render lost the Segment-attachment path")
+    occursin("← Segment #", out) && occursin("head_2", out) ||
+        error("devtools_selfcheck: the :tree render lost the inline head row's Segment origin (R-V04B-98: the row under its Line, the origin arrow naming the Segment)")
     occursin("Int64", (buf2 = IOBuffer(); print_BLS_Component_Tree(buf2, r); String(take!(buf2)))) ||
         error("devtools_selfcheck: the MIX typed dump lines vanished")
 
@@ -2603,8 +2603,9 @@ function devtools_selfcheck()
         error("devtools_selfcheck: the comparison form's Segment keys drifted (pinned 3:1-6 and 3:7-34 under Line 3-3)")
     occursin("\nC | File | 1-3 | - | - | Block 1-1;Block 2-2;Block 3-3 | - | ", cf) ||
         error("devtools_selfcheck: the comparison form's File line drifted")
-    occursin("\nA | Segment | 3:7-34 | heading | \"selfcheck head\" | Segment 3:7-34\n", cf) && occursin("\nA | Line | 3-3 | heading | null | default\n", cf) ||
-        error("devtools_selfcheck: the inline heading's answer lines drifted (pinned on the MEASURED behaviour: the Segment answers by its OWN key; its Line does not carry it — R-V04B-50 leaves the inline arm untouched; the build's sitting item A6 asks his word)")
+    occursin("\nA | Line | 3-3 | heading | \"selfcheck head\" | Line 3-3\n", cf) && occursin("\nA | Segment | 3:7-34 | heading | \"selfcheck head\" | Line 3-3\n", cf) &&
+    occursin("\nA | Segment | 3:1-6 | heading | \"selfcheck head\" | Line 3-3\n", cf) ||
+        error("devtools_selfcheck: the inline heading's answer lines drifted (pinned on the MEASURED behaviour under R-V04B-98, his §309: the Line answers its trailing metaSegment's heading as its OWN; both its Segments through the Line)")
     occursin("\nA | Block | 1-1 | labels | {label1} | Block 1-1\n", cf) ||
         error("devtools_selfcheck: the Labels answer line drifted (pinned: the set {label1}, own)")
     cfe = comparisonForm(re; name = "emoji", at = "-")

@@ -859,10 +859,11 @@ end
 """
     MetaContext
 
-IS: the v0.2 CH-3 context record — {grain, depth, application level, occurrence handle} — published at the
-walk→absorb handover for the current component (its handle the carrying Component's — R-V04B-50).
+IS: the v0.2 CH-3 context record — {grain, depth, application level, occurrence handle, applied key} — published at the
+walk→absorb handover for the current component (its handle the carrying Component's — R-V04B-50; its applied key the
+Component the statement is applied to — R-V04B-98).
 
-DOES: The v0.2 CH-3 context record — **{grain, depth, application level, occurrence handle}**,
+DOES: The v0.2 CH-3 context record — **{grain, depth, application level, occurrence handle, applied key}**,
 derived from the parse and the run's configured namespace (`st.config.namespace` keys the handle —
 nothing else of the configuration enters), published at the walk→absorb handover (`applyAbsorbFn`
 builds it from the component + the post-update MH cursor and sets `st.meta_context`) and
@@ -877,9 +878,9 @@ Segment-attached metaLine inherits the metaLine's `lineMHIdx`, so the inheritanc
 law holds by construction); the RECORDED level is normalized to ladder−1 — the
 author's own `#~`-digit vocabulary — at the enqueue materialization seam (the documented
 level vocabulary; the record itself stays as derived — from the parse and the configured
-namespace, mutated by nothing). `handle` is the
-serialized occurrence key (`key_bytes`); under localOnly delivery it is
-LOAD-BEARING as the heading row's key.
+namespace, mutated by nothing). `handle` is the carrier's
+serialized occurrence key (`key_bytes`) — under localOnly delivery the heading row's DECIDING STATEMENT; `applied` is the key of the
+Component the statement is APPLIED TO (R-V04B-98; stage 5's E1) — under localOnly delivery LOAD-BEARING as the heading row's KEY.
 
 REASONING: derived from the parse and the configured namespace, stored in no Component (the evaluation-free-tree
 law), so a consumer reads a record rather than a mutated BLS Component tree.
@@ -894,8 +895,13 @@ struct MetaContext
                              # applyAbsorbFn call site exists), so the Block arm is defensive;
                              # the field is the record's designed shape (delta-review trued)
     level::Int               # the APPLICATION level — the MH-ladder index at absorb time
-    handle::Vector{UInt8}    # occurrence-key bytes (from the parse and the configured
-                             # namespace)
+    handle::Vector{UInt8}    # the CARRIER's occurrence-key bytes (from the parse and the configured
+                             # namespace) — the heading row's deciding statement
+    applied::Vector{UInt8}   # R-V04B-98 (stage 5's E1; his §309 with his §286 (ii)): the occurrence-key bytes of the Component the
+                             # statement is APPLIED TO — the metaBlock for a metaLine's statement (his §286 (i); R-V04B-50), the LINE
+                             # for a Code Line's trailing metaSegment, keyed as the apply path keys it (the Line with the Segment as
+                             # the key's origin), the metaBlock for the statement Segment of a metaLine split by a trailing comment —
+                             # the heading row's KEY under localOnly delivery; differs from `handle` only for an inline metaSegment of a Code Line
 end
 
 """

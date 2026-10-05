@@ -6,7 +6,7 @@
 
 **REASONING.** The two variants may deliver different shapes and Julia types (his §70 (1)), and even successive versions of one line need not deliver the evaluated altValues in the same format (§D51); only a projection keyed by content can be compared. **PURPOSE.** The twelve forms; the comparison of a retro delivery against them.
 
-**THE FREEZE (his word of 2026-09-29, §D52 → R-DOC-31; his word of 2026-10-03, OWNER-WORDS §304 item 2 — R-V04B-94).** The forms are built with today's behaviour and FROZEN as GoMetaRetro's target by his typed word at this stage's review and landing — NO separate per-question word (the content questions of §4 are judged on the branch's code where he did not rule and by his rulings where he did). The review's word was given on 2026-10-03: *"I approve the freeze."* — the twelve forms as landed at `53bed82e` are the target; the landing's word comes with the branch's merge (7A). Each file's header names the v0.4 commit that produced it; a changed body is re-made, never edited, in the commit whose change moved it (§5).
+**THE FREEZE (his word of 2026-09-29, §D52 → R-DOC-31; his word of 2026-10-03, OWNER-WORDS §304 item 2 — R-V04B-94).** The forms are built with today's behaviour and FROZEN as GoMetaRetro's target by his typed word at this stage's review and landing — NO separate per-question word (the content questions of §4 are judged on the branch's code where he did not rule and by his rulings where he did). The review's word was given on 2026-10-03: *"I approve the freeze."* — the twelve forms as landed at `53bed82e` are the target, three of them as re-made by stage 5's E1 on his word of 2026-10-05 (§324; R-V04B-109 — `heading_quoted_first`, `file_for_Example_Extended`, `file_for_Example_Proposal_JuliaCon`; GoMetaRetro's target moves with them); the landing's word comes with the branch's merge (7A). Each file's header names the v0.4 commit the writing commit built on — its parent (§2); a changed body is re-made, never edited, in the commit whose change moved it (§5).
 
 ## 1. "Same content" (the definition — one paragraph; the owner corrects it)
 
@@ -14,7 +14,7 @@ Two deliveries have the same content for an input when, after each is projected 
 
 ## 2. The grammar (v1 — fixed by what v0.4's serializer emits; retro's adapter copies it byte for byte)
 
-- **The file.** Line 1 is the header: `# GoMeta comparison form v1 | <input name> | produced by GoMeta v0.4 at <short sha> | <n> Components | <m> answer lines`. Every further line is a form line; the form lines are SORTED by code point (`LC_ALL=C sort`); the file ends with one newline. The header is not content: the comparator drops `#`-led lines.
+- **The file.** Line 1 is the header: `# GoMeta comparison form v1 | <input name> | produced by GoMeta v0.4 at <short sha> | <n> Components | <m> answer lines` — the sha names the commit the writing commit BUILDS ON, its parent (a commit cannot carry its own sha; the forms' birth named `b28dc93b`, the serializer's commit, and landed as the next one; a re-made form names the re-making commit's parent the same way, that commit's message naming the form). Every further line is a form line; the form lines are SORTED by code point (`LC_ALL=C sort`); the file ends with one newline. The header is not content: the comparator drops `#`-led lines.
 - **Fields** are separated by ` | ` (space, vertical bar, space). A text value is quoted (below), so a bar inside a text never splits a field.
 - **A Component's KEY** is `<kind> <span>`: `File 1-12`, `Block 3-7`, `Line 4-4`, `Segment 4:1-12`.
   - *kind*: `File`, `Block`, `Line`, `Segment`.
@@ -35,7 +35,7 @@ Component ids and ordinals; cell handles and the rows' keys; the `range` struct 
 | # | the question | today's behaviour, which the forms carry | its standing |
 |---|---|---|---|
 | Q3 | the default's report | the declared default with the source `default` | ruled — R-V04B-51 / R-V04B-55 / R-V04B-92 |
-| Q9 | the heading | a whole-line metaLine's heading keyed to the metaBlock it forms (the metaBlock's own Lines answer through that metaBlock's key; an attached Block and its Lines answer the default, `null` — the heading's `:localOnly` mode, his §12 "applied to the first Block only"); an inline heading's row keyed to its Segment, which answers `heading` by its OWN key — its Line does NOT carry it (the Line answers the default, `null`) | the whole-line arm ruled — R-V04B-50; the inline arm MEASURED (R-V04B-50 leaves it untouched) — the build's sitting item A6 asks whether his §286/§288 reach the inline heading |
+| Q9 | the heading | a whole-line metaLine's heading keyed to the metaBlock it forms (the metaBlock's own Lines answer through that metaBlock's key; an attached Block and its Lines answer the default, `null` — the heading's `:localOnly` mode, his §12 "applied to the first Block only"); a metaLine split by a trailing `##` comment the same, every statement on it recording the metaBlock as its deciding statement (R-V04B-50 one level down — E1 cured the Segment-level key and source there); an inline heading's row keyed to its LINE with the Segment as the key's origin — the Line answers `heading` as its OWN, its Segments through the Line | both arms ruled — R-V04B-50; R-V04B-98 (his §309; stage 5's E1); the three forms re-made on his §324 (R-V04B-109) |
 | Q4 | Labels | the SET of names with ONE source (the answer's one `via`), written `{a,b}` | judged on the branch's code (R-DOC-31); card 7 "next" |
 | Q5 | Id | the compound of the RECORDED fields of the nearest statement, as a whole; the declared default `(cell=0,file=0,parent=0)` | judged on the branch's code; card 8 "next" |
 | Q10 | the File | NO answer line for the File (nothing built for it before his word, card 6) — the session's narrowing of R-V04B-36 (a) "per Component per Alterant" | judged on the branch's code; shown as such |
@@ -52,10 +52,10 @@ Component ids and ordinals; cell handles and the rows' keys; the `range` struct 
 GM=/home/fido/Dropbox/_01_Crypto_Dropbox/07_Claude/GoMetaEcosystem/GoMeta
 julia --startup-file=no --project=$GM/tests $GM/devtools/devtools.jl comparison <file>          # one form to stdout
 julia --startup-file=no --project=$GM/tests $GM/tests/comparison/regenerate.jl --check          # the twelve against the tree
-julia --startup-file=no --project=$GM/tests $GM/tests/comparison/regenerate.jl --at <sha>       # re-make the twelve (in the commit that changes them)
+julia --startup-file=no --project=$GM/tests $GM/tests/comparison/regenerate.jl --at <sha> --out <dir>   # re-make aside (in the commit that changes a form; <sha> = that commit's parent; the moved forms copied in)
 bash $GM/devtools/compare_forms.sh <form A> <form B>                                            # the comparator (exit 0 = same content)
 ```
-A changed body is never edited by hand: it is re-made with `--at <the new short sha>` in the commit whose change moved it, and that commit's message names which forms moved and why.
+A changed body is never edited by hand: it is re-made with `--at <the parent's short sha>` (the commit the re-making commit builds on) in the commit whose change moved it — only the moved forms are re-written — and that commit's message names which forms moved and why.
 
 ## 6. Using this yardstick from another variant or version (GoMetaRetro, GoMetaRetroCC, a later GoMeta) — his order of 2026-10-03 (OWNER-WORDS §304 item 1)
 
@@ -66,5 +66,5 @@ The yardstick is the FORM of §2; the twelve files beside this page are version 
 3. **Your twelve** go into a folder of YOUR line (`tests/comparison/` there, the same stems, `.cmp.txt`); nothing is written into this folder but by this line's `regenerate.jl`.
 4. **Compare file by file:** `bash <this code home>/devtools/compare_forms.sh <this line's form> <your form>` — exit 0 = the same content; exit 1 = different, the differing lines printed (`<` this line's, `>` yours); exit 2 = usage. A difference in a `C` line is a difference in the parser's reading of the file (the tree's content); in an `A` line, in the Engine's evaluated value or in where it came from.
 5. **Read a difference against §4 before changing code.** The points listed there are his to decide; a variant does not settle them by matching version 0.4, and version 0.4 does not settle them by having landed first.
-6. **When this line's forms are re-made** (a later word of his moves a value), the new headers name the new commit and that commit's message names what moved and why; re-run step 4 against the new files.
+6. **When this line's forms are re-made** (a later word of his moves a value), the new headers name the re-making commit's parent and that commit's message names what moved and why; re-run step 4 against the new files.
 7. **Record the result as the comparator's output, unabridged** (the canon's R4b), in your line's record — never a retyped summary of it.

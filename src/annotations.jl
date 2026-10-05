@@ -139,8 +139,9 @@ transient — what is not captured here is gone with the wipe.
 PURPOSE: the write path for a Component's evals rows from the APPLY — the rows of every Alterant the apply
 left in `st.working` (the shipped Labels, Visib and Id), put from the two apply sites: `src/GoMeta.jl` (the
 Block grain) and `src/absorb/walk.jl` (the Segment grain, `origin` = the Segment, the row keyed on the owning
-Line). The heading rows — a metaLine region's, keyed on the carrying Component's occurrence handle (the metaBlock a
-whole-line metaLine forms, R-V04B-50; the Segment of an inline metaSegment), and the fed
+Line). The heading rows — a metaLine region's, keyed on the Component the statement is APPLIED TO and decided by the
+carrier (the metaBlock a whole-line or a comment-split metaLine forms, R-V04B-50; the LINE with the Segment as the key's origin for an
+inline metaSegment, R-V04B-98), and the fed
 profile's, keyed on the user-context handle — are NOT put here: `capture_heading!` puts them from the absorb
 seam's flush (its one call in `src/absorb/absorb_meta.jl`). Both writers go through the one primitive
 `_putEval!`.
@@ -153,25 +154,10 @@ function captureEvals!(st::ProcessState, cell::BLS.AbstractComponent;
     # idxString==0/invalid span · blank Line ⇒ empty ⇒ NO capture) — the captured POPULATION is
     # IDENTICAL to the pre-swap engine (probe-verified, decision-instrumented, re-asserted
     # post-swap). The rows are keyed by the normalized structural occurrence handle; the piece's text is
-    # NOT stored (R-V04B-43 (1), stage 2's commit 9b) — read here through the door for the predicate and the
-    # degenerate-key diagnostic's payload only.
+    # NOT stored (R-V04B-43 (1), stage 2's commit 9b) — read here through the door for the predicate only.
     content = BLS.content(st.parse, cell)
     isempty(content) && return nothing
     k = occurrence_key(st.parse, cell; origin = origin, namespace = st.config.namespace)
-    # A DEGENERATE (truncated-walk) key entering the store is NEVER silent (two degenerate keys
-    # could alias each other, so the store's impossibility guarantee is scoped to well-formed
-    # keys): loud non-fatal diagnostic, capture still proceeds (totality).
-    # Unreachable on real parses (zero TRUNCATED steps recorded corpus-wide, chain-256 probed).
-    # (Payload convention: THIS diagnostic carries the CONTENT bytes — a degenerate key is
-    # unreliable identity, so content is the honest locator; WARN_VERDICT_COLLISION carries the
-    # handle because there the key IS reliable. Deliberate asymmetry.)
-    if any(s -> s.store == 0x00, k.path) || any(s -> s.store == 0x00, k.origin)
-        push!(st.diagnostics, Diagnostic(:WARN_DEGENERATE_OCCURRENCE_KEY, :warning,
-            "altValues_evals: a truncated-walk (degenerate) occurrence key entered the store — the " *
-            "parse tree has a broken/over-deep link chain; per-occurrence identity is not " *
-            "guaranteed among degenerate keys.",
-            copy(content)))
-    end
     handle = key_bytes(k)
 
     ## v0.4 T5 — THE REGISTRATION-DRIVEN WALK (T5-DESIGN §2; [C-W6-CE-6]: "keyed on
@@ -348,11 +334,13 @@ localOnly plugin) from the absorb seam's REGISTRY-DRIVEN flush (v0.4 T5 — the 
 checks the declared row's gate, the instance shape, and the entries protocol BEFORE
 this call; the Heading typing retired with the re-home, and the four attr spellings
 re-derive from the DECLARED `stem` — byte-identical for the shipped `:head`), minting
-one row per captured entry, keyed to the region's OWN identity. TWO handle
-sources: the DOCUMENT surface supplies the occurrence handle of the Component that CARRIES the heading — the
-metaBlock a whole-line metaLine forms (R-V04B-50, stage 2's commit 1), the Segment of an inline metaSegment —
-published by the walk as `st.meta_context.handle`; the userMH FEED supplies the minted user-context handle
-(`st.user_context`). No copy of the carrier's text rides the row (R-V04B-43 (1), commit 9b). One shared fold/dedup
+one row per captured entry, KEYED to the Component the statement is APPLIED TO and DECIDED BY the carrier
+(R-V04B-98; stage 5's E1). TWO sources: the DOCUMENT surface supplies both through the walk's record — `st.meta_context.applied`,
+the applied Component's handle (the metaBlock a whole-line metaLine forms, R-V04B-50; the LINE for a Code Line's trailing
+metaSegment, keyed as the apply path keys it with the Segment as the key's origin; the metaBlock for the statement Segment of a
+metaLine split by a trailing comment), and `st.meta_context.handle`, the carrier's own handle (the metaBlock; the Segment of an
+inline metaSegment) — the row's deciding statement; the userMH FEED supplies the minted user-context handle (`st.user_context`)
+for both. No copy of the carrier's text rides the row (R-V04B-43 (1), commit 9b). One shared fold/dedup
 body serves both sources, so the evals surface stays uniformly `(cell_handle, attr, value, polarity)`. BOTH sources
 populated at once is an INTERNAL-INVARIANT ERROR (unreachable by construction —
 the feed nulls the document context and the walk never sets the user context; a
@@ -366,11 +354,12 @@ function capture_heading!(st::ProcessState, heading, stem::Symbol)
             "both populated at a heading capture — please report this ",
             "(not reachable from any input by construction)")
     end
-    local handle::Vector{UInt8}
+    local handle::Vector{UInt8}; local applied::Vector{UInt8}
     if st.meta_context !== nothing
-        handle = (st.meta_context::MetaContext).handle
+        handle = (st.meta_context::MetaContext).handle      # the carrier — the row's deciding statement
+        applied = (st.meta_context::MetaContext).applied    # R-V04B-98: the Component the statement is applied to — the row's KEY
     elseif st.user_context !== nothing
-        handle = (st.user_context::UserContext).handle
+        handle = (st.user_context::UserContext).handle; applied = handle
     else
         return nothing
     end
@@ -392,7 +381,7 @@ function capture_heading!(st::ProcessState, heading, stem::Symbol)
         attr = lvl === nothing ?
             (k == 1 ? stem : Symbol(stem, :_u, k)) :
             (k == 1 ? Symbol(stem, :_, lvl) : Symbol(stem, :_, lvl, :_, k))
-        _putEval!(st, handle, attr, text, true, [copy(handle)])   # the never-enqueued :localOnly Heading's origin: its own carrier (R-V04B-35 (d))
+        _putEval!(st, applied, attr, text, true, [copy(handle)])   # keyed on the APPLIED Component (R-V04B-98); the never-enqueued :localOnly Heading's deciding statement: its own carrier (R-V04B-35 (d))
     end
     return nothing
 end
