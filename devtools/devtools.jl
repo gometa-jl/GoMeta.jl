@@ -25,7 +25,7 @@
 #       unanchored rows rendered, never dropped; a row's text through the door's `BLS.content`).
 # REASONING: the released v0.3.0 package deliberately ships no debug printer (e1c
 #       strip) and the run's WORKING state is not delivered at all (R-V04B-28; 0.3.x delivered it as a field) — so the dev tools live PLAY-SIDE, on a
-#       session-writable surface, honestly labeled (see the exemption below), instead
+#       session-writable surface, honestly labeled (the development tools', not the Engine's), instead
 #       of re-entering the engine through the release pipeline. Package-proper
 #       restoration is a friction-ledger motion (F-LED-16..19), never code from here.
 # PURPOSE: let the owner SEE, at any moment of play, exactly what the engine built
@@ -39,10 +39,9 @@
 # Component), `content` (the verbatim bytes at a Component's grain), `kind` (the flavor word),
 # `flavor` (the record; five fields promised), `endsWithNewline`, `isHorizontalSpace` (the lexer's
 # delimiter), the Component types and `keys` of the two named-element types (docs/public-api.md §1.2) —
-# and no field of a BLS object. ONE RESIDUE read outside the door remains, marked at its site and
-# asked for his word: the whole-document text of the File (`collectedLines` joined — `content` has no
-# File arm, a question its docstring names). The former exemption D-6(a) of 2026-08-20 covers that one
-# residue alone now. Consumer code — an Extension — reads the tree the same way, through the door
+# and no field of a BLS object; the File's text (its lines joined) through the one-argument `content(tree)` (his word
+# of 2026-10-05, R-V04B-116 (3)(b)) — one of the last two reads outside the door left at stage 5's s5c8, and the texts of the
+# former exemption D-6(a) with it. Consumer code — an Extension — reads the tree the same way, through the door
 # (docs/public-api.md §1.2; R-V04B-45).
 # The battery `devtools/probes/probe_devtools.jl` is the drift alarm (his §26; the tools' own self-check left at stage 5's T1,
 # R-V04B-111): run it after every change under `src/` — a broken surface fails LOUDLY.
@@ -290,11 +289,10 @@ _dt_gcolor(c)   = c isa _DT_BLS.Block ? _DT_C_BLOCK : c isa _DT_BLS.Line ? _DT_C
 _dt_flavor(c)   = (k = _DT_BLS.kind(c); k === nothing ? "File" : string(k))
 _dt_fcolor(f)   = f == "Meta" ? _DT_C_META_F : f == "Code" ? _DT_C_CODE_F : _DT_C_TEXT_F
 _dt_trueflags(c) = [k for k in keys(_DT_BLS.ComponentSettribute) if _DT_BLS.getElement(c, k)]
-## File arm: the door's `content` has NO File arm (a question its docstring names for his word) — the
-## whole-document content is the joined collectedLines (§6 layout-totality clause). RESIDUE outside the
-## door (stage 2's commit 0; his word asked). The other grains: `BLS.content` (the former Engine call
-## `cell_content_bytes`, byte-equal by construction of the copy).
-_dt_content(doc, c) = c isa _DT_BLS.File ? join(doc.ps.collectedLines, '\n') :
+## The File's text (its lines joined) through the door's one-argument `content(tree)` (R-V04B-116 (3)(b); the §6 layout-totality
+## clause); the other grains through `BLS.content(tree, c)` (the former Engine call `cell_content_bytes`, byte-equal by
+## construction of the copy).
+_dt_content(doc, c) = c isa _DT_BLS.File ? String(_DT_BLS.content(doc.ps)) :
                       String(_DT_BLS.content(doc.ps, c))
 
 ## Input-line span label: Blocks span `startMainStr:stopMainStr` LINE numbers

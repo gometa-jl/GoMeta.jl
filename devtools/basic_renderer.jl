@@ -28,7 +28,7 @@ Core.eval(Main, :(const _BASIC_RENDERER_LOADED = true))
 #     segment is itself discarded; a line that is neither included verbatim nor segmented
 #     contributes zero bytes. The render ends 0x0a exactly when the PARSED source content did:
 #     every emitted line is "\n"-terminated, then one trailing 0x0a is trimmed iff
-#     `parse_state.endsWithNewline` is false — for a whole-file parse that is the input's terminal
+#     `BLS.endsWithNewline(parse_state)` is false — for a whole-file parse that is the input's terminal
 #     byte; for a prefix `parse_range` the parser completes the fact (a range stopping before the
 #     last source line ends at a line boundary, so its newline is kept). The insert store's negative
 #     child ids are resolved by `BLS.children` itself (stage 2's commit 0); this file's former id-sign
@@ -47,11 +47,9 @@ Core.eval(Main, :(const _BASIC_RENDERER_LOADED = true))
 #     and resolves nothing. It reads the delivered part `result.blsComponentTree` (public by name, R-V04B-29) THROUGH THE
 #     DOOR since stage 2's commit 0 (R-V04B-58, R-V04B-80): BLS's public functions and types — `BLS.root`,
 #     `BLS.children`, `BLS.getElement`, `BLS.content`, `BLS.kind`, `BLS.flavor`, `BLS.endsWithNewline`, the Component
-#     types (docs/public-api.md §1.2) — and no field of a BLS object. ONE RESIDUE read outside the door remains,
-#     marked at its two sites: `BLS._isspace_valid`, the parser's own whitespace guard for the ensure-token head
-#     read (no door name serves it — `BLS.isHorizontalSpace` is the `[\h]` class and differs at \f and \v; his word
-#     is asked). The former interim (D-6(a) of 2026-08-20, widened 2026-09-11, R-V04B-24 C1 (a); lapsed 2026-09-16,
-#     R-V04B-29) covered the reads this commit migrated; it covers the residue alone now. the battery `devtools/probes/probe_devtools.jl` is the drift alarm.
+#     types (docs/public-api.md §1.2) — and no field of a BLS object; the whitespace guard before the hide marker reads
+#     `BLS.isHorizontalSpace` (his word of 2026-10-05, R-V04B-116 (3)(a)) — one of the last two reads outside the door left at
+#     stage 5's s5c8, and the texts of the former interim D-6(a) with it. The battery `devtools/probes/probe_devtools.jl` is the drift alarm.
 # THE LOAD-ORDER LAW: include `devtools/load_basic_renderer.jl` at the consumer's TOP LEVEL — never this
 #     file (the sentinel at the top refuses a second load) and never inside a function (Julia's world age:
 #     a method defined while a function is already running is invisible to that function).
@@ -181,13 +179,19 @@ function render_bytes(
                                 ## (already true under the R-2 fold).
                                 ## THE ALPHABET LAW: the ensure-token disjunct is an
                                 ## INPUT-FACING whitespace test over raw source bytes, so it rides the
-                                ## parser's own `_isspace_valid` guard — bare `isspace` throws at decode
-                                ## on overlong-and-kin sequences the parser classifies CONTENT. The (a)
+                                ## door's `BLS.isHorizontalSpace` — the parser's own horizontal-whitespace
+                                ## class (his word of 2026-10-05, R-V04B-116 (3)(a)). Over a Char the two
+                                ## predicates differ at \v, \f, \r and U+0085 — stripped by the internal
+                                ## guard (isvalid && isspace) alone — and at U+180E — by the public class
+                                ## (PCRE's \h) alone; no corpus input carries any of the five (measured:
+                                ## PROBES-s5c8-whitespace-class-bytes); the alphabet-law witness (ensure_token_tests [8])
+                                ## measures it total over the overlong-and-kin sequences the parser
+                                ## classifies CONTENT — bare `isspace` throws at decode on them. The (a)
                                 ## disjunct's bare lstrip stays: its `:comment &&` guard guarantees a
                                 ## valid head region (R-2 unchanged, per the row).
                                 if !((BLS.getElement(crntLine, :comment) &&
                                       startswith(lstrip(s), hide_fold_prefix)) ||
-                                     startswith(lstrip(BLS._isspace_valid, s), hide_marker))   # RESIDUE outside the door: the parser's own whitespace guard (no door name serves it; `BLS.isHorizontalSpace` differs at \f and \v — probe-proven); his word asked at stage 2's commit 0
+                                     startswith(lstrip(BLS.isHorizontalSpace, s), hide_marker))   # through the door (R-V04B-116 (3)(a))
                                     write(io, hide_marker)
                                 end
                             end
@@ -239,11 +243,11 @@ function render_bytes(
                                     ## `render ∘ ingest ∘ render` fixed point). A marker-headed
                                     ## line takes NO per-segment markers; mid-line marker bytes
                                     ## stay untouched (the check anchors at the head).
-                                    ## THE ALPHABET LAW: the line-head read
-                                    ## rides `_isspace_valid` — see the line-grain site's note.
+                                    ## THE ALPHABET LAW: the line-head read rides the door's
+                                    ## `BLS.isHorizontalSpace` — see the line-grain site's note (R-V04B-116 (3)(a)).
                                     if !((BLS.getElement(crntSegment, :comment) &&
                                           startswith(sl, hide_fold_prefix)) ||
-                                         startswith(lstrip(BLS._isspace_valid, lineText), hide_marker))   # RESIDUE outside the door (see the line-grain site)
+                                         startswith(lstrip(BLS.isHorizontalSpace, lineText), hide_marker))   # through the door (see the line-grain site)
                                         write(io, hide_marker)
                                     end
                                 end

@@ -104,6 +104,9 @@ import TOML
         @test all(n -> !Base.isexported(GM.BLS, n), DOOR)         # [B3] …and none is exported (qualified access only: BLS.<name>)
         @test all(n -> isdefined(GM.BLS, n), DOOR)                # [B4] every door name is a real binding
         @test Base.ispublic(GM, :BLS) && !Base.isexported(GM, :BLS)   # [B5] the module itself: public, not exported
+        ps = GM.BLS.setUpToProcessFromBytes(Vector{UInt8}(codeunits("x = 1\n#~ hide\n\ny = 2\n")))
+        @test String(GM.BLS.content(ps)) == join(ps.collectedLines, '\n')   # [B6] the File's whole text — the one-argument form (stage 5's s5c8; R-V04B-116 (3)(b))
+        @test isempty(GM.BLS.content(ps, GM.BLS.root(ps)))                # [B7] the two-argument form stays EMPTY for the File — the Engine's capture predicate untouched
     end
 
     @testset "naming tooth (the methods tooth, armed at the dialect-convergence wave)" begin

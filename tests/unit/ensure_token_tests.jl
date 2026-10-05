@@ -140,7 +140,7 @@ _et_rr(s::AbstractString; cfg = _et_jl) = _et_r(_et_r(s; cfg = cfg); cfg = cfg)
         ## The step-(b) panel MAJOR-1 regression witness (cured 2026-08-10): a
         ## hidden line HEADING with an overlong sequence (0xE0 0x80 0x80 — the
         ## class bare `isspace` throws on at decode) must RENDER — the (b)
-        ## disjunct rides the parser's own `_isspace_valid` guard; the parser
+        ## disjunct rides the door's `BLS.isHorizontalSpace` (since stage 5's s5c8, R-V04B-116 (3)(a)); the parser
         ## classifies these bytes CONTENT and emit must agree. Confirmed thrown
         ## pre-cure, measured green post-cure (the measurement records live in the development fork).
         let src = Vector{UInt8}(vcat(codeunits("#~ hide\n"), UInt8[0xE0, 0x80, 0x80], codeunits("x\n")))

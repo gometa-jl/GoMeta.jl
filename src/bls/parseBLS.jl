@@ -23,7 +23,7 @@
 #   first-metaLine index, when one exists). The tree print (`structural_serialization` over
 #   `writeBlsStructureToIO`; the file-writing twin `writeBlsStructureToFile`) LEFT this file on
 #   2026-09-12 (R-V04B-24) for the development tool `devtools/basic_renderer.jl`, which reads the
-#   `ParseState` under the widened exemption D-6(a) (docs/CANONICAL-OUTPUT.md §2).
+#   `ParseState` through BLS's door alone since stage 5's s5c8 (the exemption D-6(a) of 2026-08-20 lapsed 2026-09-16; its texts left; R-V04B-116 (3)).
 # REASONING: the tree print (now the development tool's) is pinned byte-for-byte by tests/golden/golden_tests.jl, so the
 #   parse must be a pure, deterministic function of the input bytes — setup and parse touch
 #   no filesystem and no module globals; all state threads through the explicit `ParseState`.

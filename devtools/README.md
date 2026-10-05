@@ -73,13 +73,11 @@ docstrings are in `devtools.jl`.
 The tools AND the moved basic renderer (`basic_renderer.jl`, the tree print included) read the
 delivered part `result.blsComponentTree` (public by name, R-V04B-29) THROUGH THE DOOR since stage 2's commit 0 of the
 v0.4 build (R-V04B-58, R-V04B-80): BLS's public functions and types — `GoMeta.BLS.root`, `children`, `getElement`,
-`content`, `kind`, `flavor`, `endsWithNewline`, `isHorizontalSpace`, the Component types, `keys` of the two
-named-element types (`docs/public-api.md` §1.2) — and no field of a BLS object. TWO RESIDUE reads outside the door
-remain, each marked at its site and asked for the owner's word: the renderer's `BLS._isspace_valid` (the parser's own
-whitespace guard for the ensure-token head read; `isHorizontalSpace` is the `[\h]` class and differs at \f and \v) and the
-tools' whole-document text of the File (`collectedLines` joined — `content` has no File arm). The former exemption D-6(a) of 2026-08-20 (widened 2026-09-11, R-V04B-24
-C1 (a); lapsed 2026-09-16, R-V04B-29) covers those two residues alone; its texts are deleted at stage 5 of the v0.4
-branch (the plan's stage 5 (1); R-V04B-48 (1)). Consumer code — an Extension — reads the tree the same way, through the door
+`content` (a Component's text; the File's text, its lines joined, as the one-argument `content(tree)`), `kind`, `flavor`, `endsWithNewline`,
+`isHorizontalSpace`, the Component types, `keys` of the two named-element types (`docs/public-api.md` §1.2) — and no field of
+a BLS object. No read outside the door remains since stage 5's s5c8 (his word of 2026-10-05, R-V04B-116 (3): the renderer's
+whitespace guard before the hide marker reads `isHorizontalSpace`; the tools read the File's text through `content(tree)`); the
+texts of the former exemption D-6(a) of 2026-08-20 left with it. Consumer code — an Extension — reads the tree the same way, through the door
 (`docs/public-api.md` §1.2; R-V04B-45).
 The assertion battery
 `devtools/probes/probe_devtools.jl` is the drift alarm: if the surface changes, it fails loudly. Run it after every change to `src/` (the tools' own self-check left at stage 5's T1 — R-V04B-111). It lives beside them since 2026-09-12 (OWNER-WORDS §26 of the

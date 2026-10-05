@@ -434,10 +434,10 @@ access function").
 DOES: a Block — its line span joined by '\n'; a Line — its full source line; a Segment —
 its byte span of its own line (a multibyte final character kept whole); EMPTY for a
 Component that addresses no content (a zero or out-of-range span; a zero-length Line — a
-whitespace-only Line returns its whitespace bytes; the File, which has no arm here). The
-empty return is also the Engine's capture predicate (`captureEvals!` skips an empty return),
-so an arm added here would change which Components are captured — a File arm is a question
-for his word, at stage 2.
+whitespace-only Line returns its whitespace bytes; the File — whose whole text is the ONE-ARGUMENT
+`content(tree)` below, his word of 2026-10-05, R-V04B-116 (3)(b)). The empty return is also the
+Engine's capture predicate (`captureEvals!` skips an empty return), which is why the File's text is
+a method this two-argument form does not reach: the captured population is unchanged.
 REASONING: NEW in BLS at stage 2's commit 0 — the body of the Engine's former `cell_content_bytes`
 (`src/annotations.jl`) COPIED unchanged but for the argument names and the dropped `BLS.` qualifiers;
 the Engine's copy LEFT at stage 2's commit 9b (R-V04B-43 (5)) — this function alone serves a piece's text:
@@ -487,6 +487,23 @@ function content(tree::ParseState, c::AbstractComponent)
     # String ranges do). nextind is total from any in-bounds byte index, malformed included.
     return Vector{UInt8}(cu[startMain:(nextind(src, stopMain) - 1)])
 end
+
+"""
+    content(tree::ParseState) -> Vector{UInt8}
+
+IS: the text of the whole document as BLS holds it — the collected source lines joined by '\n' — the File's
+content as BLS's public read (his word of 2026-10-05, OWNER-WORDS §333; R-V04B-116 (3)(b); stage 5's s5c8 of
+the v0.4 build). Not the input's bytes: the line split drops the terminal newline (`endsWithNewline(tree)`
+carries that fact) and a CRLF line end's CR.
+DOES: the collected source lines joined by '\n', as bytes — exactly the text the development tools joined
+outside the door before this commit.
+REASONING: a ONE-ARGUMENT method, not a `(tree, ::File)` arm of the two-argument `content`: that form's
+empty return for a File is the Engine's capture predicate (`captureEvals!`, src/annotations.jl), so an arm
+there would change which Components are captured — the File's text is read here, the predicate untouched.
+PURPOSE: the development tools' whole-document read (the tree print's File row, the excerpts) and an
+Extension's, through the door and nothing else — one of the last two reads outside the door left with it.
+"""
+content(tree::ParseState)::Vector{UInt8} = Vector{UInt8}(codeunits(join(tree.collectedLines, '\n')))
 
 #########################################################################################
 ## THE DOOR, continued — what the development tools read beyond the four functions above
@@ -560,7 +577,8 @@ tokens by; false for a newline and for content.
 REASONING: ADAPTED — the parser's predicate given a public name, so that the print tools' segment lexer tests whitespace exactly as the
 parser does (a copy in a tool could drift from the parser's classification; R-V04B-80 (2)(iii)); the name is the
 session's default — declaring `_is_h_ws` public as it is is the alternative, his to pick.
-PURPOSE: the print tools' lexer (the one read beyond the tree the tools make of the parser), through the door.
+PURPOSE: the print tools' lexer (the one read beyond the tree the tools make of the parser) and, since stage 5's s5c8,
+the renderer's whitespace guard before the hide marker (R-V04B-116 (3)(a)), through the door.
 """
 isHorizontalSpace(c::Char)::Bool = _is_h_ws(c)
 
