@@ -49,3 +49,19 @@ such a claim. The battery `devtools/probes/probe_devtools.jl` must print ALL GRE
 - **Terminology (canon R2):** metaLine (never "mark line") · Block / Line / Segment ·
   flavors Code / Meta / Text · Alterants capitalised (Visib · Labels · Heading · Id), actions
   lowercase (hide · show · discard) · evals · Extension · settribute.
+- **Code-home traps** (the lessons pool's hand-off H13 — this build's own lessons of 2026-10-01/02; the owner's
+  phrase of 2026-10-06, OWNER-WORDS §346 of the build record): a new cross-module read gets a witness test on
+  EVERY path that reaches it; a test over a hand-built parse state runs the set-up, then `parseBLS(ps, 1, -1)`,
+  then the seam or the walk (the set-up alone yields a File with zero Blocks); every loop of assertions over a
+  collection is preceded by an assertion on its size; a reader of the Engine's rows derives each key as the
+  Engine's writer does, never from the declared field the writer only starts from; before a signature or
+  field-list change, grep every caller — the out-of-suite probes, the root scripts and the plan repository's
+  instruments included; a pre-check instrument that calls a removed function is re-derived for the post-commit
+  tree before it runs; a Julia probe run as a file keeps its accumulating loops inside a function (Julia's soft
+  scope); a new branch placed above existing returns is probed on every case those returns distinguish; a plain
+  Line has no Segment children — a test that needs one builds a Line with an inline metaSegment
+  (`x = 1 #~ discard`).
+- **Notebook regeneration** (the same hand-off, the flagged tenth): the line-classifying generator turns an
+  INDENTED `# ` continuation line inside a code run into a standalone markdown cell — a pre-check of a source
+  edit asserts the regenerated notebook's CELL STRUCTURE (the cell count; no prose cell holding a comment
+  fragment), not only that `--check` regenerates byte-identically (a green check proves idempotence, not layout).
