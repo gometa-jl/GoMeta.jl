@@ -56,8 +56,9 @@ The render half completes the share-target emit over both non-show verdicts (`:h
 `:discard`). The six rules:
 
 1. **`:discard` (any grain)** → **zero subtree bytes**.
-2. **`:hide` at Line grain** → literal **`## ` prefix + the line's rendered bytes** (indentation
-   preserved *after* the marker). On a hidden line with MULTIPLE rendered segments, **each
+2. **`:hide` at Line grain** → literal **`## ` prefix + the line's rendered bytes** (on a segmented line the first
+   segment's indentation is restored as SPACES *after* the marker when that segment is emitted — his legacy's test,
+   since stage 5's R1 of the v0.4 build, census row 60). On a hidden line with MULTIPLE rendered segments, **each
    rendered segment carries its own `## ` marker UNLESS the segment already heads with the
    marker's bytes** (the ensure-token rule — a trailing `## `-comment segment renders as-is;
    *dated true-up 2026-08-12 for `0.3.0`, superseding the `0.2.3` per-segment doubling*) —

@@ -23,9 +23,10 @@ Core.eval(Main, :(const _BASIC_RENDERER_LOADED = true))
 #     byte-stable (render-idempotence; an authored marker-headed line under hide renders as-is —
 #     hide stays one-way, never byte-reversible); a hidden EMPTY line renders as a BARE empty line
 #     (the hide write sits in the non-empty branch — docs/CANONICAL-OUTPUT.md §3). On a
-#     segmented line the leading-whitespace columns are restored once, before the first emitted
-#     segment — captured from the first structural segment, so the indent survives even when that
-#     segment is itself discarded; a line that is neither included verbatim nor segmented
+#     segmented line the FIRST segment, when it is emitted, is preceded by one SPACE per leading byte of its source line —
+#     his legacy's one test (WriteOutFile.jl :124–:128; a tab or a multibyte leading space renders as spaces; nothing is
+#     restored when the first segment is discarded; the four-local indent restore of v0.4 left at stage 5's R1 of the
+#     v0.4 build, census row 60); a line that is neither included verbatim nor segmented
 #     contributes zero bytes. The render ends 0x0a exactly when the PARSED source content did:
 #     every emitted line is "\n"-terminated, then one trailing 0x0a is trimmed iff
 #     `BLS.endsWithNewline(parse_state)` is false — for a whole-file parse that is the input's terminal
@@ -112,12 +113,6 @@ function render_bytes(
     local wroteToLine::Bool
     ## The Line's verdict — the Engine's answer for the Line (its own rows, else its Block's, else the default).
     finalVisib::Symbol = :show
-    ## repin1_* — per-line indent-restore state (the line's leading columns, emitted once
-    ## before the first emitted segment):
-    local repin1_indent_sidx::Int   # the source-line index whose leading columns are the line indent
-    local repin1_indent_start::Int  # the first-structural-segment startMainStr; indent = the columns before it
-    local repin1_indent_done::Bool  # the indent has been emitted (once, before the first emitted segment)
-    local repin1_first_seg::Bool    # still on the first STRUCTURAL segment (capture the indent there)
     ## The tree's one File through the door (`BLS.root`); the walk down through `BLS.children` — source order,
     ## the insert store's negative ids resolved by BLS itself (this file's former id-sign dispatch is gone).
     crntFile::BLS.File = BLS.root(parse_state)
@@ -201,30 +196,16 @@ function render_bytes(
                     end
                 end ## END of R-1: "finalVisib != discard" (line grain)
             elseif BLS.getElement(crntLine, :numChildren) != 0
-                ## Reset the per-line indent-restore (repin1_*) state.
-                repin1_indent_done = false
-                repin1_first_seg = true
-                repin1_indent_sidx = 0
-                repin1_indent_start = 0
                 ## Materialize the line's ORDERED segment list through the door (`BLS.children` of a Line — the
                 ## insert store resolved by BLS itself; this file's former sign-dispatch ternary, with its kept
                 ## `[2]`-store defect, is gone); each Segment's verdict is the Engine's answer for THAT Segment
                 ## (R-V04B-52 (2): its own rows if any, else its Line's); the write loop consumes them positionally.
                 orderedSegments = BLS.children(parse_state, crntLine)
                 segVerdicts = Symbol[visib_of(delivery, sg) for sg in orderedSegments]
-                ## The line's full source text through the door, read once: the ensure-token head test and the
-                ## indent restore read the SOURCE LINE (a Segment's `:idxString` names its own Line's line — probe-proven).
+                ## The line's full source text through the door, read once: the ensure-token head test reads the
+                ## SOURCE LINE (a Segment's `:idxString` names its own Line's line — probe-proven).
                 lineText = String(BLS.content(parse_state, crntLine))
                 for (segIdx, crntSegment) in enumerate(orderedSegments)
-                    if repin1_first_seg
-                        ## re-pin #1: the LINE indent = the FIRST STRUCTURAL segment's leading-whitespace
-                        ## columns before startMainStr, char-safe via prevind (captured here even if this
-                        ## first segment is later discarded, so the indent precedes the first EMITTED segment).
-                        repin1_indent_sidx = BLS.getElement(crntSegment, :idxString)
-                        repin1_indent_start = BLS.getElement(crntSegment, :startMainStr)
-                        repin1_first_seg = false
-                    end
-
                     ## R-1: the segment discard test on the Segment's own answer (original
                     ## :116) — an inner `show` under a discarded ancestor RESURFACES here.
                     if segVerdicts[segIdx] != :discard
@@ -252,13 +233,13 @@ function render_bytes(
                                     end
                                 end
                             end
-                            if !repin1_indent_done
-                                ## Restore the dropped leading-whitespace ONCE, before the
-                                ## first emitted segment's main content.
-                                if repin1_indent_start >= 2 && repin1_indent_sidx != 0
-                                    write(io, SubString(lineText, 1:prevind(lineText, repin1_indent_start)))
-                                end
-                                repin1_indent_done = true
+                            if segIdx == 1
+                                ## His legacy's one test (WriteOutFile.jl :104–:108, :124–:128): the FIRST segment of the
+                                ## line, when emitted, is preceded by one space per leading byte of its source line
+                                ## (`startMainStr - 1`) — a tab or a multibyte leading space renders as spaces; a discarded
+                                ## first segment restores nothing (the four-local indent restore left at stage 5's R1 of the
+                                ## v0.4 build, census row 60).
+                                write(io, repeat(' ', BLS.getElement(crntSegment, :startMainStr) - 1))
                             end
                             write(io, BLS.content(parse_state, crntSegment))   # the segment's byte span through the door
                             wroteToLine = true
