@@ -301,42 +301,6 @@ Base.IteratorSize(::Type{<:EachChildId}) = Base.SizeUnknown()
 Base.eltype(::Type{<:EachChildId}) = Int
 
 #########################################################################################
-## Tree visitor — generic traversal of File → Block → Line → Segment hierarchy
-#########################################################################################
-"""
-    visit_tree(componentsPDict, blockIds; on_block, on_line, on_segment)
-
-Walk the component tree for the given block IDs, calling the provided callbacks.
-Each callback receives `(component, id)`. All callbacks are optional (default no-op).
-This factored traversal is available for tree-walking code (no in-tree caller at v0).
-"""
-function visit_tree(
-    componentsPDict::Base.PersistentDict{
-        Type{<:Component},NTuple{2,Vector{<:AbstractComponent}}},
-    blockIds;
-    on_block::Function = (_,_) -> nothing,
-    on_line::Function  = (_,_) -> nothing,
-    on_segment::Function = (_,_) -> nothing
-)
-    blockVec  = componentsPDict[Block][1]
-    lineVec   = componentsPDict[Line][1]
-    segmentVec = componentsPDict[Segment][1]
-
-    for blockId in blockIds
-        crntBlock = blockVec[blockId]
-        on_block(crntBlock, blockId)
-        for lineId in eachchildid(crntBlock, blockVec)
-            crntLine = lineVec[lineId]
-            on_line(crntLine, lineId)
-            for segmentId in eachchildid(crntLine, lineVec)
-                crntSegment = segmentVec[segmentId]
-                on_segment(crntSegment, segmentId)
-            end
-        end
-    end
-end
-
-#########################################################################################
 ##~ `parseBlocksAndLines()`
 include("flavor.jl")
 include("parseBLS.jl")

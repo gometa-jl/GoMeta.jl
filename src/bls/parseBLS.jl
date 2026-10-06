@@ -369,33 +369,6 @@ function insertChildComponentAt(
 end
 
 ####################################################################################
-## Character-based findStartOf replacing regex for common patterns
-####################################################################################
-function findStartOf(regex::Base.Regex, string::AbstractString)::Tuple{Int,Bool}
-    rangeFound::Union{Nothing,UnitRange{Int}} = findfirst(regex, string)
-    if rangeFound === nothing
-        return (lastindex(string), true)
-    else
-        return (rangeFound.start, false)
-    end
-end
-
-"""
-    findFirstNonSpace(s) -> (pos, endOfLine)
-
-Fast replacement for `findStartOf(r"\\S", s)`. Returns the byte position of
-the first non-space character, or `(lastindex(s), true)` if the line is all whitespace.
-"""
-function findFirstNonSpace(s::AbstractString)::Tuple{Int,Bool}
-    pos = findfirst(!_isspace_valid, s)
-    if pos === nothing
-        return (lastindex(s), true)
-    else
-        return (pos, false)
-    end
-end
-
-####################################################################################
 ## The header dispatch: a character-dispatch reader (`parseHashHeader!`) served the
 ## '#' flavor from the alpha builds through the parser collapse, and RETIRED once the
 ## table-driven reader proved equivalent (four-plane differentials at both regimes,
@@ -834,7 +807,11 @@ function parseBLS(
         # https://fredrikekre.github.io/Literate.jl/v2/pipeline/#Custom-control-over-chunk-splits
         # "The difference between #+ and #- is that #+ enables Documenter's "continued"-blocks,
         # see the Documenter manual."
-        (startSegment, reachedEndOfLine) = findFirstNonSpace(line)
+        ## the HEAD of the line — the first non-space character by the strip class `_isspace_valid` (R-V04B-83 (1):
+        ## the parser's head, the renderer's referent); the one-call helper `findFirstNonSpace` and the dead legacy `findStartOf` left at stage 5's P2
+        ## of the v0.4 build (census row 59) — the class unchanged; `nothing` ⇒ an all-whitespace line (after the rstrip above: the empty line)
+        headPos = findfirst(!_isspace_valid, line)
+        (startSegment, reachedEndOfLine) = headPos === nothing ? (lastindex(line), true) : (headPos, false)
         #############################################################
         # Case 1: is `empty line`
         if reachedEndOfLine
