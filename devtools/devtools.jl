@@ -1096,7 +1096,6 @@ end
 #########################################################################################
 const _CF_VERSION = 1
 const _CF_SEP = " | "
-const _CF_EXCLUDED_FLAGS = (:hide, :show, :discard)   # Visib in the BLS tree — not compared (his §69 item 5; D-R-7)
 
 _cf_kind(c) = c isa _DT_BLS.File ? "File" : c isa _DT_BLS.Block ? "Block" : c isa _DT_BLS.Line ? "Line" : "Segment"
 
@@ -1134,14 +1133,14 @@ end
 ## the Component's content KEY — its kind and span; the form's only way of naming a Component (never an id or a handle)
 _cf_key(doc, c) = _cf_kind(c) * " " * _cf_span(doc, c)
 
-## the flags of his approved table that are TRUE on the Component: every ComponentSettribute flag but hide/show/discard,
+## the flags of his approved table that are TRUE on the Component: every ComponentSettribute flag (the three Visib flags left the
+## record at stage 5's E12 of the v0.4 build — census row 45; his §69 item 5 — the former exclusion of them is dead and gone),
 ## qualified `component.<name>`, sorted by code point, joined by `,`; `-` when none. The content flag vector
 ## (`contentSettributeBitVec`) has no read through the door and no writer in the parser (measured 2026-10-02 — the grep banked as
 ## receipts/S8-branch/PROBES-s4-content-flags.txt of the build record) — no `content.<name>` flag can be emitted today (a question for his word).
 function _cf_flags(c)
     names = String[]
     for k in keys(_DT_BLS.ComponentSettribute)
-        k in _CF_EXCLUDED_FLAGS && continue
         _dt_ni(c, k) && push!(names, "component." * String(k))
     end
     isempty(names) ? "-" : join(sort!(names), ",")

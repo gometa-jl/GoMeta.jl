@@ -40,9 +40,8 @@ NamedElements.@namedElement ComponentSettribute Bool begin
                       ## content after the '!' is ignored (absorbed as EMPTY). Distinct from
                       ## :ignoreThisMeta, which stays the absorb-walk SKIP flag of the other mint
                       ## classes (the "#]" close-marker rows, comment-in-Meta, glued bucket-A).
-    hide
-    show
-    discard
+                      ## (the three Visib flags hide / show / discard left this record at stage 5's E12 of the
+                      ## v0.4 build — census row 45; R-V04B-99: a condition naming one meets the unknown-key refusal)
     firstInLine
     firstInBlock
     isSet

@@ -271,8 +271,8 @@ function absorbWalk(
                 applyAltActionFns(childComponent) ## `childComponent` is :Segment.
                 ## The Segment-grain Visib write-back onto the Line LEFT here (stage 3's commit 4 of the v0.4 build, R-V04B-42 (1)): the Engine writes NOTHING into the
                 ## caller's BLS Components — a Segment-carried Visib value is CAPTURED on its Line (below) and read through
-                ## the one answer function (R-V04B-16 (1)); the registry's `settribute` declarations and the derived table stay
-                ## until his word (R-V04B-42 (2)). The E-04 flagless read (`keys(Visib)[array][1]`) went with the write.
+                ## the one answer function (R-V04B-16 (1)); the registry's `settribute` declarations and the derived table left at stage 5's E12
+                ## of the v0.4 build (census row 45 — the word R-V04B-42 (2) waited for). The E-04 flagless read (`keys(Visib)[array][1]`) went with the write.
                 # Capture the Segment-grain FINAL evals rows before the next apply wipes `st.working`;
                 # the cell is the LINE (`crntComponent`) the Segment's meta applies to, NOT the Segment.
                 # Reads `st.working`, puts or supersedes rows in `st.evals` (and may append warning

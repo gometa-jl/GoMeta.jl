@@ -75,7 +75,7 @@ end
                                       Dict{Any,Any}(:dk => Any[UInt16(9)], "sk" => 2.5)]))
         s1 = b.action_specs[1]
         b.action_specs[1] = GM.ActionSpec(; name = s1.name, plugin = s1.plugin,
-            accepts_string_slot = s1.accepts_string_slot, validate = _callable_struct, settribute = s1.settribute)
+            accepts_string_slot = s1.accepts_string_slot, validate = _callable_struct)
         # the slot-struct default (formerly action 3's) rides plugin 2 (Visib; the DEFAULT_REGISTRY's fields copied) — a `Declared`
         # nested in the data since stage 5's E10 of the v0.4 build (the `EffectRow` that carried the case left with its slot)
         b.plugins[2] = GM.PlugIn(; altName = :Visib, setMode = :mutExclusive, altConstructor = GM.Alterants.Visib,
@@ -182,7 +182,6 @@ end
         pT === GM.PlugIn && pf === :capture && return GM.CaptureDecl(:single, nothing)
         pT === GM.ActionSpec && pf === :validate && return _swap_fn_a
         pT === GM.PlugIn && pf === :default && return GM.Declared(1)   # stage 2's commit 3-ii: the slot is the Alterant's
-        pT === GM.ActionSpec && pf === :settribute && return :zz
         pT === GM.CaptureDecl && pf === :mode_gate && return :localOnly
         pT === GM.CaptureDecl && pf === :attr_stem && return :zz   # v0.4 T5 (the round's B-3 cure — the raw error() fault otherwise)
         error("no single-point substitute for ($pT, $pf)")
@@ -703,7 +702,7 @@ end
         s.pT in (GM.PlugIn, GM.ActionSpec) && s.path[end] isa Symbol &&
             push!(recfields, (s.pT, s.path[end]))
     end
-    @test length(recfields) == 13                                # every §1 record field exercised (13 since stage 5's E11 of the v0.4 build — the overload rows' ten fields and the action record's spelling, sugar_candidacy and keyed_slot left, census row 16; 27 before: the Alterant's default slot joined at commit 3, the action's left at 3-ii — R-V04B-51; the vocabulary slot left at stage 5's E9; the record's eight slots at E10 — MEASURED, the second build's counts probe caught the stale 35)
+    @test length(recfields) == 12                                # every §1 record field exercised (12 since stage 5's E12 of the v0.4 build — census row 45, the action record's settribute slot left; 13 since stage 5's E11 of the v0.4 build — the overload rows' ten fields and the action record's spelling, sugar_candidacy and keyed_slot left, census row 16; 27 before: the Alterant's default slot joined at commit 3, the action's left at 3-ii — R-V04B-51; the vocabulary slot left at stage 5's E9; the record's eight slots at E10 — MEASURED, the second build's counts probe caught the stale 35)
     leafcats = Set(s.cat for s in sites if s.kind in (:leaf, :single, :dictkey))
     @test issubset(Set([:bool, :symbol, :int, :float, :string, :type, :function, :version,
                         :complex, :rational, :nothing_leaf]), leafcats)

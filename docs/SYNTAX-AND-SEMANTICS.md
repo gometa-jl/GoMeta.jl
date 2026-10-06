@@ -54,9 +54,10 @@ can learn GoMeta exactly, and verify it, before writing or changing a metaLine.
 - **verdict** — a final evaluated alterant value for one cell.
 - **State-refs** — built-in predicates that query a BLS component's type/content (`isCode`, `isText`, `isMeta`,
   `containsMeta`), used inside conditions to decide whether an alterant applies (§6).
-- **settribute** — a component's flag record (its settings/attributes: e.g. `depthN`, `isCode`, the Visib
-  verdict), carried per BLS component (`componentSettribute` in the source) and read by State-refs and the
-  render. The coinage joins *settings* + *attribute*.
+- **settribute** — a component's flag record (its settings/attributes: e.g. `depthN`, `isCode`), carried per BLS
+  component (`componentSettribute` in the source) and read by State-refs — the Visib verdict is the Engine's evaluated value
+  (`evaluatedAltValue`), not a flag of the record since stage 3's commit 4 of the v0.4 build; its three names left the record at
+  stage 5's E12 (census row 45). The coinage joins *settings* + *attribute*.
 - **depth** — a metaBlock's nesting level (1, 2, 3, …), set by tilde-count or a digit (§2); v0 supports
   depths 1 through 8, and the digit `0` addresses the file level — `#~0` is **accepted**, not
   refused: it processes to `PROCESS_OK` with no diagnostic (the form is outside the committed
@@ -356,6 +357,11 @@ The operators (all verified against the corpus):
 
 (`containsText` exists as a BLS attribute but is **not** used as a condition predicate anywhere in this corpus —
 see §13.)
+
+The three Visib names `hide`, `show` and `discard` are **no condition keys** since stage 5's E12 of the v0.4 build (census row 45; the
+owner's R-V04B-99): `#~ hide{ show }` meets the unknown-condition-key refusal — before E12 the key was accepted and silently false
+(`docs/public-api.md` §3.4). The rule: a bare name in `{}` is a BLS state-ref or an action of an Alterant that answers queries
+(Labels at v0); a query of Visib, Id or the Heading refuses the same way.
 
 ---
 

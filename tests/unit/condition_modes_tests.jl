@@ -101,7 +101,11 @@ _mode_run(cfg) = redirect_stdout(
         # every safe-grammar-accepted body HERE returns the SAFE AST itself (NOT an eval
         # marker) — identical semantics for these bodies; the known K3-leak divergence
         # class is recorded OPEN and pinned nowhere as identical
-        for body in ("isCode & isText", ":label1", "cell(:label1) ", "isCode && isText")
+        # (stage 5's E12 of the v0.4 build, census row 45 — the registry rule queryable_action: Id declares no getter, so `cell(:label1)`
+        # is no condition key at any LOWERING rung — the executing mode's rung 3 now runs it as Julia text (PROBES-e12-modes-AFTER:
+        # FullEvalCondition), a widening that lives until E13 removes the opt-in modes; the queryable Labels form `:(:label1)` carries
+        # this witness now — measured, PROBES-e12-modes-*)
+        for body in ("isCode & isText", ":label1", ":(:label1) ", "isCode && isText")
             r = fn(body, GM.DEFAULT_REGISTRY, prof)
             @test r isa GM.ConditionAST
             @test GM.print_condition(r) == GM.print_condition(GM.parse_condition(body))
@@ -110,7 +114,7 @@ _mode_run(cfg) = redirect_stdout(
         # the executing rung. A SETTRIBUTE key used as a call (isCode(ab)) was the class that
         # falsified this — unlowerable by that rung, it fell through to execution, so reach
         # GREW for it where the pre-cure engine had evaluated nothing at all.
-        for body in ("isCode(ab) ", "comment(xy) ", "isCode(ab) & cell ")
+        for body in ("isCode(ab) ", "comment(xy) ", "isCode(ab) & :label1 ")   # `& cell` → `& :label1` at stage 5's E12 (census row 45): a getter-less action is no key
             @test !(fn(body, GM.DEFAULT_REGISTRY, prof) isa GM.FullEvalCondition)
         end
         # …while a PARTIAL lowering (one still carrying a raw argument) must still reach it —
@@ -168,9 +172,11 @@ _mode_run(cfg) = redirect_stdout(
         for body in ("cell(x)", "cell(7)", "cell(:)")
             @test _optin_full_eval(body, GM.DEFAULT_REGISTRY, GM.DEFAULT_GRAMMAR_PROFILE) isa
                   GM.FullEvalCondition
-            # … while the NON-executing full-syntax mode carries the same text as DATA
+            # … while the NON-executing full-syntax mode, which carried the same text as DATA before stage 5's E12 of the
+            # v0.4 build (census row 45), REFUSES it as a typed Diagnostic since: Id declares no getter, so `cell` is no
+            # condition key at any lowering rung (the registry's queryable_action rule — R-V04B-99; measured, PROBES-e12-modes-*)
             @test _optin_full_parse(body, GM.DEFAULT_REGISTRY, GM.DEFAULT_GRAMMAR_PROFILE) isa
-                  GM.ConditionAST
+                  GM.Diagnostic
         end
         # the retired wall-truncation class did NOT shift: complete lowering, data everywhere
         for body in (":" * repeat("a", cap), ":" * repeat("a", cap + 1))
@@ -216,7 +222,7 @@ _mode_run(cfg) = redirect_stdout(
         # executing mode via its safe rung, the standalone full-parse mode via its
         # whitelist (that mode has NO safe rung in its chain; an earlier revision of this
         # comment said "never leaves the safe rung in either mode" and asserted only one)
-        for body in ("cell(:label1)", "isCode")
+        for body in (":label1", "isCode")   # `cell(:label1)` → `:label1` at stage 5's E12 (census row 45): the in-grammar query is the queryable Labels' now
             @test _optin_full_eval(body, GM.DEFAULT_REGISTRY, GM.DEFAULT_GRAMMAR_PROFILE) isa
                   GM.ConditionAST
             @test _optin_full_parse(body, GM.DEFAULT_REGISTRY, GM.DEFAULT_GRAMMAR_PROFILE) isa

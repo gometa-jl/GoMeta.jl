@@ -7,12 +7,12 @@
 #     and `Id` (Int16: cell/parent/file). `module CnS`: the per-call state accessors `wipeAltActionSlots`/
 #     `updateMetaHierarchy`/`getState`/`getAltState`. The tail builds the immutable `AlterantRegistry`
 #     (type: src/state.jl) — `build_default_registry()` → `const DEFAULT_REGISTRY` (v0.4 T1: the former
-#     `VISIB_TO_SETTRIBUTE` alias is retired; the write-back table is the generic `action_to_settribute`).
+#     `VISIB_TO_SETTRIBUTE` alias is retired; the generic `action_to_settribute` table left at stage 5's E12 — census row 45).
 # DOES: declares the closed default inventory (4 alterants / 8 actions since the heading registration) in
 #     DECLARATION order (labels=1, Visib=2, id=3, heading=4 — the live keys are :id / :heading) and PUBLISHES
 #     it through the v0.4 lifecycle (Builder → validate → publish): the sorted action table, the parallel action→plugin index, the name→index Dicts,
 #     the SORTED `accum_alt_idxs` (the apply-phase `insorted` consumer in apply.jl depends on the sort),
-#     and the identity Visib-action→settribute-key map. `setLabels` (the `:` labels action) checks every
+#     (the identity Visib-action→settribute-key map left at stage 5's E12 — census row 45). `setLabels` (the `:` labels action) checks every
 #     label against the whitelist; an unknown label raises the stable "GoMeta apply: unknown label"
 #     refusal, which names the accepted set (docs/public-api.md §3.4). `getState`/`getAltState` read the
 #     per-call `ProcessState` via `ctx()` (a ScopedValue — no module-global state). `updateMetaHierarchy`/`wipeAltActionSlots` maintain the meta-hierarchy cursor + the slot
@@ -402,8 +402,8 @@ end # module CnS
 # DOES: `build_default_registry()` constructs FRESH top-level `PlugIn` instances in DECLARATION order
 #     (labels=1, Visib=2, id=3, heading=4 — the live keys are :id / :heading), derives the sorted action
 #     table + the parallel `action_to_plugin` index
-#     + the `Dict` lookups + the SORTED `accum_alt_idxs` + the generic `action_to_settribute` table
-#     (DERIVED from the declared per-action `settribute` slots — v0.4 T1) through the CHECKED owner
+#     + the `Dict` lookups + the SORTED `accum_alt_idxs` (the `action_to_settribute` table left at stage 5's E12 — census
+#     row 45 of the v0.4 build's census) through the CHECKED owner
 #     fill (a duplicate action name resolves FIRST-wins since stage 5's E4 — the clash law that refused it left), and returns
 #     `const DEFAULT_REGISTRY`.
 # REASONING: alterant/action indices are fixed by declaration order, never by `Dict` iteration order —
@@ -465,14 +465,12 @@ function default_registry_builder()
         # sugars (x-8, closed at two); queryable via checkLabels.
         ActionSpec(; name = Symbol(":"), plugin = Int8(1)),
         # Visib hide/show/discard — zero literal slots (the action name selects); NON-queryable at v0.2
-        # (getAltInstance=nothing; the I20 class).
-        # v0.4 T1: the write-back settribute key is DECLARED per action (slot (1)) — identity to
-        # the action name at v0.4.0, exactly the v0.3.2 map; the registry's generic
-        # `action_to_settribute` table derives from these declarations below, so Core no longer
-        # knows "plugin 2 is Visib" anywhere in this constructor.
-        ActionSpec(; name = :hide, plugin = Int8(2), settribute = :hide),
-        ActionSpec(; name = :show, plugin = Int8(2), settribute = :show),
-        ActionSpec(; name = :discard, plugin = Int8(2), settribute = :discard),
+        # (getAltInstance=nothing; the I20 class). The declared write-back settribute key of v0.4 T1 left at stage 5's E12
+        # of the v0.4 build (census row 45; the word R-V04B-42 (2) waited for — his §317 mark and his §319 order):
+        # the Engine's answer is `evaluatedAltValue`; nothing writes a flag into the BLS Components.
+        ActionSpec(; name = :hide, plugin = Int8(2)),
+        ActionSpec(; name = :show, plugin = Int8(2)),
+        ActionSpec(; name = :discard, plugin = Int8(2)),
         # Id cell/parent/file — ONE literal slot (the setter parses the Symbol text); NON-queryable
         # (experimental, I21).
         ActionSpec(; name = :cell, plugin = Int8(3)),
@@ -490,8 +488,8 @@ function default_registry_builder()
     # above are the DEFAULT BUILDER; `publish` runs the remaining checks (`_validate_registration`: the domain
     # probe, the Heading lane's mode-gate laws — the vocabulary check left at stage 5's E9), then `_derive_tables` derives the hot-path
     # tables (the sorted action table, the parallel action→plugin index, the name→index Dicts, the SORTED
-    # accumulate/mutExclusive index sets the apply-phase `insorted` consumers depend on, the generic
-    # `action_to_settribute` write-back table — a duplicate action name resolving first-wins) from the
+    # accumulate/mutExclusive index sets the apply-phase `insorted` consumers depend on — a duplicate action
+    # name resolving first-wins; the `action_to_settribute` table left at stage 5's E12, census row 45) from the
     # declarations only, never hand-supplied; `:mutExclusivePerField` (the `id` compound) sits in NEITHER
     # mode set by design (its per-field semantics are deferred).
     return RegistryBuilder(plugins, action_specs)
@@ -586,12 +584,10 @@ function _registration_digest(action_specs::Vector{ActionSpec};
     for spec in sort!(owned; by = s -> String(s.name))
         h = _fold_parts(h, "spec", spec.name,
             Int(spec.plugin), spec.accepts_string_slot,
-            spec.validate === nothing ? "-" : String(nameof(spec.validate)),
-            # v0.4 T2 — the declared per-action slot joins the fold (the seal covers the record; the per-action
-            # default left the record at stage 2's commit 3-ii — the Alterant's default folds below; the overload rows left the fold at stage 5's E11
-            # of the v0.4 build with the spelling tag, the sugar-candidacy register and the keyed slot — census row 16:
-            # the FOURTEENTH re-mint)
-            "settribute", _slot_text(spec.settribute))
+            spec.validate === nothing ? "-" : String(nameof(spec.validate)))
+            # (the declared per-action settribute slot left the fold at stage 5's E12 of the v0.4 build — census row 45: the
+            # FIFTEENTH re-mint, measured by the build's probe; the per-action default left at stage 2's commit 3-ii, the
+            # overload rows with the spelling tag, the sugar-candidacy register and the keyed slot at stage 5's E11 — the fourteenth)
     end
     for p in plugins
         h = _fold_parts(h, "plug", p.altName, p.setMode,
@@ -778,14 +774,14 @@ _domain_leaf(x)::Bool =
     x isa Function || x isa Type || x isa Symbol || x === nothing || x isa String ||
     x isa VersionNumber || _numeric_leaf(x)
 
-## the per-record explicit field lists — 8/5 (the Alterant's default slot since stage 2's commit 3; the action's gone since 3-ii; eight since stage 5's E10; five since stage 5's E11 — the overload rows left, census row 16), each asserted against the compiler at
+## the per-record explicit field lists — 8/4 (four action fields since stage 5's E12 — the settribute slot left, census row 45; the Alterant's default slot since stage 2's commit 3; the action's gone since 3-ii; eight since stage 5's E10; five since stage 5's E11 — the overload rows left, census row 16), each asserted against the compiler at
 ## load (T2BIS-DESIGN §15 (7)); the two record structs are POSITION-RESTRICTED walker
 ## containers (elements of `plugins`/`action_specs`; the third, `ActionOverload` inside the overloads slot, left at stage 5's E11
 ## of the v0.4 build — census row 16) and are REFUSED anywhere else, declared data included.
 const _WALK_PLUGIN_FIELDS = (:altName, :setMode, :altConstructor, :setAltInstance,
     :getAltInstance, :precedencesTuple, :default, :capture)
 @assert _WALK_PLUGIN_FIELDS == fieldnames(PlugIn)
-const _WALK_ACTION_FIELDS = (:name, :plugin, :accepts_string_slot, :validate, :settribute)
+const _WALK_ACTION_FIELDS = (:name, :plugin, :accepts_string_slot, :validate)   # the settribute slot left at stage 5's E12 (census row 45)
 @assert _WALK_ACTION_FIELDS == fieldnames(ActionSpec)
 
 "The 3 record-reachable slot-struct types (walked field-wise GENERICALLY; rebuilt
@@ -1838,8 +1834,6 @@ function _derive_tables(plugins::Vector{PlugIn}, action_specs::Vector{ActionSpec
         alt_index            = Dict{Symbol,Int8}(p.altName => Int8(i) for (i, p) in enumerate(plugins)),
         accum_alt_idxs       = sort!(Int8[i for (i, p) in enumerate(plugins) if p.setMode === :accumulate]),
         mutex_alt_idxs       = sort!(Int8[i for (i, p) in enumerate(plugins) if p.setMode === :mutExclusive]),
-        action_to_settribute = Dict{Symbol,Symbol}(s.name => s.settribute for s in action_specs
-                                                   if s.settribute !== nothing),
         spec_index           = spec_index,
     )
 end
@@ -1869,7 +1863,7 @@ concrete types, sharing preserved within each copy stage; `deepcopy_internal` is
 so no user type can specialize the copy (a later mutation of the builder cannot reach a published
 registry, and vice versa). The derived tables come from the declarations alone; the seal field
 keeps the registration FINGERPRINT (a lossy cache key); the `_snapshot` baseline is a SECOND,
-disjoint domain copy of all eleven `_SNAPSHOT_FIELDS`. The published value's containers are
+disjoint domain copy of all ten `_SNAPSHOT_FIELDS` (eleven before stage 5's E12 — census row 45). The published value's containers are
 READ-ONLY by contract — a mutation through them is detected at the door (`POST_SEAL_MUTATION`)
 by the structural deep-egal comparison against the snapshot, never silently effective — for
 conforming code (the disclosed bounds apply, docs/public-api.md §1.2).
@@ -1927,7 +1921,7 @@ end
     _registry_door_check(registry) -> Vector{Diagnostic}
 
 The R-V04-34 STRICT door, T2-bis ONE-CHECK form (T2BIS-DESIGN §6): an UNPUBLISHED registry
-(`_snapshot === nothing`) refuses typed, naming the sanctioned path; else the eleven
+(`_snapshot === nothing`) refuses typed, naming the sanctioned path; else the ten (eleven before stage 5's E12)
 `_SNAPSHOT_FIELDS` are compared field-by-field against the publish-time snapshot by the ONE
 structural deep-egal walk (`===`-only leaves; no `hash`/`isequal`/`==`/user `show` dispatched
 anywhere, rendering included) and the FIRST divergent path fires exactly one
@@ -1978,9 +1972,9 @@ const DEFAULT_REGISTRY = build_default_registry()
 ## no forwarding window): it was the SAME `Dict` object as the registry's map (`===`, not a copy),
 ## i.e. a mutable alias onto the "immutable" inventory — the measured post-publication-mutation
 ## class the freeze/publication seal (T2) closes. The former write-back at both grains read the
-## PER-CALL `st.registry.action_to_settribute` (derived from the declared per-action `settribute`
-## slots) until stage 3's commit 4 — the table stays, read by nothing, until his word (R-V04B-42 (2)); the
-## default inventory's table is `DEFAULT_REGISTRY.action_to_settribute`. It was never
+## PER-CALL `action_to_settribute` table (derived from the declared per-action settribute slots; left at stage 5's E12)
+## until stage 3's commit 4; the table, read by nothing since, left at stage 5's E12 of the v0.4 build (census row 45 —
+## the word R-V04B-42 (2) waited for: his §317 mark and his §319 order). Neither the alias nor the table was ever
 ## in the `export`/`public` surface (docs/public-api.md §1), so no consumer contract moves.
 
 """

@@ -215,7 +215,7 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
         b6 = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
         s6 = b6.action_specs[4]
         b6.action_specs[4] = GM.ActionSpec(; name = s6.name, plugin = s6.plugin, accepts_string_slot = s6.accepts_string_slot,
-            validate = s6.validate, settribute = s6.settribute)
+            validate = s6.validate)
         b6.plugins[2] = _plugin_with_default(b6.plugins[2], GM.Declared(_VocHostile.HostileP()))   # the hostile value rides the Alterant's slot (commit 3-ii)
         d6 = GM.validate(b6)
         @test any(x -> x.code === :REG_PROTOCOL && occursin("HostileP", x.message), d6)
@@ -243,7 +243,7 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
             altConstructor = Dict{Symbol,Bool}, setAltInstance = _VocR3.heq,
             getAltInstance = GM.Alterants.checkLabels)
         bq.action_specs[1] = GM.ActionSpec(; name = sq.name, plugin = sq.plugin, accepts_string_slot = sq.accepts_string_slot,
-            validate = sq.validate, settribute = sq.settribute)
+            validate = sq.validate)
         dq = GM.validate(bq)
         @test dq isa Vector && _VocR3.EQCALLS[] == 0     # (r4-B2) the piracy was never SELECTED under ===
         # (A2, probe P62) the budget walkers read the type graph via getfield only: a
@@ -256,7 +256,7 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
         bk = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
         sk = bk.action_specs[4]
         bk.action_specs[4] = GM.ActionSpec(; name = sk.name, plugin = sk.plugin, accepts_string_slot = sk.accepts_string_slot,
-            validate = sk.validate, settribute = sk.settribute)
+            validate = sk.validate)
         bk.plugins[2] = _plugin_with_default(bk.plugins[2], GM.Declared(Dict{Any,Any}(_VocR3.hkey => 1)))   # commit 3-ii: the Alterant's slot
         dk = GM.validate(bk)
         @test dk isa Vector && any(x -> x.code === :REG_PROTOCOL, dk) &&
@@ -311,7 +311,7 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
         bs5 = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
         ss = bs5.action_specs[4]
         bs5.action_specs[4] = GM.ActionSpec(; name = ss.name, plugin = ss.plugin, accepts_string_slot = ss.accepts_string_slot,
-            validate = ss.validate, settribute = ss.settribute)
+            validate = ss.validate)
         bs5.plugins[2] = _plugin_with_default(bs5.plugins[2], GM.Declared(Dict{Any,Any}(_VocR5.BadString() => 1)))   # commit 3-ii: the Alterant's slot
         _VocR5.POST[] = true
         c0 = _VocR5.SCALLS[]

@@ -7,7 +7,7 @@
 #       row 3, OWNER-WORDS §317: the domain probe and the capture mode-gate laws remain — the vocabulary check
 #       left at stage 5's E9), the typed diagnostics with FULL collection (validate
 #       never throws), atomic domain-copy publication, the fingerprint + the T2-bis ONE-check door
-#       (the eleven `_SNAPSHOT_FIELDS` compared structurally against the publish-time snapshot —
+#       (the ten `_SNAPSHOT_FIELDS` — eleven before stage 5's E12, census row 45 — compared structurally against the publish-time snapshot —
 #       REPRESENTATIVE fields mutated here, not every one; the property file is the proof), the STRICT
 #       published-only door at `goMeta(bytes; registry)` (an unpublished value refuses typed NAMING the
 #       sanctioned path; the internal callable seam that ran the door too left at stage 5's E2), the real freeze gate
@@ -47,7 +47,7 @@ _plugin_with_default(p, d) = GM.PlugIn(; altName = p.altName, setMode = p.setMod
         @test D.seal !== nothing && startswith(D.seal, "fnv1a64:")
         @test R.seal == D.seal
         for f in (:sorted_alt_actions, :action_to_plugin, :action_index, :alt_index,
-                  :accum_alt_idxs, :mutex_alt_idxs, :action_to_settribute, :spec_index)
+                  :accum_alt_idxs, :mutex_alt_idxs, :spec_index)
             @test getfield(R, f) == getfield(D, f)
         end
         @test length(R.plugins) == 4 && length(R.action_specs) == 8
@@ -61,7 +61,7 @@ _plugin_with_default(p, d) = GM.PlugIn(; altName = p.altName, setMode = p.setMod
     @testset "the STRICT door: an unpublished (route-U) registry refuses, naming the path" begin
         D = GM.DEFAULT_REGISTRY
         U = GM.AlterantRegistry(D.plugins, D.sorted_alt_actions, D.action_to_plugin, D.action_index,
-                                D.alt_index, D.accum_alt_idxs, D.mutex_alt_idxs, D.action_to_settribute,
+                                D.alt_index, D.accum_alt_idxs, D.mutex_alt_idxs,
                                 D.action_specs, D.spec_index)    # conforming; the gate passes
         @test U.seal === nothing
         r = GM.goMeta(Vector{UInt8}(codeunits("x = 1\n#~ hide\n\ny = 2\n")); registry = U)
@@ -77,7 +77,7 @@ _plugin_with_default(p, d) = GM.PlugIn(; altName = p.altName, setMode = p.setMod
         bad_idx = copy(D.action_index); bad_idx[:hide] = Int8(99)
         e = try
             GM.AlterantRegistry(D.plugins, D.sorted_alt_actions, D.action_to_plugin, bad_idx,
-                                D.alt_index, D.accum_alt_idxs, D.mutex_alt_idxs, D.action_to_settribute,
+                                D.alt_index, D.accum_alt_idxs, D.mutex_alt_idxs,
                                 D.action_specs, D.spec_index); nothing
         catch err; err end
         @test e isa GM.RegistrationRefused
@@ -100,12 +100,8 @@ _plugin_with_default(p, d) = GM.PlugIn(; altName = p.altName, setMode = p.setMod
         @test isempty(GM.readAltValuesEvals(r1.altValues_evals))               # the delivered part carries no rows on the refusal path (REAL-1 R2 #9; measured: rows 0)
         @test !isempty(r1.diagnostics)                                         # non-OK ⇒ non-empty diagnostics (measured: 1, :POST_SEAL_MUTATION)
         # (cure batch 1; T2-bis) a mutated DERIVED table — the declared record untouched — is
-        # refused too: every table is a walked snapshot field (the CRX after-T2 breaker's
-        # `action_to_settribute[:hide] = :show` attack fires at the entry's element path)
-        R2 = GM.publish(GM.default_registry_builder())
-        R2.action_to_settribute[:hide] = :show
-        d2 = GM._registry_door_check(R2)
-        @test _codes(d2) == [:POST_SEAL_MUTATION] && occursin("action_to_settribute", d2[1].message)
+        # refused too: every table is a walked snapshot field (the CRX after-T2 breaker's attack on the write-back
+        # table left with that table at stage 5's E12 of the v0.4 build — census row 45; the action index carries the case)
         R3 = GM.publish(GM.default_registry_builder())
         R3.action_index[:hide] = Int8(3)
         @test _codes(GM._registry_door_check(R3)) == [:POST_SEAL_MUTATION]
@@ -133,10 +129,10 @@ _plugin_with_default(p, d) = GM.PlugIn(; altName = p.altName, setMode = p.setMod
         # attack: copying DEFAULT_REGISTRY.seal onto hand-built tables)
         D = GM.DEFAULT_REGISTRY
         @test_throws MethodError GM.AlterantRegistry(D.plugins, D.sorted_alt_actions, D.action_to_plugin,
-            D.action_index, D.alt_index, D.accum_alt_idxs, D.mutex_alt_idxs, D.action_to_settribute,
+            D.action_index, D.alt_index, D.accum_alt_idxs, D.mutex_alt_idxs,
             D.action_specs, D.spec_index, D.seal)
         @test_throws MethodError GM.AlterantRegistry(D.plugins, D.sorted_alt_actions, D.action_to_plugin,
-            D.action_index, D.alt_index, D.accum_alt_idxs, D.mutex_alt_idxs, D.action_to_settribute,
+            D.action_index, D.alt_index, D.accum_alt_idxs, D.mutex_alt_idxs,
             D.action_specs, D.spec_index, D.seal, D._snapshot)   # (T2-bis: the second named exception — the field is `_snapshot` now)
         # the injective slot encoding (cure batch 1): a re-cut vector boundary no longer collides
         @test GM._slot_text([Symbol("a,b")]) != GM._slot_text([:a, :b])
@@ -171,7 +167,7 @@ _plugin_with_default(p, d) = GM.PlugIn(; altName = p.altName, setMode = p.setMod
         badp = copy(D.plugins); badp[2] = _plugin_with_default(badp[2], GM.Declared(1:3))
         bad_idx = copy(D.action_index); bad_idx[:hide] = Int8(99)
         e = try GM.AlterantRegistry(badp, D.sorted_alt_actions, D.action_to_plugin, bad_idx, D.alt_index,
-                                    D.accum_alt_idxs, D.mutex_alt_idxs, D.action_to_settribute,
+                                    D.accum_alt_idxs, D.mutex_alt_idxs,
                                     D.action_specs, D.spec_index); nothing catch err; err end
         @test e isa GM.RegistrationRefused
         @test _errors(e.diagnostics) == [:REG_PROTOCOL, :REG_DERIVED_TABLES]
@@ -183,12 +179,11 @@ _plugin_with_default(p, d) = GM.PlugIn(; altName = p.altName, setMode = p.setMod
         Rc = GM.publish(bc)
         rc = GM.goMeta(Vector{UInt8}(codeunits("x = 1\n#~ :label1\n\ny = 2\n")); registry = Rc)
         @test rc.status === GM.PROCESS_OK && !isempty(Main.BasicRenderer.outputs(rc).render_bytes)
-        # (cure batch 3; re-cut at stage 5's E4 — the shadow law left) a Visib record declaring NO write-back
-        # key PUBLISHES; the driver's `get(action_to_settribute, …)` guard carries the run (measured:
-        # PROBES-e4-validate_stage1-src-cut [5] — PROCESS_OK)
+        # (cure batch 3; re-cut at stage 5's E4 — the shadow law left; re-cut again at stage 5's E12 of the v0.4 build,
+        # census row 45 — the write-back key is gone from the record) a re-built Visib record PUBLISHES and runs
         bv = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
         h = bv.action_specs[2]
-        bv.action_specs[2] = GM.ActionSpec(; name = :hide, plugin = Int8(2), settribute = nothing)
+        bv.action_specs[2] = GM.ActionSpec(; name = :hide, plugin = Int8(2))
         Rv = GM.publish(bv)
         @test Rv isa GM.AlterantRegistry
         @test GM.goMeta(Vector{UInt8}(codeunits("x = 1\n#~ hide\n\ny = 2\n")); registry = Rv).status === GM.PROCESS_OK
@@ -327,7 +322,7 @@ _plugin_with_default(p, d) = GM.PlugIn(; altName = p.altName, setMode = p.setMod
     @testset "full collection at the ENTRY: config + registry diagnostics in ONE result" begin
         D = GM.DEFAULT_REGISTRY
         U = GM.AlterantRegistry(D.plugins, D.sorted_alt_actions, D.action_to_plugin, D.action_index,
-                                D.alt_index, D.accum_alt_idxs, D.mutex_alt_idxs, D.action_to_settribute,
+                                D.alt_index, D.accum_alt_idxs, D.mutex_alt_idxs,
                                 D.action_specs, D.spec_index)
         r = GM.goMeta(Vector{UInt8}(codeunits("x = 1\n")); config = GM.GoMetaConfig(profile = :nope), registry = U)
         @test r.status === GM.PROCESS_ERROR

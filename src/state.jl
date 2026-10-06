@@ -13,7 +13,7 @@
 #     fallBack levels — the user level is the reserved slot that `GoMetaConfig.user_mh_profile`
 #     seeds; docs/public-api.md §2); `PlugIn`; `AlterantRegistry` with
 #     `num_alterants` / `num_alt_actions` (4 alterants / 8 actions since the heading registration,
-#     incl. the generic action → settribute write-back table); `MetaHierarchyState`; `AlterantQueue`;
+#     the generic action → settribute write-back table left at stage 5's E12 — census row 45); `MetaHierarchyState`; `AlterantQueue`;
 #     `ProcessState`; `GoMetaDelivery`; the `STATE` ScopedValue + `ctx()`; `init_state`;
 #     `snapshot_settribute!`; `get_state`; the v0.4 record SLOTS + the registration LIFECYCLE types.
 # REASONING: every mutable container lives in one per-call `ProcessState`, so two concurrent
@@ -98,7 +98,7 @@ const fallBackMHIdx = maxDepthMH + 3   # 12 == NUM_MH_LEVELS — the fallBack le
 
 # --- the v0.4 registration-record SLOTS (the Stage-A T1 schema extension) ---------------------------
 # IS: the DECLARED data slots the v0.4 record carries (the architecture chapter's sec 2.a, slots
-#     (1)–(3) of its ten): the per-action settribute mapping · the capture declaration · the presence-typed
+#     (1)–(3) of its ten): the per-action settribute mapping (left at stage 5's E12 — census row 45) · the capture declaration · the presence-typed
 #     explicit default. The other seven — the render-plane data, the constraint rows, the contributed condition
 #     atoms, the identity/contract/requires, the sugar rows, the schema-versioned provenance group and the RESERVED
 #     permissions manifest — left at stage 5's E10 of the v0.4 build (census rows 24 and 29; his §317 mark, R-V04B-105).
@@ -222,7 +222,9 @@ PlugIn(; altName::Symbol, setMode::Symbol, altConstructor::Type, setAltInstance:
 The DECLARED per-action registration record: action `name` + the owning `plugin` index + the CAPABILITIES
 (`accepts_string_slot` — 0 = no String literal slot; N = the accepting literal-slot position, retiring the
 former name literals at the absorb seams) + the `validate` slot (Alterant-owned handover validation; `nothing`
-when absent) + the declared `settribute` write-back key. The per-overload rows (`ActionOverload`) left the record at stage 5's E11 of
+when absent). The declared `settribute` write-back key left the record at stage 5's E12 of the v0.4 build (census row 45 — his §317 mark and his
+§319 order; his legacy wrote the Visib flag into the Component directly, GoMeta.jl :103–:110, and v0.4 writes nothing back since stage 3's commit 4:
+the Engine's answer is `evaluatedAltValue`). The per-overload rows (`ActionOverload`) left the record at stage 5's E11 of
 the v0.4 build with the `spelling` tag, the `sugar_candidacy` grant register and the reserved `keyed_slot` (census row 16 — his §317
 mark; his legacy registered an action by its name and let Julia dispatch do the rest): the setter's methods ARE the action's forms.
 The v0.3.2 positional constructor left with them (census row 65, R-V04B-61 — clean cuts, no leftovers of an older version); the
@@ -233,14 +235,11 @@ struct ActionSpec
     plugin::Int8
     accepts_string_slot::Int
     validate::Union{Nothing,Function}
-    # --- the v0.4 declared per-action slot (T1; the per-action default of T1 GAVE WAY to the Alterant's at stage 2's commit 3-ii) ---
-    settribute::Union{Nothing,Symbol} # slot (1): the settribute key this action's applied value
-                                      #   writes back to (`nothing` = no write-back); the registry's
-                                      #   generic `action_to_settribute` table is DERIVED from these
+    # (the v0.4 T1 slot (1), the per-action settribute write-back key, left at stage 5's E12 of the v0.4 build — census row 45)
 end
 "The keyword form of the per-action record — the one form since stage 5's E11 of the v0.4 build (census rows 16 and 65)."
-ActionSpec(; name::Symbol, plugin::Int8, accepts_string_slot::Int = 0, validate = nothing, settribute = nothing) =
-    ActionSpec(name, plugin, accepts_string_slot, validate, settribute)
+ActionSpec(; name::Symbol, plugin::Int8, accepts_string_slot::Int = 0, validate = nothing) =
+    ActionSpec(name, plugin, accepts_string_slot, validate)
 
 """
     _SealToken
@@ -257,12 +256,12 @@ struct _SealToken end
     _SNAPSHOT_FIELDS
 
 The registry fields the T2-bis snapshot door walks (T2BIS-DESIGN §1): the declared record
-(`plugins`, `action_specs`) + the eight derived tables + the published `seal` fingerprint
+(`plugins`, `action_specs`) + the seven derived tables (eight before stage 5's E12 — census row 45) + the published `seal` fingerprint
 string. The `_snapshot` field itself is NEVER walked (no recursion into the baseline). A
 seal-only divergence fires at path `seal` — what the retired re-mint used to catch.
 """
 const _SNAPSHOT_FIELDS = (:plugins, :sorted_alt_actions, :action_to_plugin, :action_index,
-                          :alt_index, :accum_alt_idxs, :mutex_alt_idxs, :action_to_settribute,
+                          :alt_index, :accum_alt_idxs, :mutex_alt_idxs,
                           :action_specs, :spec_index, :seal)
 
 """
@@ -282,9 +281,8 @@ Fields (declaration-order indices: `labels=1, Visib=2, id=3, heading=4` — the 
   within-slot first-applicable stop); `:mutExclusivePerField` plugins — the `id` compound, whose
   fields fill independently — deliberately sit in NEITHER set. `build_default_registry` MUST sort
   both.
-- `action_to_settribute` — the GENERIC action → `ComponentSettribute`-key write-back table, DERIVED
-  from the declared per-action `settribute` slots (v0.4 T1; formerly the Alterant-named
-  `visib_to_settribute` — the rename is a registered breaking change with no forwarding window).
+- (the generic action → settribute write-back table of v0.4 T1 left at stage 5's E12 of the v0.4 build — census row 45; it had read
+  by nothing since stage 3's commit 4.)
 
 REASONING: `DEFAULT_REGISTRY` is read-only after construction: its `Dict`/`Vector` fields are mutable
 containers, and mutating any of them post-construction breaks the determinism guarantee.
@@ -297,7 +295,6 @@ struct AlterantRegistry
     alt_index::Dict{Symbol,Int8}
     accum_alt_idxs::Vector{Int8}
     mutex_alt_idxs::Vector{Int8}
-    action_to_settribute::Dict{Symbol,Symbol}   # v0.4 T1: generic, derived from declarations
     # v0.2 registration build: the DECLARED registration record — one ActionSpec per
     # registered action, DECLARATION order (the parallel derived tables above stay
     # the hot-path lookups; the record is the authority — the author's statement since stage 5's E4).
@@ -313,7 +310,7 @@ struct AlterantRegistry
     # the algorithm-tagged registration digest over every declared slot (the source digests and the
     # policy identity left with the security frame at stage 5's E10), with its disclosed collisions (docs/public-api.md §1.2).
     seal::Union{Nothing,String}
-    # v0.4 T2-bis (R-V04B-4 (c+)) — THE SNAPSHOT BASELINE: a deep domain-copy of the eleven
+    # v0.4 T2-bis (R-V04B-4 (c+)) — THE SNAPSHOT BASELINE: a deep domain-copy of the ten (eleven before stage 5's E12 — census row 45)
     # `_SNAPSHOT_FIELDS` values taken at publish (leaves — callables/Types/Symbols/Strings/
     # VersionNumbers/numbers — carried by reference; containers rebuilt at their exact concrete
     # types). The door compares the live fields against it by the ONE structural deep-egal walk
@@ -333,7 +330,7 @@ struct AlterantRegistry
     # authority, OUTSIDE the trust model by the security frame's bound B-2 ("no in-process
     # arrangement in Julia constrains a loaded module"). Every integrity claim of this type is
     # accident-grade: typed refusal of post-seal mutation by CONFORMING code, never security-grade.
-    # T2-bis FORM (T2BIS-DESIGN §5): the eight derived tables enter BY NAME as ONE NamedTuple
+    # T2-bis FORM (T2BIS-DESIGN §5): the seven derived tables (eight before stage 5's E12) enter BY NAME as ONE NamedTuple
     # argument, destructured by field name HERE — the one reviewed destructuring site. No
     # hand-written table binding exists at any seal/snapshot-carrying call site, so the two
     # same-typed groups (`action_index`/`alt_index`; `action_to_plugin`/`accum_alt_idxs`/
@@ -342,13 +339,13 @@ struct AlterantRegistry
                               action_specs::Vector{ActionSpec}, t::NamedTuple,
                               seal::Union{Nothing,String}, snapshot::Union{Nothing,NamedTuple})
         new(plugins, t.sorted_alt_actions, t.action_to_plugin, t.action_index, t.alt_index,
-            t.accum_alt_idxs, t.mutex_alt_idxs, t.action_to_settribute, action_specs,
+            t.accum_alt_idxs, t.mutex_alt_idxs, action_specs,
             t.spec_index, seal, snapshot)
     end
 end
 """
     AlterantRegistry(plugins, sorted_alt_actions, action_to_plugin, action_index, alt_index,
-                     accum_alt_idxs, mutex_alt_idxs, action_to_settribute, action_specs, spec_index)
+                     accum_alt_idxs, mutex_alt_idxs, action_specs, spec_index)
 
 ROUTE U — positional construction from hand-built tables — is GATED at v0.4.0 (the route-U cure:
 every public construction route runs the remaining checks; removal = v0.5): they run over
@@ -364,7 +361,7 @@ token form is reachable by any loaded module — accident-grade, B-2).
 function AlterantRegistry(plugins::Vector{PlugIn}, sorted_alt_actions::Vector{Symbol},
                           action_to_plugin::Vector{Int8}, action_index::Dict{Symbol,Int8},
                           alt_index::Dict{Symbol,Int8}, accum_alt_idxs::Vector{Int8},
-                          mutex_alt_idxs::Vector{Int8}, action_to_settribute::Dict{Symbol,Symbol},
+                          mutex_alt_idxs::Vector{Int8},
                           action_specs::Vector{ActionSpec}, spec_index::Dict{Symbol,Int})
     diags = _validate_registration(plugins, action_specs)
     derived = try _derive_tables(plugins, action_specs) catch; nothing end   # a structurally broken
@@ -375,7 +372,6 @@ function AlterantRegistry(plugins::Vector{PlugIn}, sorted_alt_actions::Vector{Sy
             derived.alt_index == alt_index &&
             derived.accum_alt_idxs == accum_alt_idxs &&
             derived.mutex_alt_idxs == mutex_alt_idxs &&
-            derived.action_to_settribute == action_to_settribute &&
             derived.spec_index == spec_index ||
             push!(diags, Diagnostic(:REG_DERIVED_TABLES, :error,
                 "GoMeta registry: positional construction supplied derived tables that do not " *
@@ -496,6 +492,17 @@ function Base.showerror(io::IO, e::RegistrationRefused)
 end
 "The number of registered alterant actions (8 since CH-3 step 9; 7 before the heading registration)."
 num_alt_actions(r::AlterantRegistry) = length(r.sorted_alt_actions)
+"""
+    queryable_action(r::AlterantRegistry, key::Symbol) -> Bool
+
+TRUE iff `key` is a registered action of an Alterant that ANSWERS queries (its record declares `getAltInstance`). A condition's
+bare name is a settribute key, or a queryable action, or it meets the usual unknown-key refusal — stage 5's E12 of the v0.4 build
+(census row 45): the owner's R-V04B-99 delivered by this one rule (the three Visib names, no longer settribute keys, are the actions
+of a getter-less Alterant — as are Id's and the Heading's). The rule is the registry's, not the condition interpreter's, so it
+outlives E13.
+"""
+queryable_action(r::AlterantRegistry, key::Symbol)::Bool =
+    insorted(key, r.sorted_alt_actions) && r.plugins[r.action_to_plugin[r.action_index[key]]].getAltInstance !== nothing
 
 # --- the per-call mutable state ----------------------------------------------------------------------
 """

@@ -48,7 +48,7 @@ end
         b = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
         s = b.action_specs[8]
         b.action_specs[8] = GM.ActionSpec(; name = s.name, plugin = s.plugin,
-            accepts_string_slot = s.accepts_string_slot, validate = validatefn, settribute = s.settribute)
+            accepts_string_slot = s.accepts_string_slot, validate = validatefn)
         return b
     end
     _drive(doc, R) = try

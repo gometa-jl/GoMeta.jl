@@ -208,17 +208,17 @@ end
     cond_atom_for(key::Symbol, registry) -> CondStateAtom | CondQueryAtom | Diagnostic
 
 Build ONE closed atom from a bare vocabulary key, applying the same closed-vocabulary rule
-the scanner applies (settribute state-ref | registered alterant action | typed refusal).
+the scanner applies (settribute state-ref | queryable alterant action — `queryable_action`, stage 5's E12 | typed refusal).
 Exposed so an opt-in mode maps its own parse result onto the SAME closed algebra — an
 opt-in widens which TEXT is accepted, never which atoms exist or what evaluation may do.
 """
 function cond_atom_for(key::Symbol, registry::AlterantRegistry)
     key ∈ keys(BLS.ComponentSettribute) && return CondStateAtom(key)
-    insorted(key, registry.sorted_alt_actions) &&
+    queryable_action(registry, key) &&   # stage 5's E12 (census row 45): a getter-less Alterant's action is no condition key — R-V04B-99
         return CondQueryAtom(registry.action_to_plugin[registry.action_index[key]], key, Any[])
     return _cond_refusal(:ERR_UNKNOWN_CONDITION_KEY,
         "GoMeta absorb: unknown condition key " * repr(first(String(key), 40)) *
-        " — neither a component state-ref nor a registered alterant action; " *
+        " — neither a component state-ref nor a queryable alterant action; " *
         "v0's closed condition vocabulary (see docs/public-api.md §3.4)")
 end
 
@@ -228,10 +228,10 @@ end
 Build ONE closed query atom with literal arguments (the same closed vocabulary rule).
 """
 function cond_query_for(action::Symbol, args::Vector{Any}, registry::AlterantRegistry)
-    insorted(action, registry.sorted_alt_actions) ||
+    queryable_action(registry, action) ||   # stage 5's E12 (census row 45): the same rule at the opt-in seam
         return _cond_refusal(:ERR_UNKNOWN_CONDITION_KEY,
             "GoMeta absorb: unknown condition key " * repr(first(String(action), 40)) *
-            " — neither a component state-ref nor a registered alterant action; " *
+            " — neither a component state-ref nor a queryable alterant action; " *
             "v0's closed condition vocabulary (see docs/public-api.md §3.4)")
     return CondQueryAtom(registry.action_to_plugin[registry.action_index[action]], action, args)
 end
@@ -472,7 +472,7 @@ function _scan_condition(text::String, registry::AlterantRegistry, profile::Gram
                     # settribute atom's parenthesized args leak into the next parenless query
                     # atom, exactly as the engine's scanner leaves its argument buffer.
                     push!(toks, _atom_tok(CondStateAtom(keySymbol), indStartKey))
-                elseif insorted(keySymbol, registry.sorted_alt_actions)
+                elseif queryable_action(registry, keySymbol)   # stage 5's E12 (census row 45): R-V04B-99 by the registry's one rule
                     plugin = registry.action_to_plugin[registry.action_index[keySymbol]]
                     args = have_pending ? pending_args : Any[]
                     pending_args = Any[]
@@ -482,7 +482,7 @@ function _scan_condition(text::String, registry::AlterantRegistry, profile::Gram
                     _refuse(:ERR_UNKNOWN_CONDITION_KEY,
                         "GoMeta absorb: unknown condition key " *
                         repr(first(String(text[indStartKey:indEndKey]), 40)) *
-                        " — neither a component state-ref nor a registered alterant action; " *
+                        " — neither a component state-ref nor a queryable alterant action; " *
                         "v0's closed condition vocabulary (see docs/public-api.md §3.4)")
                 end
             end

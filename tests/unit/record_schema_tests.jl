@@ -3,9 +3,9 @@
 # IS:   the unit witnesses of the T1 schema extension — the declared slots ride the record (seven of the ten
 #       left at stage 5's E10 of the v0.4 build — census rows 24 and 29, OWNER-WORDS §317; the record keeps eight fields)
 #       nothing/empty-defaulted; the v0.3.2 positional constructors left at stage 5's E11 of the v0.4 build (census row 65 — the keyword form is the one form; the former additive-extension
-#       law); the generic `action_to_settribute` table DERIVES from the declared per-action
-#       `settribute` slots (the Alterant-named `visib_to_settribute` field and the `===` alias
-#       `VISIB_TO_SETTRIBUTE` are GONE); the closed enums of the two slots that remain (their record-shape refusals left at
+#       law); the generic `action_to_settribute` table and the per-action `settribute` slot it derived from LEFT at stage 5's E12
+#       of the v0.4 build (census row 45 — his §317 mark; the Alterant-named `visib_to_settribute` field and the `===` alias
+#       `VISIB_TO_SETTRIBUTE` were already GONE); the closed enums of the two slots that remain (their record-shape refusals left at
 #       stage 5's E4 of the v0.4 build; the enums of the seven other slots went with those slots at E10);
 #       the registration digest's fold COVERS the new slots (flipped at T2 when the publication seal
 #       was minted — at T1 this file witnessed the fold's blindness by name, as the T2 flip target).
@@ -50,24 +50,17 @@ import GoMeta as GM
         p = GM.PlugIn(; altName = :zz, setMode = :accumulate, altConstructor = Dict{Symbol,Bool},
                         setAltInstance = identity, capture = cap)
         @test p.capture === cap
-        s = GM.ActionSpec(; name = :zzh, plugin = Int8(1), settribute = :zzh)
-        @test s.settribute === :zzh
+        s = GM.ActionSpec(; name = :zzh, plugin = Int8(1))
+        @test !hasfield(GM.ActionSpec, :settribute)   # stage 5's E12 of the v0.4 build (census row 45): the write-back key left the record
     end
 
-    @testset "the generic action_to_settribute table derives from declarations" begin
+    @testset "the write-back declarations LEFT the record, the registry and BLS (stage 5's E12, census row 45; R-V04B-99)" begin
         R = GM.DEFAULT_REGISTRY
-        @test R.action_to_settribute == Dict(:hide => :hide, :show => :show, :discard => :discard)
-        # every table entry is a DECLARED datum on its spec; every non-declaring spec is absent
-        for s in R.action_specs
-            if s.settribute === nothing
-                @test !haskey(R.action_to_settribute, s.name)
-            else
-                @test R.action_to_settribute[s.name] === s.settribute
-            end
-        end
+        @test !hasfield(GM.AlterantRegistry, :action_to_settribute)   # the derived table left at stage 5's E12 — nothing had read it since stage 3's commit 4
         @test !hasfield(GM.AlterantRegistry, :visib_to_settribute)
         @test !isdefined(GM, :VISIB_TO_SETTRIBUTE)
         @test !hasfield(GM.ActionSpec, :default)   # stage 2's commit 3-ii: the per-action slot of T1 GAVE WAY to the Alterant's (R-V04B-51)
+        @test all(k -> k ∉ keys(GM.BLS.ComponentSettribute), (:hide, :show, :discard))   # the three names left BLS's record — necessary, not sufficient: R-V04B-99 rides on this TOGETHER WITH the registry's queryable_action rule (the names out alone left `{show}` accepted — PROBES-e12-edges-AFTER_59d7558.txt)
         # stage 2's commit 3 (R-V04B-51 (1)–(2); R-V04B-55 (1)): the default is the ALTERANT's — Visib declares 'show'; the
         # others declared on his word at stage 2's review (card C2, R-V04B-92, 2026-10-02): Labels the empty set, Heading none, Id the zero compound
         @test R.plugins[R.alt_index[:Visib]].default === GM.Declared(:show)
@@ -82,15 +75,16 @@ import GoMeta as GM
     @testset "the registration digest COVERS the new slots (flipped at T2 — the seal covers the record)" begin
         # WITNESS, flipped at T2 as registered at T1: at T1 the fold read the v0.3.2 fields only
         # (this assertion was `==`); T2 extended the fold over every declared slot so the HC-9 seal
-        # covers the record — a declared default or write-back key now MOVES the digest. The
+        # covers the record — a declared default or an accepting-slot change now MOVES the digest (the write-back
+        # key left the record at stage 5's E12 of the v0.4 build — census row 45: the FIFTEENTH re-mint). The
         # profile's bootstrap registration pin re-minted with it (profile_snapshot_tests.jl,
         # disclosed old → new); the grammar pin did not move.
         specs = GM.DEFAULT_REGISTRY.action_specs
         alt = copy(specs)
         i = findfirst(s -> s.name === :hide, alt)
         h = alt[i]
-        alt[i] = GM.ActionSpec(; name = h.name, plugin = h.plugin, accepts_string_slot = h.accepts_string_slot,
-                                 validate = h.validate, settribute = :elsewhere)
+        alt[i] = GM.ActionSpec(; name = h.name, plugin = h.plugin, accepts_string_slot = h.accepts_string_slot + 1,
+                                 validate = h.validate)
         @test GM._registration_digest(alt) != GM._registration_digest(specs)   # flipped at T2 (was ==)
     end
 end

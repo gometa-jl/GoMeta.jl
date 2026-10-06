@@ -77,3 +77,19 @@ end
         @test o1 == o2
     end
 end
+
+@testset "retired condition keys refuse as unknown (R-V04B-99; stage 5's E12 of the v0.4 build, census row 45)" begin
+    # his word (OWNER-WORDS §310 (2.3)): the three Visib names are no condition keys — "Just the usual error / refusal message."
+    # MEASURED before E12 (receipts/S8-branch/PROBES-e12-edges-BEFORE_8c65a105.txt in the build record): `#~ hide{ show }` was PROCESS_OK
+    # with 0 evals rows — the key accepted and silently false. The three names left BLS's ComponentSettribute at E12 — necessary, NOT
+    # sufficient: with the names out of BLS alone `#~ hide{ show }` was STILL PROCESS_OK (PROBES-e12-edges-AFTER_59d7558.txt — the intake
+    # read `show` as a registered ACTION); the registry's `queryable_action` rule (src/state.jl) refuses a getter-less Alterant's action,
+    # so the EXISTING unknown-condition-key refusal names them now. The control: a live settribute key applies.
+    for k in ("show", "hide", "discard")
+        e = _cc_refusal(_cc_mk(k))
+        @test e isa ErrorException
+        @test occursin("unknown condition key \"$k\"", e.msg)
+    end
+    r = GM.goMeta(_cc_mk("isCode"))
+    @test r.status === GM.PROCESS_OK && _cc_hidden(r)
+end
