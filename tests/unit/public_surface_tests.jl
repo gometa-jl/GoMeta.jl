@@ -66,15 +66,15 @@ import TOML
                          # BLS Component tree through the door (`BLS.content`), never from the Engine; the register row in docs/public-api.md §6.
                          # 44 → 38 at stage 5's E9 of the v0.4 build (census rows 10, 28, 55; R-V04B-105): the three vocabulary slot types and the
                          # G-VOC query triple REMOVED with the Labels vocabulary machinery — the 38 names a plain file; the register row in docs/public-api.md §6.
+                         # 38 → 29 at stage 5's E10 of the v0.4 build (census rows 24 and 29; R-V04B-105): the nine slot types of the carried
+                         # declarations and the security frame REMOVED with the record's eight fields; the register row in docs/public-api.md §6.
                          :RegistryBuilder, :register!, :next_plugin_index, :validate, :publish, :RegistrationRefused,
-                         :Alterant, :PlugIn, :ActionSpec, :ActionOverload, :DomainRef, :CaptureDecl, :DefaultSlot,
-                         :NoDefault, :Declared, :EffectRow, :RenderDecl,
-                         :MutEx, :ConditionAtom, :SugarRow,
-                         :Provenance, :SignatureRecord, :PermissionManifest,
+                         :Alterant, :PlugIn, :ActionSpec, :ActionOverload, :CaptureDecl, :DefaultSlot,
+                         :NoDefault, :Declared,
                          :BLS,   # 40 since stage 2's commit 0: the parser module `BLS`, R-V04B-58
                          :evaluatedAltValue, :EvaluatedAltValue,   # 42 since stage 2's commit 4: THE ONE ANSWER FUNCTION and its record, R-V04B-35 (c)
                          :scanAlterant, :evaluatedAltValues,   # 44 since stage 2's commit 5: the scan by Alterant and the access by Component, his §6 9.A
-                         :childDiffers]   # mirrors docs/public-api.md §1.2 EXACTLY (38 since stage 5's E9; 44 since stage 2's commit 9b: `content_fingerprint` removed, R-V04B-43 (1); 45 since commit 6: the child-differs signal, R-V04B-35 (e))
+                         :childDiffers]   # mirrors docs/public-api.md §1.2 EXACTLY (29 since stage 5's E10; 38 since stage 5's E9; 44 since stage 2's commit 9b: `content_fingerprint` removed, R-V04B-43 (1); 45 since commit 6: the child-differs signal, R-V04B-35 (e))
 
     @testset "export set is EXACTLY the declared semver surface" begin
         live = setdiff(Set(names(GM)), Set([:GoMeta]))     # names() on Julia ≥1.11 == exported ∪ `public` (+ the module name)

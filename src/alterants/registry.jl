@@ -711,13 +711,9 @@ function _registration_digest(action_specs::Vector{ActionSpec};
             "prec", _slot_text(p.precedencesTuple),
             # stage 2's commit 3 — the Alterant's ONE declared default joins the seal (R-V04B-51 (1))
             "default", _slot_text(p.default),
-            # v0.4 T2 — every declared per-Alterant slot joins the fold: the seal (HC-9) covers the
-            # record + the declared source digests + policy_id.
-            "capture", _slot_text(p.capture), "render", _slot_text(p.render),
-            "constraints", _slot_text(p.constraints),
-            "atoms", _slot_text(p.atoms), "contract", _slot_text(p.contract_version),
-            "requires", _slot_text(p.requires), "sugar", _slot_text(p.sugar),
-            "provenance", _slot_text(p.provenance), "permissions", _slot_text(p.permissions))
+            # v0.4 T2 — the declared capture slot joins the fold (the seal covers the record; the seven other
+            # declared slots of T1 left the record at stage 5's E10 of the v0.4 build — the twelfth re-mint)
+            "capture", _slot_text(p.capture))
     end
     return h
 end
@@ -768,8 +764,8 @@ _slot_text(x::Number)::String = throw(_UnencodableSlot(typeof(x)))
 _slot_text(x::VersionNumber)::String = string("v", _ns(string(x)))
 _slot_text(x::Type)::String = string("t", _ns(_type_text(x)))
 # (cure batch 5) DATA SLOTS HOLD DATA: a `Function` encodes by NAME only in the DESIGNATED callable
-# fields (setter/getter/evaluate/validate — each a snapshot leaf the door compares by `===`);
-# inside a declared DATA value (`Declared.value`, `EffectRow.payload`, any container in them) a
+# fields (setter/getter/validate — each a snapshot leaf the door compares by `===`);
+# inside a declared DATA value (`Declared.value`, any container in it) a
 # same-named function from another module would be invisible to the fingerprint AND, were it not
 # refused, indistinguishable in the fold, so a function there is UNENCODABLE (refused at
 # validation; the snapshot door would separately fire on the identity move).
@@ -834,24 +830,10 @@ _slot_text(nt::NamedTuple)::String =
 _slot_text(x::NoDefault)::String = "NoDefault"
 _slot_text(x::Declared)::String =
     Base.ScopedValues.with(_IN_DATA => true) do; string("Declared", _ns(_slot_text(x.value))) end
-_slot_text(x::DomainRef)::String = string("DomainRef", _nsv((_slot_text(x.artifact), x.digest)))
 _slot_text(x::CaptureDecl)::String =   # v0.4 T5: the stem joins the seal (the SEVENTH re-mint's locus — without it two registries differing only in stem would seal identically)
     string("Capture", _nsv((_type_text(x.instance_type), String(x.attr_scheme), String(x.multiplicity), _slot_text(x.mode_gate), _slot_text(x.attr_stem))))
-_slot_text(x::EffectRow)::String =
-    Base.ScopedValues.with(_IN_DATA => true) do; string("Effect", _nsv((String(x.kind), _slot_text(x.payload)))) end
-_slot_text(x::RenderDecl)::String =
-    string("Render", _nsv((_slot_text(x.effects), _slot_text(x.resolve_order), _slot_text(x.materialize))))
-_slot_text(x::MutEx)::String = string("MutEx", _ns(_slot_text(x.actions)))
-_slot_text(x::ConditionAtom)::String =
-    string("Atom", _nsv((String(x.name), _slot_text(x.print_spelling), _slot_text(x.evaluate))))
-_slot_text(x::SugarRow)::String = string("Sugar", _nsv((String(x.pattern), String(x.action), _slot_text(x.mode_gate))))
-_slot_text(x::SignatureRecord)::String =
-    string("Sig", _nsv((_slot_text(x.algorithm), _slot_text(x.key_id), _slot_text(x.signature))))
-_slot_text(x::PermissionManifest)::String = string("Perm", _nsv((_slot_text(x.seam), _slot_text(x.ambient))))
-_slot_text(x::Provenance)::String = string("Prov",
-    _nsv(string(_ns(String(f)), _ns(_slot_text(getfield(x, f)))) for f in fieldnames(Provenance)))
 # (cure batch 4) NO opaque fallback: a value of a type without an encoder is UNENCODABLE — refused
-# at validation as `REG_PROTOCOL`; a payload type T10 admits gets its own encoder then.
+# at validation as `REG_PROTOCOL`; a value type a later cure admits gets its own encoder then.
 _slot_text(x)::String = throw(_UnencodableSlot(typeof(x)))
 
 ## ————————————————————————————————————————————————————————————————————————————————————————
@@ -903,13 +885,12 @@ _domain_leaf(x)::Bool =
     x isa Function || x isa Type || x isa Symbol || x === nothing || x isa String ||
     x isa VersionNumber || _numeric_leaf(x)
 
-## the per-record explicit field lists — 17/9/10 (the Alterant's default slot since stage 2's commit 3; the action's gone since 3-ii), each asserted against the compiler at
+## the per-record explicit field lists — 8/9/10 (the Alterant's default slot since stage 2's commit 3; the action's gone since 3-ii; eight since stage 5's E10), each asserted against the compiler at
 ## load (T2BIS-DESIGN §15 (7)); the three record structs are POSITION-RESTRICTED walker
 ## containers (elements of `plugins`/`action_specs`; `ActionOverload` inside
 ## `ActionSpec.overloads`) and are REFUSED anywhere else, declared data included.
 const _WALK_PLUGIN_FIELDS = (:altName, :setMode, :altConstructor, :setAltInstance,
-    :getAltInstance, :precedencesTuple, :default, :capture, :render, :constraints, :atoms,
-    :contract_version, :requires, :sugar, :provenance, :permissions)
+    :getAltInstance, :precedencesTuple, :default, :capture)
 @assert _WALK_PLUGIN_FIELDS == fieldnames(PlugIn)
 const _WALK_ACTION_FIELDS = (:name, :spelling, :plugin, :overloads, :accepts_string_slot,
     :sugar_candidacy, :validate, :keyed_slot, :settribute)
@@ -918,15 +899,11 @@ const _WALK_OVERLOAD_FIELDS = (:sig_types, :kinds, :kind_sources, :vararg_kind, 
     :effect, :queryable, :applicability, :phase, :grammar)
 @assert _WALK_OVERLOAD_FIELDS == fieldnames(ActionOverload)
 
-"The 12 record-reachable slot-struct types (walked field-wise GENERICALLY; rebuilt
-positionally at `typeof(x)`; the two vocabulary slot types left at stage 5's E9)."
-const _SLOT_STRUCTS = (DomainRef, CaptureDecl, NoDefault, Declared, EffectRow, RenderDecl,
-                       MutEx, ConditionAtom, SugarRow,
-                       SignatureRecord, PermissionManifest, Provenance)
-const _SLOT_STRUCT_UNION = Union{DomainRef, CaptureDecl, NoDefault, Declared, EffectRow,
-                                 RenderDecl, MutEx,
-                                 ConditionAtom, SugarRow, SignatureRecord,
-                                 PermissionManifest, Provenance}
+"The 3 record-reachable slot-struct types (walked field-wise GENERICALLY; rebuilt
+positionally at `typeof(x)`; the two vocabulary slot types left at stage 5's E9, the nine of the
+carried declarations and the security frame at stage 5's E10)."
+const _SLOT_STRUCTS = (CaptureDecl, NoDefault, Declared)
+const _SLOT_STRUCT_UNION = Union{CaptureDecl, NoDefault, Declared}
 const _RECORD_STRUCT_UNION = Union{PlugIn, ActionSpec, ActionOverload}
 
 # a VALUE-domain container at any position (the record structs are position-restricted and
@@ -1115,11 +1092,10 @@ end
 # two-predicate walk, emitting AT MOST ONE slot-named row — the FIRST failure on the
 # deterministic traversal (fields in listed order · Vector/Tuple by index · Pair
 # first/second · NamedTuple by name order · Dict per `_walk_dict_entries`). Work items are
-# `(value, pos, des, rk)`: `pos` ∈ (:structural, :data) — flipped at the two DATA loci
-# `Declared.value`/`EffectRow.payload` and never flipped back (DATA WINS —
-# `ConditionAtom.evaluate` nested in data is refused like any Function in data); `des` =
-# the value sits in a designated callable field (`setAltInstance`/`getAltInstance`/
-# `evaluate`/`validate`); `rk` = 0x02 for a Vector whose elements are admitted
+# `(value, pos, des, rk)`: `pos` ∈ (:structural, :data) — flipped at the ONE DATA locus
+# `Declared.value` and never flipped back (DATA WINS — a Function nested in data is refused);
+# `des` = the value sits in a designated callable field (`setAltInstance`/`getAltInstance`/
+# `validate`); `rk` = 0x02 for a Vector whose elements are admitted
 # `ActionOverload` records (the `overloads` slot only), 0x01 for such an element itself.
 # Cycle-guarded (visiting `IdSet`, push!/delete! bracketed) with a per-slot DONE-cache on
 # the mutable containers; `validate` NEVER throws.
@@ -1164,13 +1140,6 @@ function _domain_slot_probe!(diags::Vector{Diagnostic}, label::String, ctx, slot
             end
         elseif v isa Declared
             push!(work, (v.value, :data, false, 0x00))
-        elseif v isa EffectRow
-            push!(work, (v.payload, :data, false, 0x00))
-            push!(work, (v.kind, pos, false, 0x00))
-        elseif v isa ConditionAtom
-            push!(work, (v.evaluate, pos, pos === :structural, 0x00))
-            push!(work, (v.print_spelling, pos, false, 0x00))
-            push!(work, (v.name, pos, false, 0x00))
         elseif v isa _SLOT_STRUCT_UNION
             flds = fieldnames(typeof(v))
             for i in length(flds):-1:1
@@ -1487,10 +1456,6 @@ function _domain_copy(x, memo::IdDict{Any,Any};
                 end
                 if v isa Declared
                     fr.kpos[1] = :data
-                elseif v isa EffectRow
-                    fr.kpos[2] = :data                        # payload
-                elseif v isa ConditionAtom
-                    fr.kdes[3] = (vpos === :structural)       # evaluate — DATA WINS
                 end
             end
             push!(frames, fr)
@@ -1665,9 +1630,8 @@ function _egal_cmp(t::_EgalTask, work, guards)
             flds = fieldnames(typeof(a))
             for i in length(flds):-1:1
                 f = flds[i]
-                pos2 = ((a isa Declared && f === :value) || (a isa EffectRow && f === :payload)) ?
-                    :data : t.pos
-                des2 = a isa ConditionAtom && f === :evaluate && t.pos === :structural
+                pos2 = (a isa Declared && f === :value) ? :data : t.pos
+                des2 = false                               # no slot struct carries a designated callable since stage 5's E10
                 push!(work, _EgalTask(getfield(a, f), getfield(b, f), (t.path, f), pos2, des2, 0x00))
             end
         end
@@ -2009,7 +1973,7 @@ function _derive_tables(plugins::Vector{PlugIn}, action_specs::Vector{ActionSpec
     )
 end
 
-"The seal (HC-9): the algorithm-tagged registration digest over every declared slot + the declared source digests + policy_id."
+"The seal (HC-9): the algorithm-tagged registration digest over every declared slot (the source digests and the policy identity left with the security frame at stage 5's E10)."
 _mint_seal(plugins::Vector{PlugIn}, action_specs::Vector{ActionSpec})::String =
     string("fnv1a64:", string(_registration_digest(action_specs; plugins = plugins), base = 16, pad = 16))
 
@@ -2101,7 +2065,7 @@ post-seal mutation by conforming code. The retired seal re-mint, derived-table r
 and callable-identity compare lose no detection for conforming code (the field lists being
 COMPLETE): re-derivation is deterministic, so it never catches what the snapshot cannot; the
 same-typed table swap is excluded by §5's by-name construction; every callable identity —
-altConstructor, the setters/getters, `atom.evaluate`, `spec.validate` — is a snapshot leaf
+altConstructor, the setters/getters, `spec.validate` — is a snapshot leaf
 compared by `===`.
 """
 function _registry_door_check(registry::AlterantRegistry)

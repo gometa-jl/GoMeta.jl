@@ -158,15 +158,17 @@ include("childdiff.jl")             # stage 2's commit 6 (R-V04B-35 (e); the pla
 #   BLS Component tree through the door (`BLS.content`), never from the Engine; the register row in docs/public-api.md §6;
 #   THIRTY-EIGHT since stage 5's E9 of the v0.4 build (census rows 10, 28 and 55; R-V04B-105): the three vocabulary slot
 #   types and the G-VOC query triple REMOVED — the Labels vocabulary a plain file; the register row in docs/public-api.md §6;
+#   TWENTY-NINE since stage 5's E10 of the v0.4 build (census rows 24 and 29; R-V04B-105): the nine slot types of the carried
+#   declarations and the security frame REMOVED with the record's eight fields; the register row in docs/public-api.md §6;
 #   docs/public-api.md §1.2 is the mirror).
 # Qualified import (`import GoMeta as GM`) is UNAFFECTED by these exports and remains canonical for namespace
 # hygiene + multi-implementation use; exporting serves the single-implementation `using` convenience only.
 export goMeta, readAltValuesEvals, GoMetaConfig, GoMetaDelivery
 public serialize_evals, EvalRecord, EvalStore, ProcessStatus, PROCESS_OK, PROCESS_ERROR, Diagnostic, AlterantRegistry, DEFAULT_REGISTRY,
        RegistryBuilder, register!, next_plugin_index, validate, publish, RegistrationRefused,   # v0.4 T2: the registration lifecycle (docs/public-api.md §1.2)
-       Alterant, PlugIn, ActionSpec, ActionOverload, DomainRef, CaptureDecl, DefaultSlot, NoDefault, Declared,   # v0.4 T2 (cure batch 1) + the rename: the record
-       EffectRow, RenderDecl, MutEx, ConditionAtom,   #   VOCABULARY a third-party author
-       SugarRow, Provenance, SignatureRecord, PermissionManifest                                      #   constructs (docs/public-api.md §1.2; the three vocabulary slot types and the G-VOC triple left at stage 5's E9)
+       Alterant, PlugIn, ActionSpec, ActionOverload, CaptureDecl, DefaultSlot, NoDefault, Declared   # v0.4 T2 (cure batch 1) + the rename: the record
+                                                                                                  #   VOCABULARY a third-party author constructs (docs/public-api.md §1.2; the three vocabulary slot types and the G-VOC triple left at
+                                                                                                  #   stage 5's E9; the nine slot types of the carried declarations and the security frame at stage 5's E10 — census rows 24 and 29)
 public BLS   # stage 2's commit 0 of the v0.4 build (R-V04B-33/45/58): the parser module public by name — its door of travel / access functions declared INSIDE it (src/bls/BLS.jl; docs/public-api.md §1.2 + §6)
 public evaluatedAltValue, EvaluatedAltValue   # stage 2's commit 4 of the v0.4 build (R-V04B-35 (c)): THE ONE ANSWER FUNCTION and its record — package-public, NOT exported (docs/public-api.md §1.2; the register row §6); the name his word of 2026-10-03 (OWNER-WORDS §305; R-V04B-95); the tier carried past the branch (the review's C23)
 public scanAlterant, evaluatedAltValues   # stage 2's commit 5 of the v0.4 build (his §6 9.A; the plan :57): THE SCAN BY ALTERANT and THE ACCESS BY COMPONENT — package-public, NOT exported (docs/public-api.md §1.2; the register row §6); the names his word of 2026-10-03 (§305; R-V04B-95); the form — functions of their own — stands, its alternative (methods of the reader) banked

@@ -5,12 +5,12 @@
 # IS:   the membership witnesses over the plain file ([2] the set role refuses an unknown name; [3] the late-order name in
 #       both roles — the ∈-scan, never `insorted`), the zero-literal law in its DECIDABLE form ([10]: no Core literal of the
 #       names re-enters src outside alterants-std/), and the crx-t3t4 cure witnesses that live here by history ([11]'s A3,
-#       [12]–[18]: the zero-dispatch validate chain, the DomainRef read-once law, the identity/getfield hardening, the
+#       [12]–[18]: the zero-dispatch validate chain, the DomainRef read-once law ([14] — retired at stage 5's E10 with `DomainRef`), the identity/getfield hardening, the
 #       structural callable name, the String-only encoder, the getfield numeric leaf).
 # DOES: drives the shipped vocabulary through goMeta and the direct setter, publishes hostile builders through validate,
 #       and greps the src tree against the ENUMERATED survivor census.
 # PURPOSE: the T4 acceptance rows that survive E9 (the retired testsets, with their counts: [1] 2, [4] 2, [5] 3, [6] 2, [7] 2,
-#       [9] 1, [11]'s A4/B4/C2 3, C1 1 and B2 1 — 17 asserts — and the earlier [8] 1 at E2).
+#       [9] 1, [11]'s A4/B4/C2 3, C1 1 and B2 1 — 17 asserts — the earlier [8] 1 at E2, and [14] 1 at E10 with `DomainRef`).
 
 using Test
 import GoMeta as GM
@@ -31,16 +31,6 @@ Base.nameof(::Type{_VocHostile.Hostile2}) = error("hostile-nameof-invoked (must 
 Base.hasmethod(::Type{_VocHostile.Hostile3}, ::Type{Tuple{}}) = error("hostile-hasmethod-invoked (must never dispatch)")
 Base.show(io::IO, ::Type{_VocHostile.HostileP}) = error("hostileP-show-invoked (must never render)")
 Base.show(io::IO, ::Type{_VocHostile.HostileS}) = error("hostileS-show-invoked (must never render)")
-
-# the [14] fixture: an AbstractString whose String() conversion COUNTS calls and decays —
-# read 1 yields a VALID digest, any later read garbage (the s-wave read-once law)
-@eval module _VocFlip
-    struct FlipStr <: AbstractString end
-    const CALLS = Base.RefValue{Int}(0)
-    const VALID = "sha256:" * "ab"^32
-end
-Base.String(::_VocFlip.FlipStr) = (_VocFlip.CALLS[] += 1;
-    _VocFlip.CALLS[] == 1 ? _VocFlip.VALID : "GARBAGE-second-read")
 
 # the [15] fixtures (the t3t4r3 in-model rows): a Function-subtype setter whose
 # hash/isequal/== throw; a type whose getproperty throws; a function whose nameof throws
@@ -125,9 +115,7 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
     _doc(s) = Vector{UInt8}(codeunits(s))
     _plugin_with_default(p, d) = GM.PlugIn(; altName = p.altName, setMode = p.setMode, altConstructor = p.altConstructor,
         setAltInstance = p.setAltInstance, getAltInstance = p.getAltInstance, precedencesTuple = p.precedencesTuple,
-        default = d, capture = p.capture, render = p.render, constraints = p.constraints,
-        atoms = p.atoms, contract_version = p.contract_version, requires = p.requires, sugar = p.sugar,
-        provenance = p.provenance, permissions = p.permissions)   # stage 2's commit 3-ii: the declared default is the ALTERANT's — the record `p` with the slot `d`, every other field copied
+        default = d, capture = p.capture)   # stage 2's commit 3-ii: the declared default is the ALTERANT's — the record `p` with the slot `d`, every other field copied
     _drive(s; R = GM.DEFAULT_REGISTRY) = try
         GM.goMeta(_doc(s); registry = R)
     catch e
@@ -236,19 +224,6 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
         @test any(x -> x.code === :REG_PROTOCOL && occursin("HostileP", x.message), d6)
         # (A7/A8 — the hostile-typed SIG_MISMATCH and VALUE_ALGEBRA renders — were CONSCIOUSLY RETIRED at
         # stage 5's E4 with their subjects, the reflection cross-check and the value-algebra refusal.)
-    end
-
-    @testset "[14] the crx-t3t4s cures — the DomainRef read-once law" begin
-        # (s-wave seat A, MINOR) validating the SUPPLIED AbstractString and converting
-        # it separately for storage let a stateful string validate one content and
-        # store another. The cure reads each input ONCE (`String(...)` first; the same
-        # `d` is validated and stored) — pinned by a call-counting conversion fixture:
-        # exactly ONE String() read, and the stored digest IS that read's content (a
-        # second read would have returned garbage).
-        f = _VocFlip.FlipStr()
-        dr = GM.DomainRef("art.txt", f)
-        @test _VocFlip.CALLS[] == 1 && dr.digest == _VocFlip.VALID &&
-              occursin(r"\Asha256:[0-9a-f]{64}\z", dr.digest)
     end
 
     @testset "[15] the crx-t3t4r3 cures — the identity/getfield hardening of the chain" begin

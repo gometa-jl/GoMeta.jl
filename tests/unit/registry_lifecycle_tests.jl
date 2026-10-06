@@ -31,9 +31,7 @@ import GoMeta as GM
 
 _plugin_with_default(p, d) = GM.PlugIn(; altName = p.altName, setMode = p.setMode, altConstructor = p.altConstructor,
         setAltInstance = p.setAltInstance, getAltInstance = p.getAltInstance, precedencesTuple = p.precedencesTuple,
-        default = d, capture = p.capture, render = p.render, constraints = p.constraints,
-        atoms = p.atoms, contract_version = p.contract_version, requires = p.requires, sugar = p.sugar,
-        provenance = p.provenance, permissions = p.permissions)   # stage 2's commit 3-ii: the declared default is the ALTERANT's — the record `p` with the slot `d`, every other field copied
+        default = d, capture = p.capture)   # stage 2's commit 3-ii: the declared default is the ALTERANT's — the record `p` with the slot `d`, every other field copied
 
 @testset "registry_lifecycle (v0.4 T2)" begin
 
@@ -247,7 +245,6 @@ _plugin_with_default(p, d) = GM.PlugIn(; altName = p.altName, setMode = p.setMod
         # validation (a same-named swap there would be invisible to the fingerprint fold); the
         # designated callable fields still encode by name
         @test_throws GM._UnencodableSlot GM._slot_text(GM.Declared(Any[sin]))
-        @test_throws GM._UnencodableSlot GM._slot_text(GM.EffectRow(:mark, sin))
         @test GM._slot_text(sin) == "f3:sin"
         bfn = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
         bfn.plugins[2] = _plugin_with_default(bfn.plugins[2], GM.Declared(Any[sin]))
@@ -292,12 +289,10 @@ _plugin_with_default(p, d) = GM.PlugIn(; altName = p.altName, setMode = p.setMod
         # deep-copy publication: a NESTED declared container of the builder is not shared with the published value
         bdp = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
         bdp.plugins[2] = GM.PlugIn(; altName = :Visib, setMode = :mutExclusive, altConstructor = GM.Alterants.Visib,
-                                     setAltInstance = GM.Alterants.setVisib, constraints = [GM.MutEx([:hide, :show])])
-        Rdp = GM.publish(bdp)
-        push!(bdp.plugins[2].constraints[1].actions, :discard)
-        @test Rdp.plugins[2].constraints[1].actions == [:hide, :show] && isempty(GM._registry_door_check(Rdp))
-        # (cure batch 3) the digest form is ABSOLUTELY anchored (a trailing newline is refused)
-        @test_throws ErrorException GM.DomainRef("x", "sha256:" * "0"^64 * "\n")
+                                     setAltInstance = GM.Alterants.setVisib, default = GM.Declared(Any[:hide, :show]))   # the declared default's
+        Rdp = GM.publish(bdp)                                                                                         #   container since stage 5's E10
+        push!(bdp.plugins[2].default.value, :discard)
+        @test Rdp.plugins[2].default.value == [:hide, :show] && isempty(GM._registry_door_check(Rdp))
         # (cure batch 3) next_plugin_index is Int8 and passes straight into ActionSpec; RegistryBuilder(published) preloads
         bx = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
         @test length(bx.plugins) == 4 && bx.plugins !== GM.DEFAULT_REGISTRY.plugins
@@ -444,14 +439,7 @@ _plugin_with_default(p, d) = GM.PlugIn(; altName = p.altName, setMode = p.setMod
         @test e7 isa GM.RegistrationRefused
         @test occursin("position rule", e7.diagnostics[1].message) &&
               occursin("plugins[2].default.value[1]", e7.diagnostics[1].message)
-        # W8 — the MINT-PARITY witness of the DATA-WINS precedence: an atom nested in data has
-        # its `evaluate` REFUSED (a Function in data), never the generic containment row
-        b8 = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
-        b8.plugins[2] = _plugin_with_default(b8.plugins[2], GM.Declared(GM.ConditionAtom(:n, "s", sin)))
-        d8 = GM.validate(b8)
-        @test any(x -> x.code === :REG_PROTOCOL && x.context === :Visib &&   # commit 3-ii: the context is the Alterant's name
-                       occursin("slot default", x.message), d8)
-        @test_throws GM.RegistrationRefused GM.publish(b8)
+        # (W8 — the atom-nested-in-data witness — left at stage 5's E10 with `ConditionAtom`; W7 above carries the Function-in-data refusal.)
     end
 
     @testset "T2-bis crx-t2bis cure witnesses (A1/A2/A3; APPENDED)" begin

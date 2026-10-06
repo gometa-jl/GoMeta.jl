@@ -97,10 +97,14 @@ const fallBackMHIdx = maxDepthMH + 3   # 12 == NUM_MH_LEVELS — the fallBack le
 
 # --- the v0.4 registration-record SLOTS (the Stage-A T1 schema extension) ---------------------------
 # IS: the DECLARED data slots the v0.4 record carries (the architecture chapter's sec 2.a, slots
-#     (1)–(10)): the per-action settribute mapping · the capture declaration · the presence-typed
-#     explicit default · the render-plane data · constraint rows · contributed
-#     condition atoms · identity/contract/requires · sugar rows · the schema-versioned provenance
-#     group + the RESERVED permissions manifest.
+#     (1)–(3) of its ten): the per-action settribute mapping · the capture declaration · the presence-typed
+#     explicit default. The other seven — the render-plane data, the constraint rows, the contributed condition
+#     atoms, the identity/contract/requires, the sugar rows, the schema-versioned provenance group and the RESERVED
+#     permissions manifest — left at stage 5's E10 of the v0.4 build (census rows 24 and 29; his §317 mark, R-V04B-105).
+#     He had approved those slots at the architecture sittings of 2026-08-24 (R-V04-35, the record-carried payload's vehicle;
+#     R-V04-37 SEC-4, the Rung-1 activation); his later mark removes them — the difference between his earlier and later
+#     words resolved by the later word, stated here, not silently. His R-V04-27 (verbatim) put permission levels and hash
+#     checks LATER; his §120: a basic framework BEFORE HARDENING; his §18 (ii): no unnecessary clutter.
 # DOES: defines the slot types with their closed enum sets; every slot is NOTHING/EMPTY-defaulted so a
 #     record declared in the v0.3.2 shape still constructs (the additive-extension law: old records
 #     admit; nothing is silently defaulted to a VALUE — absence stays mechanically distinguishable
@@ -108,40 +112,9 @@ const fallBackMHIdx = maxDepthMH + 3   # 12 == NUM_MH_LEVELS — the fallBack le
 # REASONING: the engine's three measured clean planes (apply, interpreter, absorb dispatch) are
 #     registry-DATA-driven; the dirty planes (capture, defaults, render, diagnostics) were
 #     hard-coded per Alterant. Moving what those planes need INTO the record as data is the cure's
-#     substrate: Core keeps schema knowledge, never a particular Alterant's content. At T1 the slots
-#     are CARRIED, not consumed — their consumers land with the per-plane cures (T4–T10), each proving
-#     its slot flows by the D6 mutation probe.
+#     substrate: Core keeps schema knowledge, never a particular Alterant's content. Both slots are consumed:
+#     the capture declaration by the capture walk (T5), the default by the answer function (stage 2's commit 3).
 # PURPOSE: one record, extended never replaced, that a registration can declare completely.
-
-"""
-    DomainRef(artifact, digest)
-
-A digest-pinned reference to an artifact OUTSIDE the record (an imported label set): `artifact` = the artifact's declared coordinate (a path or a name the loader
-resolves), `digest` = the ALGORITHM-TAGGED content digest of the bytes, `"sha256:<64 lowercase
-hex>"` — per-file SHA-256, tag in the value (the survey's discipline: a digest without its
-algorithm is not comparable). The constructor refuses any other form LOUDLY (a mis-shaped pin
-would otherwise register silently and never verify). Verification against the artifact's bytes
-is a loader's act, never this constructor's — no loader verifies at v0.4: the vocabulary artifact's pin left at stage 5's
-E9 of the v0.4 build; the slot stays RESERVED for the import digests of R-V04-37 SEC-1.
-"""
-struct DomainRef
-    artifact::String
-    digest::String
-    function DomainRef(artifact::AbstractString, digest::AbstractString)
-        # (the crx-t3t4s A1 cure) each input is READ ONCE — validating the supplied
-        # AbstractString and converting it SEPARATELY for storage let a stateful
-        # user string validate one content and store another (a stored digest could
-        # then violate the anchored grammar). The converted `d` is what the regex
-        # sees AND what `new` stores.
-        a = String(artifact)
-        d = String(digest)
-        occursin(r"\Asha256:[0-9a-f]{64}\z", d) ||   # absolute anchors: `$` would admit a trailing newline (cure batch 3)
-            error("GoMeta registry: DomainRef digest ", repr(first(d, 80)),
-                " is not algorithm-tagged — the required form is \"sha256:<64 lowercase hex>\" ",
-                "(the record shape law)")
-        new(a, d)
-    end
-end
 
 ## Slot (2): the capture declaration — HOW an Alterant's applied value becomes evals rows.
 const _CAPTURE_MODE_GATES = (nothing, :localOnly)   # v0.4 T5: the closed gate set (the scheme and multiplicity sets left with their enum checks at stage 5's E4)
@@ -202,136 +175,6 @@ struct Declared{T} <: DefaultSlot
     value::T
 end
 
-## Slot (4): render-plane data — effect rows + declared resolve order + the materialize flag.
-"""
-    EffectRow(kind, payload)
-
-One render effect: `kind` ∈ `(:drop, :mark, :pass)` — the content is dropped from the render ·
-marked (the writer-side marker rides `payload`, an opaque per-flavor datum Core never indexes —
-the record-carried carriage) · passed through. `payload` is `nothing` unless `kind === :mark`.
-"""
-struct EffectRow
-    kind::Symbol
-    payload::Any
-end
-"""
-    RenderDecl(effects, resolve_order, materialize)
-
-IS: the render-plane declaration of an Alterant — its declared effects per action, its grain resolve order, and
-whether the resolved value is written back into the component's settribute.
-
-DOES: The render-plane declaration: `effects` = action → `EffectRow` pairs in declaration order;
-`resolve_order` = the declared grain resolve order (e.g. `[:Line, :Block]` — the Line-over-Block
-arm) or `nothing`; `materialize` = whether the resolved value is written back into the
-component's settribute (the generic write-back gate).
-
-REASONING: the render-plane data travel in the record as declarations rather than hard-wired per Alterant; at T1 the
-slot is CARRIED, not consumed (the record's law above): no plane reads `materialize` — only the seal's text form encodes
-it (`_slot_text`, `alterants/registry.jl`); the apply's write-back table `action_to_settribute` is derived from
-`ActionSpec.settribute` (`alterants/registry.jl`), and the built-in Visib declares no `RenderDecl` (`render` defaults to `nothing`).
-
-PURPOSE: the declaration a render-plane consumer would read — read by no plane today; the declarations stay until the
-owner's word (R-V04B-42 (2); the census before stage 5) — the Visib write-back it would gate is removed at stage 3 (R-V04B-42).
-"""
-struct RenderDecl
-    effects::Vector{Pair{Symbol,EffectRow}}
-    resolve_order::Union{Nothing,Vector{Symbol}}
-    materialize::Bool
-end
-
-## Slot (6): constraint rows — VALIDATED (ownership + shape) and SEALED at publication (T2); their
-## compilation into the two refusal planes lands with the planes' cures (T5 capture / T6 render).
-"A mutual-exclusion constraint over the named actions (one applied value among them per unit)."
-struct MutEx
-    actions::Vector{Symbol}
-end
-
-## Slot (7): contributed condition atoms — NAME-addressed, never order-addressed.
-"""
-    ConditionAtom(name, print_spelling, evaluate)
-
-A condition atom the Alterant contributes: looked up BY NAME (the registration-order class of
-defect cannot arise), printed with its declared `print_spelling`, evaluated by `evaluate` (an
-Alterant callable) or `nothing` for a state-only atom.
-"""
-struct ConditionAtom
-    name::Symbol
-    print_spelling::String
-    evaluate::Union{Nothing,Function}
-end
-
-## Slot (9): sugar rows — a surface pattern lowering to an action, mode-gated.
-"A declared sugar row: surface `pattern` → `action`, delivered only under `mode_gate` (or always)."
-struct SugarRow
-    pattern::Symbol
-    action::Symbol
-    mode_gate::Union{Nothing,Symbol}
-end
-
-## Slot (10): the schema-versioned PROVENANCE group + the RESERVED permissions manifest.
-"""
-    SignatureRecord(; algorithm, key_id, signature)
-
-RESERVED (Rung 2): a signature over the package digest — fields nothing-defaulted; verification
-is a LATER feature (keys pinned at config); the record only carries the declaration room.
-"""
-struct SignatureRecord
-    algorithm::Union{Nothing,String}
-    key_id::Union{Nothing,String}
-    signature::Union{Nothing,String}
-end
-SignatureRecord(; algorithm = nothing, key_id = nothing, signature = nothing) =
-    SignatureRecord(algorithm, key_id, signature)
-"""
-    PermissionManifest(; seam, ambient)
-
-RESERVED (Rung 2): DECLARED permissions — `seam` rows (the registration-surface capability
-vocabulary) and `ambient` rows (`:file_read`-class ambient authority). Declarations are
-displayed and diffed, NEVER enforced in-process (the honest bound: no in-process arrangement
-confines a loaded module).
-"""
-struct PermissionManifest
-    seam::Vector{Symbol}
-    ambient::Vector{Symbol}
-end
-PermissionManifest(; seam = Symbol[], ambient = Symbol[]) = PermissionManifest(seam, ambient)
-"""
-    Provenance(; sec_schema = v"1.0.0", sources = DomainRef[], policy_id = nothing, …)
-
-The schema-versioned provenance group (the security frame's field UNION, all additive, all
-nothing/empty-defaulted — the ONE non-nothing member is `sec_schema`, the group's own schema
-version, so later rungs land as versioned additions never breaks). Live at v0.4.0 (Rung 0):
-`sources` (the per-source `DomainRef` pins — their digest enforcement for label-set imports is RESERVED, R-V04-37 SEC-1: no import loader exists at v0.4) and
-`policy_id` (a policy identity the publication mints). RESERVED, records-not-
-enforces: `package_digest` · `artifact_manifest` · `signatures` + `signer` · `source_identity`
-(a non-name coordinate) · `acquisition_mode` ∈ `(:shipped, :pinned_by_user, :first_use)` ·
-`artifact_version` · `not_before` · `load_act` (the resolved coordinate + digest as loaded) ·
-`declared_capabilities` (displayed, diffed, never enforced).
-"""
-struct Provenance
-    sec_schema::VersionNumber
-    sources::Vector{DomainRef}
-    policy_id::Union{Nothing,String}
-    package_digest::Union{Nothing,String}
-    artifact_manifest::Union{Nothing,String}
-    signatures::Vector{SignatureRecord}
-    signer::Union{Nothing,String}
-    source_identity::Union{Nothing,String}
-    acquisition_mode::Union{Nothing,Symbol}
-    artifact_version::Union{Nothing,VersionNumber}
-    not_before::Union{Nothing,String}
-    load_act::Union{Nothing,String}
-    declared_capabilities::Vector{Symbol}
-end
-Provenance(; sec_schema = v"1.0.0", sources = DomainRef[], policy_id = nothing,
-             package_digest = nothing, artifact_manifest = nothing,
-             signatures = SignatureRecord[], signer = nothing, source_identity = nothing,
-             acquisition_mode = nothing, artifact_version = nothing, not_before = nothing,
-             load_act = nothing, declared_capabilities = Symbol[]) =
-    Provenance(sec_schema, sources, policy_id, package_digest, artifact_manifest, signatures,
-               signer, source_identity, acquisition_mode, artifact_version, not_before,
-               load_act, declared_capabilities)
-
 # --- the immutable alterant inventory ----------------------------------------------------------------
 """
     Alterant
@@ -366,17 +209,8 @@ struct Alterant
                                                    #   R-V04B-55 (1)) — `NoDefault()` undeclared | `Declared(v)`; stage 2's commit 3;
                                                    #   delivered by the answer function with the source "default" (R-V04B-55 (2)) —
                                                    #   Visib declares `:show`; Labels, Heading and Id await the owner's word
-    # --- the v0.4 declared slots (T1; all nothing/empty-defaulted; carried at T1, consumed T4–T10) ---
+    # --- the capture declaration (v0.4 T5; the seven other declared slots of T1 left at stage 5's E10 of the v0.4 build) ---
     capture::Union{Nothing,CaptureDecl}            # slot (2): the capture declaration
-    render::Union{Nothing,RenderDecl}              # slot (4): render-plane data
-    constraints::Vector{MutEx}                     # slot (6): constraint rows
-    atoms::Vector{ConditionAtom}                   # slot (7): contributed condition atoms, name-addressed
-    contract_version::Union{Nothing,VersionNumber} # slot (8): the contract version the record targets
-    requires::Tuple{Vararg{Symbol}}                # slot (8): required capabilities — any uninterpreted
-                                                   #   token refuses WHOLE-record at the gate (T2)
-    sugar::Vector{SugarRow}                        # slot (9): sugar rows (surface pattern → action)
-    provenance::Provenance                         # slot (10): the schema-versioned provenance group
-    permissions::Union{Nothing,PermissionManifest} # slot (10): RESERVED permissions (Rung 2, inert)
 end
 "The PUBLIC deprecation alias of the v0.4 `PlugIn` → `Alterant` rename (R-V04B-5) — stands
 for the whole 0.4.x family; removal = v0.5 (register row V05-3)."
@@ -385,21 +219,13 @@ const PlugIn = Alterant
 PlugIn(altName::Symbol, setMode::Symbol, altConstructor::Type, setAltInstance::Function,
        getAltInstance::Union{Nothing,Function},
        precedencesTuple::Union{Nothing,NTuple{NUM_MH_LEVELS,Symbol}}) =
-    PlugIn(altName, setMode, altConstructor, setAltInstance, getAltInstance, precedencesTuple,
-           NoDefault(), nothing, nothing, MutEx[], ConditionAtom[], nothing, (), SugarRow[],
-           Provenance(), nothing)
-"The keyword form: every v0.4 slot addressable by name; unnamed slots take their nothing/empty default."
+    PlugIn(altName, setMode, altConstructor, setAltInstance, getAltInstance, precedencesTuple, NoDefault(), nothing)
+"The keyword form: the two declared slots addressable by name; an unnamed slot takes its nothing/undeclared default."
 PlugIn(; altName::Symbol, setMode::Symbol, altConstructor::Type, setAltInstance::Function,
          getAltInstance::Union{Nothing,Function} = nothing,
          precedencesTuple::Union{Nothing,NTuple{NUM_MH_LEVELS,Symbol}} = nothing,
-         default::DefaultSlot = NoDefault(),
-         capture = nothing, render = nothing,
-         constraints = MutEx[], atoms = ConditionAtom[], contract_version = nothing,
-         requires::Tuple{Vararg{Symbol}} = (), sugar = SugarRow[],
-         provenance::Provenance = Provenance(), permissions = nothing) =
-    PlugIn(altName, setMode, altConstructor, setAltInstance, getAltInstance, precedencesTuple,
-           default, capture, render, constraints, atoms, contract_version, requires, sugar,
-           provenance, permissions)
+         default::DefaultSlot = NoDefault(), capture = nothing) =
+    PlugIn(altName, setMode, altConstructor, setAltInstance, getAltInstance, precedencesTuple, default, capture)
 
 """
     ActionOverload
@@ -561,8 +387,8 @@ struct AlterantRegistry
     # construction), which the `goMeta` door refuses typed. Since T2-bis the fingerprint is a
     # LOSSY CACHE KEY, never an identity and never the door's mechanism (T2BIS-DESIGN §12: the
     # ruling's word "seal" names the snapshot MECHANISM below; this field keeps the digest) —
-    # the algorithm-tagged registration digest over every declared slot + the declared source
-    # digests + policy_id, with its disclosed collisions (docs/public-api.md §1.2).
+    # the algorithm-tagged registration digest over every declared slot (the source digests and the
+    # policy identity left with the security frame at stage 5's E10), with its disclosed collisions (docs/public-api.md §1.2).
     seal::Union{Nothing,String}
     # v0.4 T2-bis (R-V04B-4 (c+)) — THE SNAPSHOT BASELINE: a deep domain-copy of the eleven
     # `_SNAPSHOT_FIELDS` values taken at publish (leaves — callables/Types/Symbols/Strings/

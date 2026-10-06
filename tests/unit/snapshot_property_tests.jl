@@ -66,20 +66,6 @@ end
             altConstructor = Dict{Symbol,Bool},
             setAltInstance = GM.Alterants.setLabels, getAltInstance = GM.Alterants.checkLabels,
             capture = GM.CaptureDecl(Dict{Symbol,Bool}, :per_key, :many, nothing),
-            render = GM.RenderDecl([Symbol(":") => GM.EffectRow(:drop, nothing),
-                                    Symbol(":") => GM.EffectRow(:mark, "mk")], [:Line, :Block], true),
-            constraints = [GM.MutEx([Symbol(":")])],
-            atoms = [GM.ConditionAtom(:atomA, "atomA", _atom_named),
-                     GM.ConditionAtom(:atomB, "atomB", _closure_isbits)],
-            contract_version = v"0.4.7",
-            sugar = [GM.SugarRow(:pat, Symbol(":"), :localOnly)],
-            provenance = GM.Provenance(; sec_schema = v"1.0.0",
-                sources = [GM.DomainRef("art", "sha256:" * "0"^64)],
-                package_digest = "sha256:" * "1"^64,
-                signatures = [GM.SignatureRecord(; algorithm = "ed25519")],
-                acquisition_mode = :shipped, artifact_version = v"1.0.0-rc1+build.7",
-                declared_capabilities = Symbol[:c1]),
-            permissions = GM.PermissionManifest(; seam = [:s1], ambient = [:a1]),
             # stage 2's commit 3-ii: the default slot is the ALTERANT's — the value-domain carrier (formerly action 1's) rides plugin 1
             default = GM.Declared(Any[Int8(3), 1.5, Float32(2.5), Float16(1.0), _nan64,
                                       "str", :sym, true, Int128(7), UInt8(2),
@@ -92,11 +78,12 @@ end
             plugin = s1.plugin, overloads = s1.overloads,
             accepts_string_slot = s1.accepts_string_slot, sugar_candidacy = s1.sugar_candidacy,
             validate = _callable_struct)
-        # the slot-struct default (formerly action 3's) rides plugin 2 (Visib; the DEFAULT_REGISTRY's fields copied)
+        # the slot-struct default (formerly action 3's) rides plugin 2 (Visib; the DEFAULT_REGISTRY's fields copied) — a `Declared`
+        # nested in the data since stage 5's E10 of the v0.4 build (the `EffectRow` that carried the case left with its slot)
         b.plugins[2] = GM.PlugIn(; altName = :Visib, setMode = :mutExclusive, altConstructor = GM.Alterants.Visib,
             setAltInstance = GM.Alterants.setVisib,
             capture = GM.CaptureDecl(GM.Alterants.Visib, :single, :one, nothing; attr_stem = :visib),
-            default = GM.Declared(GM.EffectRow(:mark, Dict{Any,Any}(Int16(2) => "pv"))))
+            default = GM.Declared(GM.Declared(Dict{Any,Any}(Int16(2) => "pv"))))
         GM.register!(b,
             GM.PlugIn(Symbol("prop"), :accumulate, Dict{Symbol,Bool}, _closure_ref, nothing, nothing),
             GM.ActionSpec(; name = :propset, spelling = :identifier, plugin = Int8(5),
@@ -196,25 +183,13 @@ end
         pT === GM.PlugIn && pf === :getAltInstance && return GM.Alterants.checkLabels
         pT === GM.PlugIn && pf === :precedencesTuple && return ntuple(i -> Symbol("p", i), GM.NUM_MH_LEVELS)
         pT === GM.PlugIn && pf === :capture && return GM.CaptureDecl(Dict{Symbol,Bool}, :single, :one, nothing)
-        pT === GM.PlugIn && pf === :render && return GM.RenderDecl(Pair{Symbol,GM.EffectRow}[], nothing, false)
-        pT === GM.PlugIn && pf === :contract_version && return v"0.4.2"
-        pT === GM.PlugIn && pf === :requires && return (:cap,)
-        pT === GM.PlugIn && pf === :permissions && return GM.PermissionManifest()
         pT === GM.ActionSpec && pf === :validate && return _swap_fn_a
         pT === GM.ActionSpec && pf === :keyed_slot && return (:ka, :kb)
         pT === GM.PlugIn && pf === :default && return GM.Declared(1)   # stage 2's commit 3-ii: the slot is the Alterant's
         pT === GM.ActionSpec && pf === :settribute && return :zz
         pT === GM.ActionOverload && pf === :vararg_kind && return :symbol
-        pT === GM.EffectRow && pf === :payload && return "px"
         pT === GM.CaptureDecl && pf === :mode_gate && return :localOnly
         pT === GM.CaptureDecl && pf === :attr_stem && return :zz   # v0.4 T5 (the round's B-3 cure — the raw error() fault otherwise)
-        pT === GM.SugarRow && pf === :mode_gate && return :localOnly
-        pT === GM.ConditionAtom && pf === :evaluate && return _swap_fn_a
-        pT === GM.RenderDecl && pf === :resolve_order && return [:Line]
-        pT === GM.Provenance && pf === :acquisition_mode && return :shipped
-        pT === GM.Provenance && pf === :artifact_version && return v"1.0.1"
-        pT === GM.Provenance && return "sx"                      # the Union{Nothing,String} members
-        pT === GM.SignatureRecord && return "sx"
         error("no single-point substitute for ($pT, $pf)")
     end
 
@@ -291,11 +266,6 @@ end
 
     # ——— the MUTATION engine: applies one site's category-table op; returns the mutated path ———
     _push_elem(v::Vector) =
-        eltype(v) === GM.MutEx ? GM.MutEx([:zz]) :
-        eltype(v) === GM.ConditionAtom ? GM.ConditionAtom(:za, "za", nothing) :
-        eltype(v) === GM.SugarRow ? GM.SugarRow(:zp, :zq, nothing) :
-        eltype(v) === GM.DomainRef ? GM.DomainRef("zx", "sha256:" * "2"^64) :
-        eltype(v) === GM.SignatureRecord ? GM.SignatureRecord() :
         eltype(v) === Symbol ? gensym(:pe) :
         !isempty(v) ? v[end] : error("no push element for empty $(typeof(v))")
 
@@ -303,10 +273,7 @@ end
         path = site.path
         if site.kind === :leaf
             v0 = _objs_along(R, path)[end]
-            # DomainRef's validating inner constructor pins the digest FORM — replace with a
-            # different valid digest (the only admissible in-place replacement class)
-            newv = (site.pT === GM.DomainRef && site.pf === :digest) ?
-                "sha256:" * (v0 == "sha256:" * "3"^64 ? "4"^64 : "3"^64) : _distinct_value(v0, rng)
+            newv = _distinct_value(v0, rng)
             _set_at!(R, path, newv)
             push!(opseen, Symbol(:leaf_, site.cat))
             return path
@@ -325,7 +292,6 @@ end
                    collect(fieldnames(typeof(o)))
             # rebuild with ONE changed element: the first directly-replaceable leaf child
             for s in segs
-                o isa GM.DomainRef && s === :digest && continue   # form-pinned; :artifact serves
                 cv = _child(o, s)
                 if !(_leafcat(cv) in (:other, :nothing_leaf, :function))
                     _set_at!(R, Any[path; s], _distinct_value(cv, rng))
@@ -437,18 +403,16 @@ end
 
     # ═══ the FALSE-POSITIVE half (§9): structurally identical rebuilds are SILENT — 8 ═══
     dagseen = Set{Symbol}()
-    let R = GM.publish(_mk_prop_builder())                       # (1) Vector rebuilt fresh
-        c = R.plugins[1].constraints
-        _set_at!(R, Any[:plugins, 1, :constraints], GM.MutEx[e for e in c])
+    let R = GM.publish(_mk_prop_builder())                       # (1) Vector rebuilt fresh (the default's value vector since stage 5's E10 — the constraints left)
+        c = R.plugins[1].default.value
+        _set_at!(R, Any[:plugins, 1, :default, :value], Any[e for e in c])
         @test isempty(GM._registry_door_check(R))
     end
     let b = _mk_prop_builder()                                   # (2) Dict rebuilt fresh (the vocabulary flags Dict left at stage 5's E9;
         k = Int(b.action_specs[4].plugin); p = b.plugins[k]      #     a Dict declared as plugin k's default carries the case)
         b.plugins[k] = GM.PlugIn(; altName = p.altName, setMode = p.setMode, altConstructor = p.altConstructor,
             setAltInstance = p.setAltInstance, getAltInstance = p.getAltInstance, precedencesTuple = p.precedencesTuple,
-            default = GM.Declared(Dict{Any,Any}(:a => 1, :b => 2)), capture = p.capture, render = p.render,
-            constraints = p.constraints, atoms = p.atoms, contract_version = p.contract_version, requires = p.requires,
-            sugar = p.sugar, provenance = p.provenance, permissions = p.permissions)
+            default = GM.Declared(Dict{Any,Any}(:a => 1, :b => 2)), capture = p.capture)
         R = GM.publish(b)
         d = R.plugins[k].default.value
         _set_at!(R, Any[:plugins, k, :default, :value], Dict(k2 => v for (k2, v) in d))
@@ -459,9 +423,9 @@ end
         _set_at!(R, Any[:plugins, 1, :default, :value, 17], ntuple(j -> t[j], length(t)))
         @test isempty(GM._registry_door_check(R))
     end
-    let R = GM.publish(_mk_prop_builder())                       # (4) Pair rebuilt
-        p = R.plugins[1].render.effects[1]
-        _set_at!(R, Any[:plugins, 1, :render, :effects, 1], (p.first => GM.EffectRow(p.second.kind, p.second.payload)))
+    let R = GM.publish(_mk_prop_builder())                       # (4) Pair rebuilt (the default value's Pair at [19] since stage 5's E10 — the render effects left)
+        p = R.plugins[1].default.value[19]
+        _set_at!(R, Any[:plugins, 1, :default, :value, 19], (p.first => p.second))
         @test isempty(GM._registry_door_check(R))
     end
     let R = GM.publish(_mk_prop_builder())                       # (5) NamedTuple rebuilt
@@ -481,9 +445,7 @@ end
         k = Int(b.action_specs[i].plugin); p = b.plugins[k]
         b.plugins[k] = GM.PlugIn(; altName = p.altName, setMode = p.setMode, altConstructor = p.altConstructor,
             setAltInstance = p.setAltInstance, getAltInstance = p.getAltInstance, precedencesTuple = p.precedencesTuple,
-            default = GM.Declared(v), capture = p.capture, render = p.render,
-            constraints = p.constraints, atoms = p.atoms, contract_version = p.contract_version, requires = p.requires,
-            sugar = p.sugar, provenance = p.provenance, permissions = p.permissions)
+            default = GM.Declared(v), capture = p.capture)
         b
     end
     let                                                          # (7) DAG SPLIT: shared → unshared
@@ -595,8 +557,9 @@ end
         @test _codesp(GM._registry_door_check(R)) == [:POST_SEAL_MUTATION]
         @test _reported_segments(R) == Any[:action_specs, 3, :overloads, 1, :phase]
     end
-    # the STRUCT-KEYED-Dict silence case (1)
-    let R = GM.publish(_with_default(_mk_prop_builder(), 4, Dict{Any,Any}(GM.MutEx([:hide, :show]) => 1)))
+    # the STRUCT-KEYED-Dict silence case (1) — the struct keys are `Declared{Vector}` since stage 5's E10: two instances stay two
+    # Dict keys, as two of the former constraint rows did (that slot struct left with its slot at stage 5's E10)
+    let R = GM.publish(_with_default(_mk_prop_builder(), 4, Dict{Any,Any}(GM.Declared(Any[:hide, :show]) => 1)))
         @test isempty(GM._registry_door_check(R))
     end
     # the Ref-backed setter: clean ⇒ door empty (1); the CAPTURED-STATE silence (1)
@@ -618,7 +581,7 @@ end
               (_prefix_comparable(rep, Any[_dpath; 1; 1]) || _prefix_comparable(rep, Any[_dpath; 2; 1]))
     end
     # the ROUND-2 Dict cases — the entry-matching law's witnesses (4 × 1)
-    _twokey(v1, v2) = Dict{Any,Any}(GM.MutEx([:ka]) => v1, GM.MutEx([:ka]) => v2)
+    _twokey(v1, v2) = Dict{Any,Any}(GM.Declared(Any[:ka]) => v1, GM.Declared(Any[:ka]) => v2)
     let R = GM.publish(_with_default(_mk_prop_builder(), 4, _twokey(1, 2)))
         @test isempty(GM._registry_door_check(R))                # two equal keys, different values — SILENT
     end
@@ -630,14 +593,14 @@ end
     end
     let b = _mk_prop_builder()                                   # GUARD-ISOLATION: candidates share nested containers
         inner = Any[Int8(1)]
-        b = _with_default(b, 4, Dict{Any,Any}(GM.MutEx([:ka]) => Any[inner], GM.MutEx([:ka]) => Any[inner]))
+        b = _with_default(b, 4, Dict{Any,Any}(GM.Declared(Any[:ka]) => Any[inner], GM.Declared(Any[:ka]) => Any[inner]))
         R = GM.publish(b)
         @test isempty(GM._registry_door_check(R))
     end
     let b = _mk_prop_builder()                                   # a big equal-key Dict (16 keys), within budget
         big = Dict{Any,Any}()
         for _ in 1:16
-            big[GM.MutEx([:kb])] = 1
+            big[GM.Declared(Any[:kb])] = 1
         end
         R = GM.publish(_with_default(b, 4, big))
         @test isempty(GM._registry_door_check(R))
@@ -657,7 +620,7 @@ end
     let b = _mk_prop_builder()
         cur = Any[Int8(1)]
         for _ in 1:20
-            cur = Dict{Any,Any}(GM.MutEx([:t]) => cur, GM.MutEx([:t]) => cur)
+            cur = Dict{Any,Any}(GM.Declared(Any[:t]) => cur, GM.Declared(Any[:t]) => cur)
         end
         R = GM.publish(_with_default(b, 4, cur))
         @test isempty(GM._registry_door_check(R))
@@ -678,7 +641,7 @@ end
         @test _reported_segments(R) == _dpath
     end
     # the NESTED tandem cycle (1): `d2` under `d1`'s struct-keyed entry, self-cycled BOTH sides
-    let R = GM.publish(_with_default(_mk_prop_builder(), 4, Dict{Any,Any}(GM.MutEx([:n]) => Dict{Any,Any}(:k => 1))))
+    let R = GM.publish(_with_default(_mk_prop_builder(), 4, Dict{Any,Any}(GM.Declared(Any[:n]) => Dict{Any,Any}(:k => 1))))
         d2l = first(values(R.plugins[2].default.value))
         d2s = first(values(R._snapshot.plugins[2].default.value))
         d2l[:self] = d2l
@@ -695,11 +658,11 @@ end
                 a = Dict{Any,Any}()
                 b = Dict{Any,Any}()
                 if rev
-                    a[GM.MutEx([:r])] = x; a[GM.MutEx([:r])] = y
-                    b[GM.MutEx([:r])] = y; b[GM.MutEx([:r])] = x
+                    a[GM.Declared(Any[:r])] = x; a[GM.Declared(Any[:r])] = y
+                    b[GM.Declared(Any[:r])] = y; b[GM.Declared(Any[:r])] = x
                 else
-                    a[GM.MutEx([:r])] = x; a[GM.MutEx([:r])] = y
-                    b[GM.MutEx([:r])] = x; b[GM.MutEx([:r])] = y
+                    a[GM.Declared(Any[:r])] = x; a[GM.Declared(Any[:r])] = y
+                    b[GM.Declared(Any[:r])] = x; b[GM.Declared(Any[:r])] = y
                 end
                 x = a
                 y = b
@@ -754,7 +717,7 @@ end
         s.pT in (GM.PlugIn, GM.ActionSpec, GM.ActionOverload) && s.path[end] isa Symbol &&
             push!(recfields, (s.pT, s.path[end]))
     end
-    @test length(recfields) == 35                                # every §1 record field exercised (35: the Alterant's default slot joined at commit 3, the action's left at 3-ii — R-V04B-51; the vocabulary slot left at stage 5's E9)
+    @test length(recfields) == 27                                # every §1 record field exercised (27: the Alterant's default slot joined at commit 3, the action's left at 3-ii — R-V04B-51; the vocabulary slot left at stage 5's E9; the record's eight slots at E10 — MEASURED, the second build's counts probe caught the stale 35)
     leafcats = Set(s.cat for s in sites if s.kind in (:leaf, :single, :dictkey))
     @test issubset(Set([:bool, :symbol, :int, :float, :string, :type, :function, :version,
                         :complex, :rational, :nothing_leaf]), leafcats)

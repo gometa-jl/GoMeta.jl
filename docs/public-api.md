@@ -54,7 +54,7 @@ by `tests/unit/public_surface_tests.jl`) and of the refusal behavior the shipped
 | `GoMetaConfig` | type | the v0 input options |
 | `GoMetaDelivery` | type | the delivered object of a run — its four public parts, in his pipeline order (R-V04B-89): `blsComponentTree`, `altValues_evals`, `status`, `diagnostics` |
 
-`names(GoMeta)` is exactly this set plus the §1.2 public names (38 since stage 5's E9 of the v0.4 build — the three vocabulary slot types and the G-VOC triple REMOVED, §6; 44 since stage 2's commit 9b of the v0.4 build, R-V04B-43 (1) — `content_fingerprint` REMOVED; 45 since commit 6, R-V04B-35 (e) — `childDiffers`; 44 since commit 5 — `scanAlterant`, `evaluatedAltValues`; 42 since commit 4 — `evaluatedAltValue`, `EvaluatedAltValue`; 40 since commit 0, R-V04B-58 — the parser module `BLS`; 39 since R-V04B-24 (2026-09-12): the
+`names(GoMeta)` is exactly this set plus the §1.2 public names (29 since stage 5's E10 of the v0.4 build — the nine slot types of the carried declarations and the security frame REMOVED, §6; 38 since stage 5's E9 of the v0.4 build — the three vocabulary slot types and the G-VOC triple REMOVED, §6; 44 since stage 2's commit 9b of the v0.4 build, R-V04B-43 (1) — `content_fingerprint` REMOVED; 45 since commit 6, R-V04B-35 (e) — `childDiffers`; 44 since commit 5 — `scanAlterant`, `evaluatedAltValues`; 42 since commit 4 — `evaluatedAltValue`, `EvaluatedAltValue`; 40 since commit 0, R-V04B-58 — the parser module `BLS`; 39 since R-V04B-24 (2026-09-12): the
 ten of 0.3.x that remain — `outputs` REMOVED, §6 —, the six lifecycle names, the twenty record-vocabulary names — `Alterant` is the
 record's canonical name and `PlugIn` its PUBLIC 0.4.x deprecation alias, R-V04B-5 — and the
 T4 G-VOC query triple `vocabulary`/`vocabulary_member`/`vocabulary_queryable`; and the module
@@ -179,8 +179,8 @@ These are part of the documented public surface — declared with Julia's `publi
   · `Complex` and `Rational` of those · `VersionNumber` · `Type` (parameters type-tagged) ·
   CONCRETE `Vector` / `Dict` / `Tuple` / `Pair` / `NamedTuple` of encodable values · the slot
   types. A `Function` is encodable (by name) ONLY in a designated callable field (setter, getter,
-  `evaluate`, `validate`, constructor — each a snapshot leaf the door compares by `===`); inside a
-  data value (`Declared`, an effect payload, any container in them) it is refused. A declared
+  `validate`, constructor — each a snapshot leaf the door compares by `===`); inside a
+  data value (`Declared`, any container in it) it is refused. A declared
   value of ANY other type — a range, a view, a user container, `BigInt`, `Char`, an enum, an
   opaque struct — or a cyclic container is REFUSED at `validate` (`REG_PROTOCOL`, one row per
   record slot), never folded by a lossy fallback; declared string VALUES are `String`-only
@@ -212,8 +212,7 @@ These are part of the documented public surface — declared with Julia's `publi
   name identically; the record's FIELD NAMES are unchanged at v0.4 (keyword constructors are
   public); alias removal + field-name normalization land at v0.5:**
   - `PlugIn(; altName, setMode, altConstructor, setAltInstance, getAltInstance = nothing,
-    precedencesTuple = nothing, default = NoDefault(), capture, render, constraints, atoms, contract_version,
-    requires, sugar, provenance, permissions)` — the Alterant registration record. `default` = `NoDefault()` |
+    precedencesTuple = nothing, default = NoDefault(), capture)` — the Alterant registration record. `default` = `NoDefault()` |
     `Declared(value)` — the Alterant's ONE declared default value (R-V04B-51 (1)–(2); R-V04B-55 (1): Visib declares
     `:show`; since the owner's word of 2026-10-02 (card C2, R-V04B-92 — provisional) Labels the EMPTY SET `Symbol[]`, Heading
     `nothing`, Id the zero compound `(cell = 0, parent = 0, file = 0)`), delivered by the answer function with the source
@@ -278,7 +277,7 @@ These are part of the documented public surface — declared with Julia's `publi
     NEXT `register!` call will assign (1 on an empty builder; 5 after the four built-ins), and
     `register!` REFUSES (throws `RegistrationRefused`, `REG_PROTOCOL`, nothing appended) any record
     whose index is not that one. Immutable records are never re-stamped silently.
-  - The declared SLOTS: `DomainRef(artifact, "sha256:<64 LOWERCASE hex digits>")` · `CaptureDecl(instance_type,
+  - The declared SLOTS: `CaptureDecl(instance_type,
     attr_scheme ∈ (:per_key, :single, :per_field, :per_occurrence), multiplicity ∈ (:many, :one,
     :per_field), mode_gate ∈ (nothing, :localOnly)[, attr_stem]; attr_stem = nothing)` — CONSUMED
     since v0.4 T5: the capture walk is REGISTRATION-DRIVEN (the declared row is what makes an
@@ -289,22 +288,13 @@ These are part of the documented public surface — declared with Julia's `publi
     capture mode-gate laws (the gate's closed set · the bidirectional setMode⟺gate coherence · the
     :localOnly scheme and store laws; the identity, stem-shape and stem-clash laws left at stage 5's E4 —
     a stem overlapping a shipped family publishes, and same-cell same-attr rows of two plugins collapse to one) ·
-    `DefaultSlot` = `NoDefault()` | `Declared(v)` · `EffectRow(kind ∈
-    (:drop, :mark, :pass), payload)` + `RenderDecl(effects::Vector{Pair{Symbol,EffectRow}},
-    resolve_order, materialize::Bool)` · `MutEx(actions)` · `ConditionAtom(name, print_spelling,
-    evaluate)` · `SugarRow(pattern, action, mode_gate)` · `Provenance(; sec_schema = v"1.0.0",
-    sources = DomainRef[], policy_id = nothing, package_digest = nothing, artifact_manifest =
-    nothing, signatures = SignatureRecord[], signer = nothing, source_identity = nothing,
-    acquisition_mode = nothing ∈ (:shipped, :pinned_by_user, :first_use), artifact_version =
-    nothing, not_before = nothing, load_act = nothing, declared_capabilities = Symbol[])` —
-    EVERY keyword optional · `SignatureRecord(; algorithm = nothing, key_id = nothing, signature
-    = nothing)` (reserved) · `PermissionManifest(; seam = Symbol[], ambient = Symbol[])`
-    (reserved, never enforced). `PlugIn`'s keyword form likewise defaults every slot (`capture =
-    nothing`, `render = nothing`, `constraints = MutEx[]`, `atoms =
-    ConditionAtom[]`, `contract_version = nothing`, `requires = ()`, `sugar = SugarRow[]`,
-    `provenance = Provenance()`, `permissions = nothing`). At v0.4.0 the slots are CARRIED (validated for shape, sealed);
-    their consumers land with the per-plane cures — a slot the engine does not yet consume has no
-    effect on a run (the contract page of the release states, per slot, which cure consumes it).
+    `DefaultSlot` = `NoDefault()` | `Declared(v)`. `PlugIn`'s keyword form defaults both slots (`capture = nothing`,
+    `default = NoDefault()`); both are CONSUMED — the capture declaration by the capture walk (v0.4 T5), the default by
+    the answer function (stage 2's commit 3). The seven other declared slots of v0.4 T1 — the render-plane data
+    (`RenderDecl`, `EffectRow`), the constraint rows (`MutEx`), the contributed condition atoms (`ConditionAtom`), the
+    contract version and the required capabilities, the sugar rows (`SugarRow`), the provenance group (`Provenance`,
+    `DomainRef`, `SignatureRecord`) and the permissions manifest (`PermissionManifest`) — left the record at stage 5's E10
+    of the v0.4 build (census rows 24 and 29; the §6 row): nine public types and eight record fields fewer.
   - **The Labels vocabulary (since stage 5's E9 of the v0.4 build — census rows 10, 28 and 55, the owner's bulk mark of
     2026-10-03, OWNER-WORDS §317, R-V04B-105; his §120 on a basic, true Labels Alterant before any hardening):** the 38
     shipped names live in the plain file `src/alterants-std/labels_vocabulary.txt`, read at load, one per line in the
@@ -983,3 +973,4 @@ non-silent record under R-V04B-61; the letter of R-V04B-24 (P) does not govern u
 - **`GoMeta.BLS.content(tree)` — ADDED (public, not exported) at 0.4.0** (stage 5's s5c8 of the v0.4 build; his word of 2026-10-05, OWNER-WORDS §333, R-V04B-116 (3)(b)): the document's lines joined by a newline, as bytes (no terminal newline — `endsWithNewline` carries that fact; a CRLF line end's CR dropped by the line split), the one-argument method of the door's `content` — not a `(tree, ::File)` arm of the two-argument form, whose empty return for a File is the Engine's capture predicate (untouched); the development tools' last two reads outside the door left with this commit — the File's text through this method, the renderer's whitespace guard before the hide marker through `isHorizontalSpace` (R-V04B-116 (3)(a); over a Char the two predicates differ at \v, \f, \r and U+0085 — stripped by the internal guard alone — and at U+180E — by the public class alone; no corpus input carries any of the five, the build record's receipt `PROBES-s5c8-whitespace-class-bytes_on-450d1476.txt`) — and the texts of the lapsed exemption D-6(a) with them.
 - **`run_absorb_apply!` (the callable driver seam), its state ledger (`STATE_REUSE_REFUSED`), `validate_carrier_state` and the `_walk_and_apply!` factoring — REMOVED at 0.4.0** (stage 5's E2 of the v0.4 build; census rows 21, 42, 23 and 44 of the stage-5 census, the owner's bulk mark of 2026-10-03, OWNER-WORDS §317 — R-V04B-105; his verbatim of R-V04-31 on the seam: "If this is only to the benefit of the .fodt adapter it will eventually have to be removed from the GoMeta engine - if not in v0.4, then in a later GoMeta version."; the legacy was one function): `goMeta(bytes; config, registry)` is the ONE route into the Engine; the driver body (the fresh per-call state, the user feed, the File loop, the delivery) runs inside it; a caller-built store has no entry and no checker; `names(GoMeta)` unchanged (none of the four was a `public` name). The corpus, the 26 pins and the twelve forms byte-identical (the pre-check); the suite count moves by the retired witnesses alone.
 - **The Labels vocabulary machinery — `VocabularySlot`, `InlineVocabulary`, `VocabularyRef` (the record's `vocabulary` slot, field and keyword), the G-VOC triple `vocabulary` / `vocabulary_member` / `vocabulary_queryable`, the `SRC_DIGEST_MISMATCH` code, the digest pin, the capture cache, the artifact grammar, the scope law, the write-only valve and the labels record's policy identity — REMOVED at 0.4.0** (stage 5's E9 of the v0.4 build; census rows 10, 28 and 55 of the stage-5 census, the owner's bulk mark of 2026-10-03, OWNER-WORDS §317 — R-V04B-105; his words of 2026-09-20, OWNER-WORDS §120: "Similarly CC kept on pressuring me into making the Labels Alterant safe before we even could try working with a basic true Labels Alterant."): the 38 names stay in the plain file `src/alterants-std/labels_vocabulary.txt`, read at load (R-V04B-6 (a); the file byte-identical — the ZWJ line's `query=false` field, the owner's R-V04-36 content ruling, inert data now); `setLabels` keeps the closed check (an unknown label APPLIED refuses, naming the accepted set); `checkLabels` answers false for an unset or unknown label — the legacy's (GoMetaRetro Alterants.jl :87–:99); a `PlugIn` keyword `vocabulary = …` is a `MethodError` now; `names(GoMeta)` loses six. The corpus, the 26 pins and the twelve forms byte-identical (the pre-check); the registration digest re-minted (the labels record's slots leave the seal fold — `profile_snapshot_tests.jl`, measured).
+- **The carried declaration slots and the reserved security frame of the Alterant record — the types `RenderDecl`, `EffectRow`, `MutEx`, `ConditionAtom`, `SugarRow`, `DomainRef`, `Provenance`, `SignatureRecord`, `PermissionManifest` (nine public names) and the record's fields `render`, `constraints`, `atoms`, `contract_version`, `requires`, `sugar`, `provenance`, `permissions` — REMOVED at 0.4.0** (stage 5's E10 of the v0.4 build; census rows 24 and 29 of the stage-5 census, the owner's bulk mark of 2026-10-03, OWNER-WORDS §317 — R-V04B-105. He had approved those slots at the architecture sittings of 2026-08-24 — R-V04-35, the record-carried payload's vehicle; R-V04-37 SEC-4, the Rung-1 activation — and his later mark removes them: the difference between his earlier and later words is resolved by the later word, stated here; his R-V04-27 of the same day, verbatim, put permission levels and hash checks LATER; his §120 on a basic framework BEFORE HARDENING; his §18 (ii) on clutter): the record keeps eight fields (the six of 0.3.2, the declared default of stage 2's commit 3, the capture declaration of v0.4 T5); a record naming a removed keyword no longer constructs (a keyword error at the call); the seal's fold covers the capture slot alone of the declared slots — the registration digest re-minted (a cache key, measured by the build's probe); nothing a run produces changes (the corpus A/B zero bytes at the land). `RenderDecl.materialize` — piece (3) of census row 45's four Visib declarations — leaves here with its type: the judge's 'materialize follows #45' was written for the order E12-before-E10; the owner's §319 release re-slotted E12 after P3.
