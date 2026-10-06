@@ -4,7 +4,9 @@
 # DOES: proves those messages carry their stable substrings on real triggers. The deep-state
 #       loci (duplicate-conditions, condition-key family) and the internal-invariant messages
 #       ship unwitnessed here, as does the unknown-action message.
-# REASONING: the spaced `#~ : x` form is rejected at the argument guard before label handling,
+# REASONING: the spaced `#~ : x` form is rejected before label handling by the absorb grammar's "misplaced
+#       one-word label" refusal (MEASURED by stage 5's E6 probe of the v0.4 build, its J5 — not by the set-invocation
+#       seam the first draft of this line named, left at E6),
 #       so the unspaced form is the true label path exercised below.
 # PURPOSE: no bare stack traces — every user-triggerable failure names what went wrong.
 

@@ -469,8 +469,9 @@ drops `:label1` from depth 1 to depth 2. One blank line, two flips, two reasons.
   syntax may change — do not build durable content on it at v0.
 - **Visib actions (`show` / `hide` / `discard`) take NO arguments;** an empty list (`hide()`) is
   accepted as the bare form.
-- **Malformed arguments** (wrong arity; non-parsable or overflowing values) refuse with the stable
-  message `GoMeta apply: invalid arguments …` — never a raw stack trace.
+- **Malformed arguments** (wrong arity; non-parsable or overflowing values) are Julia's own error out of the
+  `goMeta` call since stage 5's E6 of the v0.4 build (the stable `GoMeta apply: invalid arguments …` refusal
+  left with the set-invocation seam — census row 14; `docs/public-api.md` §3.4).
 - **Condition-side atoms** (`{ cell(7) }`-class queries inside `{}`) route through the closed
   condition intake instead: non-label arguments meet the typed argument-domain refusal there, and
   the BARE unqueryable atom is the E-07 pending-mint edge (`docs/public-api.md` §3.2/§3.4).

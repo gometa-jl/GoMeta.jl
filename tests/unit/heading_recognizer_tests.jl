@@ -63,8 +63,8 @@ import GoMeta as GM
         @test GM.AbsorbMeta._coerce_arg_token(SubString{String}("\"\"")) === ""
         # NUMERIC text stays a Symbol — the integer space is RESERVED out of the floor
         # (hd-5): the coercion NEVER mints an Int, so numeric args keep their byte-exact
-        # pre-widening fates at the _invoke_set seam (cell(7) accepted, cell(99999) refused —
-        # pinned in arg_guard_tests.jl, untouched by this step)
+        # pre-widening fates at the setter (cell(7) accepted; cell(99999) is `parse`'s own OverflowError
+        # since stage 5's E6 of the v0.4 build — census row 14; the working form pinned in arg_guard_tests.jl)
         @test GM.AbsorbMeta._coerce_arg_token(SubString{String}("7")) === Symbol("7")
         @test GM.AbsorbMeta._coerce_arg_token(SubString{String}("99999")) === Symbol("99999")
     end
@@ -272,14 +272,9 @@ end
         # through the hd-5 floor, parsed setId-style at the store)
         @test (:head_2, "T") in _heads(_run("#~ head(\"T\", 2)\nx = 1\n"))
         @test (:head_7, "T") in _heads(_run("#~ head(\"T\", 7)\nx = 1\n"))
-        # refusals: a non-parseable level + missing args meet the _invoke_set seam
-        eb = _err("#~ head(\"T\", x)\nx = 1\n")
-        @test eb isa ErrorException && occursin("invalid arguments", eb.msg)
-        en = _err("#~ head\nx = 1\n")
-        @test en isa ErrorException && occursin("invalid arguments", en.msg)
-        # a bare-word (Symbol) text refuses — the text slot is typed AbstractString
-        es = _err("#~ head(x)\nx = 1\n")
-        @test es isa ErrorException && occursin("invalid arguments", es.msg)
+        # (the three refusals at the former set-invocation seam left at stage 5's E6 of the v0.4 build — a non-parseable
+        # level, the text missing, a bare-word text — census row 14: Julia's own errors now, measured on both trees by
+        # the build's probe)
     end
 
     @testset "localOnly delivery — the ratified `:localOnly` set mode (witnesses)" begin

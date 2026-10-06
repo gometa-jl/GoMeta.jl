@@ -59,8 +59,8 @@ import ..GoMeta: AlterantArgT
 # reads it) and the Alterants submodule (the Heading validation seam lives there).
 import ..GoMeta: MetaContext, UserContext   # UserContext since stage 2's commit 3a — the enqueue's origin line (commit 2) reads it on the user feed
 import ..Alterants
-# v0.2 localOnly delivery: the absorb seam invokes the setter guard (`_invoke_set`,
-# apply.jl — included AFTER this file, hence module-qualified late binding), evaluates
+# v0.2 localOnly delivery: the absorb seam calls the record's setter directly (its guard
+# `_invoke_set` left at stage 5's E6 of the v0.4 build — census row 14), evaluates
 # conditions ONCE (`evaluate`, condition.jl), and mints the heading rows
 # (`capture_heading!`, annotations.jl) — all reached via the parent module.
 import ..GoMeta as GMX
@@ -611,7 +611,7 @@ function absorbMeta(
                 ## the slot tensors, never consumes slot capacity, and the inheritance
                 ## backtrack (both apply passes) never sees it — "applies once, where
                 ## it stands". The whole head path (wall, validation, applicability,
-                ## materialization, the ONE condition evaluation, the setter guard)
+                ## materialization, the ONE condition evaluation, the setter call)
                 ## lives in `_absorb_local_only!` below.
                 local loPlugIdx = st.registry.action_to_plugin[crntAltActionIdx]
                 isLocalOnly = st.registry.plugins[loPlugIdx].setMode === :localOnly
@@ -774,9 +774,8 @@ end
 ##   heading's own lineage context — refusal→semantics is a compatible widening).
 ##   An opt-in FullEvalCondition marker on a heading is RESERVED TOO (the second
 ##   wall arm below);
-## - the setter guard (`_invoke_set`) supplies the SAME typed arity/type refusals as
-##   the apply plane ("invalid arguments" — the I15 seam), so canonical-call refusal
-##   classes are surface-identical to the queued era.
+## - the setter is called bare, as on the apply plane — its guard `_invoke_set` left at stage 5's E6
+##   of the v0.4 build with its typed refusals (census row 14).
 ## Registry-driven WHERE THE REGISTRY CAN DRIVE IT: the DIVERT (mode),
 ## the constructor, the setter, the String-slot capability
 ## (`accepts_string_slot`), and the VALIDATION seam (the spec's `validate` slot)
@@ -789,8 +788,8 @@ end
 ## drive `(st, heading, stem)` — the flush's concrete entries-Vector gate is the
 ## runtime shape law.) (v0.4 T3 sweep: the former "custom
 ## localOnly is OUTSIDE the v0.2 envelope / registry reserved" posture note was
-## STALE — T2 made published custom registries RUN at the seam; the mint below
-## is envelope-wrapped (`_mint_instance`) and the store check rides `_invoke_set`;
+## STALE — T2 made published custom registries RUN at the seam; the mint and the set below
+## are bare since stage 5's E6 of the v0.4 build (the wrap and the store check left — census row 14);
 ## `capture_heading!`'s Heading-typing is the T5 capture re-home's row.)
 function _absorb_local_only!(
     st, metaSS::SubString{String}, actionName::Symbol,
@@ -817,8 +816,8 @@ function _absorb_local_only!(
                     " (see docs/public-api.md §3.4)")
         end
         # the declared validation runs on the STRING text (a bare-word text in
-        # the accepting slot rides to the typed arity/type refusals at the setter
-        # guard — never the wrong-class validation message).
+        # the accepting slot rides to the setter's own dispatch — Julia's MethodError since stage 5's E6
+        # of the v0.4 build, census row 14, the build's probe, its B3 — never the wrong-class validation message).
         # v0.4 T3 (T3-DESIGN §3; FM-CB-5) — the result is CONSUMED: `true` accepts;
         # `false` refuses (REG_VALIDATE_FALSE); a non-Bool refuses (RES_RETURN_TYPE — the `-> Bool`
         # contract); a FOREIGN throw wraps (CB_VALIDATE_THROW) — each a catalogue-named stable-message
@@ -903,8 +902,8 @@ function _absorb_local_only!(
     if conditionExpr === nothing || _condOutcome
         # v0.4 T5: the store is the OWNING PLUGIN's pending entry (per-plugin injective)
         store = get(pendingLocal, plugIdx, nothing)
-        store === nothing && (store = GMX._mint_instance(plug))   # T3: the wrapped THIRD mint
-        GMX._invoke_set(st.registry, plug.setAltInstance, store, actionName, argsTup)
+        store === nothing && (store = plug.altConstructor())   # the bare mint since stage 5's E6 (census row 14)
+        plug.setAltInstance(store, actionName, argsTup...)
         pendingLocal[plugIdx] = store
     end
     return nothing
@@ -933,8 +932,8 @@ _ispunct_valid(c::AbstractChar) = isvalid(c) && ispunct(c)
 ## route's splitter, by contrast, invokes the law on ANY quote in a piece). EVERY bare
 ## token stays the Symbol it always was, INCLUDING numeric text (`Symbol("7")`) — the
 ## literal floor is EXACTLY Symbol|String: the integer space is RESERVED, deliberately not
-## coerced, so numeric args keep their byte-exact pre-widening fates at the `_invoke_set`
-## arg seam. No metaLine grammar accepts a String at this step — a String kind meets the
+## coerced, so numeric args keep their byte-exact pre-widening fates at the setter, which
+## parses them itself. No metaLine grammar accepts a String at this step — a String kind meets the
 ## TRANSITIONAL typed refusal at the enqueue seam (see absorbMeta; dispatch alone cannot
 ## hold the law — the built-in toy setters keep an untyped value slot); the recognizer
 ## step opens the first legitimate String surface.

@@ -265,12 +265,10 @@ These are part of the documented public surface — declared with Julia's `publi
     through the envelope verbatim (the shipped heading validator's ratified empty-text refusal
     is exactly this class); any other throw is a validator DEFECT.
   - **The constructor dependency** (`PlugIn.altConstructor`): must be ZERO-ARG constructible —
-    an absent zero-arg method meets the mint wrap at first apply as the stable `CB_CTOR_THROW`
-    refusal naming the alterant and the `MethodError` (the eager `DEP_MISSING` gate at `validate` left at
-    stage 5's E4). A ctor whose zero-arg method exists but THROWS converts at
-    the mint to the same `CB_CTOR_THROW` refusal; a minted instance
-    foreign to the matched overload's declared store type refuses `RES_FOREIGN_STORE` at every
-    set-invocation.
+    it is called bare at the three instance-mint sites since stage 5's E6 of the v0.4 build (census row 14): an
+    absent zero-arg method or a throwing constructor is Julia's own error out of the `goMeta` call (the eager
+    `DEP_MISSING` gate at `validate` left at stage 5's E4; the mint wrap `CB_CTOR_THROW` left at stage 5's E6, and the
+    per-invocation store-identity check `RES_FOREIGN_STORE` with it — census row 14, the set-invocation seam).
   - **The plugin index rule:** `ActionSpec.plugin` is the declaration-order index of the owning
     Alterant, an `Int8` you supply — `GoMeta.next_plugin_index(builder)` returns the index the
     NEXT `register!` call will assign (1 on an empty builder; 5 after the four built-ins), and
@@ -559,8 +557,9 @@ arg2)` — parsed with the metaLine and handed to the action when it fires. The 
   at v0. Inherited Id values do not cross a block separation at v0.
 - **Visib actions (`show` / `hide` / `discard`) take NO arguments;** an empty list (`hide()`) is
   accepted as the bare form.
-- **Malformed arguments** (wrong arity; non-parsable or overflowing values) raise the stable
-  `"GoMeta apply: invalid arguments …"` refusal (§3.4) — never a raw stack trace.
+- **Malformed arguments** (wrong arity; non-parsable or overflowing values) are Julia's own error out of the
+  `goMeta` call since stage 5's E6 of the v0.4 build (the stable `"GoMeta apply: invalid arguments …"` refusal
+  left with the set-invocation seam — census row 14; §3.4).
 - **Condition-side atoms** (`{ cell(7) }`-class queries inside `{}`) route through the closed
   condition intake instead: non-label arguments meet the typed argument-domain refusal there, and
   the BARE unqueryable atom is the E-07 pending-mint edge (§3.2/§3.4).
@@ -748,15 +747,16 @@ fabricated typed code:
   CAPTURE (`src/annotations.jl` — the stable message `GoMeta capture: more than one Visib value set for one component …`).
   Each refusal is stable and points at this section; most name the offending token, region, or
   bracket count.
-- **The action-args walls — GUARDED:** malformed alterant-action ARGUMENTS — non-parsable or
-  overflowing Id values and wrong-arity forms, including arguments on Visib actions — raise the
-  stable `"GoMeta apply: invalid arguments for alterant action …"` `ErrorException` at the
-  apply-plane `_invoke_set` seam. Working forms are unaffected (the §2 argument-forms contract).
-  Condition-side atoms with non-label arguments (`:label1{ cell(7) }`, `{ cell(x) }`) now meet
-  the TYPED argument-domain refusal at the closed intake (§3.2) — they never reach evaluation.
-  The remaining raw edge is the BARE unqueryable atom (`{ cell }` / `{ parent }` / `{ file }`):
-  the E-07 shape, whose typed mint is pending (§3.2). Witnesses:
-  `tests/unit/arg_guard_tests.jl`.
+- **The action-args walls — REMOVED at 0.4.0** (stage 5's E6 of the v0.4 build; census row 14; his §120 —
+  the framework before hardening; his legacy called the setter directly): malformed alterant-action ARGUMENTS —
+  non-parsable or overflowing Id values and wrong-arity forms, including arguments on Visib actions — meet
+  Julia's own dispatch error or the setter's own `parse` error out of the `goMeta` call; the stable
+  `"GoMeta apply: invalid arguments …"` refusal and the apply-plane `_invoke_set` seam left at stage 5's E6.
+  Working forms are unaffected (the §2 argument-forms contract). Condition-side atoms with non-label
+  arguments (`:label1{ cell(7) }`, `{ cell(x) }`) meet the TYPED argument-domain refusal at the closed
+  intake (§3.2) — they never reach evaluation. The remaining raw edge is the BARE unqueryable atom
+  (`{ cell }` / `{ parent }` / `{ file }`): the E-07 shape, whose typed mint is pending (§3.2). Witnesses of
+  the working forms: `tests/unit/arg_guard_tests.jl`.
 
 - **The bang-first meta marker — GUARDED (v0.3.1):** the transposed inert spelling — tildes,
   then ONE `!`, then digits, then an optional trailing `!`, whitespace/EOL-terminated
@@ -809,18 +809,16 @@ occurrence keys (`_putEval!`, `src/annotations.jl`).
     named via `nameof`, the action named. Trigger: any getter throw outside the pass-through
     classes. Recovery: fix the checker (its contract is total over its declared signature).
   - `RES_RETURN_TYPE` — a declared-return-type breach: the query getter returned non-`Bool`
-    (the closed interpreter's site); the setter's live return guard (the pre-existing wall, now named); or the
-    handover validator returned non-`Bool`.
+    (the closed interpreter's site) or the handover validator returned non-`Bool` (the setter's live return
+    guard left with the set-invocation seam at stage 5's E6 of the v0.4 build — census row 14).
   - `REG_VALIDATE_FALSE` — the declared handover validation returned `false` for the presented
     String-slot text; first-offender-wins at the absorb site (the catalogue's refuse-at-gate
     shape is unreachable at this callable's only call site — full collection rides T11).
   - `CB_VALIDATE_THROW` — the handover validator threw a foreign class.
-  - `CB_SET_THROW` — the set seam's malformed-argument crash conversion (the pre-existing
-    "invalid arguments" wall) now carries the name + the alterant.
-  - `CB_CTOR_THROW` — an `altConstructor` whose zero-arg method exists threw at any of the
-    three instance-mint sites; the alterant named.
-  - `RES_FOREIGN_STORE` — the store instance is foreign to the MATCHED overload's declared
-    store type, checked on every set-invocation at the post-dispatch point.
+  - `CB_SET_THROW`, `CB_CTOR_THROW`, `RES_FOREIGN_STORE` — **REMOVED at 0.4.0** (stage 5's E6 of the v0.4 build;
+    census row 14): the set seam's malformed-argument crash conversion, the three-site constructor-mint
+    envelope and the per-invocation store-identity check left with the set-invocation seam `_invoke_set` at E6;
+    the setters and constructors are called bare, as his legacy called them (his §120).
 
 ### §3.5 — Registration + door codes (v0.4; typed `Diagnostic`s)
 
@@ -845,7 +843,7 @@ rows; **(iv) DOOR results** — `REG_UNPUBLISHED` / `POST_SEAL_MUTATION` come ba
 | `REG_DERIVED_TABLES` | error | positional (route-U) construction whose hand-built tables differ from the tables derived from the declarations | `nothing` |
 | `REG_UNPUBLISHED` (door) | error | an unsealed registry reached `goMeta` — the message names `RegistryBuilder → validate → publish` | `nothing` |
 | `POST_SEAL_MUTATION` (door) | error | a published registry whose live fields no longer match the publish-time snapshot — the message carries "at <path>", the first divergent path; re-publication is the change path | the rendered path |
-| `DEP_MISSING` (v0.4 T3) | **REMOVED at 0.4.0** (stage 5's E4 of the v0.4 build; census row 3) | the eager dependency closure at publication left; an `altConstructor` with no zero-argument method publishes and meets the mint wrap at first apply — `CB_CTOR_THROW` naming the alterant and the `MethodError` (§3.4); the §6 register row | — |
+| `DEP_MISSING` (v0.4 T3) | **REMOVED at 0.4.0** (stage 5's E4 of the v0.4 build; census row 3) | the eager dependency closure at publication left; an `altConstructor` with no zero-argument method publishes and is Julia's own `MethodError` at first apply out of the `goMeta` call (the mint wrap `CB_CTOR_THROW` that named it left at stage 5's E6 of the v0.4 build — census row 14; §3.4); the §6 register row | — |
 | `STATE_REUSE_REFUSED` (T3 seam) | **REMOVED at 0.4.0** (stage 5's E2 of the v0.4 build; census row 42) | the seam ledger left with the callable driver seam: `goMeta` builds its parse state itself, one per call — nothing is injected, nothing can be in flight twice; the §6 register row | — |
 | `STATE_SEAL_MISMATCH` (T3 seam) | **REMOVED at 0.4.0** (stage 3's commit 4 of the v0.4 build; R-V04B-42 (1)) | it guarded the Visib write-backs a run left in the caller's state; nothing is written back any more — the §6 register row | — |
 | `SRC_DIGEST_MISMATCH` (v0.4 T4) | **REMOVED at 0.4.0** (stage 5's E9 of the v0.4 build; census row 10) | the vocabulary artifact's digest pin left with the record's vocabulary slot — the 38 names are a plain file read at load; the §6 register row | — |
@@ -969,3 +967,4 @@ non-silent record under R-V04B-61; the letter of R-V04B-24 (P) does not govern u
 - **The Labels vocabulary machinery — `VocabularySlot`, `InlineVocabulary`, `VocabularyRef` (the record's `vocabulary` slot, field and keyword), the G-VOC triple `vocabulary` / `vocabulary_member` / `vocabulary_queryable`, the `SRC_DIGEST_MISMATCH` code, the digest pin, the capture cache, the artifact grammar, the scope law, the write-only valve and the labels record's policy identity — REMOVED at 0.4.0** (stage 5's E9 of the v0.4 build; census rows 10, 28 and 55 of the stage-5 census, the owner's bulk mark of 2026-10-03, OWNER-WORDS §317 — R-V04B-105; his words of 2026-09-20, OWNER-WORDS §120: "Similarly CC kept on pressuring me into making the Labels Alterant safe before we even could try working with a basic true Labels Alterant."): the 38 names stay in the plain file `src/alterants-std/labels_vocabulary.txt`, read at load (R-V04B-6 (a); the file byte-identical — the ZWJ line's `query=false` field, the owner's R-V04-36 content ruling, inert data now); `setLabels` keeps the closed check (an unknown label APPLIED refuses, naming the accepted set); `checkLabels` answers false for an unset or unknown label — the legacy's (GoMetaRetro Alterants.jl :87–:99); a `PlugIn` keyword `vocabulary = …` is a `MethodError` now; `names(GoMeta)` loses six. The corpus, the 26 pins and the twelve forms byte-identical (the pre-check); the registration digest re-minted (the labels record's slots leave the seal fold — `profile_snapshot_tests.jl`, measured).
 - **The carried declaration slots and the reserved security frame of the Alterant record — the types `RenderDecl`, `EffectRow`, `MutEx`, `ConditionAtom`, `SugarRow`, `DomainRef`, `Provenance`, `SignatureRecord`, `PermissionManifest` (nine public names) and the record's fields `render`, `constraints`, `atoms`, `contract_version`, `requires`, `sugar`, `provenance`, `permissions` — REMOVED at 0.4.0** (stage 5's E10 of the v0.4 build; census rows 24 and 29 of the stage-5 census, the owner's bulk mark of 2026-10-03, OWNER-WORDS §317 — R-V04B-105. He had approved those slots at the architecture sittings of 2026-08-24 — R-V04-35, the record-carried payload's vehicle; R-V04-37 SEC-4, the Rung-1 activation — and his later mark removes them: the difference between his earlier and later words is resolved by the later word, stated here; his R-V04-27 of the same day, verbatim, put permission levels and hash checks LATER; his §120 on a basic framework BEFORE HARDENING; his §18 (ii) on clutter): the record keeps eight fields (the six of 0.3.2, the declared default of stage 2's commit 3, the capture declaration of v0.4 T5); a record naming a removed keyword no longer constructs (a keyword error at the call); the seal's fold covers the capture slot alone of the declared slots — the registration digest re-minted (a cache key, measured by the build's probe); nothing a run produces changes (the corpus A/B zero bytes at the land). `RenderDecl.materialize` — piece (3) of census row 45's four Visib declarations — leaves here with its type: the judge's 'materialize follows #45' was written for the order E12-before-E10; the owner's §319 release re-slotted E12 after P3.
 - **The capture walk's hardening, the capture declaration's `instance_type` and `multiplicity` fields, the `getAltState` query envelope, the `WARN_VERDICT_COLLISION` diagnostic and the meta-hierarchy slot-pool guard — REMOVED at 0.4.0** (stage 5's E5 of the v0.4 build; census rows 33, 34, 56, 66 and 71 of the stage-5 census, the owner's bulk mark of 2026-10-03, OWNER-WORDS §317 — R-V04B-105; his §120 on a basic framework BEFORE HARDENING; his legacy read the stores and called the getter bare): the capture walk reads each Alterant's store bare under its declared scheme (a store outside the shape is Julia's own error; a record without a capture row mints nothing); `CaptureDecl(attr_scheme, mode_gate[, attr_stem])` — the store's shape is the record's own `altConstructor`; the stem derivation folded into `_capture_stem` (four copies); the registration digest re-minted (the capture row's seal text, the thirteenth); the Heading lane's flush keeps `_capture_floor!` and its two warnings until R-V04B-101 (the judge's exception); the closed interpreter's query envelope stays; a conflicting re-apply on one cell supersedes silently, later wins; an exhausted slot pool is Julia's own error; the occurrence key's totality arm (census row 7, LATER) NOT taken here.
+- **The set-invocation seam `_invoke_set` with its pre-checks and envelopes, the instance-mint wrap `_mint_instance`, the kind map `_kind_type` with `_LITERAL_KINDS`, the user-arity helper `_user_arity`, and the `_unchecked_registry` test seam — REMOVED at 0.4.0** (stage 5's E6 of the v0.4 build; census row 14 of the stage-5 census, the owner's bulk mark of 2026-10-03, OWNER-WORDS §317 — R-V04B-105; his §120 on a basic framework BEFORE HARDENING; his legacy called the setters and constructors directly, goMetaAddOns.jl): the apply loop and the absorb heading seam call `altConstructor()` and `setAltInstance(store, action, args...)` bare — a malformed argument, an absent or throwing constructor, a store foreign to the setter's method and a declaration the method does not implement are Julia's own errors out of the `goMeta` call, and a setter's return is not checked; the codes `CB_SET_THROW`, `CB_CTOR_THROW` and `RES_FOREIGN_STORE` leave the catalogue, `RES_RETURN_TYPE` keeps its two surviving sites (the closed interpreter's query site; the handover validator); the registration record and its digest are unchanged; the typed refusal witnesses left with their subject (arg_guard, registration, seam_envelope, heading_recognizer); measured on both trees by the build's edge probe (receipts/S8-branch/PROBES-e6-edges-*).

@@ -26,8 +26,8 @@
 #     normalization); an unknown label APPLIED meets the stable refusal that
 #     names the accepted set; a label QUERIED answers false when unknown or unset — the legacy's checker, since stage 5's E9
 #     (the T4 membership refusal and the R-V04-36 write-only valve left, census row 55). `setId` parses values into the Int16 domain; the value/arity walls
-#     around these setters are guarded at the apply seam by the stable "GoMeta apply: invalid arguments"
-#     refusal (docs/public-api.md §3.4; tests/unit/arg_guard_tests.jl). Only the labels
+#     around these setters are Julia's own since stage 5's E6 of the v0.4 build (the apply seam's typed
+#     refusal left — census row 14; docs/public-api.md §3.4). Only the labels
 #     row has a query getter (`checkLabels`); Visib/Id carry none — `cell`/`parent`/`file` as a
 #     condition atom is the deferred E-07 row. `DEFAULT_REGISTRY` is a PUBLISHED, SEALED value (v0.4
 #     T2; the T2-bis SNAPSHOT door): its Dict/Vector fields stay mutable containers, but a mutation
@@ -71,9 +71,9 @@ function setLabels(
         ## (or ':()') reaches this setter with ZERO labels — the vacuous loop below then stored
         ## nothing, minted no evals row, and the author's mistyped label vanished SILENTLY
         ## (probe m_lone_colon). The Alterant verifies its own input: an empty label list
-        ## refuses loudly. error() (not ArgumentError) deliberately: the setter seam displays
-        ## an ErrorException's message verbatim (the unknown-label mechanics below), while an
-        ## ArgumentError's message is discarded to its type name at the seam's conversion.
+        ## refuses loudly. error() (not ArgumentError): chosen when the setter seam — left at stage 5's E6 of
+        ## the v0.4 build, census row 14 — reduced an ArgumentError to its type name; an ArgumentError now
+        ## propagates with its message; kept as the Alterant's own refusal (the unknown-label mechanics below).
         isempty(labels) && error("GoMeta apply: empty label list — the labels action ':' ",
             "names no label; v0 requires at least one label (e.g. ':label1'); ",
             "see docs/public-api.md §3.4")
@@ -219,8 +219,8 @@ _heading_validate_level(lvl::Int) =
 ## attr-fold; stored in NO Component) — and the EXPLICIT sibling takes the level
 ## per call. The explicit level arrives as Symbol text (`Symbol("2")`: the literal
 ## floor keeps the integer space RESERVED out of the args wall) and is parsed
-## here — the setId precedent; a non-parseable level meets the `_invoke_set`
-## invalid-arguments refusal.
+## here — the setId precedent; a non-parseable level is `parse`'s own ArgumentError (the seam's
+## typed refusal left at stage 5's E6 of the v0.4 build — census row 14).
 function setHead(crntHeading::Heading, actionName::Symbol, headingText::AbstractString)
     _heading_validate_text(headingText)
     push!(crntHeading.entries, (String(headingText), nothing))
@@ -389,7 +389,6 @@ function getAltState(
         return false
     end
 end
-
 
 end # module CnS
 
@@ -594,33 +593,6 @@ function _mode_gate_collect!(diags::Vector{Diagnostic}, plugins::Vector{PlugIn})
     return nothing
 end
 
-const _LITERAL_KINDS = (:symbol, :string, :raw)     # :raw = internal-row bytes — the closed kind set `_kind_type` is total over
-
-"""
-    _kind_type(k::Symbol) -> Type
-
-The ONE declared-kind → runtime-type map, TOTAL over the closed `_LITERAL_KINDS` set
-(`:symbol` → `Symbol` · `:string` → `AbstractString` · `:raw` → `SubString{String}`), used by
-the runtime arming consult in the set-invocation guard (its load-time partner, the reflection
-cross-check, left at stage 5's E4). An unknown kind meets the error below.
-"""
-_kind_type(k::Symbol)::Type =
-    k === :symbol ? Symbol :
-    k === :string ? AbstractString :
-    k === :raw    ? SubString{String} :
-    error("GoMeta registry: unknown literal kind ", repr(k),
-        " — the closed kind set is ", _LITERAL_KINDS, " (the shared kind map)")
-
-"""
-    _user_arity(ov::ActionOverload) -> Int
-
-The overload's USER-argument arity. Every declared `sig_types` vector INCLUDES the
-`(alterant, actionName)` dispatch preamble (the record shape the setters' methods carry),
-so the user arity is `length(sig_types) - 2` — pinned here so the
-convention cannot silently skew between the record and its consumers.
-"""
-_user_arity(ov::ActionOverload)::Int = length(ov.sig_types) - 2
-
 """
     _registration_digest(action_specs; plugins = PlugIn[]) -> UInt64
 
@@ -668,8 +640,8 @@ function _registration_digest(action_specs::Vector{ActionSpec};
             # in-band marker discipline (delta-recorded): the "k"/"s" list markers
             # separate two SPLATTED variable-length lists; boundary aliasing would
             # need a kind or source literally named k/s — no longer refused at registration
-            # (the enum check left at stage 5's E4; `_kind_type` runs only at the arming
-            # consult, after the digest is minted), so such a record's fingerprint can alias
+            # (the enum check left at stage 5's E4; the arming consult that read the kinds left at stage 5's E6
+            # of the v0.4 build — census row 14), so such a record's fingerprint can alias
             # another's: a fingerprint-only collision class inside R-V04B-4 (v)'s disclosed-lossy
             # bound — the door's snapshot compare does not depend on the fingerprint.
             h = _fold_parts(h, "k", ov.kinds..., "s", ov.kind_sources...,

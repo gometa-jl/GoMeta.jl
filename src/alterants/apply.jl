@@ -11,29 +11,26 @@
 #     plus, when the enclosing Block is `:attachedToMeta`, the depth window; the Block overload
 #     scans `userMHIdx` plus the depth window down to `fileMHIdx`; both append the `fallBack` level LAST —
 #     R-V04B-55 (3), stage 2's commit 3), and delegate.
-#     `_invoke_set` is the sole invocation seam for every plugin set-function.
+#     The setters are called directly (the record-armed invocation seam `_invoke_set` left at stage 5's E6 of the v0.4 build — census row 14).
 # DOES: evaluates each queued action's stored condition — `nothing` means set unconditionally,
 #     otherwise the stored `ConditionAST` is evaluated at apply time by the closed condition
 #     interpreter (README SECURITY; docs/public-api.md §3.2) — the engine walks it itself against
 #     the per-call settribute snapshot; no condition text reaches Julia's `eval` in a
 #     default-configured run (the opt-in `:full_eval_v1` marker dispatches to its extension's
 #     registered handler instead).
-#     An alterant already set in an earlier-processed slot is never re-set. `_invoke_set` splats the
-#     queued args tuple once into the setter and converts the malformed-argument crash classes
-#     (MethodError, ArgumentError, OverflowError) into the stable refusal
-#     "GoMeta apply: invalid arguments" (docs/public-api.md §3.4;
-#     witness tests/unit/arg_guard_tests.jl), raised OUTSIDE the catch so the refusal
-#     is the sole displayed exception; every other exception rethrows — internal defects stay
-#     loud and correctly attributed.
+#     An alterant already set in an earlier-processed slot is never re-set. The queued args tuple is
+#     splatted once into the setter, bare, as his legacy called it (goMetaAddOns.jl); a malformed argument
+#     meets Julia's own dispatch or the setter's own error — the seam's typed refusal left at stage 5's E6 of
+#     the v0.4 build (census row 14; his §120, the framework before hardening).
 # REASONING: conditions travel as parsed condition ASTs and arguments as opaque tuples, so there
-#     is one auditable evaluation site (the closed interpreter's `evaluate`), one auditable setter
-#     seam, plus explicit guards ("GoMeta internal invariant violated …", not reachable from any
-#     v0 input) on impossible apply states. Honest edges: the E-06 absorb-path guarded refusal keeps
+#     is one auditable evaluation site (the closed interpreter's `evaluate`) and direct setter calls
+#     (the auditable setter seam and its internal-invariant guards left at stage 5's E6 of the v0.4 build —
+#     census row 14). Honest edges: the E-06 absorb-path guarded refusal keeps
 #     its typed conversion deferred (the E-04 apply-path crash origin left with the Visib write-back, stage 3's commit 4)
 #     (docs/public-api.md §3.1); the BARE unqueryable condition atom aborts raw at evaluation —
 #     the E-07 pending mint (docs/public-api.md §3.2/§3.4).
-# PURPOSE: a runnable, observable Apply phase whose single evaluation site and single setter seam
-#     are the package's two replaceable condition surfaces.
+# PURPOSE: a runnable, observable Apply phase whose single evaluation site is the package's replaceable
+#     condition surface (the setter seam left at stage 5's E6 of the v0.4 build — census row 14).
 
 ## stage 2's commit 2 (R-V04B-35 (d)): the provenance of an APPLIED action — the stating Component's handle
 ## (recorded at the enqueue, `st.queue.decided_by`), kept per Alterant in APPLICATION ORDER: one entry for a
@@ -107,21 +104,16 @@ function detAltValuesForSetOfSlots(
                 local _condOutcome = _cond === nothing ? nothing : evaluate(st, _cond)   # v0.2 FLIP: the closed interpreter (the eval seam is retired)
                 if _cond === nothing || _condOutcome
                     if crntAltIdx ∉ keys(st.working)
-                        st.working[crntAltIdx] =
-                            _mint_instance(st.registry.plugins[crntAltIdx])   # T3: the wrapped mint
+                        st.working[crntAltIdx] = st.registry.plugins[crntAltIdx].altConstructor()
                     end
                     _record_origin!(st, crntAltIdx, row, crntSlot)   # R-V04B-35 (d)
                     if st.queue.args[row, crntSlot] === nothing
-                        _invoke_set(st.registry,
-                            st.registry.plugins[crntAltIdx].setAltInstance,
-                            st.working[crntAltIdx],
-                            st.registry.sorted_alt_actions[crntAltActionIdx], ())
+                        st.registry.plugins[crntAltIdx].setAltInstance(st.working[crntAltIdx],
+                            st.registry.sorted_alt_actions[crntAltActionIdx])
                     else
-                        _invoke_set(st.registry,
-                            st.registry.plugins[crntAltIdx].setAltInstance,
-                            st.working[crntAltIdx],
+                        st.registry.plugins[crntAltIdx].setAltInstance(st.working[crntAltIdx],
                             st.registry.sorted_alt_actions[crntAltActionIdx],
-                            st.queue.args[row, crntSlot])
+                            st.queue.args[row, crntSlot]...)
                     end
                 end
             end
@@ -188,21 +180,16 @@ function detAltValuesForSetOfSlots(
                     end
 
                     if crntAltIdx ∉ keys(st.working)
-                        st.working[crntAltIdx] =
-                            _mint_instance(st.registry.plugins[crntAltIdx])   # T3: the wrapped mint
+                        st.working[crntAltIdx] = st.registry.plugins[crntAltIdx].altConstructor()
                     end
                     _record_origin!(st, crntAltIdx, idx, crntSlot)   # R-V04B-35 (d)
                     if st.queue.args[idx, crntSlot] === nothing
-                        _invoke_set(st.registry,
-                            st.registry.plugins[crntAltIdx].setAltInstance,
-                            st.working[crntAltIdx],
-                            st.registry.sorted_alt_actions[crntAltActionIdx], ())
+                        st.registry.plugins[crntAltIdx].setAltInstance(st.working[crntAltIdx],
+                            st.registry.sorted_alt_actions[crntAltActionIdx])
                     else
-                        _invoke_set(st.registry,
-                            st.registry.plugins[crntAltIdx].setAltInstance,
-                            st.working[crntAltIdx],
+                        st.registry.plugins[crntAltIdx].setAltInstance(st.working[crntAltIdx],
                             st.registry.sorted_alt_actions[crntAltActionIdx],
-                            st.queue.args[idx, crntSlot])
+                            st.queue.args[idx, crntSlot]...)
                     end
                 end
             end
@@ -306,176 +293,4 @@ function applyAltActionFns(
         checkTheseSlotsInOrderVec[countEligibleSlots] = crntSlot
     end
     detAltValuesForSetOfSlots(view(checkTheseSlotsInOrderVec, 1:countEligibleSlots))
-end
-
-# ── _invoke_set: the action-args refusal seam (record-armed) ────────────────────────────────────
-# IS:   the SOLE invocation seam for every plugin set-function (the four
-#       `detAltValuesForSetOfSlots` call sites above and the heading delivery at the absorb seam
-#       route here; it is defined at the tail of the file because top-level functions are
-#       late-bound).
-# DOES: consults the DECLARED registration record BEFORE dispatch: the action must be registered
-#       (`spec_index`), and some declared overload must accept the args — arity AND per-slot form,
-#       checked as typed DATA (`_args_match`: signature types for typed slots; the declared kind
-#       via the shared `_kind_type` map for untyped slots; the vararg tail by the same map; rows
-#       whose actionName slot cannot carry a `Symbol` are unreachable from this seam and skipped).
-#       Refusals are typed and name the failing class. THEN invokes `setAltInstance` (real Julia
-#       dispatch — the matcher is a CHECK, never a dispatcher) and guards the RETURN against the
-#       ARITY-compatible addressable rows' declared return types (for the shipped record, whose
-#       rows differ in arity, that set is a singleton; the registration-time uniqueness law that
-#       made it one for every record left at stage 5's E4 — a custom record with two same-arity
-#       rows is guarded against the union of their declared types; an off-declaration return is
-#       an INTERNAL defect, loud).
-#       The catch is the value-level backstop: ArgumentError/OverflowError (arity+form
-#       pass, the VALUE itself fails — pre-checks cannot see values) keep the stable
-#       "GoMeta apply: invalid arguments" refusal, raised OUTSIDE the catch so the refusal is the
-#       SOLE displayed exception (no `caused by:` raw-payload chain); a MethodError here means
-#       declaration/reality drift and raises the internal-invariant error WITH its cause chain
-#       (attribution wanted for defects). Anything else RETHROWS.
-# REASONING: the bar is "no raw crash on any input; extreme input gets a typed, documented
-#       refusal" at the argument surface. The guard sits at the SEAM, not inside the alterant
-#       bodies — the declared data (the author's statement; the load-time cross-check left at
-#       stage 5's E4) guards every live invocation. CALLER INVARIANT (documented, unenforced here): the store
-#       passed as the alterant is built by the OWNING plugin's constructor; the matcher does not
-#       check the alterant slot. The pass path is one Dict lookup + two small row loops of `isa`
-#       checks (once to admit the args, once to bound the return), allocation-free; refusal text
-#       builds only on refusal.
-#       Condition-side atoms on the query side (the `#~ cell(7) :label1{ cell(7) }` class — the
-#       raw crash arms only once an earlier Id action populated the slot) are a documented
-#       edge (E-07, typed mint pending; docs/public-api.md §3.2/§3.4): the bare
-#       unqueryable atom aborts raw at evaluation, not here.
-# PURPOSE: a stranger's malformed argument gets an explanatory, catalogued refusal
-#       (docs/public-api.md §3.4), never a bare stack trace — and a drifted build gets a loud
-#       internal error, never a silently absorbed wrong shape.
-"""
-    _arity_match(ov::ActionOverload, args::Tuple) -> Bool
-
-The ADDRESSABILITY + ARITY half of the match (no per-slot form checks): the row's actionName
-slot carries `Symbol`, and the arg count fits (fixed == / vararg ≥). The RETURN guard uses
-this wider predicate — dispatch selects by types, not by declared kinds, so the admissible
-return set is the arity-compatible rows' (see the seam header).
-"""
-function _arity_match(ov::ActionOverload, args::Tuple)::Bool
-    Symbol <: ov.sig_types[2] || return false
-    n_user = _user_arity(ov)
-    return ov.vararg_kind === nothing ? length(args) == n_user : length(args) >= n_user
-end
-
-"""
-    _args_match(ov::ActionOverload, args::Tuple) -> Bool
-
-Whether one declared overload row accepts the user-args tuple AT THE SET-INVOCATION SEAM
-(where the actionName is always a `Symbol`): row addressable (its actionName slot carries
-`Symbol`) · arity (fixed == / vararg ≥ the user arity) · per-slot form (typed slots by
-signature type; untyped `Any` slots by the DECLARED kind where the kind vector covers them —
-the kinds tail-align to the LAST `length(kinds)` user slots; uncovered `Any` slots accept
-anything) · vararg tail by the shared kind map.
-A CHECK, not a dispatcher — on pass, the real call still runs ordinary Julia dispatch.
-"""
-function _args_match(ov::ActionOverload, args::Tuple)::Bool
-    _arity_match(ov, args) || return false
-    n_user = _user_arity(ov)
-    if ov.vararg_kind !== nothing
-        vt = _kind_type(ov.vararg_kind)
-        for j in (n_user + 1):length(args)
-            args[j] isa vt || return false
-        end
-    end
-    kind_off = n_user - length(ov.kinds)
-    for i in 1:n_user
-        t = ov.sig_types[2 + i]
-        if t === Any
-            ki = i - kind_off
-            ki >= 1 && !(args[i] isa _kind_type(ov.kinds[ki])) && return false
-        else
-            args[i] isa t || return false
-        end
-    end
-    return true
-end
-
-"""
-    _mint_instance(plug) -> the alterant instance   (v0.4 T3 — T3-DESIGN §4)
-
-THE ONE instance-mint wrap, used at all THREE bare-`altConstructor()` sites (the two
-apply-loop mints + the absorb-seam localOnly heading mint): a THROW from a user ctor
-(an absent zero-arg method — the bare call's `MethodError` — meets this wrap too since the
-gate's eager dependency closure left at stage 5's E4)
-converts to the typed refusal naming `CB_CTOR_THROW` with record attribution via
-`altName`. `InterruptException` and the engine's own `"GoMeta "`-prefixed refusals
-rethrow (the T3 pass-through law); the guarantee is scoped to exceptions delivered to
-the handler.
-"""
-function _mint_instance(plug)
-    try
-        return plug.altConstructor()
-    catch e
-        e isa InterruptException && rethrow()
-        (e isa ErrorException && startswith(e.msg, "GoMeta ")) && rethrow()
-        error("GoMeta apply: alterant instance constructor threw (CB_CTOR_THROW): ",
-            String(nameof(typeof(e))), " for alterant ", repr(plug.altName),
-            " — the declared altConstructor must construct with zero arguments ",
-            "(see docs/public-api.md §3.4)")
-    end
-end
-
-function _invoke_set(registry::AlterantRegistry, setfn::Function, alterant,
-                     actionName::Symbol, args::Tuple)
-    si = get(registry.spec_index, actionName, 0)
-    si == 0 && error("GoMeta apply: unregistered alterant action ",
-        repr(first(String(actionName), 40)),
-        " reached the set-invocation seam (the registered inventory has ",
-        length(registry.action_specs), " actions) — the registration record is the law; ",
-        "declare the action (see docs/public-api.md §3.4)")
-    spec = registry.action_specs[si]
-    matched = false
-    local mov = nothing              # T3: the MATCHED overload, captured for the store check
-    for ov in spec.overloads
-        _args_match(ov, args) && (matched = true; mov = ov; break)
-    end
-    matched || error("GoMeta apply: invalid arguments for alterant action ",
-        repr(first(String(actionName), 40)), " (no declared form accepts ",
-        length(args), " argument(s) of the given shapes; the declared arities are ",
-        sort!(unique(Int[_user_arity(ov) for ov in spec.overloads if Symbol <: ov.sig_types[2]])),
-        any(ov.vararg_kind !== nothing && Symbol <: ov.sig_types[2]
-            for ov in spec.overloads) ? " + a vararg tail" : "",
-        ") — v0's documented argument forms: see docs/public-api.md §3.4")
-    ## v0.4 T3 (T3-DESIGN §4; FM-RES-1) — the STORE-IDENTITY check at the post-dispatch
-    ## point, PER INVOKE (the matched overload is known only here; a persisted instance is
-    ## re-checked on every set-call — strictly stronger than a per-mint check, and it
-    ## covers the absorb seam's `_invoke_set` call for free). The no-match refusal above
-    ## fires FIRST (the ruled precedence). `sig_types[1]` gains its first reader; nothing
-    ## constrains store-type consistency ACROSS one action's overloads — the check binds
-    ## to the MATCHED overload, well-defined per invocation (disclosed).
-    alterant isa mov.sig_types[1] || error("GoMeta apply: alterant store of type ",
-        String(nameof(typeof(alterant))),
-        " is FOREIGN to the declared overload's store type (RES_FOREIGN_STORE) on action ",
-        repr(first(String(actionName), 40)), " (see docs/public-api.md §3.4)")
-    failed_as = nothing
-    ret = nothing
-    try
-        ret = setfn(alterant, actionName, args...)
-    catch e
-        if e isa Union{ArgumentError, OverflowError}
-            failed_as = typeof(e).name.name
-        elseif e isa MethodError
-            error("GoMeta internal invariant violated: set dispatch failed AFTER the ",
-                "declared-record pre-checks passed (declaration/reality drift on action ",
-                repr(first(String(actionName), 40)), ") — please report this")
-        else
-            rethrow()
-        end
-    end
-    failed_as === nothing || error("GoMeta apply: invalid arguments for alterant action ",
-        repr(first(String(actionName), 40)), " (", failed_as,
-        "; CB_SET_THROW; alterant ", repr(registry.plugins[spec.plugin].altName),
-        ") — v0's documented argument forms: see docs/public-api.md §3.4")
-    ret_ok = false
-    for ov in spec.overloads
-        (_arity_match(ov, args) && ret isa ov.return_type) && (ret_ok = true; break)
-    end
-    ret_ok || error("GoMeta internal invariant violated: alterant action ",
-        repr(first(String(actionName), 40)), " returned ", typeof(ret),
-        " — off its DECLARED return type (RES_RETURN_TYPE; the value-algebra guard at ",
-        "the live seam) — please report this")
-    return nothing
 end

@@ -12,8 +12,8 @@
 #   - slot_overflow_tests.jl  — witnesses for the "GoMeta absorb: slot action capacity" refusal.
 #   - malformed_meta_tests.jl — witnesses for the "GoMeta absorb: malformed metaLine" refusal.
 #   - error_message_tests.jl  — stable-message witnesses, e.g. "GoMeta apply: unknown label".
-#   - arg_guard_tests.jl      — witnesses for the "GoMeta apply: invalid arguments" refusal at the
-#                               action-args seam.
+#   - arg_guard_tests.jl      — the documented WORKING argument forms (the refusal witnesses left at
+#                               stage 5's E6 of the v0.4 build — census row 14, the set-invocation seam).
 #   - condition_cap_tests.jl  — witnesses for the condition-length-cap refusal.
 #   … and every further member in the include list below (the list IS the index: token law · ws alphabet ·
 #   unicode cures · textlaw · reserved adjacency · condition modes · heading recognizer · registration ·
@@ -30,7 +30,7 @@ using Test
     include(joinpath(@__DIR__, "slot_overflow_tests.jl"))           # guarded refusal witnesses for slot action capacity
     include(joinpath(@__DIR__, "malformed_meta_tests.jl"))          # guarded refusal witnesses for malformed metaLine input
     include(joinpath(@__DIR__, "error_message_tests.jl"))           # stable error-message witnesses
-    include(joinpath(@__DIR__, "arg_guard_tests.jl"))               # action-args refusal witnesses
+    include(joinpath(@__DIR__, "arg_guard_tests.jl"))               # the documented WORKING argument forms (the refusal witnesses left at stage 5's E6 — census row 14)
     include(joinpath(@__DIR__, "condition_cap_tests.jl"))           # guarded refusal witnesses for the condition scan cap (E-02)
     include(joinpath(@__DIR__, "token_law_tests.jl"))               # F-13 token-delimiter-law verification matrix (owner-ruled 2026-08-08)
     include(joinpath(@__DIR__, "ws_alphabet_tests.jl"))             # F-14 ws-alphabet matrix (owner-ruled 2026-08-08: Unicode \h unified; GENERATED file, real codepoints)
@@ -39,7 +39,7 @@ using Test
     include(joinpath(@__DIR__, "reserved_adjacency_tests.jl"))      # directive-adjacency SHIP-CLASS tripwire (the 0.2.3 cure; ships)
     include(joinpath(@__DIR__, "condition_modes_tests.jl"))         # the dual-mode law (safe default + explicit opt-in)
     include(joinpath(@__DIR__, "heading_recognizer_tests.jl"))      # v0.2 CH-3 step 8: String-lane widening + quote negative rows (APPEND-ONLY)
-    include(joinpath(@__DIR__, "registration_tests.jl"))            # v0.2 registration build: the record + the arming guard (APPEND-ONLY; the clash law and the atomic refusals left at stage 5's E4)
+    include(joinpath(@__DIR__, "registration_tests.jl"))            # v0.2 registration build: the record (the arming guard's witnesses left at stage 5's E6 — census row 14; the clash law and the atomic refusals at stage 5's E4; APPEND-ONLY)
     include(joinpath(@__DIR__, "profile_snapshot_tests.jl"))        # v0.2 full arming: profile snapshot digests + error oracle (APPEND-ONLY)
     include(joinpath(@__DIR__, "flavor_profile_tests.jl"))          # WP1-W1 (F-17): FlavorProfile record + threading witnesses (APPEND-ONLY)
     include(joinpath(@__DIR__, "latex_flavor_tests.jl"))            # WP1-W5 (F-22): the FLAVOR_LATEX pure-data acceptance battery (APPEND-ONLY)

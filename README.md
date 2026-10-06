@@ -81,13 +81,14 @@ extends the label whitelist by a fixed **pictograph vocabulary** (byte-exact nam
   unit layers, including the dual-mode, refusal-witness, token-delimiter-law,
   whitespace-alphabet, Unicode-correctness, and directive-adjacency families — green
   under a plain `Pkg.test()`).
-- **Robustness:** no raw crash on the witnessed metaLine ACTION surface — extreme or
-  malformed input gets a **stable, documented refusal** (slot capacity, malformed metaLines —
+- **Robustness:** the metaLine GRAMMAR surface refuses with **stable, documented refusals** —
+  malformed input gets one (slot capacity, malformed metaLines —
   including stray punctuation at the action position and tokens glued to a closing `)`/`}` —,
-  unknown action, an out-of-whitelist label name in the label-setting role (a queried unknown label answers
-  false since stage 5's E9 of the v0.4 build — `docs/public-api.md` §3.4),
-  malformed action arguments, over-long conditions), catalogued in
-  `docs/public-api.md` §3.
+  unknown action, over-long conditions), and the Labels Alterant's own unknown-label refusal (`GoMeta apply: unknown
+  label …` on an applied out-of-whitelist name; a queried unknown label answers false since stage 5's E9 of the v0.4
+  build — `docs/public-api.md` §3.4), catalogued in `docs/public-api.md` §3. Malformed action ARGUMENTS are Julia's own
+  error out of the `goMeta` call since stage 5's E6 of the v0.4 build (the apply seam's typed refusal left — census
+  row 14; his legacy called the setters directly).
   The documented exception — the guarded `#~9` depth refusal — is likewise catalogued honestly in `docs/public-api.md`
   §3.1/§3.2/§3.4 (the condition path itself is minted typed since the closed-interpreter flip, the
   statement still aborting at the absorb seam — §3.2's preamble). The former second exception — the apply-path crash

@@ -237,7 +237,8 @@ structural slots excluded), parallel to the literal tail of `sig_types`;
 tag: `:reflected` where the signature slot is typed enough to carry the kind);
 `vararg_kind` — a trailing `Vararg` literal kind or `nothing`; `return_type` — the
 DECLARED return type (never compiler inference — the ad-2/ad-5 determinism law;
-the live seam's return-type guard reads it); `effect` (`:set` — the v0.2 closed
+the setter seam's return-type guard that read it left at stage 5's E6 of the v0.4 build — census
+row 14; the digest fold and the door's snapshot walk read it); `effect` (`:set` — the v0.2 closed
 effect set); `queryable`; `applicability` (`:context_free` | `:context_required`);
 `phase` (`:apply` | `:absorb` — mode-derived, the localOnly delta); `grammar` —
 `false` marks an INTERNAL row (the probe-surfaced inherited shapes, declared for the
@@ -246,7 +247,8 @@ implemented-but-undeclared diagnostic of the time — the reflection cross-check
 REASONING: the record is a declaration a reader can check — stated by the author, never derived from the
 compiler (the determinism law).
 
-PURPOSE: the row the grammar, the domain probe and the live seam's return-type guard read.
+PURPOSE: the row the grammar and the domain probe read (the live seam's return-type guard left at stage 5's E6
+of the v0.4 build — census row 14).
 """
 struct ActionOverload
     sig_types::Vector{Type}
@@ -462,29 +464,6 @@ function AlterantRegistry(plugins::Vector{PlugIn}, sorted_alt_actions::Vector{Sy
     # distinct identity — recorded, not silent; no pin reads their identity)
     return AlterantRegistry(_SealToken(), plugins, action_specs, derived, nothing, nothing)
 end
-"""
-    _unchecked_registry(plugins, …, spec_index) -> AlterantRegistry   (INTERNAL, test seam)
-
-Constructs an UNSEALED registry with NO validation — the ONE bypass, kept so the runtime walls
-downstream of registration (the `_invoke_set` return/drift guards) can be witnessed on DELIBERATELY
-drifted shapes the gated routes refuse by design. Never `public`, never a consumer route; the door
-refuses its values like any unsealed one.
-"""
-_unchecked_registry(plugins::Vector{PlugIn}, sorted_alt_actions::Vector{Symbol},
-                    action_to_plugin::Vector{Int8}, action_index::Dict{Symbol,Int8},
-                    alt_index::Dict{Symbol,Int8}, accum_alt_idxs::Vector{Int8},
-                    mutex_alt_idxs::Vector{Int8}, action_to_settribute::Dict{Symbol,Symbol},
-                    action_specs::Vector{ActionSpec}, spec_index::Dict{Symbol,Int}) =
-    # the explicitly written NamedTuple from POSITIONAL arguments is ADMITTED here (T2BIS-DESIGN
-    # §5): the by-name ban is scoped to seal/snapshot-CARRYING construction, and this seam
-    # constructs with `nothing, nothing` — a binding swap could only affect the deliberately-
-    # drifted-shape witnesses it exists to feed.
-    AlterantRegistry(_SealToken(), plugins, action_specs,
-                     (sorted_alt_actions = sorted_alt_actions, action_to_plugin = action_to_plugin,
-                      action_index = action_index, alt_index = alt_index,
-                      accum_alt_idxs = accum_alt_idxs, mutex_alt_idxs = mutex_alt_idxs,
-                      action_to_settribute = action_to_settribute, spec_index = spec_index),
-                     nothing, nothing)
 "The number of registered alterants (4 since CH-3 step 9; 3 before the heading registration)."
 num_alterants(r::AlterantRegistry) = length(r.plugins)
 
@@ -609,8 +588,8 @@ end
 
 The action-argument LITERAL FLOOR: an enqueued argument is a `Symbol` (every bare token,
 INCLUDING numeric text — `Symbol("7")`; the integer space is deliberately not an arm of
-this union, so numeric arguments keep their exact fates at the `_invoke_set` argument
-seam) or a `String` (the CONTENT of a well-formed quoted token). ONE grammar accepts the String
+this union, so numeric arguments keep their exact fates at the setter, which parses them
+itself) or a `String` (the CONTENT of a well-formed quoted token). ONE grammar accepts the String
 kind — the Heading action's TEXT slot (`accepts_string_slot = 1`, the quoted-first sugar); every
 other slot of every action refuses a quoted argument with a typed refusal at `absorbMeta`'s
 enqueue seam (dispatch alone cannot hold that law: the built-in setters keep an untyped value

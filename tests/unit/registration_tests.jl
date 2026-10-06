@@ -1,5 +1,5 @@
-# tests/unit/registration_tests.jl — v0.2 registration build: the registration record + the
-# runtime arming guard (APPEND-ONLY; the clash law with its disposition switch, the reflection
+# tests/unit/registration_tests.jl — v0.2 registration build: the registration record (the runtime
+# arming guard's witnesses left at stage 5's E6 of the v0.4 build — census row 14; APPEND-ONLY; the clash law with its disposition switch, the reflection
 # cross-check, the value-algebra and reachability refusals, the candidacy diagnostic and the record
 # shape law were CONSCIOUSLY RETIRED with their subjects at stage 5's E4 of the v0.4 build —
 # census rows 3 and 51, OWNER-WORDS §317; the retirement notes stand where the testsets stood).
@@ -7,8 +7,8 @@
 # IS:   the witnesses of the DECLARED registration record as the Engine still reads it: the
 #       remaining checks wired at `validate` (source order), the FIRST-wins derived tables, the
 #       operator-token spelling, the commissioned capability consults, the dispatch-boundary
-#       RETURN-TYPE validation rows (the declared return types verified against real invocations)
-#       and the full-arming guard at the set-invocation seam.
+#       RETURN-TYPE validation rows (the declared return types verified against real invocations);
+#       the full-arming guard's witnesses left with the set-invocation seam at stage 5's E6 of the v0.4 build.
 # PURPOSE: plan row 11's gate — "registration + atomicity tests green" (re-scoped at E4).
 
 using Test
@@ -29,11 +29,13 @@ import GoMeta as GM
     end
 
     # (the reflection cross-check testset was CONSCIOUSLY RETIRED at stage 5's E4 with its subject —
-    # census row 3: a declared signature is the author's statement; a drifted one meets the live seam's
-    # INTERNAL drift arm, witnessed in test_drift_and_return_guard_internal_arms below.)
+    # census row 3: a declared signature is the author's statement; a drifted one is Julia's own MethodError at the
+    # bare setter call since stage 5's E6 of the v0.4 build — census row 14, the build's probe, its I1; the seam's
+    # drift arm and its witness test_drift_and_return_guard_internal_arms left at stage 5's E6.)
 
     # (test_value_algebra_refusal + test_reachability_refusal were CONSCIOUSLY RETIRED at stage 5's E4
-    # with their subjects — census row 3; the live seam's return-type guard stands, witnessed below.)
+    # with their subjects — census row 3; the live seam's return-type guard left at stage 5's E6 with its witness —
+    # census row 14: a setter's return is not checked.)
 
     @testset "the activated grants — the live register's two" begin
         # (the candidacy diagnostic left at stage 5's E4: a :candidate without activation publishes
@@ -155,112 +157,9 @@ import GoMeta as GM
             SubString{String}("cell"), SubString{String}("7"))) === Int16
     end
 
-    # ── the FULL-ARMING witnesses (the arming continuation: the declared record now
-    # guards every live set invocation at the sole seam) ────────────────────────────────
-    @testset "full arming — the set-invocation guard consults the record" begin
-        _reg = GM.DEFAULT_REGISTRY
-        _err(f) = (try f(); nothing catch e; e end)
-
-        # (test_dispatch_target_uniqueness_law was CONSCIOUSLY RETIRED at stage 5's E4 with its subject,
-        # the record shape law's uniqueness row — census row 3.)
-
-        @testset "test_kind_type_shared_map_total" begin
-            # total over the closed kind set — the one map both consults share
-            @test GM._kind_type(:symbol) === Symbol
-            @test GM._kind_type(:string) === AbstractString
-            @test GM._kind_type(:raw)    === SubString{String}
-            e = _err(() -> GM._kind_type(:nope))
-            @test e isa ErrorException && occursin("unknown literal kind", e.msg)
-        end
-
-        @testset "test_user_arity_convention" begin
-            # the (alterant, actionName) preamble convention, pinned against real rows
-            head = _reg.action_specs[_reg.spec_index[:head]]
-            @test GM._user_arity(head.overloads[1]) == 1     # deriving: (text)
-            @test GM._user_arity(head.overloads[2]) == 2     # explicit: (text, level)
-            labels = _reg.action_specs[_reg.spec_index[Symbol(":")]]
-            @test GM._user_arity(labels.overloads[1]) == 0   # vararg tail only
-        end
-
-        @testset "test_unregistered_action_refusal" begin
-            e = _err(() -> GM._invoke_set(_reg, GM.Alterants.setVisib,
-                GM.Alterants.Visib(), :nope, ()))
-            @test e isa ErrorException && occursin("unregistered alterant action", e.msg)
-        end
-
-        @testset "test_arity_refusal_typed_not_methoderror" begin
-            # :hide declares ZERO user args (the internal SubString row is unreachable
-            # from the Symbol-actionName seam and must not widen the envelope)
-            e = _err(() -> GM._invoke_set(_reg, GM.Alterants.setVisib,
-                GM.Alterants.Visib(), :hide, (:x,)))
-            @test e isa ErrorException && occursin("invalid arguments", e.msg) &&
-                  occursin("no declared form", e.msg)
-        end
-
-        @testset "test_form_refusal_declared_kind_on_untyped_slot" begin
-            # :head explicit level slot is `Any` in the signature — the DECLARED
-            # :symbol kind is the only law there; a String level must refuse
-            e = _err(() -> GM._invoke_set(_reg, GM.Alterants.setHead,
-                GM.Alterants.Heading(), :head, ("Title", "2")))
-            @test e isa ErrorException && occursin("invalid arguments", e.msg)
-        end
-
-        @testset "test_pass_paths_still_deliver" begin
-            v = GM.Alterants.Visib()
-            @test GM._invoke_set(_reg, GM.Alterants.setVisib, v, :hide, ()) === nothing
-            h = GM.Alterants.Heading()
-            @test GM._invoke_set(_reg, GM.Alterants.setHead, h, :head,
-                ("Title", Symbol("2"))) === nothing
-            @test h.entries == [("Title", 2)]
-            d = Dict{Symbol,Bool}()
-            @test GM._invoke_set(_reg, GM.Alterants.setLabels, d, Symbol(":"),
-                (:label1, :label2)) === nothing        # the vararg tail, kind-checked
-            @test haskey(d, :label1) && haskey(d, :label2)
-        end
-
-        @testset "test_value_arm_survives_as_backstop" begin
-            # arity+form PASS (a Symbol in the id slot is the declared form); the VALUE
-            # fails at parse — the stable catalogued refusal, not a raw ArgumentError
-            e = _err(() -> GM._invoke_set(_reg, GM.Alterants.setId,
-                GM.Alterants.Id(), :cell, (Symbol("xx"),)))
-            @test e isa ErrorException && occursin("invalid arguments", e.msg) &&
-                  occursin("ArgumentError", e.msg)
-        end
-
-        @testset "test_drift_and_return_guard_internal_arms" begin
-            # a hand-built registry carries the drifted shapes on purpose. Since stage 5's E4 the
-            # remaining checks at `validate` refuse neither: a declared-but-unimplemented signature
-            # and a lying return type both publish and are caught ONLY here, at the live seam — the
-            # two INTERNAL arms are production walls (the dispatch-boundary tests measure the four
-            # SHIPPED setters, a test-time fact).
-            # v0.4 T2: positional `AlterantRegistry(...)` is GATED (route U compares the hand-built
-            # tables) — the witness rides the INTERNAL `_unchecked_registry` test seam (unsealed;
-            # never a consumer route).
-            _mini(specs) = GM._unchecked_registry(GM.PlugIn[], Symbol[], Int8[],
-                Dict{Symbol,Int8}(), Dict{Symbol,Int8}(), Int8[], Int8[],
-                Dict{Symbol,Symbol}(), specs, Dict{Symbol,Int}(sp.name => i for (i, sp) in enumerate(specs)))
-            _row(sig, rt) = GM.ActionOverload(sig, Symbol[], Symbol[], nothing, rt,
-                :set, false, :context_free, :apply, true)
-            # (1) declared-but-unimplemented shape ⇒ the pre-checks pass, dispatch
-            # MethodErrors ⇒ the INTERNAL drift error (never the stranger refusal)
-            _narrow(v::GM.Alterants.Visib, n::Symbol) = true
-            drifted = _mini([GM.ActionSpec(:zz, :identifier, Int8(1),
-                [_row(Type[GM.Alterants.Visib, Symbol, Symbol], Bool)],
-                0, :none, nothing, nothing)])
-            e = _err(() -> GM._invoke_set(drifted, _narrow,
-                GM.Alterants.Visib(), :zz, (:a,)))
-            @test e isa ErrorException &&
-                  occursin("internal invariant violated", e.msg) &&
-                  occursin("drift", e.msg)
-            # (2) an off-declaration RETURN ⇒ the value-algebra guard at the live seam
-            _lies(v::GM.Alterants.Visib, n::Symbol) = Int64(7)   # declares Bool below
-            lying = _mini([GM.ActionSpec(:zz, :identifier, Int8(1),
-                [_row(Type[GM.Alterants.Visib, Symbol], Bool)],
-                0, :none, nothing, nothing)])
-            e = _err(() -> GM._invoke_set(lying, _lies, GM.Alterants.Visib(), :zz, ()))
-            @test e isa ErrorException &&
-                  occursin("internal invariant violated", e.msg) &&
-                  occursin("DECLARED return type", e.msg)
-        end
-    end
+    # ── (the FULL-ARMING witnesses — the kind map, the user-arity convention, the unregistered-action, arity,
+    # form and value refusals, the pass paths and the drift and return-guard internal arms of the set-invocation
+    # seam `_invoke_set` — were CONSCIOUSLY RETIRED with their subject at stage 5's E6 of the v0.4 build, census
+    # row 14: the seam, `_kind_type`, `_user_arity` and the `_unchecked_registry` test seam left at stage 5's E6;
+    # the setters are called bare, as his legacy called them — his §120.)
 end

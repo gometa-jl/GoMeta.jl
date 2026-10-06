@@ -169,7 +169,8 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
         survivors = Dict("config.jl" => 1,                    # §1 feed docstring example
                          "condition.jl" => 4,                 # the `{:🔥}` + `:abc(:label1)` comment set
                          "GoMeta.jl" => 1,                    # the profile-feed docstring example
-                         "alterants/apply.jl" => 1,           # the condition-side-atoms comment
+                         # (apply.jl's one — the seam header's condition-side-atoms comment — left with the set-invocation seam at stage 5's E6
+                         # of the v0.4 build, census row 14; measured on both trees: apply.jl 1 → 0, every other file equal)
                          "alterants/registry.jl" => 3)        # the header note + the TWO kept empty-list messages
         # DISCLOSED LIMIT (the crx-t3t4 C3 row): this is a SOURCE-TEXT tripwire, not a
         # semantic guarantee — a computed enumeration (names built from strings or
