@@ -203,11 +203,9 @@ _fp_julia_kwargs(; overrides...) = merge((
         r_c = GM.goMeta(_fp_bytes("//~ hide\nint x;\n");
             config = GM.GoMetaConfig(flavor_tag = :c))
         @test r_c.blsComponentTree.flavor === _FP_BLS.FLAVOR_CFAM
-        ## The invalid-tag path keeps its TYPED refusal (the resolve-once placement
-        ## law: flavor_for must never see an unvalidated tag).
-        r_bad = GM.goMeta(_fp_bytes("x\n");
+        ## The invalid-tag path throws raw at flavor_for — the closed inventory's stable message, no
+        ## fallback (the typed refusal left at stage 5's E8 of the v0.4 build — census row 30).
+        @test_throws ErrorException GM.goMeta(_fp_bytes("x\n");
             config = GM.GoMetaConfig(flavor_tag = :cobol))
-        @test r_bad.status === GM.PROCESS_ERROR
-        @test any(d -> d.code === :ERR_UNKNOWN_FLAVOR, r_bad.diagnostics)
     end
 end

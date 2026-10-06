@@ -42,15 +42,13 @@ end
         ## (the extensions pin, the seam pins and the digest distinctness left at stage 5's P1 of the v0.4 build — census rows 72, 63, 39)
     end
 
-    @testset "[2] the inventory rows: flavor_for + validate_config" begin
+    @testset "[2] the inventory rows: flavor_for (the typed config-time refusal left at stage 5's E8 — census row 30)" begin
         @test _LX_BLS.flavor_for(:latex) === _LX_BLS.FLAVOR_LATEX
         r_ok = GM.goMeta(_lx_bytes("x 1\n"); config = _lx_cfg)
         @test r_ok.status === GM.PROCESS_OK
         @test r_ok.blsComponentTree.flavor === _LX_BLS.FLAVOR_LATEX
-        r_bad = GM.goMeta(_lx_bytes("x\n");
+        @test_throws ErrorException GM.goMeta(_lx_bytes("x\n");
             config = GM.GoMetaConfig(flavor_tag = :tex))
-        @test r_bad.status === GM.PROCESS_ERROR
-        @test any(d -> d.code === :ERR_UNKNOWN_FLAVOR, r_bad.diagnostics)
     end
 
     @testset "[3] %~ mint — tree + render pinned at birth" begin

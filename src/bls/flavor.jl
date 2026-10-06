@@ -270,18 +270,17 @@ const FLAVOR_LATEX = _mk_flavor(
 """
     flavor_for(tag::Symbol)
 
-The closed flavor inventory — total-or-throw, NO fallback. `validate_config` fail-closes
-unknown tags BEFORE any pipeline call, so reaching the error below means a dispatch site
-bypassed validation (defense in depth: a silently-Julia fallback would produce a plausible
-render with wrong tree bytes and zero diagnostics the moment a new flavor arms).
+The closed flavor inventory — total-or-throw, NO fallback: an unknown tag throws the stable message below
+at `goMeta`'s flavor resolve, before any parse (docs/public-api.md §3.4; the typed config-time refusal left at
+stage 5's E8 of the v0.4 build — census row 30; a silently-Julia fallback would produce a plausible render
+with wrong tree bytes and zero diagnostics the moment a new flavor arms).
 """
 function flavor_for(tag::Symbol)
     tag === :julia && return FLAVOR_JULIA
     tag === :c     && return FLAVOR_CFAM
     tag === :latex && return FLAVOR_LATEX   # the pure-data row
     error("flavor_for: unknown flavor_tag ", repr(tag),
-        " — the closed inventory is (:julia, :c, :latex) and there is NO fallback; ",
-        "validate_config fail-closes this before any pipeline call")
+        " — the closed inventory is (:julia, :c, :latex) and there is NO fallback")
 end
 
 ## (The `_CFAM_LEAD_*` consts and the `_RE_META_LEADED_*` compatibility aliases left at stage 5's P1 of the v0.4

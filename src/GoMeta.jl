@@ -10,12 +10,13 @@
 # DOES: `goMeta(bytes; config::GoMetaConfig = GoMetaConfig(), registry::AlterantRegistry =
 #     DEFAULT_REGISTRY) -> GoMetaDelivery` runs the pipeline parse -> Absorb-walk (enqueue alterant
 #     actions) -> Apply (evaluate conditions + apply); the evaluated values are the product. `validate_config` fail-closes
-#     an invalid config into a `PROCESS_ERROR` `GoMetaDelivery` carrying typed `Diagnostic`s BEFORE any
+#     an unknown profile into a `PROCESS_ERROR` `GoMetaDelivery` carrying a typed `Diagnostic` BEFORE any
 #     parse work (the input bytes are never touched): `ERR_UNKNOWN_PROFILE` (E-03 — the
-#     three profile names are `:jl_share_v1` + the two opt-in names, docs/public-api.md §3.1),
-#     `ERR_UNKNOWN_FLAVOR` (the closed three-flavor set `:julia`/`:c`/`:latex`, selected never
-#     inferred) and `ERR_RANGE_INVALID` (E-08 — a given `parse_range` requires `first == 1` and a non-empty
-#     range). The absorb-walk + apply run inside one per-call dynamic scope, `with(STATE =>
+#     three profile names are `:jl_share_v1` + the two opt-in names, docs/public-api.md §3.1). The typed
+#     flavor and range refusals left at stage 5's E8 of the v0.4 build (census row 30): an unknown `flavor_tag`
+#     throws raw at `BLS.flavor_for` (the closed inventory, no fallback — a stable message, docs/public-api.md §3.4)
+#     and a given `parse_range` is taken plain (`first` never read; `to = last`; a non-positive `to` parses the
+#     whole file, the parser's contract). The absorb-walk + apply run inside one per-call dynamic scope, `with(STATE =>
 #     init_state(parse_state, config, registry))`, so two
 #     concurrent calls never share state; the driver walk enters each file-level Block, absorbs its
 #     metaLines, applies the queued alterant actions and captures per-cell evals rows (the Block's Visib
@@ -186,30 +187,26 @@ diagnostics that `goMeta` fail-closes on. A non-empty result means `goMeta` retu
 `GoMetaDelivery` BEFORE any parse work is attempted (the input bytes are never touched; the
 docs/public-api.md §2 fail-closed contract — downstream, the development tool's `outputs` yields its empty non-OK pair).
 
-The three v0 config-time error rows of the documented error catalogue (docs/public-api.md §3):
+The one v0 config-time error row of the documented error catalogue (docs/public-api.md §3) — the typed range and flavor
+refusals (`ERR_RANGE_INVALID`, E-08; `ERR_UNKNOWN_FLAVOR`) left at stage 5's E8 of the v0.4 build (census row 30: typed
+refusals he never named; his legacy took its arguments plain):
 
 - `ERR_UNKNOWN_PROFILE` (E-03) — `config.profile` must be one of the three profile names: `:jl_share_v1`
   (the closed default) or the two OPT-IN names `:jl_share_v1_full_parse` / `:jl_share_v1_full_eval` (which
   additionally require the explicitly-included opt-in extension — the two-act law; naming one passes THIS
   guard and refuses later at profile resolution if the extension is absent); anything else fail-closes.
-- `ERR_RANGE_INVALID` (E-08) — a given `config.parse_range` REQUIRES `first == 1` AND a NON-EMPTY range (a
-  start line other than 1 is not implemented; see docs/SYNTAX-AND-SEMANTICS.md). `nothing` (whole input) and
-  any NON-EMPTY `1:n` range (n ≥ 1) pass; an EMPTY range (e.g. `1:0`) is REJECTED — otherwise
-  `to = last(1:0) = 0` hits the parser's "non-positive ⇒ whole file" contract and a
-  degenerate empty intent would silently render the WHOLE file.
-- `ERR_UNKNOWN_FLAVOR` — `config.flavor_tag` must be one of the three armed flavor names: `:julia` (the
-  `#` lead alphabet — the default) / `:c` (the C-family `//` line-comment flavor: C, Rust & Co.) /
-  `:latex` (the `%` lead alphabet, `.tex`); anything else fail-closes. Selected, never inferred — no
-  file-extension or content sniffing exists anywhere.
 
-Pure + total (never throws): all three checks (profile, parse_range, flavor_tag) are a comparison /
-membership over the typed `GoMetaConfig` fields. The non-config-time codes are intentionally absent here, with the honest partition
+Not here since E8: `config.flavor_tag` is resolved by `BLS.flavor_for` at `goMeta` — an unknown tag throws its stable
+`ErrorException` naming the closed inventory (docs/public-api.md §3.4; no fallback); `config.parse_range` is taken plain —
+`first` is never read, `to = last(range)`, and a non-positive `to` parses the whole file (the parser's contract).
+Pure + total (never throws): the one check (profile) is a membership test over the typed `GoMetaConfig`
+field. The non-config-time codes are intentionally absent here, with the honest partition
 (docs/public-api.md §3): the condition-path refusals (E-01/E-02 + the arg-domain and parse rows) are
 TYPED at their origins in the closed interpreter; E-07's typed mint is PENDING (the unqueryable-alt
 shape still aborts raw); E-06 is the GUARDED absorb-path depth refusal (un-typed, conversion deferred; the
 E-04 apply-path crash origin left with the Visib write-back at stage 3's commit 4).
 
-REASONING: an invalid configuration must never reach the parser or the apply — the three config-time rows are decided by comparison and membership over typed fields, so the check is pure and total and the input bytes are never touched.
+REASONING: an unknown profile must never reach the parser or the apply — the one config-time row is decided by membership over a typed field, so the check is pure and total and the input bytes are never touched.
 
 PURPOSE: the one place a caller's configuration is refused with typed diagnostics, the empty vector being the pass.
 """
@@ -224,24 +221,6 @@ function validate_config(config::GoMetaConfig)
             "(the closed default), :jl_share_v1_full_parse and :jl_share_v1_full_eval " *
             "(both OPT-IN — they additionally require including " *
             "\"optin/condition_modes_opt_in.jl\" explicitly)"))
-    end
-    if !isnothing(config.parse_range) && (first(config.parse_range) != 1 || isempty(config.parse_range))
-        push!(diags, Diagnostic(:ERR_RANGE_INVALID, :error,
-            "parse_range must be a NON-EMPTY range starting at 1 (got $(repr(config.parse_range)); require first==1 and last>=1) — a start line other than 1 is not implemented, and an EMPTY range like 1:0 is rejected because `to = last(1:0) = 0` would otherwise fail OPEN to a whole-file parse"))
-    end
-    # The armed flavor inventory: :julia = the `#` lead alphabet (the default,
-    # byte-untouched); :c = the C-family `//` line-comment flavor (C, Rust & Co. —
-    # the ONE parse loop over its FlavorProfile record); :latex = the `%` lead
-    # alphabet (.tex). Closed set, no fallback (the profile law's shape). SELECTED,
-    # NEVER INFERRED: the flavor is exactly the caller's explicit config value — no
-    # file-extension or content sniffing exists anywhere — so a flavor added later can
-    # never change how an existing input is read.
-    if config.flavor_tag !== :julia && config.flavor_tag !== :c &&
-       config.flavor_tag !== :latex
-        push!(diags, Diagnostic(:ERR_UNKNOWN_FLAVOR, :error,
-            "unknown flavor_tag $(repr(config.flavor_tag)); the armed flavors are :julia " *
-            "(the `#` lead alphabet — the default), :c (the C-family `//` line-comment " *
-            "flavor: C, Rust & Co.) and :latex (the `%` lead alphabet, .tex)"))
     end
     return diags
 end
@@ -342,19 +321,21 @@ Arguments:
 - `bytes` — the input document as raw bytes. Line ENDINGS normalize to LF (CRLF is chomped — documented, not an
   error; see `docs/CANONICAL-OUTPUT.md`); content bytes are preserved faithfully for arbitrary bytes, including invalid UTF-8; non-ASCII inside a META line parses character-safely, a non-ASCII label APPLIED from outside the shipped set or a non-ASCII action meeting the stable unknown-label/unknown-action refusal (docs/public-api.md §4).
 - `config::GoMetaConfig` — the v0 input options (profile / flavor_tag / parse_range / user_mh_profile; see `GoMetaConfig`).
-  An invalid profile, flavor_tag, or parse_range fail-closes into a `PROCESS_ERROR` `GoMetaDelivery` carrying typed
-  `Diagnostic`s BEFORE any parse — the input bytes are never touched (`ERR_UNKNOWN_PROFILE` /
-  `ERR_UNKNOWN_FLAVOR` / `ERR_RANGE_INVALID`).
+  An unknown profile fail-closes into a `PROCESS_ERROR` `GoMetaDelivery` carrying a typed `Diagnostic` BEFORE any
+  parse — the input bytes are never touched (`ERR_UNKNOWN_PROFILE`). An unknown `flavor_tag` throws raw at
+  `BLS.flavor_for` (the closed inventory, no fallback — a stable message, docs/public-api.md §3.4); a given `parse_range`
+  is taken plain: `first` is never read, `last` is the parse end line, a non-positive `last` parses the whole file
+  (the typed flavor and range refusals left at stage 5's E8 of the v0.4 build — census row 30).
 - `registry::AlterantRegistry` — the alterant inventory; defaults to the deterministic `DEFAULT_REGISTRY`.
 
 The `GoMetaDelivery` is `{altValues_evals::EvalStore, blsComponentTree::BLS.ParseState, status::ProcessStatus, diagnostics::Vector{Diagnostic}}` — the four public parts, read by name (R-V04B-28/29/30) — and is
-TOTAL over the CONFIG-TIME catalogued surface (an invalid profile or parse_range never throws uncaught); absorb/apply-plane catalogued failures can still throw at v0 (see below): `status` is
+TOTAL over the CONFIG-TIME catalogued surface (an unknown profile never throws uncaught; an unknown flavor_tag throws its stable message, §3.4); absorb/apply-plane catalogued failures can still throw at v0 (see below): `status` is
 `PROCESS_OK` (no error diagnostics) or `PROCESS_ERROR` (>=1 error `Diagnostic`; non-OK => non-empty diagnostics).
 Obtain the Engine's output via `readAltValuesEvals(result.altValues_evals)` (the evals map, keyed by (handle, attr); its byte form
 `serialize_evals`; a piece's text through `BLS.content`) — with the run itself, the Engine's delivered surface
 after the move (R-V04B-24: "the run and the evaluated values"). The (tree, render) pair is the development
 tool's: `Main.BasicRenderer.outputs`, applied to the result after `include("devtools/load_basic_renderer.jl")`
-at the caller's top level. The config-time error rows are armed + typed; the condition-path refusals
+at the caller's top level. The config-time error row (E-03) is armed + typed; the condition-path refusals
 (the unknown-key, cap, argument-domain and grammar rows) are typed at their own origins in the closed
 condition interpreter, though the statement still ABORTS at the absorb seam (the refusal rethrown raw;
 its routing into the delivered diagnostics a later, separately-gated motion) — E-07's typed mint is
@@ -384,11 +365,11 @@ function goMeta(
     registry::AlterantRegistry = DEFAULT_REGISTRY,
 )
 
-    ## Config-time fail-closed validation — typed Diagnostics BEFORE any parse
-    ## work (docs/public-api.md §2: ERR_UNKNOWN_PROFILE / ERR_UNKNOWN_FLAVOR / ERR_RANGE_INVALID;
-    ## the development tool's `outputs` then yields its empty non-OK pair); on an invalid config the input bytes are never touched — the error-path
-    ## GoMetaDelivery carries a parse state built from EMPTY bytes (container sizing only). A VALID
-    ## config ⇒ an empty vector ⇒ the pipeline below runs unchanged; an INVALID config ⇒ a fail-closed
+    ## Config-time fail-closed validation — a typed Diagnostic BEFORE any parse
+    ## work (docs/public-api.md §2: ERR_UNKNOWN_PROFILE; the flavor and range arms left at stage 5's E8 — census row 30;
+    ## the development tool's `outputs` then yields its empty non-OK pair); on an unknown profile the input bytes are never touched — the error-path
+    ## GoMetaDelivery carries a parse state built from EMPTY bytes (container sizing only). A KNOWN
+    ## profile ⇒ an empty vector ⇒ the pipeline below runs unchanged; an UNKNOWN profile ⇒ a fail-closed
     ## PROCESS_ERROR GoMetaDelivery built in the `@noinline` cold `_configErrorDelivery` helper (its `init_state` +
     ## `GoMetaDelivery` construction stay OUT of this hot path). The E-06 (absorb) guarded refusal remains
     ## untyped at v0 (the E-04 apply crash origin left with the write-back, stage 3's commit 4); the condition-path refusals are minted typed
@@ -406,8 +387,9 @@ function goMeta(
     isempty(config_diags) ||
         return _configErrorDelivery(BLS.setUpToProcessFromBytes(UInt8[]), config, registry, config_diags)
 
-    ## Resolve the flavor ONCE, strictly AFTER the config validation above (an invalid tag
-    ## must keep its typed ERR_UNKNOWN_FLAVOR PROCESS_ERROR, never a raw throw), and thread
+    ## Resolve the flavor ONCE, after the config validation above (an unknown tag throws raw
+    ## HERE — `flavor_for`'s stable message naming the closed inventory; its typed refusal left at
+    ## stage 5's E8 of the v0.4 build, census row 30), and thread
     ## the record through the ParseState — every downstream flavor read rides
     ## `parse_state.flavor` (zero `config.flavor_tag` reads downstream of setup).
     flavor = BLS.flavor_for(config.flavor_tag)
@@ -417,9 +399,10 @@ function goMeta(
     ## -> GoMetaDelivery` (docs/public-api.md §2). The parse range is the typed `config.parse_range`: `nothing` ⇒
     ## the WHOLE file (mapped to `to = -1`); a `1:N` range ⇒ lines 1..N
     ## (`to = last(range)`). `parseBLS` ignores `fromLine` + breaks on `lineNum > toLine`
-    ## (docs/SYNTAX-AND-SEMANTICS.md), so a non-positive `to` parses the whole file. (`config.parse_range`
-    ## REQUIRES `first == 1`; `validate_config` above fail-closes an invalid profile/flavor/range BEFORE this
-    ## point, so the code here always sees a valid config.)
+    ## (parseBLS.jl: `fromLine` has no use but its signature; a non-positive `toLine` becomes the line count — the seat's F2: the
+    ## former citation of docs/SYNTAX-AND-SEMANTICS.md named a page that holds no range contract), so a non-positive `to` parses the whole file. The range is taken
+    ## PLAIN, as his legacy took its arguments: `first` is never read (`5:10` parses lines 1..10; `3:2` lines
+    ## 1..2; `1:0` the whole file) — the typed range refusal left at stage 5's E8 of the v0.4 build, census row 30.
     ## Sub-range note: for a `parse_range = 1:N` run the development tool's render is an exact PREFIX of its whole-file render
     ## for the same input — the divergence is purely the parse range, not the caps. The parse store is read
     ## off `parse_state` below; `parseBLS` is called for its parse SIDE-EFFECT (its return is discarded).
@@ -430,7 +413,7 @@ function goMeta(
     ## flavor-equivalence witness is the standing differential harness). Two further
     ## flavor READS exist, both riding the state's FlavorProfile record (walk.jl's
     ## introducer regex; the output-assembly hide marker) — keep it that way: adding
-    ## a flavor means extending validate_config's inventory AND flavor_for, never a
+    ## a flavor means extending `flavor_for`'s inventory, never a
     ## parse-site branch (the table-only law).
     BLS.parseBLS(parse_state, 1, to)
 

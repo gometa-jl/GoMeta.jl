@@ -8,7 +8,7 @@
 #     precede `ProcessState`, and the status enum lives beside them, so all three live here.)
 # DOES: declares `ProcessStatus` (the OK/non-OK enum), `Diagnostic` (`{code, severity, message, context}`),
 #     and `EvalStore` (a growable set of `EvalRecord`s) + its empty constructor.
-# REASONING: catalogued failures surface as typed `Diagnostic`s (E-01..E-08): the config-time rows and the
+# REASONING: catalogued failures surface as typed `Diagnostic`s (E-01..E-07; E-08 left at stage 5's E8 of the v0.4 build): the config-time row and the
 #     registry door's refusals are DELIVERED typed; the condition-path rows (E-01/E-02 and the arg-domain and parse
 #     rows) are MINTED typed in the closed interpreter, but the statement still ABORTS at the absorb seam
 #     (`absorb_meta.jl`: the refusal rethrown as a raw `ErrorException`, its code and context dropped — the
@@ -41,8 +41,8 @@ PURPOSE: the fail-closed signal of the delivered object (R-V04B-28: one of its f
 
 A typed, non-throwing diagnostic — the form in which a run DELIVERS its errors and warnings (`GoMetaDelivery.diagnostics`);
 not every refusal is delivered — some still throw at v0 (the partition, docs/public-api.md §3).
-`code::Symbol` is an E-0x catalogue code (e.g. `:ERR_UNKNOWN_PROFILE`, `:ERR_RANGE_INVALID`;
-the config-time codes arm during profile/range validation and the condition-path codes arm in the
+`code::Symbol` is an E-0x catalogue code (e.g. `:ERR_UNKNOWN_PROFILE`;
+the config-time code arms during profile validation and the condition-path codes arm in the
 closed condition interpreter — the apply-path codes are documented but deferred, docs/public-api.md §3);
 `severity::Symbol ∈ {:error,:warning,:info}`; `message::String` is human-readable; `context` is optional
 structured context (e.g. a `component_ref` tuple or a slot index), `nothing` when absent.

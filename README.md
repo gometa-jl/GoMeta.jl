@@ -57,8 +57,8 @@ the verdict store whole; `0.2.3` converts the structural-directive adjacency cra
 directly adjacent to metadata) into stable, early refusals at both grains (the line-grain
 message names the escapes); `0.3.0` arms **three content flavors** (`:julia` the default,
 `:c` for the `//` line-comment family, `:latex` for `%` — selected explicitly via
-`GoMetaConfig(flavor_tag = …)`, never inferred, with a fail-closed `ERR_UNKNOWN_FLAVOR`
-refusal), makes the hide render **idempotent** (the ensure-token write:
+`GoMetaConfig(flavor_tag = …)`, never inferred, with a fail-closed `ERR_UNKNOWN_FLAVOR` refusal — left at `0.4.0`, stage 5's E8:
+an unknown tag throws its stable message), makes the hide render **idempotent** (the ensure-token write:
 `render ∘ ingest ∘ render == render` — see the canonical-output reference, rule 6), and
 extends the label whitelist by a fixed **pictograph vocabulary** (byte-exact names like
 `:💡`, `:📝`, `:🔥`).

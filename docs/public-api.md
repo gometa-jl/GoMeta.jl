@@ -24,9 +24,10 @@ registration/door rows of §3.5); (5) records the
 CRLF-normalization convention (§4), the explicitly **deferred / not-v0** surfaces (§5), and the
 **versioning policy** (§6: clean cuts — no compatibility promise — until at least v0.7; R-V04B-61).
 
-**REASONING.** The API is **TOTAL over the CONFIG-TIME catalogued surface** — an invalid `config`
-never throws an uncaught exception; it fail-closes into a `PROCESS_ERROR` result carrying a typed
-`Diagnostic`. The absorb- and apply-plane rows are the honest exception: they can still throw at
+**REASONING.** The API is **TOTAL over the CONFIG-TIME catalogued surface** — an unknown profile (the one
+config-time row, E-03) never throws an uncaught exception; it fail-closes into a `PROCESS_ERROR` result carrying a typed
+`Diagnostic`; an unknown `flavor_tag` throws `flavor_for`'s stable message (§3.4 — stage 5's E8 of the v0.4 build, census row 30)
+and a `parse_range` is taken plain (§2). The absorb- and apply-plane rows are the honest exception: they can still throw at
 v0 — the §3 partition (the stable-message refusals of §3.4; the E-04 crash-origin row of §3.1 RETIRED at stage 3's
 commit 4 of the v0.4 build — its origin was the Visib write-back). Honesty over completeness: the rows not yet armed
 (E-07's pending mint and the E-06 guarded refusal — §3.1/§3.2) and the crashes still latent or refused with a stable
@@ -337,8 +338,8 @@ SECURITY section of `README.md` — can processing input you did not write execu
 (`goMeta` consumes raw bytes; from a `String` use `Vector{UInt8}(codeunits(s))` — or `read(path)`
 for a file, as in the README quickstart.)
 
-Pure, deterministic, **TOTAL over the CONFIG-TIME catalogued surface** (an invalid `config` never
-throws uncaught; absorb/apply-plane catalogued failures can still throw at v0 — the §3
+Pure, deterministic, **TOTAL over the CONFIG-TIME catalogued surface** (an unknown profile never
+throws uncaught; an unknown `flavor_tag` throws its stable message, §3.4 — stage 5's E8, census row 30; absorb/apply-plane catalogued failures can still throw at v0 — the §3
 partition). `GoMetaDelivery` carries the run's FOUR public parts, read by name (R-V04B-28/29/30), in his pipeline order (R-V04B-89):
 `blsComponentTree::BLS.ParseState` (the BLS Component tree the run was
 evaluated over, provided by BLS itself; it reaches an Extension as the part `blsComponentTree`, not through any function of the
@@ -356,14 +357,14 @@ is parsed and evaluated by the closed no-eval interpreter, so it cannot read the
 clock or the environment, and cannot perform effects. (Under the explicitly opt-in
 `:full_eval_v1` extension mode — see the SECURITY section of `README.md` — a condition body IS
 host-evaluated, and the guarantees then hold only for inputs whose conditions are free of side
-effects.) An invalid `config`
+effects.) An unknown profile (the one config-time row since stage 5's E8 — census row 30; an unknown `flavor_tag` throws, §3.4)
 fail-closes into a `PROCESS_ERROR` `GoMetaDelivery` **before any parse** — the input
 bytes are never touched; no parse or verdict work occurs (§3.1); the Engine renders nothing since
 0.4.0 (§1.3), and the development tool's `Main.BasicRenderer.outputs` on such a result is the empty pair.
 
 **The registry door (v0.4, STRICT — published-only).** `registry` must be a PUBLISHED value
 (`DEFAULT_REGISTRY`, or the result of `GoMeta.publish`). A conforming-but-unpublished registry
-(e.g. a gated positional construction) fail-closes exactly like an invalid config — a
+(e.g. a gated positional construction) fail-closes exactly like an unknown profile — a
 `PROCESS_ERROR` result before any parse, carrying `REG_UNPUBLISHED`, whose message names the
 sanctioned path `RegistryBuilder → validate → publish`. A published registry whose containers
 were mutated after publication fail-closes with `POST_SEAL_MUTATION` (the live fields are
@@ -380,20 +381,22 @@ also config-valid and additionally require the explicitly-included opt-in extens
 law, §3.2). The remainder of this paragraph describes the default: the share-profile proper is
 `:jl_share_v1`. `flavor_tag::Symbol` — the content flavor: a CLOSED set of three armed flavors,
 `:julia` (the `#` lead alphabet — the default) · `:c` (the C-family `//` line-comment flavor) ·
-`:latex` (the `%` lead alphabet); any other value fail-closes with `ERR_UNKNOWN_FLAVOR` (§3.1)
-before any parse — selected, never inferred (no file-extension or content sniffing). *(This
-sentence previously said "any value is accepted and ignored; validation is deferred" — stale
-since the flavor arming; corrected at v0.4 T2 on a CrossReview finding.)*
+`:latex` (the `%` lead alphabet); any other value throws at `BLS.flavor_for` — a stable message naming the
+inventory, no fallback (§3.4) — before any parse; selected, never inferred (no file-extension or content
+sniffing). *(This sentence previously said "any value is accepted and ignored; validation is deferred" — stale
+since the flavor arming; corrected at v0.4 T2 on a CrossReview finding; the typed `ERR_UNKNOWN_FLAVOR` refusal it then named left at stage 5's E8
+of the v0.4 build — census row 30.)*
 `namespace::Symbol` — the occurrence-key namespace every `altValues_evals` cell handle is scoped
 under (`:default` by default; encoded as the key's length-prefixed namespace segment). One
 constructor-time guard: a namespace over 65535 bytes throws an `ArgumentError` at
 `GoMetaConfig(...)` construction — before any `goMeta` run, hence outside the fail-close rows
 below (which require a constructed config).
-`parse_range::Union{Nothing,UnitRange{Int}}` — `nothing` ⇒ the whole input; a given range
-**requires** `first == 1` and a non-empty range. Its unit is **line indices of the input**, and a
-`last` beyond the input's final line is accepted without complaint — `1:99` on a two-line input
-returns `PROCESS_OK` and renders both lines, with no diagnostic (a `first ≠ 1` or an empty range is
-the `ERR_RANGE_INVALID` fail-close instead, §3.1).
+`parse_range::Union{Nothing,UnitRange{Int}}` — `nothing` ⇒ the whole input; a given range is taken
+**plain**: `last` is the parse end line and `first` is never read (`5:10` parses lines 1..10). Its unit is
+**line indices of the input**, and a `last` beyond the input's final line is accepted without complaint —
+`1:99` on a two-line input returns `PROCESS_OK` and renders both lines, with no diagnostic; a non-positive
+`last` (`1:0`) parses the whole file (the parser's contract). *(The typed `ERR_RANGE_INVALID` fail-close left at stage 5's E8
+of the v0.4 build — census row 30: it refused `first ≠ 1` and the empty range.)*
 `user_mh_profile::Union{Nothing,String}` — RESERVED / experimental: `nothing` (default) ⇒ no feed,
 byte-identical to the no-feed path; a `String` ⇒ that metaLine BODY is seeded into the reserved
 user slot of the meta-hierarchy before the walk (first-wins override of authored Visib actions).
@@ -568,17 +571,17 @@ the rows fall into three classes
 (§3.1–§3.3); §3.4 additionally documents the latent crashes and the stable-message refusals that
 are not catalogued typed codes.
 
-### §3.1 — Non-condition codes (5): 3 armed config-time + 1 crash-origin with deferred typed conversion + 1 GUARDED
+### §3.1 — Non-condition codes (5): 1 armed config-time + 2 REMOVED at 0.4.0 (stage 5's E8) + 1 RETIRED at 0.4.0 (E-04) + 1 GUARDED (E-06)
 
 | Code | Status | Trigger |
 |---|---|---|
 | `ERR_UNKNOWN_PROFILE` (E-03) | config-time, **armed + typed** | `config.profile` outside the three profile names `{:jl_share_v1, :jl_share_v1_full_parse, :jl_share_v1_full_eval}` — fail-closed `PROCESS_ERROR`, no parse or verdict work attempted (the Engine renders nothing since 0.4.0, §1.3) (an opt-in name passes THIS row and refuses later at profile resolution unless the opt-in extension is explicitly included — the two-act law, §3.2) |
-| `ERR_RANGE_INVALID` (E-08) | config-time, **armed + typed** | `config.parse_range` with `first ≠ 1`, or an empty range |
-| `ERR_UNKNOWN_FLAVOR` | config-time, **armed + typed** | `config.flavor_tag` outside the three armed flavors `{:julia, :c, :latex}` — fail-closed before any parse (selected, never inferred). *(Row added at v0.4 T2 on a CrossReview finding — the code armed it at the flavor arming; the catalogue had not followed.)* |
+| `ERR_RANGE_INVALID` (E-08) | **REMOVED at 0.4.0** (stage 5's E8 of the v0.4 build; census row 30) | was: `config.parse_range` with `first ≠ 1`, or an empty range — a typed refusal he never named; a range is taken plain since (§2: `first` never read, a non-positive `last` the whole file) |
+| `ERR_UNKNOWN_FLAVOR` | **REMOVED at 0.4.0** (stage 5's E8 of the v0.4 build; census row 30) | was: `config.flavor_tag` outside the three armed flavors `{:julia, :c, :latex}` — fail-closed before any parse; an unknown tag now throws `flavor_for`'s stable message (§3.4). *(Row added at v0.4 T2 on a CrossReview finding — the code armed it at the flavor arming; the catalogue had not followed.)* |
 | `ERR_VISIB_NO_FLAG` (E-04) | **RETIRED at 0.4.0** (stage 3's commit 4 of the v0.4 build; R-V04B-42 (1)) | its crash origin was the Visib write-back's flagless read of the winning action; the write-back is gone and the capture's own read is guarded — no apply-path crash origin remains catalogued |
 | `ERR_DEPTH_OUT_OF_WINDOW` (E-06) | **GUARDED** — stable untyped refusal; typed conversion deferred | a `#~9`-style **digit** depth beyond the meta-hierarchy's depth window raises the stable-message `ErrorException` "meta depth out of range …" at the depth lookup (§3.4) |
 
-E-03 / E-08 / `ERR_UNKNOWN_FLAVOR` are armed (the three config-time rows): a bad profile/range/flavor returns a `PROCESS_ERROR` `GoMetaDelivery` carrying the
+E-03 is armed (the one config-time row): a bad profile returns a `PROCESS_ERROR` `GoMetaDelivery` carrying the
 typed code, with the development tool's `Main.BasicRenderer.outputs` yielding the empty `(tree, render)` pair (its non-OK contract). No apply-path crash origin remains: E-04's left
 with the Visib write-back at stage 3's commit 4 (its row above).
 E-06 is **GUARDED**: for a digit depth outside the window the depth lookup refuses with the stable
@@ -718,6 +721,11 @@ fabricated typed code:
   QUERIED in a condition (`{ :labelX }`) is never refused for being unknown: the query answers false, as the legacy's
   checker did (since stage 5's E9 of the v0.4 build — the T4 membership refusal in the query role and the write-only
   valve left, census row 55). Witnesses: `tests/unit/error_message_tests.jl` (both roles).
+- **The unknown flavor_tag — a stable-message throw (since stage 5's E8 of the v0.4 build, census row 30):**
+  a `config.flavor_tag` outside the closed inventory `(:julia, :c, :latex)` raises the stable `ErrorException`
+  `"flavor_for: unknown flavor_tag …"` at `goMeta`'s flavor resolve, before any parse — no fallback, no
+  file-extension or content sniffing; the typed `ERR_UNKNOWN_FLAVOR` config-time refusal left at stage 5's E8 with
+  the range refusal (§3.1). Witnesses: `tests/unit/flavor_profile_tests.jl`, `tests/unit/latex_flavor_tests.jl`.
 - **The capture-floor warnings (v0.4 T5; typed, NON-fatal) — the Heading lane's alone since stage 5's E5 of the v0.4 build
   (census row 33):** `WARN_CAPTURE_FLOOR` — a localOnly alterant produced applied state but declares NO capture row;
   `WARN_CAPTURE_UNREADABLE` — its declared row's live instance falls outside the flush's readable shape. Both emitted by
