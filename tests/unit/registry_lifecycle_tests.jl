@@ -35,8 +35,6 @@ _plugin_with_default(p, d) = GM.PlugIn(; altName = p.altName, setMode = p.setMod
 
 @testset "registry_lifecycle (v0.4 T2)" begin
 
-    _ov(sig; rt = Nothing, q = false) = GM.ActionOverload(sig, Symbol[], Symbol[], nothing, rt,
-                                                          :set, q, :context_free, :apply, true)
     _codes(diags) = [d.code for d in diags]
     _errors(diags) = [d.code for d in diags if d.severity === :error]
 
@@ -55,7 +53,7 @@ _plugin_with_default(p, d) = GM.PlugIn(; altName = p.altName, setMode = p.setMod
         @test length(R.plugins) == 4 && length(R.action_specs) == 8
         # publication COPIES: no container is shared with the builder
         @test R.plugins !== b.plugins && R.action_specs !== b.action_specs
-        push!(b.plugins, GM.PlugIn(:zz, :accumulate, Dict{Symbol,Bool}, identity, nothing, nothing))
+        push!(b.plugins, GM.PlugIn(; altName = :zz, setMode = :accumulate, altConstructor = Dict{Symbol,Bool}, setAltInstance = identity))
         @test length(R.plugins) == 4                        # the published value is untouched
         @test isempty(GM._registry_door_check(R))
     end
@@ -93,8 +91,7 @@ _plugin_with_default(p, d) = GM.PlugIn(; altName = p.altName, setMode = p.setMod
         @test r0.status === GM.PROCESS_OK
         # a mutation through a published container (the finding-3 class): the live record no
         # longer matches the snapshot (T2-bis — the length gate on action_specs)
-        push!(R.action_specs, GM.ActionSpec(:zzz, :identifier, Int8(2),
-            [_ov(Type[GM.Alterants.Visib, Symbol]; rt = Bool)], 0, :none, nothing, nothing))
+        push!(R.action_specs, GM.ActionSpec(; name = :zzz, plugin = Int8(2)))
         r1 = GM.goMeta(Vector{UInt8}(codeunits("x = 1\n#~ hide\n\ny = 2\n")); registry = R)
         @test r1.status === GM.PROCESS_ERROR
         @test _codes(r1.diagnostics) == [:POST_SEAL_MUTATION]
@@ -123,7 +120,7 @@ _plugin_with_default(p, d) = GM.PlugIn(; altName = p.altName, setMode = p.setMod
         @eval module _EvilVisib; setVisib(args...) = nothing; end
         evil = _EvilVisib.setVisib
         @test nameof(evil) === nameof(GM.Alterants.setVisib)
-        R5.plugins[2] = GM.PlugIn(:Visib, :mutExclusive, GM.Alterants.Visib, evil, nothing, nothing)
+        R5.plugins[2] = GM.PlugIn(; altName = :Visib, setMode = :mutExclusive, altConstructor = GM.Alterants.Visib, setAltInstance = evil)
         @test _codes(GM._registry_door_check(R5)) == [:POST_SEAL_MUTATION]
         # (T2-bis — one of the TWO named append-only exceptions, T2BIS-DESIGN §8) the snapshot
         # BINDING is immutable: a NamedTuple has no `setindex!`, so the baseline binding cannot
@@ -155,18 +152,15 @@ _plugin_with_default(p, d) = GM.PlugIn(; altName = p.altName, setMode = p.setMod
         end
         base = GM.default_registry_builder()
         bp = GM.RegistryBuilder(copy(base.plugins), copy(base.action_specs))
-        GM.register!(bp, GM.PlugIn(:pz, :accumulate, Dict{Symbol,Bool}, _ParamSetter.paramset, nothing, nothing),
-                     GM.ActionSpec(; name = :pzset, spelling = :identifier, plugin = Int8(5),
-                                     overloads = [GM.ActionOverload(; sig_types = Type[Dict{Symbol,Bool}, Symbol, Symbol],
-                                                                      kinds = Symbol[:symbol])]))
+        GM.register!(bp, GM.PlugIn(; altName = :pz, setMode = :accumulate, altConstructor = Dict{Symbol,Bool}, setAltInstance = _ParamSetter.paramset),
+                     GM.ActionSpec(; name = :pzset, plugin = Int8(5)))
         dp = GM.validate(bp)                                  # must return, not throw
         @test dp isa Vector{GM.Diagnostic}
         # (the cure-batch-2 broken-record index witness left at stage 5's E4 with the tier-1/tier-2 chain)
         # (cure batch 2) register! refuses the ACTION pool too
         ba = GM.RegistryBuilder()
-        many = [GM.ActionSpec(Symbol("act", i), :identifier, Int8(1),
-                              [_ov(Type[Dict{Symbol,Bool}, Symbol])], 0, :none, nothing, nothing) for i in 1:128]
-        e = try GM.register!(ba, GM.PlugIn(:big, :accumulate, Dict{Symbol,Bool}, GM.Alterants.setLabels, nothing, nothing),
+        many = [GM.ActionSpec(; name = Symbol("act", i), plugin = Int8(1)) for i in 1:128]
+        e = try GM.register!(ba, GM.PlugIn(; altName = :big, setMode = :accumulate, altConstructor = Dict{Symbol,Bool}, setAltInstance = GM.Alterants.setLabels),
                              many...); nothing catch err; err end
         @test e isa GM.RegistrationRefused && _errors(e.diagnostics) == [:REG_SLOT_EXHAUSTED]
         @test isempty(ba.plugins) && isempty(ba.action_specs)
@@ -184,11 +178,8 @@ _plugin_with_default(p, d) = GM.PlugIn(; altName = p.altName, setMode = p.setMod
         # (the cure-batch-2 reflection-order witness left at stage 5's E4 with the reflection cross-check)
         # (cure batch 2, interim until T7) a PUBLISHED custom registry WITHOUT the built-in Visib RUNS
         bc = GM.RegistryBuilder()
-        GM.register!(bc, GM.PlugIn(:bag, :accumulate, Dict{Symbol,Bool}, GM.Alterants.setLabels, GM.Alterants.checkLabels, nothing),
-                     GM.ActionSpec(; name = Symbol(":"), spelling = :operator, plugin = Int8(1),
-                                     overloads = [GM.ActionOverload(; sig_types = Type[Dict{Symbol,Bool}, Symbol],
-                                                                      vararg_kind = :symbol, queryable = true)],
-                                     sugar_candidacy = :activated))
+        GM.register!(bc, GM.PlugIn(; altName = :bag, setMode = :accumulate, altConstructor = Dict{Symbol,Bool}, setAltInstance = GM.Alterants.setLabels, getAltInstance = GM.Alterants.checkLabels),
+                     GM.ActionSpec(; name = Symbol(":"), plugin = Int8(1)))
         Rc = GM.publish(bc)
         rc = GM.goMeta(Vector{UInt8}(codeunits("x = 1\n#~ :label1\n\ny = 2\n")); registry = Rc)
         @test rc.status === GM.PROCESS_OK && !isempty(Main.BasicRenderer.outputs(rc).render_bytes)
@@ -197,8 +188,7 @@ _plugin_with_default(p, d) = GM.PlugIn(; altName = p.altName, setMode = p.setMod
         # PROBES-e4-validate_stage1-src-cut [5] — PROCESS_OK)
         bv = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
         h = bv.action_specs[2]
-        bv.action_specs[2] = GM.ActionSpec(; name = :hide, spelling = :identifier, plugin = Int8(2),
-                                             overloads = h.overloads, settribute = nothing)
+        bv.action_specs[2] = GM.ActionSpec(; name = :hide, plugin = Int8(2), settribute = nothing)
         Rv = GM.publish(bv)
         @test Rv isa GM.AlterantRegistry
         @test GM.goMeta(Vector{UInt8}(codeunits("x = 1\n#~ hide\n\ny = 2\n")); registry = Rv).status === GM.PROCESS_OK
@@ -298,10 +288,8 @@ _plugin_with_default(p, d) = GM.PlugIn(; altName = p.altName, setMode = p.setMod
         @test length(bx.plugins) == 4 && bx.plugins !== GM.DEFAULT_REGISTRY.plugins
         i5 = GM.next_plugin_index(bx)
         @test i5 isa Int8 && i5 == 5
-        GM.register!(bx, GM.PlugIn(:bag2, :accumulate, Dict{Symbol,Bool}, GM.Alterants.setLabels, GM.Alterants.checkLabels, nothing),
-                     GM.ActionSpec(; name = :bagset, spelling = :identifier, plugin = i5,
-                                     overloads = [GM.ActionOverload(; sig_types = Type[Dict{Symbol,Bool}, Symbol],
-                                                                      vararg_kind = :symbol, queryable = true)]))
+        GM.register!(bx, GM.PlugIn(; altName = :bag2, setMode = :accumulate, altConstructor = Dict{Symbol,Bool}, setAltInstance = GM.Alterants.setLabels, getAltInstance = GM.Alterants.checkLabels),
+                     GM.ActionSpec(; name = :bagset, plugin = i5))
         Rx = GM.publish(bx)
         rx = GM.goMeta(Vector{UInt8}(codeunits("x = 1\n#~ hide\n\ny = 2\n")); registry = Rx)
         @test rx.status === GM.PROCESS_OK
@@ -317,36 +305,23 @@ _plugin_with_default(p, d) = GM.PlugIn(; altName = p.altName, setMode = p.setMod
         # the honest bound of bypassing `register!`
         b = GM.RegistryBuilder(copy(base.plugins), copy(base.action_specs))
         for i in 1:123
-            GM.register!(b, GM.PlugIn(Symbol("zz", i), :accumulate, Dict{Symbol,Bool},
-                                      GM.Alterants.setLabels, GM.Alterants.checkLabels, nothing))
+            GM.register!(b, GM.PlugIn(; altName = Symbol("zz", i), setMode = :accumulate, altConstructor = Dict{Symbol,Bool},
+                                      setAltInstance = GM.Alterants.setLabels, getAltInstance = GM.Alterants.checkLabels))
         end
         @test length(b.plugins) == 127
-        e = try GM.register!(b, GM.PlugIn(:zz128, :accumulate, Dict{Symbol,Bool}, GM.Alterants.setLabels,
-                                          GM.Alterants.checkLabels, nothing)); nothing catch err; err end
+        e = try GM.register!(b, GM.PlugIn(; altName = :zz128, setMode = :accumulate, altConstructor = Dict{Symbol,Bool},
+                                          setAltInstance = GM.Alterants.setLabels, getAltInstance = GM.Alterants.checkLabels)); nothing catch err; err end
         @test e isa GM.RegistrationRefused && _errors(e.diagnostics) == [:REG_SLOT_EXHAUSTED]
         # `register!` binds the records to the appended plugin (cure batch 1): a record naming another
         # index refuses loudly instead of leaving the appended alterant silently actionless
         b = GM.RegistryBuilder(copy(base.plugins), copy(base.action_specs))
-        e = try GM.register!(b, GM.PlugIn(:p5, :mutExclusive, GM.Alterants.Visib, GM.Alterants.setVisib, nothing, nothing),
-                             GM.ActionSpec(:zzv, :identifier, Int8(2),
-                                           [_ov(Type[GM.Alterants.Visib, Symbol]; rt = Bool)], 0, :none, nothing, nothing)); nothing
+        e = try GM.register!(b, GM.PlugIn(; altName = :p5, setMode = :mutExclusive, altConstructor = GM.Alterants.Visib, setAltInstance = GM.Alterants.setVisib),
+                             GM.ActionSpec(; name = :zzv, plugin = Int8(2))); nothing
         catch err; err end
         @test e isa GM.RegistrationRefused && _errors(e.diagnostics) == [:REG_PROTOCOL]
         @test length(b.plugins) == 4                         # nothing appended on refusal
-        # validate NEVER throws (cure batch 1): an odd vararg_kind row RETURNS (the enum check left at E4)
-        b = GM.RegistryBuilder(copy(base.plugins), copy(base.action_specs))
-        b.action_specs[2] = GM.ActionSpec(; name = :hide, spelling = :identifier, plugin = Int8(2),
-            overloads = [GM.ActionOverload(Type[GM.Alterants.Visib, Symbol], Symbol[], Symbol[], :bogus,
-                                           Bool, :set, false, :context_free, :apply, true)], settribute = :hide)
-        @test GM.validate(b) isa Vector{GM.Diagnostic}
-        # a :candidate sugar_candidacy without activation publishes SILENTLY (the candidacy warning left at
-        # E4; measured: PROBES-e4-validate_stage1-src-cut [3])
-        b = GM.RegistryBuilder(copy(base.plugins), copy(base.action_specs))
-        b.action_specs[3] = GM.ActionSpec(; name = :show, spelling = :identifier, plugin = Int8(2),
-                                            overloads = base.action_specs[3].overloads, sugar_candidacy = :candidate,
-                                            settribute = :show)
-        @test isempty(GM.validate(b))
-        @test GM.publish(b) isa GM.AlterantRegistry
+        # (the odd-vararg_kind-row and the :candidate-sugar_candidacy witnesses left at stage 5's E11 of the v0.4 build with
+        # their subjects — the overload rows and the grant register, census row 16)
     end
 
     @testset "full collection at the ENTRY: config + registry diagnostics in ONE result" begin
@@ -408,10 +383,10 @@ _plugin_with_default(p, d) = GM.PlugIn(; altName = p.altName, setMode = p.setMod
         # W6 — a RECORD STRUCT in declared data refuses at validate (the slot-named row, never
         # the publish-containment generic row) + a typed publish refusal
         b6 = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
-        b6.plugins[2] = _plugin_with_default(b6.plugins[2], GM.Declared(GM.ActionOverload(; sig_types = Type[])))
+        b6.plugins[2] = _plugin_with_default(b6.plugins[2], GM.Declared(GM.ActionSpec(; name = :zz, plugin = Int8(1))))   # a record struct in data (ActionSpec since stage 5's E11 — the overload row left, census row 16)
         d6 = GM.validate(b6)
         @test any(x -> x.code === :REG_PROTOCOL && x.context === :Visib &&   # commit 3-ii: the context is the Alterant's name
-                       occursin("slot default", x.message) && occursin("ActionOverload", x.message), d6)
+                       occursin("slot default", x.message) && occursin("ActionSpec", x.message), d6)
         @test_throws GM.RegistrationRefused GM.publish(b6)
         # W7 — the contained route ENFORCES the position rules on its unvalidated input: a
         # Function IN DATA refuses typed, the message naming the position rule + the path

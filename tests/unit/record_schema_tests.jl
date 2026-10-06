@@ -2,14 +2,14 @@
 #
 # IS:   the unit witnesses of the T1 schema extension — the declared slots ride the record (seven of the ten
 #       left at stage 5's E10 of the v0.4 build — census rows 24 and 29, OWNER-WORDS §317; the record keeps eight fields)
-#       nothing/empty-defaulted; the v0.3.2 positional constructors still admit (the additive-extension
+#       nothing/empty-defaulted; the v0.3.2 positional constructors left at stage 5's E11 of the v0.4 build (census row 65 — the keyword form is the one form; the former additive-extension
 #       law); the generic `action_to_settribute` table DERIVES from the declared per-action
 #       `settribute` slots (the Alterant-named `visib_to_settribute` field and the `===` alias
 #       `VISIB_TO_SETTRIBUTE` are GONE); the closed enums of the two slots that remain (their record-shape refusals left at
 #       stage 5's E4 of the v0.4 build; the enums of the seven other slots went with those slots at E10);
 #       the registration digest's fold COVERS the new slots (flipped at T2 when the publication seal
 #       was minted — at T1 this file witnessed the fold's blindness by name, as the T2 flip target).
-# DOES: constructs records positionally and by keyword, inspects DEFAULT_REGISTRY, and pins the
+# DOES: constructs records by keyword (the positional forms left at stage 5's E11 — census row 65), inspects DEFAULT_REGISTRY, and pins the
 #       digest-COVERAGE witness (the former blindness witness,
 #       flipped at T2).
 # REASONING: the golden layer proves T1 is BEHAVIOR-NEUTRAL (byte-identical renders); only unit
@@ -21,15 +21,9 @@ import GoMeta as GM
 
 @testset "record_schema (v0.4 T1)" begin
 
-    @testset "positional v0.3.2 shapes still construct, slots nothing/empty-defaulted" begin
-        p = GM.PlugIn(:zz, :accumulate, Dict{Symbol,Bool}, identity, nothing, nothing)
-        @test p.capture === nothing
-        ov = GM.ActionOverload(Type[Dict{Symbol,Bool}, Symbol], Symbol[], Symbol[], nothing,
-                               Nothing, :set, false, :context_free, :apply, true)
-        s = GM.ActionSpec(:zza, :identifier, Int8(1), [ov], 0, :none, nothing, nothing)
-        @test s.settribute === nothing
-        @test p.default === GM.NoDefault()   # stage 2's commit 3: the ALTERANT's default slot (R-V04B-51), undeclared by the positional form
-    end
+    # (the positional-shapes testset was CONSCIOUSLY RETIRED at stage 5's E11 of the v0.4 build with its subject — the
+    # v0.3.2 positional constructors of PlugIn and ActionSpec, census row 65, R-V04B-61; a positional construction is
+    # Julia's own MethodError now, measured on both trees by the build's probe.)
 
     @testset "keyword shapes round-trip every slot" begin
         cap = GM.CaptureDecl(:per_key, nothing)
@@ -56,10 +50,7 @@ import GoMeta as GM
         p = GM.PlugIn(; altName = :zz, setMode = :accumulate, altConstructor = Dict{Symbol,Bool},
                         setAltInstance = identity, capture = cap)
         @test p.capture === cap
-        ov = GM.ActionOverload(Type[Dict{Symbol,Bool}, Symbol], Symbol[], Symbol[], nothing,
-                               Bool, :set, false, :context_free, :apply, true)
-        s = GM.ActionSpec(; name = :zzh, spelling = :identifier, plugin = Int8(1), overloads = [ov],
-                            settribute = :zzh)
+        s = GM.ActionSpec(; name = :zzh, plugin = Int8(1), settribute = :zzh)
         @test s.settribute === :zzh
     end
 
@@ -98,11 +89,8 @@ import GoMeta as GM
         alt = copy(specs)
         i = findfirst(s -> s.name === :hide, alt)
         h = alt[i]
-        alt[i] = GM.ActionSpec(; name = h.name, spelling = h.spelling, plugin = h.plugin,
-                                 overloads = h.overloads, accepts_string_slot = h.accepts_string_slot,
-                                 sugar_candidacy = h.sugar_candidacy, validate = h.validate,
-                                 keyed_slot = h.keyed_slot,
-                                 settribute = :elsewhere)
+        alt[i] = GM.ActionSpec(; name = h.name, plugin = h.plugin, accepts_string_slot = h.accepts_string_slot,
+                                 validate = h.validate, settribute = :elsewhere)
         @test GM._registration_digest(alt) != GM._registration_digest(specs)   # flipped at T2 (was ==)
     end
 end

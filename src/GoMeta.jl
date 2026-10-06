@@ -166,7 +166,7 @@ include("childdiff.jl")             # stage 2's commit 6 (R-V04B-35 (e); the pla
 export goMeta, readAltValuesEvals, GoMetaConfig, GoMetaDelivery
 public serialize_evals, EvalRecord, EvalStore, ProcessStatus, PROCESS_OK, PROCESS_ERROR, Diagnostic, AlterantRegistry, DEFAULT_REGISTRY,
        RegistryBuilder, register!, next_plugin_index, validate, publish, RegistrationRefused,   # v0.4 T2: the registration lifecycle (docs/public-api.md §1.2)
-       Alterant, PlugIn, ActionSpec, ActionOverload, CaptureDecl, DefaultSlot, NoDefault, Declared   # v0.4 T2 (cure batch 1) + the rename: the record
+       Alterant, PlugIn, ActionSpec, CaptureDecl, DefaultSlot, NoDefault, Declared   # v0.4 T2 (cure batch 1) + the rename: the record (`ActionOverload` left at stage 5's E11 — census row 16)
                                                                                                   #   VOCABULARY a third-party author constructs (docs/public-api.md §1.2; the three vocabulary slot types and the G-VOC triple left at
                                                                                                   #   stage 5's E9; the nine slot types of the carried declarations and the security frame at stage 5's E10 — census rows 24 and 29)
 public BLS   # stage 2's commit 0 of the v0.4 build (R-V04B-33/45/58): the parser module public by name — its door of travel / access functions declared INSIDE it (src/bls/BLS.jl; docs/public-api.md §1.2 + §6)

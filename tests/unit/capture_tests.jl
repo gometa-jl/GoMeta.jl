@@ -6,8 +6,8 @@
 #       at stage 5's E4 of the v0.4 build — the measured consequences pinned at [9] and [11]), and the `:per_field` positive
 #       fixture the corpus never reaches.
 # DOES: registers mock Alterants through the sanctioned lifecycle (the PROBE-proven
-#       shapes: register! varargs; the vararg-tail overload matching the setter's
-#       method exactly), drives them through goMeta, and pins rows + diagnostics.
+#       shapes: register! varargs; the record's five-field keyword form since stage 5's E11 — census row 16),
+#       drives them through goMeta, and pins rows + diagnostics.
 # REASONING: PROBE-14's sadd2 measurement — on v0.3.2 a conforming mock registered,
 #       absorbed, applied PROCESS_OK and minted NO evals row (the 3-name ladder). These
 #       witnesses are the only proof the declaration is now LOAD-BEARING at the capture
@@ -35,10 +35,6 @@ end
 @testset "capture (v0.4 T5)" begin
 
     _doc(s) = Vector{UInt8}(codeunits(s))
-    _zov(store) = GM.ActionOverload(; sig_types = Type[store, Symbol],
-        kinds = Symbol[], kind_sources = Symbol[], vararg_kind = :symbol,
-        return_type = Nothing, effect = :set, queryable = false,
-        applicability = :context_free, phase = :apply, grammar = true)
     function _mockb(; capture = GM.CaptureDecl(:per_key, nothing; attr_stem = :zm),
                       setter = _CapM.zset, store = Dict{Symbol,Bool}, name = :zmark)
         b = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
@@ -46,8 +42,7 @@ end
         GM.register!(b,
             GM.PlugIn(; altName = :zmock, setMode = :accumulate, altConstructor = store,
                 setAltInstance = setter, capture = capture),
-            GM.ActionSpec(; name = name, spelling = :identifier, plugin = pi,
-                overloads = [_zov(store)]))
+            GM.ActionSpec(; name = name, plugin = pi))
         b
     end
 
@@ -105,9 +100,7 @@ end
             GM.PlugIn(; altName = :zhead, setMode = :localOnly,
                 altConstructor = GM.Alterants.Heading, setAltInstance = GM.Alterants.setHead,
                 capture = GM.CaptureDecl(:per_occurrence, :localOnly; attr_stem = :zh)),
-            GM.ActionSpec(; name = :zhd, spelling = :identifier, plugin = pi,
-                overloads = GM.DEFAULT_REGISTRY.action_specs[GM.DEFAULT_REGISTRY.spec_index[:head]].overloads,
-                accepts_string_slot = 1))
+            GM.ActionSpec(; name = :zhd, plugin = pi, accepts_string_slot = 1))
         R = GM.publish(b)
         r = GM.goMeta(_doc("x = 1\n#~ \"T\" zhd(\"U\", 2)\n\ny = 2\n"); registry = R)
         rows = GM.readAltValuesEvals(r.altValues_evals)
@@ -159,9 +152,7 @@ end
         GM.register!(b1,
             GM.PlugIn(; altName = :znone, setMode = :localOnly,
                 altConstructor = GM.Alterants.Heading, setAltInstance = GM.Alterants.setHead),
-            GM.ActionSpec(; name = :znh, spelling = :identifier, plugin = p1,
-                overloads = GM.DEFAULT_REGISTRY.action_specs[GM.DEFAULT_REGISTRY.spec_index[:head]].overloads,
-                accepts_string_slot = 1))
+            GM.ActionSpec(; name = :znh, plugin = p1, accepts_string_slot = 1))
         r1 = GM.goMeta(_doc("x = 1\n#~ \"T\" znh(\"V\", 2)\n\ny = 2\n"); registry = GM.publish(b1))
         @test r1.status === GM.PROCESS_OK &&
               any(d -> d.code === :WARN_CAPTURE_FLOOR && d.context === :znone, r1.diagnostics)
@@ -176,11 +167,7 @@ end
             GM.PlugIn(; altName = :zle, setMode = :localOnly,
                 altConstructor = Dict{Symbol,Bool}, setAltInstance = _CapM.badset,
                 capture = GM.CaptureDecl(:per_occurrence, :localOnly; attr_stem = :ze)),
-            GM.ActionSpec(; name = :zle1, spelling = :identifier, plugin = p4,
-                overloads = [GM.ActionOverload(; sig_types = Type[Dict{Symbol,Bool}, Symbol],
-                    kinds = Symbol[], kind_sources = Symbol[], vararg_kind = :symbol,
-                    return_type = Nothing, effect = :set, queryable = false,
-                    applicability = :context_free, phase = :absorb, grammar = true)]))
+            GM.ActionSpec(; name = :zle1, plugin = p4))
         @test any(x -> x.code === :REG_PROTOCOL && occursin("localOnly store law", x.message), GM.validate(b4))
         # (A6; re-cut at stage 5's E4 — the stem-clash law left) :label_x beside the shipped :label family
         # PUBLISHES; distinct keys mint distinct rows (measured: PROBES-e4-capture-laws [b2] — label_label1 · label_x_aa)

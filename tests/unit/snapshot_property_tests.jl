@@ -74,10 +74,8 @@ end
                                       (Int8(1), :a), (q = 1, w = :x), (:pk => 1),
                                       Dict{Any,Any}(:dk => Any[UInt16(9)], "sk" => 2.5)]))
         s1 = b.action_specs[1]
-        b.action_specs[1] = GM.ActionSpec(; name = s1.name, spelling = s1.spelling,
-            plugin = s1.plugin, overloads = s1.overloads,
-            accepts_string_slot = s1.accepts_string_slot, sugar_candidacy = s1.sugar_candidacy,
-            validate = _callable_struct)
+        b.action_specs[1] = GM.ActionSpec(; name = s1.name, plugin = s1.plugin,
+            accepts_string_slot = s1.accepts_string_slot, validate = _callable_struct, settribute = s1.settribute)
         # the slot-struct default (formerly action 3's) rides plugin 2 (Visib; the DEFAULT_REGISTRY's fields copied) — a `Declared`
         # nested in the data since stage 5's E10 of the v0.4 build (the `EffectRow` that carried the case left with its slot)
         b.plugins[2] = GM.PlugIn(; altName = :Visib, setMode = :mutExclusive, altConstructor = GM.Alterants.Visib,
@@ -85,9 +83,8 @@ end
             capture = GM.CaptureDecl(:single, nothing; attr_stem = :visib),
             default = GM.Declared(GM.Declared(Dict{Any,Any}(Int16(2) => "pv"))))
         GM.register!(b,
-            GM.PlugIn(Symbol("prop"), :accumulate, Dict{Symbol,Bool}, _closure_ref, nothing, nothing),
-            GM.ActionSpec(; name = :propset, spelling = :identifier, plugin = Int8(5),
-                overloads = [GM.ActionOverload(; sig_types = Type[Dict{Symbol,Bool}, Symbol])]))
+            GM.PlugIn(; altName = Symbol("prop"), setMode = :accumulate, altConstructor = Dict{Symbol,Bool}, setAltInstance = _closure_ref),
+            GM.ActionSpec(; name = :propset, plugin = Int8(5)))
         return b
     end
 
@@ -184,10 +181,8 @@ end
         pT === GM.PlugIn && pf === :precedencesTuple && return ntuple(i -> Symbol("p", i), GM.NUM_MH_LEVELS)
         pT === GM.PlugIn && pf === :capture && return GM.CaptureDecl(:single, nothing)
         pT === GM.ActionSpec && pf === :validate && return _swap_fn_a
-        pT === GM.ActionSpec && pf === :keyed_slot && return (:ka, :kb)
         pT === GM.PlugIn && pf === :default && return GM.Declared(1)   # stage 2's commit 3-ii: the slot is the Alterant's
         pT === GM.ActionSpec && pf === :settribute && return :zz
-        pT === GM.ActionOverload && pf === :vararg_kind && return :symbol
         pT === GM.CaptureDecl && pf === :mode_gate && return :localOnly
         pT === GM.CaptureDecl && pf === :attr_stem && return :zz   # v0.4 T5 (the round's B-3 cure — the raw error() fault otherwise)
         error("no single-point substitute for ($pT, $pf)")
@@ -197,10 +192,9 @@ end
     function _enumerate_sites(R)
         sites = Vector{NamedTuple}()
         function walk(v, path, pT, pf)
-            if v isa GM.PlugIn || v isa GM.ActionSpec || v isa GM.ActionOverload
+            if v isa GM.PlugIn || v isa GM.ActionSpec
                 push!(sites, (path = path, cat = :record, kind = :imm, pT = pT, pf = pf))
-                flds = v isa GM.PlugIn ? GM._WALK_PLUGIN_FIELDS :
-                       v isa GM.ActionSpec ? GM._WALK_ACTION_FIELDS : GM._WALK_OVERLOAD_FIELDS
+                flds = v isa GM.PlugIn ? GM._WALK_PLUGIN_FIELDS : GM._WALK_ACTION_FIELDS
                 for f in flds
                     walk(getfield(v, f), Any[path; f], typeof(v), f)
                 end
@@ -548,15 +542,7 @@ end
         @test _codesp(GM._registry_door_check(R)) == [:POST_SEAL_MUTATION]
         @test _reported_segments(R) == _dpath
     end
-    # the OVERLOAD LEAF case: a phase-only overload swap fires at overloads[j].phase (2)
-    let R = GM.publish(_mk_prop_builder())
-        ov = R.action_specs[3].overloads[1]
-        R.action_specs[3].overloads[1] = GM.ActionOverload(ov.sig_types, ov.kinds, ov.kind_sources,
-            ov.vararg_kind, ov.return_type, ov.effect, ov.queryable, ov.applicability,
-            ov.phase === :apply ? :absorb : :apply, ov.grammar)
-        @test _codesp(GM._registry_door_check(R)) == [:POST_SEAL_MUTATION]
-        @test _reported_segments(R) == Any[:action_specs, 3, :overloads, 1, :phase]
-    end
+    # (the OVERLOAD LEAF case (2) left at stage 5's E11 of the v0.4 build with the overload rows — census row 16)
     # the STRUCT-KEYED-Dict silence case (1) — the struct keys are `Declared{Vector}` since stage 5's E10: two instances stay two
     # Dict keys, as two of the former constraint rows did (that slot struct left with its slot at stage 5's E10)
     let R = GM.publish(_with_default(_mk_prop_builder(), 4, Dict{Any,Any}(GM.Declared(Any[:hide, :show]) => 1)))
@@ -711,13 +697,13 @@ end
         objs = _objs_along(R0, s.path[1:end-1])
         for (j, seg) in enumerate(s.path)
             o = objs[j]
-            (o isa GM.PlugIn || o isa GM.ActionSpec || o isa GM.ActionOverload) && seg isa Symbol &&
+            (o isa GM.PlugIn || o isa GM.ActionSpec) && seg isa Symbol &&
                 push!(recfields, (typeof(o), seg))
         end
-        s.pT in (GM.PlugIn, GM.ActionSpec, GM.ActionOverload) && s.path[end] isa Symbol &&
+        s.pT in (GM.PlugIn, GM.ActionSpec) && s.path[end] isa Symbol &&
             push!(recfields, (s.pT, s.path[end]))
     end
-    @test length(recfields) == 27                                # every §1 record field exercised (27: the Alterant's default slot joined at commit 3, the action's left at 3-ii — R-V04B-51; the vocabulary slot left at stage 5's E9; the record's eight slots at E10 — MEASURED, the second build's counts probe caught the stale 35)
+    @test length(recfields) == 13                                # every §1 record field exercised (13 since stage 5's E11 of the v0.4 build — the overload rows' ten fields and the action record's spelling, sugar_candidacy and keyed_slot left, census row 16; 27 before: the Alterant's default slot joined at commit 3, the action's left at 3-ii — R-V04B-51; the vocabulary slot left at stage 5's E9; the record's eight slots at E10 — MEASURED, the second build's counts probe caught the stale 35)
     leafcats = Set(s.cat for s in sites if s.kind in (:leaf, :single, :dictkey))
     @test issubset(Set([:bool, :symbol, :int, :float, :string, :type, :function, :version,
                         :complex, :rational, :nothing_leaf]), leafcats)

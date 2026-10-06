@@ -69,7 +69,9 @@ import TOML
                          # 38 → 29 at stage 5's E10 of the v0.4 build (census rows 24 and 29; R-V04B-105): the nine slot types of the carried
                          # declarations and the security frame REMOVED with the record's eight fields; the register row in docs/public-api.md §6.
                          :RegistryBuilder, :register!, :next_plugin_index, :validate, :publish, :RegistrationRefused,
-                         :Alterant, :PlugIn, :ActionSpec, :ActionOverload, :CaptureDecl, :DefaultSlot,
+                         # 29 → 28 at stage 5's E11 of the v0.4 build (census row 16; R-V04B-105): `ActionOverload` REMOVED with the
+                         # declared action record's overload rows (census row 16); the register row in docs/public-api.md §6.
+                         :Alterant, :PlugIn, :ActionSpec, :CaptureDecl, :DefaultSlot,
                          :NoDefault, :Declared,
                          :BLS,   # 40 since stage 2's commit 0: the parser module `BLS`, R-V04B-58
                          :evaluatedAltValue, :EvaluatedAltValue,   # 42 since stage 2's commit 4: THE ONE ANSWER FUNCTION and its record, R-V04B-35 (c)

@@ -105,9 +105,9 @@ const fallBackMHIdx = maxDepthMH + 3   # 12 == NUM_MH_LEVELS — the fallBack le
 #     R-V04-37 SEC-4, the Rung-1 activation); his later mark removes them — the difference between his earlier and later
 #     words resolved by the later word, stated here, not silently. His R-V04-27 (verbatim) put permission levels and hash
 #     checks LATER; his §120: a basic framework BEFORE HARDENING; his §18 (ii): no unnecessary clutter.
-# DOES: defines the slot types with their closed enum sets; every slot is NOTHING/EMPTY-defaulted so a
-#     record declared in the v0.3.2 shape still constructs (the additive-extension law: old records
-#     admit; nothing is silently defaulted to a VALUE — absence stays mechanically distinguishable
+# DOES: defines the slot types with their closed enum sets; every slot is NOTHING/EMPTY-defaulted (the
+#     v0.3.2 positional constructors that admitted old records left at stage 5's E11 of the v0.4 build —
+#     census row 65, R-V04B-61; nothing is silently defaulted to a VALUE — absence stays mechanically distinguishable
 #     from every declared value, the G-DEF disjointness law).
 # REASONING: the engine's three measured clean planes (apply, interpreter, absorb dispatch) are
 #     registry-DATA-driven; the dirty planes (capture, defaults, render, diagnostics) were
@@ -136,7 +136,8 @@ theirs explicitly). The walk reads the store's shape from the record's own `altC
 of the v0.4 build (census row 34; his §317 mark): the one restated `altConstructor`, the other was read by nothing. A PLAIN
 3-field struct — NO inner constructor that changes the positional
 signature (the domain copier rebuilds slot structs POSITIONALLY over all fields at the exact concrete type,
-src/alterants/registry.jl) — with ONE outer compatibility method (the PlugIn precedent below).
+src/alterants/registry.jl) — with ONE outer two-positional method, the row's own keyword-default form (the records'
+v0.3.2 compatibility constructors left at stage 5's E11 of the v0.4 build — census row 65, R-V04B-61).
 
 REASONING: the capture walk is registration-driven (v0.4 T5) — never an alt-name ladder — and the struct is plain
 (no inner constructor) because the domain copier rebuilds slot structs positionally.
@@ -207,11 +208,6 @@ end
 "The PUBLIC deprecation alias of the v0.4 `PlugIn` → `Alterant` rename (R-V04B-5) — stands
 for the whole 0.4.x family; removal = v0.5 (register row V05-3)."
 const PlugIn = Alterant
-"The v0.3.2 positional shape still constructs — the additive-extension law (old records admit)."
-PlugIn(altName::Symbol, setMode::Symbol, altConstructor::Type, setAltInstance::Function,
-       getAltInstance::Union{Nothing,Function},
-       precedencesTuple::Union{Nothing,NTuple{NUM_MH_LEVELS,Symbol}}) =
-    PlugIn(altName, setMode, altConstructor, setAltInstance, getAltInstance, precedencesTuple, NoDefault(), nothing)
 "The keyword form: the two declared slots addressable by name; an unnamed slot takes its nothing/undeclared default."
 PlugIn(; altName::Symbol, setMode::Symbol, altConstructor::Type, setAltInstance::Function,
          getAltInstance::Union{Nothing,Function} = nothing,
@@ -220,98 +216,30 @@ PlugIn(; altName::Symbol, setMode::Symbol, altConstructor::Type, setAltInstance:
     PlugIn(altName, setMode, altConstructor, setAltInstance, getAltInstance, precedencesTuple, default, capture)
 
 """
-    ActionOverload
-
-IS: ONE row of the DECLARED registration record — a per-overload declaration of an action's method signature,
-literal kinds, return type, effect, queryability, applicability and phase.
-
-DOES: ONE row of the DECLARED registration record (v0.2 registration build, the reflection-memo
-bindings): a per-overload declaration of the action's method signature, stated by the
-author (the registration-time reflection cross-check that verified it against the executable
-method table left at stage 5's E4).
-Fields: `sig_types` — the method signature's argument types AFTER the function
-type (store · action name · literal slots), stated as the METHOD declares them;
-`kinds` — the GRAMMAR-level literal kind per literal slot (`:symbol` | `:string`;
-structural slots excluded), parallel to the literal tail of `sig_types`;
-`kind_sources` — `:declared` | `:reflected` per kind (the memo's shrinking-surface
-tag: `:reflected` where the signature slot is typed enough to carry the kind);
-`vararg_kind` — a trailing `Vararg` literal kind or `nothing`; `return_type` — the
-DECLARED return type (never compiler inference — the ad-2/ad-5 determinism law;
-the setter seam's return-type guard that read it left at stage 5's E6 of the v0.4 build — census
-row 14; the digest fold and the door's snapshot walk read it); `effect` (`:set` — the v0.2 closed
-effect set); `queryable`; `applicability` (`:context_free` | `:context_required`);
-`phase` (`:apply` | `:absorb` — mode-derived, the localOnly delta); `grammar` —
-`false` marks an INTERNAL row (the probe-surfaced inherited shapes, declared for the
-implemented-but-undeclared diagnostic of the time — the reflection cross-check left at stage 5's E4).
-
-REASONING: the record is a declaration a reader can check — stated by the author, never derived from the
-compiler (the determinism law).
-
-PURPOSE: the row the grammar and the domain probe read (the live seam's return-type guard left at stage 5's E6
-of the v0.4 build — census row 14).
-"""
-struct ActionOverload
-    sig_types::Vector{Type}
-    kinds::Vector{Symbol}
-    kind_sources::Vector{Symbol}
-    vararg_kind::Union{Nothing,Symbol}
-    return_type::Type
-    effect::Symbol
-    queryable::Bool
-    applicability::Symbol
-    phase::Symbol
-    grammar::Bool
-end
-"The keyword form (v0.4 T2, cure batch 2 — the documented defaults exist): only `sig_types` is required."
-ActionOverload(; sig_types::Vector{Type}, kinds::Vector{Symbol} = Symbol[],
-                 kind_sources::Vector{Symbol} = Symbol[:declared for _ in kinds],
-                 vararg_kind = nothing, return_type::Type = Nothing, effect::Symbol = :set,
-                 queryable::Bool = false, applicability::Symbol = :context_free,
-                 phase::Symbol = :apply, grammar::Bool = true) =
-    ActionOverload(sig_types, kinds, kind_sources, vararg_kind, return_type, effect, queryable,
-                   applicability, phase, grammar)
-
-"""
     ActionSpec
 
-The DECLARED per-action registration record: action `name` + `spelling` tag
-(`:identifier` | `:operator` — a CLOSED spelling inventory; the hyphen class can never
-mint; the collision checks over both kinds left at stage 5's E4) + the owning
-`plugin` index + the per-overload rows + the CAPABILITIES (`accepts_string_slot`
-— 0 = no String literal slot; N = the accepting literal-slot position, retiring
-the former name literals at the absorb seams) + `sugar_candidacy` (`:none` |
-`:activated` — the grant register, CLOSED AT TWO grants: the Labels colon + the
-quoted-first heading; a `:candidate` registers unchecked since stage 5's E4 — the
-unactivated-candidacy diagnostic left) + the `validate` slot (Alterant-owned handover
-validation; `nothing` when absent) + the RESERVED `keyed_slot` (`nothing` at
-v0.2).
+The DECLARED per-action registration record: action `name` + the owning `plugin` index + the CAPABILITIES
+(`accepts_string_slot` — 0 = no String literal slot; N = the accepting literal-slot position, retiring the
+former name literals at the absorb seams) + the `validate` slot (Alterant-owned handover validation; `nothing`
+when absent) + the declared `settribute` write-back key. The per-overload rows (`ActionOverload`) left the record at stage 5's E11 of
+the v0.4 build with the `spelling` tag, the `sugar_candidacy` grant register and the reserved `keyed_slot` (census row 16 — his §317
+mark; his legacy registered an action by its name and let Julia dispatch do the rest): the setter's methods ARE the action's forms.
+The v0.3.2 positional constructor left with them (census row 65, R-V04B-61 — clean cuts, no leftovers of an older version); the
+keyword form is the one form.
 """
 struct ActionSpec
     name::Symbol
-    spelling::Symbol
     plugin::Int8
-    overloads::Vector{ActionOverload}
     accepts_string_slot::Int
-    sugar_candidacy::Symbol
     validate::Union{Nothing,Function}
-    keyed_slot::Union{Nothing,Tuple{Symbol,Symbol}}
     # --- the v0.4 declared per-action slot (T1; the per-action default of T1 GAVE WAY to the Alterant's at stage 2's commit 3-ii) ---
     settribute::Union{Nothing,Symbol} # slot (1): the settribute key this action's applied value
                                       #   writes back to (`nothing` = no write-back); the registry's
                                       #   generic `action_to_settribute` table is DERIVED from these
 end
-"The v0.3.2 positional shape still constructs (no write-back key)."
-ActionSpec(name::Symbol, spelling::Symbol, plugin::Int8, overloads::Vector{ActionOverload},
-           accepts_string_slot::Int, sugar_candidacy::Symbol, validate::Union{Nothing,Function},
-           keyed_slot::Union{Nothing,Tuple{Symbol,Symbol}}) =
-    ActionSpec(name, spelling, plugin, overloads, accepts_string_slot, sugar_candidacy, validate,
-               keyed_slot, nothing)
-"The keyword form of the per-action record."
-ActionSpec(; name::Symbol, spelling::Symbol, plugin::Int8, overloads::Vector{ActionOverload},
-             accepts_string_slot::Int = 0, sugar_candidacy::Symbol = :none, validate = nothing,
-             keyed_slot = nothing, settribute = nothing) =
-    ActionSpec(name, spelling, plugin, overloads, accepts_string_slot, sugar_candidacy, validate,
-               keyed_slot, settribute)
+"The keyword form of the per-action record — the one form since stage 5's E11 of the v0.4 build (census rows 16 and 65)."
+ActionSpec(; name::Symbol, plugin::Int8, accepts_string_slot::Int = 0, validate = nothing, settribute = nothing) =
+    ActionSpec(name, plugin, accepts_string_slot, validate, settribute)
 
 """
     _SealToken

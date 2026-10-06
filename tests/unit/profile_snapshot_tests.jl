@@ -23,13 +23,8 @@ import GoMeta as GM
     # plugin indices FAR OFF the real plugin table (a live consult of methods() or of
     # DEFAULT_REGISTRY.plugins would error on them — hardened at the panel round): the
     # digest must treat the record as pure DATA
-    _syn(name; plugin = 99, sig = Type[Dict{Symbol,Bool}, Symbol, Int],
-         kinds = Symbol[:symbol], srcs = Symbol[:declared], validate = nothing) =
-        GM.ActionSpec(
-        name, :identifier, Int8(plugin),
-        [GM.ActionOverload(sig, kinds, srcs, nothing, Nothing, :set, false,
-            :context_free, :apply, true)],
-        0, :none, validate, nothing)
+    _syn(name; plugin = 99, accepts = 0, validate = nothing) =   # the five-field record since stage 5's E11 (census row 16)
+        GM.ActionSpec(; name = name, plugin = Int8(plugin), accepts_string_slot = accepts, validate = validate)
 
     @testset "test_registration_digest_multi_order_determinism" begin
         specs = [_syn(:zza), _syn(:zzb; plugin = 98), _syn(:zzc; plugin = 97)]
@@ -38,28 +33,15 @@ import GoMeta as GM
         @test GM._registration_digest(specs) == d0                       # repeat ≡
         @test GM._registration_digest(reverse(specs)) == d0              # reversed ≡
         @test GM._registration_digest(specs[[2, 3, 1]]) == d0            # permuted ≡
-        # overload-row order inside ONE spec is canonicalized too
-        two = GM.ActionSpec(:zzd, :identifier, Int8(1),
-            [GM.ActionOverload(Type[Dict{Symbol,Bool}, Symbol], Symbol[], Symbol[],
-                 nothing, Nothing, :set, false, :context_free, :apply, true),
-             GM.ActionOverload(Type[Dict{Symbol,Bool}, Symbol, Int], Symbol[:symbol],
-                 Symbol[:declared], nothing, Nothing, :set, false, :context_free,
-                 :apply, true)],
-            0, :none, nothing, nothing)
-        two_r = GM.ActionSpec(:zzd, :identifier, Int8(1),
-            reverse(two.overloads), 0, :none, nothing, nothing)
-        @test GM._registration_digest([two]) == GM._registration_digest([two_r])
-        # and the digest SEES record content (not just names): a changed declared
-        # return type moves the fingerprint
-        rt = GM.ActionSpec(:zza, :identifier, Int8(1),
-            [GM.ActionOverload(Type[Dict{Symbol,Bool}, Symbol, Int], Symbol[:symbol],
-                 Symbol[:declared], nothing, Bool, :set, false, :context_free,
-                 :apply, true)],
-            0, :none, nothing, nothing)
+        # (the overload-row order canonicalization witness left at stage 5's E11 of the v0.4 build with the rows — census row 16)
+        # and the digest SEES record content (not just names): a changed accepting slot moves the fingerprint
+        # (the declared return type that carried this witness left with the overload rows at stage 5's E11 — census row 16)
+        rt = _syn(:zza; accepts = 1)
         @test GM._registration_digest([rt]) != GM._registration_digest([_syn(:zza)])
-        # parameter-faithful type text: a changed type PARAMETER moves the fingerprint
-        pt = _syn(:zza; sig = Type[Dict{Symbol,Int}, Symbol, Int])
-        @test GM._registration_digest([pt]) != GM._registration_digest([_syn(:zza)])
+        # parameter-faithful type text: a changed type PARAMETER of a plugin's store type moves the fingerprint
+        # (the record's one remaining Type leaf since stage 5's E11)
+        @test GM._registration_digest(specs; plugins = [GM.PlugIn(; altName = :zz, setMode = :accumulate, altConstructor = Dict{Symbol,Bool}, setAltInstance = identity)]) !=
+              GM._registration_digest(specs; plugins = [GM.PlugIn(; altName = :zz, setMode = :accumulate, altConstructor = Dict{Symbol,Int}, setAltInstance = identity)])
         # validate folds by IDENTITY (function name), not presence (panel-cured):
         # swapping the validator moves the fingerprint
         _va(x) = nothing; _vb(x) = nothing
@@ -69,8 +51,8 @@ import GoMeta as GM
               GM._registration_digest([_syn(:zza)])
         # plugin declaration data folds when supplied (panel-cured): a set-mode flip
         # moves the fingerprint; the same plugins leave it stable
-        pl1 = [GM.PlugIn(:zz, :accumulate, Dict{Symbol,Bool}, identity, nothing, nothing)]
-        pl2 = [GM.PlugIn(:zz, :localOnly, Dict{Symbol,Bool}, identity, nothing, nothing)]
+        pl1 = [GM.PlugIn(; altName = :zz, setMode = :accumulate, altConstructor = Dict{Symbol,Bool}, setAltInstance = identity)]
+        pl2 = [GM.PlugIn(; altName = :zz, setMode = :localOnly, altConstructor = Dict{Symbol,Bool}, setAltInstance = identity)]
         @test GM._registration_digest(specs; plugins = pl1) ==
               GM._registration_digest(specs; plugins = pl1)
         @test GM._registration_digest(specs; plugins = pl1) !=
@@ -79,12 +61,12 @@ import GoMeta as GM
               GM._registration_digest(specs)
         # plugin ORDER is index-bearing and folds as declared (the header's claim, witnessed —
         # t2r4 C-11): the same two plugins in the other order move the fingerprint
-        plq = GM.PlugIn(:zq, :accumulate, Dict{Symbol,Bool}, identity, nothing, nothing)
+        plq = GM.PlugIn(; altName = :zq, setMode = :accumulate, altConstructor = Dict{Symbol,Bool}, setAltInstance = identity)
         @test GM._registration_digest(specs; plugins = [pl1[1], plq]) !=
               GM._registration_digest(specs; plugins = [plq, pl1[1]])
         # clash-arm-W shape: the digest fingerprints the EFFECTIVE first-wins record —
         # a same-named loser spec never moves it (panel-cured)
-        loser = _syn(:zza; sig = Type[Dict{Symbol,Bool}, Symbol])
+        loser = _syn(:zza; accepts = 1)   # a duplicate-named spec differing in its datum (the sig_types that carried this left at stage 5's E11 — census row 16)
         @test GM._registration_digest([_syn(:zza), loser]) ==
               GM._registration_digest([_syn(:zza)])
         # INJECTIVITY of the component fold (external-review-cured): delimiter-bearing
@@ -152,9 +134,9 @@ import GoMeta as GM
         # pin asserted UNMOVED as always)
         p = GM.resolve_profile(GM.GoMetaConfig())
         @test p.grammar_digest      == 0x12972c9924c2bf2b
-        @test p.registration_digest == 0x008ddf8ca27b68e9   # the THIRTEENTH re-mint, MEASURED by a probe on the E5 scratch (receipts/S8-branch/PROBES-e5-digest_on-1bf0fa29.txt in the build record): the capture row's seal text loses its instance type and multiplicity (stage 5's E5; 0x4476f42b610c3b36 → 0x008ddf8ca27b68e9)   # the TWELFTH re-mint, MEASURED by a probe on the E10 scratch (receipts/S8-branch/PROBES-e10-digest_on-42d29dd6.txt in the build record): the record's seven declared slots leave the seal fold (stage 5's E10; 0x7592bd4b967adbce → 0x4476f42b610c3b36)   # the ELEVENTH re-mint, MEASURED by a probe on the E9 scratch (receipts/S8-branch/PROBES-e9-digest_on-841707af.txt in the build record): the labels record's vocabulary slot and policy_id leave the seal fold (stage 5's E9; 0x0e7836ce6e6b53ae → 0x7592bd4b967adbce)   # the TENTH re-mint, MEASURED by a probe (PROBES-rvc2-digest.txt): card C2's three declared defaults enter the seal (R-V04B-92; 0x0956eed205fef8ac → 0x0e7836ce6e6b53ae)   # stage 2's commit 3-ii: the per-action default leaves the seal (R-V04B-51) — the NINTH re-mint, MEASURED by a probe   # stage 2's commit 3-i: the Alterant's default joins the seal — R-V04B-51/55) — the EIGHTH re-mint, MEASURED by a probe
+        @test p.registration_digest == 0x5911e524693bb37b   # the FOURTEENTH re-mint, MEASURED by a probe on the E11 scratch (receipts/S8-branch/PROBES-e11-digest_on-e18f7f5c.txt in the build record): the overload rows, the spelling tag, the grant register and the keyed slot left the fold at stage 5's E11 (census row 16); the THIRTEENTH 0x008ddf8ca27b68e9, MEASURED by a probe on the E5 scratch (receipts/S8-branch/PROBES-e5-digest_on-1bf0fa29.txt in the build record): the capture row's seal text loses its instance type and multiplicity (stage 5's E5; 0x4476f42b610c3b36 → 0x008ddf8ca27b68e9)   # the TWELFTH re-mint, MEASURED by a probe on the E10 scratch (receipts/S8-branch/PROBES-e10-digest_on-42d29dd6.txt in the build record): the record's seven declared slots leave the seal fold (stage 5's E10; 0x7592bd4b967adbce → 0x4476f42b610c3b36)   # the ELEVENTH re-mint, MEASURED by a probe on the E9 scratch (receipts/S8-branch/PROBES-e9-digest_on-841707af.txt in the build record): the labels record's vocabulary slot and policy_id leave the seal fold (stage 5's E9; 0x0e7836ce6e6b53ae → 0x7592bd4b967adbce)   # the TENTH re-mint, MEASURED by a probe (PROBES-rvc2-digest.txt): card C2's three declared defaults enter the seal (R-V04B-92; 0x0956eed205fef8ac → 0x0e7836ce6e6b53ae)   # stage 2's commit 3-ii: the per-action default leaves the seal (R-V04B-51) — the NINTH re-mint, MEASURED by a probe   # stage 2's commit 3-i: the Alterant's default joins the seal — R-V04B-51/55) — the EIGHTH re-mint, MEASURED by a probe
         @test GM.cache_key(p) == string("gometa/v", GM._ENGINE_VERSION,
-            "/jl_share_v1/closed_v1/s3/g12972c9924c2bf2b/r8ddf8ca27b68e9")   # the r-component re-minted with the pin above (stage 5's E5 = the thirteenth; MEASURED by the probe)
+            "/jl_share_v1/closed_v1/s3/g12972c9924c2bf2b/r5911e524693bb37b")   # the r-component re-minted with the pin above (stage 5's E11 = the fourteenth; MEASURED by the probe)
     end
 
     @testset "test_error_oracle_corrupt_and_incompatible" begin

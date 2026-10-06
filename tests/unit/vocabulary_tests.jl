@@ -214,12 +214,8 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
         # hostile `show` and validate threw "hostileP-show".
         b6 = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
         s6 = b6.action_specs[4]
-        b6.action_specs[4] = GM.ActionSpec(; name = s6.name, spelling = s6.spelling,
-            plugin = s6.plugin, overloads = s6.overloads,
-            accepts_string_slot = s6.accepts_string_slot,
-            sugar_candidacy = s6.sugar_candidacy, validate = s6.validate,
-            keyed_slot = s6.keyed_slot,
-            settribute = s6.settribute)
+        b6.action_specs[4] = GM.ActionSpec(; name = s6.name, plugin = s6.plugin, accepts_string_slot = s6.accepts_string_slot,
+            validate = s6.validate, settribute = s6.settribute)
         b6.plugins[2] = _plugin_with_default(b6.plugins[2], GM.Declared(_VocHostile.HostileP()))   # the hostile value rides the Alterant's slot (commit 3-ii)
         d6 = GM.validate(b6)
         @test any(x -> x.code === :REG_PROTOCOL && occursin("HostileP", x.message), d6)
@@ -243,18 +239,11 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
         # validate returns and the pirated == is never SELECTED.
         bq = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
         sq = bq.action_specs[1]
-        qov = GM.ActionOverload(; sig_types = Type[Dict{Symbol,Bool}, Symbol],
-            kinds = Symbol[], kind_sources = Symbol[], vararg_kind = nothing,
-            return_type = Nothing, effect = :set, queryable = false,
-            applicability = :context_free, phase = :apply, grammar = false)
         bq.plugins[1] = GM.PlugIn(; altName = :labels, setMode = :accumulate,
             altConstructor = Dict{Symbol,Bool}, setAltInstance = _VocR3.heq,
             getAltInstance = GM.Alterants.checkLabels)
-        bq.action_specs[1] = GM.ActionSpec(; name = sq.name, spelling = sq.spelling,
-            plugin = sq.plugin, overloads = [qov],
-            accepts_string_slot = sq.accepts_string_slot,
-            sugar_candidacy = sq.sugar_candidacy, validate = sq.validate,
-            keyed_slot = sq.keyed_slot, settribute = sq.settribute)
+        bq.action_specs[1] = GM.ActionSpec(; name = sq.name, plugin = sq.plugin, accepts_string_slot = sq.accepts_string_slot,
+            validate = sq.validate, settribute = sq.settribute)
         dq = GM.validate(bq)
         @test dq isa Vector && _VocR3.EQCALLS[] == 0     # (r4-B2) the piracy was never SELECTED under ===
         # (A2, probe P62) the budget walkers read the type graph via getfield only: a
@@ -266,31 +255,21 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
         # pirated nameof never escapes) and the WALK refuses the key typed.
         bk = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
         sk = bk.action_specs[4]
-        bk.action_specs[4] = GM.ActionSpec(; name = sk.name, spelling = sk.spelling,
-            plugin = sk.plugin, overloads = sk.overloads,
-            accepts_string_slot = sk.accepts_string_slot,
-            sugar_candidacy = sk.sugar_candidacy, validate = sk.validate,
-            keyed_slot = sk.keyed_slot,
-            settribute = sk.settribute)
+        bk.action_specs[4] = GM.ActionSpec(; name = sk.name, plugin = sk.plugin, accepts_string_slot = sk.accepts_string_slot,
+            validate = sk.validate, settribute = sk.settribute)
         bk.plugins[2] = _plugin_with_default(bk.plugins[2], GM.Declared(Dict{Any,Any}(_VocR3.hkey => 1)))   # commit 3-ii: the Alterant's slot
         dk = GM.validate(bk)
         @test dk isa Vector && any(x -> x.code === :REG_PROTOCOL, dk) &&
               _VocR3.KCALLS[] == 0      # (r4-B1) the key's nameof never EXECUTED (the
                                         # order budget blocks Function keys outright)
-        # (A6, probe P64) an over-budget sig type is refused on the encodability row (the
+        # (A6, probe P64) an over-budget Type leaf is refused on the encodability row (the
         # reflection that once skipped the broken spec left at stage 5's E4 — no SIG row exists).
         bigU2 = reduce((a, i) -> Union{a, Val{i}}, 1:300; init = Union{})
         bb = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
-        sb = bb.action_specs[1]
-        bov2 = GM.ActionOverload(; sig_types = Type[Dict{Symbol,Bool}, bigU2],
-            kinds = Symbol[], kind_sources = Symbol[], vararg_kind = nothing,
-            return_type = Nothing, effect = :set, queryable = false,
-            applicability = :context_free, phase = :apply, grammar = false)
-        bb.action_specs[1] = GM.ActionSpec(; name = sb.name, spelling = sb.spelling,
-            plugin = sb.plugin, overloads = [sb.overloads..., bov2],
-            accepts_string_slot = sb.accepts_string_slot,
-            sugar_candidacy = sb.sugar_candidacy, validate = sb.validate,
-            keyed_slot = sb.keyed_slot, settribute = sb.settribute)
+        # (the over-budget type rode an overload row's sig_types until stage 5's E11 of the v0.4 build — census row 16;
+        # it rides the Alterant's store type now, the record's one remaining Type leaf)
+        bb.plugins[1] = GM.PlugIn(; altName = :labels, setMode = :accumulate, altConstructor = bigU2,
+            setAltInstance = GM.Alterants.setLabels, getAltInstance = GM.Alterants.checkLabels)
         db = GM.validate(bb)
         @test any(x -> x.code === :REG_PROTOCOL, db)
         # (A5; the r4-B3 cure of this scan) the reflection unwrap is LOCAL: the
@@ -331,12 +310,8 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
         # String() conversions (pre-cure: one call, its stateful throw escaping raw).
         bs5 = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
         ss = bs5.action_specs[4]
-        bs5.action_specs[4] = GM.ActionSpec(; name = ss.name, spelling = ss.spelling,
-            plugin = ss.plugin, overloads = ss.overloads,
-            accepts_string_slot = ss.accepts_string_slot,
-            sugar_candidacy = ss.sugar_candidacy, validate = ss.validate,
-            keyed_slot = ss.keyed_slot,
-            settribute = ss.settribute)
+        bs5.action_specs[4] = GM.ActionSpec(; name = ss.name, plugin = ss.plugin, accepts_string_slot = ss.accepts_string_slot,
+            validate = ss.validate, settribute = ss.settribute)
         bs5.plugins[2] = _plugin_with_default(bs5.plugins[2], GM.Declared(Dict{Any,Any}(_VocR5.BadString() => 1)))   # commit 3-ii: the Alterant's slot
         _VocR5.POST[] = true
         c0 = _VocR5.SCALLS[]

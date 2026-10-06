@@ -5,9 +5,9 @@
 # census rows 3 and 51, OWNER-WORDS §317; the retirement notes stand where the testsets stood).
 #
 # IS:   the witnesses of the DECLARED registration record as the Engine still reads it: the
-#       remaining checks wired at `validate` (source order), the FIRST-wins derived tables, the
-#       operator-token spelling, the commissioned capability consults, the dispatch-boundary
-#       RETURN-TYPE validation rows (the declared return types verified against real invocations);
+#       remaining checks wired at `validate` (source order), the FIRST-wins derived tables and the
+#       commissioned capability consults; the operator-token tag's witness, the activated-grants register's and the
+#       dispatch-boundary return-type rows left with the overload rows at stage 5's E11 of the v0.4 build (census row 16);
 #       the full-arming guard's witnesses left with the set-invocation seam at stage 5's E6 of the v0.4 build.
 # PURPOSE: plan row 11's gate — "registration + atomicity tests green" (re-scoped at E4).
 
@@ -20,13 +20,8 @@ import GoMeta as GM
     # subject: the clash law and its disposition switch left — census rows 3 and 51, OWNER-WORDS §317;
     # a duplicate action name resolves FIRST-wins in `_derive_tables`, witnessed below.)
 
-    @testset "test_operator_token_spelling — ad-4: the live record's operator tag" begin
-        # (the clash arm over operator tokens left with the clash law at stage 5's E4)
-        # the live record declares the colon action with the OPERATOR tag
-        colon_spec = GM.DEFAULT_REGISTRY.action_specs[
-            GM.DEFAULT_REGISTRY.spec_index[Symbol(":")]]
-        @test colon_spec.spelling === :operator
-    end
+    # (test_operator_token_spelling was CONSCIOUSLY RETIRED at stage 5's E11 of the v0.4 build with its subject — the
+    # record's spelling tag, census row 16.)
 
     # (the reflection cross-check testset was CONSCIOUSLY RETIRED at stage 5's E4 with its subject —
     # census row 3: a declared signature is the author's statement; a drifted one is Julia's own MethodError at the
@@ -37,14 +32,9 @@ import GoMeta as GM
     # with their subjects — census row 3; the live seam's return-type guard left at stage 5's E6 with its witness —
     # census row 14: a setter's return is not checked.)
 
-    @testset "the activated grants — the live register's two" begin
-        # (the candidacy diagnostic left at stage 5's E4: a :candidate without activation publishes
-        # silently — witnessed in registry_lifecycle_tests)
-        # the LIVE register stays closed at exactly TWO activated grants
-        activated = [s.name for s in GM.DEFAULT_REGISTRY.action_specs
-                     if s.sugar_candidacy === :activated]
-        @test sort(activated) == sort([Symbol(":"), :head])
-    end
+    # (the activated-grants testset was CONSCIOUSLY RETIRED at stage 5's E11 of the v0.4 build with its subject — the
+    # record's sugar-candidacy register, census row 16; the two sugars — the Labels colon, the quoted-first heading —
+    # are the absorb grammar's, witnessed by the corpus and the heading tests.)
 
     @testset "the remaining checks precede construction; the record is total" begin
         # (re-scoped at stage 5's E4 — the validation chain of v0.4 T2–T4 left, census row 3, OWNER-WORDS
@@ -83,15 +73,13 @@ import GoMeta as GM
         # (replaces arm-W consistency, retired with the clash law; measured on the E4 scratch —
         # PROBES-e4-validate_stage1-src-cut_on-1c9d013f.txt [4])
         b = GM.RegistryBuilder()
-        GM.register!(b, GM.PlugIn(:bag, :accumulate, Dict{Symbol,Bool}, GM.Alterants.setLabels, GM.Alterants.checkLabels, nothing),
-            GM.ActionSpec(; name = :alpha, spelling = :identifier, plugin = Int8(1),
-                overloads = [GM.ActionOverload(; sig_types = Type[Dict{Symbol,Bool}, Symbol], vararg_kind = :symbol, queryable = true)]),
-            GM.ActionSpec(; name = :alpha, spelling = :identifier, plugin = Int8(1),
-                overloads = [GM.ActionOverload(; sig_types = Type[Dict{Symbol,Bool}, Symbol], vararg_kind = :symbol, queryable = false)]))
+        GM.register!(b, GM.PlugIn(; altName = :bag, setMode = :accumulate, altConstructor = Dict{Symbol,Bool}, setAltInstance = GM.Alterants.setLabels, getAltInstance = GM.Alterants.checkLabels),
+            GM.ActionSpec(; name = :alpha, plugin = Int8(1), accepts_string_slot = 1),
+            GM.ActionSpec(; name = :alpha, plugin = Int8(1), accepts_string_slot = 0))
         @test isempty(GM.validate(b))                        # no clash law refuses it
         R = GM.publish(b)
         @test R.spec_index[:alpha] == 1                      # the FIRST declaration is the one dispatched
-        @test R.action_specs[R.spec_index[:alpha]].overloads[1].queryable === true
+        @test R.action_specs[R.spec_index[:alpha]].accepts_string_slot == 1   # the FIRST declaration's datum (the overload rows left at stage 5's E11)
         @test R.sorted_alt_actions == [:alpha] && R.action_to_plugin == Int8[1]
     end
 
@@ -104,7 +92,6 @@ import GoMeta as GM
         hs = GM.DEFAULT_REGISTRY.action_specs[GM.DEFAULT_REGISTRY.spec_index[:head]]
         @test hs.accepts_string_slot == 1
         @test hs.validate === GM.Alterants._heading_validate_text
-        @test all(ov.phase === :absorb for ov in hs.overloads)
         # behavior THROUGH the record is unchanged: the slot law + validation
         r = GM.goMeta(Vector{UInt8}(codeunits("#~ \"T\"\nx = 1\n")))
         @test any(a === :head_1 for (_, a, _, _) in GM.readAltValuesEvals(r.altValues_evals))
@@ -127,35 +114,9 @@ import GoMeta as GM
         @test !occursin("=== :head", fn) && !occursin("_heading_validate_text(", fn)
     end
 
-    @testset "dispatch-boundary return-type validation — declared ≡ measured" begin
-        # every GRAMMAR overload's declared return type matches a REAL invocation
-        # (the value algebra's ground truth; per-plugin representative calls)
-        @test typeof(GM.Alterants.setLabels(Dict{Symbol,Bool}(), Symbol(":"), :label1)) === Nothing
-        @test typeof(GM.Alterants.setVisib(GM.Alterants.Visib(), :hide)) === Bool
-        @test typeof(GM.Alterants.setId(GM.Alterants.Id(), :cell, Symbol("7"))) === Int16
-        @test typeof(GM.Alterants.setHead(GM.Alterants.Heading(), :head, "T")) === Nothing
-        @test typeof(GM.Alterants.setHead(GM.Alterants.Heading(), :head, "T", Symbol("2"))) === Nothing
-        # …and each matches its DECLARED row — EVERY spec incl. the remaining
-        # grammar rows and the internal (inherited-shape) rows (panel-found
-        # coverage gap: representatives only left :show/:discard/:parent/:file and
-        # both SubString rows unmeasured)
-        for (name, fn, args) in ((Symbol(":"), GM.Alterants.setLabels, (Dict{Symbol,Bool}(), Symbol(":"), :label1)),
-                                 (:hide, GM.Alterants.setVisib, (GM.Alterants.Visib(), :hide)),
-                                 (:show, GM.Alterants.setVisib, (GM.Alterants.Visib(), :show)),
-                                 (:discard, GM.Alterants.setVisib, (GM.Alterants.Visib(), :discard)),
-                                 (:cell, GM.Alterants.setId, (GM.Alterants.Id(), :cell, Symbol("7"))),
-                                 (:parent, GM.Alterants.setId, (GM.Alterants.Id(), :parent, Symbol("8"))),
-                                 (:file, GM.Alterants.setId, (GM.Alterants.Id(), :file, Symbol("9"))),
-                                 (:head, GM.Alterants.setHead, (GM.Alterants.Heading(), :head, "T", Symbol("2"))))
-            spec = GM.DEFAULT_REGISTRY.action_specs[GM.DEFAULT_REGISTRY.spec_index[name]]
-            @test typeof(fn(args...)) in [ov.return_type for ov in spec.overloads]
-        end
-        # the internal (grammar=false) inherited rows, measured too
-        @test typeof(GM.Alterants.setVisib(GM.Alterants.Visib(),
-            SubString{String}("hide"))) === Bool
-        @test typeof(GM.Alterants.setId(GM.Alterants.Id(),
-            SubString{String}("cell"), SubString{String}("7"))) === Int16
-    end
+    # (the dispatch-boundary return-type validation testset was CONSCIOUSLY RETIRED at stage 5's E11 of the v0.4 build
+    # with its subject — the declared return types of the overload rows, census row 16; the setters' methods are the
+    # actions' forms and Julia dispatch the check.)
 
     # ── (the FULL-ARMING witnesses — the kind map, the user-arity convention, the unregistered-action, arity,
     # form and value refusals, the pass paths and the drift and return-guard internal arms of the set-invocation

@@ -427,7 +427,7 @@ function default_registry_builder()
     plugins = PlugIn[
         ## v0.4 T5: every DEFAULT record DECLARES its capture row (the registration-driven
         ## capture plane; the stems are DECLARED — byte-compatibility never rides the
-        ## derived fallback) — the three former legacy 6-positional declarations migrated
+        ## derived fallback) — the three former legacy positional declarations migrated
         ## to the keyword form to carry `capture =`.
         PlugIn(; altName = :labels, setMode = :accumulate, altConstructor = Dict{Symbol,Bool},
                  setAltInstance = Alterants.setLabels, getAltInstance = Alterants.checkLabels,
@@ -455,75 +455,34 @@ function default_registry_builder()
                  capture = CaptureDecl(:per_occurrence, :localOnly; attr_stem = :head)),
     ]
 
-    # v0.2 registration build: THE DECLARED REGISTRATION RECORD — one ActionSpec per action,
-    # declaration order (the parallel derived tables below stay the hot-path lookups).
-    # Internal (grammar=false) rows declare the probe-surfaced INHERITED setter shapes
-    # (declared for the implemented-but-undeclared diagnostic of the time — the reflection
-    # cross-check left at stage 5's E4); they attach to the plugin's first action. Return
-    # types are DECLARED (never inference) and verified by the dispatch-boundary tests.
-    _ov(sig, kinds, srcs; vk=nothing, rt=Nothing, q=false, app=:context_free,
-        ph=:apply, gr=true) =
-        ActionOverload(sig, kinds, srcs, vk, rt, :set, q, app, ph, gr)
+    # v0.2 registration build: THE DECLARED REGISTRATION RECORD — one ActionSpec per action, declaration
+    # order (the parallel derived tables below stay the hot-path lookups). The per-overload rows left at stage 5's E11
+    # of the v0.4 build with the spelling tag, the sugar-candidacy register and the reserved keyed slot (census row 16 —
+    # his §317 mark; his legacy registered an action by its name and let Julia dispatch
+    # do the rest): the setters' methods are the actions' forms; the keyword form is the one form (census row 65).
     action_specs = ActionSpec[
-        # Labels `:(:)` — the OPERATOR-token spelling (ad-4); the colon sugar is one
-        # of the two ACTIVATED grants (x-8, closed at two). Queryable via checkLabels.
-        ActionSpec(Symbol(":"), :operator, Int8(1),
-            [_ov(Type[Dict{Symbol,Bool}, Symbol], Symbol[], Symbol[];
-                 vk=:symbol, rt=Nothing, q=true)],
-            0, :activated, nothing, nothing),
-        # Visib hide/show/discard — zero literal slots (the action name selects);
-        # NON-queryable at v0.2 (getAltInstance=nothing; the I20 class). The inherited
-        # SubString feed shape is the internal row on :hide.
+        # Labels `:(:)` — the operator-token action (ad-4); the colon sugar is one of the two activated
+        # sugars (x-8, closed at two); queryable via checkLabels.
+        ActionSpec(; name = Symbol(":"), plugin = Int8(1)),
+        # Visib hide/show/discard — zero literal slots (the action name selects); NON-queryable at v0.2
+        # (getAltInstance=nothing; the I20 class).
         # v0.4 T1: the write-back settribute key is DECLARED per action (slot (1)) — identity to
         # the action name at v0.4.0, exactly the v0.3.2 map; the registry's generic
         # `action_to_settribute` table derives from these declarations below, so Core no longer
         # knows "plugin 2 is Visib" anywhere in this constructor.
-        ActionSpec(:hide, :identifier, Int8(2),
-            [_ov(Type[Alterants.Visib, Symbol], Symbol[], Symbol[]; rt=Bool),
-             _ov(Type[Alterants.Visib, SubString{String}], Symbol[], Symbol[];
-                 rt=Bool, gr=false)],
-            0, :none, nothing, nothing, :hide),
-        ActionSpec(:show, :identifier, Int8(2),
-            [_ov(Type[Alterants.Visib, Symbol], Symbol[], Symbol[]; rt=Bool)],
-            0, :none, nothing, nothing, :show),
-        ActionSpec(:discard, :identifier, Int8(2),
-            [_ov(Type[Alterants.Visib, Symbol], Symbol[], Symbol[]; rt=Bool)],
-            0, :none, nothing, nothing, :discard),
-        # Id cell/parent/file — ONE literal slot, kind :symbol DECLARED (the setter
-        # slot is `Any` — the untyped-slot class the reflection memo tags; reflection
-        # cannot carry this kind). NON-queryable (experimental, I21). The inherited
-        # SubString pair shape is the internal row on :cell.
-        ActionSpec(:cell, :identifier, Int8(3),
-            [_ov(Type[Alterants.Id, Symbol, Any], Symbol[:symbol],
-                 Symbol[:declared]; rt=Int16),
-             _ov(Type[Alterants.Id, SubString{String}, SubString{String}],
-                 Symbol[], Symbol[]; rt=Int16, gr=false)],
-            0, :none, nothing, nothing),
-        ActionSpec(:parent, :identifier, Int8(3),
-            [_ov(Type[Alterants.Id, Symbol, Any], Symbol[:symbol],
-                 Symbol[:declared]; rt=Int16)],
-            0, :none, nothing, nothing),
-        ActionSpec(:file, :identifier, Int8(3),
-            [_ov(Type[Alterants.Id, Symbol, Any], Symbol[:symbol],
-                 Symbol[:declared]; rt=Int16)],
-            0, :none, nothing, nothing),
-        # head — the single Heading action. TWO grammar overloads: deriving
-        # (context-REQUIRED; the sugar's lowering target) and explicit
-        # (context-free). Both deliver at the ABSORB seam (the
-        # localOnly phase). The text slot's :string kind is REFLECTED (the
-        # signature carries AbstractString); the level slot's :symbol kind is
-        # DECLARED (untyped slot, parsed setId-style). accepts_string_slot = 1
-        # (the capability that retired the wall's name literal); the quoted-first
-        # sugar is the second ACTIVATED grant; the validate slot carries the
-        # Heading-owned empty-text refusal (the handover-validation slot).
-        ActionSpec(:head, :identifier, Int8(4),
-            [_ov(Type[Alterants.Heading, Symbol, AbstractString],
-                 Symbol[:string], Symbol[:reflected];
-                 rt=Nothing, app=:context_required, ph=:absorb),
-             _ov(Type[Alterants.Heading, Symbol, AbstractString, Any],
-                 Symbol[:string, :symbol], Symbol[:reflected, :declared];
-                 rt=Nothing, ph=:absorb)],
-            1, :activated, Alterants._heading_validate_text, nothing),
+        ActionSpec(; name = :hide, plugin = Int8(2), settribute = :hide),
+        ActionSpec(; name = :show, plugin = Int8(2), settribute = :show),
+        ActionSpec(; name = :discard, plugin = Int8(2), settribute = :discard),
+        # Id cell/parent/file — ONE literal slot (the setter parses the Symbol text); NON-queryable
+        # (experimental, I21).
+        ActionSpec(; name = :cell, plugin = Int8(3)),
+        ActionSpec(; name = :parent, plugin = Int8(3)),
+        ActionSpec(; name = :file, plugin = Int8(3)),
+        # head — the single Heading action; its two forms (deriving / explicit) are the setter's methods,
+        # both delivering at the ABSORB seam (the localOnly phase). accepts_string_slot = 1 (the capability
+        # that retired the wall's name literal); the quoted-first sugar is the second activated sugar; the
+        # validate slot carries the Heading-owned empty-text refusal (the handover-validation slot).
+        ActionSpec(; name = :head, plugin = Int8(4), accepts_string_slot = 1, validate = Alterants._heading_validate_text),
     ]
 
     # The registration (stage 5's E4 — his §317, census rows 3 and 51: the validation chain of v0.4 T2–T4
@@ -601,7 +560,7 @@ registration provenance/cache-key component. Canonicalization: first-owner-per-n
 FIRST (so a duplicate-named loser spec never moves the fingerprint — the effective record is
 first-wins, as `_derive_tables` resolves it since stage 5's E4; which spec WON is meaning-bearing
 and correctly stays visible), then specs
-sorted by action name; within a spec, overload rows sorted by their own serialized text — so
+sorted by action name (the overload rows left the record at stage 5's E11 of the v0.4 build — census row 16) — so
 the digest is invariant under registration/declaration ORDER (multi-order determinism). The
 `validate` slot folds by FUNCTION NAME (a swapped validator is USUALLY a result-affecting
 registration change — recorded limits: a swap to a SAME-NAMED function is invisible to the
@@ -625,29 +584,14 @@ function _registration_digest(action_specs::Vector{ActionSpec};
         spec.name in seen || (push!(seen, spec.name); push!(owned, spec))
     end
     for spec in sort!(owned; by = s -> String(s.name))
-        h = _fold_parts(h, "spec", spec.name, spec.spelling,
-            Int(spec.plugin), spec.accepts_string_slot, spec.sugar_candidacy,
+        h = _fold_parts(h, "spec", spec.name,
+            Int(spec.plugin), spec.accepts_string_slot,
             spec.validate === nothing ? "-" : String(nameof(spec.validate)),
-            spec.keyed_slot,
             # v0.4 T2 — the declared per-action slot joins the fold (the seal covers the record; the per-action
-            # default left the record at stage 2's commit 3-ii — the Alterant's default folds below)
+            # default left the record at stage 2's commit 3-ii — the Alterant's default folds below; the overload rows left the fold at stage 5's E11
+            # of the v0.4 build with the spelling tag, the sugar-candidacy register and the keyed slot — census row 16:
+            # the FOURTEENTH re-mint)
             "settribute", _slot_text(spec.settribute))
-        for ov in sort(spec.overloads; by = _overload_text)
-            h = _fold_parts(h, "ov")
-            for t in ov.sig_types
-                h = _fold_parts(h, _type_text(t))
-            end
-            # in-band marker discipline (delta-recorded): the "k"/"s" list markers
-            # separate two SPLATTED variable-length lists; boundary aliasing would
-            # need a kind or source literally named k/s — no longer refused at registration
-            # (the enum check left at stage 5's E4; the arming consult that read the kinds left at stage 5's E6
-            # of the v0.4 build — census row 14), so such a record's fingerprint can alias
-            # another's: a fingerprint-only collision class inside R-V04B-4 (v)'s disclosed-lossy
-            # bound — the door's snapshot compare does not depend on the fingerprint.
-            h = _fold_parts(h, "k", ov.kinds..., "s", ov.kind_sources...,
-                ov.vararg_kind, _type_text(ov.return_type), ov.effect,
-                ov.queryable, ov.applicability, ov.phase, ov.grammar)
-        end
     end
     for p in plugins
         h = _fold_parts(h, "plug", p.altName, p.setMode,
@@ -834,26 +778,22 @@ _domain_leaf(x)::Bool =
     x isa Function || x isa Type || x isa Symbol || x === nothing || x isa String ||
     x isa VersionNumber || _numeric_leaf(x)
 
-## the per-record explicit field lists — 8/9/10 (the Alterant's default slot since stage 2's commit 3; the action's gone since 3-ii; eight since stage 5's E10), each asserted against the compiler at
-## load (T2BIS-DESIGN §15 (7)); the three record structs are POSITION-RESTRICTED walker
-## containers (elements of `plugins`/`action_specs`; `ActionOverload` inside
-## `ActionSpec.overloads`) and are REFUSED anywhere else, declared data included.
+## the per-record explicit field lists — 8/5 (the Alterant's default slot since stage 2's commit 3; the action's gone since 3-ii; eight since stage 5's E10; five since stage 5's E11 — the overload rows left, census row 16), each asserted against the compiler at
+## load (T2BIS-DESIGN §15 (7)); the two record structs are POSITION-RESTRICTED walker
+## containers (elements of `plugins`/`action_specs`; the third, `ActionOverload` inside the overloads slot, left at stage 5's E11
+## of the v0.4 build — census row 16) and are REFUSED anywhere else, declared data included.
 const _WALK_PLUGIN_FIELDS = (:altName, :setMode, :altConstructor, :setAltInstance,
     :getAltInstance, :precedencesTuple, :default, :capture)
 @assert _WALK_PLUGIN_FIELDS == fieldnames(PlugIn)
-const _WALK_ACTION_FIELDS = (:name, :spelling, :plugin, :overloads, :accepts_string_slot,
-    :sugar_candidacy, :validate, :keyed_slot, :settribute)
+const _WALK_ACTION_FIELDS = (:name, :plugin, :accepts_string_slot, :validate, :settribute)
 @assert _WALK_ACTION_FIELDS == fieldnames(ActionSpec)
-const _WALK_OVERLOAD_FIELDS = (:sig_types, :kinds, :kind_sources, :vararg_kind, :return_type,
-    :effect, :queryable, :applicability, :phase, :grammar)
-@assert _WALK_OVERLOAD_FIELDS == fieldnames(ActionOverload)
 
 "The 3 record-reachable slot-struct types (walked field-wise GENERICALLY; rebuilt
 positionally at `typeof(x)`; the two vocabulary slot types left at stage 5's E9, the nine of the
 carried declarations and the security frame at stage 5's E10)."
 const _SLOT_STRUCTS = (CaptureDecl, NoDefault, Declared)
 const _SLOT_STRUCT_UNION = Union{CaptureDecl, NoDefault, Declared}
-const _RECORD_STRUCT_UNION = Union{PlugIn, ActionSpec, ActionOverload}
+const _RECORD_STRUCT_UNION = Union{PlugIn, ActionSpec}
 
 # a VALUE-domain container at any position (the record structs are position-restricted and
 # handled by the walks' `rk` class, never by this predicate); CONCRETE classes only —
@@ -1041,18 +981,18 @@ end
 # two-predicate walk, emitting AT MOST ONE slot-named row — the FIRST failure on the
 # deterministic traversal (fields in listed order · Vector/Tuple by index · Pair
 # first/second · NamedTuple by name order · Dict per `_walk_dict_entries`). Work items are
-# `(value, pos, des, rk)`: `pos` ∈ (:structural, :data) — flipped at the ONE DATA locus
+# `(value, pos, des)`: `pos` ∈ (:structural, :data) — flipped at the ONE DATA locus
 # `Declared.value` and never flipped back (DATA WINS — a Function nested in data is refused);
 # `des` = the value sits in a designated callable field (`setAltInstance`/`getAltInstance`/
-# `validate`); `rk` = 0x02 for a Vector whose elements are admitted
-# `ActionOverload` records (the `overloads` slot only), 0x01 for such an element itself.
+# `validate`). (The `rk` rank that admitted `ActionOverload` rows inside the overloads slot left with them at stage 5's E11
+# of the v0.4 build — census row 16: a record struct inside a declared slot is unencodable.)
 # Cycle-guarded (visiting `IdSet`, push!/delete! bracketed) with a per-slot DONE-cache on
 # the mutable containers; `validate` NEVER throws.
 function _domain_slot_probe!(diags::Vector{Diagnostic}, label::String, ctx, slot::Symbol,
-                             x, des0::Bool, ovvec::Bool)
+                             x, des0::Bool)
     visiting = Base.IdSet{Any}()
     done = Base.IdSet{Any}()
-    work = Any[(x, :structural, des0, ovvec ? 0x02 : 0x00)]
+    work = Any[(x, :structural, des0)]
     while !isempty(work)
         item = pop!(work)
         if item isa _PopVisit
@@ -1060,48 +1000,43 @@ function _domain_slot_probe!(diags::Vector{Diagnostic}, label::String, ctx, slot
             push!(done, item.v)
             continue
         end
-        (v, pos, des, rk) = item
+        (v, pos, des) = item
         if v isa _RECORD_STRUCT_UNION
-            (v isa ActionOverload && rk === 0x01 && pos === :structural) ||
-                return _emit_unencodable!(diags, label, ctx, slot, typeof(v))
-            for i in length(_WALK_OVERLOAD_FIELDS):-1:1
-                push!(work, (getfield(v, _WALK_OVERLOAD_FIELDS[i]), pos, false, 0x00))
-            end
+            return _emit_unencodable!(diags, label, ctx, slot, typeof(v))   # a record struct inside a declared slot (the admitted overload rows left at stage 5's E11 — census row 16)
         elseif v isa Vector || v isa Dict
             v in visiting && return _emit_cyclic!(diags, label, ctx, slot)
             v in done && continue
             push!(visiting, v)
             push!(work, _PopVisit(v))
             if v isa Vector
-                kidrk = rk === 0x02 ? 0x01 : 0x00
                 for i in 1:length(v)                              # crx-t2bis cure A3
                     isassigned(v, i) || return _emit_undef!(diags, label, ctx, slot)
                 end
                 for i in length(v):-1:1
-                    push!(work, (v[i], pos, false, kidrk))
+                    push!(work, (v[i], pos, false))
                 end
             else
                 entries = _walk_dict_entries(v)
                 for i in length(entries):-1:1
-                    push!(work, (entries[i].second, pos, false, 0x00))
-                    push!(work, (entries[i].first, pos, false, 0x00))
+                    push!(work, (entries[i].second, pos, false))
+                    push!(work, (entries[i].first, pos, false))
                 end
             end
         elseif v isa Declared
-            push!(work, (v.value, :data, false, 0x00))
+            push!(work, (v.value, :data, false))
         elseif v isa _SLOT_STRUCT_UNION
             flds = fieldnames(typeof(v))
             for i in length(flds):-1:1
-                push!(work, (getfield(v, flds[i]), pos, false, 0x00))
+                push!(work, (getfield(v, flds[i]), pos, false))
             end
         elseif v isa Tuple || v isa NamedTuple
             vals = v isa Tuple ? v : values(v)
             for i in length(vals):-1:1
-                push!(work, (vals[i], pos, false, 0x00))
+                push!(work, (vals[i], pos, false))
             end
         elseif v isa Pair
-            push!(work, (v.second, pos, false, 0x00))
-            push!(work, (v.first, pos, false, 0x00))
+            push!(work, (v.second, pos, false))
+            push!(work, (v.first, pos, false))
         elseif v isa Function
             (des && pos === :structural) ||
                 return _emit_unencodable!(diags, label, ctx, slot, typeof(v))
@@ -1167,8 +1102,8 @@ end
 
 (T2-bis, replacing the cure-batch-4/5 `_slot_text` probe) the DOMAIN probe (R-V04B-4 (iii); the
 record shape law's one remaining row since stage 5's E4) — the ONE
-walk with TWO predicates over EVERY record field (plugin × 16, spec × 10, overloads walked
-within over all 10 overload fields — T2BIS-DESIGN §2): predicate 1 = membership AT
+walk with TWO predicates over EVERY record field (plugin × 8, spec × 5 — T2BIS-DESIGN §2; the overload rows walked within left at stage 5's E11
+of the v0.4 build, census row 16): predicate 1 = membership AT
 POSITION (leaves via `_domain_leaf`; the value-domain containers; the record structs only
 at their structural positions; a `Function` only in the designated callable fields and
 never inside declared data; `String`-only string values); predicate 2 = the type-encoder
@@ -1180,13 +1115,12 @@ function _encodability_collect!(diags::Vector{Diagnostic}, plugins::Vector{PlugI
     for p in plugins
         for slot in _WALK_PLUGIN_FIELDS
             _domain_slot_probe!(diags, "alterant", p.altName, slot, getfield(p, slot),
-                                slot === :setAltInstance || slot === :getAltInstance, false)
+                                slot === :setAltInstance || slot === :getAltInstance)
         end
     end
     for s in action_specs
         for slot in _WALK_ACTION_FIELDS
-            _domain_slot_probe!(diags, "action", s.name, slot, getfield(s, slot),
-                                slot === :validate, slot === :overloads)
+            _domain_slot_probe!(diags, "action", s.name, slot, getfield(s, slot), slot === :validate)
         end
     end
     return nothing
@@ -1320,8 +1254,7 @@ function _domain_copy(x, memo::IdDict{Any,Any};
                 throw(_OutsideDomain(typeof(v), pathto(seg)))
             mk = contained ? (v, vpos) : v
             haskey(memo, mk) && return (true, memo[mk])
-            flds = v isa PlugIn ? _WALK_PLUGIN_FIELDS :
-                   v isa ActionSpec ? _WALK_ACTION_FIELDS : _WALK_OVERLOAD_FIELDS
+            flds = v isa PlugIn ? _WALK_PLUGIN_FIELDS : _WALK_ACTION_FIELDS
             n = length(flds)
             fr = _CopyFrame(v, :record, vpos, seg, Vector{Any}(undef, n), fill(vpos, n),
                             fill(false, n), fill(0x00, n), Vector{Any}(undef, n),
@@ -1334,8 +1267,7 @@ function _domain_copy(x, memo::IdDict{Any,Any};
                 fr.kdes[4] = true            # setAltInstance
                 fr.kdes[5] = true            # getAltInstance
             elseif v isa ActionSpec
-                fr.krk[4] = 0x02             # overloads — its elements are admitted records
-                fr.kdes[7] = true            # validate
+                fr.kdes[4] = true            # validate
             end
             push!(frames, fr)
             return (false, nothing)
@@ -1520,14 +1452,12 @@ function _egal_cmp(t::_EgalTask, work, guards)
         (a isa _RECORD_STRUCT_UNION && b isa _RECORD_STRUCT_UNION &&
             typeof(a) === typeof(b)) || return (t.path, :typeof)
         _egal_guard!(guards, a, b) && return nothing
-        flds = a isa PlugIn ? _WALK_PLUGIN_FIELDS :
-               a isa ActionSpec ? _WALK_ACTION_FIELDS : _WALK_OVERLOAD_FIELDS
+        flds = a isa PlugIn ? _WALK_PLUGIN_FIELDS : _WALK_ACTION_FIELDS
         for i in length(flds):-1:1
             f = flds[i]
             des = (a isa PlugIn && (f === :setAltInstance || f === :getAltInstance)) ||
                   (a isa ActionSpec && f === :validate)
-            rk2 = (a isa ActionSpec && f === :overloads) ? 0x02 : 0x00
-            push!(work, _EgalTask(getfield(a, f), getfield(b, f), (t.path, f), t.pos, des, rk2))
+            push!(work, _EgalTask(getfield(a, f), getfield(b, f), (t.path, f), t.pos, des, 0x00))
         end
         return nothing
     end
@@ -1791,7 +1721,7 @@ function _route2_refuse(r::AlterantRegistry, e, field::Symbol)
         string("GoMeta registry: RegistryBuilder(published) met a CYCLIC container at ", ptext,
                " (record ", repr(recname), ", slot ", slotname, ") — the published value was ",
                "mutated after publication; a declared value must be acyclic (the record shape law)")
-    elseif e.T <: Function || e.T <: PlugIn || e.T <: ActionSpec || e.T <: ActionOverload
+    elseif e.T <: Function || e.T <: PlugIn || e.T <: ActionSpec
         string("GoMeta registry: RegistryBuilder(published) met a value of type ",
                _domain_type_name(e.T), " at ", ptext, " (record ", repr(recname), ", slot ",
                slotname, ") that violates the position rule — a Function is legal only in a ",
@@ -1824,14 +1754,6 @@ function _copy_published_records(r::AlterantRegistry)
     end
     return (plugins, specs)
 end
-
-"The canonical serialized text of one overload row (the digest's SORT KEY only — the fold
-itself goes through the injective `_fold_parts`, never through this joined text)."
-_overload_text(ov::ActionOverload)::String =
-    string("|ov|", join((_type_text(t) for t in ov.sig_types), ","),
-        "|", join(ov.kinds, ","), "|", join(ov.kind_sources, ","),
-        "|", ov.vararg_kind, "|", _type_text(ov.return_type), "|", ov.effect,
-        "|", ov.queryable, "|", ov.applicability, "|", ov.phase, "|", ov.grammar)
 
 # The digest's type serialization: module-UNQUALIFIED (stable across load contexts) but
 # parameter-FAITHFUL (`Dict{Symbol,Bool}` ≠ `Dict{Symbol,Int}` — a real drift class a bare

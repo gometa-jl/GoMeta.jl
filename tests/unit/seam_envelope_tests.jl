@@ -47,10 +47,8 @@ end
     function _head_builder(validatefn)
         b = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
         s = b.action_specs[8]
-        b.action_specs[8] = GM.ActionSpec(; name = s.name, spelling = s.spelling,
-            plugin = s.plugin, overloads = s.overloads,
-            accepts_string_slot = s.accepts_string_slot,
-            sugar_candidacy = s.sugar_candidacy, validate = validatefn)
+        b.action_specs[8] = GM.ActionSpec(; name = s.name, plugin = s.plugin,
+            accepts_string_slot = s.accepts_string_slot, validate = validatefn, settribute = s.settribute)
         return b
     end
     _drive(doc, R) = try
