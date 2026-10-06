@@ -419,9 +419,8 @@ const _re_meta = Regex("^" * _RE_META_BODY_STR)
 ## bucket-A sentinel** (produced only under `:content` policies). Every divergence
 ## between the flavors is RECORD DATA: the policies (glued/bare), the run-arm
 ## strictness, the directive rows (status·flags·ws_strict·consume).
-## The per-flavor witnesses + the standing flavor-equivalence differential
-## (forkchecks/differential_flavor.jl, both modes) guard the reader's behavior for
-## every armed flavor.
+## The per-flavor witnesses guard the reader's behavior for every armed flavor (the flavor-equivalence
+## differential the earlier text cited, forkchecks/differential_flavor.jl, is not in the repository — the citation left at stage 5's P1, census row 58).
 
 ## The unrecognized/glued fallthrough — the ONE policy resolution shared by the
 ## `~`-arm's glued no-match, the strict run arm's failure, the ws-strict glued
@@ -576,7 +575,7 @@ end
         thisComponentSettribute::ComponentSettribute)::Tuple{Bool,Int}
     ## ASCII lead (mint-asserted) ⇒ byte arithmetic; ≡ nextind for lead_ncu == 1.
     sub = SubString(line, startSegment + profile.lead_ncu)
-    raw = (profile.parse_header!(profile, sub, thisComponentSettribute))::Int
+    raw = parseLeadHeader!(profile, sub, thisComponentSettribute)   # the direct call (the record's header-strategy seam left at stage 5's P1 of the v0.4 build — census row 63)
     bucketA = raw == 0
     return (bucketA, (profile.lead_ncu - 1) + (bucketA ? 1 : raw))
 end

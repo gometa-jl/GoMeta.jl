@@ -533,8 +533,9 @@ IS: the document's flavor record — the comment lead, the hide marker and its f
 renderer stamps, the flavor tag (`FlavorProfile`, `flavor.jl`; the type stays internal — a
 caller reads the record's fields). THE PROMISE (R-V04B-80 (2)(ii)): of the record's fields FIVE are the
 public contract — `lead`, `hide_marker`, `hide_fold_prefix`, `flavor_tag`, `re_meta_leaded` (the fields the
-renderer and the print tools read); every other field — `parse_header!` first, the parser's live header
-reader — is reachable but NOT part of the contract: the record's remaining shape is open to his BLS review.
+renderer and the print tools read); every other field — `directives` first, the parser's table — is reachable but NOT
+part of the contract (the `parse_header!` pointer the earlier text named first left at stage 5's P1 of the v0.4 build — census
+row 63): the record's remaining shape is open to his BLS review.
 DOES: returns the field `tree.flavor`.
 REASONING: NEW — the field read given a name (the renderer's `outputs`; the tools'
 `flavor_tag`). The name is the field's; the canon's word "flavor" for Meta/Code/Text is

@@ -3,16 +3,14 @@
 # the rows-only-grow sense — the F-18 record reshape trued the construction kwargs
 # and the [3] identity pins to the live regime, the declared witness churn).
 #
-# Covers: construction green for both armed records; the seven prototype fields
+# Covers: construction green for both armed records; the six prototype fields
 # VERBATIM-pinned; the directive TABLE rows (now with the F-18 consume verbs); the
-# glued/bare policies + the run-arm strictness; the parse_header! seam identity +
-# the header_strategy pins (the half-flip guard: pointer + strategy pinned side by
-# side); the lead codeunit generalization; digest PROPERTIES (determinism +
-# cross-flavor distinctness + data/strategy/consume/strict sensitivity +
-# pointer-excluded — deliberately NO pinned UInt64); the record guards (incl. the
-# F-18 collision/strategy/consume vocabularies + the positional-constructor
+# glued/bare policies + the run-arm strictness; the lead codeunit generalization; the
+# record guards (incl. the F-18 collision/consume vocabularies + the positional-constructor
 # removal); ParseState threading (setup default · kwarg · goMeta resolve-once for
-# BOTH armed tags + the typed invalid-tag path).
+# BOTH armed tags + the typed invalid-tag path). (The parse_header! seam identity left at stage 5's P1 of the
+# v0.4 build (census rows 63, 39, 72, 58) with the header_strategy pins, the digest PROPERTIES testset, the
+# extensions pin and the compat-alias identities — each with its subject.)
 
 using Test
 import GoMeta as GM
@@ -28,14 +26,11 @@ _fp_latexish_kwargs(; directives, flavor_tag = :latexish) = (
     comment_run_char = '%',
     hide_marker      = "%% ",
     hide_fold_prefix = "%%",
-    extensions       = (".tex",),
     directives       = directives,
     glued_policy     = :comment,
     bare_policy      = :comment,
-    parse_header!    = _FP_BLS.parseLeadHeader!,
     fences_armed     = false,
     comment_run_strict = false,
-    header_strategy  = :table_v1,
 )
 
 const _FP_ABSENT4 = (
@@ -48,27 +43,24 @@ const _FP_CLOSE_ROW = (char = ']', status = :claimed, flags = (:startNewBlock,
     :ignoreThisMeta, :containsMeta, :stopAttachmentToMeta), ws_strict = true,
     consume = :single)
 
-## The julia construction kwargs, shared by the [4] digest twins (F-18: 13 kwargs —
-## the W1-era 11 + comment_run_strict + header_strategy).
+## The julia construction kwargs, shared by the guard witnesses (10 kwargs since stage 5's P1 of the v0.4 build —
+## the extensions field, the parse_header! pointer and the header_strategy identifier left, census rows 72 and 63).
 _fp_julia_kwargs(; overrides...) = merge((
     flavor_tag       = :julia,
     lead             = "#",
     comment_run_char = '#',
     hide_marker      = "## ",
     hide_fold_prefix = "##",
-    extensions       = (".jl",),
     directives       = _FP_BLS.FLAVOR_JULIA.directives,
     glued_policy     = :content,
     bare_policy      = :content,
-    parse_header!    = _FP_BLS.parseLeadHeader!,
     fences_armed     = true,
     comment_run_strict = true,
-    header_strategy  = :table_v1,
 ), NamedTuple(overrides))
 
 @testset "flavor_profile_tests (WP1-W1 record + threading)" begin
 
-    @testset "[1] construction + the seven prototype fields, verbatim" begin
+    @testset "[1] construction + the six prototype fields, verbatim" begin
         @test _FP_BLS.FLAVOR_JULIA isa _FP_BLS.FlavorProfile
         @test _FP_BLS.FLAVOR_CFAM  isa _FP_BLS.FlavorProfile
         jl = _FP_BLS.FLAVOR_JULIA; cf = _FP_BLS.FLAVOR_CFAM
@@ -77,10 +69,7 @@ _fp_julia_kwargs(; overrides...) = merge((
         @test jl.comment_run_char == '#' && cf.comment_run_char == '/'
         @test jl.hide_marker == "## " && cf.hide_marker == "//# "
         @test jl.hide_fold_prefix == "##" && cf.hide_fold_prefix == "//"
-        @test jl.extensions == (".jl",) && cf.extensions == (".c", ".h", ".rs")
-        ## The compat aliases ARE the records' fields (identity, not equality).
-        @test jl.re_meta_leaded === _FP_BLS._RE_META_LEADED_JULIA
-        @test cf.re_meta_leaded === _FP_BLS._RE_META_LEADED_CFAM
+        ## (the extensions pin and the compat-alias identities left at stage 5's P1 of the v0.4 build — census rows 72 and 58)
     end
 
     @testset "[2] the directive TABLE (the deletion-note shape) + policies" begin
@@ -114,61 +103,16 @@ _fp_julia_kwargs(; overrides...) = merge((
         @test jl.comment_run_strict && !cf.comment_run_strict
     end
 
-    @testset "[3] the parse_header! seam + the lead generalization" begin
-        ## WP1-W3 (F-18): the LIVE regime pins — pointer AND strategy side by side
-        ## (the half-flip guard: a fallback flip that edits one and forgets the
-        ## other REDs here instead of aliasing the digest).
-        @test _FP_BLS.FLAVOR_JULIA.parse_header! === _FP_BLS.parseLeadHeader!
-        @test _FP_BLS.FLAVOR_JULIA.header_strategy === :table_v1
-        ## F-20 (WP1-W4): the cfam pins flip WITH the route (pointer + strategy
-        ## together — the half-flip law).
-        @test _FP_BLS.FLAVOR_CFAM.parse_header!  === _FP_BLS.parseLeadHeader!
-        @test _FP_BLS.FLAVOR_CFAM.header_strategy === :table_v1
+    @testset "[3] the lead generalization (the parse_header! seam pins left at stage 5's P1 — census row 63)" begin
         @test _FP_BLS.FLAVOR_JULIA.lead_ncu == 1
         @test _FP_BLS.FLAVOR_JULIA.lead_cus == (UInt8('#'),)
         @test _FP_BLS.FLAVOR_CFAM.lead_ncu == 2
         @test _FP_BLS.FLAVOR_CFAM.lead_cus == (UInt8('/'), UInt8('/'))
-        ## The record values equal the standing consts (the _CFAM_LEAD_* generalization).
-        @test _FP_BLS.FLAVOR_CFAM.lead_ncu == _FP_BLS._CFAM_LEAD_NCU
-        @test _FP_BLS.FLAVOR_CFAM.lead_cus == _FP_BLS._CFAM_LEAD_CU
+        ## (the `_CFAM_LEAD_*` consts the record values generalized left at stage 5's P1 — census row 58)
     end
 
-    @testset "[4] digest properties (NO pinned constant — the fold reshapes with the table)" begin
-        jl = _FP_BLS.FLAVOR_JULIA; cf = _FP_BLS.FLAVOR_CFAM
-        ## Determinism: an identical reconstruction folds to the identical digest.
-        twin = _FP_BLS._mk_flavor(; _fp_julia_kwargs()...)
-        @test twin.digest == jl.digest
-        ## Cross-flavor distinctness.
-        @test jl.digest != cf.digest
-        ## Data sensitivity: one changed declared value moves the digest (a legal
-        ## variant — "##\t" passes every value guard).
-        variant = _FP_BLS._mk_flavor(; _fp_julia_kwargs(hide_marker = "##\t")...)
-        @test variant.digest != jl.digest
-        ## The parse_header! FUNCTION deliberately does not join the fold (behavior
-        ## identity is the differential harness's job, never a function pointer's;
-        ## the STRATEGY is the fold's proxy for the regime — CRX finding A): a twin
-        ## differing ONLY in the pointer (same strategy) folds identically. (F-21:
-        ## the retired earlier adapter gave way to `identity` as the distinct
-        ## Function — the guard never validates the pointer, which is the point.)
-        fn_twin = _FP_BLS._mk_flavor(;
-            _fp_julia_kwargs(parse_header! = identity)...)
-        @test fn_twin.digest == jl.digest
-        ## WP1-W3 (F-18) sensitivity rows — every new behavior-bearing datum moves
-        ## the fold (the design-panel convergent injectivity finding):
-        ## (a) the strategy identifier;
-        strat_twin = _FP_BLS._mk_flavor(;
-            _fp_julia_kwargs(header_strategy = :legacy_hash)...)
-        @test strat_twin.digest != jl.digest
-        ## (b) one row's consume verb (:run → :single on the `-` row);
-        consume_rows = ((char = '-', status = :claimed, flags = (:startNewBlock,),
-            ws_strict = false, consume = :single), jl.directives[2:5]...)
-        consume_twin = _FP_BLS._mk_flavor(; _fp_julia_kwargs(directives = consume_rows)...)
-        @test consume_twin.digest != jl.digest
-        ## (c) the run-arm strictness Bool.
-        strict_twin = _FP_BLS._mk_flavor(;
-            _fp_julia_kwargs(comment_run_strict = false)...)
-        @test strict_twin.digest != jl.digest
-    end
+    # (the [4] digest-properties testset was CONSCIOUSLY RETIRED at stage 5's P1 of the v0.4 build with its subject — the
+    # flavor record's digest fold, census row 39: a cache-key component no code read.)
 
     @testset "[5] record guards + the INTERIM reserved-arms law" begin
         ## The INTERIM law: a NON-julia flavor claiming a reserved arm REFUSES at
@@ -219,9 +163,6 @@ _fp_julia_kwargs(; overrides...) = merge((
             _FP_BLS.FLAVOR_JULIA.directives[2:5]...)
         @test_throws AssertionError _FP_BLS._mk_flavor(;
             _fp_julia_kwargs(directives = bad_consume_rows)...)
-        ## The strategy-vocabulary guard.
-        @test_throws AssertionError _FP_BLS._mk_flavor(;
-            _fp_julia_kwargs(header_strategy = :bogus)...)
         ## The run-char collision guard (delta-panel cure): a lead whose run char
         ## lands in the reader's other arm triggers refuses at mint — '~' here;
         ## every EARLIER guard passes (ASCII lead; hide marker "~x " has a
@@ -229,11 +170,10 @@ _fp_julia_kwargs(; overrides...) = merge((
         ## collision assert can fire.
         @test_throws AssertionError _FP_BLS._mk_flavor(; flavor_tag = :tildeish,
             lead = "~", comment_run_char = '~', hide_marker = "~x ",
-            hide_fold_prefix = "~", extensions = (".t",),
+            hide_fold_prefix = "~",
             directives = (_FP_ABSENT4..., _FP_CLOSE_ROW),
             glued_policy = :comment, bare_policy = :comment,
-            parse_header! = _FP_BLS.parseLeadHeader!, fences_armed = false,
-            comment_run_strict = false, header_strategy = :legacy_slash)
+            fences_armed = false, comment_run_strict = false)
         ## The policy-vocabulary guards (W4-close panel cure): an out-of-domain
         ## policy Symbol refuses at mint (the reader's === compares would silently
         ## comment-ize a typo).
@@ -245,9 +185,8 @@ _fp_julia_kwargs(; overrides...) = merge((
         ## constructor replaced it — the W1 CONSTRUCTION-LAW hazard closed
         ## mechanically): positional construction throws MethodError.
         @test_throws MethodError _FP_BLS.FlavorProfile(:julia, "#", '#', "## ",
-            "##", (".jl",), r"^x", _FP_BLS.FLAVOR_JULIA.directives, :content,
-            :content, _FP_BLS.parseLeadHeader!, true, true, :table_v1, 1,
-            (UInt8('#'),), UInt64(0))
+            "##", r"^x", _FP_BLS.FLAVOR_JULIA.directives, :content,
+            :content, true, true, 1, (UInt8('#'),))   # the record's 13 values since stage 5's P1 (census rows 39, 63, 72)
     end
 
     @testset "[6] ParseState threading (setup default · kwarg · goMeta resolve-once)" begin

@@ -2,16 +2,17 @@
 # armed flavor's divergence lives on (tables · policies · strictness · lead bytes ·
 # the content-model Bool), read by the ONE parse loop.
 #
-# The record follows the grammar_profile PATTERN — pinned data + an injective
-# digest fold — NOT the GrammarProfile record itself (that name and axis belong to
-# the condition interpreter; the cache_key JOIN stays a recorded obligation at
+# The record follows the grammar_profile PATTERN — pinned data (its injective digest fold left at stage 5's P1 of
+# the v0.4 build — census row 39: a cache-key component no code read) — NOT the GrammarProfile record itself (that
+# name and axis belong to the condition interpreter; the cache_key JOIN stays a recorded obligation at
 # grammar_profile.jl `cache_key`).
 # The mainline threads ONE record through the ParseState `flavor` field populated
 # at setup (zero call-site churn — the kwarg default): ONE loop (`parseBLS`) + ONE
-# table reader (`parseLeadHeader!`) serve EVERY armed flavor over this record. The
-# directive TABLE rows, the digest fold and the `fences_armed` gate Bool are
-# record fields (the content-model slot is consciously kept at its inline-Bool
-# form — the priced retreat position).
+# table reader (`parseLeadHeader!`) serve EVERY armed flavor over this record — the loop calls the reader
+# directly (the record's header-strategy seam, a Function pointer for a fallback that no longer existed, left
+# at stage 5's P1 of the v0.4 build — census row 63). The directive TABLE rows and the `fences_armed` gate Bool
+# are record fields (the content-model slot is consciously kept at its inline-Bool form — the priced retreat
+# position).
 
 ## The shared introducer-BODY grammar string — the SINGLE SOURCE: `_re_meta`
 ## (parseBLS.jl) is DERIVED from it (`Regex("^" * …)`), as are both lead-anchored walk
@@ -42,71 +43,15 @@ const _RE_H_WS_ONE = r"\A[\h]\z"
     (!isascii(c) && occursin(_RE_H_WS_ONE, string(c)))
 
 ## ─── The FlavorProfile record ─────────────────────────────────────────────────────
-## Forward declaration — the ONE head reader is DEFINED in parseBLS.jl (included
-## AFTER this file: BLS.jl include order). Declaring the empty generic here lets
-## the records reference it at construction time; the parser file adds the method
-## (one module, BLS). The 3-arg PROFILE-FIRST convention:
-## `f(profile, subStr, settribute)::Int`.
-function parseLeadHeader! end
+## (The forward declaration of `parseLeadHeader!` left with the record's header-strategy seam at stage 5's P1 of
+## the v0.4 build — census row 63: the records no longer reference the reader; the loop calls it directly,
+## parseBLS.jl.)
 
-## The flavor-record digest fold — FNV-1a over UTF-8 codeunits with the injective
-## `<codeunit-length>:<bytes>;` part framing (the grammar_profile.jl pattern, mirrored
-## SELF-CONTAINED here: grammar_profile.jl lives in the parent module and is included
-## after BLS, so a load-time cross-module reference would couple include order).
-## Deliberately NOT `Base.hash` (String seeds are Julia-version-scoped).
-const _FLAVOR_FNV_OFFSET = 0xcbf29ce484222325
-function _flavor_fold(h::UInt64, s::AbstractString)::UInt64
-    for b in codeunits(s)
-        h = (h ⊻ b) * 0x00000100000001b3
-    end
-    return h
-end
-function _flavor_fold_parts(h::UInt64, parts...)::UInt64
-    for p in parts
-        s = string(p)
-        h = _flavor_fold(h, string(ncodeunits(s), ":"))
-        h = _flavor_fold(h, s)
-        h = _flavor_fold(h, ";")
-    end
-    return h
-end
-function _flavor_digest(flavor_tag::Symbol, lead::String, comment_run_char::Char,
-                        hide_marker::String, hide_fold_prefix::String,
-                        extensions::Tuple, directives::Tuple, glued_policy::Symbol,
-                        bare_policy::Symbol, fences_armed::Bool,
-                        comment_run_strict::Bool, header_strategy::Symbol)::UInt64
-    h = _flavor_fold(_FLAVOR_FNV_OFFSET, "gometa-flavor-v1")
-    ## The shared introducer-body grammar joins the identity: a body-string change is a
-    ## grammar change for EVERY flavor (both leaded regexes derive from it).
-    h = _flavor_fold_parts(h, _RE_META_BODY_STR)
-    h = _flavor_fold_parts(h, flavor_tag, lead, comment_run_char, hide_marker,
-        hide_fold_prefix)
-    h = _flavor_fold_parts(h, length(extensions), extensions...)
-    for row in directives
-        ## The flags COUNT is folded so row boundaries stay injective across
-        ## variable-length flag tuples. The CONSUME verb joins the row fold — it is
-        ## behavior-bearing offset data (run- vs single-unit consumption); excluded, two
-        ## profiles differing only in a consume verb would digest-collide against the
-        ## injective-fold law above.
-        h = _flavor_fold_parts(h, row.char, row.status, length(row.flags),
-            row.flags..., row.ws_strict, row.consume)
-    end
-    ## comment_run_strict (behavior-bearing run-arm data) and header_strategy (the
-    ## STABLE strategy identifier — the function POINTER stays excluded, pointers are
-    ## not data; a fallback flip EDITS the identifier so the digest tracks the live
-    ## regime) join the fold. The digest joins any cache key as a COMPONENT, never as
-    ## an identity proof — verify the canonical identity on a cache hit (the standing
-    ## grammar_profile verify-on-hit law).
-    h = _flavor_fold_parts(h, glued_policy, bare_policy, fences_armed,
-        comment_run_strict, header_strategy)
-    return h
-end
-
-## The versioned per-flavor record. `parse_header!` IS the live dispatch seam
-## (the loop calls through it, 3-arg profile-first) and `directives` IS the data
-## the table-driven `parseLeadHeader!` reads (the header-fallback axis: the
-## flip-back is ONE record edit — pointer + strategy together). Field notes:
-##   - the seven prototype fields carry their NamedTuple-era values VERBATIM;
+## The versioned per-flavor record. `directives` IS the data the table-driven `parseLeadHeader!` reads (the loop
+## calls the reader directly — the header-strategy seam and its flip-back axis left at stage 5's P1 of the v0.4
+## build, census row 63). Field notes:
+##   - the six prototype fields carry their NamedTuple-era values VERBATIM (the `extensions` field, read by no
+##     code, left at stage 5's P1 — census row 72);
 ##   - `directives`: the per-flavor directive TABLE (an `absent` verb is part of
 ##     the design): five rows `(char, status ∈ (:claimed, :absent), flags = today's
 ##     settribute flags, ws_strict, consume ∈ (:run, :single))` in the canonical
@@ -118,22 +63,18 @@ end
 ##   - `fences_armed`: the content-model slot's inline-Bool form (the trivial
 ##     per-flavor gate Bool): :julia arms the ```-fence cluster; :c consciously declines (its docblock
 ##     scope fence). The slot may later be widened per the recorded content-model fallback.
-##   - `lead_ncu` / `lead_cus`: the lead's codeunit width + bytes (the `_CFAM_LEAD_*`
-##     generalization, record-carried for the lead compares).
-##   - `digest`: the FNV-1a injective fold above, computed at construction.
+##   - `lead_ncu` / `lead_cus`: the lead's codeunit width + bytes, record-carried for the lead compares (the
+##     `_CFAM_LEAD_*` consts they generalized left at stage 5's P1 — census row 58).
 ##   CONSTRUCTION LAW: records are minted ONLY via the INNER keyword constructor
 ##   below (reachable directly or through the `_mk_flavor` alias) — the guard
 ##   surface + every derived field live there, and defining it REMOVES the default
-##   positional constructor, so the bypass hazard (guards skipped, digest
-##   inconsistent with data) no longer type-checks. Positional construction throws
+##   positional constructor, so the bypass hazard (guards skipped) no longer type-checks. Positional construction throws
 ##   MethodError (witness-pinned).
 ##   `comment_run_strict` (the run arm's exact-token strictness — julia `##`-only
 ##   vs the cfam any-run comment; explicit data, NOT coupled to the glued policy)
 ##   · per-row `consume ∈ (:run, :single)` (the arm's offset/consumption
-##   convention as table data) · `header_strategy` (the stable identifier of the
-##   live header regime — :table_v1 | :legacy_hash | :legacy_slash; the fallback
-##   flip edits it WITH the pointer, and the [3] witness pins both side by side
-##   so a half-flip REDs the suite) · the struct is PARAMETRIC over the two tuple
+##   convention as table data) (the `header_strategy` identifier left with the seam at stage 5's P1 — census
+##   row 63) · the struct is PARAMETRIC over the two tuple
 ##   fields, so every INSTANCE is fully concrete (the parse-state field stays
 ##   `::FlavorProfile`, the UnionAll — the loop hoists once; the declared
 ##   benchmark retreat is a one-line function barrier).
@@ -143,24 +84,19 @@ struct FlavorProfile{D<:Tuple,C<:Tuple{Vararg{UInt8}}}
     comment_run_char::Char
     hide_marker::String
     hide_fold_prefix::String
-    extensions::Tuple
     re_meta_leaded::Regex
     directives::D
     glued_policy::Symbol
     bare_policy::Symbol
-    parse_header!::Function
     fences_armed::Bool
     comment_run_strict::Bool
-    header_strategy::Symbol
     lead_ncu::Int
     lead_cus::C
-    digest::UInt64
 
     function FlavorProfile(; flavor_tag::Symbol, lead::String, comment_run_char::Char,
-                     hide_marker::String, hide_fold_prefix::String, extensions::Tuple,
+                     hide_marker::String, hide_fold_prefix::String,
                      directives::Tuple, glued_policy::Symbol, bare_policy::Symbol,
-                     parse_header!::Function, fences_armed::Bool,
-                     comment_run_strict::Bool, header_strategy::Symbol)
+                     fences_armed::Bool, comment_run_strict::Bool)
         @assert isascii(lead) && ncodeunits(lead) >= 1
         ## The mis-paired-marker guard — the first mechanical guard this hazard has ever had:
         ## a hide marker that does not open a comment in its own language would emit "hidden"
@@ -220,28 +156,16 @@ struct FlavorProfile{D<:Tuple,C<:Tuple{Vararg{UInt8}}}
         ## close row is claimable by any flavor.
         @assert flavor_tag === :julia ||
             all(r -> r.char == ']' || r.status === :absent, directives)
-        ## The strategy vocabulary — the closed set of header regimes.
-        ## NOTE: the two :legacy_* names are HISTORICAL since the earlier readers
-        ## retired — kept in the vocabulary as the recorded arc (a record minting
-        ## them today would still need a live Function for the pointer; nothing
-        ## supplies one). Shrinking the vocabulary is a future cleanup, never a
-        ## silent edit.
-        @assert header_strategy in (:table_v1, :legacy_hash, :legacy_slash)
         ## ASCII lead (asserted above) ⇒ byte width == char count; the tuple form
-        ## is the `_CFAM_LEAD_CU` generalization.
+        ## is the record-carried byte tuple (the `_CFAM_LEAD_CU` const it generalized left at stage 5's P1 — census row 58).
         lead_cus = Tuple(codeunits(lead))
         return new{typeof(directives), typeof(lead_cus)}(flavor_tag, lead,
             comment_run_char, hide_marker, hide_fold_prefix,
-            extensions,
             ## `\Q…\E` quotes the lead verbatim (PCRE) — `//` carries no metacharacter
             ## today, but the derivation must not silently assume that.
             Regex(string(raw"^\Q", lead, raw"\E", _RE_META_BODY_STR)),
-            directives, glued_policy, bare_policy, parse_header!, fences_armed,
-            comment_run_strict, header_strategy,
-            ncodeunits(lead), lead_cus,
-            _flavor_digest(flavor_tag, lead, comment_run_char, hide_marker,
-                hide_fold_prefix, extensions, directives, glued_policy, bare_policy,
-                fences_armed, comment_run_strict, header_strategy))
+            directives, glued_policy, bare_policy, fences_armed, comment_run_strict,
+            ncodeunits(lead), lead_cus)
     end
 end
 
@@ -255,7 +179,6 @@ const FLAVOR_JULIA = _mk_flavor(
     comment_run_char = '#',
     hide_marker      = "## ",
     hide_fold_prefix = "##",      # the fold-eligibility prefix (BLS comments)
-    extensions       = (".jl",),
     ## The table IS the reader's data — `parseLeadHeader!` reads these rows
     ## (status·flags·ws_strict·consume) + the policies + the strictness Bool.
     ## `consume` IS the offset convention (`-` run-consumes; the single-unit arms
@@ -270,11 +193,8 @@ const FLAVOR_JULIA = _mk_flavor(
     ),
     glued_policy     = :content,  # token-delimiter-law bucket-A sentinel: glued shapes are plain content
     bare_policy      = :content,  # bare '#' at EOL: sentinel 0, neighbourhood-inherited
-    parse_header!    = parseLeadHeader!,   # the LIVE table-driven regime
     fences_armed     = true,      # the ```-fence cluster IS this flavor's content model
     comment_run_strict = true,    # :comment ⇔ EXACTLY `##` + ws-or-EOL (token-delimiter law)
-    header_strategy  = :table_v1, # the strategy identifier (a flip edits it
-                                  # WITH the pointer; see the vocabulary guard's dated note)
 )
 
 const FLAVOR_CFAM = _mk_flavor(
@@ -292,8 +212,6 @@ const FLAVOR_CFAM = _mk_flavor(
                                   # Special forms are ws-strict by documented
                                   # convention; glued `//#…` (e.g. `//#include`) is a
                                   # plain comment.
-    extensions       = (".c", ".h", ".rs"),  # read by the fork demo drivers; ## FUTURE-BLS:
-                                  # extension policy is flavor policy — never inference
     ## The four Literate directive arms are NOT claimed by this flavor (`//-`, `//+`,
     ## `//>`, `//[note]` are ordinary comments via the guardrail arm); `//]` close is
     ## claimed ws-strict with the flag set VERBATIM from the `#]` original.
@@ -308,14 +226,10 @@ const FLAVOR_CFAM = _mk_flavor(
     glued_policy     = :comment,  # every glued `//`-shape is an ordinary comment (host
                                   # divergence; no bucket-A sentinel)
     bare_policy      = :comment,  # bare `//` = the graceful empty comment
-    parse_header!    = parseLeadHeader!,  # the TABLE serves :c — the one loop
-                                  # routes this flavor
     fences_armed     = false,     # fence machinery consciously NOT armed (scope fence:
                                   # no `"""` string form / markdown-fence convention here)
     comment_run_strict = false,   # every `//`-run length is a comment (host
                                   # convention; the post-run offset is byte-load-bearing)
-    header_strategy  = :table_v1, # the live regime (a flip edits pointer +
-                                  # identifier together — the half-flip law)
 )
 
 ## The third flavor is PURE DATA — it adds ZERO parser-file bytes (never a third
@@ -336,7 +250,6 @@ const FLAVOR_LATEX = _mk_flavor(
     hide_marker      = "%% ",
     hide_fold_prefix = "%%",      # every %%-led comment is fold-eligible (the cfam-
                                   # parallel class split: `% ` TEXT stays marked)
-    extensions       = (".tex",),
     ## The deletion-note shape verbatim: the four reserved arms :absent (INTERIM
     ## law — claimable by :julia only); `%]` close claimed ws-strict with the flag
     ## set from the `#]` original.
@@ -350,10 +263,8 @@ const FLAVOR_LATEX = _mk_flavor(
     ),
     glued_policy     = :comment,  # a glued `%`-shape is an ordinary comment
     bare_policy      = :comment,  # a bare `%` = the graceful empty comment
-    parse_header!    = parseLeadHeader!,   # the SAME reader — zero new parser code
     fences_armed     = false,     # no ``` / """ conventions in .tex — declined
     comment_run_strict = false,   # any %-run length is a comment (cfam-parallel)
-    header_strategy  = :table_v1,
 )
 
 """
@@ -373,23 +284,9 @@ function flavor_for(tag::Symbol)
         "validate_config fail-closes this before any pipeline call")
 end
 
-const _CFAM_LEAD_NCU = ncodeunits(FLAVOR_CFAM.lead)  # == 2; ASCII lead ⇒ byte width == char count
-const _CFAM_LEAD_CU  = Tuple(codeunits(FLAVOR_CFAM.lead))
-
-## Compatibility aliases (the s2 battery references these — the walk reads
-## `parse_state.flavor.re_meta_leaded`; both ARE the records' fields).
-## Retirement scheduled found-0; live referents: the tests/unit/
-## flavor_profile_tests.jl identity-pin rows + forkchecks/s2_battery.jl:47/:51
-## (they retire WITH the aliases).
-const _RE_META_LEADED_JULIA = FLAVOR_JULIA.re_meta_leaded
-const _RE_META_LEADED_CFAM  = FLAVOR_CFAM.re_meta_leaded
-
-## The `_cfam_*` lead helper FUNCTIONS were retired once the generic successor
-## below took their only caller; the `_CFAM_LEAD_*` CONSTS above and the aliases
-## KEEP their live referents (the [3] record pins + s2_battery:47/:51). Their
-## measured bounds carry forward on the generic successor: the INVALID-byte-
-## after-lead class (battery mf10) is invalid-is-content — a stray continuation
-## byte indexes as a 1-byte invalid Char and falls to the comment guardrail.
+## (The `_CFAM_LEAD_*` consts and the `_RE_META_LEADED_*` compatibility aliases left at stage 5's P1 of the v0.4
+## build — census row 58, his §223: their comments cited forkchecks/s2_battery.jl and forkchecks/differential_flavor.jl,
+## neither in the repository; the record carries the lead's width and bytes.)
 ## ## FUTURE-BLS(non-ascii-lead): a non-ASCII lead needs nextind-chained skipping
 ## and a stated codeunit-vs-character unit at every arithmetic site.
 

@@ -24,28 +24,22 @@ end
 
 @testset "latex_flavor_tests (WP1-W5 pure-data flavor)" begin
 
-    @testset "[1] the record: pure data, the shared reader, the shared strategy" begin
+    @testset "[1] the record: pure data (the shared reader is the loop's direct call since stage 5's P1 — census row 63)" begin
         lx = _LX_BLS.FLAVOR_LATEX
         @test lx isa _LX_BLS.FlavorProfile
         @test lx.flavor_tag === :latex
         @test lx.lead == "%" && lx.comment_run_char == '%'
         @test lx.hide_marker == "%% " && lx.hide_fold_prefix == "%%"
-        @test lx.extensions == (".tex",)
         ## The 1-cu lead exercises the width arithmetic beside :c's 2-cu history
         ## (the judgment row's lead_ncu-pinned-from-both-sides clause).
         @test lx.lead_ncu == 1 && lx.lead_cus == (UInt8('%'),)
-        ## ZERO new parser code: the SAME reader + strategy as every armed flavor.
-        @test lx.parse_header! === _LX_BLS.parseLeadHeader!
-        @test lx.header_strategy === :table_v1
         ## N-4: the cfam-parallel vocabulary — comment policies, lax runs, no fences.
         @test lx.glued_policy === :comment && lx.bare_policy === :comment
         @test !lx.comment_run_strict && !lx.fences_armed
         ## The deletion-note shape: four :absent + the claimed ws-strict close.
         @test all(r -> r.status === :absent, lx.directives[1:4])
         @test lx.directives[5].status === :claimed && lx.directives[5].ws_strict
-        ## Cross-flavor digest distinctness (property, no pinned constant).
-        @test lx.digest != _LX_BLS.FLAVOR_JULIA.digest
-        @test lx.digest != _LX_BLS.FLAVOR_CFAM.digest
+        ## (the extensions pin, the seam pins and the digest distinctness left at stage 5's P1 of the v0.4 build — census rows 72, 63, 39)
     end
 
     @testset "[2] the inventory rows: flavor_for + validate_config" begin
@@ -150,25 +144,25 @@ end
     end
 
     @testset "[12] the synthetic composition witness (the CRX design-set adoption): sentinel-before-width is TESTABLE" begin
-        ## No ARMED flavor combines a sentinel-capable reader with a multi-unit
+        ## No ARMED flavor combines a sentinel-capable policy with a multi-unit
         ## lead — a SYNTHETIC profile does, making the _lead_head! composition
-        ## ORDER mechanically observable: with the sentinel tested on the RAW
-        ## return (correct), raw 0 ⇒ (true, lead_ncu-1+1); with the width added
-        ## first (the defect class), the sentinel test could never see the 0.
-        sentinel_reader(profile, sub, s) = 0
+        ## ORDER mechanically observable: the REAL reader returns the bucket-A
+        ## sentinel 0 on the glued `!!~x` (the `~` arm's glued no-match falls through
+        ## to `_lead_fallthrough!` under the :content policy — measured on the base
+        ## tree before this re-cut at stage 5's P1: probe-p1-latex12.jl; the pointer seam
+        ## that carried a sentinel reader left, census row 63): raw 0 ⇒ (true, lead_ncu-1+1);
+        ## with the width added first (the defect class), the sentinel test could never see the 0.
         ## The :julia tag is REUSED deliberately: the INTERIM reserved-arms law
         ## admits claimed directive rows for :julia only, and this synthetic
         ## borrows julia's claimed rows — a future tag↔record coupling guard
         ## must re-point this witness consciously (W5-panel note, recorded).
         syn = _LX_BLS._mk_flavor(; flavor_tag = :julia, lead = "!!",
             comment_run_char = '!', hide_marker = "!!x ", hide_fold_prefix = "!!",
-            extensions = (".syn",),
             directives = _LX_BLS.FLAVOR_JULIA.directives,
             glued_policy = :content, bare_policy = :content,
-            parse_header! = sentinel_reader, fences_armed = false,
-            comment_run_strict = true, header_strategy = :table_v1)
+            fences_armed = false, comment_run_strict = true)
         s = _LX_BLS.ComponentSettribute()
-        (bucketA, off) = _LX_BLS._lead_head!(syn, "!! x", 1, s)
+        (bucketA, off) = _LX_BLS._lead_head!(syn, "!!~x", 1, s)
         @test bucketA === true
         @test off == 2   # (lead_ncu-1) + 1 — the sentinel mapped BEFORE the width term
     end

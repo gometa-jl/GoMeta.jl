@@ -170,8 +170,8 @@ fingerprint DECLARATIONS only). RECORDED OBLIGATIONS for any future cache, as PR
 (never a closed list): EVERY result-affecting input joins the key, keyed by CONTENT and
 never by reference — config identity today (namespace, user_mh_profile, parse_range,
 profile — the share-profile selector; flavor_tag — the ARMED content-flavor selector,
-result-affecting: its `FlavorProfile` record carries its own injective FNV-1a `digest`
-for exactly this join) and whatever future
+result-affecting; the record's own digest fold that once stood ready for this join left at stage 5's P1 of the
+v0.4 build, census row 39 — a future cache folds the tag's record data as content) and whatever future
 surfaces add (cascaded feeds, lifted feed state); fed and unfed runs must never alias.
 The 64-bit digests are key components, not identity proofs — verify the canonical
 identity on a cache hit before reuse. No result cache ships at v0.2 (forward provision
