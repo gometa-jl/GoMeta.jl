@@ -20,14 +20,15 @@
 # REASONING: everything bound for evaluation must first pass this file's closed grammar and
 #     vocabulary (docs/public-api.md §3.4) — and no condition text is ever host-evaluated in a
 #     default-configured run (the opt-in `:full_eval_v1` mode stores its marker through the SAME
-#     closed intake); out-of-vocabulary or
-#     structurally malformed input refuses at absorb with a stable message. Four guarded refusals
-#     live here (the fourth, "GoMeta absorb: condition too complex", is the scan-cap guard
-#     described below): "GoMeta absorb: slot action capacity" — the pre-increment guard on the queued
-#     tensor's per-slot cap, keeping state in-bounds (docs/public-api.md §3.4;
-#     tests/unit/slot_overflow_tests.jl); "GoMeta absorb: malformed metaLine" — parseAlt's
-#     no-token guard (tests/unit/malformed_meta_tests.jl); "GoMeta absorb: unknown alterant action"
-#     — the registry else-branch (the E-01 family). Honest edges: each refusal is an
+#     closed intake); out-of-vocabulary input refuses at absorb with a stable message. Two guarded refusals
+#     live here (the second, "GoMeta absorb: condition too complex", is the scan-cap guard described below):
+#     "GoMeta absorb: unknown alterant action" — the registry else-branch (the E-01 family). Four guards ADDED to his
+#     legacy's metaLine parser left at stage 5's E7 of the v0.4 build (census row 41; his §120) — the punctuation wall at
+#     the action-name position, the glued-token wall after a closing ')' or '}', the no-token guard (stage 5's E7) and the
+#     per-slot capacity guard: a malformed metaLine is read as his legacy read it — punctuation at the action position
+#     skipped to the next identifier, a glued token dropped (census row 41) — or meets Julia's own BoundsError (an
+#     empty meta region; a further action in a full slot — the queue tensor's width is the registered action
+#     count). Honest edges: each refusal is an
 #     untyped ErrorException raised via error(); their typed conversion is deferred
 #     at v0. The condition scanner carries fixed
 #     safety counters (at most 29 steps per scan): the outer scan refuses with the stable
@@ -35,7 +36,9 @@
 #     (a whitespace-only remainder is semantically complete and stays accepted); per-atom scan
 #     exhaustion surfaces as the malformed/unterminated-key refusals.
 # PURPOSE: turn each metaLine of a BLS input into queued alterant work the apply phase consumes,
-#     refusing malformed or out-of-vocabulary metadata with a stable, documented message.
+#     refusing out-of-vocabulary metadata and the structural shapes his legacy refused (a duplicate or unterminated list or
+#     block, a misplaced label) with a stable, documented message; a malformed metaLine is otherwise read as his legacy read it
+#     (stage 5's E7 of the v0.4 build, census row 41).
 
 ## AbsorbMeta.jl
 module AbsorbMeta
@@ -389,7 +392,6 @@ function parseAlt(
     conditionsDone::Bool = false
     foundLabel::Bool = false
     headSugar::Bool = false       ## v0.2 CH-3 step 9: this atom is the quoted-first heading
-    closedBracket::Bool = false   ## true right after a consumed '()' or '{}' group — gates the glued-token refusal
     local argsSSVec::Vector{SubString{String}}
     local conditionExpr::Union{Nothing,ConditionT}   # v0.2 FLIP: AST or the `nothing` sentinel
     if metaSS[nextind(metaSS, thisInd)] == ':'
@@ -403,15 +405,13 @@ function parseAlt(
             ## to the deriving head call — the sugar LOWERS here (parse-time shape, not an
             ## alias): the returned action name is the `head` action and the
             ## fenced token (delimiters kept — the String-lane kind marker) is its single argument,
-            ## riding the widened String lane. The span is consumed BEFORE the punctuation
-            ## guard (whose general-punctuation refusal was exactly the wall that killed
-            ## this form); the state primed below makes the EXISTING walls hold: the
-            ## closing '"' takes the closedBracket discipline (glued junk → the existing
-            ## glued-token refusal), the token inds are set (the I12 no-token guard never
-            ## false-fires), and the inner loop continues normally (a following '{'
-            ## attaches conditions; '(' meets the duplicate-argument refusal). A NON-first
-            ## quoted token deliberately falls through to the punctuation refusal — its
-            ## semantics are RESERVED (unassigned) at v0.2.
+            ## riding the widened String lane. The span is consumed FIRST; the state primed below sets the
+            ## token inds, and the inner loop continues normally (a following '{' attaches conditions; '('
+            ## meets the duplicate-argument refusal). The punctuation wall, the glued-token wall and the no-token guard left at stage 5's E7
+            ## of the v0.4 build (census row 41): glued junk after the closing '"' is dropped by the same inner-loop silence with
+            ## which his legacy's reader dropped a token glued to a closing ')' or '}' (the legacy had no quoted-heading span —
+            ## the seat's F4). A NON-first quoted token's semantics stay RESERVED (unassigned) at v0.2 — it meets the
+            ## legacy's unknown-action refusal (the quote skipped, the token `T"` unknown), not the former wall.
             ## Applicability (the MetaContext record) is checked at the enqueue seam.
             if firstToken && !foundLabel && metaSS[thisInd] == '"'
                 headSugar = true
@@ -420,16 +420,10 @@ function parseAlt(
                 indEndAlt = thisInd            ## the closing '"'
                 argsSSVec = SubString{String}[headingTok]
                 argsDone = true
-                closedBracket = true
             end
-            ## Punctuation at the action-name position refuses loudly — the parser never skips
-            ## ahead to the next identifier (a `#~ , discard` form is malformed, not `discard`).
-            if _ispunct_valid(metaSS[thisInd]) && !foundLabel && !headSugar
-                error("GoMeta absorb: malformed metaLine — unexpected punctuation ",
-                    repr(metaSS[thisInd]), " at the action-name position in the meta region ",
-                    repr(first(metaSS, 40)),
-                    " (v0 expects an action or label token; see docs/public-api.md §3.4)")
-            end
+            ## The first non-space Char: punctuation at the action-name position is skipped to the next identifier,
+            ## as his legacy read it (`#~ , discard` reads as `discard`) — the punctuation wall left at stage 5's E7
+            ## of the v0.4 build, census row 41.
             if !_ispunct_valid(metaSS[thisInd]) || foundLabel || headSugar
 
                 headSugar || (indStartAlt = thisInd)
@@ -439,7 +433,6 @@ function parseAlt(
                             indEndAlt = prevind(metaSS, thisInd)
                             (thisInd, argsSSVec) = parseArgs(metaSS, thisInd)
                             argsDone = true
-                            closedBracket = true   ## thisInd sits on the closing ')'
                         else
                             error("GoMeta absorb: duplicate argument list — a metaLine action ",
                                 "may carry '()' arguments only once (see docs/public-api.md §3.4)")
@@ -462,7 +455,6 @@ function parseAlt(
                             indEndAlt = prevind(metaSS, thisInd) : nothing
                             (thisInd, conditionExpr) = parseConditions(metaSS, thisInd)
                             conditionsDone = true
-                            closedBracket = true   ## thisInd sits on the closing '}'
                         else
                             error("GoMeta absorb: duplicate condition block — a metaLine action ",
                                 "may carry '{}' conditions only once (see docs/public-api.md §3.4)")
@@ -470,15 +462,9 @@ function parseAlt(
 
                     elseif _isspace_valid(metaSS[thisInd])
                         break
-                    elseif closedBracket
-                        ## A closing ')' or '}' must be followed by end-of-input or whitespace —
-                        ## a glued token (e.g. `hide()junk`, `hide{isCode}show`) refuses loudly,
-                        ## never a silent swallow.
-                        error("GoMeta absorb: malformed metaLine — glued token after a closing ",
-                            "')' or '}' in the meta region ", repr(first(metaSS, 40)),
-                            " (v0 requires end-of-input or whitespace after a closing ')' or '}'; ",
-                            "see docs/public-api.md §3.4)")
                     end
+                    ## (a token glued to a closing ')' or '}' is dropped, as his legacy's reader dropped it — `hide()junk`
+                    ## reads as `hide`; the glued-token wall left at stage 5's E7 of the v0.4 build, census row 41)
                 end
                 thisInd = prevind(metaSS, thisInd)
                 (indStartAlt > indEndAlt) ? indEndAlt = thisInd : nothing
@@ -502,19 +488,11 @@ function parseAlt(
         ## sentinel is `nothing` (the queue's condition matrix is Union{Nothing,ConditionT}).
         conditionExpr = nothing
     end
-    ## Guarded refusal (docs/public-api.md §3.4): a meta region yielding NO
-    ## alterant token (e.g. `#~ ,`, `#~3 (`) would otherwise reach `metaSS[0:0]` and raise a
-    ## BoundsError. Valid metaLines (incl. the inert `#~!`) never reach this return with indices
-    ## at 0 — the guard refuses exactly that malformed class.
-    if indStartAlt == 0 || indEndAlt == 0
-        error("GoMeta absorb: malformed metaLine — no alterant token found in the meta region ",
-            repr(first(metaSS, 40)),
-            " (v0 expects an action or label token; guarded refusal, ",
-            "see docs/public-api.md §3.4)")
-    end
+    ## (a meta region yielding NO alterant token — `#~ ,`, `#~3 (` — reaches `metaSS[0:0]` and meets Julia's own
+    ## BoundsError, as his legacy's reader did; the no-token guard left at stage 5's E7 of the v0.4 build, census row 41)
     ## The sugar's action NAME is SYNTHETIC (the lowering target — the `head` action),
     ## never a metaSS span; the token inds above stay the SPAN's
-    ## (the I12 guard + the end-of-scan arithmetic key on them).
+    ## (the end-of-scan arithmetic keys on them).
     return (headSugar ? _HEAD_ACTION_NAME_SS : metaSS[indStartAlt:indEndAlt]),
         argsSSVec, conditionExpr, thisInd
 end
@@ -620,17 +598,9 @@ function absorbMeta(
                         st, metaSS, Symbol(altActionName), argsSSVec, conditionExpr,
                         pendingLocal, loPlugIdx)
                 else
-                ## Guarded refusal (docs/public-api.md §3.4): the queue tensors hold size(queued,2) actions per MH
-                ## slot; the guard fires BEFORE the counter increment so state stays in-bounds for every
-                ## 1:count reader. Slot-honest wording (also reachable from the userMH feed — no input
-                ## line exists there). Capacity growth is deferred; at or below the cap behavior is byte-exact.
-                if st.mh.count_actions_per_slot[crntSlot] >= size(st.queue.queued, 2)
-                    error("GoMeta absorb: slot action capacity (",
-                        size(st.queue.queued, 2), ") exceeded at meta-hierarchy slot ", crntSlot,
-                        " — at most ", size(st.queue.queued, 2),
-                        " alterant actions may accumulate in one slot at v0 (guarded refusal; ",
-                        "see docs/public-api.md §3.4)")
-                end
+                ## The queue tensors hold size(queued, 2) = the registered action count of actions per MH slot; a further
+                ## action meets Julia's own BoundsError at the write below (the plain Array is bounds-checked; no @inbounds) —
+                ## the pre-increment capacity guard left at stage 5's E7 of the v0.4 build (census row 41; his §120).
                 altActionOnRow = (st.mh.count_actions_per_slot[crntSlot] += 1)
                 st.queue.queued[1,
                     altActionOnRow, crntSlot] = st.registry.action_to_plugin[crntAltActionIdx]

@@ -180,8 +180,8 @@ end
         ric = _run("#~ \"T\"{ isCode }\nx = 1\n")
         @test string(ric.status) == "PROCESS_OK"
         @test isempty(_heads(ric))
-        # the recognizer never false-fires the I12 no-token guard (the branch sets the
-        # token inds): a bare quoted heading parses with no I12/no BoundsError
+        # the recognizer sets the token inds: a bare quoted heading parses with no BoundsError
+        # (the no-token guard this comment once named left at stage 5's E7 — census row 41)
         @test isempty([e for e in [_err("#~ \"T\"\nx = 1\n")] if e !== nothing])
     end
 
@@ -212,14 +212,11 @@ end
         @test !isempty(_heads(rh))
     end
 
-    @testset "test_non_first_quote_refusal — the hd-3 reservation stands" begin
+    @testset "test_non_first_quote_refusal — the hd-3 reservation stands (the legacy's refusal since stage 5's E7 — census row 41)" begin
+        # the punctuation wall left at E7: the quote is skipped as his legacy skipped it, the token `T"` meets the
+        # legacy's unknown-action refusal — the reservation holds by a refusal still
         e = _err("#~ hide \"T\"\nx = 1\n")
-        @test e isa ErrorException && occursin("unexpected punctuation", e.msg)
-    end
-
-    @testset "test_glued_token_refusal — trailing junk after the span meets the existing wall" begin
-        e = _err("#~ \"T\"junk\nx = 1\n")
-        @test e isa ErrorException && occursin("glued token", e.msg)
+        @test e isa ErrorException && occursin("unknown alterant action", e.msg)
     end
 
     @testset "test_empty_quote_lowers — BOTH halves: enters the recognizer, then the ratified refusal" begin
@@ -227,7 +224,7 @@ end
         # owner ratified it as the standing v0.2 semantic; the message says so)
         e = _err("#~ \"\"\nx = 1\n")
         @test e isa ErrorException
-        @test !occursin("unexpected punctuation", e.msg)          # half 1: NOT the old wall
+        @test !occursin("unexpected punctuation", e.msg)          # half 1: NOT the old wall (the wall itself left at stage 5's E7 — census row 41)
         @test occursin("empty heading text", e.msg)               # half 2: Heading validation
         @test occursin("ratified standing decision", e.msg)       # ratified, not transitional
     end

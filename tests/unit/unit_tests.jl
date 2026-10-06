@@ -9,8 +9,8 @@
 #   - public_surface_tests.jl — the export set equals the declared semver surface (docs/public-api.md §1);
 #                               the Engine's output surface (`altValues_evals`) and the development tool's
 #                               pair (`Main.BasicRenderer.outputs`, the one-path assertions; R-V04B-24).
-#   - slot_overflow_tests.jl  — witnesses for the "GoMeta absorb: slot action capacity" refusal.
-#   - malformed_meta_tests.jl — witnesses for the "GoMeta absorb: malformed metaLine" refusal.
+#   - slot_overflow_tests.jl  — the per-slot capacity boundary (the capacity refusal left at stage 5's E7 — census row 41).
+#   - malformed_meta_tests.jl — the metaLine parser's valid twins (the malformed-metaLine refusals left at stage 5's E7 — census row 41).
 #   - error_message_tests.jl  — stable-message witnesses, e.g. "GoMeta apply: unknown label".
 #   - arg_guard_tests.jl      — the documented WORKING argument forms (the refusal witnesses left at
 #                               stage 5's E6 of the v0.4 build — census row 14, the set-invocation seam).
@@ -27,8 +27,8 @@ using Test
 
 @testset "unit" begin
     include(joinpath(@__DIR__, "public_surface_tests.jl"))
-    include(joinpath(@__DIR__, "slot_overflow_tests.jl"))           # guarded refusal witnesses for slot action capacity
-    include(joinpath(@__DIR__, "malformed_meta_tests.jl"))          # guarded refusal witnesses for malformed metaLine input
+    include(joinpath(@__DIR__, "slot_overflow_tests.jl"))           # the per-slot capacity boundary (the refusal left at stage 5's E7 — census row 41)
+    include(joinpath(@__DIR__, "malformed_meta_tests.jl"))          # the metaLine parser's valid twins (the refusals left at stage 5's E7 — census row 41)
     include(joinpath(@__DIR__, "error_message_tests.jl"))           # stable error-message witnesses
     include(joinpath(@__DIR__, "arg_guard_tests.jl"))               # the documented WORKING argument forms (the refusal witnesses left at stage 5's E6 — census row 14)
     include(joinpath(@__DIR__, "condition_cap_tests.jl"))           # guarded refusal witnesses for the condition scan cap (E-02)

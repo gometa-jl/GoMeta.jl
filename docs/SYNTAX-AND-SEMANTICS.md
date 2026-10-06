@@ -49,7 +49,8 @@ can learn GoMeta exactly, and verify it, before writing or changing a metaLine.
 - **cell** — the component a verdict attaches to (a Block, a Line, or a Segment); its **cell_handle**
   is that cell's verbatim content bytes.
 - **meta-hierarchy / slot** — the engine's per-depth store of pending alterant actions: one slot per
-  open depth, capacity 7 actions at v0.
+  open depth; its capacity is the registered action count (8 at v0.4) — a further action meets Julia's own
+  `BoundsError` since stage 5's E7 of the v0.4 build (census row 41; the capacity refusal left).
 - **verdict** — a final evaluated alterant value for one cell.
 - **State-refs** — built-in predicates that query a BLS component's type/content (`isCode`, `isText`, `isMeta`,
   `containsMeta`), used inside conditions to decide whether an alterant applies (§6).
@@ -342,7 +343,8 @@ The operators (all verified against the corpus):
 > does. (See §13.) Tokenization note: keep a space after a grouping `)` before the next atom or
 > operator, as the corpus does (`Proposal L3`) — a `)` glued directly to a following atom
 > tokenizes engine-defined at v0. (Outside `{}`, on the metaLine itself, a token glued to a
-> closing `)`/`}` refuses — `docs/public-api.md` §3.4.)
+> closing `)`/`}` is DROPPED since stage 5's E7 of the v0.4 build — census row 41: `hide()junk` reads as `hide`, `hide{isCode}show` as
+> `hide{isCode}` — `docs/public-api.md` §3.4; write the space.)
 
 **State-refs** read the BLS component's type/content: `isCode`, `isText`, `isMeta`, `containsMeta`. Verified:
 - `isCode` — the **Code** block (`Extended L20–L32`) is discarded by `discard{ :label2 , isCode}` (`L7`)
@@ -540,8 +542,8 @@ To keep the verified claims honest, these are **known but not established here**
   and **label names are validated against it when APPLIED** — an unknown label refuses with the stable
   `GoMeta apply: unknown label …` message, which names the accepted set; a label QUERIED in a condition
   answers false when it is unknown or unset (the legacy's checker; since stage 5's E9 of the v0.4
-  build). At most 7 actions accumulate per meta-hierarchy slot
-  (exceeding it refuses with a stable message — see `docs/public-api.md` §3.4). The
+  build). As many actions accumulate per meta-hierarchy slot as the registry declares (8 at v0.4)
+  (a further one meets Julia's own `BoundsError` since stage 5's E7 of the v0.4 build — census row 41; `docs/public-api.md` §3.4). The
   authorable depth window is 1–8 in the digit form (§2). Custom label names applied (a queried one
   answers false — `docs/public-api.md` §3.4), and
   predicates outside the state-ref/action whitelists, are refused.

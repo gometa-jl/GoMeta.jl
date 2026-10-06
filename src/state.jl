@@ -31,9 +31,10 @@
 #     conforming code carries a seal (accident-grade: any loaded module can reach the token — B-2);
 #     `accum_alt_idxs` must stay sorted
 #     ascending (the apply phase's `insorted` membership test depends on it). The queue matrices are
-#     sized `numAltActions × num_slots` as the per-slot upper bound; exceeding the per-slot capacity
-#     (7 actions at v0) is refused at the enqueue guard (src/absorb/absorb_meta.jl) with
-#     "GoMeta absorb: slot action capacity" (tests/unit/slot_overflow_tests.jl).
+#     sized `numAltActions × num_slots` as the per-slot upper bound (8 actions today — the registered count; the pages'
+#     "7" was stale since the heading action's registration); a further action meets Julia's own BoundsError at the
+#     enqueue write — the capacity guard left at stage 5's E7 of the v0.4 build (census row 41; tests/unit/slot_overflow_tests.jl
+#     pins the boundary).
 # PURPOSE: a reentrant, reset-safe, eval-compatible per-call state + the typed public surface.
 
 using Base.ScopedValues

@@ -1,33 +1,17 @@
-# malformed_meta_tests.jl — the malformed-metaLine guarded-refusal witnesses
+# malformed_meta_tests.jl — the valid-twin witnesses of the metaLine parser (the three guarded refusals of malformed
+# metaLines — the no-token guard, the punctuation wall, the glued-token wall — left at stage 5's E7 of the v0.4 build, census row 41)
 #
-# IS:   the witness set for the malformed-metaLine guard (parseAlt's no-token refusal in src/absorb/absorb_meta.jl).
-# DOES: proves (1) both malformed shapes raise the STABLE typed refusal — ErrorException
-#       carrying "malformed metaLine" — never a raw BoundsError; (2) a valid metaLine twin
-#       stays PROCESS_OK and byte-deterministic; (3) the INERT `#~!` corpus shape is untouched by the
-#       guard (the guard-placement constraint: no shape validation before the token search).
-# REASONING: the guard refuses exactly the no-token class,
-#       so every valid path — including `#~!`, which the corpus exercises — is byte-exact unchanged.
-# PURPOSE: a stranger's typo in a metaLine meets an explanatory refusal naming the offending region,
-#       never a bare BoundsError stack trace.
-
+# IS:   the witness set that stays after E7: the valid shapes parse green and byte-deterministically.
+# DOES: proves (1) a valid metaLine twin stays PROCESS_OK and byte-deterministic; (2) the INERT `#~!` corpus shape passes
+#       through byte-exact; (3) the documented spacing form after a closing bracket stays green.
+# REASONING: since stage 5's E7 a malformed metaLine is read as his legacy read it — stray punctuation skipped to the next identifier, a glued token
+#       dropped, an empty meta region Julia's own BoundsError — measured in the build's probe pair, not pinned here (census row 41):
+#       a raw Julia error class is no witness; the valid paths are the pins.
+# PURPOSE: the parser's valid shapes, byte-exact.
 using Test
 import GoMeta as GM
 
-@testset "malformed_meta_guard" begin
-
-    @testset "both malformed shapes: the typed refusal (not BoundsError)" begin
-        for s in ("#~ ,\n", "#~3 (\n")
-            err = try
-                GM.goMeta(Vector{UInt8}(codeunits(s)))
-                nothing
-            catch e
-                e
-            end
-            @test err isa ErrorException
-            @test !(err isa BoundsError)
-            @test occursin("malformed metaLine", err.msg)
-        end
-    end
+@testset "malformed_meta_valid_twins" begin
 
     @testset "valid twin: green + deterministic" begin
         valid = Vector{UInt8}(codeunits("#~ hide{ :label1 }\n# content\n"))
@@ -39,39 +23,16 @@ import GoMeta as GM
         @test o1 == o2
     end
 
-    @testset "the inert #~! shape is untouched by the guard" begin
+    @testset "the inert #~! shape passes through byte-exact" begin
         inert = Vector{UInt8}(codeunits("#~! discard{ isMeta }\n# content\n"))
         r = GM.goMeta(inert)
         @test r.status == GM.PROCESS_OK
         @test String(copy(Main.BasicRenderer.outputs(r)[2])) == "#~! discard{ isMeta }\n# content\n"   # the inert line passes through byte-exact
     end
 
-    @testset "strict token boundaries: punctuation at action position + glued tokens refuse" begin
-        # punctuation at the action-name position refuses — the parser never skips ahead to the next identifier
-        for s in ("#~ , discard\n# content\n", "#~ ! discard\n# content\n")
-            err = try
-                GM.goMeta(Vector{UInt8}(codeunits(s)))
-                nothing
-            catch e
-                e
-            end
-            @test err isa ErrorException
-            @test occursin("malformed metaLine", err.msg)
-            @test occursin("unexpected punctuation", err.msg)
-        end
-        # a closing ')' or '}' must be followed by end-of-input or whitespace — glued tokens refuse
-        for s in ("#~ hide()junk\n# content\n", "#~ hide{isCode}show\n# content\n")
-            err = try
-                GM.goMeta(Vector{UInt8}(codeunits(s)))
-                nothing
-            catch e
-                e
-            end
-            @test err isa ErrorException
-            @test occursin("malformed metaLine", err.msg)
-            @test occursin("glued token", err.msg)
-        end
-        # the whitespace-separated twin stays green (the documented spacing form)
+    @testset "the spaced form stays green (the former walls left at stage 5's E7 — census row 41)" begin
+        # the documented spacing form after a closing bracket; the glued form is read as the legacy read it since stage 5's E7 (the glued token
+        # dropped — measured in the build's probe pair, not pinned here; census row 41)
         spaced = GM.goMeta(Vector{UInt8}(codeunits("#~ hide{isCode} show\n# content\n")))
         @test spaced.status == GM.PROCESS_OK
     end

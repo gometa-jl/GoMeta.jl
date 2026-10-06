@@ -38,9 +38,8 @@ aborting at the absorb seam (§3.2's preamble).
 **PURPOSE.** The stable contract a consumer programs against and a reviewer audits the surface
 against — the human-readable mirror of the machine-checkable export set (`names(GoMeta)`, asserted
 by `tests/unit/public_surface_tests.jl`) and of the refusal behavior the shipped witnesses assert
-(`tests/unit/error_message_tests.jl` · `tests/unit/slot_overflow_tests.jl` ·
-`tests/unit/malformed_meta_tests.jl` · `tests/unit/arg_guard_tests.jl` ·
-`tests/unit/condition_cap_tests.jl`).
+(`tests/unit/error_message_tests.jl` · `tests/unit/arg_guard_tests.jl` · `tests/unit/condition_cap_tests.jl`; the
+slot-overflow and malformed-metaLine refusal witnesses left at stage 5's E7 of the v0.4 build — census row 41).
 
 ## §1 — The public surface
 
@@ -540,8 +539,9 @@ arg2)` — parsed with the metaLine and handed to the action when it fires. The 
   level-window guard; corrected at v0.4 T2 on a CrossReview finding.)* The `head` TEXT slot is the one
   String-accepting argument position on the one String-accepting action — every other slot
   of every action, including `head`'s level slot, refuses a String. A NON-first quoted token
-  on a metaLine is reserved and refuses (today via the §3.4 malformed-metaLine punctuation
-  refusal). `head` is not queryable in conditions (a condition naming it evaluates false —
+  on a metaLine is reserved and refuses (today via the legacy's unknown-action refusal — the quote is skipped and the token `T"`
+  meets `GoMeta absorb: unknown alterant action …`; the former §3.4 punctuation wall left at stage 5's E7 of the v0.4 build,
+  census row 41). `head` is not queryable in conditions (a condition naming it evaluates false —
   unlike the bare Id atoms, whose condition use is the §3.4 pending edge), and a heading's
   own condition may use settribute state only — evaluated ONCE at the heading's own line,
   GATING the recording (false means no row); a query atom there meets a typed refusal.
@@ -632,19 +632,16 @@ These are the honest edges of the v0 engine. Entries marked GUARDED are refusals
 message (no longer raw crashes); the rest remain latent, documented as such — **not** assigned a
 fabricated typed code:
 
-- **The >7-actions-per-slot overflow — GUARDED:** accumulating more alterant actions in one
-  meta-hierarchy slot than the queue capacity (7 at v0) raises a stable-message `ErrorException`
-  ("slot action capacity …") at the enqueue guard — never a raw `BoundsError`. The ≤7-per-slot
-  limit is a documented v0 bound. Witnesses:
-  `tests/unit/slot_overflow_tests.jl`.
-- **The malformed-metaLine crash — GUARDED:** malformed metaLines raise a stable-message
-  `ErrorException` ("malformed metaLine …") in `parseAlt` (`src/absorb/absorb_meta.jl`) — never a
-  raw `BoundsError`. The refused classes: a meta region yielding no alterant token (e.g. `#~ ,`);
-  stray punctuation at the action-name position (e.g. `#~ , discard` — the parser never skips
-  ahead to the next identifier); and a token glued to a closing `)` or `}` (`hide()junk`,
-  `hide{isCode}show` — a closing bracket must be followed by end-of-input or whitespace). VALID
-  input is unaffected (corpus 7/7 byte-exact).
-  Witnesses: `tests/unit/malformed_meta_tests.jl`.
+- **The per-slot action overflow — Julia's own `BoundsError` since 0.4.0 (stage 5's E7 of the v0.4 build, census row 41):**
+  the queue tensor holds as many actions per meta-hierarchy slot as the registry declares (8 today; the pages' earlier "7"
+  was stale since the heading action's registration); a further action in one slot meets a raw `BoundsError` at the enqueue
+  write — the guarded refusal ("slot action capacity …") left at stage 5's E7. The boundary stays green. Witnesses:
+  `tests/unit/slot_overflow_tests.jl` (the boundary).
+- **Malformed metaLines — read as his legacy read them since 0.4.0 (stage 5's E7, census row 41):** a meta region yielding
+  no alterant token (`#~ ,`) meets a raw `BoundsError`; stray punctuation at the action-name position is skipped to the
+  next identifier (`#~ , discard` reads as `discard`); a token glued to a closing `)` or `}` is dropped (`hide()junk` reads
+  as `hide`, `hide{isCode}show` as `hide{isCode}`). The three guarded refusals ("malformed metaLine …") left with E7.
+  VALID input is unaffected. Witnesses: `tests/unit/malformed_meta_tests.jl` (the valid twins).
 - **The quoted-string lane — GUARDED (stable messages from birth):** an argument list
   carrying a `"` meets "unterminated quoted argument" (a `"` never closed), "malformed
   quoted argument" (a quote glued to bare text, a stray quote, or more than one span in
@@ -740,8 +737,8 @@ fabricated typed code:
   closed) · an unterminated or malformed condition key (including a `:` that does not introduce a
   single one-word label) · an unknown condition key (an atom that is neither a component
   state-ref nor a registered action name) · a duplicate argument list or condition block on one
-  alterant clause · a misplaced label token · stray punctuation at the action-name position · a
-  token glued to a closing `)` or `}` · the over-cap condition (the dedicated entry above).
+  alterant clause · a misplaced label token · the over-cap condition (the dedicated entry above); the punctuation and
+  glued-token walls left at stage 5's E7 — census row 41 (the entry above).
   The basic renderer (a development tool, `devtools/basic_renderer.jl`) carries no Visib guard of its own since stage 3 of the
   v0.4 build: it renders the Engine's answer per Component; more than one Visib value on one cell is refused by the Engine at the
   CAPTURE (`src/annotations.jl` — the stable message `GoMeta capture: more than one Visib value set for one component …`).
@@ -970,3 +967,4 @@ non-silent record under R-V04B-61; the letter of R-V04B-24 (P) does not govern u
 - **The set-invocation seam `_invoke_set` with its pre-checks and envelopes, the instance-mint wrap `_mint_instance`, the kind map `_kind_type` with `_LITERAL_KINDS`, the user-arity helper `_user_arity`, and the `_unchecked_registry` test seam — REMOVED at 0.4.0** (stage 5's E6 of the v0.4 build; census row 14 of the stage-5 census, the owner's bulk mark of 2026-10-03, OWNER-WORDS §317 — R-V04B-105; his §120 on a basic framework BEFORE HARDENING; his legacy called the setters and constructors directly, goMetaAddOns.jl): the apply loop and the absorb heading seam call `altConstructor()` and `setAltInstance(store, action, args...)` bare — a malformed argument, an absent or throwing constructor, a store foreign to the setter's method and a declaration the method does not implement are Julia's own errors out of the `goMeta` call, and a setter's return is not checked; the codes `CB_SET_THROW`, `CB_CTOR_THROW` and `RES_FOREIGN_STORE` leave the catalogue, `RES_RETURN_TYPE` keeps its two surviving sites (the closed interpreter's query site; the handover validator); the registration record and its digest are unchanged; the typed refusal witnesses left with their subject (arg_guard, registration, seam_envelope, heading_recognizer); measured on both trees by the build's edge probe (receipts/S8-branch/PROBES-e6-edges-*).
 - **The declared action record's overload rows (`ActionOverload`, `ActionSpec.overloads`), its `spelling` tag, its `sugar_candidacy` grant register and its reserved `keyed_slot`, and the v0.3.2 positional constructors of `PlugIn` (6-positional) and `ActionSpec` (8-positional) — REMOVED at 0.4.0** (stage 5's E11 of the v0.4 build; census rows 16 and 65 of the stage-5 census, the owner's bulk mark of 2026-10-03, OWNER-WORDS §317 — R-V04B-105; his §223 'no left overs from old version in newer ones', R-V04B-61; his legacy registered an action by its name and let Julia dispatch do the rest): `ActionSpec` is five fields `(name, plugin, accepts_string_slot, validate, settribute)` with the keyword form as the one form — `accepts_string_slot` and `validate` stay for the Heading road (R-V04B-101), `settribute` stays for stage 5's E12 (census row 45); the registration digest no longer folds the rows, the tag, the register or the slot (the FOURTEENTH re-mint, measured and pinned); the door walks two record structs; the public name `ActionOverload` leaves (29 → 28 public names); no behaviour on the shipped Alterants (the corpus, the forms, the pins, the evals trees); a custom registry written in the old form — an `overloads =` keyword, a positional `PlugIn(...)` — is Julia's own MethodError at construction (an API break for custom registries under R-V04B-61; measured on both trees by the build's probe), the keyword five-field form registers, validates, publishes and runs on both trees.
 - **The flavor record's digest fold (`_flavor_digest` and the `digest` field), its header-strategy seam (the `parse_header!` pointer, the `header_strategy` identifier, the forward declaration), its `extensions` field and the `_CFAM_LEAD_*` / `_RE_META_LEADED_*` compatibility aliases — REMOVED at 0.4.0** (stage 5's P1 of the v0.4 build; census rows 39, 63, 72 and 58 of the stage-5 census, the owner's bulk mark of 2026-10-03, OWNER-WORDS §317 — R-V04B-105; his §120 and his §223, R-V04B-61): the parser's loop calls `parseLeadHeader!` directly for every armed flavor (the seam switched to a fallback that no longer existed); the digest was a cache-key component no code read (the cache key composes name, mode, schema, grammar and registration — no flavor component today, pre-existing); the extensions were read by no code; the aliases' cited referents were not in the repository. The door's promise of five fields (R-V04B-80 (2)(ii)) is untouched; no behaviour on any flavor — the three armed flavors' tree and render bytes equal on both trees (the build's probe); an internal `_mk_flavor` call carrying the three former keywords is Julia's own error now.
+- **The four guarded refusals ADDED to his legacy's metaLine parser — the punctuation wall at the action-name position, the glued-token wall after a closing `)` or `}` (with its gating flag), the no-token guard ("GoMeta absorb: malformed metaLine …") and the per-slot capacity guard ("GoMeta absorb: slot action capacity …") — REMOVED at 0.4.0** (stage 5's E7 of the v0.4 build; census row 41 of the stage-5 census, the owner's bulk mark of 2026-10-03, OWNER-WORDS §317 — R-V04B-105; his §120): a malformed metaLine is read as his legacy read it — punctuation at the action-name position skipped to the next identifier, a token glued to a closing bracket dropped — or meets Julia's own `BoundsError` (an empty meta region; a further action in a full slot — the queue tensor's width is the registered action count, 8); every re-worded legacy message stays (§3.4); no public name changes — the row is written for the behaviour's sake, as the E5 row's was.

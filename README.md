@@ -81,10 +81,10 @@ extends the label whitelist by a fixed **pictograph vocabulary** (byte-exact nam
   unit layers, including the dual-mode, refusal-witness, token-delimiter-law,
   whitespace-alphabet, Unicode-correctness, and directive-adjacency families — green
   under a plain `Pkg.test()`).
-- **Robustness:** the metaLine GRAMMAR surface refuses with **stable, documented refusals** —
-  malformed input gets one (slot capacity, malformed metaLines —
-  including stray punctuation at the action position and tokens glued to a closing `)`/`}` —,
-  unknown action, over-long conditions), and the Labels Alterant's own unknown-label refusal (`GoMeta apply: unknown
+- **Robustness:** the metaLine GRAMMAR surface refuses out-of-vocabulary input with **stable, documented refusals** —
+  an unknown action, an over-long condition — (the walls against malformed metaLines and the slot-capacity refusal left at
+  `0.4.0`, stage 5's E7 — census row 41: a malformed metaLine is read as the legacy read it), and the Labels Alterant's own
+  unknown-label refusal (`GoMeta apply: unknown
   label …` on an applied out-of-whitelist name; a queried unknown label answers false since stage 5's E9 of the v0.4
   build — `docs/public-api.md` §3.4), catalogued in `docs/public-api.md` §3. Malformed action ARGUMENTS are Julia's own
   error out of the `goMeta` call since stage 5's E6 of the v0.4 build (the apply seam's typed refusal left — census
@@ -220,9 +220,10 @@ code**, so use it only on input you trust. A default-configured run cannot reach
 naming the profile without the included extension refuses loudly with a stable message —
 never a silent fallback.
 
-Documented v0 limits (each refuses with a stable message rather than crashing): at most 7 actions
-per meta-hierarchy slot; malformed metaLines are refused — including stray punctuation at the
-action position and tokens glued to a closing `)`/`}`; malformed
+Documented v0 limits: the queue tensor holds as many actions per meta-hierarchy slot as the registry declares (8 today) —
+a further action meets Julia's own `BoundsError`; a malformed metaLine is read as the legacy read it (stray punctuation at
+the action position skipped, a token glued to a closing `)`/`}` dropped, an empty meta region a `BoundsError`) — the guarded
+refusals left at `0.4.0`, stage 5's E7 (census row 41); malformed
 action arguments are refused; label names are validated against the engine's closed whitelist when
 APPLIED — an out-of-whitelist name refuses; a label QUERIED in a condition answers false when it is unknown
 or unset (the legacy's checker; since stage 5's E9 of the v0.4 build). The corpus-documented labels are
