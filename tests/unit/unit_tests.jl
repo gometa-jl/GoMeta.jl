@@ -16,7 +16,7 @@
 #                               stage 5's E6 of the v0.4 build — census row 14, the set-invocation seam).
 #   - condition_cap_tests.jl  — witnesses for the condition-length-cap refusal.
 #   … and every further member in the include list below (the list IS the index: token law · ws alphabet ·
-#   unicode cures · textlaw · reserved adjacency · condition modes · heading recognizer · registration ·
+#   unicode cures · reserved adjacency · condition modes · heading recognizer · registration ·
 #   profile snapshot · flavor profile · latex flavor · ensure token · inert semantics ·
 #   record schema (v0.4 T1) · registry lifecycle (v0.4 T2)); each include line carries its one-liner.
 # REASONING: the byte-exact golden layer cannot see these concerns — the introspected public surface and
@@ -33,9 +33,8 @@ using Test
     include(joinpath(@__DIR__, "arg_guard_tests.jl"))               # the documented WORKING argument forms (the refusal witnesses left at stage 5's E6 — census row 14)
     include(joinpath(@__DIR__, "condition_cap_tests.jl"))           # guarded refusal witnesses for the condition scan cap (E-02)
     include(joinpath(@__DIR__, "token_law_tests.jl"))               # F-13 token-delimiter-law verification matrix (owner-ruled 2026-08-08)
-    include(joinpath(@__DIR__, "ws_alphabet_tests.jl"))             # F-14 ws-alphabet matrix (owner-ruled 2026-08-08: Unicode \h unified; GENERATED file, real codepoints)
+    include(joinpath(@__DIR__, "ws_alphabet_tests.jl"))             # F-14 ws-alphabet matrix (owner-ruled 2026-08-08: Unicode \h unified; GENERATED file, real codepoints; [8] = the live `\h` pin relocated from the text-law kernel's tests at stage 5's E1' — census row 35)
     include(joinpath(@__DIR__, "unicode_cure_tests.jl"))            # R-U4 cure witnesses (the Unicode program W1; GENERATED, real codepoints)
-    include(joinpath(@__DIR__, "textlaw_tests.jl"))                # W2 kernel conformance (pinned alphabets + nfc_key; behavior-zero, unwired)
     include(joinpath(@__DIR__, "reserved_adjacency_tests.jl"))      # directive-adjacency SHIP-CLASS tripwire (the 0.2.3 cure; ships)
     include(joinpath(@__DIR__, "condition_modes_tests.jl"))         # the dual-mode law (safe default + explicit opt-in)
     include(joinpath(@__DIR__, "heading_recognizer_tests.jl"))      # v0.2 CH-3 step 8: String-lane widening + quote negative rows (APPEND-ONLY)

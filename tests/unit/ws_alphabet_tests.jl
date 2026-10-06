@@ -79,4 +79,22 @@ _ws_err(s; kw...)    = try _ws_r(s; kw...); nothing catch e sprint(showerror, e)
             @test occursin(GM.BLS._RE_H_WS_ONE, string(c))
         end
     end
+
+    @testset "[8] the ruling-conditional LIVE pin: today's engine class is PCRE \\h (19 cp)" begin
+        # RELOCATED whole from the text-law kernel's tests ([4], :49–:52) when the kernel left at stage 5's E1' of the
+        # v0.4 build (census row 35): its mechanism, the engine's own predicate, survives; the kernel's 18-codepoint tuple
+        # is spelled as literals here. The successor site of the citation in R-V04B-83 (3)(ii) (":49" of those tests).
+        # THE ONE EXCEPTION the header's boundary law does not carry: U+180E (MONGOLIAN VOWEL SEPARATOR, a Cf FORMAT
+        # character since Unicode 6.3) DELIMITS today — PCRE's frozen `[\h]` list keeps it — against the 2026-08-08
+        # ruling's recorded note "zero-width format chars … never delimit" (the unicode proof's GROUND-3 §6). The pin
+        # makes the interim EXPLICIT: it flips WITH his BLS review's word (OWNER-WORDS §18; R-V04B-83 (3)(ii)),
+        # consciously, never silently.
+        @test GM.BLS._is_h_ws(Char(0x180E)) === true
+        for cp in (0x0009, 0x0020, 0x00A0, 0x1680,                      # the other 18 codepoints of PCRE's `\h`
+                   0x2000, 0x2001, 0x2002, 0x2003, 0x2004, 0x2005,
+                   0x2006, 0x2007, 0x2008, 0x2009, 0x200A,
+                   0x202F, 0x205F, 0x3000)
+            @test GM.BLS._is_h_ws(Char(cp)) === true
+        end
+    end
 end

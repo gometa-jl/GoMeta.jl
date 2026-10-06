@@ -103,7 +103,6 @@ using StaticArrays, InlineStrings  # stack-allocated fixed-size arrays + inline 
 ############ Includes ###################################################################
 
 include("config.jl")    # GoMetaConfig (the public input options)
-include("textlaw.jl")   # the GoMeta-owned text-law kernel (pinned alphabets + nfc_key)
 include("grammar_profile.jl")       # v0.2 CH-2/CH-4: the versioned grammar-profile substrate (caps/precedence/
                                     #   grants + provenance digests as DATA; the pre-parse error oracle) — its
                                     #   DEFINITIONS depend on GoMetaConfig only, so it sits after config.jl;
