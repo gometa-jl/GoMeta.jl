@@ -359,22 +359,6 @@ _plugin_with_default(p, d) = GM.PlugIn(; altName = p.altName, setMode = p.setMod
         @test _codes(r.diagnostics) == [:ERR_UNKNOWN_PROFILE, :REG_UNPUBLISHED]   # config first, then registry
     end
 
-    @testset "the per-call slot-pool exhaustion refuses with the stable GUARDED message (r-21; the findfirst-nothing site; typed conversion = the diagnostics catalogue row)" begin
-        # Drive `updateMetaHierarchy` directly with every slot occupied: on v0.3.2 the Int8 store
-        # of `findfirst(...) === nothing` raised a RAW MethodError (uncontained); T2 refuses with the
-        # stable absorb-style message. Input-reachability is NOT claimed here (the walk allocates
-        # at most one slot per live level); this is the defensive-invariant half, the Visib-
-        # multiplicity precedent.
-        ps = GM.BLS.setUpToProcessFromBytes(Vector{UInt8}(codeunits("x = 1\n")))
-        st = GM.init_state(ps, GM.GoMetaConfig(), GM.DEFAULT_REGISTRY)
-        fill!(st.mh.slot_occupied, true)
-        e = Base.ScopedValues.with(GM.STATE => st) do
-            try GM.CnS.updateMetaHierarchy(GM.lineMHIdx); nothing catch err; err end
-        end
-        @test e isa ErrorException && occursin("slot pool exhausted", e.msg)
-        @test all(st.mh.slot_occupied)                       # nothing displaced, nothing aliased
-    end
-
     @testset "T2-bis: the EIGHT snapshot-door witnesses W1–W8 (T2BIS-DESIGN §8; APPENDED)" begin
         # W1 — the CONTAINED route refuses a published value mutated into a CYCLE, typed,
         # naming the record + slot via the path (Rcx/Rcy above are testset-locals — rebuilt)

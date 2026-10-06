@@ -39,8 +39,8 @@ function scanAlterant(delivery::GoMetaDelivery, alterant::Symbol;
     p = registry.plugins[idx]
     out = Pair{BLS.AbstractComponent,EvaluatedAltValue}[]
     cap = p.capture
-    cap === nothing && return out                # no capture declaration: the capture floor mints NO rows — nothing recorded, nothing to list
-    stem = cap.attr_stem === nothing ? Symbol(lowercase(String(p.altName))) : cap.attr_stem   # the walk's own derivation, as evaluatedAltValue derives it (the seat of commit 4, F-1)
+    cap === nothing && return out                # no capture declaration: the walk mints NO rows — nothing recorded, nothing to list
+    stem = _capture_stem(p)   # the walk's own derivation, as evaluatedAltValue derives it (the seat of commit 4, F-1)
     scheme = cap.attr_scheme
     ps = delivery.blsComponentTree
     store = delivery.altValues_evals

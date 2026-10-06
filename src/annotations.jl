@@ -24,8 +24,8 @@
 #     The store keys by the row's handle — a NORMALIZED STRUCTURAL occurrence handle (src/occurrence.jl)
 #     or a fed profile's user-context handle — so two distinct cells never share a slot even with
 #     byte-identical content; a value-CHANGING re-apply of
-#     the SAME occurrence emits the non-fatal `WARN_VERDICT_COLLISION` diagnostic rather than
-#     masking the supersede (docs/public-api.md §3). A row is recorded for every captured cell —
+#     the SAME occurrence supersedes, later wins (the collision warning left at stage 5's E5 of the v0.4
+#     build — census row 66). A row is recorded for every captured cell —
 #     the evals rows are the Engine's recorded truth of the run; the render is the development
 #     tool's own concern (`devtools/basic_renderer.jl`), not this surface's.
 # PURPOSE: the machine-readable RESULTS surface of a `goMeta` run — pinned, attributed,
@@ -43,15 +43,14 @@ IS: the deduped put of ONE final evals row into `st.evals` — the one door into
 
 DOES: records the row `(handle, attr, value, polarity, decided_by)`, DEDUPED per `(cell_handle, attr)`: a later put
 for the same occurrence+attribute SUPERSEDES the earlier one (later wins), so the store holds at most one record
-per `(cell_handle, attr)` by construction. **Occurrence-addressing + the collision signal.** `handle` is the
+per `(cell_handle, attr)` by construction. **Occurrence-addressing.** `handle` is the
 `key_bytes` of the row's handle — a cell's NORMALIZED STRUCTURAL occurrence key (src/occurrence.jl), or a fed
 profile's user-context key for its heading rows (`capture_heading!`) — two DISTINCT cells never
 share a slot, even with byte-identical content (the distinct-cell content-collision class of a purely
 content-keyed store cannot occur by construction; PRECISE BOUND: this holds for WELL-FORMED keys — two DEGENERATE
 truncated-walk keys could alias each other, a case no real parse produces). A slot match here is therefore the
-SAME occurrence re-applied; a value-CHANGING supersede is a genuine conflicting re-apply (applied-state-wins) and
-still records the non-fatal `:warning` Diagnostic (`WARN_VERDICT_COLLISION` — the code's name unchanged) —
-surfaced, never masked. No copy of the piece's text rides the record (R-V04B-43 (1), stage 2's commit 9b).
+SAME occurrence re-applied; a value-CHANGING supersede is a conflicting re-apply (applied-state-wins; the
+collision warning that accompanied it left at stage 5's E5 of the v0.4 build — census row 66). No copy of the piece's text rides the record (R-V04B-43 (1), stage 2's commit 9b).
 
 REASONING: the surface promises final evals only — one row per `(cell_handle, attr)` — so the put dedupes at
 write time, a later put superseding, rather than by a later pass, and the reader sorts without resolving
@@ -67,19 +66,8 @@ function _putEval!(st::ProcessState, handle::Vector{UInt8}, attr::Symbol, value,
     @inbounds for i in eachindex(recs)
         r = recs[i]
         if r.attr === attr && r.cell_handle == handle
-            # v0.2 KEY SWAP: `handle` is now the OCCURRENCE-key bytes, so a slot match here is the
-            # SAME structural occurrence by construction — the distinct-cell content-collision arm
-            # of the old WARN_VERDICT_COLLISION is IMPOSSIBLE by construction (asserted by the
-            # constructed rr48 fixtures in tests/golden);
-            # what remains is the true same-cell conflicting re-apply (a value-CHANGING supersede =
-            # a genuine re-apply under applied-state-wins, int-6) — still surfaced, never masked.
-            if !isequal(r.value, value) || r.polarity != polarity
-                push!(st.diagnostics, Diagnostic(:WARN_VERDICT_COLLISION, :warning,
-                    "altValues_evals: occurrence received conflicting verdicts for attr=$(attr) " *
-                    "($(repr(r.value)) -> $(repr(value))); a same-occurrence conflicting re-apply " *
-                    "(later wins; applied-state-wins).",
-                    handle))
-            end
+            # a slot match is the SAME structural occurrence by construction (the occurrence-key bytes); a later put
+            # supersedes, later wins — the collision warning left at stage 5's E5 of the v0.4 build (census row 66)
             recs[i] = EvalRecord(handle, attr, value, polarity, decided_by)   # supersede (later wins)
             return nothing
         end
@@ -112,7 +100,7 @@ alterant instances the apply left in `st.working`:
   `(cell_h, :label_tracking, true, +)`).
 - **Visib** (`:mutExclusive`, `@namedElement … Bool`): one row for the WINNING action —
   `(handle, :visib, :hide|:show|:discard, true)` (`keys(Visib)[inst.array][1]`, the form the former Visib write-back used — gone at stage 3's commit 4;
-  guarded against the flagless `keys(Visib)[all-false]` case — the former write-back's E-04 crash origin, gone with it at stage 3's commit 4 — rather than tripping a bare `error()`).
+  the flagless `keys(Visib)[all-false]` case mints no row).
 - **Id** (`:mutExclusivePerField`, `@namedElement … Int16`): one row per NON-default field —
   `(handle, :id_<name>, value::Int16, true)`. The corpus does NOT exercise Id (SYNTAX-AND-SEMANTICS §13;
   no read site), so this path is contract-completeness ("total over the applied evals rows").
@@ -120,7 +108,7 @@ alterant instances the apply left in `st.working`:
 `polarity` is `true` for every applied evals row at v0 (all captured evals rows are "set/on"); the field is in
 the pinned tuple to distinguish on/off and is reserved for a future negated-row encoding — an evals row with
 `polarity == false`. The dispatch iterates the per-call `st.registry.plugins` and reads each plugin's declared
-`CaptureDecl` (its instance type, scheme, gate and stem — NOT the global `DEFAULT_REGISTRY`), so a custom
+`CaptureDecl` (its scheme, gate and stem; the store's shape the record's own `altConstructor` — NOT the global `DEFAULT_REGISTRY`), so a custom
 registry threads through.
 
 Each row's `decided_by` (R-V04B-35 (d); stage 2's commit 2) is the list the apply recorded for the Alterant in
@@ -160,18 +148,14 @@ function captureEvals!(st::ProcessState, cell::BLS.AbstractComponent;
     k = occurrence_key(st.parse, cell; origin = origin, namespace = st.config.namespace)
     handle = key_bytes(k)
 
-    ## v0.4 T5 — THE REGISTRATION-DRIVEN WALK (T5-DESIGN §2; [C-W6-CE-6]: "keyed on
-    ## declared instance type, never an alt-name ladder"). The retired 3-name ladder's
-    ## rows re-derive byte-for-byte from the DEFAULT's declared rows (probe P100: the
-    ## enumerate(keys)+array read reproduces the old getElement index-for-index;
-    ## "setLabels only sets true" verified at the bytes — registry.jl:89 is the sole
-    ## write). Byte-identity is the ROW SET plus the surface's own sort — the
-    ## plugin-index order coinciding with the ladder's literal order is incidental.
-    ## The CAPTURE-SIDE VALUE ALGEBRA (the round's A2=B6=C2 BLOCKER cure): only the
-    ## closed leaf set enters the store, so the accessor's string-sort / repr-serialize
-    ## / isequal-dedupe stay inside the pre-T5 value universe — no caller method can
-    ## dispatch downstream. Out-of-shape/out-of-algebra ⇒ the typed capture floor
-    ## (WARN, once per call per alterant), NEVER a raw throw and NEVER a silent skip.
+    ## v0.4 T5 — THE REGISTRATION-DRIVEN WALK (T5-DESIGN §2): the rows re-derive from each plugin's declared capture row (its
+    ## scheme and stem), never from an alt-name ladder; the shipped Labels, Visib and Id mint byte-for-byte the rows the retired
+    ## 3-name ladder minted (probe P100). The walk reads the stores BARE, as his legacy's Visib write did
+    ## (`keys(Alterants.Visib)[…array][1]`): the hardening of stage 5's census row 33 — the instance-type check, the per-arm
+    ## try/catch, the value algebra, the shape and length gates and the walk's two capture-floor calls — left at E5 of the v0.4
+    ## build (his §317 mark; his §120: a basic framework BEFORE HARDENING). A store outside its declared scheme's shape errors as
+    ## Julia does; a plugin without a capture row mints nothing (the Heading lane's flush keeps its two floor warnings until
+    ## R-V04B-101 — `_capture_floor!` below).
     for (i, p) in pairs(st.registry.plugins)
         idx8 = Int8(i)
         p.capture === nothing && continue
@@ -179,139 +163,59 @@ function captureEvals!(st::ProcessState, cell::BLS.AbstractComponent;
         haskey(st.working, idx8) || continue
         inst = st.working[idx8]
         decided = get(st.working_origin, idx8, Vector{UInt8}[])   # R-V04B-35 (d): the applied statements' handles
-        stem = p.capture.attr_stem === nothing ?
-            Symbol(lowercase(String(p.altName))) : p.capture.attr_stem
-        ## the identity law left at stage 5's E4: a declared mismatch, like a post-publication
-        ## mutation, floor-routes here rather than mis-reads (measured: WARN_CAPTURE_UNREADABLE)
-        if !(inst isa p.capture.instance_type)
-            _capture_floor!(st, p, :WARN_CAPTURE_UNREADABLE)
-            continue
-        end
-        ## (the crx-t5 second cure batch, three seats convergent) every arm runs under
-        ## its OWN mini-envelope: any residual throw class from a registrable-but-exotic
-        ## store (a missing custom `keys(T)` method, a shape the static gates cannot
-        ## see) FLOORS typed instead of escaping post-latch; InterruptException and the
-        ## engine's own "GoMeta "-prefixed refusals (the multiplicity refuse) rethrow —
-        ## the uniform T3 arm order. The VALUE ALGEBRA gates EVERY arm's minted values
-        ## (`:per_key` was the only guarded arm pre-cure); `:per_field`'s element gate
-        ## narrows to the MACHINE-INT union (every Number admitted Float64/BigInt/custom
-        ## Numbers into the closed store and dispatched extensible zero/!=); the
-        ## `:single`/`:per_field` reads preflight the array/keys LENGTH parity.
-        try
-            sch = p.capture.attr_scheme
-            if sch === :per_key
-                if inst isa Dict
-                    bad = false
-                    for (kk, vv) in inst
-                        if kk isa Symbol && _capture_value_leaf(vv)
-                            _putEval!(st, handle, Symbol(stem, :_, kk), vv, true, decided)
-                        else
-                            bad = true
-                        end
-                    end
-                    bad && _capture_floor!(st, p, :WARN_CAPTURE_UNREADABLE)
-                else
-                    _capture_floor!(st, p, :WARN_CAPTURE_UNREADABLE)
-                end
-            elseif sch === :single
-                # the NamedElements-shaped single evals row; the capability gate is STATIC
-                # on the declared type (Base.eltype on the abstract root — probes
-                # P101/P102), the array/keys parity preflighted, the minted value
-                # algebra-checked
-                T = p.capture.instance_type
-                ks = eltype(T) === Bool && hasfield(T, :array) ? keys(T) : nothing
-                arr = ks === nothing ? nothing : getfield(inst, :array)
-                if ks !== nothing && arr isa AbstractVector{Bool} && length(arr) == length(ks)
-                    set_acts = ks[arr]
-                    if length(set_acts) > 1
-                        # the shipped Visib row's refuse text is a DECLARED literal (the
-                        # "(show/hide/discard)" parenthetical is not derivable); the
-                        # generic arm names the alterant
-                        p.altName === :Visib ?
-                            error("GoMeta capture: more than one Visib value set for one component — v0's Visib ",
-                                "actions (show/hide/discard) are mutually exclusive per component ",
-                                "(see docs/public-api.md §3.4)") :
-                            error("GoMeta capture: more than one ", String(p.altName), " value set for one ",
-                                "component — a :single capture row is mutually exclusive per component ",
-                                "(see docs/public-api.md §3.4)")
-                    end
-                    if !isempty(set_acts)
-                        el = set_acts[1]
-                        _capture_value_leaf(el) ?
-                            _putEval!(st, handle, stem, el, true, decided) :
-                            _capture_floor!(st, p, :WARN_CAPTURE_UNREADABLE)
-                    end
-                else
-                    _capture_floor!(st, p, :WARN_CAPTURE_UNREADABLE)
-                end
-            elseif sch === :per_field
-                # one row per non-default MACHINE-INT field (the crx-t5 narrowing); the
-                # field read is index-exact vs the retired per-module getElement (P100);
-                # zero computed ONCE from the DECLARED element type
-                T = p.capture.instance_type
-                ET = eltype(T)
-                ks = (ET isa Type &&
-                      ET <: Union{Int8,Int16,Int32,Int64,Int128,UInt8,UInt16,UInt32,UInt64,UInt128} &&
-                      hasfield(T, :array)) ? keys(T) : nothing
-                arr = ks === nothing ? nothing : getfield(inst, :array)
-                if ks !== nothing && arr isa AbstractVector && length(arr) == length(ks)
-                    z = zero(ET)
-                    for (fi, name) in enumerate(ks)
-                        v = arr[fi]
-                        (v isa ET && v != z) &&
-                            _putEval!(st, handle, Symbol(stem, :_, name), v, true, decided)
-                    end
-                else
-                    _capture_floor!(st, p, :WARN_CAPTURE_UNREADABLE)
-                end
-            elseif sch === :per_occurrence
-                # the ungated fifth arm: one presence row per governed cell — the
-                # occurrence handle IS the locus (the value = `true` at v0.4; T11's row)
-                _putEval!(st, handle, stem, true, true, decided)
+        stem = _capture_stem(p)
+        sch = p.capture.attr_scheme
+        if sch === :per_key
+            for (kk, vv) in inst
+                _putEval!(st, handle, Symbol(stem, :_, kk), vv, true, decided)
             end
-        catch e
-            e isa InterruptException && rethrow()
-            (e isa ErrorException && startswith(e.msg, "GoMeta ")) && rethrow()
-            _capture_floor!(st, p, :WARN_CAPTURE_UNREADABLE)
-        end
-        # `multiplicity` is CARRIED, not consumed, at v0.4 (its consumer = the T11
-        # catalogue); a scheme outside the four arms with gate `nothing` publishes since stage 5's
-        # E4 (the closed-set row left) and falls through here — no row, no floor (measured:
-        # PROBES-e4-seat-notes [c]); T11's catalogue row.
-    end
-    # the FIRST floor arm: applied state whose plugin declares NO capture row — the
-    # registration is legal, its evals-invisibility must be DISCLOSED (the anti-T1 cure)
-    for (i, p) in pairs(st.registry.plugins)
-        if p.capture === nothing && haskey(st.working, Int8(i))
-            _capture_floor!(st, p, :WARN_CAPTURE_FLOOR)
+        elseif sch === :single
+            # the NamedElements-shaped single evals row: the names of the set flags, at most one set
+            set_acts = keys(p.altConstructor)[getfield(inst, :array)]
+            if length(set_acts) > 1
+                # the shipped Visib row's refuse text is a DECLARED literal (the
+                # "(show/hide/discard)" parenthetical is not derivable); the
+                # generic arm names the alterant
+                p.altName === :Visib ?
+                    error("GoMeta capture: more than one Visib value set for one component — v0's Visib ",
+                        "actions (show/hide/discard) are mutually exclusive per component ",
+                        "(see docs/public-api.md §3.4)") :
+                    error("GoMeta capture: more than one ", String(p.altName), " value set for one ",
+                        "component — a :single capture row is mutually exclusive per component ",
+                        "(see docs/public-api.md §3.4)")
+            end
+            isempty(set_acts) || _putEval!(st, handle, stem, set_acts[1], true, decided)
+        elseif sch === :per_field
+            # one row per non-default field (the field read index-exact vs the retired per-module getElement, P100);
+            # zero computed once from the store's element type
+            ks = keys(p.altConstructor)
+            arr = getfield(inst, :array)
+            z = zero(eltype(p.altConstructor))
+            for (fi, name) in enumerate(ks)
+                arr[fi] != z && _putEval!(st, handle, Symbol(stem, :_, name), arr[fi], true, decided)
+            end
+        elseif sch === :per_occurrence
+            # the ungated fifth arm: one presence row per governed cell — the
+            # occurrence handle IS the locus (the value = `true` at v0.4; T11's row)
+            _putEval!(st, handle, stem, true, true, decided)
         end
     end
     return nothing
 end
 
-"the closed CAPTURE-SIDE VALUE ALGEBRA (T5-DESIGN §1): the leaf set the evals surface renders deterministically"
-_capture_value_leaf(@nospecialize v) =
-    v isa Bool || v isa Symbol || v isa String ||
-    v isa Union{Int8,Int16,Int32,Int64,Int128,UInt8,UInt16,UInt32,UInt64,UInt128}
-
 """
     _capture_floor!(st, p, code) -> nothing
 
-IS: the typed capture-floor diagnostic — the disclosure that an Alterant's applied state minted no evals rows
-(`WARN_CAPTURE_FLOOR`: no capture row declared) or that some or all of them were not minted
-(`WARN_CAPTURE_UNREADABLE`: a live value outside the declared readable shape — under `:per_key` the admitted
-entries are still put before the floor fires).
+IS: the typed capture-floor diagnostic of the Heading lane's flush (src/absorb/absorb_meta.jl): the disclosure that a
+localOnly Alterant's applied state minted no rows (`WARN_CAPTURE_FLOOR`: no capture row declared) or that its store was
+outside the flush's readable shape (`WARN_CAPTURE_UNREADABLE`). The capture walk above calls neither arm since stage 5's
+E5 of the v0.4 build (census row 33 — the walk reads its stores bare); the flush keeps both until the Heading runs
+through the apply loop and the lane retires (R-V04B-101).
 
-DOES: The typed capture-floor diagnostic (T5-DESIGN §3; the silent skip retires). Both arms
-WARNING-severity (non-fatal — totality) and deduped ONCE PER CALL per (alterant, code)
-by scanning `st.diagnostics` — the O(n) linear-scan policy `_putEval!` already
-ratifies; ZERO state-shape change.
+DOES: pushes ONE WARNING-severity (non-fatal) diagnostic per call per (alterant, code), deduped by scanning
+`st.diagnostics` — the O(n) linear-scan policy `_putEval!` already ratifies; ZERO state-shape change.
 
-REASONING: the silent skip retires: an evals-invisible applied state, or the unreadable part of one, is
-disclosed as a non-fatal WARNING, once per call per (alterant, code), so totality holds without a throw.
-
-PURPOSE: to make the capture floor visible — an Alterant that declares no capture row, or a live value outside
-its declared readable shape — to whoever reads the diagnostics.
+PURPOSE: to make the Heading lane's floor visible to whoever reads the diagnostics, until R-V04B-101.
 """
 function _capture_floor!(st::ProcessState, p, code::Symbol)
     any(d -> d.code === code && d.context === p.altName, st.diagnostics) && return nothing
@@ -367,11 +271,9 @@ function capture_heading!(st::ProcessState, heading, stem::Symbol)
     end
     # INJECTIVITY over entries (review-found MAJOR, two seats convergent; carried
     # verbatim from the retired per-cell arm): the store dedupes per (handle, attr),
-    # so two same-level headings on one metaLine would collapse later-wins WITH a
-    # bogus conflict warning. The attr is therefore injective per (metaLine, level):
+    # so two same-level headings on one metaLine would collapse later-wins. The attr is therefore injective per (metaLine, level):
     # the FIRST entry at a level keeps the plain `head_<level>`, repeats gain a
-    # source-order ordinal (`head_<level>_2`, …) — distinct rows, no supersede, no
-    # spurious WARN_VERDICT_COLLISION, deterministic.
+    # source-order ordinal (`head_<level>_2`, …) — distinct rows, no supersede, deterministic.
     lvlseen = Dict{Union{Nothing,Int},Int}()
     for (text, lvl) in getfield(heading, :entries)   # (crx-t5 A4) getfield — the flush's concrete-Vector gate makes this iteration Base-concrete
         k = (lvlseen[lvl] = get(lvlseen, lvl, 0) + 1)
@@ -413,7 +315,7 @@ mutating it, and each returned `cell_handle` is a COPY of the store's bytes, so 
 handle never perturbs a later reader or serializer call on the same store; safe to call any number of times,
 also outside the per-call `STATE` scope (the part was fully populated by the in-`with` apply). The sort key
 stringifies `attr` and `value` for a total order over the heterogeneous `value::Any` within the CLOSED capture
-value set — the T5 capture value algebra: Bool · Symbol · the machine ints · String (`_capture_value_leaf`);
+value set the shipped Alterants mint — Bool · Symbol · the machine ints · String (the capture-side algebra that gated them left at stage 5's E5);
 the shipped four use Bool for Labels, Symbol for Visib, Int16 for Id, String for heading text;
 `cell_handle::Vector{UInt8}` sorts lexicographically. The first element is the OCCURRENCE-KEY bytes (v0.2
 CH-1); a piece's text is read from the BLS Component tree through `BLS.content`, never from a row (R-V04B-43 (1)).

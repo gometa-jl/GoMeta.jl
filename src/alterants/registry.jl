@@ -347,14 +347,10 @@ function updateMetaHierarchy(newMHIdx::Int)
         error("updateMetaHierarchy(): NUM_MH_LEVELS < newMHIdx i.e.: out of range !!!")
     end
     st.crnt_idx = newMHIdx
-    ## v0.4 T2 (r-21, W5A-DA-1): the slot pool is finite (`NUM_MH_LEVELS` slots); when every slot is
-    ## occupied `findfirst` returns `nothing` and the Int8 store below would raise a RAW MethodError —
-    ## the uncontained/silent-displacement class C1 forbids. Guarded refusal in the absorb-capacity
-    ## style (stable message; the GRAIN-COORDINATE conversion rides the diagnostics catalogue).
+    ## the slot pool is finite (`NUM_MH_LEVELS` slots); the walk allocates at most one slot per live level, so no input
+    ## exhausts it — the guarded refusal of v0.4 T2 left at stage 5's E5 of the v0.4 build (census row 71; his legacy's
+    ## bare `findfirst`): an exhausted pool is Julia's own error at the Int8 store below
     free = findfirst(isequal(false), st.mh.slot_occupied)
-    free === nothing && error("GoMeta absorb: meta-hierarchy slot pool exhausted (",
-        length(st.mh.slot_occupied), " slots, all occupied) at level ", newMHIdx,
-        " — guarded refusal; no slot is displaced or aliased (see docs/public-api.md §3.4)")
     st.mh.slots[st.crnt_idx] = free
     st.mh.slot_occupied[free] = true
 
@@ -384,30 +380,11 @@ function getAltState(
     # the apply phase constructed under that SAME index, so the lookup is internally consistent.
     local st = ctx()
     if altInd ∈ keys(st.working)
-        ## v0.4 T3 — the SAME query-seam envelope as the closed interpreter's
-        ## (`_eval_node(::CondQueryAtom)`): the query CROSSING is the cure unit, and this
-        ## is its second live call site (the opt-in modes' host-evaluated bare name).
-        ## Engine lookups hoisted; contain-all-typed; the "GoMeta "-prefix pass-through;
-        ## the `-> Bool` return guard (T3-DESIGN §2).
-        local plug = st.registry.plugins[altInd]
-        local inst = st.working[altInd]
-        local ret = try
-            plug.getAltInstance(inst, altActionName, args...)
-        catch e
-            e isa InterruptException && rethrow()
-            (e isa ErrorException && startswith(e.msg, "GoMeta ")) && rethrow()
-            error("GoMeta apply: alterant query checker threw (CB_QUERY_THROW): ",
-                String(nameof(typeof(e))), " on action ",
-                repr(first(String(altActionName), 40)),
-                " — the checker contract is total over its declared signature ",
-                "(see docs/public-api.md §3.4)")
-        end
-        ret isa Bool || error("GoMeta apply: alterant query checker returned ",
-            String(nameof(typeof(ret))), " (RES_RETURN_TYPE) on action ",
-            repr(first(String(altActionName), 40)),
-            " — the getter contract is `(instance, actionName, args...) -> Bool` ",
-            "(see docs/public-api.md §3.4)")
-        return ret
+        ## the bare call, as his legacy's (CnS.jl :267–:275): the query-seam envelope of v0.4 T3 at this second site left at
+        ## stage 5's E5 of the v0.4 build (census row 56; his §120) — the closed interpreter's site keeps its envelope
+        ## (`_eval_node(::CondQueryAtom)`, src/condition.jl); a getter's throw propagates, a non-Bool return reaches the
+        ## opt-in's host-evaluated condition as it is
+        return st.registry.plugins[altInd].getAltInstance(st.working[altInd], altActionName, args...)
     else
         return false
     end
@@ -456,15 +433,15 @@ function default_registry_builder()
         PlugIn(; altName = :labels, setMode = :accumulate, altConstructor = Dict{Symbol,Bool},
                  setAltInstance = Alterants.setLabels, getAltInstance = Alterants.checkLabels,
                  default = Declared(Symbol[]),   # R-V04B-92 (card C2, his word of 2026-10-02 (OWNER-WORDS §287; R-V04B-92: 'I do approve your recommendation: declare.' — provisional, his (ii))): Labels' declared default is the EMPTY SET — the answer's shape, a sorted Vector{Symbol}
-                 capture = CaptureDecl(Dict{Symbol,Bool}, :per_key, :many, nothing; attr_stem = :label)),
+                 capture = CaptureDecl(:per_key, nothing; attr_stem = :label)),
         PlugIn(; altName = :Visib, setMode = :mutExclusive, altConstructor = Alterants.Visib,
                  setAltInstance = Alterants.setVisib,
                  default = Declared(:show),   # R-V04B-51 (2): Visib's ONE declared default is 'show' (his lean §11; his word §180)
-                 capture = CaptureDecl(Alterants.Visib, :single, :one, nothing; attr_stem = :visib)),
+                 capture = CaptureDecl(:single, nothing; attr_stem = :visib)),
         PlugIn(; altName = :id, setMode = :mutExclusivePerField, altConstructor = Alterants.Id,
                  setAltInstance = Alterants.setId,
                  default = Declared((cell = Int16(0), parent = Int16(0), file = Int16(0))),   # R-V04B-92 (card C2): Id's declared default is the ZERO compound — every recorded field zero, in the answer's NamedTuple shape
-                 capture = CaptureDecl(Alterants.Id, :per_field, :per_field, nothing; attr_stem = :id)),
+                 capture = CaptureDecl(:per_field, nothing; attr_stem = :id)),
         # The Heading plugin. setMode `:localOnly` — the `:localOnly` set mode:
         # a localOnly alterant's value applies ONCE, WHERE IT STANDS — its
         # actions NEVER ENQUEUE into the slot tensors, so the inheritance
@@ -476,7 +453,7 @@ function default_registry_builder()
         PlugIn(; altName = :heading, setMode = :localOnly, altConstructor = Alterants.Heading,
                  setAltInstance = Alterants.setHead,
                  default = Declared(nothing),   # R-V04B-92 (card C2): Heading's declared default is NONE — no heading, delivered as `nothing` with the source `:default`
-                 capture = CaptureDecl(Alterants.Heading, :per_occurrence, :many, :localOnly; attr_stem = :head)),
+                 capture = CaptureDecl(:per_occurrence, :localOnly; attr_stem = :head)),
     ]
 
     # v0.2 registration build: THE DECLARED REGISTRATION RECORD — one ActionSpec per action,
@@ -606,11 +583,11 @@ function _mode_gate_collect!(diags::Vector{Diagnostic}, plugins::Vector{PlugIn})
         ## registrable-then-floored, and the relay's "any lane" claim narrows to
         ## exactly this protocol (the correction relayed).
         (p.capture.mode_gate !== :localOnly ||
-         (hasfield(p.capture.instance_type, :entries) &&
-          fieldtype(p.capture.instance_type, :entries) === Vector{Tuple{String,Union{Nothing,Int}}})) ||
+         (hasfield(p.altConstructor, :entries) &&                      # the record's own store type (the row's instance_type left at stage 5's E5)
+          fieldtype(p.altConstructor, :entries) === Vector{Tuple{String,Union{Nothing,Int}}})) ||
             proto(string("GoMeta registry: a :localOnly capture row on alterant ",
-                repr(p.altName), " declares instance type ",
-                _ctor_type_name(p.capture.instance_type), " without the entries",
+                repr(p.altName), " declares the store type ",
+                _ctor_type_name(p.altConstructor), " without the entries",
                 " protocol (`entries::Vector{Tuple{String,Union{Nothing,Int}}}`) — the",
                 " absorb-seam fold reads exactly that shape (the localOnly store law)"), p.altName)
     end
@@ -830,8 +807,8 @@ _slot_text(nt::NamedTuple)::String =
 _slot_text(x::NoDefault)::String = "NoDefault"
 _slot_text(x::Declared)::String =
     Base.ScopedValues.with(_IN_DATA => true) do; string("Declared", _ns(_slot_text(x.value))) end
-_slot_text(x::CaptureDecl)::String =   # v0.4 T5: the stem joins the seal (the SEVENTH re-mint's locus — without it two registries differing only in stem would seal identically)
-    string("Capture", _nsv((_type_text(x.instance_type), String(x.attr_scheme), String(x.multiplicity), _slot_text(x.mode_gate), _slot_text(x.attr_stem))))
+_slot_text(x::CaptureDecl)::String =   # v0.4 T5: the stem joins the seal (the SEVENTH re-mint's locus); the instance type and the multiplicity left the row at stage 5's E5 (the THIRTEENTH re-mint)
+    string("Capture", _nsv((String(x.attr_scheme), _slot_text(x.mode_gate), _slot_text(x.attr_stem))))
 # (cure batch 4) NO opaque fallback: a value of a type without an encoder is UNENCODABLE — refused
 # at validation as `REG_PROTOCOL`; a value type a later cure admits gets its own encoder then.
 _slot_text(x)::String = throw(_UnencodableSlot(typeof(x)))

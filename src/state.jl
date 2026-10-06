@@ -119,49 +119,41 @@ const fallBackMHIdx = maxDepthMH + 3   # 12 == NUM_MH_LEVELS — the fallBack le
 ## Slot (2): the capture declaration — HOW an Alterant's applied value becomes evals rows.
 const _CAPTURE_MODE_GATES = (nothing, :localOnly)   # v0.4 T5: the closed gate set (the scheme and multiplicity sets left with their enum checks at stage 5's E4)
 """
-    CaptureDecl(instance_type, attr_scheme, multiplicity, mode_gate[, attr_stem]; attr_stem = nothing)
+    CaptureDecl(attr_scheme, mode_gate[, attr_stem]; attr_stem = nothing)
 
 IS: the declared capture row of an Alterant — slot (2) of its registration record: HOW the Alterant's applied
 value becomes evals rows.
 
-DOES: The declared capture row (CONSUMED by the capture walk since v0.4 T5 — the registration-
-driven re-home of the retired alt-name ladder): `instance_type` = the Alterant instance
-type the walk keys on (the identity law that required it `===` the record's own `altConstructor` left at
-stage 5's E4; a mismatch floors `WARN_CAPTURE_UNREADABLE` at the walk);
-`attr_scheme` ∈ `(:per_key, :single, :per_field, :per_occurrence)` = how attr names mint
-(`<stem>_<key>` per admitted Dict entry · one `<stem>` row for a NamedElements-shaped
-single evals row · `<stem>_<field>` per non-default numeric field · one presence row per
-occurrence handle); `multiplicity` ∈ `(:many, :one, :per_field)` (CARRIED at v0.4 —
-its consumer is the T11 catalogue); `mode_gate` ∈ `(nothing, :localOnly)` — `:localOnly`
-delivers at the absorb seam keyed to the carrying Component's occurrence handle (the metaBlock
-a whole-line metaLine forms — R-V04B-50; the Segment of an inline one), and tier 1
-enforces the BIDIRECTIONAL coherence with the record's `setMode`; `attr_stem` = the
-declared attr name stem (`nothing` ⇒ the derived fallback `lowercase(String(altName))`
-— the shipped four DECLARE theirs explicitly; byte-compatibility never rides a
-derivation). A PLAIN 5-field struct — NO inner constructor that changes the positional
-signature (the domain copier rebuilds slot structs POSITIONALLY over all fields at the
-exact concrete type, src/alterants/registry.jl; an inner ctor of another arity would
-break the rebuild of `DEFAULT_REGISTRY`) — with ONE outer compatibility method (the
-PlugIn precedent below).
+DOES: The declared capture row (CONSUMED by the capture walk since v0.4 T5 — the registration-driven re-home of the
+retired alt-name ladder): `attr_scheme` ∈ `(:per_key, :single, :per_field, :per_occurrence)` = how attr names mint
+(`<stem>_<key>` per Dict entry · one `<stem>` row for a NamedElements-shaped single evals row · `<stem>_<field>` per
+non-default numeric field · one presence row per occurrence handle); `mode_gate` ∈ `(nothing, :localOnly)` —
+`:localOnly` delivers at the absorb seam keyed to the carrying Component's occurrence handle (the metaBlock a
+whole-line metaLine forms — R-V04B-50; the Segment of an inline one), and `validate` enforces the BIDIRECTIONAL
+coherence with the record's `setMode` (the mode-gate laws, kept until R-V04B-101); `attr_stem` = the declared attr name
+stem (`nothing` ⇒ the derived fallback `lowercase(String(altName))`, `_capture_stem` below — the shipped four DECLARE
+theirs explicitly). The walk reads the store's shape from the record's own `altConstructor` — the row's former `instance_type` and `multiplicity` fields left at stage 5's E5
+of the v0.4 build (census row 34; his §317 mark): the one restated `altConstructor`, the other was read by nothing. A PLAIN
+3-field struct — NO inner constructor that changes the positional
+signature (the domain copier rebuilds slot structs POSITIONALLY over all fields at the exact concrete type,
+src/alterants/registry.jl) — with ONE outer compatibility method (the PlugIn precedent below).
 
-REASONING: the capture walk is registration-driven (v0.4 T5) — keyed on the declared instance type, never an
-alt-name ladder — and the struct is plain (no inner constructor) because the domain copier rebuilds
-slot structs positionally.
+REASONING: the capture walk is registration-driven (v0.4 T5) — never an alt-name ladder — and the struct is plain
+(no inner constructor) because the domain copier rebuilds slot structs positionally.
 
-PURPOSE: the row `captureEvals!` reads to mint an Alterant's evals rows, and the row tier 1 validates for
+PURPOSE: the row `captureEvals!` reads to mint an Alterant's evals rows, and the row `validate` checks for
 coherence with the record's `setMode`.
 """
 struct CaptureDecl
-    instance_type::Type
     attr_scheme::Symbol
-    multiplicity::Symbol
     mode_gate::Union{Nothing,Symbol}
     attr_stem::Union{Nothing,Symbol}    # v0.4 T5 (additive; LAST — the positional law)
 end
-CaptureDecl(instance_type::Type, attr_scheme::Symbol, multiplicity::Symbol,
-            mode_gate::Union{Nothing,Symbol};
-            attr_stem::Union{Nothing,Symbol} = nothing) =
-    CaptureDecl(instance_type, attr_scheme, multiplicity, mode_gate, attr_stem)
+CaptureDecl(attr_scheme::Symbol, mode_gate::Union{Nothing,Symbol}; attr_stem::Union{Nothing,Symbol} = nothing) =
+    CaptureDecl(attr_scheme, mode_gate, attr_stem)
+"The attr-name stem a plugin's rows mint under: the declared `attr_stem`, or the derived fallback `lowercase(String(altName))` —
+ONE derivation for the capture walk, the answer function, the scan and the Heading lane's flush (stage 5's E5: the four copies folded)."
+_capture_stem(p) = p.capture.attr_stem === nothing ? Symbol(lowercase(String(p.altName))) : p.capture.attr_stem
 
 ## Slot (3): the presence-typed explicit default — undeclared is a TYPE, never a sentinel value. Since stage 2's
 ## commit 3 the slot is the ALTERANT's (one default per Alterant, declared as data — R-V04B-51 (1)–(2); R-V04B-55 (1));

@@ -1,6 +1,7 @@
 # seam_envelope_tests.jl — v0.4 T3: the SEAMS witnesses (T3-DESIGN §8's fixture table).
 #
-# IS:   the T3 acceptance witnesses — the symmetric query-seam envelope (both call sites),
+# IS:   the T3 acceptance witnesses — the query-seam envelope (the closed interpreter's site; the `getAltState` site's
+#       envelope left at stage 5's E5 of the v0.4 build — census row 56),
 #       the consumed handover validation (with the "GoMeta "-prefix pass-through), the three-site
 #       ctor-mint envelope (also the absent zero-arg method, since the eager DEP_MISSING gate left at
 #       stage 5's E4 of the v0.4 build) and the post-dispatch store-identity
@@ -75,24 +76,6 @@ end
         e = _drive(_QDOC, R)
         @test e isa ErrorException && occursin("RES_RETURN_TYPE", e.msg)
         @test occursin("String", e.msg)                    # the class rendered via nameof
-    end
-
-    @testset "the query envelope — site 2 (CnS.getAltState, the internals-drive precedent)" begin
-        Rt = GM.publish(_labels_builder(; getter = (a...) -> error("boom-q2")))
-        ps = GM.BLS.setUpToProcessFromBytes(Vector{UInt8}(codeunits("x = 1\n")))
-        st = GM.init_state(ps, GM.GoMetaConfig(), Rt)
-        st.working[Int8(1)] = Dict{Symbol,Bool}()
-        e2 = Base.ScopedValues.with(GM.STATE => st) do
-            try GM.getAltState(Int8(1), Symbol(":"), :x); nothing catch err; err end
-        end
-        @test e2 isa ErrorException && occursin("CB_QUERY_THROW", e2.msg)
-        Rn = GM.publish(_labels_builder(; getter = (a...) -> 7))
-        stn = GM.init_state(ps, GM.GoMetaConfig(), Rn)
-        stn.working[Int8(1)] = Dict{Symbol,Bool}()
-        e3 = Base.ScopedValues.with(GM.STATE => stn) do
-            try GM.getAltState(Int8(1), Symbol(":"), :x); nothing catch err; err end
-        end
-        @test e3 isa ErrorException && occursin("RES_RETURN_TYPE", e3.msg)
     end
 
     @testset "the handover validation CONSUMED (false · throw · non-Bool · the ratified pass-through)" begin

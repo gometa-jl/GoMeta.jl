@@ -65,7 +65,7 @@ end
         b.plugins[1] = GM.PlugIn(; altName = :labels, setMode = :accumulate,
             altConstructor = Dict{Symbol,Bool},
             setAltInstance = GM.Alterants.setLabels, getAltInstance = GM.Alterants.checkLabels,
-            capture = GM.CaptureDecl(Dict{Symbol,Bool}, :per_key, :many, nothing),
+            capture = GM.CaptureDecl(:per_key, nothing),
             # stage 2's commit 3-ii: the default slot is the ALTERANT's — the value-domain carrier (formerly action 1's) rides plugin 1
             default = GM.Declared(Any[Int8(3), 1.5, Float32(2.5), Float16(1.0), _nan64,
                                       "str", :sym, true, Int128(7), UInt8(2),
@@ -82,7 +82,7 @@ end
         # nested in the data since stage 5's E10 of the v0.4 build (the `EffectRow` that carried the case left with its slot)
         b.plugins[2] = GM.PlugIn(; altName = :Visib, setMode = :mutExclusive, altConstructor = GM.Alterants.Visib,
             setAltInstance = GM.Alterants.setVisib,
-            capture = GM.CaptureDecl(GM.Alterants.Visib, :single, :one, nothing; attr_stem = :visib),
+            capture = GM.CaptureDecl(:single, nothing; attr_stem = :visib),
             default = GM.Declared(GM.Declared(Dict{Any,Any}(Int16(2) => "pv"))))
         GM.register!(b,
             GM.PlugIn(Symbol("prop"), :accumulate, Dict{Symbol,Bool}, _closure_ref, nothing, nothing),
@@ -182,7 +182,7 @@ end
     function _single_substitute(pT, pf, v)
         pT === GM.PlugIn && pf === :getAltInstance && return GM.Alterants.checkLabels
         pT === GM.PlugIn && pf === :precedencesTuple && return ntuple(i -> Symbol("p", i), GM.NUM_MH_LEVELS)
-        pT === GM.PlugIn && pf === :capture && return GM.CaptureDecl(Dict{Symbol,Bool}, :single, :one, nothing)
+        pT === GM.PlugIn && pf === :capture && return GM.CaptureDecl(:single, nothing)
         pT === GM.ActionSpec && pf === :validate && return _swap_fn_a
         pT === GM.ActionSpec && pf === :keyed_slot && return (:ka, :kb)
         pT === GM.PlugIn && pf === :default && return GM.Declared(1)   # stage 2's commit 3-ii: the slot is the Alterant's
@@ -435,8 +435,8 @@ end
     end
     let R = GM.publish(_mk_prop_builder())                       # (6) slot struct rebuilt
         cd = R.plugins[1].capture
-        _set_at!(R, Any[:plugins, 1, :capture],                  # v0.4 T5: the 5th field carried (B-3 — a dropped field made this a NON-faithful rebuild)
-                 GM.CaptureDecl(cd.instance_type, cd.attr_scheme, cd.multiplicity, cd.mode_gate, cd.attr_stem))
+        _set_at!(R, Any[:plugins, 1, :capture],                  # every field carried (B-3 — a dropped field made this a NON-faithful rebuild); three since stage 5's E5
+                 GM.CaptureDecl(cd.attr_scheme, cd.mode_gate, cd.attr_stem))
         @test isempty(GM._registry_door_check(R))
     end
     # stage 2's commit 3-ii: the default slot is the ALTERANT's — `_with_default(b, i, v)` declares `v` on the plugin OWNING action i
@@ -476,8 +476,8 @@ end
     # (v0.4 T3 — the case-(iv) migration; RE-HOMED at T5: `SubString{String}` and its
     # swap target `String` are the ONLY named-case types without a zero-argument method,
     # so under the eager DEP_MISSING gate of the time (left at stage 5's E4) case (iv)'s TYPE half could not ride the ctor
-    # slot. T3 parked it on `capture.instance_type` while that slot was CARRIED; T5
-    # CONSUMES the slot and its identity law (`instance_type === altConstructor`)
+    # slot. T3 parked it on the capture row's former `instance_type` field (left at stage 5's E5) while that slot was CARRIED; T5
+    # CONSUMED the slot (the identity law left at stage 5's E4, the field itself at E5) — the slot
     # correctly refuses the old vehicle — the Type half now rides a DECLARED default
     # VALUE (a `Type` is an admitted domain leaf, compared `===` at the door — the same
     # Type-leaf compare the case exists to pin); cases (i)-(iii) keep the ctor slot.)

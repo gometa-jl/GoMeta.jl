@@ -369,7 +369,6 @@ end
         @test string(rp.status) == "PROCESS_OK"
         hp = _heads(rp)
         @test (:head_2, "A") in hp && (:head_2_2, "B") in hp
-        @test !any(d -> d.code === :WARN_VERDICT_COLLISION, rp.diagnostics)
         # CONSCIOUS PIN FLIP (the query-atom wall — panel-found MAJOR, probe-verified):
         # a label QUERY in a heading condition formerly evaluated against the stale
         # apply residue (order-dependent wrong verdicts: the identical condition

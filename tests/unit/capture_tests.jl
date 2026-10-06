@@ -1,8 +1,7 @@
 # capture_tests.jl — v0.4 T5: the CAPTURE RE-HOME witnesses (T5-DESIGN v2 §6).
 #
 # IS:   the T5 acceptance rows — the registration-driven walk mints for a CONFORMING
-#       mock (the sadd2 anti-T1 cure), the typed capture floor's two arms, the scheme
-#       conformance gates, the value algebra, the per-plugin localOnly flush, the ctor
+#       mock (the sadd2 anti-T1 cure), the per-plugin localOnly flush, the ctor
 #       triple, the mode-gate laws (coherence · scheme · store; the identity and stem-clash laws left
 #       at stage 5's E4 of the v0.4 build — the measured consequences pinned at [9] and [11]), and the `:per_field` positive
 #       fixture the corpus never reaches.
@@ -19,7 +18,10 @@
 #       store law; + 4 in record_schema_tests (the T5 3 + the B8 seal pin) —
 #       4749 + 29 + 4 = 4782, every movement declared; at stage 5's E4 of the v0.4 build the 29 here
 #       stand — [9]'s identity and stem-clash arms and [11]'s A6 re-cut to the measured consequences,
-#       one assert each — and record_schema_tests' shape-law testset (6 asserts) left with its subject).
+#       one assert each — and record_schema_tests' shape-law testset (6 asserts) left with its subject;
+#       at stage 5's E5 20 stand: the floor, gate and algebra witnesses — [1]'s algebra drive, [2]'s floor assert, [3] whole,
+#       [8]'s field assert, [9]'s instance-type arm, [11]'s Float and keys-less mocks — 9 asserts, left with their subjects,
+#       census rows 33 and 34).
 
 using Test
 import GoMeta as GM
@@ -27,27 +29,8 @@ import GoMeta as GM
 @eval module _CapM
     zset(d::Dict{Symbol,Bool}, a::Symbol, r::Symbol...) = (for x in r; d[x] = true; end; nothing)
     yset(d::Dict{Symbol,Bool}, a::Symbol, r::Symbol...) = (for x in r; d[x] = true; end; nothing)
-    vset(v::Vector{Symbol}, a::Symbol, r::Symbol...) = (append!(v, r); nothing)
     badset(d::Dict{Symbol,Bool}, a::Symbol, r::Symbol...) = (d[a] = true; nothing)
-    fset(d::Dict{Symbol,Any}, a::Symbol, r::Symbol...) = (for x in r; d[x] = 1.5; end; nothing)   # the out-of-algebra value
 end
-
-# the [11] fixtures: a Float64-array store (the machine-int narrowing) and a
-# keys-less Bool store (the arm envelope) — both registrable, both must FLOOR
-@eval module _CapF
-    mutable struct FStore
-        array::Vector{Float64}
-        FStore() = new([0.0, 0.0])
-    end
-    nset(s::FStore, a::Symbol, r::Symbol...) = (s.array[1] = 1.5; nothing)
-    mutable struct KStore
-        array::Vector{Bool}
-        KStore() = new([false])
-    end
-    kset(s::KStore, a::Symbol, r::Symbol...) = (s.array[1] = true; nothing)
-end
-Base.eltype(::Type{_CapF.FStore}) = Float64
-Base.eltype(::Type{_CapF.KStore}) = Bool     # eltype passes; keys(KStore) does NOT exist
 
 @testset "capture (v0.4 T5)" begin
 
@@ -56,7 +39,7 @@ Base.eltype(::Type{_CapF.KStore}) = Bool     # eltype passes; keys(KStore) does 
         kinds = Symbol[], kind_sources = Symbol[], vararg_kind = :symbol,
         return_type = Nothing, effect = :set, queryable = false,
         applicability = :context_free, phase = :apply, grammar = true)
-    function _mockb(; capture = GM.CaptureDecl(Dict{Symbol,Bool}, :per_key, :many, nothing; attr_stem = :zm),
+    function _mockb(; capture = GM.CaptureDecl(:per_key, nothing; attr_stem = :zm),
                       setter = _CapM.zset, store = Dict{Symbol,Bool}, name = :zmark)
         b = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
         pi = GM.next_plugin_index(b)
@@ -79,46 +62,14 @@ Base.eltype(::Type{_CapF.KStore}) = Bool     # eltype passes; keys(KStore) does 
         @test r.status === GM.PROCESS_OK && length(zrows) == 1     # exactly ONE mock row
         @test zrows[1][2] === :zm_aa                               # attr = stem + key
         @test zrows[1][3] === true && zrows[1][4] === true         # value + polarity faithful
-        # the value algebra END-TO-END: a store that CAN carry an out-of-set value
-        # (Dict{Symbol,Any}; the setter puts 1.5) floors typed and mints NO row
-        Ra = GM.publish(_mockb(; capture = GM.CaptureDecl(Dict{Symbol,Any}, :per_key, :many, nothing; attr_stem = :zx),
-                                 setter = _CapM.fset, store = Dict{Symbol,Any}, name = :xmark))
-        ra = GM.goMeta(_doc("x = 1\n#~ xmark(aa)\n\ny = 2\n"); registry = Ra)
-        @test ra.status === GM.PROCESS_OK &&
-              any(d -> d.code === :WARN_CAPTURE_UNREADABLE, ra.diagnostics) &&
-              !any(t -> startswith(String(t[2]), "zx"), GM.readAltValuesEvals(ra.altValues_evals))
     end
 
-    @testset "[2] the capture floor's FIRST arm (no capture row: disclosed, once, zero rows)" begin
+    @testset "[2] no capture row: zero rows, PROCESS_OK (the floor warning left at stage 5's E5)" begin
         b = _mockb(; capture = nothing)
         R = GM.publish(b)
         r = GM.goMeta(_doc("x = 1\n#~ zmark(aa)\n\ny = 2\n#~ zmark(bb)\n\nz = 3\n"); registry = R)
         @test r.status === GM.PROCESS_OK
-        floors = [d for d in r.diagnostics if d.code === :WARN_CAPTURE_FLOOR]
-        @test length(floors) == 1 && floors[1].context === :zmock  # ONCE per call, not per cell
         @test !any(t -> startswith(String(t[2]), "zm"), GM.readAltValuesEvals(r.altValues_evals))
-    end
-
-    @testset "[3] the SECOND arm — the conformance gates + the value algebra" begin
-        # a :per_key row over a non-Dict store (Vector{Symbol} — the identity law holds:
-        # instance_type === altConstructor === Vector{Symbol}; the SHAPE gate refuses)
-        Rv = GM.publish(_mockb(; capture = GM.CaptureDecl(Vector{Symbol}, :per_key, :many, nothing; attr_stem = :zv),
-                                 setter = _CapM.vset, store = Vector{Symbol}, name = :vmark))
-        rv = GM.goMeta(_doc("x = 1\n#~ vmark(aa)\n\ny = 2\n"); registry = Rv)
-        @test rv.status === GM.PROCESS_OK &&
-              any(d -> d.code === :WARN_CAPTURE_UNREADABLE && d.context === :zmock, rv.diagnostics)
-        # a :per_field row over a non-Number-eltype store: the capability gate floors it
-        Rf = GM.publish(_mockb(; capture = GM.CaptureDecl(Dict{Symbol,Bool}, :per_field, :per_field, nothing; attr_stem = :zf)))
-        rf = GM.goMeta(_doc("x = 1\n#~ zmark(aa)\n\ny = 2\n"); registry = Rf)
-        @test rf.status === GM.PROCESS_OK &&
-              any(d -> d.code === :WARN_CAPTURE_UNREADABLE, rf.diagnostics) &&
-              !any(t -> startswith(String(t[2]), "zf"), GM.readAltValuesEvals(rf.altValues_evals))
-        # the VALUE ALGEBRA: an admitted Dict whose VALUES are in-set mints; the
-        # out-of-set case is structurally unreachable from a `Dict{Symbol,Bool}` store,
-        # so the algebra is pinned DIRECTLY on the predicate
-        @test GM._capture_value_leaf(true) && GM._capture_value_leaf(:s) &&
-              GM._capture_value_leaf("t") && GM._capture_value_leaf(Int16(3)) &&
-              !GM._capture_value_leaf(1.5) && !GM._capture_value_leaf([1])
     end
 
     @testset "[4] the :per_field POSITIVE fixture (the corpus-inert Id arm)" begin
@@ -139,7 +90,7 @@ Base.eltype(::Type{_CapF.KStore}) = Bool     # eltype passes; keys(KStore) does 
     end
 
     @testset "[6] the ungated :per_occurrence fifth arm (one presence row per governed cell)" begin
-        R = GM.publish(_mockb(; capture = GM.CaptureDecl(Dict{Symbol,Bool}, :per_occurrence, :many, nothing; attr_stem = :zp)))
+        R = GM.publish(_mockb(; capture = GM.CaptureDecl(:per_occurrence, nothing; attr_stem = :zp)))
         r = GM.goMeta(_doc("x = 1\n#~ zmark(aa)\n\ny = 2\n"); registry = R)
         prow = [t for t in GM.readAltValuesEvals(r.altValues_evals) if t[2] === :zp]
         @test length(prow) == 1 && prow[1][3] === true
@@ -153,7 +104,7 @@ Base.eltype(::Type{_CapF.KStore}) = Bool     # eltype passes; keys(KStore) does 
         GM.register!(b,
             GM.PlugIn(; altName = :zhead, setMode = :localOnly,
                 altConstructor = GM.Alterants.Heading, setAltInstance = GM.Alterants.setHead,
-                capture = GM.CaptureDecl(GM.Alterants.Heading, :per_occurrence, :many, :localOnly; attr_stem = :zh)),
+                capture = GM.CaptureDecl(:per_occurrence, :localOnly; attr_stem = :zh)),
             GM.ActionSpec(; name = :zhd, spelling = :identifier, plugin = pi,
                 overloads = GM.DEFAULT_REGISTRY.action_specs[GM.DEFAULT_REGISTRY.spec_index[:head]].overloads,
                 accepts_string_slot = 1))
@@ -174,36 +125,28 @@ Base.eltype(::Type{_CapF.KStore}) = Bool     # eltype passes; keys(KStore) does 
     end
 
     @testset "[8] the CaptureDecl ctor triple" begin
-        c4 = GM.CaptureDecl(Dict{Symbol,Bool}, :per_key, :many, nothing)
-        c5 = GM.CaptureDecl(Dict{Symbol,Bool}, :per_key, :many, nothing, :zz)
-        ck = GM.CaptureDecl(Dict{Symbol,Bool}, :per_key, :many, nothing; attr_stem = :zz)
+        c4 = GM.CaptureDecl(:per_key, nothing)
+        c5 = GM.CaptureDecl(:per_key, nothing, :zz)
+        ck = GM.CaptureDecl(:per_key, nothing; attr_stem = :zz)
         @test c4.attr_stem === nothing
         @test c5.attr_stem === :zz && ck.attr_stem === :zz
-        @test c5.instance_type === Dict{Symbol,Bool} && ck.multiplicity === :many
     end
 
     @testset "[9] the mode-gate coherence law (the identity and stem-clash laws left at stage 5's E4)" begin
         # gate/setMode incoherence: an :accumulate record gating :localOnly refuses
-        bi = _mockb(; capture = GM.CaptureDecl(Dict{Symbol,Bool}, :per_key, :many, :localOnly; attr_stem = :zi))
+        bi = _mockb(; capture = GM.CaptureDecl(:per_key, :localOnly; attr_stem = :zi))
         @test any(x -> x.code === :REG_PROTOCOL && occursin("INCOHERENT", x.message), GM.validate(bi))
-        # instance_type ≠ altConstructor PUBLISHES since E4; the walk's scheme gate floors it typed
-        # (measured: PROBES-e4-capture-laws_stage1_on-1c9d013f.txt [a])
-        bt = _mockb(; capture = GM.CaptureDecl(Vector{Symbol}, :per_key, :many, nothing; attr_stem = :zt))
-        rt = GM.goMeta(_doc("x = 1\n#~ zmark(aa)\n\ny = 2\n"); registry = GM.publish(bt))
-        @test rt.status === GM.PROCESS_OK &&
-              any(d -> d.code === :WARN_CAPTURE_UNREADABLE && d.context === :zmock, rt.diagnostics) &&
-              !any(t -> startswith(String(t[2]), "zt"), GM.readAltValuesEvals(rt.altValues_evals))
         # a mock declaring the shipped :label stem PUBLISHES since E4; on ONE cell the two plugins' same-attr
         # rows collapse to one `label_label1` row — the silent cross-plugin supersede the stem-clash law refused
         # (measured: [b]; full structural namespacing is T11's row)
-        bc = _mockb(; capture = GM.CaptureDecl(Dict{Symbol,Bool}, :per_key, :many, nothing; attr_stem = :label))
+        bc = _mockb(; capture = GM.CaptureDecl(:per_key, nothing; attr_stem = :label))
         rc = GM.goMeta(_doc("x = 1\n#~ :label1 zmark(label1)\n\ny = 2\n"); registry = GM.publish(bc))
         @test rc.status === GM.PROCESS_OK &&
               [t[2] for t in GM.readAltValuesEvals(rc.altValues_evals)] == [:label_label1]
     end
 
     @testset "[10] the derived-fallback stem (a mock with attr_stem = nothing)" begin
-        R = GM.publish(_mockb(; capture = GM.CaptureDecl(Dict{Symbol,Bool}, :per_key, :many, nothing)))
+        R = GM.publish(_mockb(; capture = GM.CaptureDecl(:per_key, nothing)))
         r = GM.goMeta(_doc("x = 1\n#~ zmark(aa)\n\ny = 2\n"); registry = R)
         @test any(t -> t[2] === :zmock_aa, GM.readAltValuesEvals(r.altValues_evals))   # lowercase(String(:zmock)) = "zmock"
     end
@@ -223,7 +166,7 @@ Base.eltype(::Type{_CapF.KStore}) = Bool     # eltype passes; keys(KStore) does 
         @test r1.status === GM.PROCESS_OK &&
               any(d -> d.code === :WARN_CAPTURE_FLOOR && d.context === :znone, r1.diagnostics)
         # (A5) the localOnly scheme law: a gated row declaring :per_key refuses at tier 1
-        bs = _mockb(; capture = GM.CaptureDecl(Dict{Symbol,Bool}, :per_key, :many, :localOnly; attr_stem = :zs))
+        bs = _mockb(; capture = GM.CaptureDecl(:per_key, :localOnly; attr_stem = :zs))
         @test any(x -> x.code === :REG_PROTOCOL && occursin("localOnly scheme law", x.message), GM.validate(bs))
         # (A4/C3) the localOnly store law: a gated :per_occurrence row on an
         # entries-less instance type refuses at tier 1 (STATIC — the fieldtype check)
@@ -232,7 +175,7 @@ Base.eltype(::Type{_CapF.KStore}) = Bool     # eltype passes; keys(KStore) does 
         GM.register!(b4,
             GM.PlugIn(; altName = :zle, setMode = :localOnly,
                 altConstructor = Dict{Symbol,Bool}, setAltInstance = _CapM.badset,
-                capture = GM.CaptureDecl(Dict{Symbol,Bool}, :per_occurrence, :many, :localOnly; attr_stem = :ze)),
+                capture = GM.CaptureDecl(:per_occurrence, :localOnly; attr_stem = :ze)),
             GM.ActionSpec(; name = :zle1, spelling = :identifier, plugin = p4,
                 overloads = [GM.ActionOverload(; sig_types = Type[Dict{Symbol,Bool}, Symbol],
                     kinds = Symbol[], kind_sources = Symbol[], vararg_kind = :symbol,
@@ -241,25 +184,9 @@ Base.eltype(::Type{_CapF.KStore}) = Bool     # eltype passes; keys(KStore) does 
         @test any(x -> x.code === :REG_PROTOCOL && occursin("localOnly store law", x.message), GM.validate(b4))
         # (A6; re-cut at stage 5's E4 — the stem-clash law left) :label_x beside the shipped :label family
         # PUBLISHES; distinct keys mint distinct rows (measured: PROBES-e4-capture-laws [b2] — label_label1 · label_x_aa)
-        bp = _mockb(; capture = GM.CaptureDecl(Dict{Symbol,Bool}, :per_key, :many, nothing; attr_stem = :label_x))
+        bp = _mockb(; capture = GM.CaptureDecl(:per_key, nothing; attr_stem = :label_x))
         rp = GM.goMeta(_doc("x = 1\n#~ :label1 zmark(aa)\n\ny = 2\n"); registry = GM.publish(bp))
         @test rp.status === GM.PROCESS_OK &&
               sort([t[2] for t in GM.readAltValuesEvals(rp.altValues_evals)]) == [:label_label1, :label_x_aa]
-        # (A2/B1 narrowing) a Float-eltype :per_field mock floors typed (the machine-int
-        # gate) — a foreign @namedElement Float64 store registers and floors, no row
-        Rn = GM.publish(_mockb(; capture = GM.CaptureDecl(_CapF.FStore, :per_field, :per_field, nothing; attr_stem = :zn),
-                                 setter = _CapF.nset, store = _CapF.FStore, name = :nmark))
-        rn = GM.goMeta(_doc("x = 1\n#~ nmark(aa)\n\ny = 2\n"); registry = Rn)
-        @test rn.status === GM.PROCESS_OK &&
-              any(d -> d.code === :WARN_CAPTURE_UNREADABLE, rn.diagnostics) &&
-              !any(t -> startswith(String(t[2]), "zn"), GM.readAltValuesEvals(rn.altValues_evals))
-        # (the arm envelope) a custom :single-gated type whose keys(T) is MISSING
-        # (eltype pirated to Bool, an :array field, no keys method): floors typed,
-        # never a raw MethodError
-        Rk = GM.publish(_mockb(; capture = GM.CaptureDecl(_CapF.KStore, :single, :one, nothing; attr_stem = :zk),
-                                 setter = _CapF.kset, store = _CapF.KStore, name = :kmark))
-        rk = GM.goMeta(_doc("x = 1\n#~ kmark(aa)\n\ny = 2\n"); registry = Rk)
-        @test rk.status === GM.PROCESS_OK &&
-              any(d -> d.code === :WARN_CAPTURE_UNREADABLE, rk.diagnostics)
     end
 end

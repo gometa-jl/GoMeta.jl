@@ -12,7 +12,7 @@
 #       its current render equals the NEW pinned bytes, and its tree golden is held
 #       to the same two-leg check. (4) net_new_surface: the serialized annotations golden (sha
 #       pre-check + byte-compare), a PROCESS_OK clean-run guard, determinism across two fresh
-#       runs, sorted order, all-true verdict polarity, and no WARN_VERDICT_COLLISION diagnostic; the golden's
+#       runs, sorted order, all-true verdict polarity (the collision-warning assert left at stage 5's E5 of the v0.4 build with the warning); the golden's
 #       bytes PRODUCED by the test-layer deriver (TestSupport.derive_annotations_golden — the fifth column through the
 #       BLS Component tree and the door's `BLS.content`; stage 2's commit 8, R-V04B-43 (3)); the Engine's five-column
 #       producer LEFT at commit 9b — the byte-compare against the pinned files below holds the twelve unmoved.
@@ -167,11 +167,6 @@ end
         @test ann2 == ann                                                # determinism (independent fresh run)
         @test issorted(ann; by = t -> (t[1], string(t[2]), string(t[3])))
         @test all(t -> t[4] === true, ann)                               # v0: every applied verdict polarity true
-        # TOTALITY (real, not the length(ann)==length(records) 1:1-sortperm tautology): the EXACT verdict
-        # set+count is pinned by the golden byte-compare above; here we assert totality is not silently degraded
-        # by a value-CHANGING content-addressed merge (which would drop a distinct cell's verdict) — no such
-        # WARN_VERDICT_COLLISION diagnostic fired during capture.
-        @test isempty(filter(d -> d.code === :WARN_VERDICT_COLLISION, res.diagnostics))
     end
 
     @testset "golden-oracle-depth (≥3 oracle-grounded byte_identical fixtures)" begin

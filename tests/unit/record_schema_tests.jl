@@ -32,15 +32,15 @@ import GoMeta as GM
     end
 
     @testset "keyword shapes round-trip every slot" begin
-        cap = GM.CaptureDecl(Dict{Symbol,Bool}, :per_key, :many, nothing)
+        cap = GM.CaptureDecl(:per_key, nothing)
         # v0.4 T5 (T5-DESIGN §6, the +3 declared movements): the attr_stem default
-        # admits through the 4-positional outer method; the 5-positional round-trips;
+        # admits through the 2-positional outer method; the 3-positional round-trips (stage 5's E5: the row's 3 fields);
         # the stem participates in the SEAL fold (two rows differing only in stem
         # encode differently — the SEVENTH re-mint's mechanism).
         @test cap.attr_stem === nothing
-        @test GM.CaptureDecl(Dict{Symbol,Bool}, :per_key, :many, nothing, :st5).attr_stem === :st5
+        @test GM.CaptureDecl(:per_key, nothing, :st5).attr_stem === :st5
         @test GM._slot_text(cap) !=
-              GM._slot_text(GM.CaptureDecl(Dict{Symbol,Bool}, :per_key, :many, nothing, :st5))
+              GM._slot_text(GM.CaptureDecl(:per_key, nothing, :st5))
         # (the crx-t5 B8 strengthening) SEAL participation proper: two published
         # registries differing ONLY in a capture stem carry different seals — the fold
         # provably covers the slot (encoder inequality alone would stay green if the
@@ -49,7 +49,7 @@ import GoMeta as GM
             b = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
             b.plugins[2] = GM.PlugIn(; altName = :Visib, setMode = :mutExclusive,
                 altConstructor = GM.Alterants.Visib, setAltInstance = GM.Alterants.setVisib,
-                capture = GM.CaptureDecl(GM.Alterants.Visib, :single, :one, nothing; attr_stem = s))
+                capture = GM.CaptureDecl(:single, nothing; attr_stem = s))
             GM.publish(b)
         end
         @test _bstem(:sa1).seal != _bstem(:sa2).seal

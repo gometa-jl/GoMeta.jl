@@ -725,13 +725,11 @@ function absorbMeta(
         ## entries protocol is the CONCRETE type via getfield — `hasfield` alone admitted
         ## a wrong-shaped `entries` that threw inside `capture_heading!`, and property
         ## syntax dispatched an extensible getproperty. The Vector type makes iteration
-        ## Base-concrete and every text a String — inside the capture value algebra.
+        ## Base-concrete and every text a String.
         elseif cap.mode_gate === :localOnly && cap.attr_scheme === :per_occurrence &&
-               inst isa cap.instance_type &&
+               inst isa p.altConstructor &&                       # the record's own store type (the row's instance_type left at stage 5's E5)
                getfield(inst, :entries) isa Vector{Tuple{String,Union{Nothing,Int}}}
-            stem = cap.attr_stem === nothing ?
-                Symbol(lowercase(String(p.altName))) : cap.attr_stem
-            GMX.capture_heading!(st, inst, stem)
+            GMX.capture_heading!(st, inst, GMX._capture_stem(p))
         else
             GMX._capture_floor!(st, p, :WARN_CAPTURE_UNREADABLE)
         end

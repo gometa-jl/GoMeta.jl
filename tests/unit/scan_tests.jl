@@ -58,7 +58,7 @@ _sc_id(c) = _SC_BLS.getElement(c.cmpntNamedInt, :idComponent)
             default = p.default, capture = cap)
         k = findfirst(p -> p.altName === :Visib, GM.DEFAULT_REGISTRY.plugins); @test k !== nothing
         b1 = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
-        b1.plugins[k] = _sc_with_capture(b1.plugins[k], GM.CaptureDecl(GM.Alterants.Visib, :single, :one, nothing; attr_stem = nothing))
+        b1.plugins[k] = _sc_with_capture(b1.plugins[k], GM.CaptureDecl(:single, nothing; attr_stem = nothing))
         R1 = GM.publish(b1)
         r1 = GM.goMeta(_sc_bytes("#~ hide\nx = 1\n"); registry = R1); @test r1.status === GM.PROCESS_OK
         sc1 = GM.scanAlterant(r1, :Visib; registry = R1); @test length(sc1) == 2      # the rows minted under the derived stem :visib are listed

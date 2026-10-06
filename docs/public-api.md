@@ -109,8 +109,7 @@ These are part of the documented public surface — declared with Julia's `publi
   built through the lifecycle below, its declared record + derived tables + callables are
   sealed and door-checked, its setters DISPATCH (the apply plane is registry-data-driven) and a
   registry without the built-in Visib RUNS; the CAPTURE plane is registration-driven since T5 (a
-  declared `CaptureDecl` row mints an Alterant's evals rows; `WARN_CAPTURE_FLOOR` discloses a
-  missing declaration, `WARN_CAPTURE_UNREADABLE` an unreadable live value — the LIFECYCLE bullet
+  declared `CaptureDecl` row mints an Alterant's evals rows; a record without one mints none — the LIFECYCLE bullet
   below and §3.4); NOT registration-driven at v0.4 (the deferred rows): the QUERY plane's argument floor
   (T3: the getter is called with Symbol literals only; the getter's signature is not yet verified at
   registration), and the RENDER write-back (the Visib write-back LEFT at stage 3's commit 4 of the v0.4 branch, R-V04B-42 (1) —
@@ -252,8 +251,8 @@ These are part of the documented public surface — declared with Julia's `publi
     overload without a getter refuses); **the runtime envelope guards the call since T3**: a
     getter throw of any class converts to the stable `CB_QUERY_THROW` refusal (the engine's own
     `GoMeta `-prefixed refusals and `InterruptException` pass through verbatim), and a non-`Bool`
-    return refuses `RES_RETURN_TYPE` — at BOTH query call sites (the closed interpreter's atoms
-    and `getAltState`). No registration-time signature reflection runs since stage 5's E4 (T11's
+    return refuses `RES_RETURN_TYPE` — at the closed interpreter's atom site (the opt-in's `getAltState` call is bare
+    since stage 5's E5 of the v0.4 build — census row 56; his legacy called it bare). No registration-time signature reflection runs since stage 5's E4 (T11's
     catalogue sitting).
   - **The validate contract** (`ActionSpec.validate`, the handover validation of the accepting
     String slot): called as `validate(text::String) -> Bool` — `true` accepts; `false` refuses with the
@@ -277,14 +276,11 @@ These are part of the documented public surface — declared with Julia's `publi
     NEXT `register!` call will assign (1 on an empty builder; 5 after the four built-ins), and
     `register!` REFUSES (throws `RegistrationRefused`, `REG_PROTOCOL`, nothing appended) any record
     whose index is not that one. Immutable records are never re-stamped silently.
-  - The declared SLOTS: `CaptureDecl(instance_type,
-    attr_scheme ∈ (:per_key, :single, :per_field, :per_occurrence), multiplicity ∈ (:many, :one,
-    :per_field), mode_gate ∈ (nothing, :localOnly)[, attr_stem]; attr_stem = nothing)` — CONSUMED
-    since v0.4 T5: the capture walk is REGISTRATION-DRIVEN (the declared row is what makes an
-    Alterant's applied state mint evals rows; a record WITHOUT one is disclosed by the typed
-    `WARN_CAPTURE_FLOOR` warning, never silently evals-invisible; a declared row whose live
-    instance/value falls outside the scheme's readable shape or the closed capture value set
-    {Bool, Symbol, machine ints, String} meets `WARN_CAPTURE_UNREADABLE`); `validate` enforces the
+  - The declared SLOTS: `CaptureDecl(attr_scheme ∈ (:per_key, :single, :per_field, :per_occurrence),
+    mode_gate ∈ (nothing, :localOnly)[, attr_stem]; attr_stem = nothing)` — CONSUMED since v0.4 T5: the capture walk
+    is REGISTRATION-DRIVEN (the declared row is what makes an Alterant's applied state mint evals rows; the store's
+    shape is the record's own `altConstructor`; a record WITHOUT a row mints none; the walk reads the store bare —
+    the capture-floor warnings, the value algebra and the shape gates left the walk at stage 5's E5 of the v0.4 build (census rows 33 and 34), and the former `instance_type` and `multiplicity` fields with them); `validate` enforces the
     capture mode-gate laws (the gate's closed set · the bidirectional setMode⟺gate coherence · the
     :localOnly scheme and store laws; the identity, stem-shape and stem-clash laws left at stage 5's E4 —
     a stem overlapping a shipped family publishes, and same-cell same-attr rows of two plugins collapse to one) ·
@@ -731,14 +727,13 @@ fabricated typed code:
   QUERIED in a condition (`{ :labelX }`) is never refused for being unknown: the query answers false, as the legacy's
   checker did (since stage 5's E9 of the v0.4 build — the T4 membership refusal in the query role and the write-only
   valve left, census row 55). Witnesses: `tests/unit/error_message_tests.jl` (both roles).
-- **The capture-floor warnings (v0.4 T5; typed, NON-fatal):** `WARN_CAPTURE_FLOOR` — an
-  alterant produced applied state but declares NO capture row: its verdicts mint no evals
-  rows; the run stays `PROCESS_OK` with the warning ONCE per call per alterant (recovery:
-  declare a `CaptureDecl`). `WARN_CAPTURE_UNREADABLE` — a DECLARED row whose live
-  instance, key, or value falls outside the scheme's readable shape or the closed capture
-  value set: the affected rows are not minted, disclosed the same way (recovery: conform
-  the store/values to the declared scheme, or re-declare the scheme). Channel: warning
-  `Diagnostic`s on the result. Witnesses: `tests/unit/capture_tests.jl`.
+- **The capture-floor warnings (v0.4 T5; typed, NON-fatal) — the Heading lane's alone since stage 5's E5 of the v0.4 build
+  (census row 33):** `WARN_CAPTURE_FLOOR` — a localOnly alterant produced applied state but declares NO capture row;
+  `WARN_CAPTURE_UNREADABLE` — its declared row's live instance falls outside the flush's readable shape. Both emitted by
+  the absorb seam's flush (`src/absorb/absorb_meta.jl`) until the Heading runs through the apply loop (R-V04B-101); the
+  capture walk of the other Alterants reads its stores bare and emits neither (a store outside its declared scheme's
+  shape is Julia's own error; a record without a row mints nothing). Channel: warning `Diagnostic`s on the result.
+  Witnesses: `tests/unit/capture_tests.jl` [11] (A1).
 - **The store-`[2]` insertion path** — a latent insertion path not exercised by any v0 input.
 - **The absorb-plane grammar refusals (the same stable-message family):** beyond the entries
   above, the metaLine/condition grammar refuses with stable `GoMeta absorb:` messages on: an
@@ -797,11 +792,10 @@ parse-plane — the multi-inline-meta refusal and the two directive-adjacency re
 "GoMeta internal invariant violated … please report". The vendored parse layer's OTHER messages
 keep their existing forms; they are not part of the typed catalogue above.
 
-Additionally, a non-fatal `:warning` `Diagnostic` — `WARN_VERDICT_COLLISION` — is emitted (the run
-continues) when a later put for the SAME occurrence handle and attribute changes the recorded value
-or polarity — the same cell re-applied with conflicting verdicts (the later row supersedes;
-applied-state-wins); two distinct cells never share a slot, byte-identical content included, for
-well-formed occurrence keys (`_putEval!`, `src/annotations.jl`).
+A later put for the SAME occurrence handle and attribute supersedes the recorded row (later wins; applied-state-wins) —
+the non-fatal `WARN_VERDICT_COLLISION` diagnostic that accompanied a value-changing supersede left at stage 5's E5 of the
+v0.4 build (census row 66; §6); two distinct cells never share a slot, byte-identical content included, for well-formed
+occurrence keys (`_putEval!`, `src/annotations.jl`).
 
 - **The T3 SEAM-ENVELOPE family — GUARDED (v0.4 T3; catalogue-NAMED stable-message refusals,
   their typed `Diagnostic` conversion = the T11 catalogue):** each fires as an
@@ -810,11 +804,12 @@ well-formed occurrence keys (`_putEval!`, `src/annotations.jl`).
   envelopes verbatim; the containment guarantee is scoped to exceptions delivered to the
   handler (`StackOverflowError` catchability is shape-dependent; resource exhaustion may not
   allocate a refusal).
-  - `CB_QUERY_THROW` — an alterant query checker (getter) threw, either query site; the class
+  - `CB_QUERY_THROW` — an alterant query checker (getter) threw at the closed interpreter's query site (the opt-in's
+    `getAltState` call is bare since stage 5's E5 of the v0.4 build); the class
     named via `nameof`, the action named. Trigger: any getter throw outside the pass-through
     classes. Recovery: fix the checker (its contract is total over its declared signature).
   - `RES_RETURN_TYPE` — a declared-return-type breach: the query getter returned non-`Bool`
-    (either site); the setter's live return guard (the pre-existing wall, now named); or the
+    (the closed interpreter's site); the setter's live return guard (the pre-existing wall, now named); or the
     handover validator returned non-`Bool`.
   - `REG_VALIDATE_FALSE` — the declared handover validation returned `false` for the presented
     String-slot text; first-offender-wins at the absorb site (the catalogue's refuse-at-gate
@@ -855,10 +850,9 @@ rows; **(iv) DOOR results** — `REG_UNPUBLISHED` / `POST_SEAL_MUTATION` come ba
 | `STATE_SEAL_MISMATCH` (T3 seam) | **REMOVED at 0.4.0** (stage 3's commit 4 of the v0.4 build; R-V04B-42 (1)) | it guarded the Visib write-backs a run left in the caller's state; nothing is written back any more — the §6 register row | — |
 | `SRC_DIGEST_MISMATCH` (v0.4 T4) | **REMOVED at 0.4.0** (stage 5's E9 of the v0.4 build; census row 10) | the vocabulary artifact's digest pin left with the record's vocabulary slot — the 38 names are a plain file read at load; the §6 register row | — |
 
-Stable-message refusals (NOT typed codes; the §3.4 class): `"GoMeta absorb: meta-hierarchy slot pool
-exhausted"` — the per-call slot pool (`NUM_MH_LEVELS` = 12 slots) fully occupied at an
-`updateMetaHierarchy` allocation (v0.4 T2; previously a raw `MethodError`); guarded, nothing
-displaced or aliased; its typed conversion rides the v0.4 diagnostics catalogue.
+The stable-message refusal `"GoMeta absorb: meta-hierarchy slot pool exhausted"` of v0.4 T2 LEFT at stage 5's E5 of the
+v0.4 build (census row 71; §6): an exhausted per-call slot pool (`NUM_MH_LEVELS` = 12 slots) is Julia's own `MethodError`
+at the Int8 store, as in 0.3.2; the walk allocates at most one slot per live level, so no input reaches it.
 
 ## §4 — CRLF normalization (documented, not an error)
 
@@ -974,3 +968,4 @@ non-silent record under R-V04B-61; the letter of R-V04B-24 (P) does not govern u
 - **`run_absorb_apply!` (the callable driver seam), its state ledger (`STATE_REUSE_REFUSED`), `validate_carrier_state` and the `_walk_and_apply!` factoring — REMOVED at 0.4.0** (stage 5's E2 of the v0.4 build; census rows 21, 42, 23 and 44 of the stage-5 census, the owner's bulk mark of 2026-10-03, OWNER-WORDS §317 — R-V04B-105; his verbatim of R-V04-31 on the seam: "If this is only to the benefit of the .fodt adapter it will eventually have to be removed from the GoMeta engine - if not in v0.4, then in a later GoMeta version."; the legacy was one function): `goMeta(bytes; config, registry)` is the ONE route into the Engine; the driver body (the fresh per-call state, the user feed, the File loop, the delivery) runs inside it; a caller-built store has no entry and no checker; `names(GoMeta)` unchanged (none of the four was a `public` name). The corpus, the 26 pins and the twelve forms byte-identical (the pre-check); the suite count moves by the retired witnesses alone.
 - **The Labels vocabulary machinery — `VocabularySlot`, `InlineVocabulary`, `VocabularyRef` (the record's `vocabulary` slot, field and keyword), the G-VOC triple `vocabulary` / `vocabulary_member` / `vocabulary_queryable`, the `SRC_DIGEST_MISMATCH` code, the digest pin, the capture cache, the artifact grammar, the scope law, the write-only valve and the labels record's policy identity — REMOVED at 0.4.0** (stage 5's E9 of the v0.4 build; census rows 10, 28 and 55 of the stage-5 census, the owner's bulk mark of 2026-10-03, OWNER-WORDS §317 — R-V04B-105; his words of 2026-09-20, OWNER-WORDS §120: "Similarly CC kept on pressuring me into making the Labels Alterant safe before we even could try working with a basic true Labels Alterant."): the 38 names stay in the plain file `src/alterants-std/labels_vocabulary.txt`, read at load (R-V04B-6 (a); the file byte-identical — the ZWJ line's `query=false` field, the owner's R-V04-36 content ruling, inert data now); `setLabels` keeps the closed check (an unknown label APPLIED refuses, naming the accepted set); `checkLabels` answers false for an unset or unknown label — the legacy's (GoMetaRetro Alterants.jl :87–:99); a `PlugIn` keyword `vocabulary = …` is a `MethodError` now; `names(GoMeta)` loses six. The corpus, the 26 pins and the twelve forms byte-identical (the pre-check); the registration digest re-minted (the labels record's slots leave the seal fold — `profile_snapshot_tests.jl`, measured).
 - **The carried declaration slots and the reserved security frame of the Alterant record — the types `RenderDecl`, `EffectRow`, `MutEx`, `ConditionAtom`, `SugarRow`, `DomainRef`, `Provenance`, `SignatureRecord`, `PermissionManifest` (nine public names) and the record's fields `render`, `constraints`, `atoms`, `contract_version`, `requires`, `sugar`, `provenance`, `permissions` — REMOVED at 0.4.0** (stage 5's E10 of the v0.4 build; census rows 24 and 29 of the stage-5 census, the owner's bulk mark of 2026-10-03, OWNER-WORDS §317 — R-V04B-105. He had approved those slots at the architecture sittings of 2026-08-24 — R-V04-35, the record-carried payload's vehicle; R-V04-37 SEC-4, the Rung-1 activation — and his later mark removes them: the difference between his earlier and later words is resolved by the later word, stated here; his R-V04-27 of the same day, verbatim, put permission levels and hash checks LATER; his §120 on a basic framework BEFORE HARDENING; his §18 (ii) on clutter): the record keeps eight fields (the six of 0.3.2, the declared default of stage 2's commit 3, the capture declaration of v0.4 T5); a record naming a removed keyword no longer constructs (a keyword error at the call); the seal's fold covers the capture slot alone of the declared slots — the registration digest re-minted (a cache key, measured by the build's probe); nothing a run produces changes (the corpus A/B zero bytes at the land). `RenderDecl.materialize` — piece (3) of census row 45's four Visib declarations — leaves here with its type: the judge's 'materialize follows #45' was written for the order E12-before-E10; the owner's §319 release re-slotted E12 after P3.
+- **The capture walk's hardening, the capture declaration's `instance_type` and `multiplicity` fields, the `getAltState` query envelope, the `WARN_VERDICT_COLLISION` diagnostic and the meta-hierarchy slot-pool guard — REMOVED at 0.4.0** (stage 5's E5 of the v0.4 build; census rows 33, 34, 56, 66 and 71 of the stage-5 census, the owner's bulk mark of 2026-10-03, OWNER-WORDS §317 — R-V04B-105; his §120 on a basic framework BEFORE HARDENING; his legacy read the stores and called the getter bare): the capture walk reads each Alterant's store bare under its declared scheme (a store outside the shape is Julia's own error; a record without a capture row mints nothing); `CaptureDecl(attr_scheme, mode_gate[, attr_stem])` — the store's shape is the record's own `altConstructor`; the stem derivation folded into `_capture_stem` (four copies); the registration digest re-minted (the capture row's seal text, the thirteenth); the Heading lane's flush keeps `_capture_floor!` and its two warnings until R-V04B-101 (the judge's exception); the closed interpreter's query envelope stays; a conflicting re-apply on one cell supersedes silently, later wins; an exhausted slot pool is Julia's own error; the occurrence key's totality arm (census row 7, LATER) NOT taken here.

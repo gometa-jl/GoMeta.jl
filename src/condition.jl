@@ -742,7 +742,8 @@ function _eval_node(st::ProcessState, n::CondQueryAtom)
                 "(see docs/public-api.md §3.4)")
     end
     if n.plugin ∈ keys(st.working)
-        ## v0.4 T3 — the SYMMETRIC QUERY-SEAM ENVELOPE (T3-DESIGN §2; FM-CB-2/FM-RES-2).
+        ## v0.4 T3 — THE QUERY-SEAM ENVELOPE (T3-DESIGN §2; FM-CB-2/FM-RES-2; its twin at the opt-in site
+        ## `getAltState` left at stage 5's E5 of the v0.4 build — census row 56; this site keeps it).
         ## The engine lookups are HOISTED above the try so the wrapped region is user-only;
         ## the envelope contains EVERY class typed — no getter pre-check exists at
         ## registration (nor a setter one since stage 5's E4), so a query MethodError is

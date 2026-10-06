@@ -174,11 +174,11 @@ function evaluatedAltValue(delivery::GoMetaDelivery, component::BLS.AbstractComp
     p = registry.plugins[idx]
     component isa BLS.File && return EvaluatedAltValue(nothing, :none, nothing)
     cap = p.capture
-    if cap === nothing                  # no capture declaration: the capture floor mints NO rows (`_capture_floor!`) — R-V04B-55 (2): the declared default
+    if cap === nothing                  # no capture declaration: the walk mints NO rows — R-V04B-55 (2): the declared default
         d = p.default
         return d isa Declared ? EvaluatedAltValue(d.value, :default, nothing) : EvaluatedAltValue(nothing, :none, nothing)
     end
-    stem = cap.attr_stem === nothing ? Symbol(lowercase(String(p.altName))) : cap.attr_stem   # the walk's own derivation (annotations.jl's capture; registry.jl's effective stem) — the seat wf-s10-s2c4-check F-1
+    stem = _capture_stem(p)   # the walk's own derivation (annotations.jl's capture; registry.jl's effective stem) — the seat wf-s10-s2c4-check F-1
     scheme = cap.attr_scheme
     ps = delivery.blsComponentTree
     store = delivery.altValues_evals

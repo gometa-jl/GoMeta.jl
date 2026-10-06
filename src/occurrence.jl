@@ -14,8 +14,8 @@
 #     (2) `key_bytes(k)::Vector{UInt8}` — deterministic FIXED-field-order serialization
 #     (length-prefixed namespace + fixed-width big-endian steps), injective per namespace.
 # REASONING: identity must be re-derivable from the parse alone (purity) and must not
-#     collapse distinct occurrences the way content-addressing does (the WARN_VERDICT_COLLISION
-#     distinct-cell class is impossible by construction). STORE-EXPLICIT means the engine's
+#     collapse distinct occurrences the way content-addressing does (a distinct-cell
+#     collision is impossible by construction). STORE-EXPLICIT means the engine's
 #     signed-id convention (positive ⇒ [1] direct store, negative ⇒ [2] insert store) NEVER
 #     crosses this boundary — each path step carries an explicit store tag + an unsigned ordinal.
 #     NO HASHING core-side: the key is plain structural data; an adapter layer hashes.
