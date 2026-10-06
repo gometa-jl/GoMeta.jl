@@ -1,7 +1,6 @@
 # BLS.jl
 module BLS
 
-using InlineStrings
 using StaticArrays
 include("NamedElements.jl")
 using .NamedElements

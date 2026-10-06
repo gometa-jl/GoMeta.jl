@@ -104,9 +104,9 @@ using Pkg
 Pkg.add(url = "https://github.com/gometa-jl/GoMeta.jl")   # GitHub-only at this release
 ```
 
-Requires Julia **1.12** (or newer 1.x). The core has exactly two dependencies (StaticArrays +
-InlineStrings, exact-pinned) — install into a **fresh environment** (`Pkg.activate` a new
-directory, or `] activate --temp`) so the exact pins cannot conflict with versions already
+Requires Julia **1.12** (or newer 1.x). The core has exactly one registered dependency (StaticArrays,
+exact-pinned; SHA is a standard library) — install into a **fresh environment** (`Pkg.activate` a new
+directory, or `] activate --temp`) so the exact pin cannot conflict with a version already
 resolved in an existing environment. `Pkg.add` gives you the package; to also run the committed
 examples and the corpus driver below, **clone the repository** — the quickstart and the driver
 read `examples/` by paths relative to the repository root, so run them from a checkout (an
@@ -304,5 +304,5 @@ compatibility and no deprecation until at least GoMeta v0.7** (the owner's typed
 no alias, no leftover of an older version in a newer one — and every removal or rename is written
 into the breaking-change register (`docs/public-api.md` §6) with its ground, its replacement and
 what an older caller sees. The policy will change at a later stage — maybe v0.8, maybe later — by
-the owner's word. Compatibility: Julia **1.12**; core dependencies **StaticArrays** +
-**InlineStrings** (exact-pinned).
+the owner's word. Compatibility: Julia **1.12**; the core dependency **StaticArrays**
+(exact-pinned; SHA is a standard library).

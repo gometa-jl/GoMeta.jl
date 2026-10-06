@@ -4,12 +4,10 @@ authors = ["GoMeta Project <hello@gometa.dev>"]
 version = "0.3.2"
 
 [deps]
-InlineStrings = "842dd82b-1e85-43dc-bf29-5d0ee9dffc48"
 SHA = "ea8e919c-243c-51af-8825-aaa63cd721ce"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
 [compat]
-InlineStrings = "=1.4.5"
 SHA = "0.7"
 StaticArrays = "=1.9.18"
 julia = "1.12"

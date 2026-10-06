@@ -98,7 +98,7 @@ GoMeta
 
 #########################################################################################
 ########### Imports #####################################################################
-using StaticArrays, InlineStrings  # stack-allocated fixed-size arrays + inline string types; the slot tensors and the work vectors are plain Vector/Array (registry.jl, apply.jl)
+using StaticArrays  # stack-allocated fixed-size arrays; the slot tensors and the work vectors are plain Vector/Array (registry.jl, apply.jl)
 
 #########################################################################################
 ############ Includes ###################################################################

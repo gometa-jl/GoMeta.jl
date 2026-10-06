@@ -744,7 +744,7 @@ function parseBLS(
     reachedEndOfLine::Bool = false
     ## Fence store: a plain String — the fence grammar admits delimiters of ANY length ({3,}),
     ## so a fixed-width store is a capacity cliff (a 16-character delimiter crashed the convert).
-    ## NOTE: InlineStrings is a core dependency (BLS.jl's `using`; Project.toml + Manifest carry it).
+    ## (the fixed-width store's InlineStrings dependency left the package at stage 5's P3 of the v0.4 build — census row 73)
     fenceStr::String = ""
     fenceOpen::Bool = false
     fenceJustClosed::Bool = false   ## the fence-exit boundary's DEFERRED reset flag

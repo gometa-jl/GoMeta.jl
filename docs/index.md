@@ -41,8 +41,8 @@ using Pkg
 Pkg.add(url = "https://github.com/gometa-jl/GoMeta.jl")   # GitHub-only at this release
 ```
 
-Requires Julia **1.12** (or newer 1.x). Install into a **fresh environment** — the two core
-dependencies (StaticArrays + InlineStrings) are exact-pinned. The quickstart and the committed
+Requires Julia **1.12** (or newer 1.x). Install into a **fresh environment** — the one core
+dependency (StaticArrays) is exact-pinned. The quickstart and the committed
 example corpus live in the repository: clone it and start from the README's Quickstart section.
 
 ## Security
