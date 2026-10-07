@@ -9,23 +9,26 @@
 # v0.4 T4 HAND-EDIT (T4B-3) and stage 5's E9 HAND-EDIT: testset [7]'s membership probes read the plain
 # shipped list (`GM.Alterants.LABELS_VOCABULARY`; the G-VOC surface left at E9 — census row 28); testset [2]
 # applies its unknown labels instead of querying them (a queried unknown label answers false since E9 —
-# census row 55). Assert-count neutral. A regeneration of this file must re-apply both forms.
+# census row 55). Assert-count neutral. Stage 5's E13 HAND-EDIT: the closed interpreter left (census row 1; R-V04B-106) — testsets
+# [1], [3] and [5] drove `parse_condition` and `print_condition` directly (E13); they drive the whole run now (the same shapes END-TO-END,
+# 37 → 34 asserts: [1] 4 → 3, [3] 3 → 2, [5] 4 → 3). The CURE this file holds — a multibyte-final atom flush against the closing
+# brace takes its ordinary fate — is held by the rewrite's CHAR walk (never the legacy's byte-count end test); [4] and [7] are its
+# live witnesses. A regeneration of this file must re-apply all three forms.
 
 using Test
 import GoMeta as GM
 
-_uc_pc(body)   = GM.parse_condition(body)
 _uc_full(s)    = GM.goMeta(Vector{UInt8}(s))
 _uc_err(s)     = try _uc_full(s); nothing catch e sprint(showerror, e) end
 
 @testset "unicode_cure_tests (the char end predicate + the store widening)" begin
 
     @testset "[1] flush ≡ spaced: multibyte-final atoms take the ordinary vocabulary fate" begin
-        d = _uc_pc(":aß")                      # the d2 twin, flush at end-of-text
-        @test d isa GM.ConditionAST
-        @test GM.print_condition(d) == ":aß"
-        @test GM.print_condition(_uc_pc(":é")) == ":é"
-        @test GM.print_condition(_uc_pc(":🔥")) == ":🔥"
+        # a label test flush against the closing brace, three multibyte finals (stage 5's E13: end-to-end — the query of an
+        # unknown label answers false, the run is PROCESS_OK; the former direct parse pins left with the interpreter)
+        @test _uc_full("#~ hide{ :aß}\nx = 1\n").status == GM.PROCESS_OK     # the d2 twin, flush at end-of-text
+        @test _uc_full("#~ hide{ :é}\nx = 1\n").status == GM.PROCESS_OK
+        @test _uc_full("#~ hide{ :🔥}\nx = 1\n").status == GM.PROCESS_OK
     end
 
     @testset "[2] store-present flush trio: apply's unknown-label names the FULL token" begin
@@ -42,10 +45,11 @@ _uc_err(s)     = try _uc_full(s); nothing catch e sprint(showerror, e) end
     end
 
     @testset "[3] multibyte-WHITESPACE-final flush (the analytically-traced path, executed)" begin
-        a = _uc_pc(":x ")                      # NBSP-final, flush
-        @test a isa GM.ConditionAST
-        @test GM.print_condition(a) == ":x"
-        @test GM.print_condition(_uc_pc(":x  ")) == ":x"
+        # NBSP-final, flush against the brace (a REAL codepoint, this file's convention): the label name ends at the Unicode
+        # whitespace (the ws-alphabet law); Julia's parser reads the NBSP as whitespace (MEASURED at the E13 build) — the
+        # run is PROCESS_OK, the unknown label false
+        @test _uc_full("#~ hide{ :x }\nx = 1\n").status == GM.PROCESS_OK
+        @test _uc_full("#~ hide{ :x  }\nx = 1\n").status == GM.PROCESS_OK
     end
 
     @testset "[4] CAL-14 + the honest worst case (comma-OR, unknown silently false)" begin
@@ -57,15 +61,12 @@ _uc_err(s)     = try _uc_full(s); nothing catch e sprint(showerror, e) end
         @test length(GM.readAltValuesEvals(u.altValues_evals)) == 1  # measured + pre-registered
     end
 
-    @testset "[5] preservation: walls, quirks, parity (the cure changed NOTHING else)" begin
-        k = _uc_pc(":" * repeat("a", 40))         # KP-1: the cap wall unchanged
-        @test k isa GM.Diagnostic && k.code === :ERR_CONDITION_CAP
-        e28 = _uc_pc(":" * repeat("é", 28))     # KP-3b: cross-width parity —
-        a28 = _uc_pc(":" * repeat("a", 28))       # 28 two-byte chars ≡ 28 one-byte chars
-        @test e28 isa GM.ConditionAST && a28 isa GM.ConditionAST
-        q = _uc_pc(":(:x))")                      # QK-1: the glued-')' quirk byte-identical
-        @test q isa GM.Diagnostic && q.code === :ERR_CONDITION_PARSE
-        @test GM.print_condition(_uc_pc(":ab")) == ":ab"   # CAL-12 ASCII control
+    @testset "[5] parity and the quirk (stage 5's E13: the atom wall KP-1 left with the interpreter — a 40-character label is a label test)" begin
+        # KP-3b: cross-width parity — 28 two-byte chars ≡ 28 one-byte chars, both PROCESS_OK (unknown labels, false)
+        @test _uc_full("#~ hide{ :" * repeat("é", 28) * " }\nx = 1\n").status == GM.PROCESS_OK
+        @test _uc_full("#~ hide{ :" * repeat("a", 28) * " }\nx = 1\n").status == GM.PROCESS_OK
+        # QK-1: the glued-')' quirk is Julia's own ParseError since E13 (the former typed ERR_CONDITION_PARSE)
+        @test (try _uc_full("#~ hide{ :(:x)) }\nx = 1\n"); nothing catch e; e end) isa Base.Meta.ParseError
     end
 
     @testset "[6] U2: a multibyte FINAL character survives the content slice whole (the Segment through the door; every derived payload valid UTF-8)" begin

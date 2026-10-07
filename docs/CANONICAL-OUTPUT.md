@@ -7,9 +7,8 @@
   `(blsStructure_bytes, render_bytes)` pair (`Main.BasicRenderer.outputs`, `devtools/basic_renderer.jl`,
   loaded through `devtools/load_basic_renderer.jl`; R-V04B-24, 2026-09-12) which the golden layer pins.
   (This document's name — CANONICAL-OUTPUT — predates the move; it kept its name.) **Trust note:**
-  a default-configured `goMeta` run evaluates no condition text (the closed interpreter); only
-  the explicitly opt-in full-eval mode can execute code — `docs/public-api.md` §2/§3.2 and the
-  SECURITY section of `README.md` state the posture.
+  a `{…}` condition is Julia text evaluated by Julia (since `0.4.0`, stage 5's E13 of the v0.4 build) — a run over a
+  file executes its conditions; `docs/public-api.md` §2/§3.2 and the SECURITY section of `README.md` state the posture.
 - **DOES:** (1) names the observable surface; (2) defines each half of the tool's pair; (3) states the hide/discard
   render rules of the `jl-share-v1` profile; (4) defines the evals surface; (5) carries
   the invariant register the shipped suite asserts; (6) states the CRLF normalization convention;
@@ -17,10 +16,9 @@
 - **REASONING:** the observable surface is pinned and deterministic, and this document is that
   pin's public statement. A change to the surface is a conscious, versioned change — never silent
   drift.
-- **PURPOSE:** GoMeta's observable behavior is **pinned, deterministic, and hash-stable** (engine
-  operations; conditions run in the closed no-eval interpreter, so in a default-configured run a
-  condition body cannot read or have effects — the explicitly opt-in `:full_eval_v1` extension
-  mode is the one exception, see the SECURITY section of `README.md`); the committed example
+- **PURPOSE:** GoMeta's observable behavior is **pinned, deterministic, and hash-stable** for the Engine's
+  own operations and for conditions free of side effects (a condition body is Julia, evaluated by Julia since
+  `0.4.0` — what it reads or does is the author's act; see the SECURITY section of `README.md`); the committed example
   corpus and the golden test layer prove it byte-for-byte.
 
 ---

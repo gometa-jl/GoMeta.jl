@@ -167,7 +167,6 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
             end
         end
         survivors = Dict("config.jl" => 1,                    # §1 feed docstring example
-                         "condition.jl" => 4,                 # the `{:🔥}` + `:abc(:label1)` comment set
                          "GoMeta.jl" => 1,                    # the profile-feed docstring example
                          # (apply.jl's one — the seam header's condition-side-atoms comment — left with the set-invocation seam at stage 5's E6
                          # of the v0.4 build, census row 14; measured on both trees: apply.jl 1 → 0, every other file equal)
@@ -297,9 +296,8 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
         @test !GM._key_order_budget(_VocR4.tag) &&
               !GM._key_order_budget((1, _VocR4.tag)) &&
               GM._key_order_budget((1, :a))
-        # the fold-parity pin: for an ordinary NAMED function the structural render
-        # equals the old `nameof` text (the seal did not move for the shipped class —
-        # the profile_snapshot pins assert the DEFAULT; this pins the mechanism).
+        # the text-parity pin: for an ordinary NAMED function the structural render
+        # equals the old `nameof` text (the mechanism; the seal pin it once protected left at stage 5's E13).
         @test GM._callable_text(sin) == String(nameof(sin))
     end
 

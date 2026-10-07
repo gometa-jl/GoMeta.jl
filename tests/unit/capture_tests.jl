@@ -15,7 +15,7 @@
 # PURPOSE: the T5 acceptance rows (Σ = 29 in this file after the crx-t5 cure round:
 #       23 at the T5 commit + [11]'s 6 + the [1] end-to-end algebra drive + the [7]
 #       cross-stem pin − the [7] runtime pair made lifecycle-unreachable by the tier-1
-#       store law; + 4 in record_schema_tests (the T5 3 + the B8 seal pin) —
+#       store law; + 4 in record_schema_tests (the T5 3 + the B8 seal pin — the pin left at stage 5's E13 with the seal) —
 #       4749 + 29 + 4 = 4782, every movement declared; at stage 5's E4 of the v0.4 build the 29 here
 #       stand — [9]'s identity and stem-clash arms and [11]'s A6 re-cut to the measured consequences,
 #       one assert each — and record_schema_tests' shape-law testset (6 asserts) left with its subject;

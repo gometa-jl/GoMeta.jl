@@ -4,7 +4,8 @@
 interlinkable, re-renderable, and shareable-with-control through `#~` **metaLines** — ordinary
 comment lines that carry machine-interpretable metadata (labels, visibility actions, conditions)
 beside the content they describe. GoMeta **evaluates** metadata; **it never executes the file**
-it processes (with one honest v0 exception at the condition seam — see Security below).
+it processes — the actions its evaluation calls for are carried out by the renderer or an Extension (a `{…}`
+condition is Julia, evaluated by Julia — see Security below).
 
 ```julia
 # An ordinary Julia file — with GoMeta metaLines in its comments:
@@ -47,11 +48,10 @@ example corpus live in the repository: clone it and start from the README's Quic
 
 ## Security
 
-GoMeta's condition expressions run in **GoMeta's own closed, bounded interpreter** — no
-condition text reaches Julia's `eval` in a default-configured run, so conditions cannot execute
-code, read files, or have side effects. The one deliberate exception is the explicitly opt-in
-`:full_eval_v1` extension mode (host evaluation; only process trusted input with it loaded).
-The full statement, with the documented limits, is in the README's SECURITY section and the
+A `{…}` condition is **Julia** since `0.4.0`: its GoMeta-specific parts are re-written to Julia text at absorb, Julia's
+parser reads the body once, and Julia evaluates it at apply — the owner's design, as the original engine did. A condition
+body can therefore execute code, read files or have effects: process input you trust, as you would any Julia file you
+`include`. The full statement, with the documented limits, is in the README's SECURITY section and the
 error-mode catalogue ([Public API + error modes](public-api.md) §3).
 
 ## Status

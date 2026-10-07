@@ -5,10 +5,7 @@
 #     `DEFAULT_REGISTRY`, the meta-hierarchy and alterant-queue sub-states, the `PlugIn` inventory
 #     unit, the public `GoMetaDelivery` (docs/public-api.md §1.1), and the `init_state` constructor that
 #     sizes every container fresh for each call.
-# DOES: declares `ConditionT` (the condition-representation alias: the closed interpreter's
-#     bounded `ConditionAST`, plus the `FullEvalCondition` marker only the opt-in
-#     `:full_eval_v1` extension can mint — README SECURITY; docs/public-api.md §3.2); the
-#     meta-hierarchy level layout
+# DOES: declares the meta-hierarchy level layout
 #     (`NUM_MH_LEVELS = 12`: the file level, the depth window `1..maxDepthMH`, then the user / line /
 #     fallBack levels — the user level is the reserved slot that `GoMetaConfig.user_mh_profile`
 #     seeds; docs/public-api.md §2); `PlugIn`; `AlterantRegistry` with
@@ -20,15 +17,15 @@
 #     `goMeta` calls never share state. Conditions eval'd at apply time read it through a
 #     `ScopedValue`; an unscoped read throws.
 # Honest edges: `AlterantRegistry`'s `Dict`/`Vector` fields are mutable containers — a PUBLISHED
-#     registry is sealed, not frozen by type: a mutation through any container (declared record,
-#     derived table, callable identity or the fingerprint) BY CONFORMING CODE is DETECTED at the
+#     registry is published, not frozen by type: a mutation through any container (declared record,
+#     derived table or callable identity) BY CONFORMING CODE is DETECTED at the
 #     entry door (`POST_SEAL_MUTATION`, v0.4 T2-bis — the ONE structural deep-egal comparison
 #     against the publish-time `_snapshot` baseline, `===`-only leaves, firing at the first
 #     divergent path), never silently effective — accident-grade, within the disclosed bounds
 #     (callable behavior ≠ identity; the snapshot's own members are mutable — the mixed B-2
 #     residue; the entry check is not a lock; docs/public-api.md §1.2's honest-bound block);
 #     the construction capability is token-gated so no POSITIONAL or accidental construction by
-#     conforming code carries a seal (accident-grade: any loaded module can reach the token — B-2);
+#     conforming code carries a publish-time snapshot (accident-grade: any loaded module can reach the token — B-2);
 #     `accum_alt_idxs` must stay sorted
 #     ascending (the apply phase's `insorted` membership test depends on it). The queue matrices are
 #     sized `numAltActions × num_slots` as the per-slot upper bound (8 actions today — the registered count; the pages'
@@ -39,46 +36,12 @@
 
 using Base.ScopedValues
 
-# --- the eval seam + the meta-hierarchy level layout -------------------------------------------------
-"""
-    ConditionAST
-
-The closed-interpreter AST root type (defined HERE so the seam and its type live together —
-the no-new-file arm). LIVE since the v0.2 flip: `condition.jl` builds the closed algebra
-behind it (`parse_condition`/`evaluate`/`print_condition`); `root` carries the algebra's node
-family (state atoms · query atoms · not/and/or in eager and short-circuit forms).
-"""
-struct ConditionAST
-    root::Any
-end
-
-"""
-    FullEvalCondition(text)
-
-The MARKER for the `:full_eval_v1` OPT-IN mode (the dual-mode ruling): it carries condition text the
-OPERATOR has explicitly asked to be EVALUATED (host parse + evaluation) because neither
-safer intake rung could handle it. Not an equation with the pre-v0.2 engine — reach differs
-from that engine in both directions; see the opt-in extension's header. This package holds the MARKER ONLY — the evaluation is registered from the
-explicitly-included opt-in extension file, so no code path in `src/` can evaluate anything
-and the no-eval gates stay armed for every default-configured run. Evaluating a marker with
-no registered handler is a loud stable-message error, never a silent skip.
-"""
-struct FullEvalCondition
-    text::String
-end
-
-const _FULL_EVAL_HANDLER = Ref{Union{Nothing,Function}}(nothing)
-
-"Register the `:full_eval_v1` evaluation handler (called ONLY by the opt-in extension)."
-register_full_eval_handler!(f::Function) = (_FULL_EVAL_HANDLER[] = f)
-
-"""The condition type alias — the interpreter seam: the closed, bounded, no-eval
-`ConditionAST`, PLUS the `FullEvalCondition` marker produced by the OPT-IN
-`:full_eval_v1` intake mode. The union is the queue's carried type; the marker can only be
-minted by the explicitly-loaded opt-in extension, so a default-configured run carries
-`ConditionAST` exclusively. The alias is the single seam a future representation change
-would ride."""
-const ConditionT = Union{ConditionAST,FullEvalCondition}
+# --- the condition's carried type + the meta-hierarchy level layout ----------------------------------------
+## A `{…}` condition is carried as Julia's own `Expr` since stage 5's E13 of the v0.4 build (census row 1 — his order §319,
+## R-V04B-106 (2); his §D174): the absorb seam re-writes the GoMeta-specific parts of the body to Julia text, `Meta.parse` reads it
+## once (src/absorb/absorb_meta.jl, `parseConditions`), and Julia evaluates the stored `Expr` at apply (src/alterants/apply.jl) —
+## as his legacy did (GoMetaRetro AbsorbMeta.jl :270, goMetaAddOns.jl :37). At E13 the closed interpreter's `ConditionAST`, the
+## opt-in marker `FullEvalCondition` with its handler seam and the alias `ConditionT` left with the interpreter (E13).
 
 "The unified meta-hierarchy level count (`= maxDepthMH + 3 = fallBackMHIdx`): the file level, the
 authorable depth window, and the user / line / fallBack levels — 12 at v0. The level formerly named 'default'
@@ -245,7 +208,8 @@ ActionSpec(; name::Symbol, plugin::Int8, accepts_string_slot::Int = 0, validate 
     _SealToken
 
 The construction capability of `AlterantRegistry` (never `public`), held by the lifecycle. It
-suppresses the generated all-fields constructor (no positional form carries a seal) — an
+suppresses the generated all-fields constructor (no positional form carries a publish-time snapshot — the
+ruling's word "seal" names the snapshot MECHANISM, T2BIS-DESIGN §12; the fingerprint field left at stage 5's E13) — an
 ACCIDENT-grade guard: Julia has no access control, so any loaded module can call
 `GoMeta._SealToken()`; such a caller sits outside the trust model (the security frame's bound
 B-2). See the constructor's note.
@@ -256,13 +220,14 @@ struct _SealToken end
     _SNAPSHOT_FIELDS
 
 The registry fields the T2-bis snapshot door walks (T2BIS-DESIGN §1): the declared record
-(`plugins`, `action_specs`) + the seven derived tables (eight before stage 5's E12 — census row 45) + the published `seal` fingerprint
-string. The `_snapshot` field itself is NEVER walked (no recursion into the baseline). A
-seal-only divergence fires at path `seal` — what the retired re-mint used to catch.
+(`plugins`, `action_specs`) + the seven derived tables (eight before stage 5's E12 — census row 45); the published `seal`
+fingerprint string left the tuple at stage 5's E13 (census row 6 — the fingerprint's one consumer, the grammar profile, left
+with it; the door never read the value, it compares the fields below). The `_snapshot` field itself is NEVER walked (no
+recursion into the baseline).
 """
 const _SNAPSHOT_FIELDS = (:plugins, :sorted_alt_actions, :action_to_plugin, :action_index,
                           :alt_index, :accum_alt_idxs, :mutex_alt_idxs,
-                          :action_specs, :spec_index, :seal)
+                          :action_specs, :spec_index)
 
 """
     AlterantRegistry
@@ -301,16 +266,8 @@ struct AlterantRegistry
     # `spec_index`: action name → index into `action_specs`.
     action_specs::Vector{ActionSpec}
     spec_index::Dict{Symbol,Int}
-    # v0.4 T2/T2-bis — THE SEAL FIELD keeps the registration FINGERPRINT (HC-9), minted by the
-    # sanctioned route `publish` (the only SUPPORTED one; not the only POSSIBLE one in-process —
-    # see the constructor note); `nothing` = an UNPUBLISHED value (the gated route-U
-    # construction), which the `goMeta` door refuses typed. Since T2-bis the fingerprint is a
-    # LOSSY CACHE KEY, never an identity and never the door's mechanism (T2BIS-DESIGN §12: the
-    # ruling's word "seal" names the snapshot MECHANISM below; this field keeps the digest) —
-    # the algorithm-tagged registration digest over every declared slot (the source digests and the
-    # policy identity left with the security frame at stage 5's E10), with its disclosed collisions (docs/public-api.md §1.2).
-    seal::Union{Nothing,String}
-    # v0.4 T2-bis (R-V04B-4 (c+)) — THE SNAPSHOT BASELINE: a deep domain-copy of the ten (eleven before stage 5's E12 — census row 45)
+    # v0.4 T2-bis (R-V04B-4 (c+)) — THE SNAPSHOT BASELINE: a deep domain-copy of the nine (ten before stage 5's E13 — the seal
+    # field left with the fingerprint, census row 6; eleven before stage 5's E12 — census row 45)
     # `_SNAPSHOT_FIELDS` values taken at publish (leaves — callables/Types/Symbols/Strings/
     # VersionNumbers/numbers — carried by reference; containers rebuilt at their exact concrete
     # types). The door compares the live fields against it by the ONE structural deep-egal walk
@@ -323,24 +280,24 @@ struct AlterantRegistry
     _snapshot::Union{Nothing,NamedTuple}
     # THE ONE CONSTRUCTOR, token-gated. What the token IS and IS NOT (cure batch 2, the honest
     # bound): it removes the generated all-fields constructor so no POSITIONAL or ACCIDENTAL
-    # construction can carry a seal — the route-U and mutation classes conforming code produces.
+    # construction can carry a snapshot — the route-U and mutation classes conforming code produces.
     # It is NOT an unforgeable capability: Julia has no access control, `GoMeta._SealToken()` is
-    # callable by any loaded code, and a caller who reaches for it (and for `_mint_seal`) can
-    # construct an unvalidated sealed value — that caller is a loaded module with full process
+    # callable by any loaded code, and a caller who reaches for it can
+    # construct an unvalidated published value — that caller is a loaded module with full process
     # authority, OUTSIDE the trust model by the security frame's bound B-2 ("no in-process
     # arrangement in Julia constrains a loaded module"). Every integrity claim of this type is
     # accident-grade: typed refusal of post-seal mutation by CONFORMING code, never security-grade.
     # T2-bis FORM (T2BIS-DESIGN §5): the seven derived tables (eight before stage 5's E12) enter BY NAME as ONE NamedTuple
     # argument, destructured by field name HERE — the one reviewed destructuring site. No
-    # hand-written table binding exists at any seal/snapshot-carrying call site, so the two
+    # hand-written table binding exists at any snapshot-carrying call site, so the two
     # same-typed groups (`action_index`/`alt_index`; `action_to_plugin`/`accum_alt_idxs`/
     # `mutex_alt_idxs`) cannot be swapped by a caller.
     function AlterantRegistry(::_SealToken, plugins::Vector{PlugIn},
                               action_specs::Vector{ActionSpec}, t::NamedTuple,
-                              seal::Union{Nothing,String}, snapshot::Union{Nothing,NamedTuple})
+                              snapshot::Union{Nothing,NamedTuple})
         new(plugins, t.sorted_alt_actions, t.action_to_plugin, t.action_index, t.alt_index,
             t.accum_alt_idxs, t.mutex_alt_idxs, action_specs,
-            t.spec_index, seal, snapshot)
+            t.spec_index, snapshot)
     end
 end
 """
@@ -352,10 +309,10 @@ every public construction route runs the remaining checks; removal = v0.5): they
 `(plugins, action_specs)` AND the hand-built derived tables must equal the tables derived from
 the declarations (`REG_DERIVED_TABLES`, collected ALONGSIDE their diagnostics — full
 collection); any error-severity defect throws `RegistrationRefused` with EVERY collected
-diagnostic. A conforming construction yields an UNSEALED registry (`seal === nothing`) — the
+diagnostic. A conforming construction yields an UNPUBLISHED registry (`_snapshot === nothing`) — the
 `goMeta` door refuses it typed, naming the sanctioned path (`RegistryBuilder → validate →
 publish`); route U therefore dies at the entry too (R-V04-34's STRICT door). No positional form
-accepts a seal: for conforming callers, sealed values come from `publish` (the honest bound: the
+accepts a snapshot: for conforming callers, published values come from `publish` (the honest bound: the
 token form is reachable by any loaded module — accident-grade, B-2).
 """
 function AlterantRegistry(plugins::Vector{PlugIn}, sorted_alt_actions::Vector{Symbol},
@@ -387,7 +344,7 @@ function AlterantRegistry(plugins::Vector{PlugIn}, sorted_alt_actions::Vector{Sy
         "record (route U is GATED at v0.4.0; build via RegistryBuilder → validate → publish)")]))
     # the constructed value's tables are `derived`'s objects (`==`-equal to the caller's,
     # distinct identity — recorded, not silent; no pin reads their identity)
-    return AlterantRegistry(_SealToken(), plugins, action_specs, derived, nothing, nothing)
+    return AlterantRegistry(_SealToken(), plugins, action_specs, derived, nothing)
 end
 "The number of registered alterants (4 since CH-3 step 9; 3 before the heading registration)."
 num_alterants(r::AlterantRegistry) = length(r.plugins)
@@ -498,8 +455,9 @@ num_alt_actions(r::AlterantRegistry) = length(r.sorted_alt_actions)
 TRUE iff `key` is a registered action of an Alterant that ANSWERS queries (its record declares `getAltInstance`). A condition's
 bare name is a settribute key, or a queryable action, or it meets the usual unknown-key refusal — stage 5's E12 of the v0.4 build
 (census row 45): the owner's R-V04B-99 delivered by this one rule (the three Visib names, no longer settribute keys, are the actions
-of a getter-less Alterant — as are Id's and the Heading's). The rule is the registry's, not the condition interpreter's, so it
-outlives E13.
+of a getter-less Alterant — as are Id's and the Heading's). The rule is the registry's, not a condition reader's: it outlived
+the closed interpreter (left at stage 5's E13, census row 1) and is the vocabulary test of the rewrite that replaced it
+(`_rewrite_condition`, src/absorb/absorb_meta.jl — where his legacy's reader tested `insorted(key, sortedAltActionsSVec)`).
 """
 queryable_action(r::AlterantRegistry, key::Symbol)::Bool =
     insorted(key, r.sorted_alt_actions) && r.plugins[r.action_to_plugin[r.action_index[key]]].getAltInstance !== nothing
@@ -544,8 +502,8 @@ The per-call enqueue tensors: `queued`
 (the carrying Component's handle published at the walk handover — the metaBlock a whole-line metaLine forms,
 the Segment of an inline one, R-V04B-50; on the userMH feed the minted user-context handle), carried through
 the apply into the stored row's provenance field.
-`conditions` carries `ConditionT` (the closed interpreter's parsed condition, plus the
-opt-in full-eval marker — see that alias's docstring); `args` carries tuples over the
+`conditions` carries the condition as Julia's `Expr` (what `Meta.parse` returned for the re-written body — the
+absorb seam's `parseConditions`; evaluated by `Core.eval` at apply); `args` carries tuples over the
 argument literal floor `AlterantArgT` (`Symbol` | `String` — see that type's docstring).
 Both matrices are indexed `[row, slot_index]`: dim-1 is the per-slot enqueue ROW counter
 (`1..count_actions_per_slot[slot]` — the sequential order in which actions were absorbed into that slot,
@@ -555,7 +513,7 @@ consistently (a row/slot transposition would corrupt the queue).
 """
 struct AlterantQueue
     queued::Array{Int8,3}
-    conditions::Matrix{Union{Nothing,ConditionT}}
+    conditions::Matrix{Union{Nothing,Expr}}
     args::Matrix{Union{Nothing,Tuple{Vararg{AlterantArgT}}}}
     decided_by::Matrix{Union{Nothing,Vector{UInt8}}}
 end
@@ -771,7 +729,7 @@ function init_state(parse_state::BLS.ParseState, config::GoMetaConfig, registry:
     )
     queue = AlterantQueue(
         zeros(Int8, 2, n_act, n_slot),                                                     # queued
-        fill!(Matrix{Union{Nothing,ConditionT}}(undef, n_act, n_slot), nothing),           # conditions
+        fill!(Matrix{Union{Nothing,Expr}}(undef, n_act, n_slot), nothing),                 # conditions
         fill!(Matrix{Union{Nothing,Tuple{Vararg{AlterantArgT}}}}(undef, n_act, n_slot), nothing),# args
         fill!(Matrix{Union{Nothing,Vector{UInt8}}}(undef, n_act, n_slot), nothing),               # decided_by (R-V04B-35 (d))
     )

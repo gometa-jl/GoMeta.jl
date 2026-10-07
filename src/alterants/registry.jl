@@ -18,9 +18,9 @@
 #     per-call `ProcessState` via `ctx()` (a ScopedValue — no module-global state). `updateMetaHierarchy`/`wipeAltActionSlots` maintain the meta-hierarchy cursor + the slot
 #     tensors on `ctx()` under the single-source `maxDepthMH`/`NUM_MH_LEVELS` consts (src/state.jl).
 # REASONING: the inventory is deterministic BY CONSTRUCTION (declaration order, built once, read-only)
-#     rather than hanging on any iteration order. The closed condition interpreter
-#     (README SECURITY; docs/public-api.md §3.2) is the package's condition surface; the opt-in
-#     `:full_eval_v1` extension mode is its one documented replaceable arm.
+#     rather than hanging on any iteration order. A `{…}` condition is read by Julia's parser and evaluated by Julia
+#     since stage 5's E13 of the v0.4 build (census row 1; R-V04B-106; his §D174) — this registry supplies its VOCABULARY:
+#     the settribute keys and the queryable actions (`queryable_action`, src/state.jl), read by the rewrite at absorb.
 # EDGES (honest): the label whitelist is closed and fixed — the corpus-documented labels
 #     :label1..:label5 plus (since 0.3.0) a fixed pictograph vocabulary (byte-exact names, no
 #     normalization); an unknown label APPLIED meets the stable refusal that
@@ -29,12 +29,12 @@
 #     around these setters are Julia's own since stage 5's E6 of the v0.4 build (the apply seam's typed
 #     refusal left — census row 14; docs/public-api.md §3.4). Only the labels
 #     row has a query getter (`checkLabels`); Visib/Id carry none — `cell`/`parent`/`file` as a
-#     condition atom is the deferred E-07 row. `DEFAULT_REGISTRY` is a PUBLISHED, SEALED value (v0.4
+#     condition atom meets the usual unknown-condition-key refusal (the registry's rule since stage 5's E12; the
+#     E-07 row retired at E13). `DEFAULT_REGISTRY` is a PUBLISHED value (v0.4
 #     T2; the T2-bis SNAPSHOT door): its Dict/Vector fields stay mutable containers, but a mutation
 #     by CONFORMING code through any of them is DETECTED at the entry door (`POST_SEAL_MUTATION`)
 #     by the ONE structural deep-egal comparison against the publish-time snapshot (`===`-only
-#     leaves; the fingerprint `seal` is a lossy CACHE KEY with its disclosed collisions —
-#     docs/public-api.md §1.2 — never the door's mechanism), never silently effective
+#     leaves — the fingerprint `seal` left at stage 5's E13 of the v0.4 build, census row 6), never silently effective
 #     (accident-grade: a callable's BEHAVIOR is not pinned by its identity, the snapshot's own
 #     members are mutable — the disclosed mixed residue, docs §1.2 — and the door is an entry
 #     check, not a lock over the run — B-2); the former `===` alias onto its write-back Dict is
@@ -172,11 +172,9 @@ end
 ## compound ever mints). The store records captured headings and OWNS the corners
 ## via its validation seam: empty heading text meets the typed refusal — a STANDING
 ## v0.2 semantic, not a transitional default (docs/public-api.md §3.4).
-## NON-QUERYABLE at v0.2 (getAltInstance = nothing): under localOnly delivery a
-## condition naming `head` evaluates FALSE (the plugin never enters the working
-## set; the membership test fails closed — the queued-era query-seam crash class is
-## unreachable here). In a HEADING's own condition, query atoms refuse entirely
-## (see `_absorb_local_only!`).
+## NON-QUERYABLE (getAltInstance = nothing): a condition naming `head` meets the usual
+## unknown-condition-key refusal (the registry's rule, stage 5's E12). In a HEADING's own
+## condition, a label test refuses (see `_absorb_local_only!`).
 mutable struct Heading
     entries::Vector{Tuple{String,Union{Nothing,Int}}}   # (text, explicit level | nothing ⇒ derived)
 end
@@ -358,11 +356,10 @@ end
 
 function getState(stateKey::Symbol)
     # Reads the per-call settribute snapshot via `ctx()`: `get_state(ctx().snapshot, key)` is the pure
-    # reader form of `BLS.getElement(ctx().snapshot, key)`. In a default-configured run the closed
-    # condition interpreter reads the snapshot directly (README SECURITY; docs/public-api.md §3.2);
-    # this accessor stays module-level for the opt-in `:full_eval_v1` extension mode, whose
-    # host-evaluated condition text calls `getState(:key)` by BARE name through the module-level
-    # ScopedValue. Writing goes the other way: the parent helper
+    # reader form of `BLS.getElement(ctx().snapshot, key)`. THE condition's settribute read: a re-written
+    # condition calls `getState(:key)` by BARE name (`using .CnS: getState, getAltState` in module GoMeta,
+    # where `Core.eval` runs it — his legacy's form, CnS.jl :252–:256) and reaches the per-call state through
+    # the module-level ScopedValue. Writing goes the other way: the parent helper
     # `snapshot_settribute!(ctx(), component)` refreshes the snapshot, so this accessor is read-only.
     return get_state(ctx().snapshot, stateKey)
 end
@@ -374,16 +371,16 @@ function getAltState(
 )
     # The per-call working alterant-instance dict and the alterant inventory are both read off `ctx()`;
     # `st` is hoisted once for type-stable field reads. Module-level for the same reason as `getState`
-    # above (the opt-in mode's host-evaluated text calls it by BARE name; the closed interpreter
-    # dispatches query atoms through the registry instead). `altInd` is the declaration-order plugin
+    # above (the re-written condition calls it by BARE name — the rewrite spells the plugin index and the
+    # action as `getAltState(Int8(p), Symbol("…"), args…)`). `altInd` is the declaration-order plugin
     # index (it comes from the registry's action-to-plugin table); `st.working[altInd]` is the instance
     # the apply phase constructed under that SAME index, so the lookup is internally consistent.
     local st = ctx()
     if altInd ∈ keys(st.working)
-        ## the bare call, as his legacy's (CnS.jl :267–:275): the query-seam envelope of v0.4 T3 at this second site left at
-        ## stage 5's E5 of the v0.4 build (census row 56; his §120) — the closed interpreter's site keeps its envelope
-        ## (`_eval_node(::CondQueryAtom)`, src/condition.jl); a getter's throw propagates, a non-Bool return reaches the
-        ## opt-in's host-evaluated condition as it is
+        ## the bare call, as his legacy's (CnS.jl :267–:275): the query-seam envelope of v0.4 T3 left at stage 5's E5 of the
+        ## v0.4 build (census row 56; his §120), the closed interpreter's own envelope (CB_QUERY_THROW / RES_RETURN_TYPE — E13)
+        ## with the interpreter at stage 5's E13 — THE one query site since: a getter's throw propagates raw out of
+        ## the goMeta call, a non-Bool return reaches the condition as it is (Julia's own TypeError where a Bool is needed)
         return st.registry.plugins[altInd].getAltInstance(st.working[altInd], altActionName, args...)
     else
         return false
@@ -418,7 +415,7 @@ The v0 alterant inventory's DECLARATIONS in DECLARATION order: fresh top-level `
 `Heading`, action `head`) in the `state.jl` type + the per-action records, returned as an
 UNVALIDATED `RegistryBuilder`. `publish` runs the remaining checks (the domain probe — R-V04B-4 (iii); the Heading lane's
 mode-gate laws — the vocabulary check left at stage 5's E9, the validation chain of v0.4 T2–T4 at E4, census row 3), derives the
-tables (a duplicate action name resolving first-wins), and seals; `DEFAULT_REGISTRY`
+tables (a duplicate action name resolving first-wins), and takes the publish-time snapshot; `DEFAULT_REGISTRY`
 is that published value, consumed READ-ONLY. Pure — no module-load side-effects.
 """
 function default_registry_builder()
@@ -500,7 +497,7 @@ end
 
 The v0 alterant inventory, PUBLISHED: `publish(default_registry_builder())` — the remaining checks
 (the domain probe · the mode-gate laws — the vocabulary check left at stage 5's E9 —, inside `publish`) run before the object
-exists, the derived tables come from the declarations, and the seal is minted. Pure — no module-load side-effects beyond the const it feeds.
+exists, the derived tables come from the declarations, and the publish-time snapshot is taken. Pure — no module-load side-effects beyond the const it feeds.
 """
 build_default_registry() = publish(default_registry_builder())
 
@@ -550,71 +547,15 @@ function _mode_gate_collect!(diags::Vector{Diagnostic}, plugins::Vector{PlugIn})
     return nothing
 end
 
-"""
-    _registration_digest(action_specs; plugins = PlugIn[]) -> UInt64
-
-The canonicalized fingerprint of the EFFECTIVE declared registration record — the profile's
-registration provenance/cache-key component. Canonicalization: first-owner-per-name dedup
-FIRST (so a duplicate-named loser spec never moves the fingerprint — the effective record is
-first-wins, as `_derive_tables` resolves it since stage 5's E4; which spec WON is meaning-bearing
-and correctly stays visible), then specs
-sorted by action name (the overload rows left the record at stage 5's E11 of the v0.4 build — census row 16) — so
-the digest is invariant under registration/declaration ORDER (multi-order determinism). The
-`validate` slot folds by FUNCTION NAME (a swapped validator is USUALLY a result-affecting
-registration change — recorded limits: a swap to a SAME-NAMED function is invisible to the
-fold, and an anonymous validator's gensym name is not stable across sessions; the shipped
-record carries only named validators — extend consciously if either class ever registers),
-and the owning plugins' declaration data (name, set mode, store type,
-getter presence) folds when `plugins` is supplied — a set-mode flip moves the fingerprint.
-The fold reads ONLY the declared record data (never live method tables — snapshot-not-live:
-a spec vector backed by NO real methods digests identically well; the purity witness in the
-profile tests). FNV-1a over the canonical serialization — deterministic across sessions and
-Julia versions FOR the shipped record class (named callables; concrete DataType signatures):
-an anonymous callable's gensym name and a UnionAll/Union's `string` text are the two
-show-context-dependent inputs, both disclosed above.
-"""
-function _registration_digest(action_specs::Vector{ActionSpec};
-                              plugins::Vector{PlugIn} = PlugIn[])::UInt64
-    h = _digest_fold(_FNV_OFFSET, "gometa-registration-v1")
-    seen = Set{Symbol}()
-    owned = ActionSpec[]
-    for spec in action_specs
-        spec.name in seen || (push!(seen, spec.name); push!(owned, spec))
-    end
-    for spec in sort!(owned; by = s -> String(s.name))
-        h = _fold_parts(h, "spec", spec.name,
-            Int(spec.plugin), spec.accepts_string_slot,
-            spec.validate === nothing ? "-" : String(nameof(spec.validate)))
-            # (the declared per-action settribute slot left the fold at stage 5's E12 of the v0.4 build — census row 45: the
-            # FIFTEENTH re-mint, measured by the build's probe; the per-action default left at stage 2's commit 3-ii, the
-            # overload rows with the spelling tag, the sugar-candidacy register and the keyed slot at stage 5's E11 — the fourteenth)
-    end
-    for p in plugins
-        h = _fold_parts(h, "plug", p.altName, p.setMode,
-            _type_text(p.altConstructor), p.getAltInstance !== nothing,
-            # v0.4 T2 (cure batch 1) — the BEHAVIOR-BEARING base fields join the fold: the setter and
-            # getter by NAME, the precedence tuple (the CRX after-T2 set: a plugin swapped for one
-            # with a different setter kept the seal). Callables fold by name — the snapshot's
-            # `===` leaf compare at the door (T2-bis) closes the same-named-swap remainder.
-            "setter", _slot_text(p.setAltInstance), "getter", _slot_text(p.getAltInstance),
-            "prec", _slot_text(p.precedencesTuple),
-            # stage 2's commit 3 — the Alterant's ONE declared default joins the seal (R-V04B-51 (1))
-            "default", _slot_text(p.default),
-            # v0.4 T2 — the declared capture slot joins the fold (the seal covers the record; the seven other
-            # declared slots of T1 left the record at stage 5's E10 of the v0.4 build — the twelfth re-mint)
-            "capture", _slot_text(p.capture))
-    end
-    return h
-end
-
-## v0.4 T2 — the canonical TEXT of a declared slot for the digest fold: deterministic, module-
-## unqualified, callables by NAME, containers element-wise in declaration order, and BOUNDARY-
-## UNAMBIGUOUS (no element boundary can be re-cut) — NOT globally injective. Since T2-bis the
-## fold is a lossy CACHE KEY, never the door's mechanism (docs/public-api.md §1.2): its residual
-## collision classes — module-unqualified type names; the name-folded designated callables;
-## function-valued type parameters; untagged parameter categories (`Val{M.T}` ≡ `Val{true}`);
-## un-encoded container parameters (`Any[1]` ≡ `Int[1]`) — are FINGERPRINT-only, each caught at
-## the door by the snapshot's `===` leaf compare. The former (iv)/(v) hard-stop classes are
+## v0.4 T2 — the canonical TEXT of a declared slot: deterministic, module-unqualified, callables by NAME, containers
+## element-wise in declaration order, and BOUNDARY-UNAMBIGUOUS (no element boundary can be re-cut) — NOT globally
+## injective. Since stage 5's E13 of the v0.4 build this family has ONE caller — the validate walk's canonical Dict-entry
+## ORDER (`_walk_dict_entries` below; T2BIS-DESIGN §2's deterministic first-failure): the registration digest it fed (E13), with
+## the `seal` fingerprint that digest minted, left at E13 (census row 6 — the row's own carve-out, "one key-text path
+## stays for the kept door"). Its residual collision classes — module-unqualified type names; the name-folded designated
+## callables; function-valued type parameters; untagged parameter categories (`Val{M.T}` ≡ `Val{true}`); un-encoded
+## container parameters (`Any[1]` ≡ `Int[1]`) — were FINGERPRINT-only, each caught at the door by the snapshot's `===`
+## leaf compare; for a key ORDER a collision means two keys sort as equal texts — the sort is stable. The former (iv)/(v) hard-stop classes are
 ## CLOSED (`String`-only values; every type-bearing field probed at validate under the node
 ## budget); non-DataType type nodes encode STRUCTURALLY (crx-t2bis cure A1 — never `string`)
 ## (cure batch 1: the first encoding joined elements with delimiters, so `[Symbol("a,b")]` and
@@ -633,7 +574,7 @@ _slot_text(x::Symbol)::String = string("y", _ns(String(x)))
 _slot_text(x::String)::String = string("s", _ns(x))
 _slot_text(x::Bool)::String = x ? "T" : "F"
 # (cure batch 2) the CONCRETE numeric type is part of the value (`Int8(1)` ≠ `Int64(1)`), and a
-# vector is not a tuple — distinct tags, so a same-display substitution moves the seal.
+# vector is not a tuple — distinct tags, so a same-display substitution changes the text.
 # (cure batch 4) THE ENCODABLE DOMAIN IS CLOSED. Numbers: the machine integers by decimal text,
 # the machine floats BIT-EXACTLY (display text collapses distinct NaN payloads), Complex and
 # Rational STRUCTURALLY over their parts; any other Number — and any value of a type without an
@@ -655,17 +596,16 @@ _slot_text(x::Type)::String = string("t", _ns(_type_text(x)))
 # (cure batch 5) DATA SLOTS HOLD DATA: a `Function` encodes by NAME only in the DESIGNATED callable
 # fields (setter/getter/validate — each a snapshot leaf the door compares by `===`);
 # inside a declared DATA value (`Declared.value`, any container in it) a
-# same-named function from another module would be invisible to the fingerprint AND, were it not
-# refused, indistinguishable in the fold, so a function there is UNENCODABLE (refused at
+# same-named function from another module would be invisible to the key text (as to the fingerprint it fed — E13) AND, were it not
+# refused, indistinguishable in the text, so a function there is UNENCODABLE (refused at
 # validation; the snapshot door would separately fire on the identity move).
 const _IN_DATA = Base.ScopedValues.ScopedValue{Bool}(false)
 # (the t3t4r4 A1=B1 cure) the STRUCTURAL callable name — `nameof` is extensible, and a
 # Function can legitimately appear as an isbits TYPE PARAMETER of a declared signature
 # (`Store{tag}` — probe P70: reflection's param render dispatched a pirated `nameof`
 # raw out of validate). `_callable_text` reads TypeName fields only; for an ordinary
-# named function the text is IDENTICAL to the old `nameof` render (the P50 ladder), so
-# the seal fold does not move for the shipped/Base-fallback class (suite-asserted);
-# a closure's text differs — the same benign exotic-registrant seal-text class already
+# named function the text is IDENTICAL to the old `nameof` render (the P50 ladder — suite-asserted);
+# a closure's text differs — the same benign exotic-registrant text class already
 # disclosed at the r3-C4 scoping.
 _slot_text(f::Function)::String =
     _IN_DATA[] ? throw(_UnencodableSlot(typeof(f))) : string("f", _ns(_callable_text(f)))
@@ -719,7 +659,7 @@ _slot_text(nt::NamedTuple)::String =
 _slot_text(x::NoDefault)::String = "NoDefault"
 _slot_text(x::Declared)::String =
     Base.ScopedValues.with(_IN_DATA => true) do; string("Declared", _ns(_slot_text(x.value))) end
-_slot_text(x::CaptureDecl)::String =   # v0.4 T5: the stem joins the seal (the SEVENTH re-mint's locus); the instance type and the multiplicity left the row at stage 5's E5 (the THIRTEENTH re-mint)
+_slot_text(x::CaptureDecl)::String =   # v0.4 T5: the stem joined the seal's fold (the SEVENTH re-mint's locus — the fold left at stage 5's E13); the instance type and the multiplicity left the row at stage 5's E5
     string("Capture", _nsv((String(x.attr_scheme), _slot_text(x.mode_gate), _slot_text(x.attr_stem))))
 # (cure batch 4) NO opaque fallback: a value of a type without an encoder is UNENCODABLE — refused
 # at validation as `REG_PROTOCOL`; a value type a later cure admits gets its own encoder then.
@@ -799,9 +739,10 @@ _value_container(x)::Bool = x isa Vector || x isa Dict || x isa Tuple || x isa P
 
 "Predicate 2's totality bound (T2BIS-DESIGN §2, THE BUDGET LAW): the node budget of the
 iterative type-parameter walk. A budget-PASSING type has a whole parameter TREE of ≤ this
-many nodes, so every text-encoder recursion over it at the mint is depth-bounded —
-MINT-SAFE by construction, with NO catch (catching `StackOverflowError` is shape-dependent
-at the Julia semantics — probes P1/P4, log §S2.6/§S2.9 — and is never a design premise)."
+many nodes, so every text-encoder recursion over it is depth-bounded, with NO catch (catching
+`StackOverflowError` is shape-dependent at the Julia semantics — probes P1/P4, log §S2.6/§S2.9 — and
+is never a design premise). The MINT it bounded — the seal's digest — left at stage 5's E13 of the v0.4 build
+(census row 6); the bound stays as the domain's declared closure (register E13-3), bounding the key-order text."
 const _TYPE_BUDGET = 256
 
 # the ITERATIVE budgeted type walk: EVERY child type node is descended — `DataType`
@@ -1103,8 +1044,8 @@ of the v0.4 build, census row 16): predicate 1 = membership AT
 POSITION (leaves via `_domain_leaf`; the value-domain containers; the record structs only
 at their structural positions; a `Function` only in the designated callable fields and
 never inside declared data; `String`-only string values); predicate 2 = the type-encoder
-BUDGET over every admitted `Type` leaf's parameter tree, so a validated record is
-MINT-SAFE. At most ONE slot-named `REG_PROTOCOL` row per (record, slot), in deterministic
+BUDGET over every admitted `Type` leaf's parameter tree (the seal's mint it kept safe left at stage 5's
+E13 — census row 6; the bound stays as the domain's declared closure). At most ONE slot-named `REG_PROTOCOL` row per (record, slot), in deterministic
 order; full collection across slots and records; `validate` never throws.
 """
 function _encodability_collect!(diags::Vector{Diagnostic}, plugins::Vector{PlugIn}, action_specs::Vector{ActionSpec})
@@ -1751,7 +1692,7 @@ function _copy_published_records(r::AlterantRegistry)
     return (plugins, specs)
 end
 
-# The digest's type serialization: module-UNQUALIFIED (stable across load contexts) but
+# The slot text's type serialization (the digest it served left at stage 5's E13): module-UNQUALIFIED (stable across load contexts) but
 # parameter-FAITHFUL (`Dict{Symbol,Bool}` ≠ `Dict{Symbol,Int}` — a real drift class a bare
 # `nameof` would collapse). (cure batch 5) a NON-type parameter is a VALUE and folds type-tagged
 # through `_slot_text` (`Val{Int8(1)}` ≠ `Val{Int64(1)}`, `Val{:x}` ≠ `Val{1}`; a parameter value
@@ -1765,11 +1706,10 @@ function _type_text(t)::String
     t === Any && return "Any"
     if t isa DataType
         # (the t3t4r2 family cure) `nameof` is an EXTENSIBLE generic — a legitimate
-        # `Base.nameof(::Type{Theirs})` specialization could throw through the seal
+        # `Base.nameof(::Type{Theirs})` specialization could throw through the
         # encoder. The getfield form is OUTPUT-IDENTICAL (`nameof(t::DataType)` IS
-        # `t.name.name` — probe P50 across the type ladder, incl. function types), so
-        # the registration pin does NOT move; `getfield` is a builtin — no user method
-        # can run.
+        # `t.name.name` — probe P50 across the type ladder, incl. function types), so no
+        # text moved when it landed; `getfield` is a builtin — no user method can run.
         nm = getfield(getfield(t, :name), :name)
         isempty(getfield(t, :parameters)) && return String(nm)
         return string(nm, "{", join((_type_param_text(p) for p in getfield(t, :parameters)), ","), "}")
@@ -1802,7 +1742,7 @@ _type_param_text(p)::String =
 ## T2–T4 left: his legacy registered unchecked and failed at dispatch): the DOMAIN PROBE (R-V04B-4 (iii) — the one domain definition
 ## shared by `validate`, `publish`'s copier and the door's walker; `publish` relies on it), the Heading lane's four mode-gate laws
 ## (kept until R-V04B-101); the vocabulary check left at stage 5's E9, census row 10. Then the derived
-## tables + the seal + the lifecycle.
+## tables + the publish-time snapshot + the lifecycle (the seal's mint left at stage 5's E13 — census row 6).
 """
     _validate_registration(plugins, action_specs) -> Vector{Diagnostic}
 
@@ -1838,10 +1778,6 @@ function _derive_tables(plugins::Vector{PlugIn}, action_specs::Vector{ActionSpec
     )
 end
 
-"The seal (HC-9): the algorithm-tagged registration digest over every declared slot (the source digests and the policy identity left with the security frame at stage 5's E10)."
-_mint_seal(plugins::Vector{PlugIn}, action_specs::Vector{ActionSpec})::String =
-    string("fnv1a64:", string(_registration_digest(action_specs; plugins = plugins), base = 16, pad = 16))
-
 """
     validate(builder::RegistryBuilder) -> Vector{Diagnostic}
 
@@ -1861,9 +1797,9 @@ every container is copied by the domain copier `_domain_copy` — callables/Type
 VersionNumbers/numbers carried BY REFERENCE, containers and slot structs REBUILT at their exact
 concrete types, sharing preserved within each copy stage; `deepcopy_internal` is never dispatched,
 so no user type can specialize the copy (a later mutation of the builder cannot reach a published
-registry, and vice versa). The derived tables come from the declarations alone; the seal field
-keeps the registration FINGERPRINT (a lossy cache key); the `_snapshot` baseline is a SECOND,
-disjoint domain copy of all ten `_SNAPSHOT_FIELDS` (eleven before stage 5's E12 — census row 45). The published value's containers are
+registry, and vice versa). The derived tables come from the declarations alone; the `_snapshot` baseline is a SECOND,
+disjoint domain copy of all nine `_SNAPSHOT_FIELDS` (ten before stage 5's E13 — the `seal` fingerprint field left with the
+registration digest, census row 6; eleven before stage 5's E12 — census row 45). The published value's containers are
 READ-ONLY by contract — a mutation through them is detected at the door (`POST_SEAL_MUTATION`)
 by the structural deep-egal comparison against the snapshot, never silently effective — for
 conforming code (the disclosed bounds apply, docs/public-api.md §1.2).
@@ -1897,31 +1833,23 @@ function publish(b::RegistryBuilder)
     plugins = copyc(b.plugins, m1)
     specs   = copyc(b.action_specs, m1)
     t = _derive_tables(plugins, specs)
-    # (cure batch 4) validation has already refused cyclic/unencodable declarations; this catch is
-    # the defensive conversion so no internal exception can ever leave the public lifecycle.
-    seal = try _mint_seal(plugins, specs) catch e
-        (e isa _CyclicSlot || e isa _UnencodableSlot) || rethrow()
-        throw(RegistrationRefused([Diagnostic(:REG_PROTOCOL, :error, string("GoMeta registry: the ",
-            "declared record could not be sealed (", e isa _CyclicSlot ? "a cyclic container" :
-            string("an unencodable value of type ", e.T), ") — the record shape law"), nothing)]))
-    end
     # T2-bis STAGE 2: the SNAPSHOT — built MECHANICALLY over the field-name tuple (no per-table
     # keyword binding anywhere); ONE stage-2 memo, SEPARATE from stage 1's, so live and snapshot
-    # share no mutable container (the disjointness assert below); the fingerprint String is a
-    # leaf, carried by reference — a seal-only divergence fires at path `seal`.
-    base = (; plugins = plugins, action_specs = specs, seal = seal, t...)
+    # share no mutable container (the disjointness assert below). (The seal's mint and its catch left
+    # at stage 5's E13 of the v0.4 build — census row 6: the fingerprint's one consumer, the grammar profile, left with it.)
+    base = (; plugins = plugins, action_specs = specs, t...)
     snapshot = let m2 = IdDict{Any,Any}()
         NamedTuple{_SNAPSHOT_FIELDS}(map(k -> copyc(base[k], m2), _SNAPSHOT_FIELDS))
     end
     _assert_snapshot_disjoint(base, snapshot)
-    return AlterantRegistry(_SealToken(), plugins, specs, t, seal, snapshot)
+    return AlterantRegistry(_SealToken(), plugins, specs, t, snapshot)
 end
 
 """
     _registry_door_check(registry) -> Vector{Diagnostic}
 
 The R-V04-34 STRICT door, T2-bis ONE-CHECK form (T2BIS-DESIGN §6): an UNPUBLISHED registry
-(`_snapshot === nothing`) refuses typed, naming the sanctioned path; else the ten (eleven before stage 5's E12)
+(`_snapshot === nothing`) refuses typed, naming the sanctioned path; else the nine (ten before stage 5's E13, eleven before E12)
 `_SNAPSHOT_FIELDS` are compared field-by-field against the publish-time snapshot by the ONE
 structural deep-egal walk (`===`-only leaves; no `hash`/`isequal`/`==`/user `show` dispatched
 anywhere, rendering included) and the FIRST divergent path fires exactly one
@@ -1976,16 +1904,3 @@ const DEFAULT_REGISTRY = build_default_registry()
 ## until stage 3's commit 4; the table, read by nothing since, left at stage 5's E12 of the v0.4 build (census row 45 —
 ## the word R-V04B-42 (2) waited for: his §317 mark and his §319 order). Neither the alias nor the table was ever
 ## in the `export`/`public` surface (docs/public-api.md §1), so no consumer contract moves.
-
-"""
-    const DEFAULT_GRAMMAR_PROFILE :: GrammarProfile
-
-The pinned closed-default grammar profile — built HERE (not in the profile file) because its
-registration digest is a fold over `DEFAULT_REGISTRY.action_specs`, which must exist first
-(the module include order puts the profile substrate before the registry; every reference to
-this const is call-time-bound, so late construction is sound). Struct + constructor +
-resolution law live in the profile file; this is the ONE default-profile construction site.
-"""
-const DEFAULT_GRAMMAR_PROFILE = _mk_profile(:jl_share_v1, :closed_v1,
-    _registration_digest(DEFAULT_REGISTRY.action_specs;
-        plugins = DEFAULT_REGISTRY.plugins))

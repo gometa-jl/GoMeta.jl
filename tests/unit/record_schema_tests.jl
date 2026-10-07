@@ -7,11 +7,9 @@
 #       of the v0.4 build (census row 45 — his §317 mark; the Alterant-named `visib_to_settribute` field and the `===` alias
 #       `VISIB_TO_SETTRIBUTE` were already GONE); the closed enums of the two slots that remain (their record-shape refusals left at
 #       stage 5's E4 of the v0.4 build; the enums of the seven other slots went with those slots at E10);
-#       the registration digest's fold COVERS the new slots (flipped at T2 when the publication seal
-#       was minted — at T1 this file witnessed the fold's blindness by name, as the T2 flip target).
-# DOES: constructs records by keyword (the positional forms left at stage 5's E11 — census row 65), inspects DEFAULT_REGISTRY, and pins the
-#       digest-COVERAGE witness (the former blindness witness,
-#       flipped at T2).
+#       the registration digest's coverage witness and the seal-participation pin left at stage 5's E13 of the v0.4 build with the
+#       digest and the seal field (census row 6; the slot TEXT's distinctness, :36, stays — the encoder serves the validate walk).
+# DOES: constructs records by keyword (the positional forms left at stage 5's E11 — census row 65) and inspects DEFAULT_REGISTRY.
 # REASONING: the golden layer proves T1 is BEHAVIOR-NEUTRAL (byte-identical renders); only unit
 #       introspection can prove the schema carries what the later cures consume.
 # PURPOSE: the T1 acceptance row of the v0.4 build (the cure inventory's slot substrate).
@@ -29,24 +27,11 @@ import GoMeta as GM
         cap = GM.CaptureDecl(:per_key, nothing)
         # v0.4 T5 (T5-DESIGN §6, the +3 declared movements): the attr_stem default
         # admits through the 2-positional outer method; the 3-positional round-trips (stage 5's E5: the row's 3 fields);
-        # the stem participates in the SEAL fold (two rows differing only in stem
-        # encode differently — the SEVENTH re-mint's mechanism).
+        # two rows differing only in stem encode differently (the slot text — the seal fold it joined left at stage 5's E13).
         @test cap.attr_stem === nothing
         @test GM.CaptureDecl(:per_key, nothing, :st5).attr_stem === :st5
         @test GM._slot_text(cap) !=
               GM._slot_text(GM.CaptureDecl(:per_key, nothing, :st5))
-        # (the crx-t5 B8 strengthening) SEAL participation proper: two published
-        # registries differing ONLY in a capture stem carry different seals — the fold
-        # provably covers the slot (encoder inequality alone would stay green if the
-        # fold dropped capture).
-        _bstem(s) = begin
-            b = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
-            b.plugins[2] = GM.PlugIn(; altName = :Visib, setMode = :mutExclusive,
-                altConstructor = GM.Alterants.Visib, setAltInstance = GM.Alterants.setVisib,
-                capture = GM.CaptureDecl(:single, nothing; attr_stem = s))
-            GM.publish(b)
-        end
-        @test _bstem(:sa1).seal != _bstem(:sa2).seal
         p = GM.PlugIn(; altName = :zz, setMode = :accumulate, altConstructor = Dict{Symbol,Bool},
                         setAltInstance = identity, capture = cap)
         @test p.capture === cap
@@ -72,19 +57,4 @@ import GoMeta as GM
     # (the record shape law testset was CONSCIOUSLY RETIRED at stage 5's E4 of the v0.4 build with its
     # subject — census row 3, OWNER-WORDS §317: a mis-tagged enum slot registers unchecked, as the legacy did.)
 
-    @testset "the registration digest COVERS the new slots (flipped at T2 — the seal covers the record)" begin
-        # WITNESS, flipped at T2 as registered at T1: at T1 the fold read the v0.3.2 fields only
-        # (this assertion was `==`); T2 extended the fold over every declared slot so the HC-9 seal
-        # covers the record — a declared default or an accepting-slot change now MOVES the digest (the write-back
-        # key left the record at stage 5's E12 of the v0.4 build — census row 45: the FIFTEENTH re-mint). The
-        # profile's bootstrap registration pin re-minted with it (profile_snapshot_tests.jl,
-        # disclosed old → new); the grammar pin did not move.
-        specs = GM.DEFAULT_REGISTRY.action_specs
-        alt = copy(specs)
-        i = findfirst(s -> s.name === :hide, alt)
-        h = alt[i]
-        alt[i] = GM.ActionSpec(; name = h.name, plugin = h.plugin, accepts_string_slot = h.accepts_string_slot + 1,
-                                 validate = h.validate)
-        @test GM._registration_digest(alt) != GM._registration_digest(specs)   # flipped at T2 (was ==)
-    end
 end

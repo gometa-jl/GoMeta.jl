@@ -4,8 +4,8 @@
 #       mutation of a published registry's walked fields FIRES the door at a prefix-comparable
 #       path, and that structurally identical rebuilds (fresh containers, leaves by reference,
 #       DAG split/joined) stay SILENT. It REPLACES the enumerated witnesses AS THE PROOF of the
-#       door's coverage; no existing test is deleted (the batch-2..5 `_slot_text` witnesses stay
-#       as fingerprint regression pins, the door pins as door regression pins).
+#       door's coverage; no existing test is deleted (the batch-2..5 `_slot_text` witnesses stay as the encoder's
+#       regression pins — its one caller since stage 5's E13 the validate walk's Dict order —, the door pins as door regression pins).
 # DOES: N = 1024 iterations — each takes a FRESH publish of the fixed generator builder, checks
 #       the door EMPTY, applies one site mutation (sites cycle deterministically; the rng picks
 #       only replacement values), and checks ONE fire at a segment-prefix-comparable path — plus
@@ -251,7 +251,6 @@ end
             end
         end
         for f in GM._SNAPSHOT_FIELDS
-            f === :seal && continue                              # no mutable path reaches it — W4 is its witness
             walk(getfield(R, f), Any[f], GM.AlterantRegistry, f)
         end
         return sites

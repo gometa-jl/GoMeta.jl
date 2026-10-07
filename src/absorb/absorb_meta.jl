@@ -2,39 +2,41 @@
 #
 # IS: the Absorb-phase metaLine parser and condition extractor. It splits a metaLine's meta region
 #     into alterant clauses (parseAlt), parses one-word labels (parseOneWordLabel) and balanced
-#     '()' argument lists (parseArgs / produceArgsStr), parses each condition body through the
-#     closed interpreter's parse_condition into a bounded ConditionAST or a typed refusal
-#     (parseConditions), and ENQUEUEs action + condition + args into the per-call queue tensors
-#     (absorbMeta — the module's sole export).
+#     '()' argument lists (parseArgs / produceArgsStr), RE-WRITES each condition body's GoMeta-specific parts to Julia text
+#     and has Julia's parser read it once (`_rewrite_condition` + `Meta.parse` in parseConditions — his legacy's
+#     produceConditionStr read from the ground up, stage 5's E13 of the v0.4 build, census row 1; R-V04B-106 (2); his §D174),
+#     and ENQUEUEs action + condition + args into the per-call queue tensors (absorbMeta — the module's sole export).
 #     It enqueues, never applies: applying queued alterants is apply.jl's job.
 # DOES: absorbMeta reads the per-call ProcessState through the parent GoMeta.ctx(), hoisted once
 #     per call as `st`. Each parsed action name is resolved against st.registry.sorted_alt_actions;
 #     the declaration-order plugin index and the action index are written into st.queue.queued at
 #     the current meta-hierarchy slot, st.mh.slot_has_accum is set for actions in the registry's
-#     accumulate set, and the parsed condition / Symbol-tuple args are stored by value in
-#     st.queue.conditions / st.queue.args. Condition text is parsed HERE by the closed
-#     interpreter's parse_condition into a bounded ConditionAST (settribute keys, registered
-#     alterant-action queries, the documented operators — `,`/`||` OR, `&&` short-circuit AND,
-#     eager `&`/`|`, `!` negation — and `()` grouping; nothing else), evaluated only
-#     at apply time by the engine itself (README SECURITY; docs/public-api.md §3.2).
-# REASONING: everything bound for evaluation must first pass this file's closed grammar and
-#     vocabulary (docs/public-api.md §3.4) — and no condition text is ever host-evaluated in a
-#     default-configured run (the opt-in `:full_eval_v1` mode stores its marker through the SAME
-#     closed intake); out-of-vocabulary input refuses at absorb with a stable message. Two guarded refusals
-#     live here (the second, "GoMeta absorb: condition too complex", is the scan-cap guard described below):
-#     "GoMeta absorb: unknown alterant action" — the registry else-branch (the E-01 family). Four guards ADDED to his
-#     legacy's metaLine parser left at stage 5's E7 of the v0.4 build (census row 41; his §120) — the punctuation wall at
-#     the action-name position, the glued-token wall after a closing ')' or '}', the no-token guard (stage 5's E7) and the
-#     per-slot capacity guard: a malformed metaLine is read as his legacy read it — punctuation at the action position
-#     skipped to the next identifier, a glued token dropped (census row 41) — or meets Julia's own BoundsError (an
-#     empty meta region; a further action in a full slot — the queue tensor's width is the registered action
-#     count). Honest edges: each refusal is an
-#     untyped ErrorException raised via error(); their typed conversion is deferred
-#     at v0. The condition scanner carries fixed
-#     safety counters (at most 29 steps per scan): the outer scan refuses with the stable
-#     "condition too complex" message when the cap stops it with non-whitespace input unconsumed
-#     (a whitespace-only remainder is semantically complete and stays accepted); per-atom scan
-#     exhaustion surfaces as the malformed/unterminated-key refusals.
+#     accumulate set, and the parsed condition (Julia's `Expr`) / Symbol-tuple args are stored by value in
+#     st.queue.conditions / st.queue.args. A condition body is READ HERE: a settribute key becomes its state read
+#     `getState(:key)`, an action of an Alterant that answers queries becomes its query `getAltState(Int8(p), Symbol("…"), …)`
+#     (the registry's one rule `queryable_action`, stage 5's E12 — R-V04B-99), a label test `:name` the Labels query of that
+#     name, his `,` becomes `||`, everything else — `&&`, `!`, `()`, `|`, `&`, numbers, Julia operators, whitespace — is copied
+#     verbatim (a bare word that is neither a settribute key nor a queryable action — `true`, `false`, `nothing`, a quoted string's
+#     word among them — is a condition key and refuses, as his legacy read it);
+#     the result is parsed ONCE by `Meta.parse` and the `Expr` evaluated by Julia at apply time (apply.jl; `Core.eval`), or,
+#     for a heading's condition, once at this seam (`_absorb_local_only!`).
+# REASONING: his design — the condition is Julia (OWNER-WORDS §120, §D174): GoMeta recognises its own parts and Julia does the
+#     rest, so a Julia Boolean expression over the GoMeta names is a condition (`{ 1 == 1 }` is one). The vocabulary stays
+#     GoMeta's: a bare name that is neither a settribute key nor a queryable action meets the usual unknown-condition-key
+#     refusal here (the legacy's :231–:234) — the vocabulary's one refusal; the seam's other refusal is the no-expression guard
+#     below (two refusals of GoMeta's on the condition path, no more); a body Julia cannot parse is
+#     Julia's own `Meta.ParseError` out of the goMeta call (an incomplete body thrown as the same class HERE, never stored for a
+#     later reader); an empty block or a bare literal (`{}`, `{ 1 }`) carries no condition expression and is refused (register
+#     E13-6); an argument text is spliced as Julia text and judged by Julia at apply (as the action arguments are since
+#     stage 5's E6). Two guarded refusals live here: "GoMeta absorb: unknown alterant action" — the registry else-branch (the
+#     E-01 family) — and the unknown condition key. Four guards ADDED to his legacy's metaLine parser left at stage 5's E7 of
+#     the v0.4 build (census row 41; his §120) — the punctuation wall at the action-name position, the glued-token wall after a
+#     closing ')' or '}', the no-token guard and the per-slot capacity guard: a malformed metaLine is read as his legacy read
+#     it — punctuation at the action position skipped to the next identifier, a glued token dropped (census row 41) — or
+#     meets Julia's own BoundsError (an empty meta region; a further action in a full slot — the queue tensor's width is the
+#     registered action count). Honest edges: each refusal is an untyped ErrorException raised via error(); their typed
+#     conversion is deferred at v0. The closed condition interpreter's walls (left at E13: the 29-step scan cap, the atom wall,
+#     the byte and depth walls) and its typed condition codes left with the interpreter at E13 — Julia's parser has none of them.
 # PURPOSE: turn each metaLine of a BLS input into queued alterant work the apply phase consumes,
 #     refusing out-of-vocabulary metadata and the structural shapes his legacy refused (a duplicate or unterminated list or
 #     block, a misplaced label) with a stable, documented message; a malformed metaLine is otherwise read as his legacy read it
@@ -49,13 +51,12 @@ module AbsorbMeta
 using StaticArrays: SVector
 import ..CnS
 import ..BLS
-# The enqueue (`absorbMeta`) and the condition intake (`parseConditions`, the closed
-# interpreter's parse step) read the per-call
-# `ProcessState` (registry + slot tensors + queue + cursor) via the parent `GoMeta.ctx()`.
+# The enqueue (`absorbMeta`) and the condition intake (`parseConditions` — the rewrite reads the registry's
+# vocabulary) read the per-call `ProcessState` (registry + slot tensors + queue + cursor) via the parent `GoMeta.ctx()`.
 import ..GoMeta: ctx
-# v0.2 FLIP: the closed-interpreter intake unit + its refusal type + the flipped condition
-# seam type (parseConditions returns ConditionT = ConditionAST; the sentinel is `nothing`).
-import ..GoMeta: parse_condition, Diagnostic, ConditionT, resolve_profile, condition_mode_fn
+# the registry's one vocabulary rule for a bare name in a condition (stage 5's E12 — R-V04B-99): an action of an Alterant
+# that answers queries; the rewrite's test where his legacy tested `insorted(key, sortedAltActionsSVec)` (AbsorbMeta.jl :219)
+import ..GoMeta: queryable_action
 # v0.2 CH-3 step 8: the widened action-argument literal floor (Symbol|String; ints reserved).
 import ..GoMeta: AlterantArgT
 # v0.2 CH-3 step 9: the context record type (the enqueue-seam applicability + derivation
@@ -64,7 +65,7 @@ import ..GoMeta: MetaContext, UserContext   # UserContext since stage 2's commit
 import ..Alterants
 # v0.2 localOnly delivery: the absorb seam calls the record's setter directly (its guard
 # `_invoke_set` left at stage 5's E6 of the v0.4 build — census row 14), evaluates
-# conditions ONCE (`evaluate`, condition.jl), and mints the heading rows
+# conditions ONCE (`Core.eval` on the stored Expr — Julia's evaluation, stage 5's E13), and mints the heading rows
 # (`capture_heading!`, annotations.jl) — all reached via the parent module.
 import ..GoMeta as GMX
 export absorbMeta
@@ -217,22 +218,128 @@ _refuse_malformed_quote(t::AbstractString) =
         "); v0's argument grammar (see docs/public-api.md §3.4)")
 # Nothing in this file executes at module load beyond definitions and imports.
 
-## v0.2 FLIP: the retired condition scanner (produceArgsStr + produceConditionStr +
-## produceConditionExpr) was carried in a non-shipping reference harness used to derive the
-## migration's sealed differential records; harness and scanner were deleted once those
-## records were frozen (the development repository archives both). src carries NO code
-## evaluation and NO Meta.parse on the condition path. parseConditions (below) now calls
-## the closed interpreter's parse_condition as the (text -> value | refusal) unit.
+## THE CONDITION REWRITE — stage 5's E13 of the v0.4 build (census row 1; his order §319, R-V04B-106 (2)–(3)); his §D174 (2026-10-06):
+## the parser "must simply be able to recognize the GoMeta specific parts of the conditions in order to slightly re-write it when
+## storing the condition as a Julia Expression which gets then evaluated on demand by Julia". His legacy's produceConditionStr
+## (GoMetaRetro AbsorbMeta.jl :116–:245) read from the ground up (his §342): the GoMeta-specific parts of a `{…}` body become Julia
+## text, the rest is copied verbatim, and Julia's parser reads the result ONCE here; the stored `Expr` is evaluated by Julia at apply
+## (apply.jl) or, for a heading, once at this seam (`_absorb_local_only!`):
+##   `,`                 → ` || `                                              (his OR — the legacy's :139–:145)
+##   `:name`             → `getAltState(Int8(p), Symbol(":"), Symbol("name"))`      (a label test: the Labels Alterant's `:` action,
+##                         p its plugin index; the name quoted by `repr`, so EVERY name the vocabulary admits — a ZWJ pictograph too —
+##                         is spelled the one way; register E13-8)
+##   `:(args)`           → `getAltState(Int8(p), Symbol(":"), args)`               (the parenthesized label form, the args raw)
+##   `key` / `key(args)` → `getState(:key)` / `getState(:key, args)`              (a settribute key — `keys(BLS.ComponentSettribute)`)
+##                       → `getAltState(Int8(p), Symbol("key"), args)`             (a QUERYABLE action — `queryable_action`: an Alterant
+##                         that declares `getAltInstance`; Labels at v0 — the registry's rule, R-V04B-99 / E12, kept)
+##                       → the usual unknown-condition-key refusal                   (anything else — the legacy's :231–:234)
+##   everything else — `&&`, `!`, `()`, `|`, `&`, `||`, numbers, Julia operators, whitespace — verbatim.
+## A bare WORD that is neither a settribute key nor a queryable action IS a condition key and meets the refusal — `true`, `false`,
+## `nothing` and a quoted string's word among them (his legacy's reading, :231–:234; register E13-14, his to widen). A worded label
+## with a parenthesized list (`:abc(:xyz)` — the K6 corner) reads as the label test of the word followed by a Julia call on its
+## Bool — a MethodError at apply; his legacy dropped the word and queried the list (:187–:191, :215), the closed interpreter (E13)
+## refused the shape — register E13-13, his to revert to either.
+## An argument text is spliced as Julia text: its shape is Julia's to judge at apply (`getAltState`'s `Vararg{Symbol}`; an undefined
+## name its UndefVarError), as the action arguments are since stage 5's E6. The walk is a CHAR walk (`nextind`/`lastindex` — never
+## the legacy's byte-count end test, whose BoundsError one index past a multibyte final character the 0.2.2 cure fixed;
+## tests/unit/unicode_cure_tests.jl [4]/[7] hold the cure). A word ends at whitespace, at a non-identifier character or at one of
+## `_COND_DELIMS`; a label name ends at whitespace or at one of `_COND_DELIMS`.
+const _COND_DELIMS = ('(', ')', ',', '!', '&', '|')
 
+"the balanced `(…)` span opening at `i` (text[i] == '(') — (the index of the matching ')', the raw interior); `nothing` when no ')' closes it (the '(' is then copied verbatim and Julia's parser judges the rest)"
+function _paren_span(text::String, i::Int)
+    depth = 0; j = i
+    while j <= lastindex(text)
+        c = text[j]
+        c == '(' && (depth += 1)
+        if c == ')'
+            depth -= 1
+            depth == 0 && return (j, text[nextind(text, i):prevind(text, j)])
+        end
+        j = nextind(text, j)
+    end
+    return nothing
+end
+
+"the Julia call a condition KEY (a settribute key or a queryable action) with an optional raw argument text re-writes to — or the usual refusal"
+function _cond_target(key::Symbol, args::Union{Nothing,String}, r)::String
+    tail = args === nothing ? ")" : string(", ", args, ")")
+    if key ∈ keys(BLS.ComponentSettribute)
+        return string("getState(:", key, tail)
+    elseif queryable_action(r, key)
+        p = r.action_to_plugin[r.action_index[key]]
+        return string("getAltState(Int8(", p, "), Symbol(", repr(String(key)), ")", tail)
+    else
+        error("GoMeta absorb: unknown condition key ", repr(first(String(key), 40)), " — neither a component state-ref nor a ",
+            "queryable alterant action; a condition's bare name is a settribute key or an action of an Alterant that answers ",
+            "queries (see docs/public-api.md §3.4)")
+    end
+end
+
+"""
+    _rewrite_condition(text, registry) -> String
+
+The `{…}` body with its GoMeta-specific parts re-written to Julia text (the table in the comment above); the registry supplies the
+vocabulary — the settribute keys and the queryable actions. Pure over its two arguments; `Meta.parse` reads the result.
+"""
+function _rewrite_condition(text::String, r)::String
+    out = IOBuffer()
+    i = firstindex(text); n = lastindex(text)
+    while i <= n
+        c = text[i]
+        if c == ','
+            print(out, " || "); i = nextind(text, i)
+        elseif c == ':'
+            j = nextind(text, i)
+            if j <= n && text[j] == '('
+                span = _paren_span(text, j)
+                if span === nothing
+                    print(out, c); i = j                    # an unclosed '(' — copied verbatim; Julia's parser judges the remainder
+                else
+                    args = strip(span[2])
+                    print(out, _cond_target(Symbol(":"), isempty(args) ? nothing : String(args), r)); i = nextind(text, span[1])
+                end
+            else
+                k = j
+                while k <= n && !isspace(text[k]) && text[k] ∉ _COND_DELIMS
+                    k = nextind(text, k)
+                end
+                name = text[j:prevind(text, k)]
+                print(out, _cond_target(Symbol(":"), isempty(name) ? nothing : string("Symbol(", repr(name), ")"), r)); i = k
+            end
+        elseif Base.is_id_start_char(c)
+            k = nextind(text, i)
+            while k <= n && Base.is_id_char(text[k]) && text[k] ∉ _COND_DELIMS
+                k = nextind(text, k)
+            end
+            key = Symbol(text[i:prevind(text, k)])
+            args = nothing
+            if k <= n && text[k] == '('
+                span = _paren_span(text, k)
+                if span !== nothing
+                    inner = strip(span[2])
+                    args = isempty(inner) ? nothing : String(inner); k = nextind(text, span[1])
+                end
+            end
+            print(out, _cond_target(key, args, r)); i = k
+        else
+            print(out, c); i = nextind(text, i)           # operators, parentheses, numbers, whitespace — Julia's, verbatim
+        end
+    end
+    return String(take!(out))
+end
+
+"the stored condition `Expr` names a label test (`getAltState` — the alterant-state query) somewhere in its tree"
+_has_query(x) = x isa Expr && ((x.head === :call && !isempty(x.args) && x.args[1] === :getAltState) || any(_has_query, x.args))
 
 function parseConditions(
     metaSS::SubString{String},
     thisInd::Int ## `thisInd` s.t. `metaSS[thisInd]` == '{'. See `parseAlt(...)`
-)::Tuple{Int,ConditionT}
+)::Tuple{Int,Expr}
 
     countOpenBrakets = 1
     indStartArgs = nextind(metaSS, thisInd)
-    local conditionAst::ConditionT
+    local conditionExpr::Expr
 
     while (thisInd = nextind(metaSS, thisInd)) < ncodeunits(metaSS) + 1
         if metaSS[thisInd] == '{'
@@ -244,138 +351,27 @@ function parseConditions(
     end
     if countOpenBrakets == 0
         indEndArgs = prevind(metaSS, thisInd)
-        local bodyStr = metaSS[indStartArgs:indEndArgs]
-        ## v0.2 FLIP: the (text → value | refusal) intake unit is the closed interpreter.
-        ## A refusal Diagnostic converts to the SAME statement-abort the old unit threw —
-        ## byte-identical messages (sealed-oracle-proven); the typed carrier now exists at
-        ## this seam for a later non-throwing routing motion.
-        ## the intake MODE is resolved from the per-call profile. `:closed_v1`
-        ## (the default, and the only mode reachable without the operator's explicit opt-in
-        ## acts) runs the closed interpreter below; a registered opt-in mode runs its own
-        ## registered intake under the SAME totality contract (value | typed refusal).
-        local st_ = ctx()
-        local prof = resolve_profile(st_.config)
-        local r = if prof.mode === :closed_v1
-            parse_condition(bodyStr; registry = st_.registry, profile = prof)
-        else
-            condition_mode_fn(prof.mode)(String(bodyStr), st_.registry, prof)
-        end
-        r isa Diagnostic && throw(ErrorException(r.message))
-        conditionAst = r
+        local bodyStr = String(metaSS[indStartArgs:indEndArgs])
+        ## THE REWRITE, then Julia's parser — ONCE, here (his legacy's :269–:270). A syntax error is Julia's own `Meta.ParseError`
+        ## out of the goMeta call (as a malformed action argument is Julia's since stage 5's E6); an INCOMPLETE body (`isCode &&`)
+        ## comes back as `Expr(:incomplete, …)` and is thrown as the same class HERE, at the statement — never stored for a later
+        ## reader; an EMPTY body or a bare literal (`{}`, `{ 1 }`, `{ | }`) carries no condition expression and is refused
+        ## (an unconditional action is written without `{}`; register E13-6 — the legacy stored nothing and applied unconditionally;
+        ## a quoted string's WORD is a condition key and meets the rewrite's refusal, E13-6's note). The echoed body is bounded to
+        ## 40 characters, as every refusal's token is (docs/public-api.md §4).
+        local ex = Meta.parse(_rewrite_condition(bodyStr, ctx().registry))
+        ex isa Expr || error("GoMeta absorb: the condition block {", first(bodyStr, 40), "} carries no condition expression (",
+            ex === nothing ? "an empty block" : "a bare literal", ") — an unconditional action is written without '{}' ",
+            "(see docs/public-api.md §3.4)")
+        Meta.isexpr(ex, :incomplete) && throw(ex.args[1] isa Exception ? ex.args[1] : Meta.ParseError(string(ex.args[1])))
+        conditionExpr = ex
     else
         error("GoMeta absorb: unterminated condition block — a '{' in a metaLine was never ",
             "closed (", countOpenBrakets, " still open); v0 requires balanced '{}' ",
             "(see docs/public-api.md §3.4)")
     end
-    return thisInd, conditionAst
+    return thisInd, conditionExpr
 end
-
-# function testParseConditions(
-#     metaSS::SubString{String},
-#     thisInd::Int
-# )
-#     (jtThisInd, jtCondExpr) = parseConditions2(metaSS, thisInd)
-
-#     return eval(jtCondExpr)
-# end
-
-#########################################################################################
-#########################################################################################
-## `parseConditions()`:
-# function insertGetState(conditionSS::SubString{String})
-#     tmpConditionStr = replace(conditionSS, "," => "||")
-#     println("\n############ insertGetState() #################")
-#     println("\t tmpConditionStr = ", tmpConditionStr)
-#     println("\t ncodeunits(tmpConditionStr) = ", ncodeunits(tmpConditionStr), "\n")
-
-#     thisInd::Int = 0
-#     indStartKey::Int = 0
-#     indEndKey::Int = 0
-#     conditionStr::String = " "
-#     while (thisInd = nextind(tmpConditionStr, thisInd)) < ncodeunits(tmpConditionStr) + 1
-#         # println("tmpConditionStr[", thisInd, "] = ", tmpConditionStr[thisInd])
-#         if !isspace(tmpConditionStr[thisInd])
-
-#             if (tmpConditionStr[thisInd] ∈ Char[':', '!']) ||
-#                (!ispunct(tmpConditionStr[thisInd]) &&
-#                 (tmpConditionStr[thisInd] ∉ Char['|', '&']))
-
-#                 indStartKey = thisInd
-#                 while (thisInd = nextind(tmpConditionStr, thisInd)) <
-#                       ncodeunits(tmpConditionStr) + 1
-#                     # println("tmpConditionStr[", thisInd, "] = ", tmpConditionStr[thisInd])
-#                     if isspace(tmpConditionStr[thisInd]) ||
-#                        (tmpConditionStr[thisInd] ∈ ['|', '&'])
-
-#                         # indEndKey = prevind(tmpConditionStr, thisInd)
-#                         break
-#                     elseif ispunct(tmpConditionStr[thisInd])
-#                         error("@F: ", basename(@__FILE__), " @L: ", @__LINE__, "\n",
-#                             "\t Found `Punctuation` in `conditionStr`! ")
-#                     end
-#                 end
-#                 if indEndKey < indStartKey
-#                     println("indEndKey = ", indEndKey)
-#                     thisInd = prevind(tmpConditionStr, thisInd)
-#                     indEndKey = thisInd
-#                     println("indEndKey = ", indEndKey)
-#                 end
-#                 conditionStr *= " getState(:" *
-#                                 tmpConditionStr[indStartKey:indEndKey] * ") "
-#             else
-#                 conditionStr *= tmpConditionStr[thisInd]
-#             end
-#         else
-#             conditionStr *= tmpConditionStr[thisInd]
-#         end
-#     end
-#     return conditionStr
-# end
-# jtCondStr = " state1"
-# jtCondSS = SubString(jtCondStr)
-# insertGetState(jtCondSS)
-#########################################################################################
-#########################################################################################
-# function parseConditions_OLD(
-#     metaSS::SubString{String},
-#     thisInd::Int
-# )::Tuple{Int,Expr}
-
-#     countOpenBrakets = 1
-#     indStartArgs = nextind(metaSS, thisInd)
-#     local conditionStr::String
-#     local thisConditionExpr::Union{Nothing,Expr}
-#     local conditionExpr::Union{Nothing,ConditionT}   # v0.2 FLIP: AST or the `nothing` sentinel
-#     while (thisInd = nextind(metaSS, thisInd)) < ncodeunits(metaSS) + 1
-#         if metaSS[thisInd] == '{'
-#             countOpenBrakets += 1
-#         elseif metaSS[thisInd] == '}'
-#             countOpenBrakets -= 1
-#         end
-#         countOpenBrakets == 0 ? (
-#             println("@L ", @__LINE__, " 0 open {-brakes "); break) : nothing
-#     end
-#     if countOpenBrakets == 0
-#         indEndArgs = prevind(metaSS, thisInd)
-#         # println("\ntypeof(Meta.parse(...):")
-#         # println("Here: ",
-#         #     typeof(Meta.parse(replace(metaSS[indStartArgs:indEndArgs], "," => "||"))),
-#         #     "\n")
-#         # println("Dump: \n")
-#         # println(dump(Meta.parse(replace(metaSS[indStartArgs:indEndArgs], "," => "||"))))
-#         conditionStr = insertGetState(metaSS[indStartArgs:indEndArgs])
-#         thisConditionExpr = Meta.parse(conditionStr)
-#         if thisConditionExpr !== nothing
-#             conditionExpr = thisConditionExpr
-#         else
-#             conditionExpr = Expr(:(nothing))
-#         end
-#     else
-#         error("@F: ", basename(@__FILE__), " @L: ", @__LINE__, "\n",
-#             "\t countOpenBrakets = ", countOpenBrakets, " != 0 i.e.: args not complete!")
-#     end
-#     return thisInd, conditionExpr
-# end
 
 #########################################################################################
 #########################################################################################
@@ -384,7 +380,7 @@ function parseAlt(
     thisInd::Int,
     firstToken::Bool = false   # v0.2 CH-3 step 9: true only for the FIRST metaComponent
                                # of the meta region — gates the quoted-first recognizer
-)::Tuple{SubString{String},Vector{SubString{String}},Union{Nothing,ConditionT},Int}   # v0.2 FLIP
+)::Tuple{SubString{String},Vector{SubString{String}},Union{Nothing,Expr},Int}
 
     indStartAlt::Int = 0
     indEndAlt::Int = 0
@@ -393,7 +389,7 @@ function parseAlt(
     foundLabel::Bool = false
     headSugar::Bool = false       ## v0.2 CH-3 step 9: this atom is the quoted-first heading
     local argsSSVec::Vector{SubString{String}}
-    local conditionExpr::Union{Nothing,ConditionT}   # v0.2 FLIP: AST or the `nothing` sentinel
+    local conditionExpr::Union{Nothing,Expr}   # Julia's Expr, or the `nothing` sentinel (an action without `{}`)
     if metaSS[nextind(metaSS, thisInd)] == ':'
         foundLabel = true
     end
@@ -483,9 +479,8 @@ function parseAlt(
     end
     if !(@isdefined conditionExpr)
         ## The no-condition SENTINEL is minted ONLY here (an action written WITHOUT `{}`);
-        ## the condition-intake boundary (parse_condition) can never return it — an authored
-        ## `{}` either yields a real ConditionAST or the stable refusal. v0.2 FLIP: the
-        ## sentinel is `nothing` (the queue's condition matrix is Union{Nothing,ConditionT}).
+        ## the condition intake (parseConditions) never returns it — an authored `{}` either yields
+        ## an `Expr` or a refusal (the queue's condition matrix is Union{Nothing,Expr}).
         conditionExpr = nothing
     end
     ## (a meta region yielding NO alterant token — `#~ ,`, `#~3 (` — reaches `metaSS[0:0]` and meets Julia's own
@@ -549,7 +544,7 @@ function absorbMeta(
     thisInd::Int = 0
     local altActionName::SubString{String}
     local argsSSVec::Vector{SubString{String}}
-    local conditionExpr::Union{Nothing,ConditionT}   # v0.2 FLIP: AST or the `nothing` sentinel
+    local conditionExpr::Union{Nothing,Expr}   # Julia's Expr, or the `nothing` sentinel (an action without `{}`)
     local crntAltActionIdx::Int8
     local altActionOnRow::Int8
     firstTok::Bool = true   # the quoted-first recognizer fires only for the FIRST
@@ -740,10 +735,9 @@ end
 ##   state — the pre-walk snapshot describes no component). A QUERY atom
 ##   (alterant-state query) REFUSES here at v0.2 (at absorb time `st.working` holds the PREVIOUS apply's residue, so a query
 ##   would gate the heading on unrelated preceding content — the order-dependent
-##   wrong-outcome class; the query form is RESERVED until a build can supply the
-##   heading's own lineage context — refusal→semantics is a compatible widening).
-##   An opt-in FullEvalCondition marker on a heading is RESERVED TOO (the second
-##   wall arm below);
+##   wrong-outcome class; the query form is RESERVED until the Heading runs through the apply loop,
+##   R-V04B-101 — the ONE minimal refusal R-V04B-106 (3) keeps; the closed interpreter's full-eval arm (E13)
+##   left with its marker at stage 5's E13);
 ## - the setter is called bare, as on the apply plane — its guard `_invoke_set` left at stage 5's E6
 ##   of the v0.4 build with its typed refusals (census row 14).
 ## Registry-driven WHERE THE REGISTRY CAN DRIVE IT: the DIVERT (mode),
@@ -764,7 +758,7 @@ end
 function _absorb_local_only!(
     st, metaSS::SubString{String}, actionName::Symbol,
     argsSSVec::Vector{SubString{String}},
-    conditionExpr::Union{Nothing,ConditionT},
+    conditionExpr::Union{Nothing,Expr},
     pendingLocal::Dict{Int8,Any}, plugIdx::Int8
 )
     plug = st.registry.plugins[plugIdx]
@@ -827,35 +821,18 @@ function _absorb_local_only!(
                 Symbol(string((st.meta_context::MetaContext).level - 1)))
         end
     end
-    ## THE QUERY-ATOM WALL (see the function header): a heading condition may test
-    ## settribute predicates only at v0.2.
-    if conditionExpr isa GMX.ConditionAST && GMX.has_query_atom(conditionExpr)
+    ## THE QUERY WALL (see the function header; R-V04B-106 (3) — ONE minimal refusal kept until the Heading runs through the
+    ## apply loop, R-V04B-101): a heading condition may test settribute predicates only — a label test (`getAltState` in the
+    ## stored Expr, found by `_has_query`) would read the PREVIOUS apply's residue at this seam.
+    if conditionExpr !== nothing && _has_query(conditionExpr)
         error("GoMeta absorb: alterant-state query in a heading condition — a ",
             "heading condition may test only settribute predicates at v0.2 (the ",
             "heading applies at its own line, where no alterant state exists yet; ",
             "the query form is reserved) in the meta region ",
             repr(first(metaSS, 40)), " (see docs/public-api.md §3.4)")
     end
-    ## THE FULL-EVAL ARM of the same wall (external-lens MEDIUM at the fresh-eyes
-    ## set): an opt-in FULL-EVAL heading condition would EXECUTE at the absorb seam —
-    ## a context the executing rung's contract predates (its state reads would see
-    ## the same previous-apply residue the query reservation exists for; "opt-in
-    ## execution does not imply consent to this changed context"). The heading
-    ## surface postdates the dual-mode contract, so its intersection with the
-    ## executing rung never had a settled semantic — RESERVED at v0.2, the same
-    ## conservative arm as the query atoms. Every QUEUED action's conditions keep
-    ## the opt-in mode's full contracted behavior. (The marker only mints for text the
-    ## safer rungs cannot lower — a settribute-only heading condition under the
-    ## opt-in profile still arrives as ConditionAST and works.)
-    if conditionExpr isa GMX.FullEvalCondition
-        error("GoMeta absorb: a full-eval condition on a heading — the opt-in ",
-            "executing mode's heading conditions are reserved at v0.2 (the heading ",
-            "evaluates at the absorb seam, a context the opt-in contract predates) ",
-            "in the meta region ", repr(first(metaSS, 40)),
-            " (see docs/public-api.md §3.4)")
-    end
-    ## The user-context build's reserved wall (ratified standing; seated AFTER the query-atom and
-    ## full-eval walls, BEFORE evaluation; fires only on the feed surface): a CONDITIONED
+    ## The user-context build's reserved wall (ratified standing; seated AFTER the query wall,
+    ## BEFORE evaluation; fires only on the feed surface): a CONDITIONED
     ## head in a fed profile refuses — the feed has no evaluable settribute state (the
     ## pre-walk snapshot describes NO component; a negated atom would evaluate true
     ## against init filler — the fabricated-state class). LIFTING CONDITION (recorded):
@@ -868,7 +845,9 @@ function _absorb_local_only!(
             "region ", repr(first(metaSS, 40)),
             " (see docs/public-api.md §3.4)")
     end
-    local _condOutcome = conditionExpr === nothing ? nothing : GMX.evaluate(st, conditionExpr)
+    ## THE ONE CONDITION EVALUATION of a heading: Julia evaluates the stored Expr in module GoMeta (where `getState`/`getAltState`
+    ## are bound by name) against this metaLine's own snapshot — his legacy's form (goMetaAddOns.jl :37), stage 5's E13
+    local _condOutcome = conditionExpr === nothing ? nothing : Core.eval(GMX, conditionExpr)
     if conditionExpr === nothing || _condOutcome
         # v0.4 T5: the store is the OWNING PLUGIN's pending entry (per-plugin injective)
         store = get(pendingLocal, plugIdx, nothing)

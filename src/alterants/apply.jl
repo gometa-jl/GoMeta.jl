@@ -13,24 +13,24 @@
 #     R-V04B-55 (3), stage 2's commit 3), and delegate.
 #     The setters are called directly (the record-armed invocation seam `_invoke_set` left at stage 5's E6 of the v0.4 build — census row 14).
 # DOES: evaluates each queued action's stored condition — `nothing` means set unconditionally,
-#     otherwise the stored `ConditionAST` is evaluated at apply time by the closed condition
-#     interpreter (README SECURITY; docs/public-api.md §3.2) — the engine walks it itself against
-#     the per-call settribute snapshot; no condition text reaches Julia's `eval` in a
-#     default-configured run (the opt-in `:full_eval_v1` marker dispatches to its extension's
-#     registered handler instead).
+#     otherwise the stored `Expr` (Julia's reading of the re-written `{…}` body, absorb_meta.jl) is evaluated by
+#     Julia at apply time — `Core.eval(GoMeta, ex)`, as his legacy's `eval` (goMetaAddOns.jl :37, :95) — against the
+#     per-call settribute snapshot and working stores reached by `getState`/`getAltState` through the ScopedValue
+#     (stage 5's E13 of the v0.4 build, census row 1; R-V04B-106; his §120, §D174).
 #     An alterant already set in an earlier-processed slot is never re-set. The queued args tuple is
 #     splatted once into the setter, bare, as his legacy called it (goMetaAddOns.jl); a malformed argument
 #     meets Julia's own dispatch or the setter's own error — the seam's typed refusal left at stage 5's E6 of
 #     the v0.4 build (census row 14; his §120, the framework before hardening).
-# REASONING: conditions travel as parsed condition ASTs and arguments as opaque tuples, so there
-#     is one auditable evaluation site (the closed interpreter's `evaluate`) and direct setter calls
+# REASONING: conditions travel as Julia `Expr`s and arguments as opaque tuples, so there
+#     are two evaluation sites of one form (`Core.eval` in the two passes below) and direct setter calls
 #     (the auditable setter seam and its internal-invariant guards left at stage 5's E6 of the v0.4 build —
 #     census row 14). Honest edges: the E-06 absorb-path guarded refusal keeps
 #     its typed conversion deferred (the E-04 apply-path crash origin left with the Visib write-back, stage 3's commit 4)
-#     (docs/public-api.md §3.1); the BARE unqueryable condition atom aborts raw at evaluation —
-#     the E-07 pending mint (docs/public-api.md §3.2/§3.4).
-# PURPOSE: a runnable, observable Apply phase whose single evaluation site is the package's replaceable
-#     condition surface (the setter seam left at stage 5's E6 of the v0.4 build — census row 14).
+#     (docs/public-api.md §3.1); a condition that fails at evaluation — a non-Bool value where a Bool is needed, an
+#     argument Julia cannot dispatch — is Julia's own error out of the goMeta call (the E-07 row retired at E13 with the
+#     interpreter: a getter-less action is no condition key since E12).
+# PURPOSE: a runnable, observable Apply phase whose evaluation is Julia's (the setter seam left at stage 5's E6 of the
+#     v0.4 build — census row 14).
 
 ## stage 2's commit 2 (R-V04B-35 (d)): the provenance of an APPLIED action — the stating Component's handle
 ## (recorded at the enqueue, `st.queue.decided_by`), kept per Alterant in APPLICATION ORDER: one entry for a
@@ -72,12 +72,11 @@ function detAltValuesForSetOfSlots(
     # (`st.working`), the registry inventory + action table + accumulate-set (`st.registry.*`),
     # the slot tensors (`st.mh.count_actions_per_slot`) and the queue
     # (`st.queue.queued`/`.conditions`/`.args`) all read off `ctx()`, so one call's Apply state is
-    # never visible to another. The evaluation sites below — `evaluate(st, _cond)` — are the
-    # closed condition interpreter (README SECURITY; docs/public-api.md §3.2): a stored
-    # `ConditionAST` is walked by the engine itself against the per-call settribute snapshot; no
-    # condition text reaches Julia's `eval` in a default-configured run (a `FullEvalCondition`
-    # marker — mintable only by the opt-in `:full_eval_v1` extension — dispatches to that
-    # extension's registered host-evaluation handler instead).
+    # never visible to another. The evaluation sites below — `Core.eval(GoMeta, _cond)` — are Julia's: the stored
+    # `Expr` runs in module GoMeta, where `getState`/`getAltState` are bound by name and read this call's state through
+    # the ScopedValue `STATE` (stage 5's E13; his legacy's goMetaAddOns.jl :37). MEASURED at the build (register E13-9):
+    # 65–155 µs per evaluation on the corpus shapes — the legacy's known cost; the lowered form would be a hundredfold
+    # cheaper, his to choose.
     local st = ctx()
     ## 1.1 Compute / Determine the values of all alterants of `:setMode`-type
     ##      `:accumulate` up to BUT NOT including "primary" slot.
@@ -101,7 +100,7 @@ function detAltValuesForSetOfSlots(
             if insorted(crntAltIdx, st.registry.accum_alt_idxs)
 
                 local _cond = st.queue.conditions[row, crntSlot]
-                local _condOutcome = _cond === nothing ? nothing : evaluate(st, _cond)   # v0.2 FLIP: the closed interpreter (the eval seam is retired)
+                local _condOutcome = _cond === nothing ? nothing : Core.eval(GoMeta, _cond)   # Julia evaluates the stored Expr (stage 5's E13; the legacy's :37/:95)
                 if _cond === nothing || _condOutcome
                     if crntAltIdx ∉ keys(st.working)
                         st.working[crntAltIdx] = st.registry.plugins[crntAltIdx].altConstructor()
@@ -163,7 +162,7 @@ function detAltValuesForSetOfSlots(
                     continue
                 end
                 local _cond = st.queue.conditions[idx, crntSlot]
-                local _condOutcome = _cond === nothing ? nothing : evaluate(st, _cond)   # v0.2 FLIP: the closed interpreter (the eval seam is retired)
+                local _condOutcome = _cond === nothing ? nothing : Core.eval(GoMeta, _cond)   # Julia evaluates the stored Expr (stage 5's E13; the legacy's :37/:95)
                 if _cond === nothing || _condOutcome
 
 

@@ -9,8 +9,8 @@
 #       before hardening; his legacy called the setter directly): a malformed argument meets Julia's own dispatch
 #       or the setter's own error out of the `goMeta` call, measured on both trees by the build's probe
 #       (the build record's receipts/S8-branch/PROBES-e6-edges-*). The QUERY-side condition-atom class
-#       (`#~ cell(7) :label1{ cell(7) }`) is a DOCUMENTED CUT (the E-07 fence at the closed condition
-#       interpreter — README SECURITY; docs/public-api.md §3.2) — no witnesses here by design.
+#       (`#~ cell(7) :label1{ cell(7) }`) meets the usual unknown-condition-key refusal since stage 5's E12 (Id answers
+#       no query — the registry's rule; witnessed in condition_tests.jl since E13) — no witnesses here by design.
 # PURPOSE: the working forms' contract (docs/public-api.md §2), mechanically held.
 
 using Test

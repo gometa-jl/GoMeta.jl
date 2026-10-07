@@ -1,7 +1,9 @@
 # seam_envelope_tests.jl — v0.4 T3: the SEAMS witnesses (T3-DESIGN §8's fixture table).
 #
-# IS:   the T3 acceptance witnesses — the query-seam envelope (the closed interpreter's site; the `getAltState` site's
-#       envelope left at stage 5's E5 of the v0.4 build — census row 56),
+# IS:   the T3 acceptance witnesses — the query seam (the `getAltState` call is BARE since stage 5's E5 of the v0.4 build —
+#       census row 56; the closed interpreter's own query envelope, CB_QUERY_THROW / RES_RETURN_TYPE at its atom (E13), left with
+#       the interpreter at stage 5's E13 — census row 1: a getter's throw propagates raw out of the goMeta call, a non-Bool
+#       return is Julia's own TypeError where the condition needs a Bool),
 #       the consumed handover validation (with the "GoMeta "-prefix pass-through) and the InterruptException
 #       pass-through; an absent zero-arg method publishes (the eager DEP_MISSING gate left at stage 5's E4 of the
 #       v0.4 build). The three-site ctor-mint envelope (CB_CTOR_THROW) left at stage 5's E6 of the v0.4 build, and
@@ -58,20 +60,21 @@ end
         e
     end
 
-    @testset "the query envelope — five throw classes + the return guard (site 1: the closed interpreter)" begin
-        for thrower in ((a...) -> throw(ArgumentError("x")),
-                        (a...) -> throw(OverflowError()),
-                        (a...) -> throw(MethodError(+, (1,))),
-                        (a...) -> error("boom-q"),
-                        (a...) -> throw(_SeamT.QEx()))
+    @testset "the query seam — five throw classes propagate RAW + a non-Bool return is Julia's TypeError (the bare call; stage 5's E13)" begin
+        for (thrower, class) in (((a...) -> throw(ArgumentError("x")), ArgumentError),
+                                 ((a...) -> throw(OverflowError("x")), OverflowError),   # (the former fixture's `OverflowError()` had no zero-argument
+                                                                                           #  constructor — its MethodError was swallowed by the envelope; MEASURED at E13)
+                                 ((a...) -> throw(MethodError(+, (1,))), MethodError),
+                                 ((a...) -> error("boom-q"), ErrorException),
+                                 ((a...) -> throw(_SeamT.QEx()), _SeamT.QEx))
             R = GM.publish(_labels_builder(; getter = thrower))
             e = _drive(_QDOC, R)
-            @test e isa ErrorException && occursin("CB_QUERY_THROW", e.msg)
+            @test e isa class                              # the getter's own exception, unwrapped (his legacy's bare call)
         end
         R = GM.publish(_labels_builder(; getter = (a...) -> "yes"))
         e = _drive(_QDOC, R)
-        @test e isa ErrorException && occursin("RES_RETURN_TYPE", e.msg)
-        @test occursin("String", e.msg)                    # the class rendered via nameof
+        @test e isa TypeError                              # "non-boolean (String) used in boolean context" — Julia's, at the apply site
+        @test occursin("String", sprint(showerror, e))     # the class named by Julia
     end
 
     @testset "the handover validation CONSUMED (false · throw · non-Bool · the ratified pass-through)" begin

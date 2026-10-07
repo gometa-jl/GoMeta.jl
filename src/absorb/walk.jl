@@ -22,8 +22,8 @@
 #     is CAPTURED on the ENCLOSING Line (inline meta applies to its line — docs/SYNTAX-AND-SEMANTICS.md §9)
 #     by `captureEvals!` (annotations.jl), which records that Line as the cell; the former write into the
 #     Line's settribute left at stage 3's commit 4 (R-V04B-42 (1)).
-# REASONING: this file holds no eval — conditions enqueued here are evaluated later at the
-#     documented condition seam (README SECURITY; docs/public-api.md §3.2). Malformed, unknown, and
+# REASONING: this file holds no evaluation — conditions enqueued here are evaluated later by Julia at the
+#     apply sites (src/alterants/apply.jl; docs/public-api.md §3.2). Malformed, unknown, and
 #     over-capacity meta refuse inside `absorbMeta` (docs/public-api.md §3.4).
 # PURPOSE: a deterministic walk that turns authored metaLines into enqueued alterant state, re-runnable
 #     against the shipped corpus via devtools/run_examples.jl.

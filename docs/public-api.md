@@ -24,21 +24,23 @@ registration/door rows of §3.5); (5) records the
 CRLF-normalization convention (§4), the explicitly **deferred / not-v0** surfaces (§5), and the
 **versioning policy** (§6: clean cuts — no compatibility promise — until at least v0.7; R-V04B-61).
 
-**REASONING.** The API is **TOTAL over the CONFIG-TIME catalogued surface** — an unknown profile (the one
-config-time row, E-03) never throws an uncaught exception; it fail-closes into a `PROCESS_ERROR` result carrying a typed
-`Diagnostic`; an unknown `flavor_tag` throws `flavor_for`'s stable message (§3.4 — stage 5's E8 of the v0.4 build, census row 30)
-and a `parse_range` is taken plain (§2). The absorb- and apply-plane rows are the honest exception: they can still throw at
+**REASONING.** The API is **TOTAL over the ENTRY surface** — the registry door's two refusals (§3.5) never throw an
+uncaught exception; they fail-close into a `PROCESS_ERROR` result carrying a typed `Diagnostic`; an unknown `flavor_tag`
+throws `flavor_for`'s stable message (§3.4 — stage 5's E8 of the v0.4 build, census row 30), a `parse_range` is taken plain
+(§2), and no configuration field is refusable since stage 5's E13 (the config-time profile row E-03 left with the grammar
+profile — census rows 1 and 30; §3.1). The absorb- and apply-plane rows are the honest exception: they can still throw at
 v0 — the §3 partition (the stable-message refusals of §3.4; the E-04 crash-origin row of §3.1 RETIRED at stage 3's
-commit 4 of the v0.4 build — its origin was the Visib write-back). Honesty over completeness: the rows not yet armed
-(E-07's pending mint and the E-06 guarded refusal — §3.1/§3.2) and the crashes still latent or refused with a stable
-message (§3.4) are documented **as such**, never papered over with a fabricated typed code; the
-other condition-path refusals ARE minted typed since the closed-interpreter flip, the statement still
-aborting at the absorb seam (§3.2's preamble).
+commit 4 of the v0.4 build — its origin was the Visib write-back). Honesty over completeness: the row not yet armed
+(the E-06 guarded refusal — §3.1) and the crashes still latent or refused with a stable message (§3.4) are documented
+**as such**, never papered over with a fabricated typed code. A `{…}` condition is Julia's since stage 5's E13: the
+unknown condition key (the vocabulary's) and the no-expression guard of an empty block or a bare literal are the two
+condition refusals GoMeta mints (stable `GoMeta absorb:` messages); a body Julia cannot parse is Julia's own
+`Meta.ParseError`; a condition that fails at evaluation is Julia's own error (§3.2).
 
 **PURPOSE.** The stable contract a consumer programs against and a reviewer audits the surface
 against — the human-readable mirror of the machine-checkable export set (`names(GoMeta)`, asserted
 by `tests/unit/public_surface_tests.jl`) and of the refusal behavior the shipped witnesses assert
-(`tests/unit/error_message_tests.jl` · `tests/unit/arg_guard_tests.jl` · `tests/unit/condition_cap_tests.jl`; the
+(`tests/unit/error_message_tests.jl` · `tests/unit/arg_guard_tests.jl` · `tests/unit/condition_tests.jl`; the
 slot-overflow and malformed-metaLine refusal witnesses left at stage 5's E7 of the v0.4 build — census row 41).
 
 ## §1 — The public surface
@@ -110,8 +112,9 @@ These are part of the documented public surface — declared with Julia's `publi
   sealed and door-checked, its setters DISPATCH (the apply plane is registry-data-driven) and a
   registry without the built-in Visib RUNS; the CAPTURE plane is registration-driven since T5 (a
   declared `CaptureDecl` row mints an Alterant's evals rows; a record without one mints none — the LIFECYCLE bullet
-  below and §3.4); NOT registration-driven at v0.4 (the deferred rows): the QUERY plane's argument floor
-  (T3: the getter is called with Symbol literals only; the getter's signature is not yet verified at
+  below and §3.4); NOT registration-driven at v0.4 (the deferred rows): the QUERY plane's argument shape
+  (the getter is called with whatever the re-written condition passes — label names as Symbols; a non-Symbol argument
+  meets `getAltState`'s own `Vararg{Symbol}` MethodError at apply, stage 5's E13; the getter's signature is not verified at
   registration), and the RENDER write-back (the Visib write-back LEFT at stage 3's commit 4 of the v0.4 branch, R-V04B-42 (1) —
   the Engine writes nothing into the BLS Components; the `settribute` declarations and the derived table LEFT at stage 5's E12 of the v0.4 build — census row 45, the word R-V04B-42 (2) waited for; nothing writes back). The release contract page states,
   per slot, which row consumes it.
@@ -130,8 +133,8 @@ These are part of the documented public surface — declared with Julia's `publi
   `_domain_copy` (callables/Types/Symbols/Strings/VersionNumbers/numbers carried by reference;
   containers and slot structs rebuilt at their EXACT concrete types; sharing preserved within
   each copy); `deepcopy_internal` is never dispatched, so KNOWN OPEN (iv)'s user-type copy
-  residue is closed; derives the hot-path tables from the declarations, seals (the fingerprint),
-  and takes the SNAPSHOT baseline the door compares against.
+  residue is closed; derives the hot-path tables from the declarations and takes the SNAPSHOT baseline the door
+  compares against (the fingerprint `seal` it also minted left at stage 5's E13 of the v0.4 build — census row 6; the §6 row).
   `RegistrationRefused <: Exception` — `.diagnostics::Vector{Diagnostic}` with stable codes
   (`REG_PROTOCOL` for a declared value outside the closed encodable domain or a capture mode-gate law;
   `REG_PROTOCOL` and `REG_SLOT_EXHAUSTED` thrown by
@@ -140,10 +143,10 @@ These are part of the documented public surface — declared with Julia's `publi
   construction from hand-built tables is GATED at v0.4.0 (it runs the same checks and refuses
   inconsistent tables with `REG_DERIVED_TABLES`) and yields an UNPUBLISHED value that `goMeta`
   refuses — build through the lifecycle; positional construction is removed at v0.5. No positional
-  form accepts a seal (the generated all-fields constructor is suppressed by a construction
+  form accepts a snapshot (the generated all-fields constructor is suppressed by a construction
   token); a published registry's containers are READ-ONLY by contract — the door detects, for
   conforming code and within the disclosed bounds below, a mutation of ANY walked field (the
-  declared record, every derived table, every callable identity, the fingerprint) by ONE
+  declared record, every derived table, every callable identity) by ONE
   structural deep-egal comparison against the publish-time SNAPSHOT (`===`-only leaves; the
   first divergent path is named in the message; `POST_SEAL_MUTATION`). **The callable driver seam `run_absorb_apply!`, its
   STATE LEDGER (`STATE_REUSE_REFUSED`) and the carrier-store checker `validate_carrier_state` — the adapter route of v0.3.2/T3 —
@@ -167,7 +170,7 @@ These are part of the documented public surface — declared with Julia's `publi
   constructed duplicate-equal-key nests).* **The honest bound (the security frame's B-2 — no in-process arrangement in Julia
   constrains a loaded module):** every integrity guarantee here is ACCIDENT-grade — typed
   refusal of unpublished or post-publication-mutated registries produced by CONFORMING code.
-  It is not security-grade: the construction token and the seal-minting helpers are reachable by
+  It is not security-grade: the construction token is reachable by
   any loaded code (Julia has no access control), a callable's identity does not pin its behavior
   (a closure over a `Ref`, a redefined generic), and the door is a check at entry, not a lock
   over the run — a task mutating a registry concurrently with a run that already passed the door
@@ -184,24 +187,17 @@ These are part of the documented public surface — declared with Julia's `publi
   opaque struct — or a cyclic container is REFUSED at `validate` (`REG_PROTOCOL`, one row per
   record slot), never folded by a lossy fallback; declared string VALUES are `String`-only
   since T2-bis (a non-`String` `AbstractString` value that published before refuses typed —
-  a registered 0.4.x contract narrowing). The disclosed collisions of the encoding: type
-  identities fold module-UNQUALIFIED (two same-named types from different modules collide — the
-  recorded trade of the profile digest); the designated callables fold by NAME in the digest (a
-  same-named swap is caught by the snapshot's `===` leaf compare, not by the fingerprint);
-  UnionAll/Union signature types fold by `string`.
-  **The FINGERPRINT is a lossy CACHE KEY, never an identity and never the door's mechanism
-  (T2-bis):** its residual collision classes — (i) a function-valued TYPE PARAMETER
-  (`Val{M.f}`) folds by name; (ii) type-parameter CATEGORIES are untagged (`Val{M.T}` and
-  `Val{true}` both fold as `Val{T}`); (iii) a container's CONCRETE parameters are not encoded
-  (`Any[1]` ≡ `Int[1]`) — are FINGERPRINT-only: the snapshot door compares every `Type` leaf
-  by `===`, so each of these swaps FIRES at the door. The former class (iv) is CLOSED —
-  declared values are `String`-only and `deepcopy_internal` is never dispatched. The former
-  class (v) is CLOSED — `validate`'s domain walk probes every type-bearing field (a type such
-  as `Val{'c'}` refuses with a slot-named row; a type whose parameter tree exceeds the
-  type-encoder budget of 256 nodes likewise refuses slot-named). The door's guarantee reads: a
-  post-publication mutation of any walked field by conforming code is detected iff it changes
-  the content-structural value (`===` at the leaves) — the honest bound above states the
-  disclosed exceptions. No shipped declaration uses any of the collision shapes.
+  a registered 0.4.x contract narrowing). The canonical slot ENCODING has one reader since stage 5's E13 of the v0.4
+  build — the validate walk's deterministic Dict-entry order (the registration digest it fed — E13 —, and the `seal` fingerprint
+  that digest minted, left with the grammar profile — census row 6; the §6 row): its disclosed collisions (type identities
+  module-UNQUALIFIED; the designated callables by NAME; function-valued type parameters by name; untagged parameter
+  categories; un-encoded container parameters) mean only that two such keys sort as equal texts. **The door's guarantee
+  reads:** a post-publication mutation of any walked field by conforming code is detected iff it changes the
+  content-structural value (`===` at the leaves) — the honest bound above states the disclosed exceptions; `validate`'s
+  domain walk probes every type-bearing field (a type such as `Val{'c'}` refuses with a slot-named row; a type whose
+  parameter tree exceeds the type-encoder budget of 256 nodes likewise refuses slot-named — the mint that budget kept
+  safe left at E13, the bound stays as the domain's declared closure). Declared values are `String`-only and
+  `deepcopy_internal` is never dispatched. No shipped declaration uses any of the collision shapes.
 - `GoMeta.next_plugin_index(builder) -> Int8` — the index the next `register!` assigns (§ the
   plugin index rule below); throws `RegistrationRefused` (`REG_SLOT_EXHAUSTED`) at capacity.
 - **The record VOCABULARY (v0.4; what `register!` accepts — the Alterant registration record and
@@ -232,20 +228,19 @@ These are part of the documented public surface — declared with Julia's `publi
   - `ActionOverload`, `spelling`, `sugar_candidacy`, `keyed_slot` — **REMOVED at 0.4.0** (stage 5's E11 of the v0.4 build;
     census row 16; the §6 row): the per-setter-method rows (signature types, literal kinds, return type, effect,
     queryability, applicability, phase, grammar flag) restated what the setter's methods declare and were read at run
-    time by nothing since stage 5's E6 (the registration digest folded them, the door walked them); the spelling tag, the
+    time by nothing since stage 5's E6 (the registration digest — left at E13 — folded them, the door walked them); the spelling tag, the
     sugar register and the reserved slot were read by nothing but the fold. An action is registered by its name and its
     owning Alterant, and Julia dispatch does the rest — his legacy's form; the 8-positional record constructor left too (census row 65,
     R-V04B-61).
   - **The getter contract** (`PlugIn.getAltInstance`, required for an action used as a condition atom — the `queryable` row flag left at stage 5's E11, census row 16):
-    called as `getter(instance, actionName::Symbol, args::Symbol...) -> Bool` — the query plane
-    passes the action name and SYMBOL literals only (the argument floor of `getAltState`). The
-    getter's signature is not verified at registration (the `queryable` row flag and its existence check left — stage 5's
-    E4 and E11 of the v0.4 build); **the runtime envelope guards the call since T3**: a
-    getter throw of any class converts to the stable `CB_QUERY_THROW` refusal (the engine's own
-    `GoMeta `-prefixed refusals and `InterruptException` pass through verbatim), and a non-`Bool`
-    return refuses `RES_RETURN_TYPE` — at the closed interpreter's atom site (the opt-in's `getAltState` call is bare
-    since stage 5's E5 of the v0.4 build — census row 56; his legacy called it bare). No registration-time signature reflection runs since stage 5's E4 (T11's
-    catalogue sitting).
+    called as `getter(instance, actionName::Symbol, args::Symbol...) -> Bool` — the re-written condition calls it bare
+    through `getAltState(Int8(p), Symbol("action"), args…)` as his legacy did (stage 5's E13 of the v0.4 build; the
+    `getAltState` call bare since stage 5's E5 — census row 56): a label name reaches it as a Symbol; a non-Symbol
+    argument meets `getAltState`'s own `Vararg{Symbol}` MethodError; a getter's throw propagates raw out of the `goMeta`
+    call; a non-`Bool` return is Julia's own `TypeError` where the condition needs a Bool (E13: the closed interpreter's
+    `CB_QUERY_THROW` / `RES_RETURN_TYPE` envelope at its atom left with the interpreter at E13 — §3.4). The getter's signature is
+    not verified at registration (the `queryable` row flag and its existence check left — stage 5's E4 and E11). No
+    registration-time signature reflection runs since stage 5's E4 (T11's catalogue sitting).
   - **The validate contract** (`ActionSpec.validate`, the handover validation of the accepting
     String slot): called as `validate(text::String) -> Bool` — `true` accepts; `false` refuses with the
     catalogue-named stable message (`REG_VALIDATE_FALSE` — an `ErrorException` carrying the name, the §3.4 T3
@@ -328,17 +323,18 @@ They are not exported; reach them qualified. `tests/unit/public_surface_tests.jl
 
 ## §2 — Signatures + contracts
 
-**⚠ Trust note:** under the DEFAULT profile no condition text is ever evaluated (the closed
-interpreter, §3.2). Only under the explicitly opt-in full-eval mode — two operator acts, see the
-SECURITY section of `README.md` — can processing input you did not write execute arbitrary code.
+**⚠ Trust note:** a `{…}` condition is Julia text, read by Julia's parser at absorb and evaluated by Julia at apply
+(§3.2; stage 5's E13 of the v0.4 build — the owner's design, OWNER-WORDS §120: a full parser "for those users who …
+work only with their private GoMeta statements (i.e.: If there is NO security risk whatsoever)"). Processing a file
+you did not write therefore runs its conditions — see the SECURITY section of `README.md`.
 
 ### `goMeta(bytes::Vector{UInt8}; config::GoMetaConfig = GoMetaConfig(), registry::AlterantRegistry = DEFAULT_REGISTRY) -> GoMetaDelivery`
 
 (`goMeta` consumes raw bytes; from a `String` use `Vector{UInt8}(codeunits(s))` — or `read(path)`
 for a file, as in the README quickstart.)
 
-Pure, deterministic, **TOTAL over the CONFIG-TIME catalogued surface** (an unknown profile never
-throws uncaught; an unknown `flavor_tag` throws its stable message, §3.4 — stage 5's E8, census row 30; absorb/apply-plane catalogued failures can still throw at v0 — the §3
+Pure, deterministic, **TOTAL over the ENTRY surface** (the registry door's refusals are delivered typed, §3.5; an
+unknown `flavor_tag` throws its stable message, §3.4 — stage 5's E8, census row 30; absorb/apply-plane catalogued failures can still throw at v0 — the §3
 partition). `GoMetaDelivery` carries the run's FOUR public parts, read by name (R-V04B-28/29/30), in his pipeline order (R-V04B-89):
 `blsComponentTree::BLS.ParseState` (the BLS Component tree the run was
 evaluated over, provided by BLS itself; it reaches an Extension as the part `blsComponentTree`, not through any function of the
@@ -347,38 +343,35 @@ object) · `altValues_evals::EvalStore` (the data container of the evaluated val
 `readAltValuesEvals`, §2 below) · `status::ProcessStatus` · `diagnostics::Vector{Diagnostic}` (the invariant is **non-OK ⇒ non-empty
 diagnostics**). Nothing internal travels: the per-call working state never leaves the core. (The (tree,
 render) pair is the development tool's `Main.BasicRenderer.outputs(result)`, loaded through
-`devtools/load_basic_renderer.jl` — not an Engine surface.) No filesystem / clock / environment read. **These three guarantees —
-purity, determinism, isolation — cover the whole default-configured run under `DEFAULT_REGISTRY`
+`devtools/load_basic_renderer.jl` — not an Engine surface.) No filesystem / clock / environment read by the Engine. **These
+three guarantees — purity, determinism, isolation — cover the ENGINE'S OWN OPERATIONS under `DEFAULT_REGISTRY`
 (under a CUSTOM registry they hold exactly as far as its own setters/getters/validators do: a
 callable closing over mutable state or performing I/O is that Alterant's act, outside the
-engine's guarantee — the user-loads-trustworthy-Alterants trust model):** a `{…}` condition body
-is parsed and evaluated by the closed no-eval interpreter, so it cannot read the filesystem, the
-clock or the environment, and cannot perform effects. (Under the explicitly opt-in
-`:full_eval_v1` extension mode — see the SECURITY section of `README.md` — a condition body IS
-host-evaluated, and the guarantees then hold only for inputs whose conditions are free of side
-effects.) An unknown profile (the one config-time row since stage 5's E8 — census row 30; an unknown `flavor_tag` throws, §3.4)
-fail-closes into a `PROCESS_ERROR` `GoMetaDelivery` **before any parse** — the input
-bytes are never touched; no parse or verdict work occurs (§3.1); the Engine renders nothing since
-0.4.0 (§1.3), and the development tool's `Main.BasicRenderer.outputs` on such a result is the empty pair.
+engine's guarantee — the user-loads-trustworthy-Alterants trust model); a `{…}` condition body is Julia text
+evaluated by Julia (stage 5's E13 of the v0.4 build; the owner's §120 and §D174), so what it reads or does is the
+author's act in the same way — the guarantees hold for inputs whose conditions are free of side effects.** The
+registry door's refusal (below) fail-closes into a `PROCESS_ERROR` `GoMetaDelivery` **before any parse** — the input
+bytes are never touched; no parse or verdict work occurs (§3.5); the Engine renders nothing since
+0.4.0 (§1.3), and the development tool's `Main.BasicRenderer.outputs` on such a result is the empty pair. (The
+config-time profile refusal that fail-closed the same way — E-03 — left at stage 5's E13 with the profile; §3.1.)
 
 **The registry door (v0.4, STRICT — published-only).** `registry` must be a PUBLISHED value
 (`DEFAULT_REGISTRY`, or the result of `GoMeta.publish`). A conforming-but-unpublished registry
-(e.g. a gated positional construction) fail-closes exactly like an unknown profile — a
+(e.g. a gated positional construction) fail-closes before any parse — a
 `PROCESS_ERROR` result before any parse, carrying `REG_UNPUBLISHED`, whose message names the
 sanctioned path `RegistryBuilder → validate → publish`. A published registry whose containers
 were mutated after publication fail-closes with `POST_SEAL_MUTATION` (the live fields are
 compared structurally against the publish-time snapshot at the door — the real freeze gate;
 the message names the first divergent path; re-publication is the sanctioned change path).
-Config-time and registry-time diagnostics are collected FULLY into ONE result (config rows
-first).
+The door's diagnostics are the entry refusal: no configuration field is refusable since stage 5's E13 (the profile row
+left with the grammar profile; E8 took the range plain and sent the flavor to `flavor_for`'s own message).
 
-### `GoMetaConfig(; profile = :jl_share_v1, flavor_tag = :julia, parse_range = nothing, user_mh_profile = nothing, namespace = :default)`
+### `GoMetaConfig(; flavor_tag = :julia, parse_range = nothing, user_mh_profile = nothing, namespace = :default)`
 
-The v0 input options (the versioning policy §6). `profile::Symbol` — the closed default is
-`:jl_share_v1`; the two OPT-IN names `:jl_share_v1_full_parse` / `:jl_share_v1_full_eval` are
-also config-valid and additionally require the explicitly-included opt-in extension (the two-act
-law, §3.2). The remainder of this paragraph describes the default: the share-profile proper is
-`:jl_share_v1`. `flavor_tag::Symbol` — the content flavor: a CLOSED set of three armed flavors,
+The v0 input options (the versioning policy §6). (The `profile::Symbol` field and keyword — the selector of the closed
+condition grammar's profile and its two opt-in names — left at stage 5's E13 of the v0.4 build with that grammar, census
+rows 1 and 30; the EXPORTED type RE-SHAPED, the §6 row: `GoMetaConfig(profile = …)` is a `MethodError` since. The RENDER's
+share-profile `jl-share-v1` is the development tool's and was never this field.) `flavor_tag::Symbol` — the content flavor: a CLOSED set of three armed flavors,
 `:julia` (the `#` lead alphabet — the default) · `:c` (the C-family `//` line-comment flavor) ·
 `:latex` (the `%` lead alphabet); any other value throws at `BLS.flavor_for` — a stable message naming the
 inventory, no fallback (§3.4) — before any parse; selected, never inferred (no file-extension or content
@@ -541,10 +534,11 @@ arg2)` — parsed with the metaLine and handed to the action when it fires. The 
   of every action, including `head`'s level slot, refuses a String. A NON-first quoted token
   on a metaLine is reserved and refuses (today via the legacy's unknown-action refusal — the quote is skipped and the token `T"`
   meets `GoMeta absorb: unknown alterant action …`; the former §3.4 punctuation wall left at stage 5's E7 of the v0.4 build,
-  census row 41). `head` is not queryable in conditions (a condition naming it evaluates false —
-  unlike the bare Id atoms, whose condition use is the §3.4 pending edge), and a heading's
-  own condition may use settribute state only — evaluated ONCE at the heading's own line,
-  GATING the recording (false means no row); a query atom there meets a typed refusal.
+  census row 41). `head`, like `cell`/`parent`/`file`, is no condition key — a condition naming it meets the usual
+  unknown-condition-key refusal (the registry's `queryable_action` rule, stage 5's E12: the Heading and Id answer no
+  query) — and a heading's own condition may use settribute state only — evaluated ONCE at the heading's own line,
+  GATING the recording (false means no row); a label test there meets the stable refusal "alterant-state query in a
+  heading condition" (the one wall kept until R-V04B-101; §3.4).
   Refusal catalogue: §3.4.
 - **Id actions (`cell` / `parent` / `file`) — EXPERIMENTAL at this release:** one integer value
   argument (`#~ cell(7)`), Int16 domain. The Id alterant is a v0 placeholder implementation;
@@ -555,67 +549,72 @@ arg2)` — parsed with the metaLine and handed to the action when it fires. The 
 - **Malformed arguments** (wrong arity; non-parsable or overflowing values) are Julia's own error out of the
   `goMeta` call since stage 5's E6 of the v0.4 build (the stable `"GoMeta apply: invalid arguments …"` refusal
   left with the set-invocation seam — census row 14; §3.4).
-- **Condition-side atoms** (`{ cell(7) }`-class queries inside `{}`) route through the closed
-  condition intake instead: non-label arguments meet the typed argument-domain refusal there, and
-  the BARE unqueryable atom is the E-07 pending-mint edge (§3.2/§3.4).
+- **Condition-side atoms** (`{ cell(7) }`, `{ cell }` inside `{}`) meet the usual unknown-condition-key refusal at the
+  absorb seam, with or without arguments — `cell` declares no getter (the registry's rule since stage 5's E12; the
+  closed intake's argument-domain refusal and the E-07 pending mint left with the interpreter at E13, §3.2).
 
 ## §3 — The typed error-mode catalogue
 
 `Diagnostic = {code::Symbol, severity, message, context}`; a catalogued failure is a typed
 `Diagnostic` except where its row says otherwise — the E-06 GUARDED refusal
-still throws (§3.1; its typed conversion deferred at v0; the E-04 crash origin RETIRED at stage 3's commit 4), the condition-path rows are minted typed while
-the statement still aborts at the absorb seam (§3.2's preamble), and E-07's mint is pending (§3.2). The
+still throws (§3.1; its typed conversion deferred at v0; the E-04 crash origin RETIRED at stage 3's commit 4), and the
+condition path is Julia's since stage 5's E13 (§3.2: one stable `GoMeta absorb:` refusal of GoMeta's, Julia's own errors
+for the rest — the typed condition rows REMOVED). The
 catalogue's inventory IS the tables of §3.1–§3.5
 below (no aggregate count is maintained by hand — two hand-written counts drifted at v0.4 T2);
 the rows fall into three classes
 (§3.1–§3.3); §3.4 additionally documents the latent crashes and the stable-message refusals that
 are not catalogued typed codes.
 
-### §3.1 — Non-condition codes (5): 1 armed config-time + 2 REMOVED at 0.4.0 (stage 5's E8) + 1 RETIRED at 0.4.0 (E-04) + 1 GUARDED (E-06)
+### §3.1 — Non-condition codes (5): 0 armed config-time + 3 REMOVED at 0.4.0 (stage 5's E8 and E13) + 1 RETIRED at 0.4.0 (E-04) + 1 GUARDED (E-06)
 
 | Code | Status | Trigger |
 |---|---|---|
-| `ERR_UNKNOWN_PROFILE` (E-03) | config-time, **armed + typed** | `config.profile` outside the three profile names `{:jl_share_v1, :jl_share_v1_full_parse, :jl_share_v1_full_eval}` — fail-closed `PROCESS_ERROR`, no parse or verdict work attempted (the Engine renders nothing since 0.4.0, §1.3) (an opt-in name passes THIS row and refuses later at profile resolution unless the opt-in extension is explicitly included — the two-act law, §3.2) |
+| `ERR_UNKNOWN_PROFILE` (E-03) | **REMOVED at 0.4.0** (stage 5's E13 of the v0.4 build; census rows 1 and 30; the §6 row) | was: `config.profile` outside the three profile names of the closed condition grammar — a fail-closed `PROCESS_ERROR` before any parse; the field, the three names and the grammar they selected left at E13 — no configuration field is refusable since (the registry door's refusals are the entry's, §3.5) |
 | `ERR_RANGE_INVALID` (E-08) | **REMOVED at 0.4.0** (stage 5's E8 of the v0.4 build; census row 30) | was: `config.parse_range` with `first ≠ 1`, or an empty range — a typed refusal he never named; a range is taken plain since (§2: `first` never read, a non-positive `last` the whole file) |
 | `ERR_UNKNOWN_FLAVOR` | **REMOVED at 0.4.0** (stage 5's E8 of the v0.4 build; census row 30) | was: `config.flavor_tag` outside the three armed flavors `{:julia, :c, :latex}` — fail-closed before any parse; an unknown tag now throws `flavor_for`'s stable message (§3.4). *(Row added at v0.4 T2 on a CrossReview finding — the code armed it at the flavor arming; the catalogue had not followed.)* |
 | `ERR_VISIB_NO_FLAG` (E-04) | **RETIRED at 0.4.0** (stage 3's commit 4 of the v0.4 build; R-V04B-42 (1)) | its crash origin was the Visib write-back's flagless read of the winning action; the write-back is gone and the capture's own read is guarded — no apply-path crash origin remains catalogued |
 | `ERR_DEPTH_OUT_OF_WINDOW` (E-06) | **GUARDED** — stable untyped refusal; typed conversion deferred | a `#~9`-style **digit** depth beyond the meta-hierarchy's depth window raises the stable-message `ErrorException` "meta depth out of range …" at the depth lookup (§3.4) |
 
-E-03 is armed (the one config-time row): a bad profile returns a `PROCESS_ERROR` `GoMetaDelivery` carrying the
-typed code, with the development tool's `Main.BasicRenderer.outputs` yielding the empty `(tree, render)` pair (its non-OK contract). No apply-path crash origin remains: E-04's left
+No config-time row remains since stage 5's E13: the entry refusals are the registry door's (§3.5) — a `PROCESS_ERROR`
+`GoMetaDelivery` carrying the typed code, with the development tool's `Main.BasicRenderer.outputs` yielding the empty `(tree, render)` pair (its non-OK contract). No apply-path crash origin remains: E-04's left
 with the Visib write-back at stage 3's commit 4 (its row above).
 E-06 is **GUARDED**: for a digit depth outside the window the depth lookup refuses with the stable
 message "meta depth out of range …" (§3.4); its typed conversion is likewise deferred
 at v0.
 
-### §3.2 — Condition codes — TYPED at the closed-interpreter flip (this release; eval retired from the default path)
+### §3.2 — The condition path (since 0.4.0, stage 5's E13 of the v0.4 build — census row 1; the owner's order §319, R-V04B-106; his §120, §D174): Julia's parser, Julia's evaluation — the five typed condition codes REMOVED
 
-**Two intake modes ship (both available, the safe one by default).** The DEFAULT profile
-`:jl_share_v1` runs the closed interpreter described here. Two OPT-IN profiles —
-`:jl_share_v1_full_parse` (full Julia grammar accepted, still nothing executed) and
-`:jl_share_v1_full_eval` (a strict superset of the safe grammar: everything the safe grammar
-accepts behaves identically, and only text beyond it is parsed as Julia and EVALUATED) — require
-TWO explicit operator acts: `include`-ing `optin/condition_modes_opt_in.jl` and then naming
-the profile. Neither act is reachable from document content, so no document can widen its own
-intake (README SECURITY).
+A `{…}` condition body is READ BY JULIA'S PARSER AND EVALUATED BY JULIA, as the original engine did (GoMetaRetro `src/AbsorbMeta.jl`
+:116–:282). At absorb the body's GoMeta-specific parts are re-written to Julia text (`src/absorb/absorb_meta.jl`,
+`_rewrite_condition`): a settribute key becomes its state read (`isCode` → `getState(:isCode)`); an action of an Alterant that
+ANSWERS QUERIES becomes its query call (`getAltState(Int8(p), Symbol("action"), args…)` — the registry's one rule
+`queryable_action`, R-V04B-99 / stage 5's E12: the Alterant declares `getAltInstance`; Labels at v0); a label test `:name` is the
+Labels Alterant's query of that name (every admitted name spelled the one way — `Symbol("name")` —, a pictograph with a
+ZWJ included); the owner's `,` becomes `||`; everything else — `&&`, `!`, `()`, `|`, `&`, numbers, Julia operators, whitespace —
+is copied verbatim. `Meta.parse` reads the result ONCE; the `Expr` is stored and evaluated by `Core.eval` in module `GoMeta` at
+apply (`src/alterants/apply.jl`) — or, for a heading's condition, once at the absorb seam. So a Julia Boolean expression over
+the GoMeta names is a condition (`{ 1 == 1 }` is one; `{ (isText && containsMeta), isMeta }` is the corpus's own), and a
+13-atom condition applies where the closed interpreter's 29-step scan cap refused it (E13).
 
-The condition path is the **closed interpreter**: condition text is parsed into a bounded
-condition AST (or a typed refusal `Diagnostic`) and evaluated as DATA by the engine itself. The
-query-argument grammar is DECLARED (a `':'`-prefixed one-word label, comma-separated, one trailing
-comma permitted; an all-whitespace text is the zero-argument form) — anything else meets one typed
-refusal, and richer argument syntax is reached through the opt-in modes above, where it is
-accepted as data. At the metaLine seam a refusal still ABORTS the statement with the same stable
-message text the previous engine raised, so no input's observable outcome changed with the swap;
-routing the typed carriers into the result's diagnostic list instead of the abort is a later,
-separately-gated motion.
+**What refuses, and in which class.** TWO refusals are GoMeta's: the unknown condition key — a bare word that is neither a
+settribute key nor a queryable action (`{ show }`, `{ cell(7) }`, `{ head }`; the keyword literals `true`, `false`, `nothing` and
+a quoted string's word among them — his legacy's reading, the register's E13-14), the stable `GoMeta absorb: unknown condition
+key …` message at the absorb seam (§3.4); and an empty block or a bare literal (`{}`, `{ 1 }`, `{ | }`) — "carries no condition
+expression" (an unconditional action is written without `{}`; E13-6). A worded label carrying a parenthesized list
+(`:abc(:label1)` — the K6 corner) reads as the label test of the word followed by a Julia call on its Bool, a `MethodError` at
+apply — his legacy dropped the word and queried the list, the closed interpreter refused the shape (E13-13, his to revert to
+either). A body Julia cannot parse (`{ isCode ! }`,
+`{ :(:x)) }`) is Julia's own `Meta.ParseError` out of the `goMeta` call; an INCOMPLETE body (`{ isCode && }`) is thrown as
+the same class at absorb — never stored for a later reader. A condition that fails at EVALUATION is Julia's own error at
+apply: an argument Julia cannot dispatch (`{ :(7) }` — `getAltState`'s `Vararg{Symbol}`), an undefined name (`{ :(x) }`), a
+non-Bool value where a Bool is needed (`TypeError`), a getter's own throw (raw). The condition grammar's walls — the
+29-step scan cap, the 29-code-unit atom wall, the 4096-byte wall, the depth-32 wall (E13) — and its declared argument grammar
+left with the interpreter at E13: Julia's parser has none of them. Witnesses: `tests/unit/condition_tests.jl`.
 
-| Code | Trigger |
+| Code | Status |
 |---|---|
-| `ERR_UNKNOWN_CONDITION_KEY` (E-01) | **typed mint; the statement still aborts at the absorb seam** (§3.2's preamble) — a condition atom outside the derived whitelist of state-refs and QUERYABLE action names (stage 5's E12, census row 45: R-V04B-99 — a getter-less Alterant's action is no condition key) |
-| `ERR_CONDITION_CAP` (E-02) | **typed mint; the statement still aborts at the absorb seam** (§3.2's preamble) — the condition scan exhausts a profile cap (29 scan steps, whitespace counted; or the raw-byte / grouping-depth walls) with non-whitespace input unconsumed, or a label key is left unterminated — a refusal, never a silent truncation; each mint carries its governing wall or window size in the `Diagnostic`'s context |
-| `ERR_CONDITION_ARG_DOMAIN` | **typed mint; the statement still aborts at the absorb seam** (§3.2's preamble) — a query argument outside the declared argument grammar above |
-| `ERR_CONDITION_PARSE` | **typed mint; the statement still aborts at the absorb seam** (§3.2's preamble) — the intake's grammar refusals: an empty `{}` body · an unterminated argument list · a malformed or unterminated condition key · a worded label key carrying a parenthesized argument list · an unparsable operator sequence |
-| `ERR_CONDITION_UNQUERYABLE_ALT` (E-07) | `cell` / `parent` / `file` used as a condition atom (Id has no queryable instance) — **typed mint PENDING**: the shape still aborts raw at evaluation (documented honest edge, §3.4) |
+| `ERR_UNKNOWN_CONDITION_KEY` (E-01) · `ERR_CONDITION_CAP` (E-02) · `ERR_CONDITION_ARG_DOMAIN` · `ERR_CONDITION_PARSE` · `ERR_CONDITION_UNQUERYABLE_ALT` (E-07, never minted) | **REMOVED at 0.4.0** (stage 5's E13 of the v0.4 build; the §6 row) — the typed `Diagnostic` carriers of the closed interpreter's refusals; the unknown condition key stays a stable-message refusal (§3.4), the rest are Julia's own classes |
 
 ### §3.3 — Handled class (NOT an error): E-05 — meta-free input
 
@@ -665,11 +664,13 @@ fabricated typed code:
   the stable-message `ErrorException` ("meta depth out of range …") at the depth lookup —
   never a raw conversion crash. In-window depths work unchanged. Note: `#~10` parses its
   first digit only and behaves as depth 1.
-- **Empty and malformed condition bodies — GUARDED:** an EMPTY condition block (`{}` or
-  `{ }`) raises the stable-message `ErrorException` ("empty condition block …") — an
-  unconditional action is written without `{}`; a body that does not form a complete
-  condition expression (e.g. `{isCode &&}` or `{|}`) raises "unparsable condition …".
-  Working conditions are unaffected byte-for-byte.
+- **Empty, literal and malformed condition bodies (stage 5's E13):** an EMPTY condition block (`{}` or `{ }`) or a bare
+  literal (`{ 1 }`, `{ | }`) raises the stable-message `ErrorException` "… carries no condition expression …"
+  — an unconditional action is written without `{}`; a body Julia cannot parse (`{isCode !}`, an unbalanced `)`) or
+  cannot complete (`{isCode &&}`) is Julia's own `Meta.ParseError` out of the `goMeta` call (the former typed
+  "unparsable condition" refusal left with the interpreter at E13); a quoted string (`{ "abc" }`) is read word by word —
+  the rewrite knows no string literal — and its word meets the unknown-condition-key refusal. Working conditions are
+  unaffected byte-for-byte.
 - **The multi-inline-meta limit — GUARDED:** more than one inline `#~` marker on ONE line
   raises the stable-message `ErrorException` ("more than one inline meta segment …") EARLY,
   at parse time — never a success report followed by an output-time throw. v0 accepts at
@@ -700,14 +701,11 @@ fabricated typed code:
   after an interposed content line or benign comment fragment — are unaffected, and these
   comment forms remain reserved GoMeta syntax space at v0. Witnesses:
   `tests/unit/reserved_adjacency_tests.jl`.
-- **The over-cap condition silent mis-render — now the TYPED E-02:** a condition whose scan
-  exhausts a profile cap with non-whitespace input unconsumed meets the typed `ERR_CONDITION_CAP`
-  refusal at the closed interpreter's scan (§3.2; the `Diagnostic` carries the governing wall) —
-  the refusal exists so a truncated condition can never evaluate as if complete. The abort still
-  raises the same stable message text at the metaLine seam (§3.2's routing note). A cap-hit whose
-  remainder is only whitespace is semantically complete and stays accepted. Per-atom scan
-  exhaustion surfaces separately as the malformed/unterminated-key refusals. Witnesses:
-  `tests/unit/condition_cap_tests.jl`.
+- **The over-cap condition — the walls left at stage 5's E13 of the v0.4 build (census row 1):** the closed
+  interpreter's 29-step scan cap (the typed `ERR_CONDITION_CAP` refusal "condition too complex" — E13), its 29-code-unit atom
+  wall, its 4096-byte wall and its depth-32 wall left with the interpreter — Julia's parser reads the whole body, so a
+  13-atom condition applies where it refused and a 40-character label name is a label test like any other. Witnesses:
+  `tests/unit/condition_tests.jl` (the inversion).
 - **The unknown-alterant refusal:** an out-of-registry alterant name throws a stable, stage-honest,
   bounded `ErrorException` ("GoMeta absorb: unknown alterant action …"). Its typed-`Diagnostic`
   conversion is deferred (the E-01 family).
@@ -733,13 +731,14 @@ fabricated typed code:
 - **The store-`[2]` insertion path** — a latent insertion path not exercised by any v0 input.
 - **The absorb-plane grammar refusals (the same stable-message family):** beyond the entries
   above, the metaLine/condition grammar refuses with stable `GoMeta absorb:` messages on: an
-  unterminated argument list (a `(` never closed) · an unterminated condition block (a `{` never
-  closed) · an unterminated or malformed condition key (including a `:` that does not introduce a
-  single one-word label) · an unknown condition key (an atom that is neither a component
+  unterminated argument list (a `(` never closed, on the metaLine) · an unterminated condition block (a `{` never
+  closed) · an unknown condition key (a bare name inside `{}` that is neither a component
   state-ref nor a QUERYABLE action name — an action of a getter-less Alterant, Visib's `show`/`hide`/`discard` among them
-  with Id's and the Heading's, is no condition key since stage 5's E12, census row 45: R-V04B-99 by the registry's one rule) · a duplicate argument list or condition block on one
-  alterant clause · a misplaced label token · the over-cap condition (the dedicated entry above); the punctuation and
-  glued-token walls left at stage 5's E7 — census row 41 (the entry above).
+  with Id's and the Heading's, is no condition key since stage 5's E12, census row 45: R-V04B-99 by the registry's one rule;
+  the vocabulary's one refusal since stage 5's E13 — the seam's other is the next item) · an empty or literal condition block (the entry above) · a
+  duplicate argument list or condition block on one alterant clause · a misplaced label token; the malformed- and
+  unterminated-key refusals and the over-cap refusal left with the closed interpreter at E13 (a malformed body is Julia's
+  own `Meta.ParseError`); the punctuation and glued-token walls left at stage 5's E7 — census row 41 (the entry above).
   The basic renderer (a development tool, `devtools/basic_renderer.jl`) carries no Visib guard of its own since stage 3 of the
   v0.4 build: it renders the Engine's answer per Component; more than one Visib value on one cell is refused by the Engine at the
   CAPTURE (`src/annotations.jl` — the stable message `GoMeta capture: more than one Visib value set for one component …`).
@@ -750,10 +749,10 @@ fabricated typed code:
   non-parsable or overflowing Id values and wrong-arity forms, including arguments on Visib actions — meet
   Julia's own dispatch error or the setter's own `parse` error out of the `goMeta` call; the stable
   `"GoMeta apply: invalid arguments …"` refusal and the apply-plane `_invoke_set` seam left at stage 5's E6.
-  Working forms are unaffected (the §2 argument-forms contract). Condition-side atoms with non-label
-  arguments (`:label1{ cell(7) }`, `{ cell(x) }`) meet the TYPED argument-domain refusal at the closed
-  intake (§3.2) — they never reach evaluation. The remaining raw edge is the BARE unqueryable atom
-  (`{ cell }` / `{ parent }` / `{ file }`): the E-07 shape, whose typed mint is pending (§3.2). Witnesses of
+  Working forms are unaffected (the §2 argument-forms contract). Condition-side atoms of a getter-less Alterant
+  (`{ cell(7) }`, `{ cell }`, `{ parent }`, `{ file }`) meet the usual unknown-condition-key refusal at absorb, with or
+  without arguments (the registry's rule since stage 5's E12; the E-07 pending mint retired at E13); a QUERYABLE
+  action's argument text is spliced as Julia text and judged by Julia at apply (§3.2). Witnesses of
   the working forms: `tests/unit/arg_guard_tests.jl`.
 
 - **The bang-first meta marker — GUARDED (v0.3.1):** the transposed inert spelling — tildes,
@@ -781,7 +780,8 @@ fabricated typed code:
   before v0.3.1 the vacuous check silently evaluated TRUE.
 
 **Message stability:** every input-reachable engine-layer message a v0 input can trigger through
-the parse/absorb/apply pipeline is STABLE and explanatory (stage-honest prefix
+the parse/absorb/apply pipeline is STABLE and explanatory — a malformed condition body excepted, which is Julia's own
+`Meta.ParseError` since stage 5's E13 as a malformed action argument is Julia's own error since E6 (stage-honest prefix
 `GoMeta parse:` / `GoMeta absorb:` / `GoMeta apply:` — the development tool's render plane carries no message of its
 own since stage 3's commit 1 of the v0.4 build, the renderer consuming the Engine's answer; the offending token
 bounded, what v0 accepts, this section as the pointer); three catalogued messages are
@@ -802,12 +802,11 @@ occurrence keys (`_putEval!`, `src/annotations.jl`).
   envelopes verbatim; the containment guarantee is scoped to exceptions delivered to the
   handler (`StackOverflowError` catchability is shape-dependent; resource exhaustion may not
   allocate a refusal).
-  - `CB_QUERY_THROW` — an alterant query checker (getter) threw at the closed interpreter's query site (the opt-in's
-    `getAltState` call is bare since stage 5's E5 of the v0.4 build); the class
-    named via `nameof`, the action named. Trigger: any getter throw outside the pass-through
-    classes. Recovery: fix the checker (its contract is total over its declared signature).
-  - `RES_RETURN_TYPE` — a declared-return-type breach: the query getter returned non-`Bool`
-    (the closed interpreter's site) or the handover validator returned non-`Bool` (the setter's live return
+  - `CB_QUERY_THROW` — **REMOVED at 0.4.0** (stage 5's E13 of the v0.4 build; census row 1): the closed interpreter's query
+    envelope left with the interpreter — the getter is called bare through `getAltState` (bare since stage 5's E5 of the
+    v0.4 build), as his legacy called it: a getter's throw propagates raw out of the `goMeta` call, in its own class.
+  - `RES_RETURN_TYPE` — a declared-return-type breach: the handover validator returned non-`Bool` (the query getter's
+    non-`Bool` return is Julia's own `TypeError` at the condition since stage 5's E13; the setter's live return
     guard left with the set-invocation seam at stage 5's E6 of the v0.4 build — census row 14).
   - `REG_VALIDATE_FALSE` — the declared handover validation returned `false` for the presented
     String-slot text; first-offender-wins at the absorb site (the catalogue's refuse-at-gate
@@ -969,4 +968,6 @@ non-silent record under R-V04B-61; the letter of R-V04B-24 (P) does not govern u
 - **The declared action record's overload rows (`ActionOverload`, `ActionSpec.overloads`), its `spelling` tag, its `sugar_candidacy` grant register and its reserved `keyed_slot`, and the v0.3.2 positional constructors of `PlugIn` (6-positional) and `ActionSpec` (8-positional) — REMOVED at 0.4.0** (stage 5's E11 of the v0.4 build; census rows 16 and 65 of the stage-5 census, the owner's bulk mark of 2026-10-03, OWNER-WORDS §317 — R-V04B-105; his §223 'no left overs from old version in newer ones', R-V04B-61; his legacy registered an action by its name and let Julia dispatch do the rest): `ActionSpec` is five fields `(name, plugin, accepts_string_slot, validate, settribute)` with the keyword form as the one form — `accepts_string_slot` and `validate` stay for the Heading road (R-V04B-101), `settribute` stays for stage 5's E12 (census row 45); the registration digest no longer folds the rows, the tag, the register or the slot (the FOURTEENTH re-mint, measured and pinned); the door walks two record structs; the public name `ActionOverload` leaves (29 → 28 public names); no behaviour on the shipped Alterants (the corpus, the forms, the pins, the evals trees); a custom registry written in the old form — an `overloads =` keyword, a positional `PlugIn(...)` — is Julia's own MethodError at construction (an API break for custom registries under R-V04B-61; measured on both trees by the build's probe), the keyword five-field form registers, validates, publishes and runs on both trees.
 - **The flavor record's digest fold (`_flavor_digest` and the `digest` field), its header-strategy seam (the `parse_header!` pointer, the `header_strategy` identifier, the forward declaration), its `extensions` field and the `_CFAM_LEAD_*` / `_RE_META_LEADED_*` compatibility aliases — REMOVED at 0.4.0** (stage 5's P1 of the v0.4 build; census rows 39, 63, 72 and 58 of the stage-5 census, the owner's bulk mark of 2026-10-03, OWNER-WORDS §317 — R-V04B-105; his §120 and his §223, R-V04B-61): the parser's loop calls `parseLeadHeader!` directly for every armed flavor (the seam switched to a fallback that no longer existed); the digest was a cache-key component no code read (the cache key composes name, mode, schema, grammar and registration — no flavor component today, pre-existing); the extensions were read by no code; the aliases' cited referents were not in the repository. The door's promise of five fields (R-V04B-80 (2)(ii)) is untouched; no behaviour on any flavor — the three armed flavors' tree and render bytes equal on both trees (the build's probe); an internal `_mk_flavor` call carrying the three former keywords is Julia's own error now.
 - **The four guarded refusals ADDED to his legacy's metaLine parser — the punctuation wall at the action-name position, the glued-token wall after a closing `)` or `}` (with its gating flag), the no-token guard ("GoMeta absorb: malformed metaLine …") and the per-slot capacity guard ("GoMeta absorb: slot action capacity …") — REMOVED at 0.4.0** (stage 5's E7 of the v0.4 build; census row 41 of the stage-5 census, the owner's bulk mark of 2026-10-03, OWNER-WORDS §317 — R-V04B-105; his §120): a malformed metaLine is read as his legacy read it — punctuation at the action-name position skipped to the next identifier, a token glued to a closing bracket dropped — or meets Julia's own `BoundsError` (an empty meta region; a further action in a full slot — the queue tensor's width is the registered action count, 8); every re-worded legacy message stays (§3.4); no public name changes — the row is written for the behaviour's sake, as the E5 row's was.
-- **The three Visib DECLARATIONS — the per-action write-back key `ActionSpec.settribute`, the derived table `AlterantRegistry.action_to_settribute` and the three names `hide`, `show`, `discard` in BLS's `ComponentSettribute` — REMOVED at 0.4.0** (stage 5's E12 of the v0.4 build; census row 45 — the owner's bulk mark of 2026-10-03, OWNER-WORDS §317, and his order §319 "#45 remove" (R-V04B-106) — the word R-V04B-42 (2) kept them for since 2026-09-22; his §14: the flags were stored in the BLS Components "for simplicity and as an interim step"; his §69 item 5: "will be removed later"): nothing had written back since stage 3's commit 4 — the Engine's answer is `evaluatedAltValue` (§1.2). What an older caller sees: `ActionSpec(; …, settribute = …)` is a `MethodError` (the keyword is gone); `R.action_to_settribute` an error (the field is gone); the registration digest re-minted (the FIFTEENTH — the seal fold lost the slot); and — R-V04B-99, his §310 (2.3): *"Just the usual error / refusal message."* — a condition naming `show`, `hide` or `discard` meets the unknown-condition-key refusal where it was accepted and silently false before (measured: `#~ hide{ show }` PROCESS_OK with 0 evals rows before, the refusal after — `receipts/S8-branch/PROBES-e12-edges-*` in the build record; witnesses: `tests/unit/condition_cap_tests.jl`'s retired-keys testset). HOW it is delivered — MEASURED on the build, not inferred: taking the three names out of BLS alone did NOT refuse them (the intake read `show` as a registered ACTION and minted a query — silently false without a Visib instance, measured there; with one, a CB_QUERY_THROW at apply by the mechanism measured for Id on the BEFORE tree, `#~ cell(3) hide{ cell }`); the rule that delivers the ruling is the registry's `queryable_action` (`src/state.jl`): a bare name in a condition is a settribute key, or an action of an Alterant that ANSWERS queries (Labels at v0 — Visib, Id and the Heading declare no getter), or it meets the usual refusal — whose text gains the one word that became false ("nor a registered" → "nor a queryable alterant action"). Its reach beyond the three names: a query of Id or the Heading (`{cell}`, `{head}`), which answered FALSE silently or threw CB_QUERY_THROW at apply before, refuses at absorb the same way — one principled rule in place of a patch per key (his §342), placed on the registry so it outlives stage 5's E13; stated here for the owner's correction (his §D174: the condition parser recognises the GoMeta-specific parts).
+- **The three Visib DECLARATIONS — the per-action write-back key `ActionSpec.settribute`, the derived table `AlterantRegistry.action_to_settribute` and the three names `hide`, `show`, `discard` in BLS's `ComponentSettribute` — REMOVED at 0.4.0** (stage 5's E12 of the v0.4 build; census row 45 — the owner's bulk mark of 2026-10-03, OWNER-WORDS §317, and his order §319 "#45 remove" (R-V04B-106) — the word R-V04B-42 (2) kept them for since 2026-09-22; his §14: the flags were stored in the BLS Components "for simplicity and as an interim step"; his §69 item 5: "will be removed later"): nothing had written back since stage 3's commit 4 — the Engine's answer is `evaluatedAltValue` (§1.2). What an older caller sees: `ActionSpec(; …, settribute = …)` is a `MethodError` (the keyword is gone); `R.action_to_settribute` an error (the field is gone); the registration digest re-minted (the FIFTEENTH — the seal fold lost the slot); and — R-V04B-99, his §310 (2.3): *"Just the usual error / refusal message."* — a condition naming `show`, `hide` or `discard` meets the unknown-condition-key refusal where it was accepted and silently false before (measured: `#~ hide{ show }` PROCESS_OK with 0 evals rows before, the refusal after — `receipts/S8-branch/PROBES-e12-edges-*` in the build record; witnesses: `tests/unit/condition_cap_tests.jl`'s retired-keys testset — re-homed into `tests/unit/condition_tests.jl` at stage 5's E13). HOW it is delivered — MEASURED on the build, not inferred: taking the three names out of BLS alone did NOT refuse them (the intake read `show` as a registered ACTION and minted a query — silently false without a Visib instance, measured there; with one, a CB_QUERY_THROW at apply by the mechanism measured for Id on the BEFORE tree, `#~ cell(3) hide{ cell }`); the rule that delivers the ruling is the registry's `queryable_action` (`src/state.jl`): a bare name in a condition is a settribute key, or an action of an Alterant that ANSWERS queries (Labels at v0 — Visib, Id and the Heading declare no getter), or it meets the usual refusal — whose text gains the one word that became false ("nor a registered" → "nor a queryable alterant action"). Its reach beyond the three names: a query of Id or the Heading (`{cell}`, `{head}`), which answered FALSE silently or threw CB_QUERY_THROW at apply before, refuses at absorb the same way — one principled rule in place of a patch per key (his §342), placed on the registry so it outlives stage 5's E13; stated here for the owner's correction (his §D174: the condition parser recognises the GoMeta-specific parts).
+- **The closed condition interpreter, the opt-in condition modes and the grammar profile — `src/condition.jl` whole (`parse_condition`, the algebra `CondStateAtom` / `CondQueryAtom` / `CondRawArg` / `CondNot` / `CondAnd` / `CondOr` / `CondScAnd` / `CondScOr` under `ConditionAST`, `print_condition`, `evaluate`, `cond_atom_for`, `cond_query_for`, `has_query_atom`, the typed condition codes `ERR_UNKNOWN_CONDITION_KEY` (E-01), `ERR_CONDITION_CAP` (E-02), `ERR_CONDITION_ARG_DOMAIN`, `ERR_CONDITION_PARSE` and the never-minted `ERR_CONDITION_UNQUERYABLE_ALT` (E-07), the K3–K6 corner register), the marker `FullEvalCondition` with `_FULL_EVAL_HANDLER` / `register_full_eval_handler!` and the alias `ConditionT` (`src/state.jl`), `src/grammar_profile.jl` whole (`GrammarProfile`, the caps and precedence data, `_grammar_digest`, `_mk_profile`, `cache_key`, `_profile_wellformed_check`, the opt-in seam `_CONDITION_MODES` / `register_condition_mode!` / `condition_mode_fn`, `_PROFILE_MODES`, `resolve_profile`), the pinned `DEFAULT_GRAMMAR_PROFILE` (`src/alterants/registry.jl`), the extension `optin/condition_modes_opt_in.jl` with `optin/README.md` (R-V04B-14's directory emptied), and the field and keyword `GoMetaConfig.profile` with `validate_config` and `ERR_UNKNOWN_PROFILE` (E-03) — REMOVED at 0.4.0** (stage 5's E13 of the v0.4 build; census row 1 `B:S2+C:default-grammar-profile` with row 30's profile arm — the owner's ORDER of 2026-10-03, OWNER-WORDS §319 *"and I order #1: remove."* (R-V04B-106 (2)); his §120 *"I never aimed for an additional safe parser. CC kept on pressuring for that."* and *"A FULL PARSER MUST BE AVAILABLE FOR THOSE USERS WHO FOR INSTANCE WORK ONLY WITH THEIR PRIVATE GoMeta statements"*; his §123 *"I actually do not want an opt-in at the moment."*; his §D174 of 2026-10-06 — the parser recognises the GoMeta-specific parts and slightly re-writes the condition into a Julia Expression evaluated on demand by Julia; his §223 'no left overs', R-V04B-61): a `{…}` condition is READ BY JULIA'S PARSER AND EVALUATED BY JULIA, as his legacy did (GoMetaRetro `src/AbsorbMeta.jl` :116–:282) — the body re-written at absorb (a settribute key to its state read; a QUERYABLE action to its query call; a label test `:name` to the Labels query, every admitted name spelled `Symbol("name")`; `,` to `||`; the rest verbatim — `_rewrite_condition`, `src/absorb/absorb_meta.jl`), parsed ONCE by `Meta.parse`, carried as Julia's `Expr` (`AlterantQueue.conditions`) and evaluated by `Core.eval` in module `GoMeta` at apply (`src/alterants/apply.jl`; a heading's once at the absorb seam); the vocabulary rule KEPT — the registry's `queryable_action` (`src/state.jl`; R-V04B-99, stage 5's E12): a bare name is a settribute key, or an action of an Alterant that declares `getAltInstance` (Labels at v0), or it meets the usual `GoMeta absorb: unknown condition key …` refusal — the vocabulary's refusal, the keyword literals `true` / `false` / `nothing` and a quoted string's word among the bare words it refuses (his legacy's reading; register E13-14); an empty block or a bare literal is refused as carrying no condition expression — the seam's second refusal (the legacy applied unconditionally — the session's choice, his to revert; E13-6); a worded label carrying a parenthesized list (`:abc(:label1)`, the K6 corner) reads as the label test of the word followed by a Julia call on its Bool — a `MethodError` at apply, where his legacy dropped the word and queried the list and the closed interpreter refused the shape (register E13-13, his to revert to either); the three profile names `:jl_share_v1` / `:jl_share_v1_full_parse` / `:jl_share_v1_full_eval`, the two-act law and the forward-provisioned cache key leave with the modes; the EXPORTED type `GoMetaConfig` RE-SHAPED — `GoMetaConfig(; flavor_tag, parse_range, user_mh_profile, namespace)`, the same-commit triple (the type `src/config.jl`, this document's §2/§3.1, the surface oracle unchanged — the four exported names and the 28 public names); none of the removed names was public. What an older caller sees: `GoMetaConfig(profile = …)` a `MethodError`; `include(… "optin/condition_modes_opt_in.jl")` no such file; a document whose condition met a typed refusal: a body Julia cannot parse is Julia's own `Meta.ParseError` out of the `goMeta` call (the messages 'condition too complex', 'condition too large', 'unterminated label key', 'unparsable condition', 'malformed condition key', 'label key with an argument list', 'unsupported condition argument' gone; 'empty condition block' re-worded to 'carries no condition expression'); a `PROCESS_ERROR` delivery carrying `[:ERR_UNKNOWN_PROFILE]` never again. What an author gains: the 29-step scan wall, the 29-code-unit atom wall, the 4096-byte wall and the depth-32 wall are gone (a 13-atom condition applies where it refused), the argument grammar is Julia's, a Julia Boolean expression over the GoMeta names (`{ 1 == 1 }`) is accepted and evaluated, a glued grouping `{(isCode)}` reads (the inventory's D-6) and a ZWJ pictograph label queried reads (D-11's query half) — MEASURED at the build by the probe pair `PROBES-e13-edges-{BEFORE_928c47bb,AFTER_<build>}.txt` over the 26 bodies of `PROBES-e12-modes-AFTER_50fb968.txt` and the parser inventory's H-rows; the TWELVE FROZEN FORMS UNMOVED (nine carry conditions — R-V04B-106 (2): a moved line is a defect); the heading-condition walls (`src/absorb/absorb_meta.jl`): the full-eval arm left with its marker; the label-test wall ("alterant-state query in a heading condition") KEPT as the ONE minimal refusal of R-V04B-106 (3) until the Heading runs through the apply loop (R-V04B-101) — a walk over the stored `Expr` for a `getAltState` call; the getter is called bare through `getAltState` — `CB_QUERY_THROW` leaves the catalogue, `RES_RETURN_TYPE` keeps the validator site; the evaluation's cost MEASURED (65–155 µs per `Core.eval` on the corpus shapes — his legacy's known cost; the lowered form a hundredfold cheaper, his to choose — the build record's register E13-9). Witnesses: `tests/unit/condition_tests.jl` (new — the E12 retired-keys testset re-homed with its control; the Julia-intake rows); `condition_cap_tests.jl`, `condition_modes_tests.jl` and `profile_snapshot_tests.jl` deleted whole; `unicode_cure_tests.jl` [1]/[3]/[5] re-cut end-to-end and `seam_envelope_tests.jl`'s query testset re-cut to Julia's own classes; `heading_recognizer_tests.jl`'s two wall witnesses unchanged.
+- **The registration fingerprint — `_registration_digest` (`src/alterants/registry.jl`), the FNV-1a fold helpers `_FNV_OFFSET` / `_digest_fold` / `_fold_parts` (`src/grammar_profile.jl`), `_mint_seal` and the `seal` field of `AlterantRegistry` (the `fnv1a64:<16 hex>` text; its `_SNAPSHOT_FIELDS` entry; the constructor argument) — REMOVED at 0.4.0** (stage 5's E13 of the v0.4 build; census row 6 `C:seal-fingerprint+B:S12-seal` — R-V04B-106 (2) "the registration fingerprint (#6, its one consumer the profile) goes in the same commit"; R-V04B-4 (v) had demoted it to a lossy cache-key component; his §314 "AS SIMPLE AND ELEGANT AS POSSIBLE"): the fingerprint's consumer was the grammar profile's `registration_digest` / `cache_key` (the row above); the `seal` field carried the digest and nothing else — the DOOR never read its value: `_registry_door_check` gates on `_snapshot === nothing` (`REG_UNPUBLISHED`) and compares the nine walked fields against the publish-time snapshot, `===` at the leaves (T2-bis), firing `POST_SEAL_MUTATION` at the first divergent path — both guarantees kept; the ruling's word "seal" names that snapshot mechanism (T2BIS-DESIGN §12), so `_SealToken` and `POST_SEAL_MUTATION` keep their names; the `_slot_text` encoder family STAYS for its one remaining caller — the validate walk's canonical Dict-entry order (`_walk_dict_entries`; the census row's own carve-out, "one key-text path stays for the kept door"; its removal with the order is the build record's register E13-2, his to order); the type-encoder budget (predicate 2 of the domain probe) STAYS as the domain's declared closure (register E13-3). What an older caller sees: `R.seal` a field error (`hasfield(AlterantRegistry, :seal)` false); the sixteen digest re-mints of this register's history end here (the E9/E10/E11/E12 rows stand as history); no public name moves. Witnesses: `registry_lifecycle_tests.jl` — the two seal pins re-cut to the snapshot, the route-U pin to `_snapshot === nothing`, the seal-carrying forge form and W4 (the foreign-seal leaf witness) retired, the 22 encoder pins unchanged; `record_schema_tests.jl` — the seal-participation pin and the digest-coverage testset retired, the slot-text distinctness pin unchanged; `snapshot_property_tests.jl` unchanged in count (the `:seal` skip line gone — the door's proof, 3127).

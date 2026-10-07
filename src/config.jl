@@ -9,15 +9,14 @@
 # PURPOSE: the stable, documented surface a caller uses to drive one `goMeta` call.
 
 """
-    GoMetaConfig(; profile=:jl_share_v1, flavor_tag=:julia, parse_range=nothing,
-                  user_mh_profile=nothing, namespace=:default)
+    GoMetaConfig(; flavor_tag=:julia, parse_range=nothing, user_mh_profile=nothing, namespace=:default)
 
 The v0 public input options for `goMeta` (docs/public-api.md §2; the versioning policy §6):
 
-- `profile::Symbol` — the share-profile. The closed default is `:jl_share_v1`; the two OPT-IN names
-  `:jl_share_v1_full_parse` / `:jl_share_v1_full_eval` are also config-valid and additionally require the
-  explicitly-included opt-in extension (the two-act law — `grammar_profile.jl`); any other name is a
-  fail-closed `ERR_UNKNOWN_PROFILE` diagnostic (`validate_config` in `GoMeta.jl`).
+- (the `profile::Symbol` field — the selector of the closed condition grammar's profile and its two opt-in names — left at E13,
+  stage 5's E13 of the v0.4 build, with the grammar profile — census rows 1 and 30; his order §319, R-V04B-106 (2); the
+  EXPORTED type re-shaped, R-V04B-61's clean cut — `GoMetaConfig(profile = …)` is a MethodError since; the RENDER's
+  share-profile `jl-share-v1` is the development tool's and was never this field.)
 - `flavor_tag::Symbol` — the content flavor, a CLOSED inventory: `:julia` (the default — the `#` lead
   alphabet, byte-untouched) or `:c` (the C-family `//` line-comment flavor: C, Rust & Co.) or `:latex`
   (the `%` lead alphabet, `.tex`); any other value throws at `BLS.flavor_for` (a stable message naming the
@@ -35,11 +34,10 @@ The v0 public input options for `goMeta` (docs/public-api.md §2; the versioning
 - `namespace::Symbol` — the occurrence-key namespace every `altValues_evals` cell handle is scoped
   under (`:default` by default; encoded as the key's length-prefixed namespace segment — docs/public-api.md
   §2). One constructor-time guard: a namespace over 65535 bytes throws an `ArgumentError` AT
-  CONSTRUCTION (a `GoMetaConfig(...)` call error, before any `goMeta` run — distinct from the
-  config-time fail-close row, which requires a constructed config).
+  CONSTRUCTION (a `GoMetaConfig(...)` call error, before any `goMeta` run; no config-time refusal remains since stage 5's E13 —
+  the entry refusals are the registry door's).
 """
 struct GoMetaConfig
-    profile::Symbol
     flavor_tag::Symbol
     parse_range::Union{Nothing,UnitRange{Int}}
     user_mh_profile::Union{Nothing,String}
@@ -47,8 +45,7 @@ struct GoMetaConfig
                         # (IDB constraint (5): supplied, never inferred; per-call store, so
                         # cross-document uniqueness is the caller/adapter's obligation)
 end
-function GoMetaConfig(; profile::Symbol = :jl_share_v1,
-                       flavor_tag::Symbol = :julia,
+function GoMetaConfig(; flavor_tag::Symbol = :julia,
                        parse_range::Union{Nothing,UnitRange{Int}} = nothing,
                        user_mh_profile::Union{Nothing,String} = nothing,
                        namespace::Symbol = :default)
@@ -58,5 +55,5 @@ function GoMetaConfig(; profile::Symbol = :jl_share_v1,
     ncodeunits(String(namespace)) <= 65535 ||
         throw(ArgumentError("GoMetaConfig: namespace exceeds 65535 bytes — the occurrence-key " *
                             "serialization bound (choose a shorter namespace symbol)"))
-    return GoMetaConfig(profile, flavor_tag, parse_range, user_mh_profile, namespace)
+    return GoMetaConfig(flavor_tag, parse_range, user_mh_profile, namespace)
 end

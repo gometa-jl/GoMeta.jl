@@ -22,7 +22,7 @@
 | 16 | An Id Alterant with two fields set in two metaLines (`mutExclusivePerField`) — expectation to be ruled (per-field semantics deferred) | 10 | DRAFT (stage 2's commit 7 of the v0.4 build, 2026-10-01): the three MEASURED behaviours — both fields on the depth-1 Blocks; the depth-2 statement's compound as a WHOLE, the unset field not inherited; a stated zero not recorded — and the compound's expectation vocabulary (an inline table) PUT TO THE OWNER; no authority until his word | `006_id_compound.toml` (draft) |
 | 17 | Invalid bytes (not UTF-8) in content: parsed as content, no crash (R-REL-21) | 13 | OPEN | |
 | 18 | An empty file; a file without a terminal newline (RC-1) | 13 | OPEN | |
-| 19 | The opt-in modes: the same file under `:closed_v1` and `:jl_share_v1_full_parse` gives identical values (R-V04B-14) | 6 | OPEN | |
+| 19 | (The opt-in condition modes — RETIRED at stage 5's E13 of the v0.4 build with the modes, census row 1; R-V04B-106: a condition is read by Julia's parser, no second intake exists) | 6 | RETIRED | |
 | 20 | A third-party Alterant registered in a custom registry: its values appear in the evaluated values without an Engine edit (the T5 promise) | 10 | OPEN | |
 | 21a | The File as a Component, ungoverned: `a = 1` alone — `file` Visib show, decided by default (the documented default; the registry declares none as data at ac29037 — see row 3's 2026-09-10 note) | 0 | OPEN — needs the D-4 ruling (File governable or not at v0.4) | |
 | 21b | The File under a file-level metaLine: `#~0 hide` · `a = 1` — `file` Visib hide, decided by the `#~0` metaLine; block/line values per the ruled inheritance | 2 | OPEN — needs the D-4 ruling | |

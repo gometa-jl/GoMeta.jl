@@ -162,8 +162,10 @@ check(occursin("path=[(direct,1)]", out), "show_handles did not print the full d
 
 ## 13 — an error delivery prints as the empty document its tree is (the status-first banner left at stage 5's T3 — the
 ## command-line entry prints the status to stderr); empty docs show the File summary in EVERY style
-err = GoMeta.goMeta(read(joinpath(_PB_FIX, "mini-Documenter-Source-File.jl"));
-                    config = GoMeta.GoMetaConfig(profile = :no_such_profile))
+_pbD = GoMeta.DEFAULT_REGISTRY   # a conforming UNPUBLISHED registry (route U) — the door refuses it typed (REG_UNPUBLISHED);
+_pbU = GoMeta.AlterantRegistry(_pbD.plugins, _pbD.sorted_alt_actions, _pbD.action_to_plugin, _pbD.action_index,   # the unknown-
+                               _pbD.alt_index, _pbD.accum_alt_idxs, _pbD.mutex_alt_idxs, _pbD.action_specs, _pbD.spec_index)   # profile route left at stage 5's E13
+err = GoMeta.goMeta(read(joinpath(_PB_FIX, "mini-Documenter-Source-File.jl")); registry = _pbU)
 out = plain(io -> print_BLS_Component_Tree(io, err))
 check(err.status == GoMeta.PROCESS_ERROR && occursin("0 Blocks", out) && !occursin("status", out),
       "an error delivery does not print as the empty document")

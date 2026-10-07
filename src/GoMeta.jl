@@ -9,10 +9,10 @@
 #     `GoMeta.PROCESS_OK`).
 # DOES: `goMeta(bytes; config::GoMetaConfig = GoMetaConfig(), registry::AlterantRegistry =
 #     DEFAULT_REGISTRY) -> GoMetaDelivery` runs the pipeline parse -> Absorb-walk (enqueue alterant
-#     actions) -> Apply (evaluate conditions + apply); the evaluated values are the product. `validate_config` fail-closes
-#     an unknown profile into a `PROCESS_ERROR` `GoMetaDelivery` carrying a typed `Diagnostic` BEFORE any
-#     parse work (the input bytes are never touched): `ERR_UNKNOWN_PROFILE` (E-03 — the
-#     three profile names are `:jl_share_v1` + the two opt-in names, docs/public-api.md §3.1). The typed
+#     actions) -> Apply (evaluate conditions + apply); the evaluated values are the product. The registry door fail-closes
+#     an unpublished or post-publication-mutated registry into a `PROCESS_ERROR` `GoMetaDelivery` carrying a typed
+#     `Diagnostic` BEFORE any parse work (the input bytes are never touched) — the ONE entry refusal since stage 5's E13
+#     (the config-time `ERR_UNKNOWN_PROFILE` row, E-03, left at E13 with the grammar profile — census row 30's arm). The typed
 #     flavor and range refusals left at stage 5's E8 of the v0.4 build (census row 30): an unknown `flavor_tag`
 #     throws raw at `BLS.flavor_for` (the closed inventory, no fallback — a stable message, docs/public-api.md §3.4)
 #     and a given `parse_range` is taken plain (`first` never read; `to = last`; a non-positive `to` parses the
@@ -28,16 +28,15 @@
 #     (`feed_user_mh!`; a fed explicit `head` records one row against the minted user-context
 #     handle — docs/public-api.md §2; experimental).
 # REASONING: the public contract (docs/public-api.md §2) requires `goMeta` to be pure and
-#     deterministic FOR THE ENGINE'S OWN OPERATIONS (no filesystem / clock / environment read; a v0
-#     condition body runs in the closed no-eval interpreter — only under the opt-in
-#     `:full_eval_v1` extension mode can it read or have effects — README SECURITY),
-#     and TOTAL over the config-time
-#     catalogued surface — non-OK implies non-empty diagnostics. Honest edges: the
-#     E-06 absorb-path guarded refusal is documented but not yet typed (conversion deferred; the E-04
-#     apply-path crash origin LEFT with the Visib write-back at stage 3's commit 4, R-V04B-42); the condition-path refusals are MINTED typed since the
-#     closed-interpreter flip, though the statement still aborts at the absorb seam, with E-07's mint
-#     PENDING (the unqueryable-alt shape still aborts raw). The full honest-edges catalogue:
-#     docs/public-api.md §3.
+#     deterministic FOR THE ENGINE'S OWN OPERATIONS (no filesystem / clock / environment read; a `{…}` condition is
+#     Julia text evaluated by Julia since stage 5's E13 — his design, §120 and §D174 — so what a condition body reads or
+#     does is the author's act, as a custom registry's callables are: README SECURITY), and TOTAL over the entry
+#     surface — non-OK implies non-empty diagnostics. Honest edges: the E-06 absorb-path guarded refusal is documented
+#     but not yet typed (conversion deferred; the E-04 apply-path crash origin LEFT with the Visib write-back at stage 3's
+#     commit 4, R-V04B-42); the condition path keeps TWO refusals of GoMeta's — the unknown condition key (the vocabulary's)
+#     and the no-expression guard of an empty block or a bare literal — and a body Julia cannot parse is Julia's own
+#     `Meta.ParseError` (the typed condition codes left with the interpreter at E13).
+#     The full honest-edges catalogue: docs/public-api.md §3.
 # PURPOSE: the single auditable entry point — bytes in, a typed `GoMetaDelivery` out, with the package's
 #     canonical observable output = `altValues_evals` (+ `serialize_evals`); the Engine's
 #     delivered surface = the run and the evaluated values (R-V04B-24); the (tree, render) pair is the
@@ -104,11 +103,6 @@ using StaticArrays  # stack-allocated fixed-size arrays; the slot tensors and th
 ############ Includes ###################################################################
 
 include("config.jl")    # GoMetaConfig (the public input options)
-include("grammar_profile.jl")       # v0.2 CH-2/CH-4: the versioned grammar-profile substrate (caps/precedence/
-                                    #   grants + provenance digests as DATA; the pre-parse error oracle) — its
-                                    #   DEFINITIONS depend on GoMetaConfig only, so it sits after config.jl;
-                                    #   the DEFAULT profile CONST is built at the registry tail (its
-                                    #   registration digest folds the declared record; call-time-bound refs).
 include("result.jl")    # ProcessStatus / Diagnostic / EvalStore (the GoMetaDelivery support types)
 include("bls/BLS.jl")
 include("occurrence.jl")            # v0.2 CH-1 (step 1): the normalized occurrence handle — depends
@@ -117,10 +111,8 @@ include("occurrence.jl")            # v0.2 CH-1 (step 1): the normalized occurre
 import .BLS
 include("state.jl")     # per-call ProcessState + the typed GoMetaDelivery surface + the AlterantRegistry type + the STATE/ctx() seam
 include("alterants/registry.jl")    # the Alterants + CnS layers, combined (Alterants BEFORE CnS)
-using .CnS: getState, getAltState
-include("condition.jl")             # the closed condition interpreter (bounded intake + algebra +
-                                    #   printer + evaluate) — after registry.jl (the query dispatch
-                                    #   surface) + state.jl; inert until the engine flips to it.
+using .CnS: getState, getAltState   # the two names a re-written condition calls by BARE name under `Core.eval(GoMeta, ex)` —
+                                    #   his legacy's GoMeta.jl :18 (the closed interpreter's include left at stage 5's E13)
 include("annotations.jl")           # the evals surface — evals capture +
                                     #   readAltValuesEvals(result.altValues_evals). AFTER registry.jl (Alterants.Visib/Id) + state.jl
                                     #   (ProcessState/GoMetaDelivery/EvalStore); BEFORE walk.jl + the driver below
@@ -174,67 +166,17 @@ public evaluatedAltValue, EvaluatedAltValue   # stage 2's commit 4 of the v0.4 b
 public scanAlterant, evaluatedAltValues   # stage 2's commit 5 of the v0.4 build (his §6 9.A; the plan :57): THE SCAN BY ALTERANT and THE ACCESS BY COMPONENT — package-public, NOT exported (docs/public-api.md §1.2; the register row §6); the names his word of 2026-10-03 (§305; R-V04B-95); the form — functions of their own — stands, its alternative (methods of the reader) banked
 public childDiffers   # stage 2's commit 6 of the v0.4 build (R-V04B-35 (e); his §37 item 4.2): THE CHILD-DIFFERS SIGNAL computed from the answer — the per-child primitive; his (ii) Boolean beside a PARENT's entry is `any` of it over the children (the seat of commit 6, F-3) — package-public, NOT exported (docs/public-api.md §1.2; the register row §6); the name kept by his word of 2026-10-03 (R-V04B-95); the Block-against-File reading carried past the branch (the review's C23)
 
-#########################################################################################
-#~~ Config-time validation
-
 """
-    validate_config(config::GoMetaConfig) -> Vector{Diagnostic}
-
-IS: the config-time validator of the public `GoMetaConfig` — the fail-closed gate every `goMeta` run passes BEFORE any parse.
-
-DOES: Config-time validation of the public `GoMetaConfig`, returning the (possibly empty) typed
-diagnostics that `goMeta` fail-closes on. A non-empty result means `goMeta` returns a `PROCESS_ERROR`
-`GoMetaDelivery` BEFORE any parse work is attempted (the input bytes are never touched; the
-docs/public-api.md §2 fail-closed contract — downstream, the development tool's `outputs` yields its empty non-OK pair).
-
-The one v0 config-time error row of the documented error catalogue (docs/public-api.md §3) — the typed range and flavor
-refusals (`ERR_RANGE_INVALID`, E-08; `ERR_UNKNOWN_FLAVOR`) left at stage 5's E8 of the v0.4 build (census row 30: typed
-refusals he never named; his legacy took its arguments plain):
-
-- `ERR_UNKNOWN_PROFILE` (E-03) — `config.profile` must be one of the three profile names: `:jl_share_v1`
-  (the closed default) or the two OPT-IN names `:jl_share_v1_full_parse` / `:jl_share_v1_full_eval` (which
-  additionally require the explicitly-included opt-in extension — the two-act law; naming one passes THIS
-  guard and refuses later at profile resolution if the extension is absent); anything else fail-closes.
-
-Not here since E8: `config.flavor_tag` is resolved by `BLS.flavor_for` at `goMeta` — an unknown tag throws its stable
-`ErrorException` naming the closed inventory (docs/public-api.md §3.4; no fallback); `config.parse_range` is taken plain —
-`first` is never read, `to = last(range)`, and a non-positive `to` parses the whole file (the parser's contract).
-Pure + total (never throws): the one check (profile) is a membership test over the typed `GoMetaConfig`
-field. The non-config-time codes are intentionally absent here, with the honest partition
-(docs/public-api.md §3): the condition-path refusals (E-01/E-02 + the arg-domain and parse rows) are
-TYPED at their origins in the closed interpreter; E-07's typed mint is PENDING (the unqueryable-alt
-shape still aborts raw); E-06 is the GUARDED absorb-path depth refusal (un-typed, conversion deferred; the
-E-04 apply-path crash origin left with the Visib write-back at stage 3's commit 4).
-
-REASONING: an unknown profile must never reach the parser or the apply — the one config-time row is decided by membership over a typed field, so the check is pure and total and the input bytes are never touched.
-
-PURPOSE: the one place a caller's configuration is refused with typed diagnostics, the empty vector being the pass.
-"""
-function validate_config(config::GoMetaConfig)
-    diags = Diagnostic[]
-    # the closed default + the two OPT-IN profile names. Naming an opt-in profile
-    # passes THIS guard but still refuses at `resolve_profile` unless the operator has
-    # explicitly included the opt-in extension — the two-act law (see grammar_profile.jl).
-    if config.profile !== :jl_share_v1 && !haskey(_PROFILE_MODES, config.profile)
-        push!(diags, Diagnostic(:ERR_UNKNOWN_PROFILE, :error,
-            "unknown profile $(repr(config.profile)); the v0.2 profiles are :jl_share_v1 " *
-            "(the closed default), :jl_share_v1_full_parse and :jl_share_v1_full_eval " *
-            "(both OPT-IN — they additionally require including " *
-            "\"optin/condition_modes_opt_in.jl\" explicitly)"))
-    end
-    return diags
-end
-
-"""
-    _configErrorDelivery(parse_state, config, registry, config_diags) -> GoMetaDelivery
+    _entryErrorDelivery(parse_state, config, registry, diags) -> GoMetaDelivery
 
 IS: the cold constructor of the fail-closed `PROCESS_ERROR` `GoMetaDelivery` — reached ONLY on an ENTRY
-refusal — before any absorb or apply work of the refused call, and at `goMeta` before its parse: a
-non-empty `validate_config` vector or the registry door's diagnostics (the callable seam that ran the door too, and its
-state ledger's refusals of an injected parse state, left at stage 5's E2 of the v0.4 build).
+refusal — before any absorb or apply work of the refused call, and at `goMeta` before its parse: the registry door's
+diagnostics (the config-time `validate_config` vector left at stage 5's E13 with the grammar profile — no configuration
+field is refusable since: an unknown `flavor_tag` throws `flavor_for`'s own message, a range is taken plain, E8; the
+callable seam that ran the door too, and its state ledger's refusals of an injected parse state, left at stage 5's E2).
 
 DOES: builds a per-call `ProcessState` by `init_state` (container SIZING only — no parse content is read, no
-`parseBLS` / absorb-walk runs), appends the typed `config_diags`, and hands back the delivery's four parts taken
+`parseBLS` / absorb-walk runs), appends the typed `diags`, and hands back the delivery's four parts taken
 from that state: the EMPTY store `st.evals` as `altValues_evals`; the unparsed `parse_state` — the caller passes
 one built from EMPTY bytes, since the validation pre-empts touching the input — as `blsComponentTree`; `PROCESS_ERROR`;
 the diagnostics. The working state itself is not delivered (R-V04B-28).
@@ -245,10 +187,10 @@ low-allocation main `goMeta` path; the empty-bytes tree keeps the delivery total
 
 PURPOSE: ONE fail-closed outcome for every entry refusal — typed diagnostics, never a throw.
 """
-@noinline function _configErrorDelivery(parse_state::BLS.ParseState, config::GoMetaConfig,
-                                        registry::AlterantRegistry, config_diags::Vector{Diagnostic})
+@noinline function _entryErrorDelivery(parse_state::BLS.ParseState, config::GoMetaConfig,
+                                       registry::AlterantRegistry, diags::Vector{Diagnostic})
     st = init_state(parse_state, config, registry)
-    append!(st.diagnostics, config_diags)
+    append!(st.diagnostics, diags)
     return GoMetaDelivery(st.parse, st.evals, PROCESS_ERROR, st.diagnostics)   # the field order R-V04B-89
 end
 
@@ -307,41 +249,39 @@ IS: the pipeline driver — the package's primary public entry, `goMeta(bytes; c
 (docs/public-api.md §2): the run whose evals rows `readAltValuesEvals` reads.
 
 DOES: Run the GoMeta pipeline over `bytes` and return a typed `GoMetaDelivery` — the package's primary public entry
-(docs/public-api.md §2). PURE + DETERMINISTIC for a DEFAULT-CONFIGURED run under `DEFAULT_REGISTRY`
-(the closed interpreter; the opt-in full-eval mode and a custom registry's own callables are outside
-the guarantee — the trust model): the same `(bytes, config, registry)` always yields
-the same `GoMetaDelivery`, with no filesystem / clock / environment read — conditions run in the
-closed no-eval interpreter, so in a default-configured run a condition body cannot read or have
-effects (only the explicitly opt-in `:full_eval_v1` extension mode host-evaluates condition text —
-README SECURITY). The pipeline is parse -> Absorb-walk (enqueue alterant
+(docs/public-api.md §2). PURE + DETERMINISTIC for the ENGINE'S OWN OPERATIONS under `DEFAULT_REGISTRY`: the same
+`(bytes, config, registry)` always yields the same `GoMetaDelivery`, with no filesystem / clock / environment read by the
+Engine. A `{…}` condition is Julia text evaluated by Julia (stage 5's E13 of the v0.4 build; his §120 and §D174 — the
+full parser, for those who work with their own GoMeta statements), so what a condition body reads or does is the
+author's act, outside the Engine's guarantee — as a custom registry's own callables are (the trust model; README
+SECURITY). The pipeline is parse -> Absorb-walk (enqueue alterant
 actions) -> Apply (evaluate conditions + apply), run inside one per-call dynamic scope
 (`STATE`), so two concurrent calls never share state.
 
 Arguments:
 - `bytes` — the input document as raw bytes. Line ENDINGS normalize to LF (CRLF is chomped — documented, not an
   error; see `docs/CANONICAL-OUTPUT.md`); content bytes are preserved faithfully for arbitrary bytes, including invalid UTF-8; non-ASCII inside a META line parses character-safely, a non-ASCII label APPLIED from outside the shipped set or a non-ASCII action meeting the stable unknown-label/unknown-action refusal (docs/public-api.md §4).
-- `config::GoMetaConfig` — the v0 input options (profile / flavor_tag / parse_range / user_mh_profile; see `GoMetaConfig`).
-  An unknown profile fail-closes into a `PROCESS_ERROR` `GoMetaDelivery` carrying a typed `Diagnostic` BEFORE any
-  parse — the input bytes are never touched (`ERR_UNKNOWN_PROFILE`). An unknown `flavor_tag` throws raw at
+- `config::GoMetaConfig` — the v0 input options (flavor_tag / parse_range / user_mh_profile / namespace; see `GoMetaConfig`;
+  the `profile` field left at stage 5's E13 with the grammar profile it selected). An unknown `flavor_tag` throws raw at
   `BLS.flavor_for` (the closed inventory, no fallback — a stable message, docs/public-api.md §3.4); a given `parse_range`
   is taken plain: `first` is never read, `last` is the parse end line, a non-positive `last` parses the whole file
   (the typed flavor and range refusals left at stage 5's E8 of the v0.4 build — census row 30).
 - `registry::AlterantRegistry` — the alterant inventory; defaults to the deterministic `DEFAULT_REGISTRY`.
 
 The `GoMetaDelivery` is `{altValues_evals::EvalStore, blsComponentTree::BLS.ParseState, status::ProcessStatus, diagnostics::Vector{Diagnostic}}` — the four public parts, read by name (R-V04B-28/29/30) — and is
-TOTAL over the CONFIG-TIME catalogued surface (an unknown profile never throws uncaught; an unknown flavor_tag throws its stable message, §3.4); absorb/apply-plane catalogued failures can still throw at v0 (see below): `status` is
+TOTAL over the ENTRY surface (the registry door's refusals are delivered typed; an unknown flavor_tag throws its stable message, §3.4); absorb/apply-plane catalogued failures can still throw at v0 (see below): `status` is
 `PROCESS_OK` (no error diagnostics) or `PROCESS_ERROR` (>=1 error `Diagnostic`; non-OK => non-empty diagnostics).
 Obtain the Engine's output via `readAltValuesEvals(result.altValues_evals)` (the evals map, keyed by (handle, attr); its byte form
 `serialize_evals`; a piece's text through `BLS.content`) — with the run itself, the Engine's delivered surface
 after the move (R-V04B-24: "the run and the evaluated values"). The (tree, render) pair is the development
 tool's: `Main.BasicRenderer.outputs`, applied to the result after `include("devtools/load_basic_renderer.jl")`
-at the caller's top level. The config-time error row (E-03) is armed + typed; the condition-path refusals
-(the unknown-key, cap, argument-domain and grammar rows) are typed at their own origins in the closed
-condition interpreter, though the statement still ABORTS at the absorb seam (the refusal rethrown raw;
-its routing into the delivered diagnostics a later, separately-gated motion) — E-07's typed mint is
-PENDING (the unqueryable-alt shape still aborts raw) — and the E-06 absorb-path guarded depth refusal stays
-un-typed for now (the honest partition — docs/public-api.md §3; the E-04 apply-path crash origin left with the
-Visib write-back at stage 3's commit 4).
+at the caller's top level. The entry refusals (the registry door's `REG_UNPUBLISHED` / `POST_SEAL_MUTATION`) are typed and
+delivered; the condition path keeps TWO refusals of GoMeta's — the unknown condition key and the no-expression guard of an
+empty block or a bare literal, `ErrorException`s at the absorb seam — a body Julia cannot parse is Julia's own `Meta.ParseError`,
+a condition that fails at evaluation Julia's own error
+(the typed condition codes and E-07's pending mint left with the closed interpreter at stage 5's E13); the E-06 absorb-path
+guarded depth refusal stays un-typed for now (the honest partition — docs/public-api.md §3; the E-04 apply-path crash origin
+left with the Visib write-back at stage 3's commit 4).
 The full honest-edges catalogue: docs/public-api.md §3.4.
 
 # The marker syntax (short form)
@@ -351,10 +291,10 @@ structurally identical, content ignored · the transposed `#~!N` refuses loudly 
 closes the innermost metaBlock and detaches what follows · a trailing `#~ …` applies to
 its own line. Full family + laws: the module docstring and `docs/SYNTAX-AND-SEMANTICS.md`.
 
-REASONING: the Engine's own operations are pure and deterministic — no filesystem, clock or environment read; the
-closed condition interpreter — so that the same `(bytes, config, registry)` always yields the same result (the
-byte law's ground); the trust model bounds the guarantee: the opt-in full-eval mode and a custom registry's own
-callables are outside it.
+REASONING: the Engine's own operations are pure and deterministic — no filesystem, clock or environment read — so that
+the same `(bytes, config, registry)` always yields the same result (the byte law's ground); the trust model bounds the
+guarantee: a condition body (Julia, evaluated by Julia — his §120) and a custom registry's own callables are the
+author's, outside it.
 
 PURPOSE: the one route from a document's bytes to the delivered object — the run and the evaluated values
 (R-V04B-24) — for an Extension, a test, a development tool or a DB-interface.
@@ -365,29 +305,21 @@ function goMeta(
     registry::AlterantRegistry = DEFAULT_REGISTRY,
 )
 
-    ## Config-time fail-closed validation — a typed Diagnostic BEFORE any parse
-    ## work (docs/public-api.md §2: ERR_UNKNOWN_PROFILE; the flavor and range arms left at stage 5's E8 — census row 30;
-    ## the development tool's `outputs` then yields its empty non-OK pair); on an unknown profile the input bytes are never touched — the error-path
-    ## GoMetaDelivery carries a parse state built from EMPTY bytes (container sizing only). A KNOWN
-    ## profile ⇒ an empty vector ⇒ the pipeline below runs unchanged; an UNKNOWN profile ⇒ a fail-closed
-    ## PROCESS_ERROR GoMetaDelivery built in the `@noinline` cold `_configErrorDelivery` helper (its `init_state` +
-    ## `GoMetaDelivery` construction stay OUT of this hot path). The E-06 (absorb) guarded refusal remains
-    ## untyped at v0 (the E-04 apply crash origin left with the write-back, stage 3's commit 4); the condition-path refusals are minted typed
-    ## in the closed interpreter (E-07's mint pending) but the statement still aborts at the absorb seam
-    ## (`absorb_meta.jl`: the refusal rethrown raw — its routing into the delivered diagnostics a later,
-    ## separately-gated motion, docs/public-api.md §3).
-    config_diags = validate_config(config)
-    ## v0.4 T2 — THE STRICT DOOR (R-V04-34): the registry must be PUBLISHED (validated + sealed);
-    ## an unpublished value refuses typed (`REG_UNPUBLISHED`, naming RegistryBuilder → validate →
-    ## publish) and a published value mutated after publication refuses `POST_SEAL_MUTATION`
-    ## (the recomputed seal ≠ the stored one — the real freeze gate). FULL COLLECTION before the
-    ## ONE terminal outcome: config-time AND registry-time diagnostics ride ONE fail-closed
-    ## PROCESS_ERROR result (config first, then registry); the input bytes are never touched.
-    append!(config_diags, _registry_door_check(registry))
-    isempty(config_diags) ||
-        return _configErrorDelivery(BLS.setUpToProcessFromBytes(UInt8[]), config, registry, config_diags)
+    ## v0.4 T2 — THE STRICT DOOR (R-V04-34), the ONE entry refusal since stage 5's E13 (the config-time arm — `validate_config`'s
+    ## profile check, E-03 — left at E13 with the grammar profile; no configuration field is refusable since: an unknown `flavor_tag`
+    ## throws `flavor_for`'s own message below, a range is taken plain — E8): the registry must be PUBLISHED; an unpublished value
+    ## refuses typed (`REG_UNPUBLISHED`, naming RegistryBuilder → validate → publish) and a published value mutated after
+    ## publication refuses `POST_SEAL_MUTATION` (the live fields against the publish-time snapshot — the real freeze gate). The
+    ## fail-closed PROCESS_ERROR GoMetaDelivery is built in the `@noinline` cold `_entryErrorDelivery` helper (its `init_state` +
+    ## `GoMetaDelivery` construction stay OUT of this hot path); the input bytes are never touched — the error-path delivery
+    ## carries a parse state built from EMPTY bytes (container sizing only). The E-06 (absorb) guarded refusal remains untyped
+    ## at v0 (the E-04 apply crash origin left with the write-back, stage 3's commit 4); the condition path's two refusals of
+    ## GoMeta's — the unknown condition key, the no-expression guard — abort the statement at the absorb seam (`absorb_meta.jl`).
+    door_diags = _registry_door_check(registry)
+    isempty(door_diags) ||
+        return _entryErrorDelivery(BLS.setUpToProcessFromBytes(UInt8[]), config, registry, door_diags)
 
-    ## Resolve the flavor ONCE, after the config validation above (an unknown tag throws raw
+    ## Resolve the flavor ONCE, after the door above (an unknown tag throws raw
     ## HERE — `flavor_for`'s stable message naming the closed inventory; its typed refusal left at
     ## stage 5's E8 of the v0.4 build, census row 30), and thread
     ## the record through the ParseState — every downstream flavor read rides
@@ -476,9 +408,10 @@ function goMeta(
     ## The typed `GoMetaDelivery` supersedes the original three-field NamedTuple (render, tree, configDict)
     ## (the historical field name `tree_bytes` predates the `blsStructure_bytes` rename; kept verbatim in this
     ## comment only). `status` is computed from the accumulated diagnostics: `PROCESS_ERROR` iff an `:error` row
-    ## exists, else `PROCESS_OK`. On this path no `:error` row is ever pushed (a config-time or door
-    ## refusal fail-closes through `_configErrorDelivery` before the parse; the absorb/apply-path refusals still
-    ## THROW — the condition refusal rethrown at the absorb seam, the E-06 row raw), so a run that returns
+    ## exists, else `PROCESS_OK`. On this path no `:error` row is ever pushed (the door's
+    ## refusal fail-closes through `_entryErrorDelivery` before the parse; the absorb/apply-path refusals still
+    ## THROW — the unknown-condition-key refusal at the absorb seam, Julia's own ParseError for a body it cannot read,
+    ## the E-06 row raw), so a run that returns
     ## here is `PROCESS_OK` — but the vector need NOT be empty: the walk's and the capture's `:warning` rows
     ## (the Heading lane's two capture-floor codes, until R-V04B-101) ride the delivery
     ## (the type's docstring). The evaluated values are read by `readAltValuesEvals(result.altValues_evals)`; the development tool's

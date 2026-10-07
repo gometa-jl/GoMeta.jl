@@ -326,9 +326,9 @@ around it so that whoever holds an `EvalStore` reads it the same way — the del
 the rows of a File, User or `fallBack` level once the Engine's apply records them: such a row is a row of this
 same store under its own grain code (`src/occurrence.jl`), so a level's entry needs no new part and no new
 signature (R-V04B-53's room — stated here, not built). Its order is fixed so that two runs over the
-same input bytes, configuration (the fed profile included) and registry serialize identically — for a
-default-configured run under `DEFAULT_REGISTRY`, the closed interpreter (the opt-in `:full_eval_v1` mode and a
-custom registry's own callables are outside the guarantee — `goMeta`'s docstring, the trust model): the
+same input bytes, configuration (the fed profile included) and registry serialize identically — for the Engine's
+own operations under `DEFAULT_REGISTRY` (a condition body — Julia, evaluated by Julia since stage 5's E13 — and a
+custom registry's own callables are the author's, outside the guarantee — `goMeta`'s docstring, the trust model): the
 Engine's determinism supplies equal rows, the sort their equal order. This surface is the Engine's; the
 development tool's `outputs` pair — the BLS Component tree's print and the render
 (`Main.BasicRenderer.outputs`, R-V04B-24) — is the tool's own, and no ruling foresees the two joined.

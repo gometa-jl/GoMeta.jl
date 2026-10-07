@@ -24,8 +24,8 @@ framework with facilities which Extensions can build on.
 interlinkable, re-renderable, and shareable-with-control** through `#~` **metaLines** — ordinary
 comment lines that carry machine-interpretable metadata (labels, visibility actions, conditions)
 beside the content they describe. GoMeta **evaluates** metadata; **it never executes the file** it
-processes — conditions run in GoMeta's own closed interpreter, never through Julia's `eval`
-(the one deliberate exception is an explicitly opt-in extension mode — see SECURITY below).
+processes — the actions its evaluation calls for are carried out by the renderer or an Extension. A `{…}`
+condition is Julia: read by Julia's parser, evaluated by Julia (since `0.4.0` — see SECURITY below).
 
 ```julia
 # An ordinary Julia file — with GoMeta metaLines in its comments:
@@ -46,12 +46,13 @@ x = 1                          # ...content...
 ## Status: alpha
 
 `0.3.0` (alpha maturity) — a working, tested engine for the **v0 subset** of the GoMeta
-language. The closed no-eval condition interpreter landed at `0.2.0`; `0.2.1` added the
+language. `0.2.0` brought a closed no-eval condition interpreter (REMOVED at `0.4.0`, stage 5's E13 of the v0.4 build —
+a condition is read by Julia's parser and evaluated by Julia, as the original engine did; `docs/public-api.md` §3.2); `0.2.1` added the
 token-delimiter law (every marker token requires whitespace-or-line-boundary on BOTH
 sides of its head — an undelimited shape is plain content, never special, never refused)
-with Unicode horizontal whitespace as the delimiter class; `0.2.2` makes the condition
-scanner Unicode-correct — a multibyte-final atom flush against the closing brace takes
-its ordinary vocabulary fate (flush ≡ spaced), and a multibyte final character survives
+with Unicode horizontal whitespace as the delimiter class; `0.2.2` made the condition
+reading Unicode-correct — a multibyte-final atom flush against the closing brace takes
+its ordinary vocabulary fate (flush ≡ spaced; the law holds in `0.4.0`'s char walk), and a multibyte final character survives
 the verdict store whole; `0.2.3` converts the structural-directive adjacency crash class
 (a `#-`/`#+`/`#[`/`#>`-form — including ordinary `#----` dividers and `#->` arrows —
 directly adjacent to metadata) into stable, early refusals at both grains (the line-grain
@@ -68,7 +69,8 @@ extends the label whitelist by a fixed **pictograph vocabulary** (byte-exact nam
 - **The `#~` metaLine language:** labels + conditional labels; the Visib actions `show` / `hide`
   / `discard` (incl. hide-aware rendering); section-title metaLines (`#~2 "Title"` → evaluated
   `head` entries; no render effect); `{}` condition expressions with `,`(OR) / `&&` / `!`
-  / `()` grouping; nested metadata regions (depth + attachment scoping; author depths 1–8 at
+  / `()` grouping — and, since `0.4.0`, any Julia Boolean expression over the GoMeta names (Julia's parser reads
+  the body; `docs/public-api.md` §3.2); nested metadata regions (depth + attachment scoping; author depths 1–8 at
   v0); the inert `#~!` form; inline `#~` on content lines; the `#]` close-marker; UTF-8-correct
   segment handling; CRLF→LF normalization.
 - **The pipeline:** the input file → BLS parses it into the BLS Component tree → the GoMeta Engine evaluates the
@@ -77,12 +79,12 @@ extends the label whitelist by a fixed **pictograph vocabulary** (byte-exact nam
   R-V04B-24) — pure and deterministic for the
   engine's own operations (see SECURITY), with a byte-exact oracle: the 7 committed example pairs
   under `examples/` render **byte-identically**,
-  pinned by the shipped **4912-test suite at this release** (the golden byte-oracle and
-  unit layers, including the dual-mode, refusal-witness, token-delimiter-law,
-  whitespace-alphabet, Unicode-correctness, and directive-adjacency families — green
+  pinned by the shipped test suite (the golden byte-oracle and
+  unit layers, including the refusal-witness, token-delimiter-law,
+  whitespace-alphabet, Unicode-correctness, directive-adjacency and condition-path families — green
   under a plain `Pkg.test()`).
 - **Robustness:** the metaLine GRAMMAR surface refuses out-of-vocabulary input with **stable, documented refusals** —
-  an unknown action, an over-long condition — (the walls against malformed metaLines and the slot-capacity refusal left at
+  an unknown action, an unknown condition key — (the walls against malformed metaLines and the slot-capacity refusal left at
   `0.4.0`, stage 5's E7 — census row 41: a malformed metaLine is read as the legacy read it), and the Labels Alterant's own
   unknown-label refusal (`GoMeta apply: unknown
   label …` on an applied out-of-whitelist name; a queried unknown label answers false since stage 5's E9 of the v0.4
@@ -90,8 +92,8 @@ extends the label whitelist by a fixed **pictograph vocabulary** (byte-exact nam
   error out of the `goMeta` call since stage 5's E6 of the v0.4 build (the apply seam's typed refusal left — census
   row 14; his legacy called the setters directly).
   The documented exception — the guarded `#~9` depth refusal — is likewise catalogued honestly in `docs/public-api.md`
-  §3.1/§3.2/§3.4 (the condition path itself is minted typed since the closed-interpreter flip, the
-  statement still aborting at the absorb seam — §3.2's preamble). The former second exception — the apply-path crash
+  §3.1/§3.2/§3.4 (a condition is Julia's since `0.4.0`, stage 5's E13: the unknown condition key is the one GoMeta refusal,
+  a body Julia cannot parse Julia's own parse error — §3.2). The former second exception — the apply-path crash
   edge, a flagless-Visib write-back — left with the write-back at stage 3's commit 4 of the v0.4 build.
 
 **The language grows by design; the v0 subset forecloses none of it.** `using()` is a reserved
@@ -198,27 +200,20 @@ julia --startup-file=no --project=. extensions/find_by_label.jl label5     # whi
 
 ## SECURITY
 
-GoMeta's condition expressions are parsed and evaluated by **GoMeta's own closed, bounded
-interpreter** — a restricted grammar over label and state queries. **No condition text ever
-reaches Julia's `eval` in a default-configured run**: this holds BY CONSTRUCTION (the shipped
-`src/` contains no code evaluation — conditions parse to data the engine walks itself), the
-shipped test suite carries a behavioral sentinel that would flip if any condition text were
-ever evaluated, and the development repository additionally pins the law with static no-eval
-gates. Condition text cannot execute code, read files, or have side effects. (Two caveats
-remain: metaLine names intern as Julia `Symbol`s, which persist for the session — the symbol
-table only grows as new names arrive, so a long session over many untrusted files accretes
-entries; and the separate opt-in modes below.)
-
-**The opt-in exception:** the `optin/condition_modes_opt_in.jl` extension registers the
-`:jl_share_v1_full_eval` profile, in which condition text beyond the safe grammar **is**
-host-evaluated. Activation takes **two explicit operator acts** — `include`-ing that file AND
-naming the profile in your config; neither act alone evaluates anything, neither is reachable
-from document content, and GoMeta itself never performs them for you (`src/` never includes the
-file; any other loaded Julia code can — Julia has no access control, the honest bound of
-`docs/public-api.md` §1.2). With the mode active, **processing a file you did not write can execute arbitrary
-code**, so use it only on input you trust. A default-configured run cannot reach this path:
-naming the profile without the included extension refuses loudly with a stable message —
-never a silent fallback.
+A `{…}` condition is **Julia** — since `0.4.0` (stage 5's E13 of the v0.4 build; the owner's order, OWNER-WORDS §319), as the
+original engine read it: at absorb the body's GoMeta-specific parts are re-written to Julia text (a settribute key to its
+state read, a queryable Alterant action or a label test to its query call, the owner's `,` to `||`; the rest verbatim),
+Julia's parser reads the result once, and Julia evaluates the stored expression at apply in GoMeta's module — the owner's
+design (OWNER-WORDS §120: a full parser *"for those users who for instance work only with their private GoMeta statements
+(i.e.: If there is NO security risk whatsoever)"*; §D174). **Processing a file you did not write therefore runs its
+conditions as Julia code** — a condition body can read files, take time or have effects, exactly as a custom Alterant's
+callables can: use GoMeta on input you trust, as you would any Julia file you `include`. The Engine's own operations stay
+pure and deterministic (`docs/public-api.md` §2). The vocabulary stays GoMeta's: a bare name inside `{}` must be a
+settribute key or an action of an Alterant that answers queries, else the stable `GoMeta absorb: unknown condition key …`
+refusal; a body Julia cannot parse is Julia's own `Meta.ParseError` (§3.2). One caveat remains: metaLine names intern
+as Julia `Symbol`s, which persist for the session — the symbol table only grows as new names arrive, so a long session
+over many untrusted files accretes entries. (The closed no-eval interpreter of `0.2.0`–`0.3.x` and its opt-in modes left at E13 —
+`0.4.0`, stage 5's E13 of the v0.4 build; `docs/public-api.md` §6.)
 
 Documented v0 limits: the queue tensor holds as many actions per meta-hierarchy slot as the registry declares (8 today) —
 a further action meets Julia's own `BoundsError`; a malformed metaLine is read as the legacy read it (stray punctuation at

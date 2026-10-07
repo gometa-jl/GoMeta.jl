@@ -323,12 +323,10 @@ content-only block across the blank.
 Conditions guard **alterant actions** (`discard{…}`/`hide{…}`/`show{…}`) and **conditional labels**
 (`:labelN{…}`).
 
-> **SECURITY — conditions run in GoMeta's own closed interpreter.** The `{…}` body is parsed
-> and evaluated by the engine itself (a bounded grammar over label and state queries) — it never
-> reaches Julia's `eval` in a default-configured run, so a condition cannot execute code or have
-> effects. The explicitly opt-in `:full_eval_v1` extension mode is the one documented exception
-> (host evaluation — only process trusted input with it loaded). Full posture: the README's
-> SECURITY section and `docs/public-api.md` §3.2.
+> **SECURITY — a condition is Julia.** Since `0.4.0` (stage 5's E13 of the v0.4 build) the `{…}` body is re-written at
+> absorb (its GoMeta-specific parts to Julia text), read once by Julia's parser and evaluated by Julia at apply — the
+> owner's design (OWNER-WORDS §120, §D174), as the original engine did. A condition body can therefore execute code and
+> have effects: process input you trust. Full statement: the README's SECURITY section and `docs/public-api.md` §3.2.
 
 The operators (all verified against the corpus):
 
@@ -339,11 +337,10 @@ The operators (all verified against the corpus):
 | `!`  | **NOT** | `Extended L18` `show{ !:label5}` — show only if `:label5` is **not** present |
 | `()` | **group** | `Proposal L3` `:label1{ (isText && containsMeta), isMeta }` |
 
-> Precedence of *un-parenthesized* mixed operators (e.g. `a && b, c`) is engine-defined and **not exercised by
-> this corpus** — **do not rely on it; always use explicit `()`** to make intent unambiguous, as `Proposal L3`
-> does. (See §13.) Tokenization note: keep a space after a grouping `)` before the next atom or
-> operator, as the corpus does (`Proposal L3`) — a `)` glued directly to a following atom
-> tokenizes engine-defined at v0. (Outside `{}`, on the metaLine itself, a token glued to a
+> Precedence of *un-parenthesized* mixed operators (e.g. `a && b, c`) is Julia's (`,` lowers to `||`; `&&` binds tighter
+> than `||`; `!` is prefix) and **not exercised by this corpus** — **write explicit `()`** to make intent unambiguous, as
+> `Proposal L3` does. (See §13.) Inside `{}` a `)` glued to a following atom or operator is read by Julia's parser since
+> `0.4.0` (`{(isCode)}` reads — the former scanner refused it). (Outside `{}`, on the metaLine itself, a token glued to a
 > closing `)`/`}` is DROPPED since stage 5's E7 of the v0.4 build — census row 41: `hide()junk` reads as `hide`, `hide{isCode}show` as
 > `hide{isCode}` — `docs/public-api.md` §3.4; write the space.)
 
@@ -480,9 +477,9 @@ drops `:label1` from depth 1 to depth 2. One blank line, two flips, two reasons.
 - **Malformed arguments** (wrong arity; non-parsable or overflowing values) are Julia's own error out of the
   `goMeta` call since stage 5's E6 of the v0.4 build (the stable `GoMeta apply: invalid arguments …` refusal
   left with the set-invocation seam — census row 14; `docs/public-api.md` §3.4).
-- **Condition-side atoms** (`{ cell(7) }`-class queries inside `{}`) route through the closed
-  condition intake instead: non-label arguments meet the typed argument-domain refusal there, and
-  the BARE unqueryable atom is the E-07 pending-mint edge (`docs/public-api.md` §3.2/§3.4).
+- **Condition-side atoms** (`{ cell(7) }`, `{ cell }` inside `{}`) meet the usual unknown-condition-key refusal at absorb,
+  with or without arguments — `cell` answers no query (the registry's rule since stage 5's E12 of the v0.4 build; the
+  closed intake's argument-domain refusal left with the interpreter at E13 — `docs/public-api.md` §3.2/§3.4).
 
 ---
 
@@ -530,7 +527,7 @@ To keep the verified claims honest, these are **known but not established here**
   their refusal family in `docs/public-api.md` §2/§3.4; not exercised by this corpus.
 - **`containsText`** is a BLS component attribute but is not used as a *condition predicate* in any example
   (only `containsMeta` is) — treat it as unverified-as-a-predicate.
-- **Operator precedence** for un-parenthesized mixed conditions (§6) — use explicit `()`.
+- **Operator precedence** for un-parenthesized mixed conditions (§6) is Julia's — use explicit `()`.
 - **Digit-vs-tilde-count conflict.** A multi-tilde form carrying a *differing* digit (e.g. `#~~3`) is not
   exercised; `#~2`/`#~3` (one tilde + digit) are.
 - **`## ` and inline `#~` in the same `# ` content line** — their parsing interaction is not exercised.
@@ -552,7 +549,8 @@ To keep the verified claims honest, these are **known but not established here**
   (a further one meets Julia's own `BoundsError` since stage 5's E7 of the v0.4 build — census row 41; `docs/public-api.md` §3.4). The
   authorable depth window is 1–8 in the digit form (§2). Custom label names applied (a queried one
   answers false — `docs/public-api.md` §3.4), and
-  predicates outside the state-ref/action whitelists, are refused.
+  bare names outside the settribute keys and the queryable actions, are refused; a Julia Boolean expression over those
+  names is accepted and evaluated by Julia (`0.4.0`; `docs/public-api.md` §3.2).
 
 > Status: this is the verified working reference for the v0 subset of the GoMeta language. The
 > language grows by design; the v0 subset forecloses none of it.

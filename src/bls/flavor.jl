@@ -2,10 +2,9 @@
 # armed flavor's divergence lives on (tables · policies · strictness · lead bytes ·
 # the content-model Bool), read by the ONE parse loop.
 #
-# The record follows the grammar_profile PATTERN — pinned data (its injective digest fold left at stage 5's P1 of
-# the v0.4 build — census row 39: a cache-key component no code read) — NOT the GrammarProfile record itself (that
-# name and axis belong to the condition interpreter; the cache_key JOIN stays a recorded obligation at
-# grammar_profile.jl `cache_key`).
+# The record is pinned DATA (its injective digest fold left at stage 5's P1 of the v0.4 build — census row 39: a
+# cache-key component no code read; the condition grammar's own profile record, whose pattern this one followed and
+# whose cache key was to join it, left at stage 5's E13 — census row 1).
 # The mainline threads ONE record through the ParseState `flavor` field populated
 # at setup (zero call-site churn — the kwarg default): ONE loop (`parseBLS`) + ONE
 # table reader (`parseLeadHeader!`) serve EVERY armed flavor over this record — the loop calls the reader
