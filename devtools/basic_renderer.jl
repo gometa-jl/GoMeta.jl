@@ -406,10 +406,10 @@ PURPOSE: the pair the golden layer pins byte-for-byte (tests/golden/golden_tests
     and `render` print.
 """
 function outputs(result::GoMeta.GoMetaDelivery)
-    ## The non-OK output contract. A fail-closed PROCESS_ERROR GoMetaDelivery — an ENTRY refusal: at v0.3 the
-    ## only source was a config-time validation error; at v0.4 the registry DOOR
-    ## (`REG_UNPUBLISHED` / `POST_SEAL_MUTATION`) is the further source (the seam ledger's `STATE_REUSE_REFUSED` left with the
-    ## callable seam at stage 5's E2 of the v0.4 build; `STATE_SEAL_MISMATCH` with the write-back at stage 3's commit 4) —
+    ## The non-OK output contract. A fail-closed PROCESS_ERROR GoMetaDelivery — an ENTRY refusal: the registry DOOR
+    ## (`REG_UNPUBLISHED` / `POST_SEAL_MUTATION`), the ONE entry refusal since stage 5's E13 of the v0.4 build (v0.3's
+    ## config-time validation error — `validate_config`'s profile check, E-03 — left at E13 with the grammar profile; the seam
+    ## ledger's `STATE_REUSE_REFUSED` left with the callable seam at E2; `STATE_SEAL_MISMATCH` with the write-back at stage 3's commit 4) —
     ## before any parse — yields an EMPTY (tree, render): "no render attempted",
     ## and the delivered tree is a container built from EMPTY bytes ⇒ an empty tree. `render_bytes` is NOT
     ## invoked (the emit path stays untriggered). No post-parse error class exists at v0.4: this branch

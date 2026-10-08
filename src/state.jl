@@ -92,8 +92,9 @@ DOES: The declared capture row (CONSUMED by the capture walk since v0.4 T5 — t
 retired alt-name ladder): `attr_scheme` ∈ `(:per_key, :single, :per_field, :per_occurrence)` = how attr names mint
 (`<stem>_<key>` per Dict entry · one `<stem>` row for a NamedElements-shaped single evals row · `<stem>_<field>` per
 non-default numeric field · one presence row per occurrence handle); `mode_gate` ∈ `(nothing, :localOnly)` —
-`:localOnly` delivers at the absorb seam keyed to the carrying Component's occurrence handle (the metaBlock a
-whole-line metaLine forms — R-V04B-50; the Segment of an inline one), and `validate` enforces the BIDIRECTIONAL
+`:localOnly` delivers at the absorb seam keyed on the Component the statement is APPLIED TO and decided by the carrier
+(the metaBlock a whole-line or a comment-split metaLine forms, R-V04B-50; the LINE with the Segment as the key's origin for
+an inline metaSegment, R-V04B-98), and `validate` enforces the BIDIRECTIONAL
 coherence with the record's `setMode` (the mode-gate laws, kept until R-V04B-101); `attr_stem` = the declared attr name
 stem (`nothing` ⇒ the derived fallback `lowercase(String(altName))`, `_capture_stem` below — the shipped four DECLARE
 theirs explicitly). The walk reads the store's shape from the record's own `altConstructor` — the row's former `instance_type` and `multiplicity` fields left at stage 5's E5

@@ -500,9 +500,10 @@ function absorbMeta(
     ## post-latch or non-injective over the shared store) — every localOnly action sets
     ## into ITS OWNING PLUGIN's store (entry order preserved per store, so the
     ## per-region fold's injectivity ordinals keep their key), and the region flushes
-    ## ONCE after the component loop via the REGISTRY-DRIVEN loop below (keyed to the
-    ## carrying Component's occurrence handle — the metaBlock a whole-line metaLine forms,
-    ## R-V04B-50; the Segment of an inline one).
+    ## ONCE after the component loop via the REGISTRY-DRIVEN loop below (keyed on the
+    ## Component the statement is APPLIED TO and decided by the carrier — the metaBlock a
+    ## whole-line or a comment-split metaLine forms, R-V04B-50; the LINE with the Segment as
+    ## the key's origin for an inline metaSegment, R-V04B-98).
     local pendingLocal::Dict{Int8,Any} = Dict{Int8,Any}()
     local isLocalOnly::Bool = false
     while (thisInd = nextind(metaSS, thisInd)) < ncodeunits(metaSS) + 1
@@ -594,9 +595,10 @@ function absorbMeta(
     ## v0.2 localOnly delivery — the ONCE-per-region FLUSH (v0.4 T5: REGISTRY-DRIVEN,
     ## per-plugin, deterministic order): each pending store (every condition-passing
     ## localOnly action of this meta region, in source order per store) mints its rows
-    ## keyed to the region's OWN identity + content: on the document surface that is
-    ## the carrying Component's occurrence handle + its verbatim bytes (the metaBlock a
-    ## whole-line metaLine forms, R-V04B-50; the Segment of an inline one); on the userMH feed it is
+    ## with the heading's verbatim text as the value: on the document surface keyed on the
+    ## Component the statement is APPLIED TO and decided by the carrier (the metaBlock a
+    ## whole-line or a comment-split metaLine forms, R-V04B-50; the LINE with the Segment as
+    ## the key's origin for an inline metaSegment, R-V04B-98); on the userMH feed it is
     ## the minted USER-CONTEXT handle + the profile's verbatim bytes. The WRONG-SHAPE
     ## check runs HERE, BEFORE any typed conversion (the T5 floor law — a mismatched or
     ## entries-less store takes the typed WARNING, never a raw TypeError in the poison

@@ -460,10 +460,11 @@ function default_registry_builder()
         # a localOnly alterant's value applies ONCE, WHERE IT STANDS — its
         # actions NEVER ENQUEUE into the slot tensors, so the inheritance
         # backtrack (both apply passes) never visits them; delivery happens at
-        # the absorb seam, keyed to the carrying Component's occurrence handle — the
-        # metaBlock a whole-line metaLine forms (R-V04B-50), the Segment of an inline one (the
-        # outline model: one row per heading occurrence, document order
-        # recoverable from handles). Deliberately in NEITHER derived set below.
+        # the absorb seam, keyed on the Component the statement is APPLIED TO and decided by
+        # the carrier (the metaBlock a whole-line or a comment-split metaLine forms, R-V04B-50;
+        # the LINE with the Segment as the key's origin for an inline metaSegment, R-V04B-98;
+        # the outline model: one row per heading occurrence, document order recoverable from
+        # the carriers' handles, the rows' origins). Deliberately in NEITHER derived set below.
         Alterant(; altName = :heading, setMode = :localOnly, altConstructor = Alterants.Heading,
                    setAltInstance = Alterants.setHead,
                    default = Declared(nothing),   # R-V04B-92 (card C2): Heading's declared default is NONE — no heading, delivered as `nothing` with the source `:default`
