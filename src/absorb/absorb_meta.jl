@@ -1,46 +1,50 @@
 # absorb_meta.jl — the metaLine parser and meta-hierarchy enqueuer (module AbsorbMeta)
 #
-# IS: the Absorb-phase metaLine parser and condition extractor. It splits a metaLine's meta region
-#     into alterant clauses (parseAlt), parses one-word labels (parseOneWordLabel) and balanced
-#     '()' argument lists (parseArgs / produceArgsStr), RE-WRITES each condition body's GoMeta-specific parts to Julia text
-#     and has Julia's parser read it once (`_rewrite_condition` + `Meta.parse` in parseConditions — his legacy's
-#     produceConditionStr read from the ground up, stage 5's E13 of the v0.4 build, census row 1; R-V04B-106 (2); his §D174),
-#     and ENQUEUEs action + condition + args into the per-call queue tensors (absorbMeta — the module's sole export).
-#     It enqueues, never applies: applying queued alterants is apply.jl's job.
-# DOES: absorbMeta reads the per-call ProcessState through the parent GoMeta.ctx(), hoisted once
-#     per call as `st`. Each parsed action name is resolved against st.registry.sorted_alt_actions;
-#     the declaration-order plugin index and the action index are written into st.queue.queued at
-#     the current meta-hierarchy slot, st.mh.slot_has_accum is set for actions in the registry's
-#     accumulate set, and the parsed condition (Julia's `Expr`) / Symbol-tuple args are stored by value in
-#     st.queue.conditions / st.queue.args. A condition body is READ HERE: a settribute key becomes its state read
-#     `getState(:key)`, an action of an Alterant that answers queries becomes its query `getAltState(Int8(p), Symbol("…"), …)`
-#     (the registry's one rule `queryable_action`, stage 5's E12 — R-V04B-99), a label test `:name` the Labels query of that
-#     name, his `,` becomes `||`, everything else — `&&`, `!`, `()`, `|`, `&`, numbers, Julia operators, whitespace — is copied
-#     verbatim (a bare word that is neither a settribute key nor a queryable action — `true`, `false`, `nothing`, a quoted string's
-#     word among them — is a condition key and refuses, as his legacy read it);
-#     the result is parsed ONCE by `Meta.parse` and the `Expr` evaluated by Julia at apply time (apply.jl; `Core.eval`), or,
-#     for a heading's condition, once at this seam (`_absorb_local_only!`).
-# REASONING: his design — the condition is Julia (OWNER-WORDS §120, §D174): GoMeta recognises its own parts and Julia does the
-#     rest, so a Julia Boolean expression over the GoMeta names is a condition (`{ 1 == 1 }` is one). The vocabulary stays
-#     GoMeta's: a bare name that is neither a settribute key nor a queryable action meets the usual unknown-condition-key
-#     refusal here (the legacy's :231–:234) — the vocabulary's one refusal; the seam's other refusal is the no-expression guard
-#     below (two refusals of GoMeta's on the condition path, no more); a body Julia cannot parse is
-#     Julia's own `Meta.ParseError` out of the goMeta call (an incomplete body thrown as the same class HERE, never stored for a
-#     later reader); an empty block or a bare literal (`{}`, `{ 1 }`) carries no condition expression and is refused (register
-#     E13-6); an argument text is spliced as Julia text and judged by Julia at apply (as the action arguments are since
-#     stage 5's E6). Two guarded refusals live here: "GoMeta absorb: unknown alterant action" — the registry else-branch (the
-#     E-01 family) — and the unknown condition key. Four guards ADDED to his legacy's metaLine parser left at stage 5's E7 of
-#     the v0.4 build (census row 41; his §120) — the punctuation wall at the action-name position, the glued-token wall after a
-#     closing ')' or '}', the no-token guard and the per-slot capacity guard: a malformed metaLine is read as his legacy read
-#     it — punctuation at the action position skipped to the next identifier, a glued token dropped (census row 41) — or
-#     meets Julia's own BoundsError (an empty meta region; a further action in a full slot — the queue tensor's width is the
-#     registered action count). Honest edges: each refusal is an untyped ErrorException raised via error(); their typed
-#     conversion is deferred at v0. The closed condition interpreter's walls (left at E13: the 29-step scan cap, the atom wall,
-#     the byte and depth walls) and its typed condition codes left with the interpreter at E13 — Julia's parser has none of them.
-# PURPOSE: turn each metaLine of a BLS input into queued alterant work the apply phase consumes,
-#     refusing out-of-vocabulary metadata and the structural shapes his legacy refused (a duplicate or unterminated list or
-#     block, a misplaced label) with a stable, documented message; a malformed metaLine is otherwise read as his legacy read it
-#     (stage 5's E7 of the v0.4 build, census row 41).
+# IS: the Absorb-phase metaLine parser and condition intake — his legacy's reader (GoMetaRetro AbsorbMeta.jl) with its grammar made
+#     explicit (the metaLine parser effort of stage 5, R-V04B-118 (3); his Decision 1 of 2026-10-08, OWNER-WORDS §356: Design E — his
+#     code fixed from the ground up, §342). It splits a metaLine's meta region into metaStatements (absorbMeta's loop + parseAlt), reads
+#     one-word labels (parseOneWordLabel) and `()` argument lists (parseArgs) with ONE scanner (_span) and ONE splitter (_split_args),
+#     RE-WRITES each condition body's GoMeta-specific parts to Julia text and has Julia's parser read it once (`_rewrite_condition` +
+#     `Meta.parse` in parseConditions — his legacy's produceConditionStr read from the ground up, stage 5's E13, R-V04B-106 (2); his §D174),
+#     and ENQUEUEs action + condition + args into the per-call queue tensors (absorbMeta — the module's sole export). It enqueues, never
+#     applies: applying queued alterants is apply.jl's job.
+# DOES: a metaStatement is a HEAD — a name, a `:` label, or (the region's first statement only) a `"…"` heading — then at most one `(…)`,
+#     then at most one `{…}`, and ENDS at white space or at the region's end; any other character meets the one refusal `_refuse_char`,
+#     which names the character, the token it begins and the region (his §341). The six structural characters `( ) { } , "` end a name or
+#     a label (§362); every other non-white-space character is a name or label character — pictographs and emojis among them (§360); a
+#     leading punctuation is part of the name and meets the registry's unknown-action refusal (§361; the prefix sugar a later design,
+#     V05-15). absorbMeta reads the per-call ProcessState through the parent GoMeta.ctx(), hoisted once as `st`; each name is resolved
+#     against st.registry.sorted_alt_actions; a slot already holding size(queued, 2) actions refuses with GoMeta's message BEFORE the
+#     write (his Decision 3, §358 — the limit a fixed size raised by hand); the plugin index and the action index are written into
+#     st.queue.queued at the current meta-hierarchy slot, st.mh.slot_has_accum set for the accumulate set, the condition (Julia's `Expr`,
+#     or `nothing` for an action written without `{}`) and the argument tuple stored by value; ONE text-argument rule (`_string_slot_check`,
+#     his §359 (8)) admits a quoted (String) argument in the slot the action's declared record names and refuses it elsewhere; an empty
+#     argument piece (`cell(7,)`) is handed on as the empty token — the Alterant decides (§359 (1)). A condition body is READ HERE: a
+#     settribute key becomes its state read `getState(:key)`, an action of an Alterant that answers queries becomes its query
+#     `getAltState(Int8(p), Symbol("…"), …)` (the registry's one rule `queryable_action`, stage 5's E12 — R-V04B-99), a label test `:name`
+#     the Labels query of that name, his `,` becomes `||`, everything else — `&&`, `!`, `()`, `|`, `&`, numbers, Julia operators,
+#     whitespace — is copied verbatim (a bare word that is neither a settribute key nor a queryable action — `true`, `false`, `nothing`, a
+#     quoted string's word among them — is a condition key and refuses, as his legacy read it); the result is parsed ONCE by `Meta.parse`
+#     and the `Expr` evaluated by Julia at apply time (apply.jl; `Core.eval`), or, for a heading's condition, once at this seam
+#     (`_absorb_local_only!`).
+# REASONING: his design — the condition is Julia (OWNER-WORDS §120, §D174): GoMeta recognises its own parts and Julia does the rest; the
+#     metaLine grammar is his legacy's with its two missing arms supplied: his `parseAlt` had arms for `(`, the label, `{` and white
+#     space and no "anything else" case (AbsorbMeta.jl :307–:340), and its outer `ispunct` gate (:304) skipped a leading punctuation — so
+#     a statement was never required to END and a leading punctuation was never read: every silent skip, drop and raw BoundsError of the
+#     inventory (the register's D-1, D-2, D-3, D-8, D-10) was one of those two arms, cured at their root rather than by a patch per shape
+#     (his §342, §343). One of each where there were several — one white-space predicate (`_isspace_valid`, his
+#     legacy's `isspace` guarded; his §359 (10)), one scanner `_span` for the metaLine's spans (quote-aware: a `}` or `)` inside a quoted
+#     text closes nothing — his §359 (5); the condition rewrite keeps its own `(…)` finder until the lever "strings in conditions" is
+#     his — the register's PB-6), one splitter, one text-argument rule; the backslash reserved in GoMeta's quoted texts — the heading
+#     sugar and the quoted arguments, his decision's two producers (U8 :1310) — while a condition's quoted text is Julia's and its `\`
+#     Julia's escape — the session's default under his §D174, the register's PB-6, his to revert. The scanner's form is the quote-scan
+#     panel's judge's specification (wf-s10-quote-scan-design, B.2).
+#     Honest edges: each refusal is an untyped ErrorException raised via error() ("the usual error / refusal message", U8 :1473); a body
+#     Julia cannot parse is Julia's own `Meta.ParseError` (his §319); an argument's arity or type fault is the Alterant's own setter
+#     error (§359 (9)); the Labels Alterant's character law and whitelist judge the label names handed over (U8 :1252).
+# PURPOSE: turn each metaLine of a BLS input into queued alterant work the apply phase consumes, refusing every malformed metaStatement
+#     with a stable GoMeta message that names the character at fault, and reading every well-formed one exactly as his legacy read it
+#     (his two example files and the twelve frozen forms byte-equal, his §78).
 
 ## AbsorbMeta.jl
 module AbsorbMeta
@@ -70,143 +74,134 @@ import ..Alterants
 import ..GoMeta as GMX
 export absorbMeta
 
-function parseOneWordLabel(
-    metaSS::SubString{String},
-    thisInd::Int
-)::Tuple{Int,Vector{SubString{String}}}
+#########################################################################################
+## THE METALINE PARSER — his reader with its grammar made explicit (the metaLine parser effort, R-V04B-118 (3); his Decision 1 of
+## 2026-10-08, OWNER-WORDS §356: Design E — his code fixed from the ground up, §342). A metaStatement is a HEAD — a name, a `:` label,
+## or, as the region's FIRST statement only, a `"…"` heading (his U8 :1292 sugar) — then at most one `(…)`, then at most one `{…}`
+## (his order, U8 :1390), and it ENDS at white space or at the region's end; any other character meets THE ONE refusal
+## `_refuse_char`, which names it (his §341: such situations cause an error). The six structural characters `( ) { } , "` end a
+## name or a one-word label (his §362); every other non-white-space character is a name or label character — a pictograph or an
+## emoji among them (his §360; a leading punctuation is part of the name, §361 — the prefix sugar is a later design, V05-15).
+## ONE white-space predicate (`_isspace_valid` — his legacy's `isspace`, guarded against invalid UTF-8; his §359 (10)), ONE scanner
+## `_span` for the metaLine's spans `(…)` `{…}` `"…"` (the condition rewrite keeps its own `(…)` finder until the lever "strings in
+## conditions" is his), ONE argument splitter `_split_args`, ONE refusal helper — where his legacy and the v0.2–v0.3 additions had
+## three white-space tests, four bracket loops, three backslash sites and two String walls. The quote-scan panel of 2026-10-08
+## (wf-s10-quote-scan-design; its judge's specification B.2) is the scanner's form.
+const _STRUCTURAL = ('(', ')', '{', '}', ',', '"')
 
-    indStartArgs = thisInd
-    local labelEndFound::Union{Nothing,UnitRange{Int64}}
-    local indEndArgs::Int
-    labelEndFound = findfirst(
-        r"(\s|{){1}",
-        view(metaSS, thisInd:lastindex(metaSS)))
-    if labelEndFound !== nothing
-        thisInd = indStartArgs - 1 + labelEndFound[1]
-        indEndArgs = prevind(metaSS, thisInd)
-    else
-        indEndArgs = lastindex(metaSS)
+## The words of the refusals' hints (his item 6: the words as drafted; his to re-word): the glue hint is his item 2 — a space before
+## '(' or '{' separates it from the preceding metaStatement; the labels hint is his Decision 2 (slide 43); the quote hint his U8 :1306.
+const _HINT_GLUE = " — '()' and '{}' are written glued to the name, as in hide{isCode}: a white space before them separates them from the preceding metaStatement"
+const _HINT_ORDER = " — a metaStatement is a name or a label, then '()' at most once, then '{}' at most once, and ends at white space"
+const _HINT_LABELS = " — the short form :name takes ONE label; several labels are written :(name1, name2)"
+const _HINT_QUOTE = " — a quoted text is the heading sugar at the region's first metaStatement only; elsewhere write head(\"…\")"
+
+"the index after the TOKEN that starts at `i`: the run of characters that are neither white space nor structural (`i` itself when the run is empty)"
+function _token_end(text::AbstractString, i::Int)::Int
+    n = lastindex(text); j = i
+    while j <= n && !_isspace_valid(text[j]) && text[j] ∉ _STRUCTURAL
+        j = nextind(text, j)
     end
-    thisInd = indEndArgs
-    argsSSVec = [strip(_isspace_valid, p) for p in split(metaSS[indStartArgs:indEndArgs], ",")]
-    if length(argsSSVec) == 1 && argsSSVec[1] == ""
-        ## Return `isempty` vector instead:
-        argsSSVec = Vector{SubString{String}}[]
-    end
-    return thisInd, argsSSVec
+    return j
 end
 
-#########################################################################################
-#########################################################################################
-## `parseArgs()` — the STRING-LANE WIDENING (quote-aware; MECHANISM only).
-## A '"'-delimited span is ONE token: ',' '(' ')' inside it are CONTENT, not structure. NO
-## metaLine grammar accepts a string argument here (that is the heading recognizer's carve-out): a
-## quoted token flows the widened lane as a String KIND (see `_coerce_arg_token`) and meets
-## a TRANSITIONAL typed refusal at the enqueue seam in `absorbMeta` (dispatch alone cannot
-## hold the law — the built-in toy setters keep an untyped value slot that would parse
-## `cell("7")`; byte-probed).
-## Every QUOTE-FREE argument list takes the BYTE-IDENTICAL pre-widening path below (two-path
-## split), so the pre-widening envelope cannot shift. Refusal classes minted here, all
-## loud, never a silent mangle: UNTERMINATED quoted argument; BACKSLASH inside a
-## quoted span (the WHOLE backslash character is RESERVED at v0.2 for the future
-## escape grammar; see
-## `_consume_heading_span`'s header for the full why + rejected alternative);
-## MALFORMED quoted argument (a quote
-## glued to bare text, a stray quote, or more than one span in one token).
-function parseArgs(
-    metaSS::SubString{String},
-    thisInd::Int
-)::Tuple{Int,Vector{SubString{String}}}
+"""
+    _span(text, thisInd; julia = false) -> Int
 
-    countOpenBrakets = 1
-    inQuote = false
-    sawQuote = false
-    indStartArgs = nextind(metaSS, thisInd)
-    while (thisInd = nextind(metaSS, thisInd)) < ncodeunits(metaSS) + 1
-        c = metaSS[thisInd]
-        if c == '"'
-            inQuote = !inQuote
-            sawQuote = true
-        elseif inQuote
-            ## THE BACKSLASH RESERVATION:
-            ## ANY `\` inside a quoted span refuses at v0.2 — the argument-lane twin
-            ## of the heading-span law (full WHY + rejected alternative at
-            ## `_consume_heading_span`'s header: the future escape grammar must be a
-            ## purely additive widening, so no valid v0.2 document may carry a
-            ## backslash a later grammar would reinterpret; sugar ≡ canonical holds
-            ## because both producers refuse).
-            if c == '\\'
-                error("GoMeta absorb: backslash in a quoted argument — the backslash is ",
-                    "reserved inside quoted spans at v0.2 for the future escape grammar ",
-                    "in the meta region ", repr(first(metaSS, 40)),
-                    " (see docs/public-api.md §3.4)")
+IS: THE ONE SCANNER of the metaLine grammar (Design E — "one routine finds a closing bracket or quote", his Decision 1,
+OWNER-WORDS §356; his §359 (5)): his counter loop (AbsorbMeta.jl :44–:53 parseArgs, :88–:99 produceArgsStr, :253–:266
+parseConditions) with the opener as its parameter and ONE quote arm.
+
+DOES: `text[thisInd]` is an opener — `(`, `{` or `"`; returns the index of its closer. A bracket nests with its own kind
+(his counters; the other kind is content, as in his loops); inside a bracket span a `"` opens a QUOTED TEXT whose characters
+are content — a bracket or a comma inside it closes and splits nothing; a quoted span's own `"` closes it. A `\\` inside a
+quoted text: in GoMeta's text (`julia = false` — the quoted heading, a quoted argument, a label list) it is RESERVED and
+refuses (his v0.2 decision, U8 :1310, given for the sugar span and the String-argument span: a later escape grammar must be
+a purely additive widening; reserving only `\\"` refused unevenly — the rejected alternative); in Julia's text (`julia =
+true` — a condition body, his §D174) it escapes the next character as Julia reads it, so the quoted text ends where Julia
+ends it. Reaching the end of `text` refuses ONCE, naming the innermost opener left open — the `"` when the text ends inside
+a quoted text. One character walk (`nextind`, never a byte count); no regex; no allocation on the accepting path; generic
+over `AbstractString` (the parser's `SubString{String}` today; the rewrite's `String` with the lever "strings in conditions" — the
+register's PB-6, PB-12).
+
+REASONING: his legacy counted brackets in three loops and the v0.2 additions added quote arms and backslash checks at three
+more places; one walk with one quote state serves every span. Julia's other literal delimiters are not known — a Char
+literal (`'}'`; `'` is also Julia's adjoint `x'`), a backtick, an odd `"` inside a triple-quoted text, a string prefix's
+word: each ends in a loud refusal or Julia's own error (the register's PB-5).
+
+PURPOSE: where a span ends, for every reader: parseArgs (the argument list and the label list), parseConditions, the quoted
+heading and the splitter.
+"""
+function _span(text::AbstractString, thisInd::Int; julia::Bool = false)::Int
+    o = text[thisInd]                                    # the opener: '(' '{' or '"'
+    c = o == '(' ? ')' : o == '{' ? '}' : '"'            # its closer
+    inQuote = o == '"'                                   # a quoted span starts inside its own quote
+    countOpenBrakets = 1                                 # his counter — the opener counted
+    while (thisInd = nextind(text, thisInd)) < ncodeunits(text) + 1      # his loop header (AbsorbMeta.jl :46, :92, :259)
+        ch = text[thisInd]
+        if inQuote
+            if ch == '\\'
+                julia || _refuse_backslash(text)         # GoMeta's quoted text: the v0.2 reservation
+                thisInd == lastindex(text) && break      # Julia's quoted text: a final '\' escapes nothing — left open
+                thisInd = nextind(text, thisInd)         #   else the escaped character is content (the header steps past it)
+            elseif ch == '"'
+                o == '"' && return thisInd               # a quoted span's own closer
+                inQuote = false                          # a quoted text inside a bracket span ends
             end
-        elseif c == '('
+        elseif ch == '"'
+            inQuote = true                               # a quoted text inside a bracket span: its characters are content
+        elseif ch == o
             countOpenBrakets += 1
-        elseif c == ')'
-            countOpenBrakets -= 1
+        elseif ch == c
+            (countOpenBrakets -= 1) == 0 && return thisInd
         end
-        countOpenBrakets == 0 ? break : nothing
     end
-    inQuote && error("GoMeta absorb: unterminated quoted argument — a '\"' in a metaLine ",
-        "argument list was never closed in the meta region ", repr(first(metaSS, 40)),
-        "; v0 requires balanced '\"\"' around a quoted argument ",
-        "(see docs/public-api.md §3.4)")
-    if countOpenBrakets == 0
-        indEndArgs = prevind(metaSS, thisInd)
-        if !sawQuote
-            ## the BYTE-IDENTICAL pre-widening path — every quote-free list, verbatim as before
-            argsSSVec = [strip(_isspace_valid, p) for p in split(metaSS[indStartArgs:indEndArgs], ",")]
-            if length(argsSSVec) == 1 && argsSSVec[1] == ""
-                ## Return `isempty` vector instead:
-                argsSSVec = Vector{SubString{String}}[]
-            end
-        else
-            argsSSVec = _split_args_quote_aware(metaSS[indStartArgs:indEndArgs])
-        end
-    else
-        error("GoMeta absorb: unterminated argument list — a '(' in a metaLine was never closed ",
-            "(", countOpenBrakets, " still open); v0 requires balanced '()' ",
-            "(see docs/public-api.md §3.4)")
-    end
-    return thisInd, argsSSVec
+    _refuse_unterminated(text, inQuote ? '"' : o, inQuote ? 1 : countOpenBrakets)
 end
 
-## The quote-aware splitter (the widening step): top-level commas split; commas inside a quoted span are
-## inert. Each piece is edge-stripped exactly like the pre-widening path (quotes are not
-## whitespace, so a quoted token keeps its delimiters — the KIND marker `_coerce_arg_token`
-## reads). A piece carrying any '"' must be EXACTLY one well-formed span (`"…"`); anything
-## else refuses loudly. Empty pieces survive as "" tokens, exactly like the pre-widening split.
-function _split_args_quote_aware(argtext::Union{String,SubString{String}})::Vector{SubString{String}}
-    pieces = SubString{String}[]
-    start = firstindex(argtext)
-    i = start
-    inq = false
-    while i <= lastindex(argtext)
-        c = argtext[i]
-        if c == '"'
-            inq = !inq
-        elseif c == ',' && !inq
-            push!(pieces, SubString(argtext, start, prevind(argtext, i)))
-            start = nextind(argtext, i)
-        end
-        i = nextind(argtext, i)
+"the one unterminated refusal of the metaLine grammar — the E seat's R2 in the words he approved as drafted (§359 (6)); the innermost opener left open is named, the `\"` when the text ends inside a quoted text"
+_refuse_unterminated(text::AbstractString, o::Char, nOpen::Int) =
+    error("GoMeta absorb: unterminated '", o, "' — never closed in the meta region ", repr(first(text, 40)),
+        " (", nOpen, " still open) (see docs/public-api.md §3.4)")
+
+"the one backslash refusal — the E seat's R3 in the words he approved as drafted (§359 (6)): a `\\` inside GoMeta's own quoted text (the heading sugar, a quoted argument, a label list) is reserved for the future escape grammar (his v0.2 decision, U8 :1310)"
+_refuse_backslash(text::AbstractString) =
+    error("GoMeta absorb: backslash in a quoted span — reserved for the future escape grammar in the meta region ",
+        repr(first(text, 40)), " (see docs/public-api.md §3.4)")
+
+"THE ONE REFUSAL of the metaLine grammar: the character at `i` cannot stand `where` (a position phrase); the message names it, the token it begins and the region — the usual GoMeta refusal form (his §341); its form approved as drafted by his item 6 of 2026-10-08 (the sitting pack's D.1), the four hints' words the session's — the register's PB-3, his to set"
+function _refuse_char(metaSS::SubString{String}, i::Int, where::String, hint::String = "")
+    j = i
+    while j <= lastindex(metaSS) && !_isspace_valid(metaSS[j])
+        j = nextind(metaSS, j)
     end
-    push!(pieces, SubString(argtext, start, lastindex(argtext)))
-    out = SubString{String}[]
-    for p in pieces
-        t = strip(_isspace_valid, p)
-        occursin('"', t) && !_is_wellformed_quote_span(t) && _refuse_malformed_quote(t)
-        push!(out, t)
-    end
-    return out
+    error("GoMeta absorb: unexpected character ", repr(metaSS[i]), " ", where, " in the meta region ", repr(first(metaSS, 40)),
+        " (the token ", repr(first(SubString(metaSS, i, prevind(metaSS, j)), 40)), ")", hint, " (see docs/public-api.md §3.4)")
 end
 
-## The quote-span LAW, one predicate, enforced at TWO seams (the quote-aware splitter
-## above and the kind coercion `_coerce_arg_token` below — two seams because argsSSVec has
-## two producers and only parseArgs is quote-aware): exactly one well-formed '"…"' span
-## forming the WHOLE token. The length/edge conjuncts run BEFORE the interior slice, so
-## the slice is computed only under its own precondition (review-found ordering).
+"the argument list's interior split at its TOP-LEVEL commas — a quoted text is jumped whole by the one scanner, so its commas are content; each piece edge-stripped by the one white-space test; a piece carrying a `\"` must be exactly one well-formed `\"…\"` span (the token law at its ONE seam — the only producer of a quoted argument token; the heading's token is one by construction of `_span`); an empty piece among several is handed on as the empty token — the Alterant decides (his §359 (1)); `()` is no argument (his legacy's normalisation, AbsorbMeta.jl :57–:60 — `hide()` ≡ `hide`)"
+function _split_args(argtext::SubString{String})::Vector{SubString{String}}
+    argsSSVec = SubString{String}[]
+    indStart = thisInd = firstindex(argtext)
+    while thisInd <= lastindex(argtext)
+        ch = argtext[thisInd]
+        if ch == ','
+            push!(argsSSVec, strip(_isspace_valid, SubString(argtext, indStart, prevind(argtext, thisInd))))
+            indStart = nextind(argtext, thisInd)
+        elseif ch == '"'
+            thisInd = _span(argtext, thisInd)            # never refuses here: `_span('(')` paired every '"' and refused every '\'
+        end
+        thisInd = nextind(argtext, thisInd)
+    end
+    push!(argsSSVec, strip(_isspace_valid, SubString(argtext, indStart, lastindex(argtext))))
+    for a in argsSSVec
+        occursin('"', a) && !_is_wellformed_quote_span(a) && _refuse_malformed_quote(a)
+    end
+    return (length(argsSSVec) == 1 && isempty(argsSSVec[1])) ? SubString{String}[] : argsSSVec
+end
+
+## The quote-span LAW, one predicate: exactly one well-formed '"…"' span forming the WHOLE token. The length/edge conjuncts run
+## BEFORE the interior slice, so the slice is computed only under its own precondition.
 _is_wellformed_quote_span(t::AbstractString) =
     ncodeunits(t) >= 2 && t[firstindex(t)] == '"' && t[lastindex(t)] == '"' &&
     !occursin('"', t[nextind(t, firstindex(t)):prevind(t, lastindex(t))])
@@ -216,6 +211,18 @@ _refuse_malformed_quote(t::AbstractString) =
         "exactly one '\"…\"' span forming the whole token (got ",
         repr(first(String(t), 40)),
         "); v0's argument grammar (see docs/public-api.md §3.4)")
+
+"the one-word label starting at `i` (the first character after `:`): the index after the label and the ONE-element argument vector — the sugar `:name` takes one label (his slide 43, U8 :1236; his Decision 2 of 2026-10-08, §357: `:name1,name2` is refused at the comma, the right form named); what the name may contain is the Labels Alterant's (U8 :1252), the six structural characters excepted (§362); no shipped label name is spelled in this file (the zero-literal law, tests/unit/vocabulary_tests.jl [10])"
+function parseOneWordLabel(metaSS::SubString{String}, i::Int)::Tuple{Int,Vector{SubString{String}}}
+    j = _token_end(metaSS, i)
+    return j, SubString{String}[SubString(metaSS, i, prevind(metaSS, j))]
+end
+
+"the `(…)` list opening at `i` (`metaSS[i] == '('` — an action's argument list or the Labels Alterant's `:(…)`): the index after its closing `)` and the argument tokens — his `parseArgs` (AbsorbMeta.jl :39–:67): its counter loop the one scanner's, its split the one splitter's"
+function parseArgs(metaSS::SubString{String}, i::Int)::Tuple{Int,Vector{SubString{String}}}
+    j = _span(metaSS, i)
+    return nextind(metaSS, j), _split_args(SubString(metaSS, nextind(metaSS, i), prevind(metaSS, j)))
+end
 # Nothing in this file executes at module load beyond definitions and imports.
 
 ## THE CONDITION REWRITE — stage 5's E13 of the v0.4 build (census row 1; his order §319, R-V04B-106 (2)–(3)); his §D174 (2026-10-06):
@@ -321,12 +328,12 @@ function _rewrite_condition(text::String, r)::String
                 if span === nothing
                     print(out, c); i = j                    # an unclosed '(' — copied verbatim; Julia's parser judges the remainder
                 else
-                    args = strip(span[2])
+                    args = strip(_isspace_valid, span[2])
                     print(out, _cond_target(Symbol(":"), isempty(args) ? nothing : String(args), r)); i = nextind(text, span[1])
                 end
             else
                 k = j
-                while k <= n && !isspace(text[k]) && text[k] ∉ _COND_DELIMS
+                while k <= n && !_isspace_valid(text[k]) && text[k] ∉ _COND_DELIMS
                     k = nextind(text, k)
                 end
                 name = text[j:prevind(text, k)]
@@ -342,7 +349,7 @@ function _rewrite_condition(text::String, r)::String
             if k <= n && text[k] == '('
                 span = _paren_span(text, k)
                 if span !== nothing
-                    inner = strip(span[2])
+                    inner = strip(_isspace_valid, span[2])
                     args = isempty(inner) ? nothing : String(inner); k = nextind(text, span[1])
                 end
             end
@@ -357,205 +364,118 @@ end
 "the stored condition `Expr` names a label test (`getAltState` — the alterant-state query) somewhere in its tree"
 _has_query(x) = x isa Expr && ((x.head === :call && !isempty(x.args) && x.args[1] === :getAltState) || any(_has_query, x.args))
 
-function parseConditions(
-    metaSS::SubString{String},
-    thisInd::Int ## `thisInd` s.t. `metaSS[thisInd]` == '{'. See `parseAlt(...)`
-)::Tuple{Int,Expr}
+"""
+    parseConditions(metaSS, i) -> (index after the closing `}`, the condition's `Expr`)
 
-    countOpenBrakets = 1
-    indStartArgs = nextind(metaSS, thisInd)
-    local conditionExpr::Expr
+IS: the condition intake — the `{…}` block opening at `i` read into the `Expr` Julia evaluates at apply (his `parseConditions`,
+AbsorbMeta.jl :248–:282; the seam stage 5's E13 left: the GoMeta parts of the body re-written to Julia text, Julia's parser once).
 
-    while (thisInd = nextind(metaSS, thisInd)) < ncodeunits(metaSS) + 1
-        if metaSS[thisInd] == '{'
-            countOpenBrakets += 1
-        elseif metaSS[thisInd] == '}'
-            countOpenBrakets -= 1
-        end
-        countOpenBrakets == 0 ? break : nothing
-    end
-    if countOpenBrakets == 0
-        indEndArgs = prevind(metaSS, thisInd)
-        local bodyStr = String(metaSS[indStartArgs:indEndArgs])
-        ## THE REWRITE, then Julia's parser — ONCE, here (his legacy's :269–:270). A syntax error is Julia's own `Meta.ParseError`
-        ## out of the goMeta call (as a malformed action argument is Julia's since stage 5's E6); an INCOMPLETE body (`isCode &&`)
-        ## comes back as `Expr(:incomplete, …)` and is thrown as the same class HERE, at the statement — never stored for a later
-        ## reader; an EMPTY body or a bare literal (`{}`, `{ 1 }`, `{ | }`) carries no condition expression and is refused
-        ## (an unconditional action is written without `{}`; register E13-6 — the legacy stored nothing and applied unconditionally;
-        ## a quoted string's WORD is a condition key and meets the rewrite's refusal, E13-6's note). The echoed body is bounded to
-        ## 40 characters, as every refusal's token is (docs/public-api.md §4).
-        local ex = Meta.parse(_rewrite_condition(bodyStr, ctx().registry))
-        ex isa Expr || error("GoMeta absorb: the condition block {", first(bodyStr, 40), "} carries no condition expression (",
-            ex === nothing ? "an empty block" : "a bare literal", ") — an unconditional action is written without '{}' ",
-            "(see docs/public-api.md §3.4)")
-        Meta.isexpr(ex, :incomplete) && throw(ex.args[1] isa Exception ? ex.args[1] : Meta.ParseError(string(ex.args[1])))
-        conditionExpr = ex
-    else
-        error("GoMeta absorb: unterminated condition block — a '{' in a metaLine was never ",
-            "closed (", countOpenBrakets, " still open); v0 requires balanced '{}' ",
-            "(see docs/public-api.md §3.4)")
-    end
-    return thisInd, conditionExpr
+DOES: finds the block's end with the one scanner (quote-aware since the parser effort — a `}` inside a quoted text no longer closes
+the block, his §359 (5)); `Meta.parse`s the re-written body ONCE; an EMPTY body or a bare literal (`{}`, `{ 1 }`, `{ | }`) carries
+no condition expression and is refused (an unconditional action is written without `{}`; register E13-6); an INCOMPLETE body
+(`isCode &&`) is thrown as Julia's own `Meta.ParseError` class HERE, at the statement, never stored for a later reader; a body
+Julia cannot parse is Julia's own error out of the goMeta call. The echoed body is bounded to 40 characters.
+
+REASONING: his design — a condition is Julia (OWNER-WORDS §120, §D174); the parser carries no condition grammar of its own.
+
+PURPOSE: the stored `Expr` a queued action's condition evaluates at apply, or a heading's once at the absorb seam.
+"""
+function parseConditions(metaSS::SubString{String}, i::Int)::Tuple{Int,Expr}
+    j = _span(metaSS, i; julia = true)                   # the matching `}` — quote-aware; the body is Julia's text (its `\` Julia's escape)
+    bodyStr = String(SubString(metaSS, nextind(metaSS, i), prevind(metaSS, j)))
+    ex = Meta.parse(_rewrite_condition(bodyStr, ctx().registry))
+    ex isa Expr || error("GoMeta absorb: the condition block {", first(bodyStr, 40), "} carries no condition expression (",
+        ex === nothing ? "an empty block" : "a bare literal", ") — an unconditional action is written without '{}' ",
+        "(see docs/public-api.md §3.4)")
+    Meta.isexpr(ex, :incomplete) && throw(ex.args[1] isa Exception ? ex.args[1] : Meta.ParseError(string(ex.args[1])))
+    return nextind(metaSS, j), ex
 end
 
 #########################################################################################
-#########################################################################################
+"""
+    parseAlt(metaSS, thisInd, firstToken = false) -> (name, args, condition, the index of the statement's last character)
+
+IS: the reader of ONE metaStatement — his `parseAlt` (AbsorbMeta.jl :286–:360) with its grammar made explicit: HEAD, TAIL, END.
+
+DOES: from the first non-white-space character after `thisInd` (his :301–:302 search): the HEAD is a `:` label (his `foundLabel`
+arm — `:(name1, name2)` through `parseArgs`, `:name` through `parseOneWordLabel`, the lone `:` with zero arguments handed to the
+Labels Alterant as his word orders, U8 :1250; any other character after the `:` refused), a `"…"` heading at the region's FIRST
+statement only (the sugar lowers here to the `head` action with the quoted span as its one argument — the quotes kept as the
+String-lane kind marker `_coerce_arg_token` reads; a non-first quoted text is refused with his U8 :1306 hint), a structural
+character (refused: no metaStatement starts with one — `#~ ,` and `#~3 (` no longer reach an empty name and Julia's BoundsError),
+or a NAME (the run to white space or a structural character — never empty). The TAIL is at most one `(…)` (unless the head took
+its arguments) then at most one `{…}`, his order (U8 :1390). The END: the next character is white space or the region's end —
+anything else is refused by name: a token glued to a closing bracket (`hide()junk`, `hide{isCode}show` — his legacy dropped it),
+a second `(` or `{`, a `(` after `{…}`, a `,` after a one-word label (the right form named), a stray `)` `}` `"`. Returns the
+name (`head` for the sugar), the argument tokens, the condition (`nothing` for an action without `{}` — minted ONLY here) and
+the index of the statement's last character (his :359 contract; the caller's loop resumes after it).
+
+REASONING: his legacy's reader had arms for `(`, the label, `{` and white space and no "anything else" case (AbsorbMeta.jl
+:307–:340), and its outer `ispunct` gate (:304) skipped a leading punctuation — so a statement was never required to END and a
+leading punctuation was never read: every silent skip, drop and raw BoundsError of the inventory (the register's D-1, D-2, D-3,
+D-8, D-10) was one of those two arms, cured at their root rather than by a patch per shape; the grammar in one sequence replaces his `argsDone` / `conditionsDone`
+flags and the three "again" refusals. The negative character rule (white space and the six structural characters end a token;
+everything else is a token character) keeps his pictograph and emoji labels and names (his §360) and drops the Unicode-category
+dependence that made `-hide` apply and `+hide` refuse (§361).
+
+PURPOSE: one metaStatement, read as his grammar states it, or one refusal naming the character at fault.
+"""
 function parseAlt(
     metaSS::SubString{String},
     thisInd::Int,
-    firstToken::Bool = false   # v0.2 CH-3 step 9: true only for the FIRST metaComponent
-                               # of the meta region — gates the quoted-first recognizer
+    firstToken::Bool = false   # true only for the FIRST metaStatement of the meta region — gates the quoted-first heading
 )::Tuple{SubString{String},Vector{SubString{String}},Union{Nothing,Expr},Int}
 
-    indStartAlt::Int = 0
-    indEndAlt::Int = 0
-    argsDone::Bool = false
-    conditionsDone::Bool = false
-    foundLabel::Bool = false
-    headSugar::Bool = false       ## v0.2 CH-3 step 9: this atom is the quoted-first heading
-    local argsSSVec::Vector{SubString{String}}
-    local conditionExpr::Union{Nothing,Expr}   # Julia's Expr, or the `nothing` sentinel (an action without `{}`)
-    if metaSS[nextind(metaSS, thisInd)] == ':'
-        foundLabel = true
+    n = lastindex(metaSS)
+    i = nextind(metaSS, thisInd)
+    while i <= n && _isspace_valid(metaSS[i])
+        i = nextind(metaSS, i)
     end
-    while (thisInd = nextind(metaSS, thisInd)) < ncodeunits(metaSS) + 1
-        if !_isspace_valid(metaSS[thisInd])
-            ## THE QUOTED-FIRST HEADING RECOGNIZER (the second of the two CLOSED grammar grants).
-            ## IF this is the FIRST metaComponent of the
-            ## meta region AND it starts with '"': the fenced String is a parameter input
-            ## to the deriving head call — the sugar LOWERS here (parse-time shape, not an
-            ## alias): the returned action name is the `head` action and the
-            ## fenced token (delimiters kept — the String-lane kind marker) is its single argument,
-            ## riding the widened String lane. The span is consumed FIRST; the state primed below sets the
-            ## token inds, and the inner loop continues normally (a following '{' attaches conditions; '('
-            ## meets the duplicate-argument refusal). The punctuation wall, the glued-token wall and the no-token guard left at stage 5's E7
-            ## of the v0.4 build (census row 41): glued junk after the closing '"' is dropped by the same inner-loop silence with
-            ## which his legacy's reader dropped a token glued to a closing ')' or '}' (the legacy had no quoted-heading span —
-            ## the seat's F4). A NON-first quoted token's semantics stay RESERVED (unassigned) at v0.2 — it meets the
-            ## legacy's unknown-action refusal (the quote skipped, the token `T"` unknown), not the former wall.
-            ## Applicability (the MetaContext record) is checked at the enqueue seam.
-            if firstToken && !foundLabel && metaSS[thisInd] == '"'
-                headSugar = true
-                indStartAlt = thisInd
-                (thisInd, headingTok) = _consume_heading_span(metaSS, thisInd)
-                indEndAlt = thisInd            ## the closing '"'
-                argsSSVec = SubString{String}[headingTok]
-                argsDone = true
-            end
-            ## The first non-space Char: punctuation at the action-name position is skipped to the next identifier,
-            ## as his legacy read it (`#~ , discard` reads as `discard`) — the punctuation wall left at stage 5's E7
-            ## of the v0.4 build, census row 41.
-            if !_ispunct_valid(metaSS[thisInd]) || foundLabel || headSugar
-
-                headSugar || (indStartAlt = thisInd)
-                while (thisInd = nextind(metaSS, thisInd)) < ncodeunits(metaSS) + 1
-                    if metaSS[thisInd] == '('
-                        if argsDone == false && conditionsDone == false
-                            indEndAlt = prevind(metaSS, thisInd)
-                            (thisInd, argsSSVec) = parseArgs(metaSS, thisInd)
-                            argsDone = true
-                        else
-                            error("GoMeta absorb: duplicate argument list — a metaLine action ",
-                                "may carry '()' arguments only once (see docs/public-api.md §3.4)")
-                        end
-                    ## Text-law rider: the char-next predicate replaces byte+1 — identical
-                    ## today (the char at indStartAlt is single-byte on this path),
-                    ## structurally safe when the vocabulary widens.
-                    elseif foundLabel && thisInd == nextind(metaSS, indStartAlt)
-                        if argsDone == false && conditionsDone == false
-                            indEndAlt = prevind(metaSS, thisInd)
-                            (thisInd, argsSSVec) = parseOneWordLabel(metaSS, thisInd)
-                            argsDone = true
-                        else
-                            error("GoMeta absorb: misplaced one-word label — a metaLine action may carry its ",
-                                "arguments ('()' list or one-word label) only once, before any '{}' conditions (see docs/public-api.md §3.4)")
-                        end
-                    elseif metaSS[thisInd] == '{'
-                        if conditionsDone == false
-                            (indStartAlt > indEndAlt) ?
-                            indEndAlt = prevind(metaSS, thisInd) : nothing
-                            (thisInd, conditionExpr) = parseConditions(metaSS, thisInd)
-                            conditionsDone = true
-                        else
-                            error("GoMeta absorb: duplicate condition block — a metaLine action ",
-                                "may carry '{}' conditions only once (see docs/public-api.md §3.4)")
-                        end
-
-                    elseif _isspace_valid(metaSS[thisInd])
-                        break
-                    end
-                    ## (a token glued to a closing ')' or '}' is dropped, as his legacy's reader dropped it — `hide()junk`
-                    ## reads as `hide`; the glued-token wall left at stage 5's E7 of the v0.4 build, census row 41)
-                end
-                thisInd = prevind(metaSS, thisInd)
-                (indStartAlt > indEndAlt) ? indEndAlt = thisInd : nothing
-                if argsDone
-                    argsDone = false
-                end
-                if conditionsDone
-                    conditionsDone = false
-                end
-                break
-            end
+    s = i; c = metaSS[i]
+    local name::SubString{String}
+    argsSSVec = SubString{String}[]
+    local conditionExpr::Union{Nothing,Expr} = nothing
+    headArgs = false
+    ## HEAD
+    if c == ':'
+        name = SubString(metaSS, i, i); i = nextind(metaSS, i)
+        if i <= n && metaSS[i] == '('
+            (i, argsSSVec) = parseArgs(metaSS, i); headArgs = true
+        elseif i <= n && !_isspace_valid(metaSS[i]) && metaSS[i] ∉ _STRUCTURAL
+            (i, argsSSVec) = parseOneWordLabel(metaSS, i); headArgs = true
+        elseif i <= n && !_isspace_valid(metaSS[i])
+            _refuse_char(metaSS, i, "after ':'", metaSS[i] == '"' ? _HINT_QUOTE : _HINT_ORDER)
         end
+    elseif c == '"'
+        firstToken || _refuse_char(metaSS, i, "at the start of a metaStatement", _HINT_QUOTE)
+        j = _span(metaSS, i)
+        name = _HEAD_ACTION_NAME_SS
+        argsSSVec = SubString{String}[SubString(metaSS, i, j)]; headArgs = true
+        i = nextind(metaSS, j)
+    elseif c ∈ _STRUCTURAL
+        _refuse_char(metaSS, i, "at the start of a metaStatement", (c == '(' || c == '{') && !firstToken ? _HINT_GLUE : _HINT_ORDER)
+    else
+        j = _token_end(metaSS, i); name = SubString(metaSS, i, prevind(metaSS, j)); i = j
     end
-    if !(@isdefined argsSSVec)
-        argsSSVec = Vector{SubString{String}}[]
+    ## TAIL
+    if !headArgs && i <= n && metaSS[i] == '('
+        (i, argsSSVec) = parseArgs(metaSS, i)
     end
-    if !(@isdefined conditionExpr)
-        ## The no-condition SENTINEL is minted ONLY here (an action written WITHOUT `{}`);
-        ## the condition intake (parseConditions) never returns it — an authored `{}` either yields
-        ## an `Expr` or a refusal (the queue's condition matrix is Union{Nothing,Expr}).
-        conditionExpr = nothing
+    if i <= n && metaSS[i] == '{'
+        (i, conditionExpr) = parseConditions(metaSS, i)
     end
-    ## (a meta region yielding NO alterant token — `#~ ,`, `#~3 (` — reaches `metaSS[0:0]` and meets Julia's own
-    ## BoundsError, as his legacy's reader did; the no-token guard left at stage 5's E7 of the v0.4 build, census row 41)
-    ## The sugar's action NAME is SYNTHETIC (the lowering target — the `head` action),
-    ## never a metaSS span; the token inds above stay the SPAN's
-    ## (the end-of-scan arithmetic keys on them).
-    return (headSugar ? _HEAD_ACTION_NAME_SS : metaSS[indStartAlt:indEndAlt]),
-        argsSSVec, conditionExpr, thisInd
+    ## END
+    if i <= n && !_isspace_valid(metaSS[i])
+        e = metaSS[i]
+        _refuse_char(metaSS, i, string("after the metaStatement ", repr(SubString(metaSS, s, prevind(metaSS, i)))),
+            e == ',' && c == ':' ? _HINT_LABELS : e == '"' ? _HINT_QUOTE : e ∈ _STRUCTURAL ? _HINT_ORDER : "")
+    end
+    return name, argsSSVec, conditionExpr, prevind(metaSS, i)
 end
 
-## The lowered spelling of the quoted-first sugar — the deriving head call's name (the
-## action is `head`), as a SubString so parseAlt's return type is unchanged.
+## The lowered spelling of the quoted-first sugar — the deriving head call's name (the action is `head`), as a SubString so parseAlt's
+## return type is unchanged.
 const _HEAD_ACTION_NAME_SS = SubString(String("head"))
-
-## v0.2 CH-3: consume ONE '"'-fenced heading span starting at the opening quote.
-## Returns (index-of-the-closing-quote, the token WITH its delimiters — the String-lane kind
-## marker the coercion strips). Refusal classes, the heading-lane siblings of the
-## argument-lane quote refusals: a BACKSLASH anywhere in the span is reserved (below),
-## an unterminated span refuses loudly.
-##
-## THE BACKSLASH RESERVATION: ANY
-## `\` inside a quoted span meets a typed refusal at v0.2 — not merely `\"`. WHY: an escape grammar
-## is intended for a later version; if v0.2 accepted `\` as ordinary content, every
-## shipped document containing one would change meaning or break the day escapes
-## arrive (`\b` → unknown escape), forcing that grammar to either break shipped
-## documents or carve permanent literal-backslash exceptions. Refusing ALL backslashes
-## now means no valid v0.2 document can be reinterpreted — the future escape grammar
-## becomes a purely additive widening. REJECTED ALTERNATIVE: reserving only `\"` —
-## which also refused unevenly (`"a\b"`
-## accepted while `"a\\"` refused, the trailing backslash reading as `\"`). BOTH span
-## producers hold this law identically (parseArgs' in-quote scan is the argument-lane
-## twin), so the documented sugar ≡ canonical equivalence holds.
-function _consume_heading_span(metaSS::SubString{String}, thisInd::Int)::Tuple{Int,SubString{String}}
-    indOpen = thisInd
-    while (thisInd = nextind(metaSS, thisInd)) < ncodeunits(metaSS) + 1
-        c = metaSS[thisInd]
-        if c == '\\'
-            error("GoMeta absorb: backslash in a quoted heading — the backslash is ",
-                "reserved inside quoted spans at v0.2 for the future escape grammar ",
-                "in the meta region ", repr(first(metaSS, 40)),
-                " (see docs/public-api.md §3.4)")
-        elseif c == '"'
-            return thisInd, SubString(metaSS, indOpen, thisInd)
-        end
-    end
-    error("GoMeta absorb: unterminated quoted heading — a first-position '\"' in the ",
-        "meta region ", repr(first(metaSS, 40)), " was never closed; a quoted heading ",
-        "is one '\"…\"'-fenced span (see docs/public-api.md §3.4)")
-end
 
 
 function absorbMeta(
@@ -618,9 +538,13 @@ function absorbMeta(
                         st, metaSS, Symbol(altActionName), argsSSVec, conditionExpr,
                         pendingLocal, loPlugIdx)
                 else
-                ## The queue tensors hold size(queued, 2) = the registered action count of actions per MH slot; a further
-                ## action meets Julia's own BoundsError at the write below (the plain Array is bounds-checked; no @inbounds) —
-                ## the pre-increment capacity guard left at stage 5's E7 of the v0.4 build (census row 41; his §120).
+                ## THE SLOT BOUND (his Decision 3 of 2026-10-08, §358): the queue tensors hold size(queued, 2) = the registered action
+                ## count of actions per meta-hierarchy slot — a fixed size, raised by hand when an example needs it (the slower overflow
+                ## buffer a later design, V05-14); a further action meets GoMeta's message here, BEFORE the write.
+                st.mh.count_actions_per_slot[crntSlot] == size(st.queue.queued, 2) &&
+                    error("GoMeta absorb: more than ", size(st.queue.queued, 2), " actions in one meta-hierarchy slot — the queue holds ",
+                        "the registered action count (", size(st.queue.queued, 2), ") per slot in the meta region ", repr(first(metaSS, 40)),
+                        " (see docs/public-api.md §3.4)")
                 altActionOnRow = (st.mh.count_actions_per_slot[crntSlot] += 1)
                 st.queue.queued[1,
                     altActionOnRow, crntSlot] = st.registry.action_to_plugin[crntAltActionIdx]
@@ -657,34 +581,11 @@ function absorbMeta(
                 st.queue.conditions[altActionOnRow, crntSlot] = conditionExpr
             end
             if !isempty(argsSSVec)
-                ## v0.2 CH-3 step 8: kind-preserving coercion through the widened args wall
-                ## (was the blanket `Tuple{Vararg{Symbol}}(Symbol.(argsSSVec))` — every bare
-                ## token still becomes the SAME Symbol it always did; only a VALIDATED
-                ## well-formed quoted token becomes a String — the coercion enforces the
-                ## span law ITSELF, because the one-word-label producer is quote-blind;
-                ## see _coerce_arg_token's docstring).
+                ## the kind-preserving coercion: a bare token stays the Symbol it always was; a well-formed quoted token (the
+                ## splitter's or the heading arm's — both scanned by `_span`) becomes its String content (`_coerce_arg_token`).
                 argsTup = Tuple{Vararg{AlterantArgT}}(_coerce_arg_token.(argsSSVec))
-                ## THE STEP-8 WALL, SIMPLIFIED AT THE localOnly BUILD: NO queued action
-                ## accepts a String argument at v0.2 — the head action (the one
-                ## String-accepting surface) is localOnly and DIVERTED before this
-                ## path, so the wall here is UNCONDITIONAL (the former name-literal
-                ## head exemption is RETIRED; the mode divert is registry-driven).
-                ## Dispatch alone cannot hold this law: the built-in toy setters keep
-                ## an UNTYPED value slot (`setId` does `parse(Int16, string(idValue))`,
-                ## so `cell("7")` would silently ACCEPT — byte-probed).
-                ## PLACEMENT NOTE (review-found, recorded not moved): this wall runs
-                ## AFTER the row bookkeeping above, unlike the I13 guard's
-                ## fire-before-mutate doctrine. Deliberate: every refusal here aborts
-                ## the whole call and the per-call state is discarded whole, so the
-                ## partial row is unobservable.
-                for _a in argsTup
-                    _a isa String &&
-                        error("GoMeta absorb: string argument not accepted — ",
-                            "a quoted (String) argument is reserved at this surface at v0.2 ",
-                            "(only an action whose DECLARED record carries a String slot ",
-                            "accepts one — the heading's text slot; see ",
-                            "docs/public-api.md §3.4)")
-                end
+                ## THE ONE TEXT-ARGUMENT RULE (his §359 (8)): the declared record says which slot takes a quoted text.
+                _string_slot_check(st.registry.action_specs[st.registry.spec_index[Symbol(altActionName)]], argsTup, metaSS)
                 st.queue.args[altActionOnRow, crntSlot] = argsTup
             end
             end
@@ -795,15 +696,7 @@ function _absorb_local_only!(
     argsTup = isempty(argsSSVec) ? () :
         Tuple{Vararg{AlterantArgT}}(_coerce_arg_token.(argsSSVec))
     if any(_a -> _a isa String, argsTup)
-        for (_i, _a) in enumerate(argsTup)
-            _a isa String && _i != spec.accepts_string_slot &&
-                error("GoMeta absorb: string argument not accepted — ",
-                    "a quoted (String) argument is reserved at this surface at v0.2 ",
-                    "(only an action whose DECLARED record carries a String slot ",
-                    "accepts one — the heading's text slot) in the meta region ",
-                    repr(first(metaSS, 40)),
-                    " (see docs/public-api.md §3.4)")
-        end
+        _string_slot_check(spec, argsTup, metaSS)
         # the declared validation runs on the STRING text (a bare-word text in
         # the accepting slot rides to the setter's own dispatch — Julia's MethodError since stage 5's E6
         # of the v0.4 build, census row 14, the build's probe, its B3 — never the wrong-class validation message).
@@ -883,48 +776,25 @@ function _absorb_local_only!(
     return nothing
 end
 
-## Character predicates over possibly-invalid UTF-8: an invalid byte sequence is CONTENT — never
-## whitespace, never punctuation. The Unicode-category predicates (`isspace`/`ispunct`) throw at
-## decode on sequences that require it (overlong encodings and kin), so every input-facing test
-## in this module goes through these guards. On every VALID char each is exactly its Base twin.
+## THE ONE WHITE-SPACE PREDICATE over possibly-invalid UTF-8 (his §359 (10): his legacy's `isspace`): an invalid byte sequence is
+## CONTENT — never white space (`isspace` throws at decode on sequences that require it, so every input-facing test of this module goes
+## through this guard); on every VALID char it is exactly `isspace`.
 _isspace_valid(c::AbstractChar) = isvalid(c) && isspace(c)
-_ispunct_valid(c::AbstractChar) = isvalid(c) && ispunct(c)
 
-## The ONE kind-preserving coercion point of the widened String lane.
-## The String arm VALIDATES THE SPAN ITSELF (the shared `_is_wellformed_quote_span` law):
-## argsSSVec has TWO producers and only one is quote-aware — parseArgs validates spans in
-## its splitter, but parseOneWordLabel (the one-word-label route) is QUOTE-BLIND, so a
-## label metaLine like `#~ :"ab` hands this point an unvalidated '"'-leading token
-## (an unconditional strip would MANGLE such tokens before the transitional wall refused
-## them). A '"'-leading token
-## failing the span law meets the same malformed-quoted-argument refusal the splitter
-## mints; a well-formed one becomes its String CONTENT (delimiters stripped). TRIGGER
-## SCOPE, per route: here the law binds '"'-LEADING tokens; a
-## label token merely CONTAINING a quote (`#~ :a"b`) stays a Symbol and meets the closed
-## label vocabulary's own refusal downstream — its pre-widening fate, deliberately
-## unchanged (re-classing it would be an uncommanded envelope change; the argument-list
-## route's splitter, by contrast, invokes the law on ANY quote in a piece). EVERY bare
-## token stays the Symbol it always was, INCLUDING numeric text (`Symbol("7")`) — the
-## literal floor is EXACTLY Symbol|String: the integer space is RESERVED, deliberately not
-## coerced, so numeric args keep their byte-exact pre-widening fates at the setter, which
-## parses them itself. No metaLine grammar accepts a String at this step — a String kind meets the
-## TRANSITIONAL typed refusal at the enqueue seam (see absorbMeta; dispatch alone cannot
-## hold the law — the built-in toy setters keep an untyped value slot); the recognizer
-## step opens the first legitimate String surface.
-function _coerce_arg_token(a::SubString{String})::AlterantArgT
-    (isempty(a) || a[firstindex(a)] != '"') && return Symbol(a)
-    _is_wellformed_quote_span(a) || _refuse_malformed_quote(a)
-    ## THE BACKSLASH RESERVATION at the THIRD producer (the quote-blind
-    ## one-word-label route hands this point spans NEITHER scan visited — e.g.
-    ## `#~ :"a\b"` — which would otherwise fall to the String wall's WRONG refusal class):
-    ## the interior scan holds the reservation with its OWN class at every producer.
-    occursin('\\', a) &&
-        error("GoMeta absorb: backslash in a quoted argument — the backslash is ",
-            "reserved inside quoted spans at v0.2 for the future escape grammar ",
-            "(the token ", repr(first(String(a), 40)),
-            "; see docs/public-api.md §3.4)")
-    return String(a[nextind(a, firstindex(a)):prevind(a, lastindex(a))])
+"THE ONE TEXT-ARGUMENT RULE (his §359 (8)): a quoted (String) argument is accepted in the one slot the action's DECLARED record names (`accepts_string_slot` — `head`'s text slot; 0 for every other shipped action) and refused in every other — the shipped setters keep untyped value slots, so dispatch alone cannot hold the law (byte-probed: `cell(\"7\")` would parse)"
+function _string_slot_check(spec, argsTup, metaSS::SubString{String})
+    for (k, a) in enumerate(argsTup)
+        a isa String && k != spec.accepts_string_slot &&
+            error("GoMeta absorb: string argument not accepted — a quoted (String) argument is accepted only in the slot the action's ",
+                "DECLARED record names (the heading's text slot) in the meta region ", repr(first(metaSS, 40)),
+                " (see docs/public-api.md §3.4)")
+    end
+    return nothing
 end
+
+"the kind-preserving coercion of one argument token: a bare token stays the Symbol it always was (numeric text included — the integer space is reserved, the setter parses it); a `\"`-led token is a well-formed quoted span — its two producers, the splitter and the heading arm, are scanned by `_span` and validated — and becomes its String content"
+_coerce_arg_token(a::SubString{String})::AlterantArgT =
+    (isempty(a) || a[firstindex(a)] != '"') ? Symbol(a) : String(a[nextind(a, firstindex(a)):prevind(a, lastindex(a))])
 
 end
 #########################################################################################

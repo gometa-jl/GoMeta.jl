@@ -29,10 +29,11 @@ import GoMeta as GM
         @test occursin("zznotalabel", err.msg)
     end
 
-    @testset "duplicate argument list → the absorb-stage message" begin
+    @testset "a second argument list → the grammar's one refusal names the '(' (the metaLine parser effort, stage 5's s5c29)" begin
         err = _err("#~ hide(a)(b)\n# content\n")
         @test err isa ErrorException
-        @test occursin("duplicate argument list", err.msg)
+        @test occursin("unexpected character '('", err.msg)
+        @test occursin("after the metaStatement \"hide(a)\"", err.msg)
     end
 
     @testset "unknown label queried in a CONDITION → no refusal: the query answers false (the legacy's checker; stage 5's E9 of the v0.4 build, census row 55)" begin

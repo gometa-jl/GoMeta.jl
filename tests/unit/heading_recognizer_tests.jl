@@ -14,8 +14,8 @@
 # DOES: [SL] String-lane mechanism rows (testplan names: test_quoted_arg_single_token ·
 #       test_comma_inert_inside_quotes · test_kind_preserving_coercion ·
 #       test_args_wall_widened) · [SLN] the quote negative rows (unterminated · escaped ·
-#       malformed/glued, on BOTH producer routes — the quote-aware parseArgs route AND the
-#       quote-blind one-word-label route, whose tokens the coercion itself validates) ·
+#       malformed/glued, on the parseArgs route; the former quote-blind one-word-label route is gone since stage 5's s5c29 —
+#       a '"' after ':' meets the grammar's one refusal, the rows below) ·
 #       [SLE] end-to-end: a quoted argument at the metaLine surface meets the TRANSITIONAL
 #       typed refusal at the enqueue seam (nothing accepted strings at step 8; step 9 carved
 #       the head text slot out — the step-9 sections below own that surface), and the
@@ -83,13 +83,13 @@ import GoMeta as GM
     @testset "[SLN] quote negative rows — loud refusals, never a silent mangle" begin
         # unterminated quoted argument
         e1 = try _pa("(\"abc)"); nothing catch e; e end
-        @test e1 isa ErrorException && occursin("unterminated quoted argument", e1.msg)
+        @test e1 isa ErrorException && occursin("unterminated '\"'", e1.msg)
         # backslash — the WHOLE backslash character is RESERVED inside quoted spans at
         # v0.2 (owner-broadened from the former `\"`-only reservation)
         e2 = try _pa("(\"a\\\"b\")"); nothing catch e; e end
-        @test e2 isa ErrorException && occursin("backslash in a quoted argument", e2.msg)
+        @test e2 isa ErrorException && occursin("backslash in a quoted span", e2.msg)
         e2b = try _pa("(\"a\\b\")"); nothing catch e; e end        # lone mid-span backslash
-        @test e2b isa ErrorException && occursin("backslash in a quoted argument", e2b.msg)
+        @test e2b isa ErrorException && occursin("backslash in a quoted span", e2b.msg)
         # a quote glued to bare text is a malformed quoted argument …
         e3 = try _pa("(ab\"cd\")"); nothing catch e; e end
         @test e3 isa ErrorException && occursin("malformed quoted argument", e3.msg)
@@ -111,30 +111,22 @@ import GoMeta as GM
             @test occursin("string argument not accepted", err.msg)
             @test occursin("GoMeta absorb:", err.msg)
         end
-        # the unterminated/escaped-quote refusals reach the surface as absorb refusals —
-        # asserting the QUOTE-specific fragment (this body also has an unclosed '(' and
-        # refused pre-step as "unterminated argument list"; the quote lane must fire FIRST
-        # or this row is not discriminating — review-found)
+        # the unterminated-quote refusal reaches the surface as an absorb refusal naming the INNERMOST opener left open — the quote,
+        # before the enclosing '(' (the one scanner of the metaLine parser effort, stage 5's s5c29; the E seat's R2 as he approved it)
         eu = _err("#~ cell(\"x\n# c\n")
-        @test eu isa ErrorException && occursin("unterminated quoted argument", eu.msg)
-        # THE ONE-WORD-LABEL ROUTE (review-found, two seats convergent): parseOneWordLabel
-        # is QUOTE-BLIND, so its tokens reach the coercion UNVALIDATED — the coercion's own
-        # span law must catch them. A WELL-FORMED quoted label token flows as a String and
-        # meets the transitional wall; a MALFORMED one meets the malformed-quoted refusal
-        # (pre-cure it was silently MANGLED — '"ab' → 'a' — before the wall refused with
-        # the wrong class):
+        @test eu isa ErrorException && occursin("unterminated '\"'", eu.msg)
+        # THE LABEL ROUTE since the metaLine parser effort (stage 5's s5c29; his §362): the six structural characters end a name or a
+        # label, so a '"' after ':' or inside a label meets the grammar's one refusal naming the character — the quote lane's former
+        # coercion-side validation of a quote-blind label token is gone with the quote-blind route
         el1 = _err("#~ :\"x\"\n# c\n")
-        @test el1 isa ErrorException && occursin("string argument not accepted", el1.msg)
+        @test el1 isa ErrorException && occursin("unexpected character '\"' after ':'", el1.msg)
         el2 = _err("#~ :\"ab\n# c\n")
-        @test el2 isa ErrorException && occursin("malformed quoted argument", el2.msg)
+        @test el2 isa ErrorException && occursin("unexpected character '\"' after ':'", el2.msg)
         el3 = _err("#~ :\"\n# c\n")
-        @test el3 isa ErrorException && occursin("malformed quoted argument", el3.msg)
-        # … and the trigger-scope BOUNDARY, made conscious (delta-review): a label token
-        # merely CONTAINING a quote is NOT '"'-leading — it stays a Symbol and meets the
-        # closed label vocabulary's own refusal downstream, its pre-widening fate,
-        # deliberately unchanged (re-classing it would be an uncommanded envelope change)
+        @test el3 isa ErrorException && occursin("unexpected character '\"' after ':'", el3.msg)
+        # … and a label token merely CONTAINING a quote ends at it (the quote is structural, §362): the refusal names the quote
         ed = _err("#~ :a\"b\n# c\n")
-        @test ed isa ErrorException && occursin("unknown label", ed.msg)
+        @test ed isa ErrorException && occursin("unexpected character '\"' after the metaStatement \":a\"", ed.msg)
         # QUOTE × INVALID UTF-8 (the module's own doctrine class): a quoted span carrying
         # an invalid byte sequence stays a LOUD typed refusal, never a raw decode crash —
         # and the CLASS is pinned (delta-review: the span is well-formed, its content the
@@ -212,11 +204,10 @@ end
         @test !isempty(_heads(rh))
     end
 
-    @testset "test_non_first_quote_refusal — the hd-3 reservation stands (the legacy's refusal since stage 5's E7 — census row 41)" begin
-        # the punctuation wall left at E7: the quote is skipped as his legacy skipped it, the token `T"` meets the
-        # legacy's unknown-action refusal — the reservation holds by a refusal still
+    @testset "test_non_first_quote_refusal — the hd-3 reservation stands: the grammar's one refusal names the quote, with his U8 :1306 hint (the metaLine parser effort, stage 5's s5c29)" begin
         e = _err("#~ hide \"T\"\nx = 1\n")
-        @test e isa ErrorException && occursin("unknown alterant action", e.msg)
+        @test e isa ErrorException && occursin("unexpected character '\"' at the start of a metaStatement", e.msg)
+        @test occursin("heading sugar at the region's first metaStatement only", e.msg)
     end
 
     @testset "test_empty_quote_lowers — BOTH halves: enters the recognizer, then the ratified refusal" begin
@@ -231,22 +222,22 @@ end
 
     @testset "heading-lane quote refusals (siblings of the argument-lane classes)" begin
         eu = _err("#~ \"abc\nx = 1\n")
-        @test eu isa ErrorException && occursin("unterminated quoted heading", eu.msg)
+        @test eu isa ErrorException && occursin("unterminated '\"'", eu.msg)
         # THE BACKSLASH RESERVATION (owner-broadened): ANY `\`
         # inside the span refuses — not merely `\"`. The pre-cure grammar accepted `"a\b"`
         # while refusing `"a\\"` (the trailing backslash read as `\"`) — that ragged
         # acceptance is exactly what the ruling closed; all four shapes now meet ONE
         # typed refusal, and the future escape grammar mints on a clean slate.
         ee = _err("#~ \"a\\\"b\"\nx = 1\n")
-        @test ee isa ErrorException && occursin("backslash in a quoted heading", ee.msg)
+        @test ee isa ErrorException && occursin("backslash in a quoted span", ee.msg)
         el = _err("#~ \"a\\b\"\nx = 1\n")                          # lone mid-span backslash
-        @test el isa ErrorException && occursin("backslash in a quoted heading", el.msg)
+        @test el isa ErrorException && occursin("backslash in a quoted span", el.msg)
         et = _err("#~ \"a\\\\\"\nx = 1\n")                         # trailing double backslash
-        @test et isa ErrorException && occursin("backslash in a quoted heading", et.msg)
+        @test et isa ErrorException && occursin("backslash in a quoted span", et.msg)
         # the ARGUMENT-lane twin holds the same law (sugar ≡ canonical): a backslash
-        # inside a quoted canonical-call argument refuses at parseArgs' in-quote scan
+        # inside a quoted canonical-call argument refuses in the one scanner _span (stage 5's s5c29)
         ea = _err("#~ head(\"a\\b\")\nx = 1\n")
-        @test ea isa ErrorException && occursin("backslash in a quoted argument", ea.msg)
+        @test ea isa ErrorException && occursin("backslash in a quoted span", ea.msg)
     end
 
     @testset "test_usermh_contextless_refusal — derived context absent ⇒ typed applicability refusal" begin
@@ -344,11 +335,10 @@ end
         # guards only) — the 4th plugin IS :heading in :localOnly mode
         @test GM.DEFAULT_REGISTRY.plugins[4].altName === :heading
         @test GM.DEFAULT_REGISTRY.plugins[4].setMode === :localOnly
-        # the THIRD quoted-span producer holds the backslash reservation with its own
-        # class (panel-found: the quote-blind label route formerly fell to the String
-        # wall's wrong-class message)
+        # a quoted span after ':' is not a label: the grammar's one refusal names the quote (the metaLine parser effort, stage 5's
+        # s5c29; his §362) — the former third quoted-span producer, the quote-blind label route, is gone
         eb3 = _err("#~ :\"a\\b\"\nx = 1\n")
-        @test eb3 isa ErrorException && occursin("backslash in a quoted argument", eb3.msg)
+        @test eb3 isa ErrorException && occursin("unexpected character '\"' after ':'", eb3.msg)
     end
 
     @testset "delta-round pins — injectivity, condition fates, userMH explicit, slot-scoped wall" begin

@@ -216,9 +216,10 @@ over many untrusted files accretes entries. (The closed no-eval interpreter of `
 `0.4.0`, stage 5's E13 of the v0.4 build; `docs/public-api.md` §6.)
 
 Documented v0 limits: the queue tensor holds as many actions per meta-hierarchy slot as the registry declares (8 today) —
-a further action meets Julia's own `BoundsError`; a malformed metaLine is read as the legacy read it (stray punctuation at
-the action position skipped, a token glued to a closing `)`/`}` dropped, an empty meta region a `BoundsError`) — the guarded
-refusals left at `0.4.0`, stage 5's E7 (census row 41); malformed
+a further action meets the stable message "GoMeta absorb: more than 8 actions in one meta-hierarchy slot …" (stage 5's s5c29;
+the owner's §358); a malformed metaLine meets the grammar's one refusal naming the character at fault — "GoMeta absorb: unexpected
+character '<c>' <where> …" (stage 5's s5c29, the metaLine parser effort: a metaStatement is a name, a ':' label or the region's first
+quoted heading, then at most one `()`, then at most one `{}`, and ends at white space; `docs/public-api.md` §3.4); malformed
 action arguments are refused; label names are validated against the engine's closed whitelist when
 APPLIED — an out-of-whitelist name refuses; a label QUERIED in a condition answers false when it is unknown
 or unset (the legacy's checker; since stage 5's E9 of the v0.4 build). The corpus-documented labels are

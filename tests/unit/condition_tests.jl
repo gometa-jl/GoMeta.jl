@@ -100,7 +100,7 @@ end
     @test _cn_err(_cn_mk("isCode(ab)")) isa UndefVarError                 # `getState(:isCode, ab)` — the legacy dropped the argument silently (K3)
     # the unterminated block stays GoMeta's (the metaLine grammar's own)
     e = _cn_err(Vector{UInt8}(codeunits("#~ hide{ isCode\nx = 1\n")))
-    @test e isa ErrorException && occursin("unterminated condition block", e.msg)
+    @test e isa ErrorException && occursin("unterminated '{'", e.msg)      # the one scanner's R2 (stage 5's s5c29): the opener named
 end
 
 @testset "the label test — every admitted name spelled the one way (register E13-8; the inventory's D-11 query half cured)" begin

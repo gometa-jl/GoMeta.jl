@@ -52,8 +52,9 @@ can learn GoMeta exactly, and verify it, before writing or changing a metaLine.
   `GoMeta.BLS.content(delivery.blsComponentTree, component)` — "through BLS's own access function"
   (R-V04B-43 (1); `content_fingerprint` left at 0.4.0's stage-2 commit 9b).
 - **meta-hierarchy / slot** — the engine's per-depth store of pending alterant actions: one slot per
-  open depth; its capacity is the registered action count (8 at v0.4) — a further action meets Julia's own
-  `BoundsError` since stage 5's E7 of the v0.4 build (census row 41; the capacity refusal left).
+  open depth; its capacity is the registered action count (8 at v0.4; a fixed size, raised by hand — the owner's Decision 3 of
+  2026-10-08, OWNER-WORDS §358) — a further action meets the stable message "GoMeta absorb: more than 8 actions in one meta-hierarchy
+  slot …" since stage 5's s5c29 (between E7 and s5c29 Julia's own `BoundsError`).
 - **verdict** — a final evaluated alterant value for one cell.
 - **State-refs** — built-in predicates that query a BLS component's type/content (`isCode`, `isText`, `isMeta`,
   `containsMeta`), used inside conditions to decide whether an alterant applies (§6).
@@ -344,8 +345,9 @@ The operators (all verified against the corpus):
 > than `||`; `!` is prefix) and **not exercised by this corpus** — **write explicit `()`** to make intent unambiguous, as
 > `Proposal L3` does. (See §13.) Inside `{}` a `)` glued to a following atom or operator is read by Julia's parser since
 > `0.4.0` (`{(isCode)}` reads — the former scanner refused it). (Outside `{}`, on the metaLine itself, a token glued to a
-> closing `)`/`}` is DROPPED since stage 5's E7 of the v0.4 build — census row 41: `hide()junk` reads as `hide`, `hide{isCode}show` as
-> `hide{isCode}` — `docs/public-api.md` §3.4; write the space.)
+> closing `)`/`}` is REFUSED by name since stage 5's s5c29 — "GoMeta absorb: unexpected character 'j' after the metaStatement "hide()" …",
+> "… 's' after the metaStatement "hide{isCode}" …" (between E7 and s5c29 it was dropped as the legacy dropped it) — `docs/public-api.md`
+> §3.4; write the space.)
 
 **State-refs** read the BLS component's type/content: `isCode`, `isText`, `isMeta`, `containsMeta`. Verified:
 - `isCode` — the **Code** block (`Extended L20–L32`) is discarded by `discard{ :label2 , isCode}` (`L7`)
@@ -549,7 +551,7 @@ To keep the verified claims honest, these are **known but not established here**
   `GoMeta apply: unknown label …` message, which names the accepted set; a label QUERIED in a condition
   answers false when it is unknown or unset (the legacy's checker; since stage 5's E9 of the v0.4
   build). As many actions accumulate per meta-hierarchy slot as the registry declares (8 at v0.4)
-  (a further one meets Julia's own `BoundsError` since stage 5's E7 of the v0.4 build — census row 41; `docs/public-api.md` §3.4). The
+  (a further one meets the stable message "GoMeta absorb: more than 8 actions in one meta-hierarchy slot …" since stage 5's s5c29 — the owner's §358; `docs/public-api.md` §3.4). The
   authorable depth window is 1–8 in the digit form (§2). Custom label names applied (a queried one
   answers false — `docs/public-api.md` §3.4), and
   bare names outside the settribute keys and the queryable actions, are refused; a Julia Boolean expression over those

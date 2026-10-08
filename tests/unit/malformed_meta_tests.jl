@@ -1,13 +1,13 @@
-# malformed_meta_tests.jl — the valid-twin witnesses of the metaLine parser (the three guarded refusals of malformed
-# metaLines — the no-token guard, the punctuation wall, the glued-token wall — left at stage 5's E7 of the v0.4 build, census row 41)
+# malformed_meta_tests.jl — the valid-twin witnesses of the metaLine parser, and the glued form's refusal
 #
-# IS:   the witness set that stays after E7: the valid shapes parse green and byte-deterministically.
-# DOES: proves (1) a valid metaLine twin stays PROCESS_OK and byte-deterministic; (2) the INERT `#~!` corpus shape passes
-#       through byte-exact; (3) the documented spacing form after a closing bracket stays green.
-# REASONING: since stage 5's E7 a malformed metaLine is read as his legacy read it — stray punctuation skipped to the next identifier, a glued token
-#       dropped, an empty meta region Julia's own BoundsError — measured in the build's probe pair, not pinned here (census row 41):
-#       a raw Julia error class is no witness; the valid paths are the pins.
-# PURPOSE: the parser's valid shapes, byte-exact.
+# IS:   the witness set of the parser's valid shapes — they parse green and byte-deterministically — and of the one refusal a glued
+#       token meets since the metaLine parser effort (stage 5's s5c29; his Decision 1 of 2026-10-08, OWNER-WORDS §356: Design E).
+# DOES: proves (1) a valid metaLine twin stays PROCESS_OK and byte-deterministic; (2) the INERT `#~!` corpus shape passes through
+#       byte-exact; (3) the documented spacing form after a closing bracket stays green; (4) the glued form `hide{isCode}show` is
+#       refused by the grammar's one refusal naming the character (his legacy dropped the `show` silently — the register's D-2).
+# REASONING: a metaStatement ENDS at white space or the region's end; any other character is named in the refusal (his §341).
+#       The full battery of shapes is tests/unit/parser_quality_tests.jl (generated); these are the valid paths' pins.
+# PURPOSE: the parser's valid shapes, byte-exact; the glued form, refused by name.
 using Test
 import GoMeta as GM
 
@@ -30,10 +30,10 @@ import GoMeta as GM
         @test String(copy(Main.BasicRenderer.outputs(r)[2])) == "#~! discard{ isMeta }\n# content\n"   # the inert line passes through byte-exact
     end
 
-    @testset "the spaced form stays green (the former walls left at stage 5's E7 — census row 41)" begin
-        # the documented spacing form after a closing bracket; the glued form is read as the legacy read it since stage 5's E7 (the glued token
-        # dropped — measured in the build's probe pair, not pinned here; census row 41)
+    @testset "the spaced form stays green; the glued form is refused by name (the metaLine parser effort, stage 5's s5c29)" begin
         spaced = GM.goMeta(Vector{UInt8}(codeunits("#~ hide{isCode} show\n# content\n")))
         @test spaced.status == GM.PROCESS_OK
+        e = try GM.goMeta(Vector{UInt8}(codeunits("#~ hide{isCode}show\n# content\n"))); nothing catch err; err end
+        @test e isa ErrorException && occursin("unexpected character 's' after the metaStatement \"hide{isCode}\"", e.msg)
     end
 end
