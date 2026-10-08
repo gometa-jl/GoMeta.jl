@@ -410,13 +410,31 @@ end # module CnS
 """
     default_registry_builder() -> RegistryBuilder
 
-The v0 alterant inventory's DECLARATIONS in DECLARATION order: fresh top-level `Alterant` instances for
-`labels` / `Visib` / `Id` / `Heading` (the heading alterant — its names are RATIFIED: alterant
-`Heading`, action `head`) in the `state.jl` type + the per-action records, returned as an
-UNVALIDATED `RegistryBuilder`. `publish` runs the remaining checks (the domain probe — R-V04B-4 (iii); the Heading lane's
-mode-gate laws — the vocabulary check left at stage 5's E9, the validation chain of v0.4 T2–T4 at E4, census row 3), derives the
-tables (a duplicate action name resolving first-wins), and takes the publish-time snapshot; `DEFAULT_REGISTRY`
-is that published value, consumed READ-ONLY. Pure — no module-load side-effects.
+IS: the v0 alterant inventory's DECLARATIONS in DECLARATION order — the DEFAULT BUILDER: fresh top-level `Alterant`
+instances (the `state.jl` record type) for `labels` / `Visib` / `Id` / `Heading` (the live keys `:labels`, `:Visib`, `:id`,
+`:heading`; the heading alterant — its names are RATIFIED: alterant `Heading`, action `head`) + the per-action records,
+returned as an UNVALIDATED `RegistryBuilder`.
+
+DOES: builds the four records in the keyword form, each with its declared default and its capture row — `labels`
+(`:accumulate`; `Dict{Symbol,Bool}`; setter `setLabels`, getter `checkLabels`; default the EMPTY SET, R-V04B-92; capture
+`:per_key`, stem `:label`), `Visib` (`:mutExclusive`; default `:show`, R-V04B-51 (2); `:single`, stem `:visib`), `id`
+(`:mutExclusivePerField`; default the ZERO compound, R-V04B-92; `:per_field`, stem `:id`) and `heading` (`:localOnly` —
+never enqueued, delivered at the absorb seam keyed to the Component the statement is applied to and decided by the
+carrier (R-V04B-98; the metaBlock a whole-line metaLine forms, R-V04B-50); default `nothing`; `:per_occurrence` gated
+`:localOnly`, stem `:head`) — and the eight `ActionSpec` records: `:` (plugin 1), `hide` / `show` / `discard` (2),
+`cell` / `parent` / `file` (3) and `head` (4; `accepts_string_slot = 1`, `validate = Alterants._heading_validate_text`).
+The plugin index IS the position here. `publish` runs the remaining checks (the domain probe — R-V04B-4 (iii); the
+Heading lane's mode-gate laws — the vocabulary check left at stage 5's E9, the validation chain of v0.4 T2–T4 at E4,
+census row 3), derives the tables (a duplicate action name resolving first-wins), and takes the publish-time snapshot;
+`DEFAULT_REGISTRY` is that published value, consumed READ-ONLY. Pure — no module-load side-effects.
+
+REASONING: the inventory is deterministic BY CONSTRUCTION — declaration order fixes every index, never a `Dict`
+iteration order; the declarations are DATA, the hot-path tables derived from them by `publish`, never hand-supplied
+(the clash law with its disposition switch left at stage 5's E4, the per-overload rows at E11; his legacy registered an
+action by its name).
+
+PURPOSE: the one declaration site of the shipped inventory — the base `build_default_registry` publishes and
+`RegistryBuilder(DEFAULT_REGISTRY)` extends.
 """
 function default_registry_builder()
     # The closed v0 inventory, in DECLARATION order (deterministic, unlike Dict-iteration
@@ -495,19 +513,41 @@ end
 """
     build_default_registry() -> AlterantRegistry
 
-The v0 alterant inventory, PUBLISHED: `publish(default_registry_builder())` — the remaining checks
-(the domain probe · the mode-gate laws — the vocabulary check left at stage 5's E9 —, inside `publish`) run before the object
-exists, the derived tables come from the declarations, and the publish-time snapshot is taken. Pure — no module-load side-effects beyond the const it feeds.
+IS: the v0 alterant inventory, PUBLISHED — the one-line composition `publish(default_registry_builder())`.
+
+DOES: returns a published `AlterantRegistry` carrying its publish-time snapshot: the remaining checks (the domain probe ·
+the mode-gate laws — the vocabulary check left at stage 5's E9 —, inside `publish`) run before the object exists, the
+derived tables come from the declarations, and the publish-time snapshot is taken. Every call builds a FRESH value (the
+tests publish their own). Pure — no module-load side-effects beyond the const it feeds.
+
+REASONING: the shipped inventory goes through the SAME lifecycle a third-party registration goes through (Builder →
+validate → publish) — no second construction route for the default.
+
+PURPOSE: the builder of `const DEFAULT_REGISTRY` (the tail of this file).
 """
 build_default_registry() = publish(default_registry_builder())
 
 """
     _mode_gate_collect!(diags, plugins) -> nothing
 
-The four capture MODE-GATE laws of the Heading's :localOnly lane — the gate's closed set, the setMode⟺gate coherence, the one
-implemented scheme and the entries protocol of a :localOnly store (the former tier-1 plugin-level collector's four gate rows) — KEPT at
-`validate` until the Heading runs through the apply loop and the lane retires (R-V04B-101, after the branch); the rest of the tier-1 record shape
-law left at stage 5's E4 (census row 3, his §317). Accumulating: every row a `REG_PROTOCOL` diagnostic; never throws.
+IS: the collector of the four capture MODE-GATE laws of the Heading's :localOnly lane — the gate's closed set, the
+setMode⟺gate coherence, the one implemented scheme and the entries protocol of a :localOnly store (the former tier-1
+plugin-level collector's four gate rows) — KEPT at `validate` until the Heading runs through the apply loop and the lane
+retires (R-V04B-101, after the branch); the rest of the tier-1 record shape law left at stage 5's E4 (census row 3,
+his §317).
+
+DOES: for every record that declares a capture row (one without is skipped): (1) `mode_gate` must be in
+`_CAPTURE_MODE_GATES` (`nothing` | `:localOnly`); (2) `setMode === :localOnly` iff `mode_gate === :localOnly` (either
+mismatch is a silent zero-rows class); (3) a `:localOnly` row declares `attr_scheme === :per_occurrence` — the one scheme
+the absorb-seam delivery implements; (4) a `:localOnly` record's `altConstructor` carries the field `entries` of the
+exact type `Vector{Tuple{String,Union{Nothing,Int}}}` — the shape the seam's flush reads. Accumulating: every finding
+is pushed as ONE `REG_PROTOCOL` error diagnostic naming the Alterant (its `context`); the collector raises no refusal
+of its own (never throws); returns `nothing`. Its one caller is `_validate_registration`.
+
+REASONING: a row that passes registration but is heading-folded against its own declaration, or floored at the flush,
+would fail silently at run time — so the seam's assumptions are refused at publish, where every defect is collected.
+
+PURPOSE: the registry-side half of the Heading lane's contract with the absorb seam, until R-V04B-101 retires the lane.
 """
 function _mode_gate_collect!(diags::Vector{Diagnostic}, plugins::Vector{Alterant})
     proto(msg, ctx) = push!(diags, Diagnostic(:REG_PROTOCOL, :error, msg, ctx))
@@ -699,16 +739,23 @@ _numeric_leaf(x)::Bool = x isa _MACHINE_REAL ||
 """
     _domain_leaf(x) -> Bool
 
-THE ONE leaf predicate (T2BIS-DESIGN §1) — enumerated, never `isbits` (which would admit
-`Char`, enums and opaque isbits structs R-V04B-8 refuses): `Function` · `Type` · `Symbol` ·
-`Nothing` · `String` (VALUES are `String`-only — a non-`String` `AbstractString` value is
-OUTSIDE the domain; `AbstractString` stays a legal `Type` leaf) · `VersionNumber` · the
-machine scalars · `Complex`/`Rational` of those, parts-recursively. Leaves are carried by
-reference by the copier and compared by `===` only by the comparator (bitwise on isbits —
-NaN payloads and signed zero stay detected; `String` content-egal; `VersionNumber`
-field-wise egal; `Function`/`Type`/`Symbol` by identity). Position rules (a `Function`
-only in a designated callable field, never inside declared data — DATA WINS) live in the
-walks, not here.
+IS: THE ONE leaf predicate of the closed value domain (T2BIS-DESIGN §1; R-V04B-4 (iii)) — enumerated, never `isbits`
+(which would admit `Char`, enums and opaque isbits structs R-V04B-8 refuses).
+
+DOES: answers true for `Function` · `Type` · `Symbol` · `Nothing` · `String` (VALUES are `String`-only — a non-`String`
+`AbstractString` value is OUTSIDE the domain; `AbstractString` stays a legal `Type` leaf) · `VersionNumber` · the
+machine scalars (`_MACHINE_REAL`, Bool included) · `Complex`/`Rational` of those, parts-recursively (`_numeric_leaf`,
+`getfield` reads — no extensible generic runs); false for everything else. Leaves are carried by reference by the
+copier and compared by `===` only by the comparator (bitwise on isbits — NaN payloads and signed zero stay detected;
+`String` content-egal; `VersionNumber` field-wise egal; `Function`/`Type`/`Symbol` by identity). Position rules (a
+`Function` only in a designated callable field, never inside declared data — DATA WINS) live in the walks, not here.
+Its readers: the validate walk (`_domain_slot_probe!`, `_type_budget_check`), the copier `_domain_copy` and the
+comparator `_egal_cmp`.
+
+REASONING: one enumerated predicate is the law for all three walks — `validate`, the copier and the door — so the
+domain cannot drift between them, and nothing a registrant can extend is dispatched to decide membership.
+
+PURPOSE: the membership test of a declared value, shared by the registration's probe, copy and door.
 """
 _domain_leaf(x)::Bool =
     x isa Function || x isa Type || x isa Symbol || x === nothing || x isa String ||
@@ -1035,18 +1082,27 @@ function _callable_text(@nospecialize f)
 end
 
 """
-    _encodability_collect!(diags, plugins, action_specs)
+    _encodability_collect!(diags, plugins, action_specs) -> nothing
 
-(T2-bis, replacing the cure-batch-4/5 `_slot_text` probe) the DOMAIN probe (R-V04B-4 (iii); the
-record shape law's one remaining row since stage 5's E4) — the ONE
-walk with TWO predicates over EVERY record field (plugin × 8, spec × 5 — T2BIS-DESIGN §2; the overload rows walked within left at stage 5's E11
-of the v0.4 build, census row 16): predicate 1 = membership AT
-POSITION (leaves via `_domain_leaf`; the value-domain containers; the record structs only
-at their structural positions; a `Function` only in the designated callable fields and
-never inside declared data; `String`-only string values); predicate 2 = the type-encoder
-BUDGET over every admitted `Type` leaf's parameter tree (the seal's mint it kept safe left at stage 5's
-E13 — census row 6; the bound stays as the domain's declared closure). At most ONE slot-named `REG_PROTOCOL` row per (record, slot), in deterministic
-order; full collection across slots and records; `validate` never throws.
+IS: the DOMAIN probe (R-V04B-4 (iii); the record shape law's one remaining row since stage 5's E4) — T2-bis, replacing
+the cure-batch-4/5 `_slot_text` probe: the ONE walk with TWO predicates over EVERY record field (plugin × 8, spec × 4 —
+the four `ActionSpec` fields since stage 5's E12, the settribute slot left, census row 45; T2BIS-DESIGN §2; the overload
+rows walked within left at stage 5's E11 of the v0.4 build, census row 16).
+
+DOES: calls `_domain_slot_probe!` once per (record, slot) — every `_WALK_PLUGIN_FIELDS` slot of every `Alterant`, the
+designated flag set for `setAltInstance` / `getAltInstance`; every `_WALK_ACTION_FIELDS` slot of every `ActionSpec`,
+designated for `validate`: predicate 1 = membership AT POSITION (leaves via `_domain_leaf`; the value-domain containers;
+the record structs only at their structural positions — inside a declared slot one is unencodable; a `Function` only
+in the designated callable fields and never inside declared data; `String`-only string values; no undefined container
+element; no cycle); predicate 2 = the type-encoder BUDGET (`_TYPE_BUDGET`) over every admitted `Type` leaf's parameter
+tree (the seal's mint it kept safe left at stage 5's E13 — census row 6; the bound stays as the domain's declared
+closure). At most ONE slot-named `REG_PROTOCOL` row per (record, slot), in deterministic order; full collection across
+slots and records; `validate` never throws. Returns `nothing`; one caller, `_validate_registration`.
+
+REASONING: every declared value is probed at validate, so the publish copier and the door's walk meet in-domain,
+acyclic values only, and a registrant's own methods never run inside the registration's checks.
+
+PURPOSE: the first of the remaining checks — the record shape law, enforced before any value is published.
 """
 function _encodability_collect!(diags::Vector{Diagnostic}, plugins::Vector{Alterant}, action_specs::Vector{ActionSpec})
     for p in plugins
@@ -1147,22 +1203,32 @@ end
 """
     _domain_copy(x, memo::IdDict{Any,Any}; visiting = nothing, pos = :structural, rk = 0x02)
 
-THE DOMAIN COPIER (T2BIS-DESIGN §3; NOT `Base.deepcopy` — `deepcopy_internal` is never
-dispatched, a capturing closure/callable struct keeps its identity): leaves BY REFERENCE;
-containers, slot structs and (at structural positions) record structs REBUILT at their
-EXACT concrete types (`T = typeof(v)` — THE TYPE LAW; a `Vector`/`Dict` is constructed AS
-`T` and filled, never by an inferred comprehension); the else-arm throws the internal
-`_OutsideDomain`. ITERATIVE — an explicit frame stack with post-order rebuild, no native
-recursion. The `memo` is ALWAYS caller-supplied — ONE per copy stage/route, over EVERY
-container class (immutables included: `IdDict` egal-keying makes the reuse sound), so
-sharing is preserved WITHIN a stage and the copy is linear in the stage's distinct
-containers. `visiting !== nothing` selects the CONTAINED route
-(`RegistryBuilder(published)` — the one route that meets UNVALIDATED values): the on-stack
-cycle guard rides beside the memo, the memo is keyed by `(source, position-class)`, and
-§1's POSITION rules are ENFORCED (a `Function` in data or outside a designated field, or
-a record struct outside its structural position, throws `_OutsideDomain`); cycles throw
-`_CyclicValue`. Both carry the path. On the publish route (`visiting === nothing`) the
-copy is TYPE-based — `validate` has already run, so every value is in-domain and acyclic.
+IS: THE DOMAIN COPIER (T2BIS-DESIGN §3; NOT `Base.deepcopy` — `deepcopy_internal` is never dispatched, a capturing
+closure/callable struct keeps its identity) — the one copy every published value and every preloaded builder goes
+through.
+
+DOES: returns a copy of `x`: leaves BY REFERENCE; containers, slot structs and (at structural positions) record structs
+REBUILT at their EXACT concrete types (`T = typeof(v)` — THE TYPE LAW; a `Vector`/`Dict` is constructed AS `T` and
+filled, never by an inferred comprehension — `_copy_rebuild`); the else-arm throws the internal `_OutsideDomain`; an
+undefined `Vector` element throws `_UndefSlot`; a user `hash`/`isequal` thrown at a `Dict` fill is converted to
+`_RebuildFailed` (the one rebuild step that dispatches user code). ITERATIVE — an explicit `_CopyFrame` stack with
+post-order rebuild, no native recursion. The `memo` is ALWAYS caller-supplied — ONE per copy stage/route, over EVERY
+container class (immutables included: `IdDict` egal-keying makes the reuse sound), so sharing is preserved WITHIN a
+stage and the copy is linear in the stage's distinct containers. `visiting !== nothing` selects the CONTAINED route
+(`RegistryBuilder(published)` through `_copy_published_records` — the one route that meets UNVALIDATED values): the
+on-stack cycle guard rides beside the memo, the memo is keyed by `(source, position-class)`, and §1's POSITION rules
+are ENFORCED (a `Function` in data or outside a designated field, or a record struct outside its structural position,
+throws `_OutsideDomain`); cycles throw `_CyclicValue`. Both carry the path. On the publish route (`visiting ===
+nothing`, `publish`'s two stages) the copy is TYPE-based — `validate` has already run, so every value is in-domain and
+acyclic. The internal exceptions never leave the public routes: `_route2_refuse` converts all four on the contained
+route, `publish`'s copy wrapper the two its route can meet (`_RebuildFailed`, `_UndefSlot`) — each to a typed
+`RegistrationRefused`.
+
+REASONING: a later mutation of the builder cannot reach a published registry and vice versa, and no user type can
+specialize the copy — the type law and the by-reference leaves keep the copy exact without dispatching anything a
+registrant can extend.
+
+PURPOSE: the copy behind publication (T2-bis) and behind the preload of a builder from a published value.
 """
 function _domain_copy(x, memo::IdDict{Any,Any};
                       visiting::Union{Nothing,Base.IdSet{Any}} = nothing,
@@ -1530,11 +1596,24 @@ end
 """
     _deep_egal(live, snap) -> Union{Nothing, _Divergence}
 
-The comparator (T2BIS-DESIGN §4): the first divergent typed-segment path, or `nothing`
-when the pair is content-structurally equal. Container-type-FIRST dispatch; per-class
-gates (`typeof` → size → element-wise); leaves by `===` ONLY; alias topology is NOT
-significant (the pair guard makes shared DAGs and even both-sided cycles terminate);
-Dicts by the one-path structural entry-matching law. A fresh spine guard per call.
+IS: the deep-egal COMPARATOR of the T2-bis snapshot door (T2BIS-DESIGN §4) — ONE explicit machine over a work stack,
+no native recursion.
+
+DOES: returns the first divergent typed-segment path with its reason (`_Divergence`: `:typeof` | `:size` | `:leaf` |
+`:outside_domain` | `:key_set` | `:entry`), or `nothing` when the pair is content-structurally equal.
+Container-type-FIRST dispatch (`_egal_cmp`): record structs at their structural position, then the value-domain
+containers, then leaves; per-class gates (`typeof` → size → element-wise; an undefined `Vector` element compares by
+its assignment state); leaves by `===` ONLY, after the outside-domain test with the position rules; alias topology is
+NOT significant (the pair guard makes shared DAGs and even both-sided cycles terminate); Dicts by the one-path
+structural entry-matching law (`_egal_dict_step`: every snapshot entry must match a not-yet-consumed live entry with
+equal key AND value; a probe's guard overlay merges on acceptance, is discarded on rejection; no outcome memo). A
+fresh spine guard per call. The door dispatches NO user-extensible method — no `hash`, `isequal`, `==` or user `show`.
+Its callers: `_registry_door_check` (per `_SNAPSHOT_FIELDS` field) and the snapshot property tests.
+
+REASONING: the live fields against the publish-time snapshot, by content and structure alone, is the ONE check that
+detects a post-publication mutation by conforming code without running anything a registrant can extend.
+
+PURPOSE: the comparison behind the door's `POST_SEAL_MUTATION` row.
 """
 function _deep_egal(live, snap)
     guards = Base.IdSet{Any}[Base.IdSet{Any}()]
@@ -1746,8 +1825,19 @@ _type_param_text(p)::String =
 """
     _validate_registration(plugins, action_specs) -> Vector{Diagnostic}
 
-The remaining checks, in fixed order: the domain probe over every declared field, the capture mode-gate laws (the vocabulary
-check left at stage 5's E9). FULL collection: every defect is reported; the caller decides the terminal outcome (error present ⇒ refuse).
+IS: the registration's remaining checks at `validate` (stage 5's E4, census rows 3 and 51 — his §317; the validation
+chain of v0.4 T2–T4 left: his legacy registered unchecked and failed at dispatch).
+
+DOES: runs, in fixed order, the domain probe over every declared field (`_encodability_collect!`, R-V04B-4 (iii)) and
+the capture mode-gate laws (`_mode_gate_collect!`, the Heading lane's — R-V04B-101: after the branch; the vocabulary
+check left at stage 5's E9) into one fresh `Diagnostic` vector and returns it. FULL collection: every defect is
+reported; the caller decides the terminal outcome (error present ⇒ refuse). Two callers: `validate(builder)` and the
+gated positional `AlterantRegistry` constructor (route U, src/state.jl).
+
+REASONING: one chain, collecting rather than throwing, so a registrant sees every defect at once and `publish` and
+route U refuse on the same evidence.
+
+PURPOSE: the one definition of what a registration must satisfy before it is published.
 """
 function _validate_registration(plugins::Vector{Alterant}, action_specs::Vector{ActionSpec})
     diags = Diagnostic[]
@@ -1781,28 +1871,49 @@ end
 """
     validate(builder::RegistryBuilder) -> Vector{Diagnostic}
 
-Run the remaining checks (the domain probe, the mode-gate laws — the vocabulary check left at stage 5's E9) over the builder's declarations and return
-EVERY diagnostic (deterministic order; no remaining check warns since stage 5's E4) — never throws. Empty ⇒ publishable.
+IS: the lifecycle's VALIDATE step (Builder → validate → publish; package-public, docs/public-api.md §1.2) over a
+builder's declarations.
+
+DOES: Run the remaining checks (the domain probe, the mode-gate laws — the vocabulary check left at stage 5's E9) over
+the builder's declarations (`plugins` and `action_specs`, through `_validate_registration`) and return EVERY
+diagnostic (deterministic order; no remaining check warns since stage 5's E4) — never throws. Empty ⇒ publishable.
+`publish` calls it first; a caller wanting the diagnostics as data calls it itself.
+
+REASONING: full collection before the one terminal outcome — the defects as data, the refusal `publish`'s.
+
+PURPOSE: the registrant's own check of a declaration before publishing it.
 """
 validate(b::RegistryBuilder) = _validate_registration(b.plugins, b.action_specs)
 
 """
     publish(builder::RegistryBuilder) -> AlterantRegistry
 
-The SANCTIONED route to a SEALED registry — the only SUPPORTED one for conforming callers (not the
-only possible one in-process: the construction token and this file's helpers are reachable by any
-loaded module, the accident-grade bound recorded at `_SealToken`). Refuses (throws `RegistrationRefused` carrying every
-diagnostic) if `validate` reports any error; proceeds on warnings. Atomic COPY-publication (T2-bis):
-every container is copied by the domain copier `_domain_copy` — callables/Types/Symbols/Strings/
-VersionNumbers/numbers carried BY REFERENCE, containers and slot structs REBUILT at their exact
-concrete types, sharing preserved within each copy stage; `deepcopy_internal` is never dispatched,
-so no user type can specialize the copy (a later mutation of the builder cannot reach a published
-registry, and vice versa). The derived tables come from the declarations alone; the `_snapshot` baseline is a SECOND,
-disjoint domain copy of all nine `_SNAPSHOT_FIELDS` (ten before stage 5's E13 — the `seal` fingerprint field left with the
-registration digest, census row 6; eleven before stage 5's E12 — census row 45). The published value's containers are
-READ-ONLY by contract — a mutation through them is detected at the door (`POST_SEAL_MUTATION`)
-by the structural deep-egal comparison against the snapshot, never silently effective — for
-conforming code (the disclosed bounds apply, docs/public-api.md §1.2).
+IS: the lifecycle's PUBLISH step — the SANCTIONED route to a SEALED registry, the only SUPPORTED one for conforming
+callers (not the only possible one in-process: the construction token and this file's helpers are reachable by any
+loaded module, the accident-grade bound recorded at `_SealToken`).
+
+DOES: refuses (throws `RegistrationRefused` carrying every diagnostic) if `validate` reports any error; proceeds on
+warnings, each emitted by `@warn` at publication (never swallowed; none is minted since stage 5's E4). Atomic
+COPY-publication (T2-bis), two stages, each by the domain copier `_domain_copy` — callables/Types/Symbols/Strings/
+VersionNumbers/numbers carried BY REFERENCE, containers and slot structs REBUILT at their exact concrete types,
+sharing preserved within each copy stage; `deepcopy_internal` is never dispatched, so no user type can specialize the
+copy (a later mutation of the builder cannot reach a published registry, and vice versa). STAGE 1: the builder's
+`plugins` and `action_specs` copied under ONE memo; the derived tables (`_derive_tables`) computed from those copies —
+the derived tables come from the declarations alone. STAGE 2: the `_snapshot` baseline — a SECOND, disjoint domain
+copy of all nine `_SNAPSHOT_FIELDS` (ten before stage 5's E13 — the `seal` fingerprint field left with the registration
+digest, census row 6; eleven before stage 5's E12 — census row 45) under a SEPARATE memo, built mechanically over the
+field-name tuple; the disjointness asserted (`_assert_snapshot_disjoint`); the value constructed through the
+token-gated constructor `AlterantRegistry(_SealToken(), …)`. A copy that cannot complete — a user `hash`/`isequal`
+thrown at a `Dict` rebuild, an undefined container element — converts to a typed `RegistrationRefused`
+(`REG_PROTOCOL`), never a raw exception. The published value's containers are READ-ONLY by contract — a mutation
+through them is detected at the door (`POST_SEAL_MUTATION`) by the structural deep-egal comparison against the
+snapshot, never silently effective — for conforming code (the disclosed bounds apply, docs/public-api.md §1.2).
+
+REASONING: validate first, then copy, so the copy is type-based over in-domain, acyclic values; two memos so live and
+snapshot share no mutable container — the door's comparison then has a baseline nothing conforming code can reach
+through the live fields.
+
+PURPOSE: the one route to a published value — what `goMeta`'s door accepts (R-V04-34) and what `DEFAULT_REGISTRY` is.
 """
 function publish(b::RegistryBuilder)
     diags = validate(b)
@@ -1848,18 +1959,26 @@ end
 """
     _registry_door_check(registry) -> Vector{Diagnostic}
 
-The R-V04-34 STRICT door, T2-bis ONE-CHECK form (T2BIS-DESIGN §6): an UNPUBLISHED registry
-(`_snapshot === nothing`) refuses typed, naming the sanctioned path; else the nine (ten before stage 5's E13, eleven before E12)
-`_SNAPSHOT_FIELDS` are compared field-by-field against the publish-time snapshot by the ONE
-structural deep-egal walk (`===`-only leaves; no `hash`/`isequal`/`==`/user `show` dispatched
-anywhere, rendering included) and the FIRST divergent path fires exactly one
-`POST_SEAL_MUTATION` row — the real freeze gate (M-AC-9), accident-grade: typed refusal of
-post-seal mutation by conforming code. The retired seal re-mint, derived-table re-derivation
-and callable-identity compare lose no detection for conforming code (the field lists being
-COMPLETE): re-derivation is deterministic, so it never catches what the snapshot cannot; the
-same-typed table swap is excluded by §5's by-name construction; every callable identity —
-altConstructor, the setters/getters, `spec.validate` — is a snapshot leaf
-compared by `===`.
+IS: the R-V04-34 STRICT door of `goMeta` — the published-only entry — in its T2-bis ONE-CHECK form (T2BIS-DESIGN §6):
+the ONE entry refusal since stage 5's E13.
+
+DOES: returns the door's diagnostics, empty when the registry passes. An UNPUBLISHED registry (`_snapshot === nothing`)
+refuses typed — one `REG_UNPUBLISHED` error row naming the sanctioned path (RegistryBuilder → validate → publish); else
+the nine (ten before stage 5's E13, eleven before E12) `_SNAPSHOT_FIELDS` are compared field-by-field against the
+publish-time snapshot by the ONE structural deep-egal walk (`_deep_egal`: `===`-only leaves; no
+`hash`/`isequal`/`==`/user `show` dispatched anywhere, rendering included) and the FIRST divergent path fires exactly
+one `POST_SEAL_MUTATION` row (the loop breaks at the first; the path rendered by `_render_path` as the row's message
+and context) — the real freeze gate (M-AC-9), accident-grade: typed refusal of post-seal mutation by conforming code.
+Its one Engine caller is `goMeta`, before the parse: a non-empty return becomes the fail-closed `PROCESS_ERROR`
+delivery (`_entryErrorDelivery`). The retired seal re-mint, derived-table re-derivation and callable-identity compare
+lose no detection for conforming code (the field lists being COMPLETE): re-derivation is deterministic, so it never
+catches what the snapshot cannot; the same-typed table swap is excluded by §5's by-name construction; every callable
+identity — altConstructor, the setters/getters, `spec.validate` — is a snapshot leaf compared by `===`.
+
+REASONING: one check at the entry, against a baseline the publication took, dispatching nothing a registrant can
+extend — the honest bound: an entry check, not a lock over the run; the snapshot's own members are mutable (B-2).
+
+PURPOSE: that a run reads only a registry whose declarations are the ones that were validated and published.
 """
 function _registry_door_check(registry::AlterantRegistry)
     diags = Diagnostic[]
@@ -1889,10 +2008,21 @@ end
 """
     const DEFAULT_REGISTRY :: AlterantRegistry
 
-The v0 default alterant inventory — built ONCE at load and READ-ONLY thereafter. Mutating any of its
-`Dict`/`Vector` fields destroys the determinism the registry exists to provide, so treat it as frozen.
-It is threaded into `ProcessState` via `init_state(parse_state, config, DEFAULT_REGISTRY)`, and the
-absorb/apply phases read it from there (`ctx().registry`) rather than from a module global.
+IS: the v0 default alterant inventory — the PUBLISHED value `build_default_registry()` returns, built ONCE at load and
+READ-ONLY thereafter; a package-public name (docs/public-api.md §1.2).
+
+DOES: serves as the default of `goMeta`'s `registry` keyword and as the base a third party extends
+(`RegistryBuilder(DEFAULT_REGISTRY)`, then `register!`). Mutating any of its `Dict`/`Vector` fields destroys the
+determinism the registry exists to provide, so treat it as frozen: a mutation through them by conforming code is
+DETECTED at the entry door (`POST_SEAL_MUTATION`, against its publish-time snapshot), never silently effective. It is
+threaded into `ProcessState` via `init_state(parse_state, config, DEFAULT_REGISTRY)`, and the absorb/apply phases read
+it from there (`ctx().registry`) rather than from a module global.
+
+REASONING: one deterministic inventory, published through the same lifecycle every registration goes through, held as
+a const and read per call through the state — no module-global mutable inventory (v0.4 T1: the `===` alias onto its
+write-back Dict retired).
+
+PURPOSE: the Alterant inventory of a run that names none — the four shipped Alterants and their eight actions.
 """
 const DEFAULT_REGISTRY = build_default_registry()
 

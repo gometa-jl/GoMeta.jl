@@ -210,10 +210,19 @@ _dt_children(doc, c) = _DT_BLS.children(doc.ps, c)
 _dt_id(c) = Int(_dt_ni(c, :idComponent))
 
 """
-IS: the per-call render context — one `goMeta` result opened for printing.
-DOES: carries the result, its delivered tree (`blsComponentTree`), the Block Components the door's walk
-yields (`BLS.children` of the tree: the basic renderer's form, devtools/basic_renderer.jl — the legacy
-`2:numChildren+1` census breaks on extension chains), and the display name.
+    DTDoc
+
+IS: the per-call render context — one `goMeta` result opened for printing; built by `_dt_doc(result; name)`.
+DOES: carries the result (`r`), its delivered tree (`ps` — the part `blsComponentTree`), the Block Components the door's
+    walk yields (`blocks` — `BLS.children` of the tree, materialised once: the basic renderer's form,
+    devtools/basic_renderer.jl — the legacy `2:numChildren+1` census breaks on extension chains), and the display name
+    (`name`, printed in the `File` header line).
+REASONING: the result and the tree are held untyped (`Any`): the tools name no Julia type of the delivered part (the basic
+    renderer's note at its own read: that type is his open item 5 — not named there either) and dispatch on the Component
+    types through the door alone. One context per call keeps every printer on the same tree and the same Block census.
+PURPOSE: the context every printer opens first — `print_BLS_Component_Tree`, `print_altValues_evals`, `comparisonForm` and
+    the command-line verbs `evals` and `trace`; the tools work on the run's two MAIN PRODUCTS, the BLS Component tree and
+    `altValues_evals` (his words of 2026-09-30, OWNER-WORDS §242 item 3).
 """
 struct DTDoc
     r::Any
@@ -303,12 +312,23 @@ function _dt_resolve(doc, steps)
 end
 
 """
-IS: one evals row, resolved for rendering.
+    DTEvalRow
+
+IS: one evals row of `altValues_evals`, resolved for rendering; built by `_dt_eval_rows(doc)` — one per row of
+    `GoMeta.readAltValuesEvals`.
 DOES: carries the evals row (`attr`, `value`, `polarity` — polarity is constant `true` at v0, a reserved field, so it
-renders DIM), the resolved target Component (`comp`; `nothing` = unanchored: the user-context plane, grain > 0xd2, has
-no document tree position), the origin metaSegment (`origin`; `nothing` when the key carries no origin steps), the raw
-occurrence-handle bytes (`handle` — row identity, cell grouping) and the decoded key (`key` — the shared decoder's named
-tuple; `nothing` when the bytes do not decode). A row's text is the door's `BLS.content` of its resolved Component.
+    renders DIM), the resolved target Component (`comp`; `nothing` = unanchored: the user-context plane, grain > 0xd2, has
+    no document tree position), the origin metaSegment (`origin`; `nothing` when the key carries no origin steps), the raw
+    occurrence-handle bytes (`handle` — row identity, cell grouping) and the decoded key (`key` — the shared decoder's
+    named tuple `(; namespace, grain, path, origin)`; `nothing` when the bytes do not decode). A row's text is the door's
+    `BLS.content` of its resolved Component.
+REASONING: a row is decoded (the shared `decode_handle`, R-V04B-102) and resolved ONCE — the plain path walk `_dt_resolve`
+    from the File root through the door's `children`, a step with no such child giving `nothing` — and every layout reads
+    the resolved fields. The seven fields are what stage 5's T3 left of the former twelve-field row: the decoded key's
+    named tuple in place of grain, namespace, path and origin steps; the resolver's gates and the origin states left with
+    the design note's §6 defensive contract.
+PURPOSE: the unit the three layouts of `print_altValues_evals` (`:tree`, `:rows`, `:cells`), the `unanchored rows`
+    section, the bullet `_dt_eval_bullet` and the handle note render.
 """
 struct DTEvalRow
     attr::Symbol
@@ -387,63 +407,69 @@ const _DT_T1_STYLES = (:mix, :legacy, :tree, :banner)
     print_BLS_Component_Tree(result::GoMetaDelivery; kwargs...)           # → stdout
     write_BLS_Component_Tree_to_file(path, result; format=:auto, kwargs...)
 
-Print the BLS Component tree of one `goMeta` result — every Block/Line/Segment with
-its named-int record and TRUE settribute flags, hierarchically. The restored-and-
-superseding successor of the February `GoMeta.BLS.printComponentStates()` (owner
-ruling R-DEV-2; existing script call sites need a one-line edit to this form).
-
-METHOD DISPATCH — which call form triggers what:
-- `(io, result)` — the CORE method (Julia print convention): renders into `io` exactly
-  as configured; every other method funnels here.
-- `(result)` — REPL convenience: identical, `io = stdout` (colors auto-resolve from
-  the terminal).
-- `write_BLS_Component_Tree_to_file(path, result)` — opens `path`, renders, closes.
-  `format = :auto` infers from the extension (`.html` ⇒ the self-contained HTML page,
-  anything else ⇒ text); `:html` / `:txt` override the inference. Text files default
-  `color = :never` (plain, grep-friendly); pass `color = :always` to write ANSI bytes
-  (view with `less -R`). The HTML sink is ALWAYS styled — `color` does not apply to it.
-
-PARAMETERS (each names the METHOD BEHAVIOR it selects):
-- `color::Symbol = :auto` — `:auto` passes the io's own `:color` property through
-  (a deliberate `IOContext(io, :color=>true)` is honored; `stdout` resolves from the
-  tty and `--color=yes`/`FORCE_COLOR`/`NO_COLOR`); `:always`/`:never` WRAP the io via
-  `IOContext(io, :color => true/false)`.
-- `style::Symbol = :mix` — selects the renderer:
-  `:mix`    (owner-ruled default, R-DEV-1): guide-line tree; under EACH component two
-            dump lines labeled by the REAL element types (`Int64` named-int pairs,
-            `Bool` TRUE-flag names; values in default fg — R-DEV-7); a blank line
-            between Blocks; every string printed ONLY at the component that CONTAINS
-            it (a Line with Segments shows no excerpt — its Segments do; Blocks never).
-  `:legacy` — the February look (banners, `key=>1` yellow dumps, frozen header
-            without the old `@L/@F` self-location — D-14) on the sound census.
-  `:tree`   — the compact baseline: one line per component, TRUE flags inline;
-            `detail=:full` appends the typed dump pair per component.
-  `:banner` — `##`-chromed banners + source text + one-line `ints`/`flags` dumps.
-- `detail::Symbol = :auto` — resolution table. The rule is strict: ANY explicit value
-  for a non-`:tree` style ERRORS — even one naming the style's inherent detail — so a
-  detail request can never silently no-op; inherent details are selected only via
-  `:auto`. `:mix` ⇒ inherent (the typed dump lines ARE its detail) · `:legacy` ⇒
-  inherent full · `:banner` ⇒ inherent (its co-located dumps) · `:tree` ⇒
-  `:auto`→`:compact`; explicit `:compact`/`:full` valid — `:full` keeps the `:tree`
-  rows (inline flags + every content string) and APPENDS the typed dump pair under
-  each component.
-- `blocks = :all` — or a `Vector{Int}` of Block ids (the legacy Block-subset
-  precedent): the named Blocks in census order; an id that names no Block selects nothing.
-- `lines = nothing` — an input-line range (e.g. `5:12`): a component renders iff its
-  input-line span INTERSECTS the range; a partially-overlapping Block keeps its full
-  span label while its children clip to the range.
-- `grain::Symbol = :segment` — the deepest grain printed: `:block` | `:line` |
-  `:segment`. In `:mix`, a string prints at the deepest DISPLAYED owner — with
-  `grain = :line` the Line shows its string even when Segments exist (they are not
-  displayed; the print-once law R-DEV-1(iii) binds displayed components).
-- `_name::AbstractString = ""` — the display name in the `File` header line (an
-  internal-ish kwarg: the write twins default it to `basename(path)`; REPL calls may
-  set it for a labeled header).
-
-The two `print_BLS_Component_Tree` methods return `nothing`;
-`write_BLS_Component_Tree_to_file` returns `path`. The delivery's status is not printed here (the
-command-line entry prints it to stderr): an error delivery carries the tree of empty bytes and prints
-as the empty document.
+IS: the first of the two owner-ruled print tools (R-DEV-1..9, 2026-08-20; the canon AGENT-RULES_GoMeta.md §R4b) — the BLS
+    Component tree of one `goMeta` result, every Block/Line/Segment with its named-int record and TRUE settribute flags,
+    hierarchically. The restored-and-superseding successor of the February `GoMeta.BLS.printComponentStates()` (owner
+    ruling R-DEV-2; existing script call sites need a one-line edit to this form). A development tool: nothing under
+    `src/` reads it.
+DOES: prints the tree of `result.blsComponentTree`, read through the door alone (`BLS.children`, `getElement`, `kind`,
+    `content`), as deep as the selected style, detail and filters ask.
+    METHOD DISPATCH — which call form triggers what:
+    - `(io, result)` — the CORE method (Julia print convention): renders into `io` exactly as configured; every other
+      method funnels here.
+    - `(result)` — REPL convenience: identical, `io = stdout` (colors auto-resolve from the terminal).
+    - `write_BLS_Component_Tree_to_file(path, result)` — opens `path`, renders, closes. `format = :auto` infers from the
+      extension (`.html` ⇒ the self-contained HTML page, anything else ⇒ text); `:html` / `:txt` override the inference.
+      Text files default `color = :never` (plain, grep-friendly); pass `color = :always` to write ANSI bytes (view with
+      `less -R`). The HTML sink is ALWAYS styled — `color` does not apply to it.
+    PARAMETERS (each names the METHOD BEHAVIOR it selects):
+    - `color::Symbol = :auto` — `:auto` passes the io's own `:color` property through (a deliberate
+      `IOContext(io, :color=>true)` is honored; `stdout` resolves from the tty and `--color=yes`/`FORCE_COLOR`/`NO_COLOR`);
+      `:always`/`:never` WRAP the io via `IOContext(io, :color => true/false)`.
+    - `style::Symbol = :mix` — selects the renderer (the four of `_DT_T1_STYLES`):
+      `:mix`    (owner-ruled default, R-DEV-1): guide-line tree; under EACH component two dump lines labeled by the REAL
+                element types (`Int64` named-int pairs, `Bool` TRUE-flag names; values in default fg — R-DEV-7); a blank
+                line between Blocks; every string printed ONLY at the component that CONTAINS it (a Line with Segments
+                shows no excerpt — its Segments do; Blocks never).
+      `:legacy` — the February look (banners, `key=>1` yellow dumps, frozen header without the old `@L/@F`
+                self-location — D-14) on the sound census.
+      `:tree`   — the compact baseline: one line per component, TRUE flags inline; `detail=:full` appends the typed dump
+                pair per component.
+      `:banner` — `##`-chromed banners + source text + one-line `ints`/`flags` dumps.
+    - `detail::Symbol = :auto` — resolution table. The rule is strict: ANY explicit value for a non-`:tree` style ERRORS —
+      even one naming the style's inherent detail — so a detail request can never silently no-op; inherent details are
+      selected only via `:auto`. `:mix` ⇒ inherent (the typed dump lines ARE its detail) · `:legacy` ⇒ inherent full ·
+      `:banner` ⇒ inherent (its co-located dumps) · `:tree` ⇒ `:auto`→`:compact`; explicit `:compact`/`:full` valid —
+      `:full` keeps the `:tree` rows (inline flags + every content string) and APPENDS the typed dump pair under each
+      component.
+    - `blocks = :all` — or a Vector of Integer Block ids (any `AbstractVector` of non-`Bool` `Integer`s; the legacy
+      Block-subset precedent): the named Blocks in census order; an id that names no Block selects nothing.
+    - `lines = nothing` — an input-line range (e.g. `5:12`): a component renders iff its input-line span INTERSECTS the
+      range; a partially-overlapping Block keeps its full span label while its children clip to the range.
+    - `grain::Symbol = :segment` — the deepest grain printed: `:block` | `:line` | `:segment`. In `:mix`, a string prints
+      at the deepest DISPLAYED owner — with `grain = :line` the Line shows its string even when Segments exist (they are
+      not displayed; the print-once law R-DEV-1(iii) binds displayed components).
+    - `_name::AbstractString = ""` — the display name in the `File` header line (an internal-ish kwarg: the write twins
+      default it to `basename(path)`; REPL calls may set it for a labeled header).
+    An unknown `style`, `grain`, `color`, `detail`, `blocks` or `lines` value ERRORS with a message naming the accepted
+    forms. With no Block selected (an empty document, or a `blocks=` request matching none) the styles other than
+    `:legacy` print the `File` summary line and the reason; `:legacy` keeps its frozen chrome (D-14). In `:mix` a shown
+    Block whose `idExtension` is not 0 prints a one-line extension-chain notice (the logical walk flattens the chain).
+    The two `print_BLS_Component_Tree` methods return `nothing`; `write_BLS_Component_Tree_to_file` returns `path`. The
+    delivery's status is not printed here (the command-line entry prints it to stderr): an error delivery carries the
+    tree of empty bytes and prints as the empty document.
+REASONING: the released package ships no debug printer and the run's WORKING state is not delivered (R-V04B-28), so the
+    printer lives beside the package as a development tool and reads only the delivered part — through the door, never a
+    field of a BLS object (R-V04B-58, R-V04B-80; the tools' last reads outside the door left at stage 5's s5c8,
+    R-V04B-116 (3)). The census is the door's `children` of the File root, never the legacy `2:numChildren+1`
+    (extension-unsafe). The strict `detail` rule and the typed dump labels are the design's: no silent no-op, no lookalike
+    accept, the REAL element types shown. The full-content REFERENCE style of R-V04B-44 (2) — the same bytes every run, on
+    a finished run AND on a bare parse, ahead of the old tree dump's removal at the branch's last stage — is not in this
+    file at this commit: the four styles above take a delivery.
+PURPOSE: the canon's instrument (AGENT-RULES_GoMeta.md §R4b; the verb `bls-tree` = `style = :mix`): what the Engine built —
+    the structure and the settribute state the conditions tested — is stated from this printout, never re-derived from
+    raw text (canon R1); the next step of `print_altValues_evals`' "why NOT" path (the settribute state the conditions
+    tested). The tools work on the run's MAIN PRODUCTS (his words of 2026-09-30, OWNER-WORDS §242 item 3).
 """
 function print_BLS_Component_Tree(io::IO, result::GoMeta.GoMetaDelivery;
         color::Symbol = :auto, style::Symbol = :mix, detail::Symbol = :auto,
@@ -695,63 +721,66 @@ const _DT_T2_LAYOUTS = (:tree, :rows, :cells)
     print_altValues_evals(result::GoMetaDelivery; kwargs...)              # → stdout
     write_altValues_evals_to_file(path, result; format=:auto, kwargs...)
 
-Print the `altValues_evals` rows of one `goMeta` result — each evals row placed AT its
-BLS Component (which label landed WHERE, which metaSegment caused it), with the
-input-line spans the raw rows lack (the F-LED-7 gap). Absence is explicit: a shown
-component with no rows reads `(no evals — defaults apply)` — the engine has NO
-explicit per-Alterant default surface yet (R-DEV-6 → GoMeta v0.4), so no value is
-asserted.
-
-METHOD DISPATCH — which call form triggers what: exactly as
-`print_BLS_Component_Tree` (core `(io, result)`; `(result)` = stdout convenience;
-the write twin infers `format` from the extension, `.html` ⇒ styled HTML page,
-else text with `color = :never` default).
-
-PARAMETERS:
-- `color::Symbol = :auto` — as in `print_BLS_Component_Tree`.
-- `layout::Symbol = :tree` — selects the renderer:
-  `:tree`  (default): the component-tree skeleton with eval bullets attached AT their
-           Components. The skeleton's NODES stop at the Line grain, and rows anchor
-           accordingly: label/visib rows key on the owning Line/Block (the causing
-           metaSegment rides the `← Segment #N` origin tag — the inline head row too since
-           R-V04B-98, stage 5's E1: keyed on its Line, grain 0x0a, the Segment its origin); a
-           Segment-grain row, were one minted (none by the default registry since E1), would attach
-           to its owning Line with a dim `[Segment #N]` target tag; File-grain rows render at a `[File]` bullet
-           under the header. Every counted row renders somewhere.
-           Segment STRUCTURE questions belong to `print_BLS_Component_Tree`.
-  `:rows`  — one line per eval, input-line span first: THE grep/census form.
-  `:cells` — per-cell dossiers with the decoded handle (ns · grain · path · origin).
-           Unanchored rows appear as red `### CELL (… no document tree position)`
-           dossiers (this layout has no counting header and no separate section).
-- `include_empty = nothing` — `:tree` ONLY; any other layout ERRORS on an explicit
-  `true`/`false` (the `nothing` sentinel is HOW that is detected: unset means "the
-  R-DEV-4 default `false`", so only a deliberate value can conflict with the layout).
-  `false` collapses to evals-bearing subtrees with dim IN-PLACE elision rows
-  (`… N Blocks/Lines (no evals)`); `true` keeps every node visible, making ABSENCE
-  readable ("why did `:label1` NOT apply?"). With a filter active the absence labels
-  say `(no matching evals)` — never asserting engine-level absence for filtered rows.
-- `attrs = :all` — a `Symbol` or `Vector{Symbol}` filter (e.g. `:visib`,
-  `[:label_label3]` — the label census). The header echoes the filter with per-attr
-  match counts; a requested attr with NO rows prints an explicit
-  "0 matches — :attr never minted" line, never silence.
-- `lines = nothing` — an input-line range: keeps rows whose target span intersects;
-  unanchored rows have no span and are NEVER hidden by `lines` (only `attrs` can);
-  in `:tree` the range also acts as a FOCUS (matching targets + their ancestors stay,
-  unrelated empty subtrees collapse).
-- `show_handles::Bool = false` — `:cells` always shows decoded handles; `:rows`/`:tree`
-  add them per row when `true`.
-- `_name::AbstractString = ""` — the display name in the header line (internal-ish;
-  the write twin defaults it to `basename(path)`).
-
-The "why NOT" companion: when a label/action you expected is ABSENT here, the next
-step is the canon-R4 command-line entry `devtools.jl trace <file>` (evals rows + decoded handles) and
-`print_BLS_Component_Tree` (the settribute state the conditions tested).
-
-Every row renders in every layout: a row outside the document tree (the user-context plane)
-is never dropped — `:rows`/`:tree` render it in a red `unanchored rows` section (the headers
-count it); `:cells` renders it as a red `### CELL (… no document tree position)` dossier of its own.
-The two `print_altValues_evals` methods return `nothing`;
-`write_altValues_evals_to_file` returns `path`.
+IS: the second of the two owner-ruled print tools (R-DEV-1..9; the canon AGENT-RULES_GoMeta.md §R4b) — the
+    `altValues_evals` rows of one `goMeta` result, each evals row placed AT its BLS Component (which label landed WHERE,
+    which metaSegment caused it), with the input-line spans the raw rows lack (the F-LED-7 gap). The FULL form — every
+    Component shown, absence labelled, every row with its decoded handle — is `layout = :tree, include_empty = true,
+    show_handles = true` (the verb `evals-tree`); the compact tree (the R-DEV-4 default) is the canon's compact form for
+    a census (§R4b). A development tool: nothing under `src/` reads it.
+DOES: reads the rows through the public reader `GoMeta.readAltValuesEvals(result.altValues_evals)`, decodes each handle
+    with the shared `decode_handle` and resolves its Component by the plain path walk through the door (`DTEvalRow`); a
+    row's text is the door's `BLS.content` of that Component. Absence is explicit: a shown component with no rows reads
+    `(no evals — defaults apply)` — the printer reads the Engine's rows alone, never the answer function, so it asserts no
+    value where no row exists (an Alterant's declared default — `Alterant.default`, Visib's `:show`, the explicit default
+    R-DEV-6 required, carried by the Engine since stage 2's commit 3 — is the answer function's, `GoMeta.evaluatedAltValue`,
+    never a row). With no rows at all it prints `(no evals rows — no metaLine on any surface)` after the filters' echo.
+    METHOD DISPATCH — which call form triggers what: exactly as `print_BLS_Component_Tree` (core `(io, result)`;
+    `(result)` = stdout convenience; the write twin infers `format` from the extension, `.html` ⇒ styled HTML page, else
+    text with `color = :never` default).
+    PARAMETERS:
+    - `color::Symbol = :auto` — as in `print_BLS_Component_Tree`.
+    - `layout::Symbol = :tree` — selects the renderer:
+      `:tree`  (default): the component-tree skeleton with eval bullets attached AT their Components. The skeleton's
+               NODES stop at the Line grain, and rows anchor accordingly: `:label_<name>`/`:visib` rows key on the owning
+               Line/Block (the causing metaSegment rides the `← Segment #N` origin tag — the inline head row too since
+               R-V04B-98, stage 5's E1: keyed on its Line, grain 0x0a, the Segment its origin); a Segment-grain row, were
+               one minted (none by the default registry since E1), would attach to its owning Line with a dim
+               `[Segment #N]` target tag; File-grain rows render at a `[File]` bullet under the header. Every counted row
+               renders somewhere. Segment STRUCTURE questions belong to `print_BLS_Component_Tree`.
+      `:rows`  — one line per eval, input-line span first, sorted by input line then attr: THE grep/census form.
+      `:cells` — per-cell dossiers with the decoded handle (ns · grain · path · origin), one dossier per handle in
+               input-line order. Unanchored rows appear as red `### CELL (… no document tree position)` dossiers (this
+               layout has no counting header and no separate section).
+    - `include_empty = nothing` — `:tree` ONLY; any other layout ERRORS on an explicit `true`/`false` (the `nothing`
+      sentinel is HOW that is detected: unset means "the R-DEV-4 default `false`", so only a deliberate value can
+      conflict with the layout). `false` collapses to evals-bearing subtrees with dim IN-PLACE elision rows
+      (`… N Blocks/Lines (no evals)`); `true` keeps every node visible, making ABSENCE readable ("why did `:label1` NOT
+      apply?"). With a filter active the absence labels say `(no matching evals)` — never asserting engine-level absence
+      for filtered rows.
+    - `attrs = :all` — a `Symbol` or `Vector{Symbol}` filter (e.g. `:visib`, `[:label_label3]` — the label census). The
+      header echoes the filter with per-attr match counts; a requested attr with NO rows prints an explicit
+      "0 matches — :attr never minted" line, never silence.
+    - `lines = nothing` — an input-line range: keeps rows whose target span intersects; unanchored rows have no span and
+      are NEVER hidden by `lines` (only `attrs` can); in `:tree` the range also acts as a FOCUS (matching targets + their
+      ancestors stay, unrelated empty subtrees collapse). With any filter active the header echoes `showing N of M rows`.
+    - `show_handles::Bool = false` — `:cells` always shows decoded handles; `:rows`/`:tree` add them per row when `true`.
+    - `_name::AbstractString = ""` — the display name in the header line (internal-ish; the write twin defaults it to
+      `basename(path)`).
+    An unknown `layout`, `color`, `attrs` or `lines` value ERRORS with a message naming the accepted forms. Every row
+    renders in every layout: a row outside the document tree (the user-context plane) is never dropped — `:rows`/`:tree`
+    render it in a red `unanchored rows` section (the headers count it); `:cells` renders it as a red
+    `### CELL (… no document tree position)` dossier of its own. The two `print_altValues_evals` methods return
+    `nothing`; `write_altValues_evals_to_file` returns `path`.
+REASONING: what a run evaluated, for which Component, is stated from the Engine's rows (`altValues_evals`) and the
+    delivered tree — the run's two MAIN PRODUCTS (his words of 2026-09-30, OWNER-WORDS §242 item 3) — never re-derived
+    from raw text (canon R1). The row's Component is resolved by the plain walk stage 5's T3 kept (the design note's §6
+    defensive contract left); `polarity` renders DIM because it is constant `true` at v0 — a polarity-driven color would
+    be constant fake signal. An absence label never asserts a value the Engine did not record.
+PURPOSE: the canon's rule (AGENT-RULES_GoMeta.md §R4b): no claim about what a run evaluated, for which Component, without
+    one of these printouts — the compact form for a census, the FULL form for the owner — and the printout goes,
+    unabridged, into any page or record that carries the claim. The "why NOT" companion: when a label/action you expected
+    is ABSENT here, the next step is the canon-R4 command-line entry `devtools.jl trace <file>` (evals rows + decoded
+    handles) and `print_BLS_Component_Tree` (the settribute state the conditions tested).
 """
 function print_altValues_evals(io::IO, result::GoMeta.GoMetaDelivery;
         color::Symbol = :auto, layout::Symbol = :tree,
@@ -1030,15 +1059,21 @@ end
     write_BLS_Component_Tree_to_file(path, result; format=:auto, color=:never,
                                      title="print_BLS_Component_Tree", kwargs...)
 
-The file twin of [`print_BLS_Component_Tree`](@ref) (February `print*`/`write*` pair
-convention). `format` selects the sink: `:auto` (default) infers from the extension —
-`.html` (case-insensitive) ⇒ the self-contained styled HTML page, ANY other extension
-(or none) ⇒ text; an explicit `:html` / `:txt` OVERRIDES the extension entirely.
-`color` does not apply to the HTML sink (always styled). Text default
-`color=:never` (plain, grep-friendly); `color=:always` writes ANSI escape bytes
-(view with `less -R`). `title` is the HTML page's `<title>` (ignored for text output).
-The rendered `File` header uses `basename(path)` as the document name unless `_name`
-is passed explicitly. All other kwargs pass through. Returns `path`.
+IS: the file twin of [`print_BLS_Component_Tree`](@ref) (the February `print*`/`write*` pair convention; the file sinks
+    owner-ruled R-DEV-3, the format inference D-17) — the `.html` / `.txt` twin of the canon's print tool
+    (AGENT-RULES_GoMeta.md §R4b).
+DOES: `format` selects the sink: `:auto` (default) infers from the extension — `.html` (case-insensitive) ⇒ the
+    self-contained styled HTML page, ANY other extension (or none) ⇒ text; an explicit `:html` / `:txt` OVERRIDES the
+    extension entirely; any other value ERRORS (`write_*_to_file: unknown format=…`). `color` does not apply to the HTML
+    sink (always styled). Text default `color=:never` (plain, grep-friendly); `color=:always` writes ANSI escape bytes
+    (view with `less -R`). `title` is the HTML page's `<title>` (ignored for text output). The rendered `File` header
+    uses `basename(path)` as the document name unless `_name` is passed explicitly. All other kwargs pass through to the
+    core method. Opens `path` for writing, renders, closes; returns `path`.
+REASONING: the HTML sink is the core method rendered into an `IOContext` carrying `:gm_html => true`, which the one
+    styled-run emitter `_dt_sty` routes to `<span>` styles — one renderer, three sinks (terminal, plain text, HTML); the
+    page wrapper is byte-identical to the mockup generator's, so `.html` output stays comparable to the approved mockups.
+PURPOSE: a printout as a file — the site's capture of the authored tests (`agent-doc/site/capture-devtools.jl`) writes the
+    `:mix` tree as `.html` through it; the `.txt` form is the grep-friendly record.
 """
 function write_BLS_Component_Tree_to_file(path::AbstractString, result::GoMeta.GoMetaDelivery;
         format::Symbol = :auto, color::Symbol = :never,
@@ -1058,8 +1093,20 @@ end
     write_altValues_evals_to_file(path, result; format=:auto, color=:never,
                                   title=..., kwargs...)
 
-The file twin of [`print_altValues_evals`](@ref) — same format/color/title/_name
-rules as [`write_BLS_Component_Tree_to_file`](@ref). Returns `path`.
+IS: the file twin of [`print_altValues_evals`](@ref) — the `.html` / `.txt` twin of the canon's print tool
+    (AGENT-RULES_GoMeta.md §R4b; the file sinks owner-ruled R-DEV-4, the format inference D-17).
+DOES: same format/color/title/_name rules as [`write_BLS_Component_Tree_to_file`](@ref): `format` `:auto` infers the sink
+    from the extension (`.html`, case-insensitive ⇒ the styled HTML page; else text), `:html` / `:txt` override it, any
+    other value ERRORS; `color` applies to the text sink only (default `:never`); `title` defaults to
+    `"print_altValues_evals"`; `_name` defaults to `basename(path)`; all other kwargs pass through to the core method
+    (`layout`, `include_empty`, `show_handles`, `attrs`, `lines`). Returns `path`.
+REASONING: one renderer, three sinks — the HTML sink is the core method rendered into an `IOContext` carrying
+    `:gm_html => true`, routed by the one styled-run emitter `_dt_sty`; the page wrapper is the mockup generator's,
+    byte-identical.
+PURPOSE: the FULL form as a file for the owner (`include_empty = true, show_handles = true`): the site's capture of the
+    authored tests (`agent-doc/site/capture-devtools.jl`) writes it as `.html` through this twin; the JuliaCon deck's
+    dev-tool slides and the demo deck were produced from its output with the tools' former `slide` option (left at
+    stage 5's T2).
 """
 function write_altValues_evals_to_file(path::AbstractString, result::GoMeta.GoMetaDelivery;
         format::Symbol = :auto, color::Symbol = :never,
@@ -1194,13 +1241,23 @@ end
     comparisonForm(result; name = "", at = "-") -> String
 
 IS: the comparison form of ONE `goMeta` result (R-V04B-36; the definition `tests/comparison/README.md`) — the text
-the twelve forms under `tests/comparison/` hold (v0.4's reference altValues, his term of 2026-09-29).
+    the twelve forms under `tests/comparison/` hold (v0.4's reference altValues, his term of 2026-09-29); the v0.4 lane's
+    adapter, a development tool: nothing under `src/` reads it.
 DOES: one header line `# GoMeta comparison form v1 | <name> | produced by GoMeta v0.4 at <at> | <nC> Components |
-<nA> answer lines`, then every line of the form SORTED by code point: `C | kind | span | parent key | position |
-children keys | content type | flags` per Component, `A | kind | span | Alterant | value | source` per Component
-per Alterant (the File has none). Throws (the door's own throw) on a delivery whose tree cannot be walked.
-REASONING: the lines carry content keys only, so two lanes' projections compare as text; sorting makes the
-order a non-fact. PURPOSE: `writeComparisonFormToFile`, the `comparison` verb, `tests/comparison/regenerate.jl`.
+    <nA> answer lines`, then every line of the form SORTED by code point: `C | kind | span | parent key | position |
+    children keys | content type | flags` per Component, `A | kind | span | Alterant | value | source` per Component
+    per Alterant (the File has its `C` line and none). The tree is walked through the door (`root`, `children`, `parent`,
+    `kind`, `content`, `getElement`); the answers are the Engine's, `GoMeta.evaluatedAltValues` per Component; the source
+    is the deciding Component's own key (`:own`; the `via` Component's key for `:indirect`, a bare `indirect` when the
+    delivery names none) or the level word `user` / `file` / `default` (any other source its name). A Segment's span is
+    given in CHARACTERS of its line (the parser's byte offsets converted on the line's own bytes); the File's span runs
+    from its first Block's start to its last Block's stop, `0-0` without a Block. Throws (the door's own throw) on a
+    delivery whose tree cannot be walked.
+REASONING: the two lanes may deliver different shapes and types (his §70 (1)); only a projection keyed by content can be
+    compared — ordinals, ids, handles and Julia types never appear — and the lines carry content keys only, so two lanes'
+    projections compare as text; sorting makes the order a non-fact.
+PURPOSE: `writeComparisonFormToFile`, the `comparison` verb, `tests/comparison/regenerate.jl` (which writes or checks the
+    twelve), the battery's §18 and the first comparator `devtools/compare_forms.sh` (a sorted-text diff).
 """
 function comparisonForm(result::GoMeta.GoMetaDelivery; name::AbstractString = "", at::AbstractString = "-")
     doc = _dt_doc(result; name = name)
@@ -1233,9 +1290,16 @@ end
 """
     writeComparisonFormToFile(path, result; name = basename(path), at = "-") -> path
 
-IS: the comparison form's file writer (the reference set's producer — stage 4 of the v0.4 build; R-V04B-36).
-DOES: writes `comparisonForm(result; name, at)` to `path`, verbatim; returns `path`. The form is
-a comparison surface, not a share-view. PURPOSE: `tests/comparison/regenerate.jl` writes the twelve through it.
+IS: the comparison form's file writer (the reference set's producer — stage 4 of the v0.4 build; R-V04B-36); a
+    development tool.
+DOES: writes `comparisonForm(result; name, at)` to `path`, verbatim (`write(path, text)`); returns `path`. `name`
+    defaults to `basename(path)` and lands in the header; `at` is the producing commit the header names (the caller
+    states it; `-` when unknown). The form is a comparison surface, not a share-view.
+REASONING: the committed form's body must equal the producer's byte for byte — `regenerate.jl --check` compares each
+    committed file's body (the lines after the header) with the form produced in memory; a changed body is re-made
+    through this writer with `--at <the new sha>` in the commit that changes it, never edited.
+PURPOSE: `tests/comparison/regenerate.jl` writes the twelve through it (`--at <sha>`, optionally `--out <dir>`); the
+    battery's §18 writes one per fixture through it.
 """
 function writeComparisonFormToFile(path::AbstractString, result::GoMeta.GoMetaDelivery;
                                    name::AbstractString = basename(String(path)), at::AbstractString = "-")

@@ -34,8 +34,23 @@ eltype(::Type{<:NamedElement{T,sizeTuple}}) where
 """
     parse_named_element_args(elementNames)
 
-Parse the `elementNames` varargs from `@namedElement` into structured data.
-Returns `(sizesVec, vecOfSymbolVecs, superType, crntDim, elementNames)`.
+IS: the argument parser of the `@namedElement` macro — the first of the macro's helpers, extracted from the macro body
+(the file's words: for readability; rung 4 of the March 2026 ladder); its one caller is the macro.
+
+DOES: Parse the `elementNames` varargs from `@namedElement` into structured data. Returns `(sizesVec, vecOfSymbolVecs,
+superType, crntDim, elementNames)`: a single `begin … end` block argument is unwrapped into its lines (the form every
+`@namedElement` under `src/` uses); `LineNumberNode`s are skipped; a keyword assignment `superType = T` sets
+`superType` (`nothing` when absent — the generated struct then subtypes `NamedElement`), any other keyword meets
+``error("Found something which ought to be a `keyWord` but seems not to match anything.")``; each remaining argument
+opens one dimension (`crntDim += 1`): a bare `Symbol` means ONE dimension holding every argument (the loop breaks after
+it), a tuple expression `(a, b, …)` one dimension of its elements; `sizesVec[dim]` counts the elements,
+`vecOfSymbolVecs[dim]` collects them. Refusals as the code has them: a mix of bare Symbols and tuples, an argument of
+another shape, or an element that is not a `Symbol` throw `ArgumentError`.
+
+REASONING: the macro's one body split into argument parsing and four code-generation helpers (the file's own section
+heads) — the legacy's parsing otherwise, kept.
+
+PURPOSE: the shape data the code-generation helpers of `@namedElement` build the `NamedElement` type from.
 """
 function parse_named_element_args(elementNames)
     argsAreSymbols = true

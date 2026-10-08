@@ -279,8 +279,33 @@ end
 """
     _rewrite_condition(text, registry) -> String
 
-The `{…}` body with its GoMeta-specific parts re-written to Julia text (the table in the comment above); the registry supplies the
-vocabulary — the settribute keys and the queryable actions. Pure over its two arguments; `Meta.parse` reads the result.
+IS: the condition REWRITE of stage 5's E13 (census row 1; his order §319, R-V04B-106 (2)–(3); his §D174): the `{…}` body
+with its GoMeta-specific parts re-written to Julia text (the table in the comment above); the registry supplies the
+vocabulary — the settribute keys and the queryable actions. His legacy's `produceConditionStr` read from the ground up.
+
+DOES: one CHAR walk over `text` (`nextind`/`lastindex`, never a byte-count end test), printing into a buffer: `,` →
+` || ` (his OR); `:` followed by `(` → the balanced span (`_paren_span`) becomes the Labels query
+`getAltState(Int8(p), Symbol(":"), args)` with the raw interior as `args` (an empty interior passes none; an unclosed
+`(` leaves the `:` copied verbatim for Julia's parser to judge); `:name` (the name to whitespace or one of
+`_COND_DELIMS`) → the same query with `Symbol("name")`, the name quoted by `repr` so every name the vocabulary admits
+is spelled the one way; a word at an identifier-start character (its run of identifier characters, an optional
+balanced `(args)` spliced raw) → `_cond_target`: a settribute key (`keys(BLS.ComponentSettribute)`) becomes
+`getState(:key[, args])`, a QUERYABLE action (`queryable_action` — an Alterant that declares `getAltInstance`; the
+registry's one rule, R-V04B-99 / E12: the three Visib names `hide` / `show` / `discard` are neither) becomes
+`getAltState(Int8(p), Symbol("key")[, args])` with `p` its plugin index, anything else — `true`, `false`, `nothing` and a
+quoted string's word among them — meets the refusal `error("GoMeta absorb: unknown condition key …")`, an
+`ErrorException` naming the key (bounded to 40 characters); every other character — operators, parentheses, numbers,
+whitespace — verbatim. Returns the re-written text as a `String`. Pure over its two arguments (no state read; the
+refusal its one exit besides the return); `Meta.parse` reads the result ONCE in its one caller, `parseConditions`,
+with `ctx().registry`.
+
+REASONING: his design — the condition is Julia: GoMeta recognises its own parts and Julia does the rest, so the parser
+carries no condition grammar of its own (the closed interpreter's walls and typed codes left at E13); the vocabulary
+stays the registry's (settribute keys, queryable actions), and the spelling of a label through `repr` keeps one form
+for every admitted name (register E13-8).
+
+PURPOSE: the text Julia's parser turns into the stored `Expr` a queued action's condition evaluates at apply (or, for a
+heading, once at the absorb seam).
 """
 function _rewrite_condition(text::String, r)::String
     out = IOBuffer()

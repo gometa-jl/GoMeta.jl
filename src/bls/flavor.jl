@@ -267,12 +267,22 @@ const FLAVOR_LATEX = _mk_flavor(
 )
 
 """
-    flavor_for(tag::Symbol)
+    flavor_for(tag::Symbol) -> FlavorProfile
 
-The closed flavor inventory — total-or-throw, NO fallback: an unknown tag throws the stable message below
-at `goMeta`'s flavor resolve, before any parse (docs/public-api.md §3.4; the typed config-time refusal left at
-stage 5's E8 of the v0.4 build — census row 30; a silently-Julia fallback would produce a plausible render
-with wrong tree bytes and zero diagnostics the moment a new flavor arms).
+IS: the closed flavor inventory — the one place a `flavor_tag` resolves to its `FlavorProfile` record: `:julia` →
+`FLAVOR_JULIA`, `:c` → `FLAVOR_CFAM`, `:latex` → `FLAVOR_LATEX` (the pure-data row).
+
+DOES: total-or-throw, NO fallback: returns the record of a known tag; an unknown tag throws the stable message below
+(`error("flavor_for: unknown flavor_tag …")`, naming the closed inventory `(:julia, :c, :latex)`) at `goMeta`'s flavor
+resolve, after the registry door and before any parse — raw out of the `goMeta` call (docs/public-api.md §3.4; the
+typed config-time refusal left at stage 5's E8 of the v0.4 build — census row 30). The resolved record is threaded into
+the `ParseState` at `setUpToProcessFromBytes` and read from there by every downstream flavor consumer.
+
+REASONING: a silently-Julia fallback would produce a plausible render with wrong tree bytes and zero diagnostics the
+moment a new flavor arms; adding a flavor means extending this inventory, never a parse-site branch (the table-only
+law).
+
+PURPOSE: the entry of the flavor's divergence into one parse loop — the record, resolved once per run.
 """
 function flavor_for(tag::Symbol)
     tag === :julia && return FLAVOR_JULIA
@@ -303,10 +313,22 @@ end
 """
     findLeadAfterSpace(profile, s) -> (pos, endOfLine)
 
-THE inline-opener scanner: finds the first horizontal whitespace
-followed by the profile's lead token. The ws+lead inline rule is the
-architectural meta-liveness carrier — the rule lives HERE, structurally, never
-per-flavor.
+IS: THE inline-opener scanner of the parse — the flavor-generic finder of where a Line's inline lead (a trailing `#~ …`
+metaSegment, a `# …` comment; the profile's lead bytes for every flavor) begins; for the one-code-unit `#` lead the
+classic hash-after-space scan.
+
+DOES: finds the first horizontal whitespace followed by the profile's lead token: a character walk over `s`
+(`nextind`); at a horizontal-whitespace character (`_is_h_ws`) that is not the last one, `_starts_with_lead` tests the
+whole lead width at the next index; a hit returns `(i, false)` with `i` the index of the WHITESPACE before the lead
+(not the lead's); no hit returns `(lastindex(s), true)`. A lead glued to content is not found (the ws+lead rule). Its
+callers, the two Segment seams of `parseBLS` (`SubString(line, stopSegment)`), bind `(offset, reachedEndOfLine)` and
+advance `stopSegment` by `offset - 1`.
+
+REASONING: the ws+lead inline rule is the architectural meta-liveness carrier — the rule lives HERE, structurally,
+never per-flavor; the lead's width and bytes ride the record (`lead_ncu` / `lead_cus`), the `_cfam_*` helpers
+generalized.
+
+PURPOSE: the split of a Line into Segments at its inline leads — where an inline metaSegment or comment starts.
 """
 function findLeadAfterSpace(profile::FlavorProfile, s::AbstractString)::Tuple{Int,Bool}
     i = firstindex(s)

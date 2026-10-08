@@ -155,8 +155,20 @@ const File = Component{210}
     capacity(::Component{N}) -> Int
     capacity(::Type{Component{N}}) -> Int
 
-Return the maximum number of children that fit in a single component's
-childComponentsIdxVec before an extension is needed. Compile-time constant.
+IS: the child capacity of a BLS Component — the type parameter `N` of `Component{N}`, which is the length of its
+`childComponentsIdxVec` (Segment 1, Line 10, Block 70, File 210 at v0.4); the accessor is rung 3's of the March 2026
+ladder.
+
+DOES: returns `N` for an instance or for the type. Return the maximum number of children that fit in a single
+component's childComponentsIdxVec before an extension is needed. Compile-time constant. Read by the parse
+(`addChildComponentTo`, `insertChildComponentAt`: the overflow test before an extension is used or created) and by the
+extension-chain iterator (`eachchildid`: the step from a full Component to its extension).
+
+REASONING: his words of 2026-03-28 — this integer `N` determines the length of `childComponentsIdxVec`, so a Component
+can NOT have more children than `N`; the surplus children are stored in an extension Component (his note (1); the
+chain of rung 2). The accessor is not his legacy's (rungs 1–4 are CC's work at his order; his review comes after v0.4).
+
+PURPOSE: the one bound the overflow logic of the parse and of the child walk consults.
 """
 capacity(::Component{N}) where N = N
 capacity(::Type{Component{N}}) where N = N
@@ -270,11 +282,26 @@ struct EachChildId{T<:Component}
 end
 
 """
-    eachchildid(component, componentsVec)
+    eachchildid(component, componentsVec) -> EachChildId{T}
 
-Iterate over all child IDs across a component's extension chain.
-`componentsVec` is the vector used to follow extension links
-(e.g. `componentsPDict[Block][1]`).
+IS: the extension-chain child iterator of a BLS Component — the one downward step over `childComponentsIdxVec` and the
+chain of extension Components (the chain the March 2026 ladder's rung 2 built — the ladder CC's work, his §70 item 3);
+the file's own words: it replaces the duplicated traversal loops.
+
+DOES: Iterate over all child IDs across a component's extension chain. `componentsVec` is the vector used to follow
+extension links (e.g. `componentsPDict[Block][1]` — the ORIGINAL store of the component's own type, where its
+extensions live). `Base.iterate` reads `childComponentsIdxVec` of the current Component up to its `capacity`, then
+follows `:idExtension` into `componentsVec` and continues there; it stops at an id of 0 or at a Component without
+extension. Each id is an `Int`: positive = the child's index in its type's original store, negative = the index in the
+insert store (`insertChildComponentAt` writes `-childId`) — the callers resolve the sign. `IteratorSize` is
+`SizeUnknown`, `eltype` is `Int`. Its callers: BLS's door `children`, the parse's `getAllChildIds`, the driver's File
+loop (`goMeta`) and the absorb walk's Block and Line loops.
+
+REASONING: the legacy's child walk — the loop over `childComponentsIdxVec` — carried as one iterator since the
+extension chain (his note of 2026-03-28: the surplus children stored elsewhere), so every walker takes the same step;
+the legacy's form otherwise, kept.
+
+PURPOSE: the one child walk under the door's `children`, the driver and the absorb walk.
 """
 eachchildid(component::T, componentsVec::Vector{T}) where T<:Component =
     EachChildId{T}(component, componentsVec)

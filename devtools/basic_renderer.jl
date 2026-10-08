@@ -383,15 +383,27 @@ end
 """
     outputs(result::GoMeta.GoMetaDelivery) -> (blsStructure_bytes::Vector{UInt8}, render_bytes::Vector{UInt8})
 
-The development tool's pair; the Engine's canonical output is `altValues_evals` (docs/public-api.md §1.3). `blsStructure_bytes` is the verdict-free
-`structural_serialization` (this module's own function since R-V04B-24) of the final parse tree; `render_bytes` is the jl-share-v1 emit
-(docs/CANONICAL-OUTPUT.md). The tree print is a PURE function of `result.blsComponentTree`; the render a PURE function of the
-delivery — the tree walked through the door, every Visib verdict the Engine's answer (`GoMeta.evaluatedAltValue`; stage 3's first commit) —
-so this accessor is correct OUTSIDE the per-call `STATE` scope. Total on any OK result (the render plane's string indexing is
-character-safe, docs/public-api.md §4, GUARDED); on a non-OK result the contract is
-`(empty tree, empty render)` for EVERY current non-OK result (no post-parse error class exists at v0.4; a
-"tree-if-parse-succeeded" distinction would be a new contract row) — for the config-time path both are empty, because the
-parse never ran. The NamedTuple field order is `(blsStructure_bytes, render_bytes)`.
+IS: the development tool's (tree, render) pair over ONE `goMeta` delivery — `Main.BasicRenderer.outputs`, the Engine's
+    former `GoMeta.outputs`, moved here on 2026-09-12 unchanged in behaviour (R-V04B-24 B1: a hard removal from the
+    Engine, no stub) and reached only through `devtools/load_basic_renderer.jl`. The Engine's canonical output is
+    `altValues_evals` (docs/public-api.md §1.3); the pair is the tool's own, and no Extension takes it (R-V04B-56).
+DOES: returns the NamedTuple `(blsStructure_bytes, render_bytes)` — that field order. `blsStructure_bytes` is the
+    verdict-free `structural_serialization` (this module's own function since R-V04B-24) of the final parse tree,
+    `result.blsComponentTree`; `render_bytes` is the jl-share-v1 emit (docs/CANONICAL-OUTPUT.md) of this module's
+    `render_bytes`, its hide marker and fold prefix taken from the tree's own flavor record through the door
+    (`BLS.flavor`), never from the config. Total on any OK result (the render plane's string indexing is character-safe,
+    docs/public-api.md §4, GUARDED). On a non-OK result the contract is `(empty tree, empty render)` for EVERY current
+    non-OK result: `render_bytes` is not invoked and two EMPTY vectors are returned unconditionally — no post-parse error
+    class exists at v0.4 (the one entry refusal is the registry door's, `REG_UNPUBLISHED` / `POST_SEAL_MUTATION`, since
+    stage 5's E13; a "tree-if-parse-succeeded" distinction would be a new contract row); on that entry-refusal path both
+    are empty because the parse never ran — the delivered tree is built from EMPTY bytes.
+REASONING: the tree print is a PURE function of `result.blsComponentTree`; the render a PURE function of the delivery —
+    the tree walked through the door, every Visib verdict the Engine's answer (`GoMeta.evaluatedAltValue`; stage 3's
+    first commit) — so this accessor is correct OUTSIDE the per-call `STATE` scope. The entry refusal's empty-bytes tree
+    keeps the delivery total, so the pair needs no error arm beyond the status test.
+PURPOSE: the pair the golden layer pins byte-for-byte (tests/golden/golden_tests.jl; docs/CANONICAL-OUTPUT.md §5), the
+    corpus driver `devtools/run_examples.jl` writes, the unit tests read, and the command-line verbs `tree`, `segments`
+    and `render` print.
 """
 function outputs(result::GoMeta.GoMetaDelivery)
     ## The non-OK output contract. A fail-closed PROCESS_ERROR GoMetaDelivery — an ENTRY refusal: at v0.3 the

@@ -33,9 +33,18 @@
 """
     OccurrenceStep(store, ordinal)
 
-One store-explicit path element: `store` = 0x01 (direct `[1]` store) | 0x02 (insert `[2]` store) |
-0x00 (the TRUNCATED marker — degenerate-walk arm only); `ordinal` = the UNSIGNED position within
-that store. The engine's signed-id sign encoding never crosses this boundary.
+IS: one store-explicit path element of an `OccurrenceKey` — `store::UInt8` + `ordinal::UInt32`.
+
+DOES: `store` = 0x01 (direct `[1]` store) | 0x02 (insert `[2]` store) | 0x00 (the TRUNCATED marker —
+degenerate-walk arm only); `ordinal` = the UNSIGNED position within that store. The engine's signed-id sign encoding
+never crosses this boundary: `_step_of` maps a positive `idComponent` to 0x01 and a negative one to 0x02 with its
+absolute value; the File root is the fixed step (0x01, 1); a user-context key's one step carries the fed-region
+ordinal. Serialized as five fixed-width bytes by `_push_steps!` (`store`, then the ordinal big-endian).
+
+REASONING: each step carries an explicit store tag and an unsigned ordinal so that the key is plain structural data,
+readable without the engine's sign convention, and the marker value 0x00 can never collide with a natural step.
+
+PURPOSE: the unit of a key's `path` and `origin`.
 """
 struct OccurrenceStep
     store::UInt8
@@ -47,20 +56,27 @@ const OCCURRENCE_SCHEMA_VERSION = 0x01
 """
     OccurrenceKey
 
-The normalized occurrence handle: `schema_version` (replay provenance),
-`namespace` (opaque PURE input — supplied, never inferred), `grain` — the HANDLE-CLASS tag:
-the DOCUMENT ladder is its capacity-coded sub-vocabulary (the cell's `Component{N}` N as
-UInt8-clamped code: Segment=1, Line=10, Block=70, File=210 — all ≤ 0xd2), and the
-NON-DOCUMENT handle-class plane is 0xd3–0xfe (0xff is CARVED OUT permanently: it is the
-UInt8-clamp landing point of an oversized capacity and must never name a class; the one
-resident class today is the user context, `USER_CONTEXT_GRAIN` below), `path` (for document
-keys: root→cell store-explicit ordinals, extension-normalized; for user-context keys: the
-single region-ordinal step at v0.2 — the MINT's first-step shape, not a class invariant),
-`origin` (the segment-carried origin path for the segment-carried remap; EMPTY ⇒ the key addresses
-the cell itself). Ordering note: `namespace` precedes `grain` in `key_bytes`, so byte-sort
-guarantees are NAMESPACE-SCOPED — one process call carries one namespace, so within every
-result store the non-document classes sort after all document rows; consumers DECODE the
-class at its fixed offset, never infer it from row position.
+IS: the normalized occurrence handle — the structural identity of a parsed cell (or of a fed profile's region) that
+the evals rows key by, serialized by `key_bytes`.
+
+DOES: carries `schema_version` (replay provenance; `OCCURRENCE_SCHEMA_VERSION = 0x01`), `namespace` (opaque PURE
+input — supplied, never inferred), `grain` — the HANDLE-CLASS tag: the DOCUMENT ladder is its capacity-coded
+sub-vocabulary (the cell's `Component{N}` N as UInt8-clamped code: Segment=1, Line=10, Block=70, File=210 — all ≤
+0xd2; `_DOC_GRAIN_CODES`, the single source the load-time pin asserts), and the NON-DOCUMENT handle-class plane is
+0xd3–0xfe (0xff is CARVED OUT permanently: it is the UInt8-clamp landing point of an oversized capacity and must
+never name a class; the one resident class today is the user context, `USER_CONTEXT_GRAIN` below), `path` (for
+document keys: root→cell store-explicit ordinals, extension-normalized; for user-context keys: the single
+region-ordinal step at v0.2 — the MINT's first-step shape, not a class invariant), `origin` (the segment-carried
+origin path for the segment-carried remap; EMPTY ⇒ the key addresses the cell itself). Minted by `occurrence_key`
+and `user_context_key`; the Engine stores and compares its `key_bytes`, not the struct. Ordering note: `namespace`
+precedes `grain` in `key_bytes`, so byte-sort guarantees are NAMESPACE-SCOPED — one process call carries one
+namespace, so within every result store the non-document classes sort after all document rows; consumers DECODE
+the class at its fixed offset, never infer it from row position (the answer function's `_grain_of`, src/answer.jl).
+
+REASONING: identity must be re-derivable from the parse alone and must not collapse distinct occurrences the way
+content-addressing does; the class tag and the schema version make a key self-describing to its readers.
+
+PURPOSE: the key under which `EvalRecord.cell_handle` and `decided_by` name a Component or a fed region.
 """
 struct OccurrenceKey
     schema_version::UInt8
@@ -93,11 +109,18 @@ const USER_CONTEXT_GRAIN = 0xe0
 """
     user_context_key(namespace::Symbol, ordinal::Integer) -> OccurrenceKey
 
-The user-context handle mint (the class's ONE constructor): schema 1, the caller's own
-namespace, `USER_CONTEXT_GRAIN`, a single direct-store step carrying the fed-region
-ordinal, empty origin. Deliberately a SIBLING of `occurrence_key` — that constructor's
-total-on-parsed-cells / pure-from-parse contract is untouched; this mint's inputs are
-per-call configuration only.
+IS: the user-context handle mint (the class's ONE constructor).
+
+DOES: returns an `OccurrenceKey` of schema 1, the caller's own namespace, `USER_CONTEXT_GRAIN` (0xe0), a single
+direct-store step carrying the fed-region ordinal (`OccurrenceStep(0x01, UInt32(ordinal))`), empty origin. Its one
+caller under `src/` is `feed_user_mh!` (src/GoMeta.jl), with `st.config.namespace` and the ordinal 1 — one feed =
+one region.
+
+REASONING: deliberately a SIBLING of `occurrence_key` — that constructor's total-on-parsed-cells / pure-from-parse
+contract is untouched; this mint's inputs are per-call configuration only.
+
+PURPOSE: the identity a fed profile's rows and provenance are recorded against (`UserContext.handle`, after
+`key_bytes`).
 """
 user_context_key(namespace::Symbol, ordinal::Integer) =
     OccurrenceKey(OCCURRENCE_SCHEMA_VERSION, namespace, USER_CONTEXT_GRAIN,
@@ -186,13 +209,25 @@ end
 """
     occurrence_key(parse, cell; origin = nothing, namespace = :default) -> OccurrenceKey
 
-Plan Contract 1 — TOTAL on parsed cells, never throws, pure function of its inputs (no clock /
-random / env / global state). `origin` (a Segment, typically) mints the segment-carried
-target/origin split of the segment-carried remap: the KEY's `path` addresses `cell` (the remap TARGET,
-e.g. the owning Line) while `origin` carries the origin cell's OWN path — two same-kind inline
-Segment evals on one Line stay distinct through the remap (injective by construction).
-`namespace` is the opaque pure input (constraint (5)) — supplied by the caller (the capture seam
-reads it from `GoMetaConfig`), NEVER inferred here.
+IS: Plan Contract 1 — the mint of a parsed cell's normalized structural occurrence handle: TOTAL on parsed cells,
+never throws, pure function of its inputs (no clock / random / env / global state).
+
+DOES: builds the key from the schema version, `namespace`, the cell's grain code (`_grain_code`, by the cell's type)
+and its root→cell store-explicit path (`_ordinal_path`: the upward `idParent` walk, every component normalized to
+its extension-chain root first; a broken link, an out-of-bounds store index or a hop-cap overrun ends the path in the
+TRUNCATED marker step, never a throw). `origin` (a Segment, typically) mints the segment-carried target/origin split
+of the segment-carried remap: the KEY's `path` addresses `cell` (the remap TARGET, e.g. the owning Line) while
+`origin` carries the origin cell's OWN path — two same-kind inline Segment evals on one Line stay distinct through
+the remap (injective by construction); `nothing` ⇒ an empty origin. `namespace` is the opaque pure input (constraint
+(5)) — supplied by the caller (the capture seam reads it from `GoMetaConfig`), NEVER inferred here. The callers under
+`src/`: `captureEvals!` (the row's key; the Segment-grain site passes the Segment as `origin`), the walk's context
+record (the carrier's and the applied Component's keys), the answer function (a Component's own key).
+
+REASONING: identity re-derivable from the parse alone, with a distinct-cell collision impossible by construction and
+no hashing core-side; totality so that a degenerate tree yields a deterministic, non-aliasing key rather than an
+error.
+
+PURPOSE: the key every Component's evals row and provenance entry is minted under.
 """
 function occurrence_key(ps::BLS.ParseState, cell::BLS.AbstractComponent;
                         origin::Union{Nothing,BLS.AbstractComponent} = nothing,
@@ -209,11 +244,21 @@ end
 """
     key_bytes(k::OccurrenceKey) -> Vector{UInt8}
 
-Plan Contract 2 — the deterministic FIXED-field-order serialization: `schema_version (1B)` ·
-`namespace` (UInt16-BE byte-length prefix + UTF-8 bytes) · `grain (1B)` · `path` (UInt16-BE step
-count + per step `store (1B)` + `ordinal (UInt32-BE)`) · `origin` (same shape). Length-prefixed
-variable field + fixed-width steps ⇒ INJECTIVE per namespace by construction (no two distinct
-keys share bytes). NO hashing — these are the plain structural bytes.
+IS: Plan Contract 2 — the deterministic FIXED-field-order serialization of an `OccurrenceKey`: the bytes the evals
+rows, the provenance entries and the context records carry.
+
+DOES: writes `schema_version (1B)` · `namespace` (UInt16-BE byte-length prefix + UTF-8 bytes) · `grain (1B)` ·
+`path` (UInt16-BE step count + per step `store (1B)` + `ordinal (UInt32-BE)`) · `origin` (same shape), into a vector
+sized once by `sizehint!`. Length-prefixed variable field + fixed-width steps ⇒ INJECTIVE per namespace by
+construction (no two distinct keys share bytes). NO hashing — these are the plain structural bytes. The UInt16
+prefixes are written through `_push_u16!`, which clamps at 65535: the namespace is bounded to 65535 bytes at
+`GoMetaConfig`'s construction, and a path's length by the hop cap (`_MAX_HOPS`).
+
+REASONING: a fixed field order with length prefixes makes the bytes injective and byte-sortable per namespace, and
+decodable at fixed offsets by a reader that never sees the struct.
+
+PURPOSE: the one byte form of a handle — what `EvalRecord.cell_handle`, `decided_by`, `MetaContext` and
+`UserContext` hold and what `readAltValuesEvals` sorts by.
 """
 function key_bytes(k::OccurrenceKey)::Vector{UInt8}
     ns = codeunits(String(k.namespace))

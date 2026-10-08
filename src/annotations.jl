@@ -215,6 +215,11 @@ through the apply loop and the lane retires (R-V04B-101).
 DOES: pushes ONE WARNING-severity (non-fatal) diagnostic per call per (alterant, code), deduped by scanning
 `st.diagnostics` — the O(n) linear-scan policy `_putEval!` already ratifies; ZERO state-shape change.
 
+REASONING: a warning, not an error — the run stays `PROCESS_OK` and the row rides the delivery's diagnostics, so a
+store the flush cannot read is disclosed rather than refused (the T5 floor law: the typed warning, never a raw
+`TypeError` in the flush); the dedupe keeps one row per (Alterant, code) however many regions meet the floor, and the
+`UNREADABLE` arm reads `p.capture` defensively, so the floor's own message can never itself throw.
+
 PURPOSE: to make the Heading lane's floor visible to whoever reads the diagnostics, until R-V04B-101.
 """
 function _capture_floor!(st::ProcessState, p, code::Symbol)
@@ -235,24 +240,34 @@ end
 """
     capture_heading!(st::ProcessState, heading, stem::Symbol) -> nothing
 
-The localOnly delivery's capture (the outline model): called ONCE per (meta region ×
-localOnly plugin) from the absorb seam's REGISTRY-DRIVEN flush (v0.4 T5 — the flush
-checks the declared row's gate, the instance shape, and the entries protocol BEFORE
-this call; the Heading typing retired with the re-home, and the four attr spellings
-re-derive from the DECLARED `stem` — byte-identical for the shipped `:head`), minting
-one row per captured entry, KEYED to the Component the statement is APPLIED TO and DECIDED BY the carrier
-(R-V04B-98; stage 5's E1). TWO sources: the DOCUMENT surface supplies both through the walk's record — `st.meta_context.applied`,
-the applied Component's handle (the metaBlock a whole-line metaLine forms, R-V04B-50; the LINE for a Code Line's trailing
-metaSegment, keyed as the apply path keys it with the Segment as the key's origin; the metaBlock for the statement Segment of a
-metaLine split by a trailing comment), and `st.meta_context.handle`, the carrier's own handle (the metaBlock; the Segment of an
-inline metaSegment) — the row's deciding statement; the userMH FEED supplies the minted user-context handle (`st.user_context`)
-for both. No copy of the carrier's text rides the row (R-V04B-43 (1), commit 9b). One shared fold/dedup
-body serves both sources, so the evals surface stays uniformly `(cell_handle, attr, value, polarity)`. BOTH sources
-populated at once is an INTERNAL-INVARIANT ERROR (unreachable by construction —
-the feed nulls the document context and the walk never sets the user context; a
-defect that made it reachable gets the loud rejection, never a silent pick).
-Neither source ⇒ no row. The attr is the ATTR-FOLD: the level rides the attr
-NAME; a `:depth` record column is deliberately deferred.
+IS: the localOnly delivery's capture (the outline model) — the writer of the Heading's evals rows from the absorb seam:
+called ONCE per (meta region × localOnly plugin) from the absorb seam's REGISTRY-DRIVEN flush
+(src/absorb/absorb_meta.jl; v0.4 T5 — the flush checks the declared row's gate, the instance shape, and the entries
+protocol BEFORE this call; the Heading typing retired with the re-home, and the four attr spellings re-derive from the
+DECLARED `stem` — byte-identical for the shipped `:head`). The separate road retires when the Heading runs through the
+apply loop (R-V04B-101, after the branch).
+
+DOES: mints one row per captured entry of `heading.entries` (a `(text, level | nothing)` pair each), KEYED to the
+Component the statement is APPLIED TO and DECIDED BY the carrier (R-V04B-98; stage 5's E1): `_putEval!(st, applied,
+attr, text, true, [copy(handle)])` — the value the heading text, the polarity `true`. TWO sources: the DOCUMENT surface
+supplies both through the walk's record — `st.meta_context.applied`, the applied Component's handle (the metaBlock a
+whole-line metaLine forms, R-V04B-50; the LINE for a Code Line's trailing metaSegment, keyed as the apply path keys it
+with the Segment as the key's origin; the metaBlock for the statement Segment of a metaLine split by a trailing
+comment), and `st.meta_context.handle`, the carrier's own handle (the metaBlock; the Segment of an inline metaSegment)
+— the row's deciding statement; the userMH FEED supplies the minted user-context handle (`st.user_context`) for both.
+No copy of the carrier's text rides the row (R-V04B-43 (1), commit 9b). One shared fold/dedup body serves both
+sources, so the evals surface stays uniformly `(cell_handle, attr, value, polarity)`. BOTH sources populated at once is
+an INTERNAL-INVARIANT ERROR (unreachable by construction — the feed nulls the document context and the walk never sets
+the user context; a defect that made it reachable gets the loud rejection, never a silent pick). Neither source ⇒ no
+row. The attr is the ATTR-FOLD: the level rides the attr NAME — the FIRST entry at a level `<stem>_<level>`, a repeat
+at the same level `<stem>_<level>_<k>` (k ≥ 2, source order); an entry without a level (dead on live paths, kept
+defensive) `<stem>`, its repeats `<stem>_u<k>`; a `:depth` record column is deliberately deferred.
+
+REASONING: the store dedupes per (handle, attr), so two same-level headings on one metaLine would collapse later-wins
+— the attr is therefore injective per (metaLine, level): distinct rows, no supersede, deterministic; the `_u<k>`
+spelling keeps a level-less repeat from aliasing a genuine `<stem>_<k>` level attr.
+
+PURPOSE: the Heading's rows in the delivered evals, until the apply loop carries the Heading like every Alterant.
 """
 function capture_heading!(st::ProcessState, heading, stem::Symbol)
     if st.meta_context !== nothing && st.user_context !== nothing

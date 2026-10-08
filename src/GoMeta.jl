@@ -179,20 +179,30 @@ end
 """
     feed_user_mh!(st::ProcessState) -> nothing
 
-Seed the RESERVED user slot of the meta-hierarchy (`userMHIdx` in `state.jl` — defined + scanned FIRST by
+IS: the feed of the RESERVED user slot of the meta-hierarchy (`userMHIdx` in `state.jl` — defined + scanned FIRST by
 both `applyAltActionFns` walks, and fed by no other call site) with the metaLine-body profile in
-`st.config.user_mh_profile`, BEFORE the absorb walk. Reuses the standard machinery VERBATIM — no parallel
-intake — queued actions enqueue, the localOnly heading class diverts to absorb-seam delivery and an
-explicit `head` RECORDS against the minted user-context handle (grain 0xe0; no copy of the profile's bytes on the
-row since commit 9b, R-V04B-43 (1)): `updateMetaHierarchy(userMHIdx)` allocates + occupies the slot (its `10..12` branch; the
-depth-window wipes at `<10` never touch it, so the fed slot SURVIVES the whole file walk), then `absorbMeta`
-routes the profile's actions through the SAME parseAlt path authored metaLines use; the meta-hierarchy
-cursor is restored so the walk starts exactly as un-fed. First-wins per non-accumulate alterant across the
-user-slot-first scans ⇒ the fed profile OVERRIDES authored Visib (e.g. `"discard{ :label1 } show"`).
-SCOPE: a minimal caller-supplied feed ONLY — not a general user-level configuration system; internal (NOT
-exported); called from `goMeta` iff `config.user_mh_profile !== nothing`. An action name outside the
-registry errors loudly inside `absorbMeta` (the same crash-loud class as an authored non-member).
-Experimental — see docs/public-api.md §2.
+`st.config.user_mh_profile`, BEFORE the absorb walk. SCOPE: a minimal caller-supplied feed ONLY — not a general
+user-level configuration system; internal (NOT exported); called from `goMeta` iff `config.user_mh_profile !==
+nothing`. Experimental — see docs/public-api.md §2.
+
+DOES: reuses the standard machinery VERBATIM — no parallel intake — queued actions enqueue, the localOnly heading class
+diverts to absorb-seam delivery and an explicit `head` RECORDS against the minted user-context handle (grain 0xe0; no
+copy of the profile's bytes on the row since commit 9b, R-V04B-43 (1)): saves the meta-hierarchy cursor `st.crnt_idx`;
+`updateMetaHierarchy(userMHIdx)` allocates + occupies the slot (its `10..12` branch; the depth-window wipes at `<10`
+never touch it, so the fed slot SURVIVES the whole file walk); NULLS `st.meta_context` (no document line stands behind
+this surface — a derived-context action fed here meets the typed applicability refusal in `absorbMeta`, never a
+fabricated context); sets `st.user_context` to the minted handle `UserContext(key_bytes(user_context_key(namespace, 1)))`
+inside a try/finally that restores the prior value; then `absorbMeta` routes the profile's actions through the SAME
+parseAlt path authored metaLines use; the meta-hierarchy cursor is restored so the walk starts exactly as un-fed.
+First-wins per non-accumulate alterant across the user-slot-first scans ⇒ the fed profile OVERRIDES authored Visib
+(e.g. `"discard{ :label1 } show"`). An action name outside the registry errors loudly inside `absorbMeta` (the same
+crash-loud class as an authored non-member). Returns `nothing`.
+
+REASONING: one intake for authored and fed metadata — the fed profile is a metaLine body read by the same parser and
+queued into a slot the depth-window wipes never reach; the save/set/restore bracket (never a bare null) is re-entry
+safe and runs even when a refusal escapes the absorb, so the per-call state leaves no residue.
+
+PURPOSE: a caller-supplied profile applied over the whole file from the user level of the meta-hierarchy.
 """
 function feed_user_mh!(st::ProcessState)
     prev_idx = st.crnt_idx

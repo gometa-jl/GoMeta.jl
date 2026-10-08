@@ -184,16 +184,32 @@ Alterant(; altName::Symbol, setMode::Symbol, altConstructor::Type, setAltInstanc
 """
     ActionSpec
 
-The DECLARED per-action registration record: action `name` + the owning `plugin` index + the CAPABILITIES
-(`accepts_string_slot` — 0 = no String literal slot; N = the accepting literal-slot position, retiring the
-former name literals at the absorb seams) + the `validate` slot (Alterant-owned handover validation; `nothing`
-when absent). The declared `settribute` write-back key left the record at stage 5's E12 of the v0.4 build (census row 45 — his §317 mark and his
-§319 order; his legacy wrote the Visib flag into the Component directly, GoMeta.jl :103–:110, and v0.4 writes nothing back since stage 3's commit 4:
-the Engine's answer is `evaluatedAltValue`). The per-overload rows (`ActionOverload`) left the record at stage 5's E11 of
-the v0.4 build with the `spelling` tag, the `sugar_candidacy` grant register and the reserved `keyed_slot` (census row 16 — his §317
-mark; his legacy registered an action by its name and let Julia dispatch do the rest): the setter's methods ARE the action's forms.
-The v0.3.2 positional constructor left with them (census row 65, R-V04B-61 — clean cuts, no leftovers of an older version); the
-keyword form is the one form.
+IS: the DECLARED per-action registration record — one row per registered action of an Alterant, held by the registry
+in declaration order (`action_specs`) and appended with its Alterant by `register!`.
+
+DOES: carries the action `name`, the owning `plugin` index (`Int8` — the Alterant's declaration-order index, which
+`register!` checks) and the CAPABILITIES: `accepts_string_slot` — 0 = no String literal slot; N = the accepting
+literal-slot position, retiring the former name literals at the absorb seams — and the `validate` slot (Alterant-owned
+handover validation; `nothing` when absent). The localOnly path of the absorb seam reads both from the record: a String
+argument in any position but the declared one refuses, and the declared `validate` runs on the String text of that
+slot (`_absorb_local_only!`, src/absorb/absorb_meta.jl); a queued action refuses every String at the enqueue seam.
+The shipped records: `:` for Labels; `hide` / `show` / `discard` for Visib; `cell` / `parent` / `file` for Id; `head`
+for the Heading — the one record with a String slot (`accepts_string_slot = 1`) and a validator. The declared
+`settribute` write-back key left the record at stage 5's E12 of the v0.4 build (census row 45 — his §317 mark and his
+§319 order; his legacy wrote the Visib flag into the Component directly (its GoMeta.jl :103–:110), and v0.4 writes
+nothing back since stage 3's commit 4: the Engine's answer is `evaluatedAltValue`). The per-overload rows
+(`ActionOverload`) left the record at stage 5's E11 of the v0.4 build with the `spelling` tag, the `sugar_candidacy`
+grant register and the reserved `keyed_slot` (census row 16 — his §317 mark; his legacy registered an action by its
+name and let Julia dispatch do the rest): the setter's methods ARE the action's forms. The v0.3.2 positional
+constructor left with them (census row 65, R-V04B-61 — clean cuts, no leftovers of an older version); the keyword
+form below is the one form.
+
+REASONING: an action is registered by its name and its owner — his legacy registered by name and let Julia dispatch do
+the rest; what the absorb seam must know beyond the name — the String slot, the validator — rides the record as data,
+never as a name literal in the seam.
+
+PURPOSE: the row `register!` binds to its Alterant, `_derive_tables` derives the action tables from, and the absorb
+seam consults for the String-slot law and the handover validation.
 """
 struct ActionSpec
     name::Symbol
@@ -209,23 +225,40 @@ ActionSpec(; name::Symbol, plugin::Int8, accepts_string_slot::Int = 0, validate 
 """
     _SealToken
 
-The construction capability of `AlterantRegistry` (never `public`), held by the lifecycle. It
-suppresses the generated all-fields constructor (no positional form carries a publish-time snapshot — the
-ruling's word "seal" names the snapshot MECHANISM, T2BIS-DESIGN §12; the fingerprint field left at stage 5's E13) — an
-ACCIDENT-grade guard: Julia has no access control, so any loaded module can call
-`GoMeta._SealToken()`; such a caller sits outside the trust model (the security frame's bound
-B-2). See the constructor's note.
+IS: the construction capability of `AlterantRegistry` (never `public`), held by the lifecycle — the empty struct whose
+value is the first argument of the type's ONE inner constructor.
+
+DOES: its presence as the first argument suppresses the generated all-fields constructor: no positional form carries a
+publish-time snapshot (the ruling's word "seal" names the snapshot MECHANISM, T2BIS-DESIGN §12; the fingerprint field
+left at stage 5's E13). Its two callers under `src/`: `publish` (src/alterants/registry.jl — the snapshot taken) and
+the gated positional route below (the snapshot `nothing`). An ACCIDENT-grade guard: Julia has no access control, so
+any loaded module can call `GoMeta._SealToken()`; such a caller sits outside the trust model (the security frame's
+bound B-2). See the constructor's note.
+
+REASONING: the guard removes the construction classes CONFORMING code produces by accident — a positional or
+all-fields call carrying a snapshot — and claims nothing against a module that reaches for the token.
+
+PURPOSE: the token the registry lifecycle hands to the type's one constructor, so that a published value comes from
+`publish` alone for conforming callers.
 """
 struct _SealToken end
 
 """
     _SNAPSHOT_FIELDS
 
-The registry fields the T2-bis snapshot door walks (T2BIS-DESIGN §1): the declared record
-(`plugins`, `action_specs`) + the seven derived tables (eight before stage 5's E12 — census row 45); the published `seal`
-fingerprint string left the tuple at stage 5's E13 (census row 6 — the fingerprint's one consumer, the grammar profile, left
-with it; the door never read the value, it compares the fields below). The `_snapshot` field itself is NEVER walked (no
-recursion into the baseline).
+IS: the tuple of the nine registry field names the T2-bis snapshot door walks (T2BIS-DESIGN §1): the declared record
+(`plugins`, `action_specs`) + the seven derived tables (eight before stage 5's E12 — census row 45).
+
+DOES: names the fields `publish` copies a second time into the `_snapshot` baseline (a `NamedTuple` over this tuple,
+src/alterants/registry.jl) and the fields `_registry_door_check` compares, one by one, against that baseline at the
+`goMeta` entry. The published `seal` fingerprint string left the tuple at stage 5's E13 (census row 6 — the
+fingerprint's one consumer, the grammar profile, left with it; the door never read the value, it compares the fields
+below). The `_snapshot` field itself is NEVER walked (no recursion into the baseline).
+
+REASONING: one field-name tuple is the single source for the snapshot's construction and the door's comparison, so
+the two cannot drift apart and no per-table keyword binding exists at either site.
+
+PURPOSE: the field list behind the registry's post-publication mutation detection (`POST_SEAL_MUTATION`).
 """
 const _SNAPSHOT_FIELDS = (:plugins, :sorted_alt_actions, :action_to_plugin, :action_index,
                           :alt_index, :accum_alt_idxs, :mutex_alt_idxs,
@@ -234,10 +267,14 @@ const _SNAPSHOT_FIELDS = (:plugins, :sorted_alt_actions, :action_to_plugin, :act
 """
     AlterantRegistry
 
-The immutable, DETERMINISTIC alterant inventory — built ONCE by `build_default_registry()` into
-`const DEFAULT_REGISTRY`; the registration order is fixed by declaration, never by `Dict` iteration order.
-Fields (declaration-order indices: `labels=1, Visib=2, id=3, heading=4` — the live keys are `:id` / `:heading`):
-- `plugins` — the alterants in declaration order.
+IS: the immutable, DETERMINISTIC alterant inventory — the declared registration record (`plugins`, `action_specs`)
+with its derived lookup tables and its publish-time snapshot baseline; built ONCE by `build_default_registry()` into
+`const DEFAULT_REGISTRY` through the lifecycle `RegistryBuilder → validate → publish`; the registration order is fixed
+by declaration, never by `Dict` iteration order.
+
+DOES: holds the fields below (declaration-order indices: `labels=1, Visib=2, id=3, heading=4` — the live keys are
+`:id` / `:heading`):
+- `plugins` — the Alterants' records in declaration order.
 - `sorted_alt_actions` — the action names, sorted.
 - `action_to_plugin` — action-index → plugin-index (parallel to `sorted_alt_actions`).
 - `action_index` — action-name → action-index.
@@ -246,13 +283,35 @@ Fields (declaration-order indices: `labels=1, Visib=2, id=3, heading=4` — the 
   sets, BOTH **sorted ascending** — the LIVE apply-phase `insorted` consumers in
   `detAltValuesForSetOfSlots` (apply.jl) DEPEND on the sort (the accumulate-pass gate and the
   within-slot first-applicable stop); `:mutExclusivePerField` plugins — the `id` compound, whose
-  fields fill independently — deliberately sit in NEITHER set. `build_default_registry` MUST sort
-  both.
-- (the generic action → settribute write-back table of v0.4 T1 left at stage 5's E12 of the v0.4 build — census row 45; it had read
-  by nothing since stage 3's commit 4.)
+  fields fill independently — deliberately sit in NEITHER set. `_derive_tables` sorts both (`sort!`) on
+  every route — `build_default_registry` reaches it through `publish`.
+- `action_specs` — the DECLARED registration record: one `ActionSpec` per registered action, DECLARATION order (the
+  parallel derived tables above stay the hot-path lookups; the record is the authority — the author's statement since
+  stage 5's E4); `spec_index` — action name → index into `action_specs`.
+- `_snapshot` — the T2-bis baseline (R-V04B-4 (c+)): a deep domain-copy of the nine `_SNAPSHOT_FIELDS` values taken
+  at publish (ten before stage 5's E13 — the seal field left with the fingerprint, census row 6; eleven before E12 —
+  census row 45); `nothing` on an unpublished value; the underscore is deliberate — an integrity baseline is not a
+  plain member of a package-public struct.
+- (the generic action → settribute write-back table of v0.4 T1 left at stage 5's E12 of the v0.4 build — census row
+  45; it had read by nothing since stage 3's commit 4.)
+
+The ONE constructor is token-gated (`_SealToken`): the seven derived tables enter BY NAME as ONE `NamedTuple` argument,
+destructured by field name there — the one reviewed destructuring site, so the two same-typed groups
+(`action_index` / `alt_index`; `action_to_plugin` / `accum_alt_idxs` / `mutex_alt_idxs`) cannot be swapped by a
+caller (T2BIS-DESIGN §5). The `goMeta` door (`_registry_door_check`) refuses an unpublished value (`REG_UNPUBLISHED`)
+and compares the live fields against `_snapshot` by the ONE structural deep-egal walk (`===`-only leaves), firing
+`POST_SEAL_MUTATION` at the first divergent path. The counts: `num_alterants` / `num_alt_actions` (4 / 8 since the
+heading registration).
 
 REASONING: `DEFAULT_REGISTRY` is read-only after construction: its `Dict`/`Vector` fields are mutable
-containers, and mutating any of them post-construction breaks the determinism guarantee.
+containers, and mutating any of them post-construction breaks the determinism guarantee. A mutation through any
+container by CONFORMING code is DETECTED at the entry door, never silently effective — accident-grade, within the
+disclosed bounds (a callable's behaviour is not pinned by its identity; the snapshot's own members are mutable — the
+B-2 residue, T2BIS-DESIGN §11; the entry check is not a lock).
+
+PURPOSE: the alterant inventory every run reads from `ProcessState.registry` (`init_state`), the vocabulary the
+condition rewrite reads (`queryable_action`), and the published value an Extension extends through
+`RegistryBuilder(published)`.
 """
 struct AlterantRegistry
     plugins::Vector{Alterant}
@@ -306,16 +365,26 @@ end
     AlterantRegistry(plugins, sorted_alt_actions, action_to_plugin, action_index, alt_index,
                      accum_alt_idxs, mutex_alt_idxs, action_specs, spec_index)
 
-ROUTE U — positional construction from hand-built tables — is GATED at v0.4.0 (the route-U cure:
-every public construction route runs the remaining checks; removal = v0.5): they run over
-`(plugins, action_specs)` AND the hand-built derived tables must equal the tables derived from
-the declarations (`REG_DERIVED_TABLES`, collected ALONGSIDE their diagnostics — full
-collection); any error-severity defect throws `RegistrationRefused` with EVERY collected
-diagnostic. A conforming construction yields an UNPUBLISHED registry (`_snapshot === nothing`) — the
-`goMeta` door refuses it typed, naming the sanctioned path (`RegistryBuilder → validate →
-publish`); route U therefore dies at the entry too (R-V04-34's STRICT door). No positional form
-accepts a snapshot: for conforming callers, published values come from `publish` (the honest bound: the
-token form is reachable by any loaded module — accident-grade, B-2).
+IS: ROUTE U — the positional construction of a registry from hand-built tables — GATED at v0.4.0 (the route-U cure:
+every public construction route runs the remaining checks; removal = v0.5).
+
+DOES: runs the remaining checks over `(plugins, action_specs)` (`_validate_registration`) AND derives the tables from
+the declarations (`_derive_tables`); the hand-built derived tables must equal the derived ones — each of the seven
+compared by `==` — else a `REG_DERIVED_TABLES` diagnostic is collected ALONGSIDE the others (full collection); any
+error-severity defect throws `RegistrationRefused` with EVERY collected diagnostic. A `_derive_tables` failure always
+co-occurs with an error diagnostic, thrown first; were that ever false, the route refuses TYPED with its own
+`REG_DERIVED_TABLES` row rather than reaching the token form (T2-bis §15 (8)). A conforming construction yields an
+UNPUBLISHED registry (`_snapshot === nothing`) whose tables are the DERIVED objects (`==`-equal to the caller's,
+distinct identity — recorded, not silent; no pin reads their identity) — the `goMeta` door refuses it typed, naming
+the sanctioned path (`RegistryBuilder → validate → publish`); route U therefore dies at the entry too (R-V04-34's
+STRICT door). No positional form accepts a snapshot: for conforming callers, published values come from `publish`
+(the honest bound: the token form is reachable by any loaded module — accident-grade, B-2).
+
+REASONING: a hand-built table can disagree with the declared record; deriving the tables from the record alone and
+refusing on any difference keeps the record the authority, and the missing snapshot keeps the value out of `goMeta`.
+
+PURPOSE: the gated public positional route — every construction runs the checks, and only `publish` yields a value
+the door admits.
 """
 function AlterantRegistry(plugins::Vector{Alterant}, sorted_alt_actions::Vector{Symbol},
                           action_to_plugin::Vector{Int8}, action_index::Dict{Symbol,Int8},
@@ -355,14 +424,23 @@ num_alterants(r::AlterantRegistry) = length(r.plugins)
 """
     RegistryBuilder()
 
-The MUTABLE declaration site of a registry: `register!(builder, plugin, specs...)` appends an
-Alterant registration record + its action records in declaration order. `register!` performs
-exactly TWO immediate checks (throwing `RegistrationRefused`): the records must name the plugin
-index being appended, and the Int8 slot pool (127 plugins, 127 actions) must not overflow; every
-other check is DEFERRED to `validate(builder)`, which collects EVERY defect as typed diagnostics
-(full collection before the one terminal outcome, never throwing), and `publish(builder)` refuses
-on any error, else DEEP-copies every container into a SEALED `AlterantRegistry` (the sanctioned
-route to a sealed value; `next_plugin_index(builder)` gives the index the next record must name).
+IS: the MUTABLE declaration site of a registry — two vectors, `plugins` and `action_specs`, both empty from this
+constructor; the first step of the lifecycle `RegistryBuilder → validate → publish`.
+
+DOES: `register!(builder, plugin, specs...)` appends an Alterant registration record + its action records in
+declaration order. `register!` performs its two IMMEDIATE refusals (throwing `RegistrationRefused`): the records must
+name the plugin index being appended (`REG_PROTOCOL`), and the Int8 slot pool (127 plugins, 127 actions) must not
+overflow (`REG_SLOT_EXHAUSTED`); every other check is DEFERRED to `validate(builder)`, which collects EVERY defect as
+typed diagnostics (full collection before the one terminal outcome, never throwing), and `publish(builder)` refuses
+on any error, else DEEP-copies every container into a SEALED — published, the snapshot taken — `AlterantRegistry`
+(the sanctioned route to a sealed value; `next_plugin_index(builder)` gives the index the next record must name).
+`default_registry_builder()` returns the four shipped Alterants with their eight action records in one
+(src/alterants/registry.jl); `RegistryBuilder(published)` preloads one from a published value.
+
+REASONING: declaring is mutable and checking is deferred so that a whole record is collected before one terminal
+outcome; the published value is a separate, copied object, so a later mutation of the builder cannot reach it.
+
+PURPOSE: where an Extension declares its Alterant and its actions before `validate` and `publish`.
 """
 mutable struct RegistryBuilder
     plugins::Vector{Alterant}
@@ -372,9 +450,17 @@ RegistryBuilder() = RegistryBuilder(Alterant[], ActionSpec[])
 """
     next_plugin_index(builder) -> Int8
 
-The declaration-order index the NEXT `register!`ed record must name (`length(builder.plugins) +
-1`), typed `Int8` so it passes straight into `ActionSpec(; plugin = …)`; at capacity (127 plugins
-already) it throws the lifecycle's typed `REG_SLOT_EXHAUSTED` refusal instead of an unusable 128.
+IS: the declaration-order index the NEXT `register!`ed record must name — `length(builder.plugins) + 1`.
+
+DOES: returns that index typed `Int8`, so it passes straight into `ActionSpec(; plugin = …)`; at capacity (127
+plugins already) it throws the lifecycle's typed `REG_SLOT_EXHAUSTED` refusal (a `RegistrationRefused` carrying one
+diagnostic) instead of an unusable 128. Reads the builder, writes nothing.
+
+REASONING: `register!` refuses a record naming another index, so the author needs the index before writing the
+record; the Int8 pool's end is named here, before an overflowing value could be typed.
+
+PURPOSE: the index an Extension writes into its `ActionSpec`s before `register!` (package-public,
+docs/public-api.md §1.2).
 """
 function next_plugin_index(b::RegistryBuilder)::Int8
     n = length(b.plugins) + 1
@@ -386,28 +472,46 @@ end
 """
     RegistryBuilder(published::AlterantRegistry) -> RegistryBuilder
 
-A builder PRELOADED with a published registry's declarations (copied by the domain copier
-`_domain_copy` — nothing mutable shared with the published value; leaves carried by reference;
-`deepcopy` is never dispatched): the documented way to extend the built-in inventory
+IS: a builder PRELOADED with a published registry's declarations — the documented way to extend the built-in inventory
 (`RegistryBuilder(DEFAULT_REGISTRY)`), then `register!` the new Alterant at `next_plugin_index`.
-This is the ONE route that meets UNVALIDATED values (the input may carry a post-publication
-cycle, an out-of-domain value, or a position-rule offense), so the copy is CONTAINED
-(T2BIS-DESIGN §3 route 2): a cycle, an outside-domain value, or a `Function`/record struct
-outside its lawful position converts to a typed `RegistrationRefused` (`REG_PROTOCOL`) whose
-message names the offending type and the path — no internal exception and no unbounded
-recursion leaves this public constructor.
+
+DOES: copies `plugins` and `action_specs` by the domain copier `_domain_copy` (`_copy_published_records`,
+src/alterants/registry.jl — one memo across both fields): nothing mutable shared with the published value; leaves
+carried by reference; `deepcopy` is never dispatched. This is the ONE route that meets UNVALIDATED values (the input
+may carry a post-publication cycle, an out-of-domain value, or a position-rule offense), so the copy is CONTAINED
+(T2BIS-DESIGN §3 route 2): a cycle, an outside-domain value, or a `Function`/record struct outside its lawful position
+converts to a typed `RegistrationRefused` (`REG_PROTOCOL`) whose message names the offending type and the path — as
+do the copier's two path-less classes (a user method thrown at a Dict rebuild; an undefined container element); any
+other exception is rethrown (`_route2_refuse`). No internal exception and no unbounded recursion leaves this public
+constructor. The derived tables are not copied: `publish` derives them again from the declarations.
+
+REASONING: an Extension extends the shipped inventory by adding to a copy of its declarations, never by touching the
+published value; a published value mutated after publication is met here with a typed refusal, not a raw exception.
+
+PURPOSE: the extension route of the lifecycle — from `DEFAULT_REGISTRY` to a builder an Extension registers into.
 """
 RegistryBuilder(r::AlterantRegistry) = RegistryBuilder(_copy_published_records(r)...)
 
 """
     register!(builder, plugin, specs...) -> builder
 
-Append one Alterant registration record + ITS action records: the plugin takes the next
-declaration-order index `i`, and every supplied `ActionSpec` MUST name `plugin == i` — a record
-naming another index would pass validation against that other Alterant's setter and leave the
-appended one silently actionless (cure batch 1), so the mismatch refuses HERE, loudly, as
-`REG_PROTOCOL`; the Int8 slot pool refuses `REG_SLOT_EXHAUSTED` at the 128th PLUGIN append AND
-when the appended action records would exceed 127 ACTIONS (cure batch 2).
+IS: the append of one Alterant registration record + ITS action records to a builder, in declaration order.
+
+DOES: the plugin takes the next declaration-order index `i` (`length(builder.plugins) + 1`), and every supplied
+`ActionSpec` MUST name `plugin == i` — a record naming another index would pass validation against that other
+Alterant's setter and leave the appended one silently actionless (cure batch 1), so the mismatch refuses HERE,
+loudly, as `REG_PROTOCOL` (the message lists the offending action names); the Int8 slot pool refuses
+`REG_SLOT_EXHAUSTED` at the 128th PLUGIN append AND when the appended action records would exceed 127 ACTIONS
+(cure batch 2). The pool checks run before the index check; each refusal is a `RegistrationRefused` carrying one
+diagnostic whose `context` is the Alterant's `altName`. On success it pushes the record, appends the specs and
+returns the builder; nothing else is checked here — the remaining checks are `validate`'s.
+
+REASONING: the record shape law — a record belongs to the Alterant it is registered with — is cheapest to hold at the
+append, where the index is known; the Int8 index space bounds both pools.
+
+PURPOSE: the append route of the lifecycle (package-public, docs/public-api.md §1.2) — the shipped four enter
+`default_registry_builder`'s vectors directly, and `RegistryBuilder(published)` preloads a builder from a published
+value.
 """
 function register!(b::RegistryBuilder, plugin::Alterant, specs::ActionSpec...)
     n = length(b.plugins) + 1
@@ -433,11 +537,19 @@ end
 """
     RegistrationRefused(diagnostics)
 
-The typed refusal of a registration: thrown by `publish` (and by the gated positional route) with
-EVERY collected error/warning diagnostic — never the first one only — and by `register!` /
-`next_plugin_index` for their two IMMEDIATE checks (the plugin-index binding `REG_PROTOCOL`; the
-plugin/action pool overflow `REG_SLOT_EXHAUSTED`). Catch it, read `.diagnostics` (stable
-`code`s), fix the record, re-validate.
+IS: the typed refusal of a registration — an `Exception` carrying `diagnostics::Vector{Diagnostic}`.
+
+DOES: thrown by `publish` (and by the gated positional route) with EVERY collected error/warning diagnostic — never
+the first one only — and by `register!` / `next_plugin_index` for their two IMMEDIATE checks (the plugin-index
+binding `REG_PROTOCOL`; the plugin/action pool overflow `REG_SLOT_EXHAUSTED`); also by `RegistryBuilder(published)`
+when the contained copy meets a value the record shape law refuses (`REG_PROTOCOL`), and by `publish` when its own
+copy fails (`REG_PROTOCOL`). `Base.showerror` prints the error count, the total count and one line per diagnostic
+(`[severity] code — message`). Catch it, read `.diagnostics` (stable `code`s), fix the record, re-validate.
+
+REASONING: a registration's defects are reported whole, as typed rows with stable codes, so an author fixes the
+record once rather than meeting one defect per attempt.
+
+PURPOSE: the one package-public exception type of the registration lifecycle (docs/public-api.md §1.2).
 """
 struct RegistrationRefused <: Exception
     diagnostics::Vector{Diagnostic}
@@ -454,12 +566,23 @@ num_alt_actions(r::AlterantRegistry) = length(r.sorted_alt_actions)
 """
     queryable_action(r::AlterantRegistry, key::Symbol) -> Bool
 
-TRUE iff `key` is a registered action of an Alterant that ANSWERS queries (its record declares `getAltInstance`). A condition's
-bare name is a settribute key, or a queryable action, or it meets the usual unknown-key refusal — stage 5's E12 of the v0.4 build
-(census row 45): the owner's R-V04B-99 delivered by this one rule (the three Visib names, no longer settribute keys, are the actions
-of a getter-less Alterant — as are Id's and the Heading's). The rule is the registry's, not a condition reader's: it outlived
-the closed interpreter (left at stage 5's E13, census row 1) and is the vocabulary test of the rewrite that replaced it
-(`_rewrite_condition`, src/absorb/absorb_meta.jl — where his legacy's reader tested `insorted(key, sortedAltActionsSVec)`).
+IS: the registry's ONE vocabulary rule for a bare name inside a `{…}` condition (stage 5's E12 of the v0.4 build,
+census row 45): TRUE iff `key` is a registered action of an Alterant that ANSWERS queries (its record declares
+`getAltInstance`).
+
+DOES: tests `insorted(key, r.sorted_alt_actions)` and, only then, whether the owning record's `getAltInstance` is
+not `nothing` (the lookup through `action_index` and `action_to_plugin` runs only for a registered name). A
+condition's bare name is a settribute key, or a queryable action, or it meets the usual unknown-key refusal — the
+owner's R-V04B-99 delivered by this one rule (the three Visib names, no longer settribute keys, are the actions of a
+getter-less Alterant — as are Id's and the Heading's; Labels' `:` is the one queryable action among the shipped
+eight). The caller is the rewrite's `_cond_target` (src/absorb/absorb_meta.jl), which spells a queryable action as
+`getAltState(Int8(p), Symbol("key"), …)`.
+
+REASONING: the rule is the registry's, not a condition reader's: it outlived the closed interpreter (left at stage
+5's E13, census row 1) and is the vocabulary test of the rewrite that replaced it (`_rewrite_condition`,
+src/absorb/absorb_meta.jl — where his legacy's reader tested `insorted(key, sortedAltActionsSVec)`).
+
+PURPOSE: what a bare name in a condition may be, decided from the registration record alone.
 """
 queryable_action(r::AlterantRegistry, key::Symbol)::Bool =
     insorted(key, r.sorted_alt_actions) && r.plugins[r.action_to_plugin[r.action_index[key]]].getAltInstance !== nothing
@@ -468,9 +591,24 @@ queryable_action(r::AlterantRegistry, key::Symbol)::Bool =
 """
     MetaHierarchyState
 
-The per-call meta-hierarchy slot tensors:
-`slots` (length `NUM_MH_LEVELS`), `slot_occupied` / `slot_has_accum` (dense `Vector{Bool}`, deliberately
-not `BitVector`s), and `count_actions_per_slot`. All plain `Vector`/`Array`, sized once by `init_state`.
+IS: the per-call meta-hierarchy slot tensors — `slots` (length `NUM_MH_LEVELS`), `slot_occupied` / `slot_has_accum`
+(dense `Vector{Bool}`, deliberately not `BitVector`s), and `count_actions_per_slot`.
+
+DOES: `slots[level]` holds the slot number a meta-hierarchy level occupies, 0 for none; the other three are indexed
+by slot: `slot_occupied[slot]` whether the slot is allocated, `slot_has_accum[slot]` whether an action of an
+`:accumulate` Alterant was enqueued into it, `count_actions_per_slot[slot]` the enqueue row count (the queue
+matrices' dim-1). `updateMetaHierarchy` allocates the first unoccupied slot for the current level and wipes the
+levels the cursor re-enters (`wipeAltActionSlots` — the slot's queue rows, its flags, its `slots` entry);
+`absorbMeta` reads the current level's slot, increments its count and sets its accumulate flag; the apply reads
+`slots` and `slot_occupied` to collect the eligible slots in priority order (src/alterants/registry.jl,
+src/absorb/absorb_meta.jl, src/alterants/apply.jl). All plain `Vector`/`Array`, sized once by `init_state`.
+
+REASONING: the level → slot indirection is the design note's (src/alterants/registry.jl): the slot count was
+conceived as possibly larger than the level count — meta stored at an already-used level without overwriting the
+previous one; at v0 the two are equal (12), so one const carries both.
+
+PURPOSE: the per-call bookkeeping of which meta-hierarchy level holds which enqueued actions, read by the absorb walk
+and the apply.
 """
 struct MetaHierarchyState
     slots::Vector{Int8}
@@ -482,36 +620,54 @@ end
 """
     AlterantArgT
 
-The action-argument LITERAL FLOOR: an enqueued argument is a `Symbol` (every bare token,
-INCLUDING numeric text — `Symbol("7")`; the integer space is deliberately not an arm of
-this union, so numeric arguments keep their exact fates at the setter, which parses them
-itself) or a `String` (the CONTENT of a well-formed quoted token). ONE grammar accepts the String
-kind — the Heading action's TEXT slot (`accepts_string_slot = 1`, the quoted-first sugar); every
-other slot of every action refuses a quoted argument with a typed refusal at `absorbMeta`'s
-enqueue seam (dispatch alone cannot hold that law: the built-in setters keep an untyped value
-slot that would parse `cell("7")`). *(This docstring said "NO metaLine grammar accepts it yet"
-— stale since the heading registration; corrected at v0.4 T2 on a CrossReview finding.)*
-Exactly `Union{Symbol,String}`.
+IS: the action-argument LITERAL FLOOR — exactly `Union{Symbol,String}` — the element type of an enqueued argument
+tuple (`AlterantQueue.args`) and of the tuple a localOnly action's setter receives.
+
+DOES: an enqueued argument is a `Symbol` (every bare token, INCLUDING numeric text — `Symbol("7")`; the integer
+space is deliberately not an arm of this union, so numeric arguments keep their exact fates at the setter, which
+parses them itself) or a `String` (the CONTENT of a well-formed quoted token — `_coerce_arg_token`,
+src/absorb/absorb_meta.jl, the one coercion point). ONE grammar accepts the String kind — the Heading action's TEXT
+slot (`accepts_string_slot = 1`, the quoted-first sugar); every other slot of every action refuses a quoted argument
+at `absorbMeta`'s enqueue seam, and `_absorb_local_only!` refuses one in any slot but the declared one — each
+refusal an `ErrorException` raised by `error` ("GoMeta absorb: string argument not accepted — …"; the file's own
+word for its refusals: untyped, the typed conversion deferred). Dispatch alone cannot hold that law: the built-in
+setters keep an untyped value slot that would parse `cell("7")`. *(This docstring said "NO metaLine grammar accepts
+it yet" — stale since the heading registration; corrected at v0.4 T2 on a CrossReview finding.)*
+
+REASONING: the floor is exactly Symbol | String so that every bare token stays the Symbol it always became and a
+quoted token is a String only where a record declares the slot; the integer space is reserved.
+
+PURPOSE: the type the absorb seam coerces argument tokens to and the setters are called with.
 """
 const AlterantArgT = Union{Symbol,String}
 
 """
     AlterantQueue
 
-The per-call enqueue tensors: `queued`
-(`2 × numAltActions × num_slots`), `conditions`, `args` and — since stage 2's commit 2 of the v0.4 build
-(R-V04B-35 (d)) — `decided_by`: per enqueued action the `key_bytes` handle of the Component that STATED it
-(the carrying Component's handle published at the walk handover — the metaBlock a whole-line metaLine forms,
-the Segment of an inline one, R-V04B-50; on the userMH feed the minted user-context handle), carried through
-the apply into the stored row's provenance field.
-`conditions` carries the condition as Julia's `Expr` (what `Meta.parse` returned for the re-written body — the
-absorb seam's `parseConditions`; evaluated by `Core.eval` at apply); `args` carries tuples over the
-argument literal floor `AlterantArgT` (`Symbol` | `String` — see that type's docstring).
-Both matrices are indexed `[row, slot_index]`: dim-1 is the per-slot enqueue ROW counter
-(`1..count_actions_per_slot[slot]` — the sequential order in which actions were absorbed into that slot,
-NOT a registry action index; the matrices are merely SIZED `numAltActions × num_slots` as the per-slot
-upper bound), dim-2 = slot, parallel to `queued[:, row, slot]`. The apply phase MUST index `[row, slot]`
-consistently (a row/slot transposition would corrupt the queue).
+IS: the per-call enqueue tensors: `queued` (`2 × numAltActions × num_slots`), `conditions`, `args` and — since stage
+2's commit 2 of the v0.4 build (R-V04B-35 (d)) — `decided_by`.
+
+DOES: `queued[1, row, slot]` holds the declaration-order plugin index and `queued[2, row, slot]` the action index
+(into `sorted_alt_actions`) of the enqueued action; `conditions` carries the condition as Julia's `Expr` (what
+`Meta.parse` returned for the re-written body — the absorb seam's `parseConditions`; evaluated by `Core.eval` at
+apply), `nothing` for an action without `{}`; `args` carries tuples over the argument literal floor `AlterantArgT`
+(`Symbol` | `String` — see that type's docstring), `nothing` for no arguments; `decided_by` carries per enqueued
+action the `key_bytes` handle of the Component that STATED it (the carrying Component's handle published at the walk
+handover — the metaBlock a whole-line metaLine forms, the Segment of an inline one, R-V04B-50; on the userMH feed the
+minted user-context handle), carried through the apply into the stored row's provenance field. All three matrices
+are indexed `[row, slot_index]`: dim-1 is the per-slot enqueue ROW counter (`1..count_actions_per_slot[slot]` — the
+sequential order in which actions were absorbed into that slot, NOT a registry action index; the matrices are merely
+SIZED `numAltActions × num_slots` as the per-slot upper bound), dim-2 = slot, parallel to `queued[:, row, slot]`.
+The apply phase MUST index `[row, slot]` consistently (a row/slot transposition would corrupt the queue). Written by
+`absorbMeta` (src/absorb/absorb_meta.jl), read by `detAltValuesForSetOfSlots` (src/alterants/apply.jl), wiped per
+slot by `wipeAltActionSlots`; a localOnly action never enters it. Sized once by `init_state`.
+
+REASONING: the queue holds the absorbed statements as values — the `Expr`, the tuple, the handle — in source order
+per slot, so the apply can evaluate each condition against the Component it applies to and record which statement
+decided the value (R-V04B-35 (d): provenance MEASURED at the enqueue, never inferred).
+
+PURPOSE: the hand-over from the absorb walk to the apply — what was stated, under which condition, with which
+arguments, by which Component.
 """
 struct AlterantQueue
     queued::Array{Int8,3}
@@ -571,13 +727,23 @@ end
 """
     UserContext
 
-The profile-feed surface's own recordable identity (the user-context build): `handle` =
-the minted user-context key bytes (`user_context_key(config.namespace, region_ordinal)`,
-serialized). The fed profile's bytes are NOT carried on the record since stage 2's commit 9b (R-V04B-43 (1); the
-row has no piece in the tree — its derived fifth column is empty: R-V04B-43 (4), his word OWNER-WORDS §277, R-V04B-90). Constructed by the feed routine immediately before its absorb call and
-RESTORED-to-prior in a `finally` right after (the stack-disciplined bracket); the
-document-side `meta_context` stays `nothing` on the feed, so the deriving-form refusal
-holds by construction. Immutable; per-call config inputs only.
+IS: the profile-feed surface's own recordable identity (the user-context build): one field, `handle` = the minted
+user-context key bytes (`user_context_key(config.namespace, region_ordinal)`, serialized by `key_bytes`; the
+ordinal 1 at v0 — one feed, one region).
+
+DOES: constructed by the feed routine (`feed_user_mh!`, src/GoMeta.jl) immediately before its absorb call and
+RESTORED-to-prior in a `finally` right after (the stack-disciplined bracket); the document-side `meta_context` stays
+`nothing` on the feed, so the deriving-form refusal holds by construction. Read at the absorb seam as the enqueued
+action's `decided_by` handle when no document context exists, as the trigger of the conditioned-head refusal on the
+feed, and by `capture_heading!` as both the key and the deciding statement of a fed profile's heading row. The fed
+profile's bytes are NOT carried on the record since stage 2's commit 9b (R-V04B-43 (1); the row has no piece in the
+tree — its derived fifth column is empty: R-V04B-43 (4), his word OWNER-WORDS §277, R-V04B-90). Immutable; per-call
+config inputs only.
+
+REASONING: the feed has no document Component behind it, so its statements need an identity of their own to be
+recorded against — minted from the per-call configuration, deterministic, and present only inside the feed's bracket.
+
+PURPOSE: the handle a fed profile's rows and provenance carry (`USER_CONTEXT_GRAIN`, src/occurrence.jl).
 """
 struct UserContext
     handle::Vector{UInt8}
@@ -690,10 +856,18 @@ end
 """
     const STATE :: ScopedValue{ProcessState}
 
-The per-call state binding — NO default, so an unscoped read THROWS (fail-loud, supporting the total typed
-surface). `goMeta` opens `with(STATE => init_state(…)) do … end`; every state-bearing
-function reaches it through `ctx()`. This is THE swap point: `ctx()` is the only accessor, so a benchmark
+IS: the per-call state binding — a `ScopedValue` with NO default, so an unscoped read THROWS (fail-loud, supporting
+the total typed surface).
+
+DOES: `goMeta` opens `with(STATE => init_state(…)) do … end` around the feed, the absorb walk and the apply; every
+state-bearing function reaches it through `ctx()` (`STATE[]`), the only accessor — the re-written conditions'
+bare-name `getState` / `getAltState` among them (`Core.eval` in module GoMeta). This is THE swap point: a benchmark
 could flip the delivery (ScopedValue ⇄ threaded arg) by changing `ctx()` alone.
+
+REASONING: one fresh state per call, delivered through a dynamic scope rather than a global, so two concurrent calls
+never share state and a condition evaluated by Julia reaches this call's state without a threaded argument.
+
+PURPOSE: the delivery seam of the per-call `ProcessState`.
 """
 const STATE = ScopedValue{ProcessState}()
 
@@ -751,9 +925,19 @@ end
 """
     snapshot_settribute!(st, component) -> ComponentSettribute
 
-Copy `component`'s settribute bytes INTO `st.snapshot` IN PLACE. The destination array is the
-per-call `snapshot`'s own array (copied into, never aliased), so a second `goMeta` call starts from
-a fresh snapshot.
+IS: the refresh of the per-call settribute snapshot — the copy of one Component's settribute bytes into
+`st.snapshot`.
+
+DOES: copies `component.componentSettribute.array` INTO `st.snapshot.array` IN PLACE (`.=`) and returns
+`st.snapshot`. The destination array is the per-call `snapshot`'s own array (copied into, never aliased), so a
+second `goMeta` call starts from a fresh snapshot. Called at the walk → absorb handover (`applyAbsorbFn`,
+src/absorb/walk.jl) for the current Component and at the two apply overloads (src/alterants/apply.jl — the Block
+itself; a Segment's parent Line); read by the conditions' `getState` through `get_state`.
+
+REASONING: a condition reads settribute flags through the snapshot rather than the Component, so the apply's state
+lives in the per-call `ProcessState` and no module global is touched.
+
+PURPOSE: what `getState(:key)` in a condition answers from.
 """
 function snapshot_settribute!(st::ProcessState, component::T) where {T<:BLS.Component}
     st.snapshot.array[:] .= component.componentSettribute.array[:]
@@ -763,6 +947,16 @@ end
 """
     get_state(snapshot, key) -> Bool
 
-Read a settribute flag from a settribute snapshot (the pure helper behind the de-globalized `getState`). `get_state(ctx().snapshot, key)` is what the eval'd `getState(:key)` resolves to — the reader resolves through `ctx()`.
+IS: the pure reader of one settribute flag from a settribute snapshot (the helper behind the de-globalized
+`getState`).
+
+DOES: returns `BLS.getElement(snapshot, key)` — the `Bool` at the key's position of the `ComponentSettribute`
+record; the rewrite emits a `getState` call only for a declared key (`keys(BLS.ComponentSettribute)`, the settribute
+keys). `get_state(ctx().snapshot, key)` is what the eval'd `getState(:key)` resolves to — the reader `CnS.getState`
+(src/alterants/registry.jl) resolves through `ctx()`.
+
+REASONING: the read is a pure function of a snapshot and a key, so the per-call state enters only at the one caller.
+
+PURPOSE: the settribute read of a condition.
 """
 get_state(snapshot::BLS.ComponentSettribute, key::Symbol) = BLS.getElement(snapshot, key)

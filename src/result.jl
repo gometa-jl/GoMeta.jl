@@ -39,13 +39,25 @@ PURPOSE: the fail-closed signal of the delivered object (R-V04B-28: one of its f
 """
     Diagnostic(code, severity, message, context)
 
-A typed, non-throwing diagnostic — the form in which a run DELIVERS its errors and warnings (`GoMetaDelivery.diagnostics`);
-not every refusal is delivered — some still throw at v0 (the partition, docs/public-api.md §3).
-`code::Symbol` is a catalogue code (e.g. `:REG_UNPUBLISHED`; the registry door's codes arm at `goMeta`'s entry, the
-capture-floor warnings at the absorb seam's flush — the config-time and condition-path codes left at stage 5's E13,
-docs/public-api.md §3);
-`severity::Symbol ∈ {:error,:warning,:info}`; `message::String` is human-readable; `context` is optional
-structured context (e.g. a `component_ref` tuple or a slot index), `nothing` when absent.
+IS: a typed, non-throwing diagnostic — the form in which a run DELIVERS its errors and warnings
+(`GoMetaDelivery.diagnostics`); not every refusal is delivered — some still throw at v0 (the partition,
+docs/public-api.md §3).
+
+DOES: `code::Symbol` is a catalogue code (e.g. `:REG_UNPUBLISHED`; the registry door's codes arm at `goMeta`'s entry,
+the capture-floor warnings at the absorb seam's flush — the config-time and condition-path codes left at stage 5's
+E13, docs/public-api.md §3); `severity::Symbol ∈ {:error,:warning,:info}` — the declared set; under `src/` the rows
+minted are `:error` (`REG_UNPUBLISHED`, `POST_SEAL_MUTATION` — delivered; `REG_PROTOCOL`, `REG_SLOT_EXHAUSTED`,
+`REG_DERIVED_TABLES` — returned by `validate` as data or carried by a thrown `RegistrationRefused`) and `:warning`
+(`WARN_CAPTURE_FLOOR`, `WARN_CAPTURE_UNREADABLE` — delivered); `message::String` is human-readable; `context` is
+optional structured context — what the minters pass: a record's name (an Alterant's `altName`, an action's `name`),
+a rendered path text, a field name, or `nothing` when absent (the three-argument outer constructor supplies it).
+`goMeta` computes the status from the severity: `PROCESS_ERROR` iff an `:error` row exists; `RegistrationRefused`'s
+`showerror` counts its `:error` rows the same way.
+
+REASONING: catalogued failures surface as typed rows with stable codes where they are delivered, so a consumer reads
+a code, never a message, and the status invariant (non-OK ⇒ non-empty diagnostics) holds by construction.
+
+PURPOSE: the element of the delivered object's `diagnostics` part (R-V04B-28) and of `RegistrationRefused`.
 """
 struct Diagnostic
     code::Symbol

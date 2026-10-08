@@ -560,8 +560,18 @@ end
 """
     propagate_content_flags_up!(child, parent)
 
-Copy `:containsMeta`, `:containsText`, `:containsCode` from child to parent
-if they are set on the child's `componentSettribute`.
+IS: the one-level content-flag propagation of the parse — one of the helpers extracted from `parseBLS` (the file's own
+section head; not his legacy's — the March 2026 ladder, CC's work, his §70 item 3).
+
+DOES: Copy `:containsMeta`, `:containsText`, `:containsCode` from child to parent if they are set on the child's
+`componentSettribute` (a `setElement(… => true)` per set flag; a flag is never cleared here). Its callers in
+`parseBLS`: a Line into its Block before the next Line is added (when the Block has children), a Segment into its Line
+after each new Segment, and the last content Line into its Block before the trailing-empty flush.
+
+REASONING: the legacy's form, kept — the flags propagate child → parent → file (the file header).
+
+PURPOSE: the Block- and Line-level content flags the absorb walk gates on (`:containsMeta` with `:ignoreThisMeta`, in
+`goMeta`'s File loop and the walk's Block loop).
 """
 function propagate_content_flags_up!(
     child::Component, parent::Component)
@@ -575,7 +585,18 @@ end
 """
     propagate_content_flags_up!(child, parent, grandparent)
 
-Two-level propagation: child → parent, parent → grandparent.
+IS: the two-level content-flag propagation of the parse — the sibling of the one-level method above, over the three
+grains Line → Block → File.
+
+DOES: Two-level propagation: child → parent, parent → grandparent — for each of `:containsMeta`, `:containsText`,
+`:containsCode`: a flag set on the child is set on the parent AND the grandparent; else a flag set on the parent is set
+on the grandparent; a flag is never cleared. Its callers in `parseBLS` pass `(crntLine, crntBlock, crntFile)` at a
+Block's close: before a NEW Block is opened, at the trailing-empty flush that opens a fresh Block, and at the FINAL
+Block's close.
+
+REASONING: the legacy's form, kept — the flags propagate child → parent → file (the file header).
+
+PURPOSE: the File- and Block-level content flags at a Block's close.
 """
 function propagate_content_flags_up!(
     child::Component, parent::Component, grandparent::Component)
@@ -590,14 +611,29 @@ function propagate_content_flags_up!(
 end
 
 """
-    determine_content_type!(settribute, fallbackContentType) -> Type
+    determine_content_type!(settribute, fallbackContentType) -> Union{Type, Nothing}
 
-Given a `ComponentSettribute` with flags already set (e.g. by `parseLeadHeader!`),
-determine and return the segment content type (`Meta`, `Code`, `Text`), and set
-the corresponding `:is...` flag on the settribute.
+IS: the content-type resolution of the parse — one of the helpers extracted from `parseBLS` (the file's own section
+head; not his legacy's — the March 2026 ladder, CC's work, his §70 item 3): the flavor of a Line or a Segment from the
+flags its head reader set.
 
-`fallbackContentType` is used when only `:comment` is set — comments inherit
-the content type of their enclosing line/block.
+DOES: Given a `ComponentSettribute` with flags already set (e.g. by `parseLeadHeader!`, or by the loop's fence and
+plain-line arms), determine and return the segment content type (`Meta`, `Code`, `Text`), and set the corresponding
+`:is...` flag on the settribute — in this order: `:containsText` → `:isText`, `Text`; `:containsCode` → `:isCode`,
+`Code`; `:containsMeta` → `:isMeta`, `Meta`. `fallbackContentType` is used when only `:comment` is set — comments
+inherit the content type of their enclosing line/block: the fallback, or `Text` when it is `nothing` (file start); a
+`Meta` fallback also sets `:ignoreThisMeta` (a comment in a Meta neighbourhood is inert); no `:is...` flag is set on
+this arm. Any other flag set, or none, returns `nothing`: the callers then take the bucket-A twin of the comment arm
+(the neighbourhood type, `:ignoreThisMeta` in a Meta context) for a bucket-A line or Segment, refuse a
+structural-directive form directly after Meta (the reserved-adjacency guard, in its stated scope) and otherwise leave
+the loop's `segmentContentType` as it stands. Its callers: the Line grain (the fallback the preceding Line's
+`contentType`) and the Segment grain (the fallback the Line's own).
+
+REASONING: the legacy's form, kept; the invariant the file states — `Meta` without a `:depthN` MUST set
+`:ignoreThisMeta` — is why the comment arm marks a Meta-inherited comment inert.
+
+PURPOSE: the resolved type a new Segment is created with and, through the Block type it opens or continues, a new
+Line's (inside an open fence the Block's own); and the first-metaLine index the parse records.
 """
 function determine_content_type!(
     crntComponentSettribute::ComponentSettribute,
