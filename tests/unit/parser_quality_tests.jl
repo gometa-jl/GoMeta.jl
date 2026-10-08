@@ -9,7 +9,10 @@
 #       arity or type fault is the Alterant's setter's, §359 (9); a malformed condition body is Julia's parse error, §319).
 # DOES: one @testset per row; the comment on each row is the outcome MEASURED before the build (the receipts
 #       PROBES-parser-battery-BEFORE_e97b864c.txt and PROBES-parser-needs-a-run_2026-10-08.txt of the build record) — the CHANGE column:
-#       a row marked UNCHANGED pins today's behaviour against drift; a row marked CHANGED pins the effort's cure.
+#       a row marked UNCHANGED pins today's behaviour against drift; a row marked CHANGED pins the effort's cure; a row marked
+#       CHANGED (s5c31 — strings in conditions now, his §366) pins the lever's outcome, MEASURED on the s5c31 scratch
+#       (PROBES-parser-*-AFTER_s5c31-scratch.txt): a quoted text inside a condition body is Julia's — copied whole, never read by
+#       the rewrite — and the body's `(…)` lists are found by the one scanner (an unclosed `(` meets "unterminated '('").
 # REASONING: a refusal is pinned by its GoMeta head, never by Julia's message text (the judge's (E).2); an accepted row's count was
 #       measured on the build with the development tool's printout (canon R4b; the AFTER receipt beside the pre-check).
 # PURPOSE: the parser's quality, shape by shape — his two example files and the twelve frozen forms are the oracle's other half
@@ -1089,27 +1092,25 @@ end
         @test k === :throw && e isa ErrorException
         @test occursin("GoMeta absorb: unknown condition key \"s\"", e.msg)
     end
-    # s01 [quote-scan] — QUOTE-SCAN (the judge's (C) row — the BEFORE as measured at 50d61cf5) — BEFORE: quote-scan — BEFORE at 50d61cf5: THROWS ErrorException: GoMeta absorb: unknown condition key "a"
+    # s01 [quote-scan] — CHANGED (s5c31 — strings in conditions now, his §366; the outcome MEASURED on the s5c31 scratch) — BEFORE: quote-scan — BEFORE at 50d61cf5: THROWS ErrorException: GoMeta absorb: unknown condition key "a"
     @testset "s01" begin
         k, st, n, e = _pq("#~ hide{ isCode == \"a } show{ isText == \" }\nx = 1\n")
-        @test k === :throw && e isa ErrorException
-        @test occursin("GoMeta absorb: unknown condition key \"a\"", e.msg)
-    end
-    # s02 [quote-scan] — QUOTE-SCAN (the judge's (C) row — the BEFORE as measured at 50d61cf5) — BEFORE: quote-scan — BEFORE at 50d61cf5: THROWS ErrorException: GoMeta absorb: unknown condition key "a"
-    @testset "s02" begin
-        k, st, n, e = _pq("#~ hide{ isCode == \"a \"isCode\" c\" }\nx = 1\n")
-        @test k === :throw && e isa ErrorException
-        @test occursin("GoMeta absorb: unknown condition key \"a\"", e.msg)
-    end
-    # s04 [quote-scan] — QUOTE-SCAN (the judge's (C) row — the BEFORE as measured at 50d61cf5) — BEFORE: quote-scan — BEFORE at 50d61cf5: OK PROCESS_OK, 0 evals rows
-    @testset "s04" begin
-        k, st, n, e = _pq("#~ hide{ :\"x\" }\nx = 1\n")
         @test k === :ok && st == GM.PROCESS_OK && n == 0
     end
-    # s05 [quote-scan] — QUOTE-SCAN (the judge's (C) row — the BEFORE as measured at 50d61cf5) — BEFORE: quote-scan — BEFORE at 50d61cf5: OK PROCESS_OK, 1 evals rows
+    # s02 [quote-scan] — CHANGED (s5c31 — strings in conditions now, his §366; the outcome MEASURED on the s5c31 scratch) — BEFORE: quote-scan — BEFORE at 50d61cf5: THROWS ErrorException: GoMeta absorb: unknown condition key "a"
+    @testset "s02" begin
+        k, st, n, e = _pq("#~ hide{ isCode == \"a \"isCode\" c\" }\nx = 1\n")
+        @test k === :throw && e isa Base.Meta.ParseError
+    end
+    # s04 [quote-scan] — CHANGED (s5c31 — strings in conditions now, his §366; the outcome MEASURED on the s5c31 scratch) — BEFORE: quote-scan — BEFORE at 50d61cf5: OK PROCESS_OK, 0 evals rows
+    @testset "s04" begin
+        k, st, n, e = _pq("#~ hide{ :\"x\" }\nx = 1\n")
+        @test k === :throw && e isa Base.Meta.ParseError
+    end
+    # s05 [quote-scan] — CHANGED (s5c31 — strings in conditions now, his §366; the outcome MEASURED on the s5c31 scratch) — BEFORE: quote-scan — BEFORE at 50d61cf5: OK PROCESS_OK, 1 evals rows
     @testset "s05" begin
         k, st, n, e = _pq("#~ hide{ :a\"b\", isCode }\nx = 1\n")
-        @test k === :ok && st == GM.PROCESS_OK && n == 1
+        @test k === :throw && e isa Base.Meta.ParseError
     end
     # s09 [quote-scan] — QUOTE-SCAN (the judge's (C) row — the BEFORE as measured at 50d61cf5) — BEFORE: quote-scan — BEFORE at 50d61cf5: OK PROCESS_OK, 0 evals rows
     @testset "s09" begin
@@ -1146,11 +1147,10 @@ end
         @test k === :throw && e isa ErrorException
         @test occursin("GoMeta absorb: unexpected character '\"' at the start of a metaStatement in the meta region \"hide \\\"\" (the token \"\\\"\")", e.msg)
     end
-    # s22 [quote-scan] — QUOTE-SCAN (the judge's (C) row — the BEFORE as measured at 50d61cf5) — BEFORE: quote-scan — BEFORE at 50d61cf5: THROWS ErrorException: GoMeta absorb: unknown condition key "x"
+    # s22 [quote-scan] — CHANGED (s5c31 — strings in conditions now, his §366; the outcome MEASURED on the s5c31 scratch) — BEFORE: quote-scan — BEFORE at 50d61cf5: THROWS ErrorException: GoMeta absorb: unknown condition key "x"
     @testset "s22" begin
         k, st, n, e = _pq("#~ hide{ isCode\"x\" }\nx = 1\n")
-        @test k === :throw && e isa ErrorException
-        @test occursin("GoMeta absorb: unknown condition key \"x\"", e.msg)
+        @test k === :throw && e isa Base.Meta.ParseError
     end
     # s23 [quote-scan] — QUOTE-SCAN (the judge's (C) row — the BEFORE as measured at 50d61cf5) — BEFORE: quote-scan — BEFORE at 50d61cf5: THROWS ErrorException: GoMeta absorb: unknown condition key "s"
     @testset "s23" begin
@@ -1170,17 +1170,15 @@ end
         @test k === :throw && e isa ErrorException
         @test occursin("GoMeta absorb: unterminated '\"'", e.msg)
     end
-    # t01 [quote-scan] — QUOTE-SCAN (the judge's (C) row — the BEFORE as measured at 50d61cf5) — BEFORE: quote-scan — BEFORE at 50d61cf5: THROWS ErrorException: GoMeta absorb: unknown condition key "a"
+    # t01 [quote-scan] — CHANGED (s5c31 — strings in conditions now, his §366; the outcome MEASURED on the s5c31 scratch) — BEFORE: quote-scan — BEFORE at 50d61cf5: THROWS ErrorException: GoMeta absorb: unknown condition key "a"
     @testset "t01" begin
         k, st, n, e = _pq("#~ hide{ isCode == \"a\" } show{ isText == \"b\" }\nx = 1\n")
-        @test k === :throw && e isa ErrorException
-        @test occursin("GoMeta absorb: unknown condition key \"a\"", e.msg)
+        @test k === :ok && st == GM.PROCESS_OK && n == 0
     end
-    # t02 [quote-scan] — QUOTE-SCAN (the judge's (C) row — the BEFORE as measured at 50d61cf5) — BEFORE: quote-scan — BEFORE at 50d61cf5: THROWS ErrorException: GoMeta absorb: unknown condition key "it"
+    # t02 [quote-scan] — CHANGED (s5c31 — strings in conditions now, his §366; the outcome MEASURED on the s5c31 scratch) — BEFORE: quote-scan — BEFORE at 50d61cf5: THROWS ErrorException: GoMeta absorb: unknown condition key "it"
     @testset "t02" begin
         k, st, n, e = _pq("#~ hide{ isCode == \"it's\" }\nx = 1\n")
-        @test k === :throw && e isa ErrorException
-        @test occursin("GoMeta absorb: unknown condition key \"it\"", e.msg)
+        @test k === :ok && st == GM.PROCESS_OK && n == 0
     end
     # t03 [quote-scan] — QUOTE-SCAN (the judge's (C) row — the BEFORE as measured at 50d61cf5) — BEFORE: quote-scan — BEFORE at 50d61cf5: THROWS ErrorException: GoMeta absorb: string argument not accepted
     @testset "t03" begin
@@ -1194,27 +1192,25 @@ end
         @test k === :throw && e isa ErrorException
         @test occursin("GoMeta absorb: unknown condition key \"s\"", e.msg)
     end
-    # j02t [quote-scan] — QUOTE-SCAN (the judge's (C) row — the BEFORE as measured at 50d61cf5) — BEFORE: quote-scan — BEFORE at 50d61cf5: THROWS ErrorException: GoMeta absorb: unknown condition key "abc"
+    # j02t [quote-scan] — CHANGED (s5c31 — strings in conditions now, his §366; the outcome MEASURED on the s5c31 scratch) — BEFORE: quote-scan — BEFORE at 50d61cf5: THROWS ErrorException: GoMeta absorb: unknown condition key "abc"
     @testset "j02t" begin
         k, st, n, e = _pq("#~ hide{ isCode == \"abc\" }\nx = 1\n")
-        @test k === :throw && e isa ErrorException
-        @test occursin("GoMeta absorb: unknown condition key \"abc\"", e.msg)
+        @test k === :ok && st == GM.PROCESS_OK && n == 0
     end
-    # j03t [quote-scan] — QUOTE-SCAN (the judge's (C) row — the BEFORE as measured at 50d61cf5) — BEFORE: quote-scan — BEFORE at 50d61cf5: THROWS ErrorException: GoMeta absorb: unknown condition key "a"
+    # j03t [quote-scan] — CHANGED (s5c31 — strings in conditions now, his §366; the outcome MEASURED on the s5c31 scratch) — BEFORE: quote-scan — BEFORE at 50d61cf5: THROWS ErrorException: GoMeta absorb: unknown condition key "a"
     @testset "j03t" begin
         k, st, n, e = _pq("#~ hide{ isCode == \"a, b\" }\nx = 1\n")
-        @test k === :throw && e isa ErrorException
-        @test occursin("GoMeta absorb: unknown condition key \"a\"", e.msg)
+        @test k === :ok && st == GM.PROCESS_OK && n == 0
     end
     # j03u [quote-scan] — QUOTE-SCAN (the judge's (C) row — the BEFORE as measured at 50d61cf5) — BEFORE: quote-scan — BEFORE at 50d61cf5: OK PROCESS_OK, 0 evals rows
     @testset "j03u" begin
         k, st, n, e = _pq("#~ hide{ isCode == \",\" }\nx = 1\n")
         @test k === :ok && st == GM.PROCESS_OK && n == 0
     end
-    # j04t [quote-scan] — QUOTE-SCAN (the judge's (C) row — the BEFORE as measured at 50d61cf5) — BEFORE: quote-scan — BEFORE at 50d61cf5: THROWS ParseError
+    # j04t [quote-scan] — CHANGED (s5c31 — strings in conditions now, his §366; the outcome MEASURED on the s5c31 scratch) — BEFORE: quote-scan — BEFORE at 50d61cf5: THROWS ParseError
     @testset "j04t" begin
         k, st, n, e = _pq("#~ hide{ isCode == \":x\" }\nx = 1\n")
-        @test k === :throw && e isa Base.Meta.ParseError
+        @test k === :ok && st == GM.PROCESS_OK && n == 0
     end
     # j05t [quote-scan] — QUOTE-SCAN (the judge's (C) row — the BEFORE as measured at 50d61cf5) — BEFORE: quote-scan — BEFORE at 50d61cf5: OK PROCESS_OK, 0 evals rows
     @testset "j05t" begin
@@ -1226,11 +1222,10 @@ end
         k, st, n, e = _pq("#~ hide{ isCode == '}' }\nx = 1\n")
         @test k === :throw && e isa Base.Meta.ParseError
     end
-    # j08t [quote-scan] — QUOTE-SCAN (the judge's (C) row — the BEFORE as measured at 50d61cf5) — BEFORE: quote-scan — BEFORE at 50d61cf5: THROWS ErrorException: GoMeta absorb: unknown condition key "a"
+    # j08t [quote-scan] — CHANGED (s5c31 — strings in conditions now, his §366; the outcome MEASURED on the s5c31 scratch) — BEFORE: quote-scan — BEFORE at 50d61cf5: THROWS ErrorException: GoMeta absorb: unknown condition key "a"
     @testset "j08t" begin
         k, st, n, e = _pq("#~ hide{ isCode == \"a\\\"b\" }\nx = 1\n")
-        @test k === :throw && e isa ErrorException
-        @test occursin("GoMeta absorb: unknown condition key \"a\"", e.msg)
+        @test k === :ok && st == GM.PROCESS_OK && n == 0
     end
     # j09t [quote-scan] — QUOTE-SCAN (the judge's (C) row — the BEFORE as measured at 50d61cf5) — BEFORE: quote-scan — BEFORE at 50d61cf5: THROWS ErrorException: GoMeta absorb: unknown condition key "unterminated"
     @testset "j09t" begin
@@ -1243,17 +1238,15 @@ end
         k, st, n, e = _pq("#~ hide{ isCode == \"\" }\nx = 1\n")
         @test k === :ok && st == GM.PROCESS_OK && n == 0
     end
-    # j11t [quote-scan] — QUOTE-SCAN (the judge's (C) row — the BEFORE as measured at 50d61cf5) — BEFORE: quote-scan — BEFORE at 50d61cf5: THROWS ErrorException: GoMeta absorb: unknown condition key "日本"
+    # j11t [quote-scan] — CHANGED (s5c31 — strings in conditions now, his §366; the outcome MEASURED on the s5c31 scratch) — BEFORE: quote-scan — BEFORE at 50d61cf5: THROWS ErrorException: GoMeta absorb: unknown condition key "日本"
     @testset "j11t" begin
         k, st, n, e = _pq("#~ hide{ isCode == \"\u65e5\u672c\" }\nx = 1\n")
-        @test k === :throw && e isa ErrorException
-        @test occursin("GoMeta absorb: unknown condition key \"\u65e5\u672c\"", e.msg)
+        @test k === :ok && st == GM.PROCESS_OK && n == 0
     end
-    # j12t [quote-scan] — QUOTE-SCAN (the judge's (C) row — the BEFORE as measured at 50d61cf5) — BEFORE: quote-scan — BEFORE at 50d61cf5: THROWS ErrorException: GoMeta absorb: unknown condition key "x"
+    # j12t [quote-scan] — CHANGED (s5c31 — strings in conditions now, his §366; the outcome MEASURED on the s5c31 scratch) — BEFORE: quote-scan — BEFORE at 50d61cf5: THROWS ErrorException: GoMeta absorb: unknown condition key "x"
     @testset "j12t" begin
         k, st, n, e = _pq("#~ hide{ isCode == \"\"\"x\"\"\" }\nx = 1\n")
-        @test k === :throw && e isa ErrorException
-        @test occursin("GoMeta absorb: unknown condition key \"x\"", e.msg)
+        @test k === :ok && st == GM.PROCESS_OK && n == 0
     end
     # j13t [quote-scan] — QUOTE-SCAN (the judge's (C) row — the BEFORE as measured at 50d61cf5) — BEFORE: quote-scan — BEFORE at 50d61cf5: THROWS ErrorException: GoMeta absorb: unknown condition key "r"
     @testset "j13t" begin
@@ -1266,16 +1259,15 @@ end
         k, st, n, e = _pq("#~ hide{ isCode == \"\\\\\" }\nx = 1\n")
         @test k === :ok && st == GM.PROCESS_OK && n == 0
     end
-    # j15t [quote-scan] — QUOTE-SCAN (the judge's (C) row — the BEFORE as measured at 50d61cf5) — BEFORE: quote-scan — BEFORE at 50d61cf5: THROWS ErrorException: GoMeta absorb: unknown condition key "a"
+    # j15t [quote-scan] — CHANGED (s5c31 — strings in conditions now, his §366; the outcome MEASURED on the s5c31 scratch) — BEFORE: quote-scan — BEFORE at 50d61cf5: THROWS ErrorException: GoMeta absorb: unknown condition key "a"
     @testset "j15t" begin
         k, st, n, e = _pq("#~ hide{ isCode == \"a\" || isText == \"b\" }\nx = 1\n")
-        @test k === :throw && e isa ErrorException
-        @test occursin("GoMeta absorb: unknown condition key \"a\"", e.msg)
+        @test k === :ok && st == GM.PROCESS_OK && n == 0
     end
-    # j16t [quote-scan] — QUOTE-SCAN (the judge's (C) row — the BEFORE as measured at 50d61cf5) — BEFORE: quote-scan — BEFORE at 50d61cf5: THROWS ParseError
+    # j16t [quote-scan] — CHANGED (s5c31 — strings in conditions now, his §366; the outcome MEASURED on the s5c31 scratch) — BEFORE: quote-scan — BEFORE at 50d61cf5: THROWS ParseError
     @testset "j16t" begin
         k, st, n, e = _pq("#~ hide{ :label1 || isCode == \":label2\" }\nx = 1\n")
-        @test k === :throw && e isa Base.Meta.ParseError
+        @test k === :ok && st == GM.PROCESS_OK && n == 0
     end
     # j17t [quote-scan] — QUOTE-SCAN (the judge's (C) row — the BEFORE as measured at 50d61cf5) — BEFORE: quote-scan — BEFORE at 50d61cf5: OK PROCESS_OK, 0 evals rows
     @testset "j17t" begin
@@ -1304,11 +1296,10 @@ end
         @test k === :throw && e isa ErrorException
         @test occursin("GoMeta absorb: string argument not accepted", e.msg)
     end
-    # j40t [quote-scan] — QUOTE-SCAN (the judge's (C) row — the BEFORE as measured at 50d61cf5) — BEFORE: quote-scan — BEFORE at 50d61cf5: THROWS ErrorException: GoMeta absorb: unknown condition key "a"
+    # j40t [quote-scan] — CHANGED (s5c31 — strings in conditions now, his §366; the outcome MEASURED on the s5c31 scratch) — BEFORE: quote-scan — BEFORE at 50d61cf5: THROWS ErrorException: GoMeta absorb: unknown condition key "a"
     @testset "j40t" begin
         k, st, n, e = _pq("#~ hide{ isCode == \"a\" } show{ isText == \"b\" }\nx = 1\n")
-        @test k === :throw && e isa ErrorException
-        @test occursin("GoMeta absorb: unknown condition key \"a\"", e.msg)
+        @test k === :ok && st == GM.PROCESS_OK && n == 0
     end
     # jS1p [quote-scan] — QUOTE-SCAN (the judge's (C) row — the BEFORE as measured at 50d61cf5) — BEFORE: quote-scan — BEFORE at 50d61cf5: THROWS ErrorException: GoMeta absorb: unknown condition key "a"
     @testset "jS1p" begin
@@ -1316,22 +1307,23 @@ end
         @test k === :throw && e isa ErrorException
         @test occursin("GoMeta absorb: unterminated '\"'", e.msg)
     end
-    # jX2 [quote-scan] — QUOTE-SCAN (the judge's (C) row — the BEFORE as measured at 50d61cf5) — BEFORE: quote-scan — BEFORE at 50d61cf5: THROWS ErrorException: GoMeta absorb: unknown condition key "abc"
+    # jX2 [quote-scan] — CHANGED (s5c31 — strings in conditions now, his §366; the outcome MEASURED on the s5c31 scratch) — BEFORE: quote-scan — BEFORE at 50d61cf5: THROWS ErrorException: GoMeta absorb: unknown condition key "abc"
     @testset "jX2" begin
         k, st, n, e = _pq("#~ hide{ \"abc\" }\nx = 1\n")
         @test k === :throw && e isa ErrorException
-        @test occursin("GoMeta absorb: unknown condition key \"abc\"", e.msg)
+        @test occursin("GoMeta absorb: the condition block { \"abc\" } carries no condition expression (a bare literal) \u2014 an unconditional action is written without '{}'", e.msg)
     end
-    # jX3 [quote-scan] — QUOTE-SCAN (the judge's (C) row — the BEFORE as measured at 50d61cf5) — BEFORE: quote-scan — BEFORE at 50d61cf5: THROWS ParseError
+    # jX3 [quote-scan] — CHANGED (s5c31 — strings in conditions now, his §366; the outcome MEASURED on the s5c31 scratch) — BEFORE: quote-scan — BEFORE at 50d61cf5: THROWS ParseError
     @testset "jX3" begin
         k, st, n, e = _pq("#~ hide{ isCode( }\nx = 1\n")
-        @test k === :throw && e isa Base.Meta.ParseError
+        @test k === :throw && e isa ErrorException
+        @test occursin("GoMeta absorb: unterminated '(' \u2014 never closed in the meta region \" isCode( \" (1 still open)", e.msg)
     end
-    # jX4 [quote-scan] — QUOTE-SCAN (the judge's (C) row — the BEFORE as measured at 50d61cf5) — BEFORE: quote-scan — BEFORE at 50d61cf5: THROWS ErrorException: GoMeta absorb: unknown condition key "x"
+    # jX4 [quote-scan] — CHANGED (s5c31 — strings in conditions now, his §366; the outcome MEASURED on the s5c31 scratch) — BEFORE: quote-scan — BEFORE at 50d61cf5: THROWS ErrorException: GoMeta absorb: unknown condition key "x"
     @testset "jX4" begin
         k, st, n, e = _pq("#~ hide{ :(x }\nx = 1\n")
         @test k === :throw && e isa ErrorException
-        @test occursin("GoMeta absorb: unknown condition key \"x\"", e.msg)
+        @test occursin("GoMeta absorb: unterminated '(' \u2014 never closed in the meta region \" :(x \" (1 still open)", e.msg)
     end
     # jX5 [quote-scan] — QUOTE-SCAN (the judge's (C) row — the BEFORE as measured at 50d61cf5) — BEFORE: quote-scan — BEFORE at 50d61cf5: THROWS ParseError
     @testset "jX5" begin
@@ -1350,49 +1342,45 @@ end
         @test k === :throw && e isa ErrorException
         @test occursin("GoMeta absorb: unterminated '\"'", e.msg)
     end
-    # jX9 [quote-scan] — QUOTE-SCAN (the judge's (C) row — the BEFORE as measured at 50d61cf5) — BEFORE: quote-scan — BEFORE at 50d61cf5: THROWS ErrorException: GoMeta absorb: unknown condition key "x"
+    # jX9 [quote-scan] — CHANGED (s5c31 — strings in conditions now, his §366; the outcome MEASURED on the s5c31 scratch) — BEFORE: quote-scan — BEFORE at 50d61cf5: THROWS ErrorException: GoMeta absorb: unknown condition key "x"
     @testset "jX9" begin
         k, st, n, e = _pq("#~ hide{ isCode == \"\$x\" }\nx = 1\n")
-        @test k === :throw && e isa ErrorException
-        @test occursin("GoMeta absorb: unknown condition key \"x\"", e.msg)
+        @test k === :throw && e isa UndefVarError
     end
-    # jX10 [quote-scan] — QUOTE-SCAN (the judge's (C) row — the BEFORE as measured at 50d61cf5) — BEFORE: quote-scan — BEFORE at 50d61cf5: OK PROCESS_OK, 0 evals rows
+    # jX10 [quote-scan] — CHANGED (s5c31 — strings in conditions now, his §366; the outcome MEASURED on the s5c31 scratch) — BEFORE: quote-scan — BEFORE at 50d61cf5: OK PROCESS_OK, 0 evals rows
     @testset "jX10" begin
         k, st, n, e = _pq("#~ hide{ :\"x\" }\nx = 1\n")
-        @test k === :ok && st == GM.PROCESS_OK && n == 0
+        @test k === :throw && e isa Base.Meta.ParseError
     end
-    # jX11 [quote-scan] — QUOTE-SCAN (the judge's (C) row — the BEFORE as measured at 50d61cf5) — BEFORE: quote-scan — BEFORE at 50d61cf5: OK PROCESS_OK, 0 evals rows
+    # jX11 [quote-scan] — CHANGED (s5c31 — strings in conditions now, his §366; the outcome MEASURED on the s5c31 scratch) — BEFORE: quote-scan — BEFORE at 50d61cf5: OK PROCESS_OK, 0 evals rows
     @testset "jX11" begin
         k, st, n, e = _pq("#~ hide{ :a\"b\" }\nx = 1\n")
-        @test k === :ok && st == GM.PROCESS_OK && n == 0
+        @test k === :throw && e isa Base.Meta.ParseError
     end
-    # jX12 [quote-scan] — QUOTE-SCAN (the judge's (C) row — the BEFORE as measured at 50d61cf5) — BEFORE: quote-scan — BEFORE at 50d61cf5: THROWS ErrorException: GoMeta absorb: unknown condition key "x"
+    # jX12 [quote-scan] — CHANGED (s5c31 — strings in conditions now, his §366; the outcome MEASURED on the s5c31 scratch) — BEFORE: quote-scan — BEFORE at 50d61cf5: THROWS ErrorException: GoMeta absorb: unknown condition key "x"
     @testset "jX12" begin
         k, st, n, e = _pq("#~ hide{ isCode\"x\" }\nx = 1\n")
-        @test k === :throw && e isa ErrorException
-        @test occursin("GoMeta absorb: unknown condition key \"x\"", e.msg)
+        @test k === :throw && e isa Base.Meta.ParseError
     end
-    # jX13 [quote-scan] — QUOTE-SCAN (the judge's (C) row — the BEFORE as measured at 50d61cf5) — BEFORE: quote-scan — BEFORE at 50d61cf5: THROWS ErrorException: GoMeta absorb: unknown condition key "a"
+    # jX13 [quote-scan] — CHANGED (s5c31 — strings in conditions now, his §366; the outcome MEASURED on the s5c31 scratch) — BEFORE: quote-scan — BEFORE at 50d61cf5: THROWS ErrorException: GoMeta absorb: unknown condition key "a"
     @testset "jX13" begin
         k, st, n, e = _pq("#~ hide{ isCode == \"a\" \"b\" }\nx = 1\n")
-        @test k === :throw && e isa ErrorException
-        @test occursin("GoMeta absorb: unknown condition key \"a\"", e.msg)
+        @test k === :throw && e isa Base.Meta.ParseError
     end
-    # jX14 [quote-scan] — QUOTE-SCAN (the judge's (C) row — the BEFORE as measured at 50d61cf5) — BEFORE: quote-scan — BEFORE at 50d61cf5: OK PROCESS_OK, 0 evals rows
+    # jX14 [quote-scan] — CHANGED (s5c31 — strings in conditions now, his §366; the outcome MEASURED on the s5c31 scratch) — BEFORE: quote-scan — BEFORE at 50d61cf5: OK PROCESS_OK, 0 evals rows
     @testset "jX14" begin
         k, st, n, e = _pq("#~ hide{ :label1==\"x\" }\nx = 1\n")
-        @test k === :ok && st == GM.PROCESS_OK && n == 0
+        @test k === :throw && e isa Base.Meta.ParseError
     end
     # jX15 [quote-scan] — QUOTE-SCAN (the judge's (C) row — the BEFORE as measured at 50d61cf5) — BEFORE: quote-scan — BEFORE at 50d61cf5: THROWS ParseError
     @testset "jX15" begin
         k, st, n, e = _pq("#~ hide{ isCode == \"\u201c}\u201d\" }\nx = 1\n")
         @test k === :ok && st == GM.PROCESS_OK && n == 0
     end
-    # jX17 [quote-scan] — QUOTE-SCAN (the judge's (C) row — the BEFORE as measured at 50d61cf5) — BEFORE: quote-scan — BEFORE at 50d61cf5: THROWS ErrorException: GoMeta absorb: unknown condition key "a"
+    # jX17 [quote-scan] — CHANGED (s5c31 — strings in conditions now, his §366; the outcome MEASURED on the s5c31 scratch) — BEFORE: quote-scan — BEFORE at 50d61cf5: THROWS ErrorException: GoMeta absorb: unknown condition key "a"
     @testset "jX17" begin
         k, st, n, e = _pq("#~ hide{ isCode == \"a\u200bb\" }\nx = 1\n")
-        @test k === :throw && e isa ErrorException
-        @test occursin("GoMeta absorb: unknown condition key \"a\"", e.msg)
+        @test k === :ok && st == GM.PROCESS_OK && n == 0
     end
     # jX18 [quote-scan] — QUOTE-SCAN (the judge's (C) row — the BEFORE as measured at 50d61cf5) — BEFORE: quote-scan — BEFORE at 50d61cf5: THROWS ErrorException: GoMeta absorb: unterminated condition block
     @testset "jX18" begin
@@ -1411,11 +1399,10 @@ end
         k, st, n, e = _pq("#~ hide{ isCode == `}` }\nx = 1\n")
         @test k === :throw && e isa Base.Meta.ParseError
     end
-    # jP1 [quote-scan] — QUOTE-SCAN (the judge's (C) row — the BEFORE as measured at 50d61cf5) — BEFORE: quote-scan — BEFORE at 50d61cf5: THROWS ErrorException: GoMeta absorb: unknown condition key "f"
+    # jP1 [quote-scan] — CHANGED (s5c31 — strings in conditions now, his §366; the outcome MEASURED on the s5c31 scratch) — BEFORE: quote-scan — BEFORE at 50d61cf5: THROWS ErrorException: GoMeta absorb: unknown condition key "f"
     @testset "jP1" begin
         k, st, n, e = _pq("#~ hide{ isCode == \"f(\" }\nx = 1\n")
-        @test k === :throw && e isa ErrorException
-        @test occursin("GoMeta absorb: unknown condition key \"f\"", e.msg)
+        @test k === :ok && st == GM.PROCESS_OK && n == 0
     end
     # jP2 [quote-scan] — QUOTE-SCAN (the judge's (C) row — the BEFORE as measured at 50d61cf5) — BEFORE: quote-scan — BEFORE at 50d61cf5: OK PROCESS_OK, 0 evals rows
     @testset "jP2" begin

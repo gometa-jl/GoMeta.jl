@@ -11,8 +11,8 @@
 # REASONING: catalogued failures surface as typed `Diagnostic`s where they are DELIVERED — the registry door's refusals
 #     (`REG_UNPUBLISHED`, `POST_SEAL_MUTATION`) and the capture-floor warnings; the config-time row E-03 left at stage 5's E13
 #     with the grammar profile, the typed condition rows (E-01/E-02, the arg-domain and parse rows, E-07's pending mint — E13) with
-#     the closed interpreter at E13 (a condition is Julia's since — the unknown condition key the one GoMeta refusal, an
-#     `ErrorException` at the absorb seam; a body Julia cannot parse its own `Meta.ParseError`), E-08 at E8; the E-06 row
+#     the closed interpreter at E13 (a condition is Julia's since — GoMeta's own refusals the unknown condition key, the no-expression
+#     guard and, since s5c31, the unterminated `(` inside a body, `ErrorException`s at the absorb seam; a body Julia cannot parse its own `Meta.ParseError`), E-08 at E8; the E-06 row
 #     still throws (docs/public-api.md §3; E-04 left with the Visib write-back at stage 3's commit 4). `captureEvals!` (the apply sites, before the
 #     slot wipe) and `capture_heading!` (the absorb seam's flush) record the evals rows, feeding
 #     `readAltValuesEvals`.

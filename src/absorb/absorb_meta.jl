@@ -23,8 +23,8 @@
 #     settribute key becomes its state read `getState(:key)`, an action of an Alterant that answers queries becomes its query
 #     `getAltState(Int8(p), Symbol("…"), …)` (the registry's one rule `queryable_action`, stage 5's E12 — R-V04B-99), a label test `:name`
 #     the Labels query of that name, his `,` becomes `||`, everything else — `&&`, `!`, `()`, `|`, `&`, numbers, Julia operators,
-#     whitespace — is copied verbatim (a bare word that is neither a settribute key nor a queryable action — `true`, `false`, `nothing`, a
-#     quoted string's word among them — is a condition key and refuses, as his legacy read it); the result is parsed ONCE by `Meta.parse`
+#     whitespace — is copied verbatim (a bare word that is neither a settribute key nor a queryable action — `true`, `false`, `nothing`
+#     among them — is a condition key and refuses, as his legacy read it; a quoted text is copied WHOLE to Julia, never read — his §366); the result is parsed ONCE by `Meta.parse`
 #     and the `Expr` evaluated by Julia at apply time (apply.jl; `Core.eval`), or, for a heading's condition, once at this seam
 #     (`_absorb_local_only!`).
 # REASONING: his design — the condition is Julia (OWNER-WORDS §120, §D174): GoMeta recognises its own parts and Julia does the rest; the
@@ -33,11 +33,11 @@
 #     a statement was never required to END and a leading punctuation was never read: every silent skip, drop and raw BoundsError of the
 #     inventory (the register's D-1, D-2, D-3, D-8, D-10) was one of those two arms, cured at their root rather than by a patch per shape
 #     (his §342, §343). One of each where there were several — one white-space predicate (`_isspace_valid`, his
-#     legacy's `isspace` guarded; his §359 (10)), one scanner `_span` for the metaLine's spans (quote-aware: a `}` or `)` inside a quoted
-#     text closes nothing — his §359 (5); the condition rewrite keeps its own `(…)` finder until the lever "strings in conditions" is
-#     his — the register's PB-6), one splitter, one text-argument rule; the backslash reserved in GoMeta's quoted texts — the heading
-#     sugar and the quoted arguments, his decision's two producers (U8 :1310) — while a condition's quoted text is Julia's and its `\`
-#     Julia's escape — the session's default under his §D174, the register's PB-6, his to revert. The scanner's form is the quote-scan
+#     legacy's `isspace` guarded; his §359 (10)), one scanner `_span` for EVERY span — the metaLine's and the condition body's (quote-aware: a `}` or `)` inside a quoted
+#     text closes nothing — his §359 (5); the condition rewrite's own `(…)` finder left at s5c31 on his word "strings in conditions:
+#     now", §366), one splitter, one text-argument rule; the backslash reserved in GoMeta's quoted texts — the heading
+#     sugar and the quoted arguments, his decision's two producers (U8 :1310) — while a condition's quoted text is Julia's — copied WHOLE by the rewrite, never read — and its `\`
+#     Julia's escape (his §D174; his word of 2026-10-08, §366). The scanner's form is the quote-scan
 #     panel's judge's specification (wf-s10-quote-scan-design, B.2).
 #     Honest edges: each refusal is an untyped ErrorException raised via error() ("the usual error / refusal message", U8 :1473); a body
 #     Julia cannot parse is Julia's own `Meta.ParseError` (his §319); an argument's arity or type fault is the Alterant's own setter
@@ -83,8 +83,8 @@ export absorbMeta
 ## name or a one-word label (his §362); every other non-white-space character is a name or label character — a pictograph or an
 ## emoji among them (his §360; a leading punctuation is part of the name, §361 — the prefix sugar is a later design, V05-15).
 ## ONE white-space predicate (`_isspace_valid` — his legacy's `isspace`, guarded against invalid UTF-8; his §359 (10)), ONE scanner
-## `_span` for the metaLine's spans `(…)` `{…}` `"…"` (the condition rewrite keeps its own `(…)` finder until the lever "strings in
-## conditions" is his), ONE argument splitter `_split_args`, ONE refusal helper — where his legacy and the v0.2–v0.3 additions had
+## `_span` for EVERY span — the metaLine's `(…)` `{…}` `"…"` and, since s5c31 on his word "strings in conditions: now" (§366), the
+## condition body's `(…)` lists and quoted texts (the rewrite's own finder left), ONE argument splitter `_split_args`, ONE refusal helper — where his legacy and the v0.2–v0.3 additions had
 ## three white-space tests, four bracket loops, three backslash sites and two String walls. The quote-scan panel of 2026-10-08
 ## (wf-s10-quote-scan-design; its judge's specification B.2) is the scanner's form.
 const _STRUCTURAL = ('(', ')', '{', '}', ',', '"')
@@ -121,8 +121,8 @@ a purely additive widening; reserving only `\\"` refused unevenly — the reject
 true` — a condition body, his §D174) it escapes the next character as Julia reads it, so the quoted text ends where Julia
 ends it. Reaching the end of `text` refuses ONCE, naming the innermost opener left open — the `"` when the text ends inside
 a quoted text. One character walk (`nextind`, never a byte count); no regex; no allocation on the accepting path; generic
-over `AbstractString` (the parser's `SubString{String}` today; the rewrite's `String` with the lever "strings in conditions" — the
-register's PB-6, PB-12).
+over `AbstractString` (the parser's `SubString{String}` today; the rewrite's `String` since s5c31 — his word "strings in
+conditions: now", §366).
 
 REASONING: his legacy counted brackets in three loops and the v0.2 additions added quote arms and backslash checks at three
 more places; one walk with one quote state serves every span. Julia's other literal delimiters are not known — a Char
@@ -130,7 +130,7 @@ literal (`'}'`; `'` is also Julia's adjoint `x'`), a backtick, an odd `"` inside
 word: each ends in a loud refusal or Julia's own error (the register's PB-5).
 
 PURPOSE: where a span ends, for every reader: parseArgs (the argument list and the label list), parseConditions, the quoted
-heading and the splitter.
+heading, the splitter and — since s5c31, his §366 — the condition rewrite (a body's `(…)` lists and its quoted texts).
 """
 function _span(text::AbstractString, thisInd::Int; julia::Bool = false)::Int
     o = text[thisInd]                                    # the opener: '(' '{' or '"'
@@ -240,9 +240,11 @@ end
 ##                       → `getAltState(Int8(p), Symbol("key"), args)`             (a QUERYABLE action — `queryable_action`: an Alterant
 ##                         that declares `getAltInstance`; Labels at v0 — the registry's rule, R-V04B-99 / E12, kept)
 ##                       → the usual unknown-condition-key refusal                   (anything else — the legacy's :231–:234)
+##   `"…"`               → verbatim, WHOLE                                       (a quoted text is Julia's — never read by the rewrite; its end
+##                         found by the one scanner `_span(…; julia = true)`, its `\` Julia's escape; his §D174, his word §366 — s5c31)
 ##   everything else — `&&`, `!`, `()`, `|`, `&`, `||`, numbers, Julia operators, whitespace — verbatim.
 ## A bare WORD that is neither a settribute key nor a queryable action IS a condition key and meets the refusal — `true`, `false`,
-## `nothing` and a quoted string's word among them (his legacy's reading, :231–:234; register E13-14, his to widen). A worded label
+## `nothing` among them (his legacy's reading, :231–:234; register E13-14, his to widen); a quoted text is not a word (s5c31). A worded label
 ## with a parenthesized list (`:abc(:xyz)` — the K6 corner) reads as the label test of the word followed by a Julia call on its
 ## Bool — a MethodError at apply; his legacy dropped the word and queried the list (:187–:191, :215), the closed interpreter (E13)
 ## refused the shape — register E13-13, his to revert to either.
@@ -250,23 +252,9 @@ end
 ## name its UndefVarError), as the action arguments are since stage 5's E6. The walk is a CHAR walk (`nextind`/`lastindex` — never
 ## the legacy's byte-count end test, whose BoundsError one index past a multibyte final character the 0.2.2 cure fixed;
 ## tests/unit/unicode_cure_tests.jl [4]/[7] hold the cure). A word ends at whitespace, at a non-identifier character or at one of
-## `_COND_DELIMS`; a label name ends at whitespace or at one of `_COND_DELIMS`.
-const _COND_DELIMS = ('(', ')', ',', '!', '&', '|')
-
-"the balanced `(…)` span opening at `i` (text[i] == '(') — (the index of the matching ')', the raw interior); `nothing` when no ')' closes it (the '(' is then copied verbatim and Julia's parser judges the rest)"
-function _paren_span(text::String, i::Int)
-    depth = 0; j = i
-    while j <= lastindex(text)
-        c = text[j]
-        c == '(' && (depth += 1)
-        if c == ')'
-            depth -= 1
-            depth == 0 && return (j, text[nextind(text, i):prevind(text, j)])
-        end
-        j = nextind(text, j)
-    end
-    return nothing
-end
+## `_COND_DELIMS`; a label name ends at whitespace or at one of `_COND_DELIMS` — the `"` among them since s5c31:
+## a quoted text glued to a key or a label name begins Julia's text (one reading of `"` on both planes — his §362, §366).
+const _COND_DELIMS = ('(', ')', ',', '!', '&', '|', '"')
 
 "the Julia call a condition KEY (a settribute key or a queryable action) with an optional raw argument text re-writes to — or the usual refusal"
 function _cond_target(key::Symbol, args::Union{Nothing,String}, r)::String
@@ -291,25 +279,27 @@ with its GoMeta-specific parts re-written to Julia text (the table in the commen
 vocabulary — the settribute keys and the queryable actions. His legacy's `produceConditionStr` read from the ground up.
 
 DOES: one CHAR walk over `text` (`nextind`/`lastindex`, never a byte-count end test), printing into a buffer: `,` →
-` || ` (his OR); `:` followed by `(` → the balanced span (`_paren_span`) becomes the Labels query
+` || ` (his OR); `:` followed by `(` → the balanced span (the one scanner `_span`, quote-aware) becomes the Labels query
 `getAltState(Int8(p), Symbol(":"), args)` with the raw interior as `args` (an empty interior passes none; an unclosed
-`(` leaves the `:` copied verbatim for Julia's parser to judge); `:name` (the name to whitespace or one of
+`(` meets the scanner's unterminated refusal — the condition path's third GoMeta refusal, s5c31); `:name` (the name to whitespace or one of
 `_COND_DELIMS`) → the same query with `Symbol("name")`, the name quoted by `repr` so every name the vocabulary admits
 is spelled the one way; a word at an identifier-start character (its run of identifier characters, an optional
 balanced `(args)` spliced raw) → `_cond_target`: a settribute key (`keys(BLS.ComponentSettribute)`) becomes
 `getState(:key[, args])`, a QUERYABLE action (`queryable_action` — an Alterant that declares `getAltInstance`; the
 registry's one rule, R-V04B-99 / E12: the three Visib names `hide` / `show` / `discard` are neither) becomes
-`getAltState(Int8(p), Symbol("key")[, args])` with `p` its plugin index, anything else — `true`, `false`, `nothing` and a
-quoted string's word among them — meets the refusal `error("GoMeta absorb: unknown condition key …")`, an
-`ErrorException` naming the key (bounded to 40 characters); every other character — operators, parentheses, numbers,
-whitespace — verbatim. Returns the re-written text as a `String`. Pure over its two arguments (no state read; the
-refusal its one exit besides the return); `Meta.parse` reads the result ONCE in its one caller, `parseConditions`,
+`getAltState(Int8(p), Symbol("key")[, args])` with `p` its plugin index, anything else — `true`, `false`, `nothing` among
+them — meets the refusal `error("GoMeta absorb: unknown condition key …")`, an `ErrorException` naming the key (bounded
+to 40 characters); a quoted text (`"…"`) is copied WHOLE, never read — its end found by `_span(…; julia = true)`, its `\`
+Julia's escape (his §D174; his word of 2026-10-08, §366: strings in conditions now — s5c31); every other character — operators, parentheses, numbers,
+whitespace — verbatim. Returns the re-written text as a `String`. Pure over its two arguments (no state read; a
+refusal — the unknown key's or the scanner's unterminated `(` — its one exit besides the return); `Meta.parse` reads the result ONCE in its one caller, `parseConditions`,
 with `ctx().registry`.
 
 REASONING: his design — the condition is Julia: GoMeta recognises its own parts and Julia does the rest, so the parser
 carries no condition grammar of its own (the closed interpreter's walls and typed codes left at E13); the vocabulary
-stays the registry's (settribute keys, queryable actions), and the spelling of a label through `repr` keeps one form
-for every admitted name (register E13-8).
+stays the registry's (settribute keys, queryable actions), the spelling of a label through `repr` keeps one form
+for every admitted name (register E13-8), and ONE scanner serves both planes — the condition's own `(…)` finder left at
+s5c31 (his §342: one of each).
 
 PURPOSE: the text Julia's parser turns into the stored `Expr` a queued action's condition evaluates at apply (or, for a
 heading, once at the absorb seam).
@@ -319,18 +309,17 @@ function _rewrite_condition(text::String, r)::String
     i = firstindex(text); n = lastindex(text)
     while i <= n
         c = text[i]
-        if c == ','
+        if c == '"'                                                  # a quoted text is Julia's: copied whole, never read (his §D174; his §366)
+            e = _span(text, i; julia = true)                         #   never refuses: the body's extent scan paired every '"' the walk reaches
+            print(out, SubString(text, i, e)); i = nextind(text, e)
+        elseif c == ','
             print(out, " || "); i = nextind(text, i)
         elseif c == ':'
             j = nextind(text, i)
             if j <= n && text[j] == '('
-                span = _paren_span(text, j)
-                if span === nothing
-                    print(out, c); i = j                    # an unclosed '(' — copied verbatim; Julia's parser judges the remainder
-                else
-                    args = strip(_isspace_valid, span[2])
-                    print(out, _cond_target(Symbol(":"), isempty(args) ? nothing : String(args), r)); i = nextind(text, span[1])
-                end
+                e = _span(text, j; julia = true)                     # the parenthesized label list — the one scanner
+                args = strip(_isspace_valid, SubString(text, nextind(text, j), prevind(text, e)))
+                print(out, _cond_target(Symbol(":"), isempty(args) ? nothing : String(args), r)); i = nextind(text, e)
             else
                 k = j
                 while k <= n && !_isspace_valid(text[k]) && text[k] ∉ _COND_DELIMS
@@ -347,15 +336,13 @@ function _rewrite_condition(text::String, r)::String
             key = Symbol(text[i:prevind(text, k)])
             args = nothing
             if k <= n && text[k] == '('
-                span = _paren_span(text, k)
-                if span !== nothing
-                    inner = strip(_isspace_valid, span[2])
-                    args = isempty(inner) ? nothing : String(inner); k = nextind(text, span[1])
-                end
+                e = _span(text, k; julia = true)                     # `key(args)` — the one scanner
+                inner = strip(_isspace_valid, SubString(text, nextind(text, k), prevind(text, e)))
+                args = isempty(inner) ? nothing : String(inner); k = nextind(text, e)
             end
             print(out, _cond_target(key, args, r)); i = k
         else
-            print(out, c); i = nextind(text, i)           # operators, parentheses, numbers, whitespace — Julia's, verbatim
+            print(out, c); i = nextind(text, i)                       # operators, a bare grouping, numbers, whitespace — Julia's, verbatim
         end
     end
     return String(take!(out))

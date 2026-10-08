@@ -597,11 +597,14 @@ apply (`src/alterants/apply.jl`) — or, for a heading's condition, once at the 
 the GoMeta names is a condition (`{ 1 == 1 }` is one; `{ (isText && containsMeta), isMeta }` is the corpus's own), and a
 13-atom condition applies where the closed interpreter's 29-step scan cap refused it (E13).
 
-**What refuses, and in which class.** TWO refusals are GoMeta's: the unknown condition key — a bare word that is neither a
-settribute key nor a queryable action (`{ show }`, `{ cell(7) }`, `{ head }`; the keyword literals `true`, `false`, `nothing` and
-a quoted string's word among them — his legacy's reading, the register's E13-14), the stable `GoMeta absorb: unknown condition
-key …` message at the absorb seam (§3.4); and an empty block or a bare literal (`{}`, `{ 1 }`, `{ | }`) — "carries no condition
-expression" (an unconditional action is written without `{}`; E13-6). A worded label carrying a parenthesized list
+**What refuses, and in which class.** THREE refusals are GoMeta's: the unknown condition key — a bare word that is neither a
+settribute key nor a queryable action (`{ show }`, `{ cell(7) }`, `{ head }`; the keyword literals `true`, `false`, `nothing`
+among them — his legacy's reading, the register's E13-14; a quoted text is NOT read word by word since stage 5's s5c31 — the
+owner's word of 2026-10-08, OWNER-WORDS §366: it is copied whole to Julia, so `{ isCode == "abc" }` is Julia's comparison, false
+at `0.4.0` where every value a condition reads is a Bool), the stable `GoMeta absorb: unknown condition
+key …` message at the absorb seam (§3.4); an empty block or a bare literal (`{}`, `{ 1 }`, `{ "abc" }`, `{ | }`) — "carries no condition
+expression" (an unconditional action is written without `{}`; E13-6); and a `(` left open inside the body — the one scanner's
+"unterminated '('" refusal naming the innermost opener (s5c31; a `"` or the block's `{` left open met it at the block's extent since s5c29). A worded label carrying a parenthesized list
 (`:abc(:label1)` — the K6 corner) reads as the label test of the word followed by a Julia call on its Bool, a `MethodError` at
 apply — his legacy dropped the word and queried the list, the closed interpreter refused the shape (E13-13, his to revert to
 either). A body Julia cannot parse (`{ isCode ! }`,
@@ -672,8 +675,8 @@ fabricated typed code:
   quoted texts — the heading sugar, a quoted argument, a label list: "backslash in a quoted span — reserved for the future escape
   grammar" (the owner's v0.2 decision, given for these two producers) — so a future escape grammar can land as a purely additive
   widening without reinterpreting any shipped document; inside a CONDITION a quoted text is Julia's (the owner's §D174) and there the
-  backslash escapes the next character as Julia reads it — the build's default pending the owner's word on "strings in conditions" (the
-  build record's register, PB-6). Witnesses: `tests/unit/heading_recognizer_tests.jl`,
+  backslash escapes the next character as Julia reads it — the owner's word of 2026-10-08, §366 ("strings in conditions: now",
+  stage 5's s5c31): the quoted text is copied whole to Julia, never read by the rewrite. Witnesses: `tests/unit/heading_recognizer_tests.jl`,
   `tests/unit/parser_quality_tests.jl` (the quote-scan rows).
 - **The out-of-window meta depth — GUARDED:** the refusal is witnessed on the **DIGIT** depth
   form — a digit depth marker outside the v0 window (`#~9`, `#~99` — v0 supports `#~` through
@@ -687,9 +690,10 @@ fabricated typed code:
   cannot complete (`{isCode &&}`) is Julia's own `Meta.ParseError` out of the `goMeta` call (the former typed
   "unparsable condition" refusal left with the interpreter at E13). Since the metaLine parser effort (stage 5's s5c29) the
   block's EXTENT is found quote-aware — a `}` inside a quoted text closes nothing (`hide{ isCode == "}" }` is read as Julia reads
-  it), a condition's quoted text is Julia's and its `\` Julia's escape; the REWRITE still reads a quoted string word by word
-  (`{ "abc" }` → its word meets the unknown-condition-key refusal) until the owner's word on "strings in conditions" (the build
-  record's register, PB-6). Working conditions are unaffected byte-for-byte.
+  it), a condition's quoted text is Julia's and its `\` Julia's escape; since s5c31 (the owner's word of 2026-10-08, §366) the
+  REWRITE copies a quoted text whole — `{ isCode == "abc" }` is Julia's comparison (false at `0.4.0`: every value a condition reads
+  is a Bool), `{ "abc" }` a bare literal ("carries no condition expression") — and the condition's `(…)` lists are found by the one
+  scanner (an unclosed `(` meets "unterminated '('"). Working conditions are unaffected byte-for-byte.
 - **The multi-inline-meta limit — GUARDED:** more than one inline `#~` marker on ONE line
   raises the stable-message `ErrorException` ("more than one inline meta segment …") EARLY,
   at parse time — never a success report followed by an output-time throw. v0 accepts at
@@ -751,10 +755,11 @@ fabricated typed code:
 - **The absorb-plane grammar refusals (the same stable-message family):** beyond the entries
   above, the metaLine/condition grammar refuses with stable `GoMeta absorb:` messages on: an
   unterminated `(`, `{` or `"` on the metaLine ("unterminated '<o>' — never closed … (n still open)" — the one scanner names the
-  innermost opener left open; stage 5's s5c29) · an unknown condition key (a bare name inside `{}` that is neither a component
+  innermost opener left open; stage 5's s5c29) and, since s5c31 (the owner's word §366), a `(` left open inside a condition body
+  (the same scanner, the same message) · an unknown condition key (a bare name inside `{}` that is neither a component
   state-ref nor a QUERYABLE action name — an action of a getter-less Alterant, Visib's `show`/`hide`/`discard` among them
   with Id's and the Heading's, is no condition key since stage 5's E12, census row 45: R-V04B-99 by the registry's one rule;
-  the vocabulary's one refusal since stage 5's E13 — the seam's other is the next item) · an empty or literal condition block (the entry above) · a
+  the vocabulary's one refusal since stage 5's E13 — the seam's others are the next item and the open `(` above) · an empty or literal condition block (the entry above) · a
   second argument list or condition block, a bracket after `{}`, a glued token or a stray structural character (the grammar's one
   refusal `unexpected character …`, the entry above; the former "duplicate argument list" / "duplicate condition block" /
   "misplaced one-word label" texts left at stage 5's s5c29); the malformed- and

@@ -92,8 +92,9 @@ extends the label whitelist by a fixed **pictograph vocabulary** (byte-exact nam
   error out of the `goMeta` call since stage 5's E6 of the v0.4 build (the apply seam's typed refusal left — census
   row 14; his legacy called the setters directly).
   The documented exception — the guarded `#~9` depth refusal — is likewise catalogued honestly in `docs/public-api.md`
-  §3.1/§3.2/§3.4 (a condition is Julia's since `0.4.0`, stage 5's E13: the unknown condition key is the one GoMeta refusal,
-  a body Julia cannot parse Julia's own parse error — §3.2). The former second exception — the apply-path crash
+  §3.1/§3.2/§3.4 (a condition is Julia's since `0.4.0`, stage 5's E13: GoMeta's own refusals are the unknown condition key, the
+  block that carries no condition expression and — since s5c31, the owner's word §366 — a `(` left open inside the body; a body
+  Julia cannot parse is Julia's own parse error — §3.2). The former second exception — the apply-path crash
   edge, a flagless-Visib write-back — left with the write-back at stage 3's commit 4 of the v0.4 build.
 
 **The language grows by design; the v0 subset forecloses none of it.** `using()` is a reserved

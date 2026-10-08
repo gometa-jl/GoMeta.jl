@@ -90,10 +90,17 @@ end
         e = _cn_err(Vector{UInt8}(codeunits("#~ hide" * body * "\nx = 1\n")))
         @test e isa ErrorException && occursin("carries no condition expression", e.msg)
     end
-    # a quoted string inside `{}`: the rewrite knows no string literal — the word inside the quotes is read as a condition key and
-    # meets the usual refusal (MEASURED at E13; the register's E13-6 note — Julia's literals are not the vocabulary's)
+    # a quoted text inside `{}` is Julia's since stage 5's s5c31 (his word of 2026-10-08, OWNER-WORDS §366 — "strings in conditions: now"):
+    # copied whole by the rewrite, never read word by word — `{ isCode == "abc" }` is Julia's comparison, false at v0.4 (every value a
+    # condition reads is a Bool), so the action is never applied; `{ "abc" }` is a bare literal — "carries no condition expression"
+    # (E13-6's guard); an unclosed `(` after a key meets the one scanner's unterminated refusal (the condition path's third GoMeta
+    # refusal). MEASURED on the s5c31 scratch (the build record's probe-s5c31-lever.jl: L01, L02, L06). Before s5c31 the word inside
+    # the quotes was read as a condition key (`unknown condition key "abc"` — the register's E13-6 note, flipped at s5c31).
+    @test !_cn_hidden(GM.goMeta(_cn_mk("isCode == \"abc\"")))
     es = _cn_err(Vector{UInt8}(codeunits("#~ hide{ \"abc\" }\nx = 1\n")))
-    @test es isa ErrorException && occursin("unknown condition key \"abc\"", es.msg)
+    @test es isa ErrorException && occursin("carries no condition expression", es.msg)
+    eu = _cn_err(_cn_mk("isCode(ab"))
+    @test eu isa ErrorException && occursin("GoMeta absorb: unterminated '('", eu.msg)
     # an argument text is spliced as Julia text — Julia judges it at APPLY: an undefined name, a non-Symbol label argument
     @test _cn_err(_cn_mk(":(x)")) isa UndefVarError                       # `getAltState(Int8(1), Symbol(":"), x)` — x unbound
     @test _cn_err(_cn_mk(":(7)")) isa MethodError                         # `getAltState`'s `Vararg{Symbol}`

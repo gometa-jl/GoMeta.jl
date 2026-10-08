@@ -33,8 +33,9 @@
 #     does is the author's act, as a custom registry's callables are: README SECURITY), and TOTAL over the entry
 #     surface — non-OK implies non-empty diagnostics. Honest edges: the E-06 absorb-path guarded refusal is documented
 #     but not yet typed (conversion deferred; the E-04 apply-path crash origin LEFT with the Visib write-back at stage 3's
-#     commit 4, R-V04B-42); the condition path keeps TWO refusals of GoMeta's — the unknown condition key (the vocabulary's)
-#     and the no-expression guard of an empty block or a bare literal — and a body Julia cannot parse is Julia's own
+#     commit 4, R-V04B-42); the condition path keeps THREE refusals of GoMeta's — the unknown condition key (the vocabulary's),
+#     the no-expression guard of an empty block or a bare literal and, since s5c31 (his §366), the one scanner's unterminated `(`
+#     inside a body — and a body Julia cannot parse is Julia's own
 #     `Meta.ParseError` (the typed condition codes left with the interpreter at E13).
 #     The full honest-edges catalogue: docs/public-api.md §3.
 # PURPOSE: the single auditable entry point — bytes in, a typed `GoMetaDelivery` out, with the package's
@@ -268,8 +269,9 @@ Obtain the Engine's output via `readAltValuesEvals(result.altValues_evals)` (the
 after the move (R-V04B-24: "the run and the evaluated values"). The (tree, render) pair is the development
 tool's: `Main.BasicRenderer.outputs`, applied to the result after `include(joinpath(pkgdir(GoMeta), "devtools", "load_basic_renderer.jl"))`
 at the caller's top level. The entry refusals (the registry door's `REG_UNPUBLISHED` / `POST_SEAL_MUTATION`) are typed and
-delivered; the condition path keeps TWO refusals of GoMeta's — the unknown condition key and the no-expression guard of an
-empty block or a bare literal, `ErrorException`s at the absorb seam — a body Julia cannot parse is Julia's own `Meta.ParseError`,
+delivered; the condition path keeps THREE refusals of GoMeta's — the unknown condition key, the no-expression guard of an
+empty block or a bare literal and the one scanner's unterminated `(` inside a body (s5c31, his §366), `ErrorException`s at the
+absorb seam — a body Julia cannot parse is Julia's own `Meta.ParseError`,
 a condition that fails at evaluation Julia's own error
 (the typed condition codes and E-07's pending mint left with the closed interpreter at stage 5's E13); the E-06 absorb-path
 guarded depth refusal stays un-typed for now (the honest partition — docs/public-api.md §3; the E-04 apply-path crash origin
@@ -305,8 +307,8 @@ function goMeta(
     ## fail-closed PROCESS_ERROR GoMetaDelivery is built in the `@noinline` cold `_entryErrorDelivery` helper (its `init_state` +
     ## `GoMetaDelivery` construction stay OUT of this hot path); the input bytes are never touched — the error-path delivery
     ## carries a parse state built from EMPTY bytes (container sizing only). The E-06 (absorb) guarded refusal remains untyped
-    ## at v0 (the E-04 apply crash origin left with the write-back, stage 3's commit 4); the condition path's two refusals of
-    ## GoMeta's — the unknown condition key, the no-expression guard — abort the statement at the absorb seam (`absorb_meta.jl`).
+    ## at v0 (the E-04 apply crash origin left with the write-back, stage 3's commit 4); the condition path's three refusals of
+    ## GoMeta's — the unknown condition key, the no-expression guard, the unterminated `(` inside a body (s5c31) — abort the statement at the absorb seam (`absorb_meta.jl`).
     door_diags = _registry_door_check(registry)
     isempty(door_diags) ||
         return _entryErrorDelivery(BLS.setUpToProcessFromBytes(UInt8[]), config, registry, door_diags)
