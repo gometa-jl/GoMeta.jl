@@ -1,6 +1,6 @@
 # `feature_explicit_close.jl`
 
-**Proves:** `#]` — the two axes (close-innermost scope + detach-next line), independent
+**Proves:** `#]` — the two axes (close-innermost scope + detach the following block — a single line in this fixture), independent *(its frozen in-file header narrates the detach at LINE grain; §4's block-grain chain law is the corrected statement — v0.3.1)*
 
 *(The "proves" line is this example's row in the [syntax reference](../SYNTAX-AND-SEMANTICS.md)
 §11 proof-set table; every rule there cites a runnable committed example.)*
@@ -8,6 +8,11 @@
 Committed pair: `examples/InFileFolder/feature_explicit_close.jl` → `examples/OutFileFolder/feature_explicit_close.jl` — the same
 bytes the golden test layer pins. Verify locally from the repository root:
 `julia --startup-file=no --project=. devtools/run_examples.jl`.
+
+*(The fixture's frozen header line "Labels are limited to :label1..:label5" narrates the corpus-documented labels of
+its writing; since `0.3.0` the closed whitelist also accepts the fixed pictograph vocabulary
+(`src/alterants-std/labels_vocabulary.txt`; README "Documented v0 limits"). The quoted bytes stay as committed — the
+golden layer pins them.)*
 
 ## Input
 

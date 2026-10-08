@@ -256,7 +256,7 @@ TOTAL over the ENTRY surface (the registry door's refusals are delivered typed; 
 Obtain the Engine's output via `readAltValuesEvals(result.altValues_evals)` (the evals map, keyed by (handle, attr); its byte form
 `serialize_evals`; a piece's text through `BLS.content`) — with the run itself, the Engine's delivered surface
 after the move (R-V04B-24: "the run and the evaluated values"). The (tree, render) pair is the development
-tool's: `Main.BasicRenderer.outputs`, applied to the result after `include("devtools/load_basic_renderer.jl")`
+tool's: `Main.BasicRenderer.outputs`, applied to the result after `include(joinpath(pkgdir(GoMeta), "devtools", "load_basic_renderer.jl"))`
 at the caller's top level. The entry refusals (the registry door's `REG_UNPUBLISHED` / `POST_SEAL_MUTATION`) are typed and
 delivered; the condition path keeps TWO refusals of GoMeta's — the unknown condition key and the no-expression guard of an
 empty block or a bare literal, `ErrorException`s at the absorb seam — a body Julia cannot parse is Julia's own `Meta.ParseError`,

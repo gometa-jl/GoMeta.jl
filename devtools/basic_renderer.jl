@@ -15,7 +15,7 @@ Core.eval(Main, :(const _BASIC_RENDERER_LOADED = true))
 # DOES: applies the jl-share-v1 hide/discard rules (docs/CANONICAL-OUTPUT.md §3) during the walk.
 #     The verdict a Line or a Segment gets is the Engine's answer for THAT Component (the Component's own
 #     rows, else its parent's up the tree, else the declared default `show` — the Engine's inner-wins
-#     precedence; a Segment's answer per R-V04B-52 (2)). `:discard` at any grain skips the whole subtree — zero bytes. `:hide` writes the
+#     precedence; a Segment's answer per R-V04B-52 (2)). `:discard` is an inherited verdict a finer grain's own answer can override — a discarded Component contributes zero bytes of its own, while an inner `show` or `hide` under it RESURFACES (no subtree-skip; the WRITE-side law below). `:hide` writes the
 #     flavor's hide marker (the literal "## " in the `:julia` flavor) before each rendered
 #     non-empty line and before each rendered segment, ahead of the restored indentation — an
 #     ENSURE-TOKEN write, not exactly-one-prefix: the write is skipped when the source line's

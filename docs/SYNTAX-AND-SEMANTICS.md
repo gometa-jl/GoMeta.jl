@@ -47,7 +47,10 @@ can learn GoMeta exactly, and verify it, before writing or changing a metaLine.
 - **alterant** — a directive GoMeta applies to a component: the **Visib** alterant (show/hide/discard), **labels**,
   and other engine actions (see §10 and §13).
 - **cell** — the component a verdict attaches to (a Block, a Line, or a Segment); its **cell_handle**
-  is that cell's verbatim content bytes.
+  is the cell's occurrence key — opaque, namespace-scoped bytes naming WHICH component, never its text
+  (`docs/public-api.md` §1.2/§2). A cell's text is read from the BLS Component tree through
+  `GoMeta.BLS.content(delivery.blsComponentTree, component)` — "through BLS's own access function"
+  (R-V04B-43 (1); `content_fingerprint` left at 0.4.0's stage-2 commit 9b).
 - **meta-hierarchy / slot** — the engine's per-depth store of pending alterant actions: one slot per
   open depth; its capacity is the registered action count (8 at v0.4) — a further action meets Julia's own
   `BoundsError` since stage 5's E7 of the v0.4 build (census row 41; the capacity refusal left).

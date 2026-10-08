@@ -38,7 +38,10 @@ the basic renderer's own function (`devtools/basic_renderer.jl`, reached only th
   complete over **`:discard` AND `:hide`**.
 
 The render is the basic renderer's **reference / verification render** — a development tool's output that
-doubles as the conformance anchor, pinned by the golden layer; it is NOT an Engine output.
+doubles as the conformance anchor, pinned by the golden layer; it is NOT an Engine output. **No Extension takes
+the pair** (R-V04B-56 — the owner's word of 2026-09-24: "no Extension takes the pair"): an Extension consumes the
+Engine's answer through the delivered object and the BLS Component tree (the part `blsComponentTree`, BLS's own
+delivery, R-V04B-45); the pair is the tool's own, proved by its seven render reference files, never by an Extension.
 
 ## §2 — The tree half (the tool's tree print)
 
@@ -101,9 +104,11 @@ stay a living GoMeta document.
 
 These rules are **oracle-grounded where exercised**: rules 1–4 ride the
 committed corpus (`examples/`), whose renders the golden test layer pins **byte-for-byte** (7/7);
-the rule-5 empty-line fact and the rule-6 ensure-token + one-way facts are engine behavior
-documented here (the corpus exercises neither a hidden empty line nor a marker-headed input
-line — the idempotence facts are proven by a standing differential in the development fork). *(Dated true-up
+the rule-5 empty-line fact and the rule-6 ensure-token fact ride it too — the `Extended` pair's hidden text block
+carries the blank input line (L40, rendered as a bare empty line) and the `## `-headed narration lines (L46–L49,
+rendered as-is, no doubling; `docs/SYNTAX-AND-SEMANTICS.md` §7 cites them); the rule-6 one-way fact and
+re-ingestion idempotence are NOT exercised by the corpus — they are proven by a standing differential in the
+development fork. *(Dated true-up
 2026-08-12 for `0.3.0`: the former sentence grounded the rule-6 DOUBLING in the corpus; the
 doubling died with the ensure-token rule and the corpus outputs carry no doubled shapes.)*
 

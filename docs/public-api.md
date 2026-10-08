@@ -313,7 +313,11 @@ They are not exported; reach them qualified. `tests/unit/public_surface_tests.jl
 2. **The (tree, render) pair is the development tool's**, not the Engine's: `Main.BasicRenderer.outputs(result)
    -> (blsStructure_bytes, render_bytes)` — the verdict-free tree print + the `jl-share-v1` share render — is
    obtained ONLY through the basic renderer (`devtools/basic_renderer.jl`) loaded by its one loader,
-   `include("devtools/load_basic_renderer.jl")` at the caller's top level; `devtools/README.md` documents it.
+   `include(joinpath(pkgdir(GoMeta), "devtools", "load_basic_renderer.jl"))` at the caller's top level; `devtools/README.md` documents it.
+   **No Extension takes this pair** (R-V04B-56 — the owner's word of 2026-09-24: "no Extension takes the pair"): an
+   Extension consumes the Engine's answer through the delivered object and the BLS Component tree, which reaches it as
+   the part `blsComponentTree` (BLS's own delivery, R-V04B-45) — the pair is the tool's own, proved by its seven render
+   reference files, never by an Extension.
 3. **The test layer pins that pair byte-exact** against the corpus golden (`tests/golden/`) — the test
    layer's property, beside the twelve annotation pins of the Engine's values.
 
@@ -488,7 +492,7 @@ compatibility promise before v0.7 (§6).
 `GoMeta.outputs` left the Engine at 0.4.0 (the breaking-change register row in §6). The pair `(blsStructure_bytes, render_bytes)` —
 the verdict-free tree print + the `jl-share-v1` share render, the SAME field names and order, the same non-OK
 contract (a `PROCESS_ERROR` result of an entry refusal — at `goMeta` before its parse — yields the **empty** pair) — is the basic renderer's own function
-`Main.BasicRenderer.outputs(result)`, obtained ONLY after `include("devtools/load_basic_renderer.jl")` at the
+`Main.BasicRenderer.outputs(result)`, obtained ONLY after `include(joinpath(pkgdir(GoMeta), "devtools", "load_basic_renderer.jl"))` at the
 caller's top level. Its render-plane qualification (the character-safe string indexing, §4) is the tool's; since stage 3 of the
 v0.4 build every Visib verdict the render applies is the Engine's answer per Component (`evaluatedAltValue`, §1.2 — R-V04B-16 (1)), the
 renderer resolving nothing itself. See `devtools/README.md` and `docs/CANONICAL-OUTPUT.md`.
@@ -615,7 +619,9 @@ left with the interpreter at E13: Julia's parser has none of them. Witnesses: `t
 ### §3.3 — Handled class (NOT an error): E-05 — meta-free input
 
 A meta-free input is **not** an error: on the NO-FEED path `goMeta` returns `PROCESS_OK` with zero
-alterant work, and the development tool's render of such a result is a byte-exact passthrough (a head-bearing fed profile still mints its
+alterant work, and the development tool's render of such a result passes the PARSED content through unchanged —
+byte-exact up to the documented line-ending normalization (CRLF → LF, §4; `docs/CANONICAL-OUTPUT.md` §6) and the
+selected `parse_range` (a given range is taken plain, `last` the parse end line — §2) (a head-bearing fed profile still mints its
 user-context row; a refusal-carrying feed aborts regardless of document meta-freeness). It carries
 no typed code — it is a normal success path.
 (An input whose only meta is inline is NOT this class: inline `#~` actions on content lines DO
@@ -885,7 +891,7 @@ non-silent record under R-V04B-61; the letter of R-V04B-24 (P) does not govern u
 
 - **`GoMeta.outputs` — §1.2 public-not-exported since 0.3.0 — REMOVED at 0.4.0** (no deprecation stub; the
   owner's "as clean as possible NOW"); ground: the renderer and the tree print are development tools
-  (R-V04B-13); replacement: the tool's `outputs` after `include("devtools/load_basic_renderer.jl")` at the
+  (R-V04B-13); replacement: the tool's `outputs` after `include(joinpath(pkgdir(GoMeta), "devtools", "load_basic_renderer.jl"))` at the
   caller's top level; a 0.3.0 caller sees `UndefVarError`; the same-commit triple (code + the document's
   §1.2/§1.3/§2/§3.4/§6 + the surface oracle); the policy's protection read as covering exported names only (P);
   `docs/CANONICAL-OUTPUT.md` re-scoped (the package's canonical observable output = `altValues_evals` (+

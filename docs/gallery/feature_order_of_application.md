@@ -9,6 +9,11 @@ Committed pair: `examples/InFileFolder/feature_order_of_application.jl` → `exa
 bytes the golden test layer pins. Verify locally from the repository root:
 `julia --startup-file=no --project=. devtools/run_examples.jl`.
 
+*(The fixture's frozen header line "Labels are limited to :label1..:label5" narrates the corpus-documented labels of
+its writing; since `0.3.0` the closed whitelist also accepts the fixed pictograph vocabulary
+(`src/alterants-std/labels_vocabulary.txt`; README "Documented v0 limits"). The quoted bytes stay as committed — the
+golden layer pins them.)*
+
 ## Input
 
 ```julia
