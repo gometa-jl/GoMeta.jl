@@ -40,7 +40,7 @@ end
                                setter = GM.Alterants.setLabels,
                                ctor = Dict{Symbol,Bool})
         b = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
-        b.plugins[1] = GM.PlugIn(; altName = :labels, setMode = :accumulate,
+        b.plugins[1] = GM.Alterant(; altName = :labels, setMode = :accumulate,
                                    altConstructor = ctor, setAltInstance = setter,
                                    getAltInstance = getter)
         return b
@@ -99,7 +99,7 @@ end
     @testset "an absent zero-arg method publishes (the eager DEP_MISSING gate left at stage 5's E4; the mint wrap left at stage 5's E6)" begin
         # (measured on the E4 scratch: PROBES-e4-validate_stage1-src-cut_on-1c9d013f.txt [6])
         b = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
-        b.plugins[2] = GM.PlugIn(; altName = :Visib, setMode = :mutExclusive,
+        b.plugins[2] = GM.Alterant(; altName = :Visib, setMode = :mutExclusive,
                                    altConstructor = SubString{String},
                                    setAltInstance = GM.Alterants.setVisib)
         @test isempty(GM.validate(b))

@@ -53,7 +53,7 @@ _sc_id(c) = _SC_BLS.getElement(c.cmpntNamedInt, :idComponent)
     end
 
     @testset "[S6] a custom registry: an undeclared capture stem derives as the walk derives it; a capture-less Alterant lists nothing" begin
-        _sc_with_capture(p, cap) = GM.PlugIn(; altName = p.altName, setMode = p.setMode, altConstructor = p.altConstructor,
+        _sc_with_capture(p, cap) = GM.Alterant(; altName = p.altName, setMode = p.setMode, altConstructor = p.altConstructor,
             setAltInstance = p.setAltInstance, getAltInstance = p.getAltInstance, precedencesTuple = p.precedencesTuple,
             default = p.default, capture = cap)
         k = findfirst(p -> p.altName === :Visib, GM.DEFAULT_REGISTRY.plugins); @test k !== nothing

@@ -119,7 +119,7 @@ _an_id(c) = _AN_BLS.getElement(c.cmpntNamedInt, :idComponent)
 
     @testset "[A8] a custom registry: an undeclared capture stem derives as the walk derives it; a capture-less Alterant answers its declared default" begin
         # the seat wf-s10-s2c4-check F-1: the Engine mints a stem-less Alterant's rows under lowercase(altName) and a capture-less Alterant's none
-        _with_capture(p, cap) = GM.PlugIn(; altName = p.altName, setMode = p.setMode, altConstructor = p.altConstructor,
+        _with_capture(p, cap) = GM.Alterant(; altName = p.altName, setMode = p.setMode, altConstructor = p.altConstructor,
             setAltInstance = p.setAltInstance, getAltInstance = p.getAltInstance, precedencesTuple = p.precedencesTuple,
             default = p.default, capture = cap)
         k = findfirst(p -> p.altName === :Visib, GM.DEFAULT_REGISTRY.plugins); @test k !== nothing

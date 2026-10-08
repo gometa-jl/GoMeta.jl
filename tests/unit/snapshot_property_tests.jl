@@ -62,7 +62,7 @@ end
     # fresh single-overload plugin; NO shared mutable container; fill Dicts UNIQUE-KEYED ———
     function _mk_prop_builder()
         b = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
-        b.plugins[1] = GM.PlugIn(; altName = :labels, setMode = :accumulate,
+        b.plugins[1] = GM.Alterant(; altName = :labels, setMode = :accumulate,
             altConstructor = Dict{Symbol,Bool},
             setAltInstance = GM.Alterants.setLabels, getAltInstance = GM.Alterants.checkLabels,
             capture = GM.CaptureDecl(:per_key, nothing),
@@ -78,12 +78,12 @@ end
             accepts_string_slot = s1.accepts_string_slot, validate = _callable_struct)
         # the slot-struct default (formerly action 3's) rides plugin 2 (Visib; the DEFAULT_REGISTRY's fields copied) — a `Declared`
         # nested in the data since stage 5's E10 of the v0.4 build (the `EffectRow` that carried the case left with its slot)
-        b.plugins[2] = GM.PlugIn(; altName = :Visib, setMode = :mutExclusive, altConstructor = GM.Alterants.Visib,
+        b.plugins[2] = GM.Alterant(; altName = :Visib, setMode = :mutExclusive, altConstructor = GM.Alterants.Visib,
             setAltInstance = GM.Alterants.setVisib,
             capture = GM.CaptureDecl(:single, nothing; attr_stem = :visib),
             default = GM.Declared(GM.Declared(Dict{Any,Any}(Int16(2) => "pv"))))
         GM.register!(b,
-            GM.PlugIn(; altName = Symbol("prop"), setMode = :accumulate, altConstructor = Dict{Symbol,Bool}, setAltInstance = _closure_ref),
+            GM.Alterant(; altName = Symbol("prop"), setMode = :accumulate, altConstructor = Dict{Symbol,Bool}, setAltInstance = _closure_ref),
             GM.ActionSpec(; name = :propset, plugin = Int8(5)))
         return b
     end
@@ -177,11 +177,11 @@ end
     # single-point substitutes, keyed by (parent struct type, field) — T2BIS-DESIGN §9's rule:
     # a distinct in-domain value ADMISSIBLE in that field, via the nearest mutable ancestor
     function _single_substitute(pT, pf, v)
-        pT === GM.PlugIn && pf === :getAltInstance && return GM.Alterants.checkLabels
-        pT === GM.PlugIn && pf === :precedencesTuple && return ntuple(i -> Symbol("p", i), GM.NUM_MH_LEVELS)
-        pT === GM.PlugIn && pf === :capture && return GM.CaptureDecl(:single, nothing)
+        pT === GM.Alterant && pf === :getAltInstance && return GM.Alterants.checkLabels
+        pT === GM.Alterant && pf === :precedencesTuple && return ntuple(i -> Symbol("p", i), GM.NUM_MH_LEVELS)
+        pT === GM.Alterant && pf === :capture && return GM.CaptureDecl(:single, nothing)
         pT === GM.ActionSpec && pf === :validate && return _swap_fn_a
-        pT === GM.PlugIn && pf === :default && return GM.Declared(1)   # stage 2's commit 3-ii: the slot is the Alterant's
+        pT === GM.Alterant && pf === :default && return GM.Declared(1)   # stage 2's commit 3-ii: the slot is the Alterant's
         pT === GM.CaptureDecl && pf === :mode_gate && return :localOnly
         pT === GM.CaptureDecl && pf === :attr_stem && return :zz   # v0.4 T5 (the round's B-3 cure — the raw error() fault otherwise)
         error("no single-point substitute for ($pT, $pf)")
@@ -191,9 +191,9 @@ end
     function _enumerate_sites(R)
         sites = Vector{NamedTuple}()
         function walk(v, path, pT, pf)
-            if v isa GM.PlugIn || v isa GM.ActionSpec
+            if v isa GM.Alterant || v isa GM.ActionSpec
                 push!(sites, (path = path, cat = :record, kind = :imm, pT = pT, pf = pf))
-                flds = v isa GM.PlugIn ? GM._WALK_PLUGIN_FIELDS : GM._WALK_ACTION_FIELDS
+                flds = v isa GM.Alterant ? GM._WALK_PLUGIN_FIELDS : GM._WALK_ACTION_FIELDS
                 for f in flds
                     walk(getfield(v, f), Any[path; f], typeof(v), f)
                 end
@@ -231,7 +231,7 @@ end
                 walk(v.second, Any[path; :second], Pair, pf)
             elseif v isa GM._SLOT_STRUCT_UNION
                 flds = fieldnames(typeof(v))
-                if isempty(flds) || (v isa GM.Declared && v.value === nothing)   # NoDefault() — or a `Declared(nothing)` (Heading's default since card C2, R-V04B-92): a single-point site, substituted WHOLE by `_single_substitute(PlugIn, :default, …)` — its `nothing` value is no leaf to vary and no imm site to rebuild
+                if isempty(flds) || (v isa GM.Declared && v.value === nothing)   # NoDefault() — or a `Declared(nothing)` (Heading's default since card C2, R-V04B-92): a single-point site, substituted WHOLE by `_single_substitute(Alterant, :default, …)` — its `nothing` value is no leaf to vary and no imm site to rebuild
                     push!(sites, (path = path, cat = :slotstruct, kind = :single, pT = pT, pf = pf))
                 else
                     push!(sites, (path = path, cat = :slotstruct, kind = :imm, pT = pT, pf = pf))
@@ -402,7 +402,7 @@ end
     end
     let b = _mk_prop_builder()                                   # (2) Dict rebuilt fresh (the vocabulary flags Dict left at stage 5's E9;
         k = Int(b.action_specs[4].plugin); p = b.plugins[k]      #     a Dict declared as plugin k's default carries the case)
-        b.plugins[k] = GM.PlugIn(; altName = p.altName, setMode = p.setMode, altConstructor = p.altConstructor,
+        b.plugins[k] = GM.Alterant(; altName = p.altName, setMode = p.setMode, altConstructor = p.altConstructor,
             setAltInstance = p.setAltInstance, getAltInstance = p.getAltInstance, precedencesTuple = p.precedencesTuple,
             default = GM.Declared(Dict{Any,Any}(:a => 1, :b => 2)), capture = p.capture)
         R = GM.publish(b)
@@ -435,7 +435,7 @@ end
     # (action 4 = Visib's :discard → plugin 2), every other field copied; the readers below read `R.plugins[2].default`
     _with_default(b, i, v) = begin
         k = Int(b.action_specs[i].plugin); p = b.plugins[k]
-        b.plugins[k] = GM.PlugIn(; altName = p.altName, setMode = p.setMode, altConstructor = p.altConstructor,
+        b.plugins[k] = GM.Alterant(; altName = p.altName, setMode = p.setMode, altConstructor = p.altConstructor,
             setAltInstance = p.setAltInstance, getAltInstance = p.getAltInstance, precedencesTuple = p.precedencesTuple,
             default = GM.Declared(v), capture = p.capture)
         b
@@ -461,9 +461,9 @@ end
     end
 
     # ═══ the NAMED cases (§9): Σ = 44 asserts (44 at T2-bis; the T4 VocabularyRef case's two left at stage 5's E9) ═══
-    _with_ctor(b, T) = (b.plugins[2] = GM.PlugIn(; altName = :Visib, setMode = :mutExclusive,
+    _with_ctor(b, T) = (b.plugins[2] = GM.Alterant(; altName = :Visib, setMode = :mutExclusive,
         altConstructor = T, setAltInstance = GM.Alterants.setVisib); b)
-    _swap_ctor!(R, T) = (R.plugins[2] = GM.PlugIn(; altName = :Visib, setMode = :mutExclusive,
+    _swap_ctor!(R, T) = (R.plugins[2] = GM.Alterant(; altName = :Visib, setMode = :mutExclusive,
         altConstructor = T, setAltInstance = GM.Alterants.setVisib); R)
     # (v0.4 T3 — the case-(iv) migration; RE-HOMED at T5: `SubString{String}` and its
     # swap target `String` are the ONLY named-case types without a zero-argument method,
@@ -695,10 +695,10 @@ end
         objs = _objs_along(R0, s.path[1:end-1])
         for (j, seg) in enumerate(s.path)
             o = objs[j]
-            (o isa GM.PlugIn || o isa GM.ActionSpec) && seg isa Symbol &&
+            (o isa GM.Alterant || o isa GM.ActionSpec) && seg isa Symbol &&
                 push!(recfields, (typeof(o), seg))
         end
-        s.pT in (GM.PlugIn, GM.ActionSpec) && s.path[end] isa Symbol &&
+        s.pT in (GM.Alterant, GM.ActionSpec) && s.path[end] isa Symbol &&
             push!(recfields, (s.pT, s.path[end]))
     end
     @test length(recfields) == 12                                # every §1 record field exercised (12 since stage 5's E12 of the v0.4 build — census row 45, the action record's settribute slot left; 13 since stage 5's E11 of the v0.4 build — the overload rows' ten fields and the action record's spelling, sugar_candidacy and keyed_slot left, census row 16; 27 before: the Alterant's default slot joined at commit 3, the action's left at 3-ii — R-V04B-51; the vocabulary slot left at stage 5's E9; the record's eight slots at E10 — MEASURED, the second build's counts probe caught the stale 35)

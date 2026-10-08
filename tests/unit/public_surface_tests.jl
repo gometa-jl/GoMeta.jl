@@ -10,8 +10,7 @@
 # DOES: (1) introspects the surface — `names(GoMeta)` (minus the module name) returns the
 #       exported ∪ `public` names; the EXPORTED tier (via `Base.isexported`) must equal the FOUR
 #       declared exports and the remaining tier (via `Base.ispublic`) must equal the declared
-#       package-public names (11 at v0.3.2; 36 since v0.4 T2 — the lifecycle + the record vocabulary;
-#       37 since the v0.4 `Alterant` rename — the canonical name beside the `PlugIn` alias;
+#       package-public names (27 since stage 5's E14 of the v0.4 build — the history of the count in docs/public-api.md §6;
 #       no accidental leak, no gap, no silent demotion) — the
 #       machine-checkable surface oracle; (2) asserts each supporting package-public name is
 #       defined, `public`, and NOT exported (the controlled surface); (3) asserts the internal
@@ -47,42 +46,20 @@ import TOML
     # The supporting PACKAGE-PUBLIC surface (docs/public-api.md §1.2): documented + qualified-access, NOT exported.
     SUPPORTING_PUBLIC = [:serialize_evals, :EvalRecord, :EvalStore, :ProcessStatus, :PROCESS_OK,
                          :PROCESS_ERROR, :Diagnostic, :AlterantRegistry, :DEFAULT_REGISTRY,
-                         # v0.4 T2 — the registration LIFECYCLE surface (Builder → validate → publish; the
-                         # typed refusal) + (cure batch 1) the record VOCABULARY a third-party author
-                         # constructs: 11 → 36 package-public names (a registered widening — the
-                         # sanctioned registration surface IS the intended Extension-facing seam);
-                         # 36 → 37 at the v0.4 `Alterant` rename (R-V04B-5): the canonical record
-                         # name beside the `PlugIn` 0.4.x deprecation alias.
-                         # 37 → 40 at v0.4 T4: the G-VOC query triple — the ONE vocabulary
-                         # read surface the three planes share (T4-DESIGN §4);
-                         # 40 → 39 at R-V04B-24 (2026-09-12): `outputs` REMOVED with the basic renderer
-                         # (a development tool; the register row in docs/public-api.md §6).
-                         # 39 → 40 at stage 2's commit 0 (R-V04B-58): `BLS` — the parser module public by name; its door
-                         # of travel / access functions declared inside it (the BLS-tier testset below).
-                         # 40 → 42 at stage 2's commit 4 (R-V04B-35 (c)): `evaluatedAltValue` + `EvaluatedAltValue` — THE ONE ANSWER FUNCTION and its record.
-                         # 42 → 44 at stage 2's commit 5 (his §6 9.A; the plan :57): `scanAlterant` + `evaluatedAltValues` — the scan by Alterant, the access by Component.
-                         # 44 → 45 at stage 2's commit 6 (R-V04B-35 (e); the plan :58): `childDiffers` — the child-differs signal computed from the answer.
-                         # 45 → 44 at stage 2's commit 9b (R-V04B-43 (1); the plan :61): `content_fingerprint` REMOVED — a piece's text is read from the
-                         # BLS Component tree through the door (`BLS.content`), never from the Engine; the register row in docs/public-api.md §6.
-                         # 44 → 38 at stage 5's E9 of the v0.4 build (census rows 10, 28, 55; R-V04B-105): the three vocabulary slot types and the
-                         # G-VOC query triple REMOVED with the Labels vocabulary machinery — the 38 names a plain file; the register row in docs/public-api.md §6.
-                         # 38 → 29 at stage 5's E10 of the v0.4 build (census rows 24 and 29; R-V04B-105): the nine slot types of the carried
-                         # declarations and the security frame REMOVED with the record's eight fields; the register row in docs/public-api.md §6.
+                         # the registration LIFECYCLE (Builder → validate → publish; the typed refusal) and the record VOCABULARY a
+                         # third-party author constructs — the sanctioned Extension-facing seam
                          :RegistryBuilder, :register!, :next_plugin_index, :validate, :publish, :RegistrationRefused,
-                         # 29 → 28 at stage 5's E11 of the v0.4 build (census row 16; R-V04B-105): `ActionOverload` REMOVED with the
-                         # declared action record's overload rows (census row 16); the register row in docs/public-api.md §6.
-                         :Alterant, :PlugIn, :ActionSpec, :CaptureDecl, :DefaultSlot,
-                         :NoDefault, :Declared,
-                         :BLS,   # 40 since stage 2's commit 0: the parser module `BLS`, R-V04B-58
-                         :evaluatedAltValue, :EvaluatedAltValue,   # 42 since stage 2's commit 4: THE ONE ANSWER FUNCTION and its record, R-V04B-35 (c)
-                         :scanAlterant, :evaluatedAltValues,   # 44 since stage 2's commit 5: the scan by Alterant and the access by Component, his §6 9.A
-                         :childDiffers]   # mirrors docs/public-api.md §1.2 EXACTLY (29 since stage 5's E10; 38 since stage 5's E9; 44 since stage 2's commit 9b: `content_fingerprint` removed, R-V04B-43 (1); 45 since commit 6: the child-differs signal, R-V04B-35 (e))
+                         :Alterant, :ActionSpec, :CaptureDecl, :DefaultSlot, :NoDefault, :Declared,
+                         :BLS,   # the parser module, public by name — its door inside it (R-V04B-58)
+                         :evaluatedAltValue, :EvaluatedAltValue,   # THE ONE ANSWER FUNCTION and its record (R-V04B-35 (c), R-V04B-95)
+                         :scanAlterant, :evaluatedAltValues,   # the scan by Alterant and the access by Component (his §6 9.A)
+                         :childDiffers]   # mirrors docs/public-api.md §1.2 EXACTLY — 27 names since stage 5's E14 of the v0.4 build; every change of the set is a row of §6
 
     @testset "export set is EXACTLY the declared semver surface" begin
         live = setdiff(Set(names(GM)), Set([:GoMeta]))     # names() on Julia ≥1.11 == exported ∪ `public` (+ the module name)
         exported = Set(filter(n -> Base.isexported(GM, n), collect(live)))
         @test exported == DECLARED_EXPORTS                        # [1] no accidental leak AND no gap (exact equality)
-        @test setdiff(live, exported) == Set(SUPPORTING_PUBLIC)   # [1b] the `public` tier is EXACTLY the declared names (38 since stage 5's E9; 44 since stage 2's commit 9b: `content_fingerprint` REMOVED, R-V04B-43 (1); 45 since commit 6: `childDiffers`; 44 since commit 5: `scanAlterant`, `evaluatedAltValues`; 42 since commit 4: `evaluatedAltValue`, `EvaluatedAltValue`; 40 since commit 0: `BLS`; 39 since R-V04B-24; 40 before)
+        @test setdiff(live, exported) == Set(SUPPORTING_PUBLIC)   # [1b] the `public` tier is EXACTLY the declared names (27 since stage 5's E14 of the v0.4 build; the history of the count in docs/public-api.md §6)
         @test all(n -> Base.ispublic(GM, n), SUPPORTING_PUBLIC)   # [1c] every supporting name carries the `public` marking
         @test all(n -> !Base.isexported(GM, n), SUPPORTING_PUBLIC) # [1d] …and none is exported (the two-tier partition is real)
         for n in DECLARED_EXPORTS
@@ -193,9 +170,10 @@ import TOML
     @testset "surface oracle: an out-of-surface implementation name is NOT bound in the top module" begin
         # The standing oracle for the v0 public surface: a name OUTSIDE the declared surface must
         # not be a binding in the top module (⇒ a fortiori it cannot be exported either, so a separate
-        # `∉ exported` assertion would be implied by [1]). The single load-bearing check below reds the
-        # moment a future edit binds this name — any module addition must consciously update the oracle.
+        # `∉ exported` assertion would be implied by [1]). The two load-bearing checks below red the
+        # moment a future edit binds either name — any module addition must consciously update the oracle.
         @test !isdefined(GM, :OtherImpl)                         # [9] the name is not bound in the top module
+        @test !isdefined(GM, :PlugIn)                           # [10] the public alias `PlugIn` LEFT at stage 5's E14 of the v0.4 build (R-V04B-62 — a clean cut, R-V04B-61): a re-binding reds here where [1b] alone would not
     end
 
     @testset "env_twin (test/ and tests/ resolve the same environment)" begin

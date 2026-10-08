@@ -131,36 +131,18 @@ include("childdiff.jl")             # stage 2's commit 6 (R-V04B-35 (e); the pla
 
 #########################################################################################
 ########### Public API (the declared semver surface — re-exported) #####################
-# The four names below ARE GoMeta's declared public API (documented in docs/public-api.md §1.1).
-# `export` re-exports them — all are defined directly in this
-# module via the include spine above — so `using GoMeta` brings exactly these into scope and
-# `names(GoMeta)` IS the machine-checkable semver surface (asserted by tests/unit/public_surface_tests.jl).
-# EVERYTHING else stays PACKAGE-PUBLIC (reached qualified, e.g. GoMeta.PROCESS_OK / .Diagnostic):
-# the supporting types (ProcessStatus/Diagnostic/EvalStore/AlterantRegistry),
-# DEFAULT_REGISTRY, serialize_evals, EvalRecord, and the PROCESS_OK/PROCESS_ERROR values
-# — the names on the `public` lines below (eleven at 0.3.x; thirty-six since v0.4 T2: + the
-#   registration lifecycle incl. `next_plugin_index` + the record vocabulary; thirty-seven since
-#   the v0.4 `Alterant` rename — `Alterant` is the record's canonical name and `PlugIn` its
-#   PUBLIC 0.4.x deprecation alias (R-V04B-5); FORTY since v0.4 T4: + the G-VOC query triple
-#   `vocabulary`/`vocabulary_member`/`vocabulary_queryable`; THIRTY-NINE since R-V04B-24 (2026-09-12):
-#   `outputs` REMOVED with the basic renderer — a development tool; the register row in docs/public-api.md §6;
-#   FORTY since stage 2's commit 0 of the v0.4 build (R-V04B-58): + the parser module `BLS`, its door inside it;
-#   FORTY-FIVE after stage 2's commits 4–6 (`evaluatedAltValue`, `EvaluatedAltValue`, `scanAlterant`, `evaluatedAltValues`, `childDiffers`);
-#   FORTY-FOUR since stage 2's commit 9b (R-V04B-43 (1)): `content_fingerprint` REMOVED — a piece's text is read from the
-#   BLS Component tree through the door (`BLS.content`), never from the Engine; the register row in docs/public-api.md §6;
-#   THIRTY-EIGHT since stage 5's E9 of the v0.4 build (census rows 10, 28 and 55; R-V04B-105): the three vocabulary slot
-#   types and the G-VOC query triple REMOVED — the Labels vocabulary a plain file; the register row in docs/public-api.md §6;
-#   TWENTY-NINE since stage 5's E10 of the v0.4 build (census rows 24 and 29; R-V04B-105): the nine slot types of the carried
-#   declarations and the security frame REMOVED with the record's eight fields; the register row in docs/public-api.md §6;
-#   docs/public-api.md §1.2 is the mirror).
+# The four names below ARE GoMeta's declared public API (docs/public-api.md §1.1); `export` re-exports them — all defined directly in
+# this module via the include spine above — so `using GoMeta` brings exactly these into scope and `names(GoMeta)` IS the
+# machine-checkable semver surface (asserted by tests/unit/public_surface_tests.jl). EVERYTHING else stays PACKAGE-PUBLIC (reached
+# qualified, e.g. GoMeta.PROCESS_OK / .Diagnostic): the names on the `public` lines below — TWENTY-SEVEN since stage 5's E14 of the
+# v0.4 build (census row 54: the tier at its ruled names; the `PlugIn` alias left, R-V04B-62); docs/public-api.md §1.2 is the mirror
+# and its §6 register carries every change of the set as a row.
 # Qualified import (`import GoMeta as GM`) is UNAFFECTED by these exports and remains canonical for namespace
 # hygiene + multi-implementation use; exporting serves the single-implementation `using` convenience only.
 export goMeta, readAltValuesEvals, GoMetaConfig, GoMetaDelivery
 public serialize_evals, EvalRecord, EvalStore, ProcessStatus, PROCESS_OK, PROCESS_ERROR, Diagnostic, AlterantRegistry, DEFAULT_REGISTRY,
-       RegistryBuilder, register!, next_plugin_index, validate, publish, RegistrationRefused,   # v0.4 T2: the registration lifecycle (docs/public-api.md §1.2)
-       Alterant, PlugIn, ActionSpec, CaptureDecl, DefaultSlot, NoDefault, Declared   # v0.4 T2 (cure batch 1) + the rename: the record (`ActionOverload` left at stage 5's E11 — census row 16)
-                                                                                                  #   VOCABULARY a third-party author constructs (docs/public-api.md §1.2; the three vocabulary slot types and the G-VOC triple left at
-                                                                                                  #   stage 5's E9; the nine slot types of the carried declarations and the security frame at stage 5's E10 — census rows 24 and 29)
+       RegistryBuilder, register!, next_plugin_index, validate, publish, RegistrationRefused,   # the registration lifecycle (docs/public-api.md §1.2)
+       Alterant, ActionSpec, CaptureDecl, DefaultSlot, NoDefault, Declared   # the record vocabulary a third-party author constructs (docs/public-api.md §1.2)
 public BLS   # stage 2's commit 0 of the v0.4 build (R-V04B-33/45/58): the parser module public by name — its door of travel / access functions declared INSIDE it (src/bls/BLS.jl; docs/public-api.md §1.2 + §6)
 public evaluatedAltValue, EvaluatedAltValue   # stage 2's commit 4 of the v0.4 build (R-V04B-35 (c)): THE ONE ANSWER FUNCTION and its record — package-public, NOT exported (docs/public-api.md §1.2; the register row §6); the name his word of 2026-10-03 (OWNER-WORDS §305; R-V04B-95); the tier carried past the branch (the review's C23)
 public scanAlterant, evaluatedAltValues   # stage 2's commit 5 of the v0.4 build (his §6 9.A; the plan :57): THE SCAN BY ALTERANT and THE ACCESS BY COMPONENT — package-public, NOT exported (docs/public-api.md §1.2; the register row §6); the names his word of 2026-10-03 (§305; R-V04B-95); the form — functions of their own — stands, its alternative (methods of the reader) banked

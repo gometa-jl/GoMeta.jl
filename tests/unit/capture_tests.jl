@@ -40,7 +40,7 @@ end
         b = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
         pi = GM.next_plugin_index(b)
         GM.register!(b,
-            GM.PlugIn(; altName = :zmock, setMode = :accumulate, altConstructor = store,
+            GM.Alterant(; altName = :zmock, setMode = :accumulate, altConstructor = store,
                 setAltInstance = setter, capture = capture),
             GM.ActionSpec(; name = name, plugin = pi))
         b
@@ -97,7 +97,7 @@ end
         b = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
         pi = GM.next_plugin_index(b)
         GM.register!(b,
-            GM.PlugIn(; altName = :zhead, setMode = :localOnly,
+            GM.Alterant(; altName = :zhead, setMode = :localOnly,
                 altConstructor = GM.Alterants.Heading, setAltInstance = GM.Alterants.setHead,
                 capture = GM.CaptureDecl(:per_occurrence, :localOnly; attr_stem = :zh)),
             GM.ActionSpec(; name = :zhd, plugin = pi, accepts_string_slot = 1))
@@ -150,7 +150,7 @@ end
         b1 = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
         p1 = GM.next_plugin_index(b1)
         GM.register!(b1,
-            GM.PlugIn(; altName = :znone, setMode = :localOnly,
+            GM.Alterant(; altName = :znone, setMode = :localOnly,
                 altConstructor = GM.Alterants.Heading, setAltInstance = GM.Alterants.setHead),
             GM.ActionSpec(; name = :znh, plugin = p1, accepts_string_slot = 1))
         r1 = GM.goMeta(_doc("x = 1\n#~ \"T\" znh(\"V\", 2)\n\ny = 2\n"); registry = GM.publish(b1))
@@ -164,7 +164,7 @@ end
         b4 = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
         p4 = GM.next_plugin_index(b4)
         GM.register!(b4,
-            GM.PlugIn(; altName = :zle, setMode = :localOnly,
+            GM.Alterant(; altName = :zle, setMode = :localOnly,
                 altConstructor = Dict{Symbol,Bool}, setAltInstance = _CapM.badset,
                 capture = GM.CaptureDecl(:per_occurrence, :localOnly; attr_stem = :ze)),
             GM.ActionSpec(; name = :zle1, plugin = p4))

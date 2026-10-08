@@ -32,7 +32,7 @@ import GoMeta as GM
         @test GM.CaptureDecl(:per_key, nothing, :st5).attr_stem === :st5
         @test GM._slot_text(cap) !=
               GM._slot_text(GM.CaptureDecl(:per_key, nothing, :st5))
-        p = GM.PlugIn(; altName = :zz, setMode = :accumulate, altConstructor = Dict{Symbol,Bool},
+        p = GM.Alterant(; altName = :zz, setMode = :accumulate, altConstructor = Dict{Symbol,Bool},
                         setAltInstance = identity, capture = cap)
         @test p.capture === cap
         s = GM.ActionSpec(; name = :zzh, plugin = Int8(1))

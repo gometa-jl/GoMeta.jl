@@ -28,7 +28,7 @@
 using Test
 import GoMeta as GM
 
-_plugin_with_default(p, d) = GM.PlugIn(; altName = p.altName, setMode = p.setMode, altConstructor = p.altConstructor,
+_plugin_with_default(p, d) = GM.Alterant(; altName = p.altName, setMode = p.setMode, altConstructor = p.altConstructor,
         setAltInstance = p.setAltInstance, getAltInstance = p.getAltInstance, precedencesTuple = p.precedencesTuple,
         default = d, capture = p.capture)   # stage 2's commit 3-ii: the declared default is the ALTERANT's — the record `p` with the slot `d`, every other field copied
 
@@ -52,7 +52,7 @@ _plugin_with_default(p, d) = GM.PlugIn(; altName = p.altName, setMode = p.setMod
         @test length(R.plugins) == 4 && length(R.action_specs) == 8
         # publication COPIES: no container is shared with the builder
         @test R.plugins !== b.plugins && R.action_specs !== b.action_specs
-        push!(b.plugins, GM.PlugIn(; altName = :zz, setMode = :accumulate, altConstructor = Dict{Symbol,Bool}, setAltInstance = identity))
+        push!(b.plugins, GM.Alterant(; altName = :zz, setMode = :accumulate, altConstructor = Dict{Symbol,Bool}, setAltInstance = identity))
         @test length(R.plugins) == 4                        # the published value is untouched
         @test isempty(GM._registry_door_check(R))
     end
@@ -115,7 +115,7 @@ _plugin_with_default(p, d) = GM.PlugIn(; altName = p.altName, setMode = p.setMod
         @eval module _EvilVisib; setVisib(args...) = nothing; end
         evil = _EvilVisib.setVisib
         @test nameof(evil) === nameof(GM.Alterants.setVisib)
-        R5.plugins[2] = GM.PlugIn(; altName = :Visib, setMode = :mutExclusive, altConstructor = GM.Alterants.Visib, setAltInstance = evil)
+        R5.plugins[2] = GM.Alterant(; altName = :Visib, setMode = :mutExclusive, altConstructor = GM.Alterants.Visib, setAltInstance = evil)
         @test _codes(GM._registry_door_check(R5)) == [:POST_SEAL_MUTATION]
         # (T2-bis — one of the TWO named append-only exceptions, T2BIS-DESIGN §8) the snapshot
         # BINDING is immutable: a NamedTuple has no `setindex!`, so the baseline binding cannot
@@ -144,7 +144,7 @@ _plugin_with_default(p, d) = GM.PlugIn(; altName = p.altName, setMode = p.setMod
         end
         base = GM.default_registry_builder()
         bp = GM.RegistryBuilder(copy(base.plugins), copy(base.action_specs))
-        GM.register!(bp, GM.PlugIn(; altName = :pz, setMode = :accumulate, altConstructor = Dict{Symbol,Bool}, setAltInstance = _ParamSetter.paramset),
+        GM.register!(bp, GM.Alterant(; altName = :pz, setMode = :accumulate, altConstructor = Dict{Symbol,Bool}, setAltInstance = _ParamSetter.paramset),
                      GM.ActionSpec(; name = :pzset, plugin = Int8(5)))
         dp = GM.validate(bp)                                  # must return, not throw
         @test dp isa Vector{GM.Diagnostic}
@@ -152,7 +152,7 @@ _plugin_with_default(p, d) = GM.PlugIn(; altName = p.altName, setMode = p.setMod
         # (cure batch 2) register! refuses the ACTION pool too
         ba = GM.RegistryBuilder()
         many = [GM.ActionSpec(; name = Symbol("act", i), plugin = Int8(1)) for i in 1:128]
-        e = try GM.register!(ba, GM.PlugIn(; altName = :big, setMode = :accumulate, altConstructor = Dict{Symbol,Bool}, setAltInstance = GM.Alterants.setLabels),
+        e = try GM.register!(ba, GM.Alterant(; altName = :big, setMode = :accumulate, altConstructor = Dict{Symbol,Bool}, setAltInstance = GM.Alterants.setLabels),
                              many...); nothing catch err; err end
         @test e isa GM.RegistrationRefused && _errors(e.diagnostics) == [:REG_SLOT_EXHAUSTED]
         @test isempty(ba.plugins) && isempty(ba.action_specs)
@@ -170,7 +170,7 @@ _plugin_with_default(p, d) = GM.PlugIn(; altName = p.altName, setMode = p.setMod
         # (the cure-batch-2 reflection-order witness left at stage 5's E4 with the reflection cross-check)
         # (cure batch 2, interim until T7) a PUBLISHED custom registry WITHOUT the built-in Visib RUNS
         bc = GM.RegistryBuilder()
-        GM.register!(bc, GM.PlugIn(; altName = :bag, setMode = :accumulate, altConstructor = Dict{Symbol,Bool}, setAltInstance = GM.Alterants.setLabels, getAltInstance = GM.Alterants.checkLabels),
+        GM.register!(bc, GM.Alterant(; altName = :bag, setMode = :accumulate, altConstructor = Dict{Symbol,Bool}, setAltInstance = GM.Alterants.setLabels, getAltInstance = GM.Alterants.checkLabels),
                      GM.ActionSpec(; name = Symbol(":"), plugin = Int8(1)))
         Rc = GM.publish(bc)
         rc = GM.goMeta(Vector{UInt8}(codeunits("x = 1\n#~ :label1\n\ny = 2\n")); registry = Rc)
@@ -269,7 +269,7 @@ _plugin_with_default(p, d) = GM.PlugIn(; altName = p.altName, setMode = p.setMod
               Set(x.context for x in dps) == Set([:labels, :Visib])   # commit 3-ii: the slots are the Alterants' — the contexts their names
         # deep-copy publication: a NESTED declared container of the builder is not shared with the published value
         bdp = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
-        bdp.plugins[2] = GM.PlugIn(; altName = :Visib, setMode = :mutExclusive, altConstructor = GM.Alterants.Visib,
+        bdp.plugins[2] = GM.Alterant(; altName = :Visib, setMode = :mutExclusive, altConstructor = GM.Alterants.Visib,
                                      setAltInstance = GM.Alterants.setVisib, default = GM.Declared(Any[:hide, :show]))   # the declared default's
         Rdp = GM.publish(bdp)                                                                                         #   container since stage 5's E10
         push!(bdp.plugins[2].default.value, :discard)
@@ -279,7 +279,7 @@ _plugin_with_default(p, d) = GM.PlugIn(; altName = p.altName, setMode = p.setMod
         @test length(bx.plugins) == 4 && bx.plugins !== GM.DEFAULT_REGISTRY.plugins
         i5 = GM.next_plugin_index(bx)
         @test i5 isa Int8 && i5 == 5
-        GM.register!(bx, GM.PlugIn(; altName = :bag2, setMode = :accumulate, altConstructor = Dict{Symbol,Bool}, setAltInstance = GM.Alterants.setLabels, getAltInstance = GM.Alterants.checkLabels),
+        GM.register!(bx, GM.Alterant(; altName = :bag2, setMode = :accumulate, altConstructor = Dict{Symbol,Bool}, setAltInstance = GM.Alterants.setLabels, getAltInstance = GM.Alterants.checkLabels),
                      GM.ActionSpec(; name = :bagset, plugin = i5))
         Rx = GM.publish(bx)
         rx = GM.goMeta(Vector{UInt8}(codeunits("x = 1\n#~ hide\n\ny = 2\n")); registry = Rx)
@@ -296,17 +296,17 @@ _plugin_with_default(p, d) = GM.PlugIn(; altName = p.altName, setMode = p.setMod
         # the honest bound of bypassing `register!`
         b = GM.RegistryBuilder(copy(base.plugins), copy(base.action_specs))
         for i in 1:123
-            GM.register!(b, GM.PlugIn(; altName = Symbol("zz", i), setMode = :accumulate, altConstructor = Dict{Symbol,Bool},
+            GM.register!(b, GM.Alterant(; altName = Symbol("zz", i), setMode = :accumulate, altConstructor = Dict{Symbol,Bool},
                                       setAltInstance = GM.Alterants.setLabels, getAltInstance = GM.Alterants.checkLabels))
         end
         @test length(b.plugins) == 127
-        e = try GM.register!(b, GM.PlugIn(; altName = :zz128, setMode = :accumulate, altConstructor = Dict{Symbol,Bool},
+        e = try GM.register!(b, GM.Alterant(; altName = :zz128, setMode = :accumulate, altConstructor = Dict{Symbol,Bool},
                                           setAltInstance = GM.Alterants.setLabels, getAltInstance = GM.Alterants.checkLabels)); nothing catch err; err end
         @test e isa GM.RegistrationRefused && _errors(e.diagnostics) == [:REG_SLOT_EXHAUSTED]
         # `register!` binds the records to the appended plugin (cure batch 1): a record naming another
         # index refuses loudly instead of leaving the appended alterant silently actionless
         b = GM.RegistryBuilder(copy(base.plugins), copy(base.action_specs))
-        e = try GM.register!(b, GM.PlugIn(; altName = :p5, setMode = :mutExclusive, altConstructor = GM.Alterants.Visib, setAltInstance = GM.Alterants.setVisib),
+        e = try GM.register!(b, GM.Alterant(; altName = :p5, setMode = :mutExclusive, altConstructor = GM.Alterants.Visib, setAltInstance = GM.Alterants.setVisib),
                              GM.ActionSpec(; name = :zzv, plugin = Int8(2))); nothing
         catch err; err end
         @test e isa GM.RegistrationRefused && _errors(e.diagnostics) == [:REG_PROTOCOL]
@@ -344,7 +344,7 @@ _plugin_with_default(p, d) = GM.PlugIn(; altName = p.altName, setMode = p.setMod
         # W5 — KNOWN OPEN (v) closes: `altConstructor = Val{'c'}` is a SLOT-NAMED validate row
         # (record in context, slot in the message) + a typed publish refusal
         b5 = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
-        b5.plugins[1] = GM.PlugIn(; altName = :labels, setMode = :accumulate, altConstructor = Val{'c'},
+        b5.plugins[1] = GM.Alterant(; altName = :labels, setMode = :accumulate, altConstructor = Val{'c'},
                                     setAltInstance = GM.Alterants.setLabels,
                                     getAltInstance = GM.Alterants.checkLabels)
         d5 = GM.validate(b5)
@@ -388,7 +388,7 @@ _plugin_with_default(p, d) = GM.PlugIn(; altName = p.altName, setMode = p.setMod
             Poison() = Poison{Int}()
         end
         bc1 = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
-        bc1.plugins[2] = GM.PlugIn(; altName = :Visib, setMode = :mutExclusive,
+        bc1.plugins[2] = GM.Alterant(; altName = :Visib, setMode = :mutExclusive,
                                      altConstructor = _CrxPoison.Poison,
                                      setAltInstance = GM.Alterants.setVisib)
         Rc1 = GM.publish(bc1)

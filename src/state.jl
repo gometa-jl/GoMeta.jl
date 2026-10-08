@@ -2,13 +2,13 @@
 #
 # IS: the state vocabulary of the GoMeta engine — the per-call `ProcessState` (delivered through a
 #     `ScopedValue`, never held in a global), the immutable `AlterantRegistry` type behind
-#     `DEFAULT_REGISTRY`, the meta-hierarchy and alterant-queue sub-states, the `PlugIn` inventory
+#     `DEFAULT_REGISTRY`, the meta-hierarchy and alterant-queue sub-states, the `Alterant` inventory
 #     unit, the public `GoMetaDelivery` (docs/public-api.md §1.1), and the `init_state` constructor that
 #     sizes every container fresh for each call.
 # DOES: declares the meta-hierarchy level layout
 #     (`NUM_MH_LEVELS = 12`: the file level, the depth window `1..maxDepthMH`, then the user / line /
 #     fallBack levels — the user level is the reserved slot that `GoMetaConfig.user_mh_profile`
-#     seeds; docs/public-api.md §2); `PlugIn`; `AlterantRegistry` with
+#     seeds; docs/public-api.md §2); `Alterant`; `AlterantRegistry` with
 #     `num_alterants` / `num_alt_actions` (4 alterants / 8 actions since the heading registration,
 #     the generic action → settribute write-back table left at stage 5's E12 — census row 45); `MetaHierarchyState`; `AlterantQueue`;
 #     `ProcessState`; `GoMetaDelivery`; the `STATE` ScopedValue + `ctx()`; `init_state`;
@@ -136,24 +136,29 @@ end
 """
     Alterant
 
-The registration-record type for one alterant — RENAMED from `PlugIn` at v0.4 (R-V04B-5);
-`const PlugIn = Alterant` is a PUBLIC deprecation alias for the whole 0.4.x family (both
-names `public`; the record's FIELD NAMES are NOT renamed at v0.4 — keyword constructors
-are public; alias removal + field-name normalization = v0.5).
-
-The inventory unit for one alterant (`Labels` / `Visib` / `Id` / `Heading`): its name, set-mode
-(`:accumulate` — the inheritance backtrack COLLECTS every applicable value · `:mutExclusive` — the
-backtrack stops at the FIRST applicable value · `:mutExclusivePerField` — the `Id` compound; the per-FIELD
-first-wins semantics its name promises are DEFERRED (the registry's note: the mode sits in neither set-mode table by
-design) — at v0.4 the nearest statement sets the compound as a WHOLE (an unset field is not inherited from an outer
-slot) and within one slot the LAST row of a field wins (MEASURED at stage 2's commit 7, `tests/authored/006_id_compound.toml`
-a draft put to the owner; card 8 "next"; the CrossReview set REAL-1 R1 #1 — the contract narrowed, no Engine change)
-· `:localOnly` — the value applies ONCE, where it stands: never enqueued, never visited by
-the backtrack, delivered at the absorb seam), the alterant-instance constructor type, the setter/getter, the (always-`nothing` at
-v0) precedence tuple and — since stage 2's commit 3 — the Alterant's ONE declared default value (`default`,
-R-V04B-51 (1)–(2): Visib's is `:show`; delivered by the answer function with the source "default"). A fixed-size-array-free inventory unit, built into the registry by
-`build_default_registry`. `precedencesTuple` is sized by `NUM_MH_LEVELS`,
-the unified meta-hierarchy level count.
+IS: the registration record of ONE Alterant — the inventory unit the registry holds for `Labels` / `Visib` / `Id` / `Heading` and for
+    any Alterant an Extension registers through the lifecycle (docs/public-api.md §1.2). His legacy's `struct PlugIn` (R-V04B-5;
+    GoMetaRetro `src/Alterants.jl`) carries the name `Alterant` since v0.4 — his words of 2026-07-28 (U5 OQ-149): he prefers NOT to
+    call the record 'PlugIn' anymore, the name clashing with another kind of PlugIn he has in mind (R-V04B-5); the public alias
+    `PlugIn` LEFT at stage 5's E14 of the v0.4 build (R-V04B-62 — a clean cut under R-V04B-61; the register row in docs/public-api.md
+    §6). The FIELD NAMES are his legacy's and stay.
+DOES: carries the Alterant's name (`altName`); its set-mode (`setMode` — `:accumulate`: the inheritance backtrack COLLECTS every
+    applicable value · `:mutExclusive`: the backtrack stops at the FIRST applicable value · `:mutExclusivePerField`: the `Id`
+    compound — the per-FIELD first-wins semantics its name promises are DEFERRED (the registry's note: the mode sits in neither
+    set-mode table by design); at v0.4 the nearest statement sets the compound as a WHOLE (an unset field is not inherited from an
+    outer slot) and within one slot the LAST row of a field wins (MEASURED at stage 2's commit 7, `tests/authored/006_id_compound.toml`,
+    a draft put to the owner; card 8 "next"; the CrossReview set REAL-1 R1 #1 — the contract narrowed, no Engine change) ·
+    `:localOnly`: the value applies ONCE, where it stands — never enqueued, never visited by the backtrack, delivered at the absorb
+    seam); the alterant-instance constructor type (`altConstructor`); the setter and the query getter (`setAltInstance`,
+    `getAltInstance` — the getter `nothing` for an Alterant that answers no query); the precedence tuple (`precedencesTuple`, always
+    `nothing` at v0; sized by `NUM_MH_LEVELS`, the unified meta-hierarchy level count); the Alterant's ONE declared default value
+    (`default` — `NoDefault()` | `Declared(v)`; R-V04B-51 (1)–(2), R-V04B-55: Visib's is `:show`; delivered by the answer function
+    with the source "default"; stage 2's commit 3); and the capture declaration (`capture` — `nothing` | a `CaptureDecl`; v0.4 T5:
+    the row that makes the Alterant's applied state mint evals rows). The keyword form below defaults every optional slot;
+    `build_default_registry` builds the four shipped records.
+REASONING: one immutable record per Alterant, declared as DATA and read by the apply plane through the registry's derived tables — his
+    legacy's form (one record per Alterant, registered as data); no fixed-size array inside it.
+PURPOSE: the unit of the Alterant inventory — what `register!` accepts and what the registry's tables are derived from.
 """
 struct Alterant
     altName::Symbol
@@ -169,15 +174,12 @@ struct Alterant
     # --- the capture declaration (v0.4 T5; the seven other declared slots of T1 left at stage 5's E10 of the v0.4 build) ---
     capture::Union{Nothing,CaptureDecl}            # slot (2): the capture declaration
 end
-"The PUBLIC deprecation alias of the v0.4 `PlugIn` → `Alterant` rename (R-V04B-5) — stands
-for the whole 0.4.x family; removal = v0.5 (register row V05-3)."
-const PlugIn = Alterant
 "The keyword form: the two declared slots addressable by name; an unnamed slot takes its nothing/undeclared default."
-PlugIn(; altName::Symbol, setMode::Symbol, altConstructor::Type, setAltInstance::Function,
-         getAltInstance::Union{Nothing,Function} = nothing,
-         precedencesTuple::Union{Nothing,NTuple{NUM_MH_LEVELS,Symbol}} = nothing,
-         default::DefaultSlot = NoDefault(), capture = nothing) =
-    PlugIn(altName, setMode, altConstructor, setAltInstance, getAltInstance, precedencesTuple, default, capture)
+Alterant(; altName::Symbol, setMode::Symbol, altConstructor::Type, setAltInstance::Function,
+           getAltInstance::Union{Nothing,Function} = nothing,
+           precedencesTuple::Union{Nothing,NTuple{NUM_MH_LEVELS,Symbol}} = nothing,
+           default::DefaultSlot = NoDefault(), capture = nothing) =
+    Alterant(altName, setMode, altConstructor, setAltInstance, getAltInstance, precedencesTuple, default, capture)
 
 """
     ActionSpec
@@ -253,7 +255,7 @@ REASONING: `DEFAULT_REGISTRY` is read-only after construction: its `Dict`/`Vecto
 containers, and mutating any of them post-construction breaks the determinism guarantee.
 """
 struct AlterantRegistry
-    plugins::Vector{PlugIn}
+    plugins::Vector{Alterant}
     sorted_alt_actions::Vector{Symbol}
     action_to_plugin::Vector{Int8}
     action_index::Dict{Symbol,Int8}
@@ -292,7 +294,7 @@ struct AlterantRegistry
     # hand-written table binding exists at any snapshot-carrying call site, so the two
     # same-typed groups (`action_index`/`alt_index`; `action_to_plugin`/`accum_alt_idxs`/
     # `mutex_alt_idxs`) cannot be swapped by a caller.
-    function AlterantRegistry(::_SealToken, plugins::Vector{PlugIn},
+    function AlterantRegistry(::_SealToken, plugins::Vector{Alterant},
                               action_specs::Vector{ActionSpec}, t::NamedTuple,
                               snapshot::Union{Nothing,NamedTuple})
         new(plugins, t.sorted_alt_actions, t.action_to_plugin, t.action_index, t.alt_index,
@@ -315,7 +317,7 @@ publish`); route U therefore dies at the entry too (R-V04-34's STRICT door). No 
 accepts a snapshot: for conforming callers, published values come from `publish` (the honest bound: the
 token form is reachable by any loaded module — accident-grade, B-2).
 """
-function AlterantRegistry(plugins::Vector{PlugIn}, sorted_alt_actions::Vector{Symbol},
+function AlterantRegistry(plugins::Vector{Alterant}, sorted_alt_actions::Vector{Symbol},
                           action_to_plugin::Vector{Int8}, action_index::Dict{Symbol,Int8},
                           alt_index::Dict{Symbol,Int8}, accum_alt_idxs::Vector{Int8},
                           mutex_alt_idxs::Vector{Int8},
@@ -363,10 +365,10 @@ on any error, else DEEP-copies every container into a SEALED `AlterantRegistry` 
 route to a sealed value; `next_plugin_index(builder)` gives the index the next record must name).
 """
 mutable struct RegistryBuilder
-    plugins::Vector{PlugIn}
+    plugins::Vector{Alterant}
     action_specs::Vector{ActionSpec}
 end
-RegistryBuilder() = RegistryBuilder(PlugIn[], ActionSpec[])
+RegistryBuilder() = RegistryBuilder(Alterant[], ActionSpec[])
 """
     next_plugin_index(builder) -> Int8
 
@@ -407,7 +409,7 @@ appended one silently actionless (cure batch 1), so the mismatch refuses HERE, l
 `REG_PROTOCOL`; the Int8 slot pool refuses `REG_SLOT_EXHAUSTED` at the 128th PLUGIN append AND
 when the appended action records would exceed 127 ACTIONS (cure batch 2).
 """
-function register!(b::RegistryBuilder, plugin::PlugIn, specs::ActionSpec...)
+function register!(b::RegistryBuilder, plugin::Alterant, specs::ActionSpec...)
     n = length(b.plugins) + 1
     n > typemax(Int8) && throw(RegistrationRefused([Diagnostic(:REG_SLOT_EXHAUSTED, :error, string(
         "GoMeta registry: register! — appending alterant ", repr(plugin.altName), " would be plugin ",

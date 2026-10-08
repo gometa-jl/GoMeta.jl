@@ -113,7 +113,7 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
 @testset "vocabulary (v0.4 T4)" begin
 
     _doc(s) = Vector{UInt8}(codeunits(s))
-    _plugin_with_default(p, d) = GM.PlugIn(; altName = p.altName, setMode = p.setMode, altConstructor = p.altConstructor,
+    _plugin_with_default(p, d) = GM.Alterant(; altName = p.altName, setMode = p.setMode, altConstructor = p.altConstructor,
         setAltInstance = p.setAltInstance, getAltInstance = p.getAltInstance, precedencesTuple = p.precedencesTuple,
         default = d, capture = p.capture)   # stage 2's commit 3-ii: the declared default is the ALTERANT's — the record `p` with the slot `d`, every other field copied
     _drive(s; R = GM.DEFAULT_REGISTRY) = try
@@ -186,7 +186,7 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
         # (A3; re-cut at stage 5's E4 — the DEP_MISSING row left with the eager dependency closure) `validate`
         # is total over a Union-typed altConstructor: it RETURNS (the domain probe walks the type)
         bu = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
-        bu.plugins[2] = GM.PlugIn(; altName = :Visib, setMode = :mutExclusive,
+        bu.plugins[2] = GM.Alterant(; altName = :Visib, setMode = :mutExclusive,
             altConstructor = Union{Int,String}, setAltInstance = GM.Alterants.setVisib)
         @test GM.validate(bu) isa Vector{GM.Diagnostic}
     end
@@ -199,7 +199,7 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
     end
 
     @testset "[13] the t3t4r2 FAMILY cures — the zero-dispatch validate chain" begin
-        _vis(alt) = GM.PlugIn(; altName = :Visib, setMode = :mutExclusive,
+        _vis(alt) = GM.Alterant(; altName = :Visib, setMode = :mutExclusive,
             altConstructor = alt, setAltInstance = GM.Alterants.setVisib)
         # (A3/A4 — the invoke-pinned `hasmethod` gate and the Union{} refusal — were CONSCIOUSLY RETIRED at
         # stage 5's E4 with their subject, the eager dependency closure.)
@@ -225,7 +225,7 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
     @testset "[15] the crx-t3t4r3 cures — the identity/getfield hardening of the chain" begin
         _vset(setter) = begin
             b = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
-            b.plugins[2] = GM.PlugIn(; altName = :Visib, setMode = :mutExclusive,
+            b.plugins[2] = GM.Alterant(; altName = :Visib, setMode = :mutExclusive,
                 altConstructor = GM.Alterants.Visib, setAltInstance = setter)
             b
         end
@@ -238,7 +238,7 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
         # validate returns and the pirated == is never SELECTED.
         bq = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
         sq = bq.action_specs[1]
-        bq.plugins[1] = GM.PlugIn(; altName = :labels, setMode = :accumulate,
+        bq.plugins[1] = GM.Alterant(; altName = :labels, setMode = :accumulate,
             altConstructor = Dict{Symbol,Bool}, setAltInstance = _VocR3.heq,
             getAltInstance = GM.Alterants.checkLabels)
         bq.action_specs[1] = GM.ActionSpec(; name = sq.name, plugin = sq.plugin, accepts_string_slot = sq.accepts_string_slot,
@@ -267,7 +267,7 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
         bb = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
         # (the over-budget type rode an overload row's sig_types until stage 5's E11 of the v0.4 build — census row 16;
         # it rides the Alterant's store type now, the record's one remaining Type leaf)
-        bb.plugins[1] = GM.PlugIn(; altName = :labels, setMode = :accumulate, altConstructor = bigU2,
+        bb.plugins[1] = GM.Alterant(; altName = :labels, setMode = :accumulate, altConstructor = bigU2,
             setAltInstance = GM.Alterants.setLabels, getAltInstance = GM.Alterants.checkLabels)
         db = GM.validate(bb)
         @test any(x -> x.code === :REG_PROTOCOL, db)
@@ -287,7 +287,7 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
         # route: validate RETURNS (since stage 5's E4, with no reflection row to mint; the
         # pirated nameof still never runs).
         bs = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
-        bs.plugins[2] = GM.PlugIn(; altName = :Visib, setMode = :mutExclusive,
+        bs.plugins[2] = GM.Alterant(; altName = :Visib, setMode = :mutExclusive,
             altConstructor = _VocR4.Store{_VocR4.tag}, setAltInstance = _VocR4.setS)
         ds = GM.validate(bs)
         @test ds isa Vector && _VocR4.TCALLS[] == 0

@@ -262,7 +262,7 @@ export getState
 #########################################################################################
 ########### Constants & Co. #############################################################
 
-########### Constants AFTER `BLS` BEFORE `PlugIn(s)` ####################################
+########### Constants AFTER `BLS` BEFORE `Alterant(s)` ##################################
 # The structural meta-hierarchy index consts are NOT per-call state, and they have a SINGLE source,
 # state.jl: `NUM_MH_LEVELS = 12` + `maxDepthMH`(=length(BLS.depthLevelsMH)=9) / `fileMHIdx`(=1) /
 # `userMHIdx`(=maxDepthMH+1=10) / `lineMHIdx`(=maxDepthMH+2=11) / `fallBackMHIdx`(=maxDepthMH+3=12),
@@ -277,7 +277,7 @@ export getState
 ## At v0 the two are EQUAL (both 12), so one const carries both roles (state.jl's `init_state` sizes
 ## `n_slot = NUM_MH_LEVELS`); re-opening this layout is deferred at v0.
 
-########### Constants AFTER `PlugIn(s)` (and `BLS`) #####################################
+########### Constants AFTER `Alterant(s)` (and `BLS`) ###################################
 function wipeAltActionSlots(fromIdx::Int, toIdx::Int)
     # The slot tensors (`st.mh.slots` / `st.mh.count_actions_per_slot` / `st.mh.slot_occupied` /
     # `st.mh.slot_has_accum`) and the per-slot queue matrices (`st.queue.conditions` / `st.queue.args`,
@@ -394,9 +394,9 @@ end # module CnS
 #########################################################################################
 # IS: the declaration-order build of the immutable `AlterantRegistry` (type: src/state.jl). This is
 #     top-level `GoMeta` code (registry.jl is `include`d after state.jl, and GoMeta does NOT
-#     `using .Alterants`), so `PlugIn` here is unambiguously the state.jl definition — NOT
-#     `Alterants.PlugIn`.
-# DOES: `build_default_registry()` constructs FRESH top-level `PlugIn` instances in DECLARATION order
+#     `using .Alterants`), so `Alterant` here is unambiguously state.jl's record type — the module `Alterants` (plural)
+#     holds the shipped Alterants' code, not the record.
+# DOES: `build_default_registry()` constructs FRESH top-level `Alterant` instances in DECLARATION order
 #     (labels=1, Visib=2, id=3, heading=4 — the live keys are :id / :heading), derives the sorted action
 #     table + the parallel `action_to_plugin` index
 #     + the `Dict` lookups + the SORTED `accum_alt_idxs` (the `action_to_settribute` table left at stage 5's E12 — census
@@ -410,7 +410,7 @@ end # module CnS
 """
     default_registry_builder() -> RegistryBuilder
 
-The v0 alterant inventory's DECLARATIONS in DECLARATION order: fresh top-level `PlugIn` instances for
+The v0 alterant inventory's DECLARATIONS in DECLARATION order: fresh top-level `Alterant` instances for
 `labels` / `Visib` / `Id` / `Heading` (the heading alterant — its names are RATIFIED: alterant
 `Heading`, action `head`) in the `state.jl` type + the per-action records, returned as an
 UNVALIDATED `RegistryBuilder`. `publish` runs the remaining checks (the domain probe — R-V04B-4 (iii); the Heading lane's
@@ -421,23 +421,23 @@ is that published value, consumed READ-ONLY. Pure — no module-load side-effect
 function default_registry_builder()
     # The closed v0 inventory, in DECLARATION order (deterministic, unlike Dict-iteration
     # order). Plugin index = position here.
-    plugins = PlugIn[
+    plugins = Alterant[
         ## v0.4 T5: every DEFAULT record DECLARES its capture row (the registration-driven
         ## capture plane; the stems are DECLARED — byte-compatibility never rides the
         ## derived fallback) — the three former legacy positional declarations migrated
         ## to the keyword form to carry `capture =`.
-        PlugIn(; altName = :labels, setMode = :accumulate, altConstructor = Dict{Symbol,Bool},
-                 setAltInstance = Alterants.setLabels, getAltInstance = Alterants.checkLabels,
-                 default = Declared(Symbol[]),   # R-V04B-92 (card C2, his word of 2026-10-02 (OWNER-WORDS §287; R-V04B-92: 'I do approve your recommendation: declare.' — provisional, his (ii))): Labels' declared default is the EMPTY SET — the answer's shape, a sorted Vector{Symbol}
-                 capture = CaptureDecl(:per_key, nothing; attr_stem = :label)),
-        PlugIn(; altName = :Visib, setMode = :mutExclusive, altConstructor = Alterants.Visib,
-                 setAltInstance = Alterants.setVisib,
-                 default = Declared(:show),   # R-V04B-51 (2): Visib's ONE declared default is 'show' (his lean §11; his word §180)
-                 capture = CaptureDecl(:single, nothing; attr_stem = :visib)),
-        PlugIn(; altName = :id, setMode = :mutExclusivePerField, altConstructor = Alterants.Id,
-                 setAltInstance = Alterants.setId,
-                 default = Declared((cell = Int16(0), parent = Int16(0), file = Int16(0))),   # R-V04B-92 (card C2): Id's declared default is the ZERO compound — every recorded field zero, in the answer's NamedTuple shape
-                 capture = CaptureDecl(:per_field, nothing; attr_stem = :id)),
+        Alterant(; altName = :labels, setMode = :accumulate, altConstructor = Dict{Symbol,Bool},
+                   setAltInstance = Alterants.setLabels, getAltInstance = Alterants.checkLabels,
+                   default = Declared(Symbol[]),   # R-V04B-92 (card C2, his word of 2026-10-02 (OWNER-WORDS §287; R-V04B-92: 'I do approve your recommendation: declare.' — provisional, his (ii))): Labels' declared default is the EMPTY SET — the answer's shape, a sorted Vector{Symbol}
+                   capture = CaptureDecl(:per_key, nothing; attr_stem = :label)),
+        Alterant(; altName = :Visib, setMode = :mutExclusive, altConstructor = Alterants.Visib,
+                   setAltInstance = Alterants.setVisib,
+                   default = Declared(:show),   # R-V04B-51 (2): Visib's ONE declared default is 'show' (his lean §11; his word §180)
+                   capture = CaptureDecl(:single, nothing; attr_stem = :visib)),
+        Alterant(; altName = :id, setMode = :mutExclusivePerField, altConstructor = Alterants.Id,
+                   setAltInstance = Alterants.setId,
+                   default = Declared((cell = Int16(0), parent = Int16(0), file = Int16(0))),   # R-V04B-92 (card C2): Id's declared default is the ZERO compound — every recorded field zero, in the answer's NamedTuple shape
+                   capture = CaptureDecl(:per_field, nothing; attr_stem = :id)),
         # The Heading plugin. setMode `:localOnly` — the `:localOnly` set mode:
         # a localOnly alterant's value applies ONCE, WHERE IT STANDS — its
         # actions NEVER ENQUEUE into the slot tensors, so the inheritance
@@ -446,10 +446,10 @@ function default_registry_builder()
         # metaBlock a whole-line metaLine forms (R-V04B-50), the Segment of an inline one (the
         # outline model: one row per heading occurrence, document order
         # recoverable from handles). Deliberately in NEITHER derived set below.
-        PlugIn(; altName = :heading, setMode = :localOnly, altConstructor = Alterants.Heading,
-                 setAltInstance = Alterants.setHead,
-                 default = Declared(nothing),   # R-V04B-92 (card C2): Heading's declared default is NONE — no heading, delivered as `nothing` with the source `:default`
-                 capture = CaptureDecl(:per_occurrence, :localOnly; attr_stem = :head)),
+        Alterant(; altName = :heading, setMode = :localOnly, altConstructor = Alterants.Heading,
+                   setAltInstance = Alterants.setHead,
+                   default = Declared(nothing),   # R-V04B-92 (card C2): Heading's declared default is NONE — no heading, delivered as `nothing` with the source `:default`
+                   capture = CaptureDecl(:per_occurrence, :localOnly; attr_stem = :head)),
     ]
 
     # v0.2 registration build: THE DECLARED REGISTRATION RECORD — one ActionSpec per action, declaration
@@ -509,7 +509,7 @@ implemented scheme and the entries protocol of a :localOnly store (the former ti
 `validate` until the Heading runs through the apply loop and the lane retires (R-V04B-101, after the branch); the rest of the tier-1 record shape
 law left at stage 5's E4 (census row 3, his §317). Accumulating: every row a `REG_PROTOCOL` diagnostic; never throws.
 """
-function _mode_gate_collect!(diags::Vector{Diagnostic}, plugins::Vector{PlugIn})
+function _mode_gate_collect!(diags::Vector{Diagnostic}, plugins::Vector{Alterant})
     proto(msg, ctx) = push!(diags, Diagnostic(:REG_PROTOCOL, :error, msg, ctx))
     for p in plugins
         p.capture === nothing && continue
@@ -720,7 +720,7 @@ _domain_leaf(x)::Bool =
 ## of the v0.4 build — census row 16) and are REFUSED anywhere else, declared data included.
 const _WALK_PLUGIN_FIELDS = (:altName, :setMode, :altConstructor, :setAltInstance,
     :getAltInstance, :precedencesTuple, :default, :capture)
-@assert _WALK_PLUGIN_FIELDS == fieldnames(PlugIn)
+@assert _WALK_PLUGIN_FIELDS == fieldnames(Alterant)
 const _WALK_ACTION_FIELDS = (:name, :plugin, :accepts_string_slot, :validate)   # the settribute slot left at stage 5's E12 (census row 45)
 @assert _WALK_ACTION_FIELDS == fieldnames(ActionSpec)
 
@@ -729,7 +729,7 @@ positionally at `typeof(x)`; the two vocabulary slot types left at stage 5's E9,
 carried declarations and the security frame at stage 5's E10)."
 const _SLOT_STRUCTS = (CaptureDecl, NoDefault, Declared)
 const _SLOT_STRUCT_UNION = Union{CaptureDecl, NoDefault, Declared}
-const _RECORD_STRUCT_UNION = Union{PlugIn, ActionSpec}
+const _RECORD_STRUCT_UNION = Union{Alterant, ActionSpec}
 
 # a VALUE-domain container at any position (the record structs are position-restricted and
 # handled by the walks' `rk` class, never by this predicate); CONCRETE classes only —
@@ -1048,7 +1048,7 @@ BUDGET over every admitted `Type` leaf's parameter tree (the seal's mint it kept
 E13 — census row 6; the bound stays as the domain's declared closure). At most ONE slot-named `REG_PROTOCOL` row per (record, slot), in deterministic
 order; full collection across slots and records; `validate` never throws.
 """
-function _encodability_collect!(diags::Vector{Diagnostic}, plugins::Vector{PlugIn}, action_specs::Vector{ActionSpec})
+function _encodability_collect!(diags::Vector{Diagnostic}, plugins::Vector{Alterant}, action_specs::Vector{ActionSpec})
     for p in plugins
         for slot in _WALK_PLUGIN_FIELDS
             _domain_slot_probe!(diags, "alterant", p.altName, slot, getfield(p, slot),
@@ -1191,7 +1191,7 @@ function _domain_copy(x, memo::IdDict{Any,Any};
                 throw(_OutsideDomain(typeof(v), pathto(seg)))
             mk = contained ? (v, vpos) : v
             haskey(memo, mk) && return (true, memo[mk])
-            flds = v isa PlugIn ? _WALK_PLUGIN_FIELDS : _WALK_ACTION_FIELDS
+            flds = v isa Alterant ? _WALK_PLUGIN_FIELDS : _WALK_ACTION_FIELDS
             n = length(flds)
             fr = _CopyFrame(v, :record, vpos, seg, Vector{Any}(undef, n), fill(vpos, n),
                             fill(false, n), fill(0x00, n), Vector{Any}(undef, n),
@@ -1200,7 +1200,7 @@ function _domain_copy(x, memo::IdDict{Any,Any};
                 fr.kids[i] = getfield(v, f)
                 fr.ksegs[i] = f
             end
-            if v isa PlugIn
+            if v isa Alterant
                 fr.kdes[4] = true            # setAltInstance
                 fr.kdes[5] = true            # getAltInstance
             elseif v isa ActionSpec
@@ -1389,10 +1389,10 @@ function _egal_cmp(t::_EgalTask, work, guards)
         (a isa _RECORD_STRUCT_UNION && b isa _RECORD_STRUCT_UNION &&
             typeof(a) === typeof(b)) || return (t.path, :typeof)
         _egal_guard!(guards, a, b) && return nothing
-        flds = a isa PlugIn ? _WALK_PLUGIN_FIELDS : _WALK_ACTION_FIELDS
+        flds = a isa Alterant ? _WALK_PLUGIN_FIELDS : _WALK_ACTION_FIELDS
         for i in length(flds):-1:1
             f = flds[i]
-            des = (a isa PlugIn && (f === :setAltInstance || f === :getAltInstance)) ||
+            des = (a isa Alterant && (f === :setAltInstance || f === :getAltInstance)) ||
                   (a isa ActionSpec && f === :validate)
             push!(work, _EgalTask(getfield(a, f), getfield(b, f), (t.path, f), t.pos, des, 0x00))
         end
@@ -1651,14 +1651,14 @@ function _route2_refuse(r::AlterantRegistry, e, field::Symbol)
     slotname = "?"
     if length(p) >= 2 && p[2] isa Int && 1 <= p[2] <= length(recs)
         rec = recs[p[2]]
-        recname = String(rec isa PlugIn ? rec.altName : rec.name)
+        recname = String(rec isa Alterant ? rec.altName : rec.name)
         length(p) >= 3 && p[3] isa Symbol && (slotname = String(p[3]))
     end
     msg = if e isa _CyclicValue
         string("GoMeta registry: RegistryBuilder(published) met a CYCLIC container at ", ptext,
                " (record ", repr(recname), ", slot ", slotname, ") — the published value was ",
                "mutated after publication; a declared value must be acyclic (the record shape law)")
-    elseif e.T <: Function || e.T <: PlugIn || e.T <: ActionSpec
+    elseif e.T <: Function || e.T <: Alterant || e.T <: ActionSpec
         string("GoMeta registry: RegistryBuilder(published) met a value of type ",
                _domain_type_name(e.T), " at ", ptext, " (record ", repr(recname), ", slot ",
                slotname, ") that violates the position rule — a Function is legal only in a ",
@@ -1749,7 +1749,7 @@ _type_param_text(p)::String =
 The remaining checks, in fixed order: the domain probe over every declared field, the capture mode-gate laws (the vocabulary
 check left at stage 5's E9). FULL collection: every defect is reported; the caller decides the terminal outcome (error present ⇒ refuse).
 """
-function _validate_registration(plugins::Vector{PlugIn}, action_specs::Vector{ActionSpec})
+function _validate_registration(plugins::Vector{Alterant}, action_specs::Vector{ActionSpec})
     diags = Diagnostic[]
     _encodability_collect!(diags, plugins, action_specs)   # the domain probe (R-V04B-4 (iii))
     _mode_gate_collect!(diags, plugins)                    # the Heading lane's laws (R-V04B-101: after the branch)
@@ -1757,7 +1757,7 @@ function _validate_registration(plugins::Vector{PlugIn}, action_specs::Vector{Ac
 end
 
 "The derived hot-path tables, computed from the DECLARED record only (never hand-supplied)."
-function _derive_tables(plugins::Vector{PlugIn}, action_specs::Vector{ActionSpec})
+function _derive_tables(plugins::Vector{Alterant}, action_specs::Vector{ActionSpec})
     owner_of_action = Dict{Symbol,Int8}()
     for spec in action_specs
         haskey(owner_of_action, spec.name) || (owner_of_action[spec.name] = spec.plugin)   # first-wins

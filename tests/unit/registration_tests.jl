@@ -73,7 +73,7 @@ import GoMeta as GM
         # (replaces arm-W consistency, retired with the clash law; measured on the E4 scratch —
         # PROBES-e4-validate_stage1-src-cut_on-1c9d013f.txt [4])
         b = GM.RegistryBuilder()
-        GM.register!(b, GM.PlugIn(; altName = :bag, setMode = :accumulate, altConstructor = Dict{Symbol,Bool}, setAltInstance = GM.Alterants.setLabels, getAltInstance = GM.Alterants.checkLabels),
+        GM.register!(b, GM.Alterant(; altName = :bag, setMode = :accumulate, altConstructor = Dict{Symbol,Bool}, setAltInstance = GM.Alterants.setLabels, getAltInstance = GM.Alterants.checkLabels),
             GM.ActionSpec(; name = :alpha, plugin = Int8(1), accepts_string_slot = 1),
             GM.ActionSpec(; name = :alpha, plugin = Int8(1), accepts_string_slot = 0))
         @test isempty(GM.validate(b))                        # no clash law refuses it
