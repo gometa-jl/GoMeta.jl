@@ -275,7 +275,7 @@ IS: the closed flavor inventory — the one place a `flavor_tag` resolves to its
 DOES: total-or-throw, NO fallback: returns the record of a known tag; an unknown tag throws the stable message below
 (`error("flavor_for: unknown flavor_tag …")`, naming the closed inventory `(:julia, :c, :latex)`) at `goMeta`'s flavor
 resolve, after the registry door and before any parse — raw out of the `goMeta` call (docs/public-api.md §3.4; the
-typed config-time refusal left at stage 5's E8 of the v0.4 build — census row 30). The resolved record is threaded into
+coded config-time refusal left at stage 5's E8 of the v0.4 build — census row 30). The resolved record is threaded into
 the `ParseState` at `setUpToProcessFromBytes` and read from there by every downstream flavor consumer.
 
 REASONING: a silently-Julia fallback would produce a plausible render with wrong tree bytes and zero diagnostics the

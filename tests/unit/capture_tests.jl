@@ -11,7 +11,7 @@
 # REASONING: PROBE-14's sadd2 measurement — on v0.3.2 a conforming mock registered,
 #       absorbed, applied PROCESS_OK and minted NO evals row (the 3-name ladder). These
 #       witnesses are the only proof the declaration is now LOAD-BEARING at the capture
-#       plane and the silence classes are typed.
+#       plane and the silence classes are coded.
 # PURPOSE: the T5 acceptance rows (Σ = 29 in this file after the crx-t5 cure round:
 #       23 at the T5 commit + [11]'s 6 + the [1] end-to-end algebra drive + the [7]
 #       cross-stem pin − the [7] runtime pair made lifecycle-unreachable by the tier-1
@@ -146,7 +146,7 @@ end
 
     @testset "[11] the crx-t5 cure witnesses" begin
         # (A1) a localOnly plugin with capture === nothing: the FLOOR arm, never the
-        # UNREADABLE-with-nothing crash — the drive completes and floors typed
+        # UNREADABLE-with-nothing crash — the drive completes and floors coded
         b1 = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
         p1 = GM.next_plugin_index(b1)
         GM.register!(b1,

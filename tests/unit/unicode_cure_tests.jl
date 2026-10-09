@@ -65,7 +65,7 @@ _uc_err(s)     = try _uc_full(s); nothing catch e sprint(showerror, e) end
         # KP-3b: cross-width parity — 28 two-byte chars ≡ 28 one-byte chars, both PROCESS_OK (unknown labels, false)
         @test _uc_full("#~ hide{ :" * repeat("é", 28) * " }\nx = 1\n").status == GM.PROCESS_OK
         @test _uc_full("#~ hide{ :" * repeat("a", 28) * " }\nx = 1\n").status == GM.PROCESS_OK
-        # QK-1: the glued-')' quirk is Julia's own ParseError since E13 (the former typed ERR_CONDITION_PARSE)
+        # QK-1: the glued-')' quirk is Julia's own ParseError since E13 (the former coded ERR_CONDITION_PARSE)
         @test (try _uc_full("#~ hide{ :(:x)) }\nx = 1\n"); nothing catch e; e end) isa Base.Meta.ParseError
     end
 

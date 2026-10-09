@@ -304,7 +304,7 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
     @testset "[17] the crx-t3t4r5 cures — the String-only encoder + the guarded sig render" begin
         # (three seats convergent, probe P80) a caller-owned non-String AbstractString
         # as a declared Dict KEY: the encoder is now String-only (matching
-        # _domain_leaf's own law), so validate REFUSES typed with ZERO validate-time
+        # _domain_leaf's own law), so validate REFUSES coded with ZERO validate-time
         # String() conversions (pre-cure: one call, its stateful throw escaping raw).
         bs5 = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
         ss = bs5.action_specs[4]

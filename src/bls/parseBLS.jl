@@ -30,7 +30,7 @@
 # PURPOSE: one deterministic parse substrate under GoMeta's absorb/apply stages.
 # Honest edges: `insertChildComponentAt` and each store's second (insert) vector are
 #   unexercised by any v0 input (a documented latent path); this file's own internal
-#   `error()` messages keep their existing forms — they are not part of the typed-diagnostic
+#   `error()` messages keep their existing forms — they are not part of the coded-diagnostic
 #   catalogue (docs/public-api.md §3).
 #########################################################################################
 mutable struct ParseState

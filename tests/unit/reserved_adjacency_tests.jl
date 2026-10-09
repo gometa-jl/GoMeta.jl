@@ -3,7 +3,7 @@
 # IS:   the ship-class witness set for the directive-adjacency refusals (the 0.2.3
 #       cure): a structural-directive form (`#-`/`#+`/`#[`/`#>` — prefix-fired, so
 #       `#----` dividers and `#->` arrows are in the class) DIRECTLY adjacent to
-#       metadata refuses EARLY and typed, at BOTH grains (same-line segment; next-line
+#       metadata refuses EARLY and guarded, at BOTH grains (same-line segment; next-line
 #       LINE), instead of crashing raw (the pre-0.2.3 published behavior: a raw
 #       MethodError, or a wrong-class "meta depth out of range" blaming a metaLine the
 #       author never wrote).
@@ -35,7 +35,7 @@ end
 
 @testset "reserved directive-adjacency witnesses (the 0.2.3 cure)" begin
 
-    @testset "w1 :: segment grain — a directive fragment directly after an inline meta event refuses typed" begin
+    @testset "w1 :: segment grain — a directive fragment directly after an inline meta event refuses guarded" begin
         for s in ("x = 1 #~ hide #- y\n",     # the headline same-line shape
                   "x = 1 #~ hide #----\n",    # ordinary divider run (prefix-fired)
                   "x = 1 #] #> y\n")          # closer-adjacent (no marker event)
@@ -47,7 +47,7 @@ end
         end
     end
 
-    @testset "w2 :: line grain — a directive LINE directly after a metaLine/meta block refuses typed" begin
+    @testset "w2 :: line grain — a directive LINE directly after a metaLine/meta block refuses guarded" begin
         for s in ("#~ hide{ :label1 }\n#----\nx = 2\n",  # annotation + ordinary divider line
                   "#~ :label1\n#> y\nx = 2\n",           # the #> twin (died at the re-match pre-cure)
                   "#~ hide{ :label1 }\n\n#----\nx = 2\n") # a blank line between does NOT defuse

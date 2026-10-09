@@ -8,7 +8,7 @@
 # glued/bare policies + the run-arm strictness; the lead codeunit generalization; the
 # record guards (incl. the F-18 collision/consume vocabularies + the positional-constructor
 # removal); ParseState threading (setup default · kwarg · goMeta resolve-once for
-# BOTH armed tags + the typed invalid-tag path). (The parse_header! seam identity left at stage 5's P1 of the
+# BOTH armed tags + the coded invalid-tag path). (The parse_header! seam identity left at stage 5's P1 of the
 # v0.4 build (census rows 63, 39, 72, 58) with the header_strategy pins, the digest PROPERTIES testset, the
 # extensions pin and the compat-alias identities — each with its subject.)
 
@@ -204,7 +204,7 @@ _fp_julia_kwargs(; overrides...) = merge((
             config = GM.GoMetaConfig(flavor_tag = :c))
         @test r_c.blsComponentTree.flavor === _FP_BLS.FLAVOR_CFAM
         ## The invalid-tag path throws raw at flavor_for — the closed inventory's stable message, no
-        ## fallback (the typed refusal left at stage 5's E8 of the v0.4 build — census row 30).
+        ## fallback (the coded refusal left at stage 5's E8 of the v0.4 build — census row 30).
         @test_throws ErrorException GM.goMeta(_fp_bytes("x\n");
             config = GM.GoMetaConfig(flavor_tag = :cobol))
     end

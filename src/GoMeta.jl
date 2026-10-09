@@ -10,9 +10,9 @@
 # DOES: `goMeta(bytes; config::GoMetaConfig = GoMetaConfig(), registry::AlterantRegistry =
 #     DEFAULT_REGISTRY) -> GoMetaDelivery` runs the pipeline parse -> Absorb-walk (enqueue alterant
 #     actions) -> Apply (evaluate conditions + apply); the evaluated values are the product. The registry door fail-closes
-#     an unpublished or post-publication-mutated registry into a `PROCESS_ERROR` `GoMetaDelivery` carrying a typed
+#     an unpublished or post-publication-mutated registry into a `PROCESS_ERROR` `GoMetaDelivery` carrying a coded
 #     `Diagnostic` BEFORE any parse work (the input bytes are never touched) — the ONE entry refusal since stage 5's E13
-#     (the config-time `ERR_UNKNOWN_PROFILE` row, E-03, left at E13 with the grammar profile — census row 30's arm). The typed
+#     (the config-time `ERR_UNKNOWN_PROFILE` row, E-03, left at E13 with the grammar profile — census row 30's arm). The coded
 #     flavor and range refusals left at stage 5's E8 of the v0.4 build (census row 30): an unknown `flavor_tag`
 #     throws raw at `BLS.flavor_for` (the closed inventory, no fallback — a stable message, docs/public-api.md §3.4)
 #     and a given `parse_range` is taken plain (`first` never read; `to = last`; a non-positive `to` parses the
@@ -32,11 +32,11 @@
 #     Julia text evaluated by Julia since stage 5's E13 — his design, §120 and §D174 — so what a condition body reads or
 #     does is the author's act, as a custom registry's callables are: README SECURITY), and TOTAL over the entry
 #     surface — non-OK implies non-empty diagnostics. Honest edges: the E-06 absorb-path guarded refusal is documented
-#     but not yet typed (conversion deferred; the E-04 apply-path crash origin LEFT with the Visib write-back at stage 3's
+#     but not yet coded (its conversion deferred; the E-04 apply-path crash origin LEFT with the Visib write-back at stage 3's
 #     commit 4, R-V04B-42); the condition path keeps THREE refusals of GoMeta's — the unknown condition key (the vocabulary's),
 #     the no-expression guard of an empty block or a bare literal and, since s5c31 (his §366), the one scanner's unterminated `(`
 #     inside a body — and a body Julia cannot parse is Julia's own
-#     `Meta.ParseError` (the typed condition codes left with the interpreter at E13).
+#     `Meta.ParseError` (the condition codes left with the interpreter at E13).
 #     The full honest-edges catalogue: docs/public-api.md §3.
 # PURPOSE: the single auditable entry point — bytes in, a typed `GoMetaDelivery` out, with the package's
 #     canonical observable output = `altValues_evals` (+ `serialize_evals`); the Engine's
@@ -159,7 +159,7 @@ field is refusable since: an unknown `flavor_tag` throws `flavor_for`'s own mess
 callable seam that ran the door too, and its state ledger's refusals of an injected parse state, left at stage 5's E2).
 
 DOES: builds a per-call `ProcessState` by `init_state` (container SIZING only — no parse content is read, no
-`parseBLS` / absorb-walk runs), appends the typed `diags`, and hands back the delivery's four parts taken
+`parseBLS` / absorb-walk runs), appends the coded `diags`, and hands back the delivery's four parts taken
 from that state: the EMPTY store `st.evals` as `altValues_evals`; the unparsed `parse_state` — the caller passes
 one built from EMPTY bytes, since the validation pre-empts touching the input — as `blsComponentTree`; `PROCESS_ERROR`;
 the diagnostics. The working state itself is not delivered (R-V04B-28).
@@ -168,7 +168,7 @@ REASONING: `@noinline` + cold, so its `init_state` and the construction never pe
 low-allocation main `goMeta` path; the empty-bytes tree keeps the delivery total (the development tool's `outputs`,
 `devtools/basic_renderer.jl`, yields its empty non-OK pair on it).
 
-PURPOSE: ONE fail-closed outcome for every entry refusal — typed diagnostics, never a throw.
+PURPOSE: ONE fail-closed outcome for every entry refusal — coded diagnostics, never a throw.
 """
 @noinline function _entryErrorDelivery(parse_state::BLS.ParseState, config::GoMetaConfig,
                                        registry::AlterantRegistry, diags::Vector{Diagnostic})
@@ -191,7 +191,7 @@ diverts to absorb-seam delivery and an explicit `head` RECORDS against the minte
 copy of the profile's bytes on the row since commit 9b, R-V04B-43 (1)): saves the meta-hierarchy cursor `st.crnt_idx`;
 `updateMetaHierarchy(userMHIdx)` allocates + occupies the slot (its `10..12` branch; the depth-window wipes at `<10`
 never touch it, so the fed slot SURVIVES the whole file walk); NULLS `st.meta_context` (no document line stands behind
-this surface — a derived-context action fed here meets the typed applicability refusal in `absorbMeta`, never a
+this surface — a derived-context action fed here meets the guarded applicability refusal in `absorbMeta`, never a
 fabricated context); sets `st.user_context` to the minted handle `UserContext(key_bytes(user_context_key(namespace, 1)))`
 inside a try/finally that restores the prior value; then `absorbMeta` routes the profile's actions through the SAME
 parseAlt path authored metaLines use; the meta-hierarchy cursor is restored so the walk starts exactly as un-fed.
@@ -258,23 +258,23 @@ Arguments:
   the `profile` field left at stage 5's E13 with the grammar profile it selected). An unknown `flavor_tag` throws raw at
   `BLS.flavor_for` (the closed inventory, no fallback — a stable message, docs/public-api.md §3.4); a given `parse_range`
   is taken plain: `first` is never read, `last` is the parse end line, a non-positive `last` parses the whole file
-  (the typed flavor and range refusals left at stage 5's E8 of the v0.4 build — census row 30).
+  (the coded flavor and range refusals left at stage 5's E8 of the v0.4 build — census row 30).
 - `registry::AlterantRegistry` — the alterant inventory; defaults to the deterministic `DEFAULT_REGISTRY`.
 
 The `GoMetaDelivery` is `{blsComponentTree::BLS.ParseState, altValues_evals::EvalStore, status::ProcessStatus, diagnostics::Vector{Diagnostic}}` — the four public parts, read by name (R-V04B-28/29/30), in his pipeline order (R-V04B-89) — and is
-TOTAL over the ENTRY surface (the registry door's refusals are delivered typed; an unknown flavor_tag throws its stable message, §3.4); absorb/apply-plane catalogued failures can still throw at v0 (see below): `status` is
+TOTAL over the ENTRY surface (the registry door's refusals are delivered coded; an unknown flavor_tag throws its stable message, §3.4); absorb/apply-plane catalogued failures can still throw at v0 (see below): `status` is
 `PROCESS_OK` (no error diagnostics) or `PROCESS_ERROR` (>=1 error `Diagnostic`; non-OK => non-empty diagnostics).
 Obtain the Engine's output via `readAltValuesEvals(result.altValues_evals)` (the evals map, keyed by (handle, attr); its byte form
 `serialize_evals`; a piece's text through `BLS.content`) — with the run itself, the Engine's delivered surface
 after the move (R-V04B-24: "the run and the evaluated values"). The (tree, render) pair is the development
 tool's: `Main.BasicRenderer.outputs`, applied to the result after `include(joinpath(pkgdir(GoMeta), "devtools", "load_basic_renderer.jl"))`
-at the caller's top level. The entry refusals (the registry door's `REG_UNPUBLISHED` / `POST_SEAL_MUTATION`) are typed and
+at the caller's top level. The entry refusals (the registry door's `REG_UNPUBLISHED` / `POST_SEAL_MUTATION`) are coded and
 delivered; the condition path keeps THREE refusals of GoMeta's — the unknown condition key, the no-expression guard of an
 empty block or a bare literal and the one scanner's unterminated `(` inside a body (s5c31, his §366), `ErrorException`s at the
 absorb seam — a body Julia cannot parse is Julia's own `Meta.ParseError`,
 a condition that fails at evaluation Julia's own error
-(the typed condition codes and E-07's pending mint left with the closed interpreter at stage 5's E13); the E-06 absorb-path
-guarded depth refusal stays un-typed for now (the honest partition — docs/public-api.md §3; the E-04 apply-path crash origin
+(the condition codes and E-07's pending mint left with the closed interpreter at stage 5's E13); the E-06 absorb-path
+guarded depth refusal stays without a code for now (the honest partition — docs/public-api.md §3; the E-04 apply-path crash origin
 left with the Visib write-back at stage 3's commit 4).
 The full honest-edges catalogue: docs/public-api.md §3.4.
 
@@ -302,7 +302,7 @@ function goMeta(
     ## v0.4 T2 — THE STRICT DOOR (R-V04-34), the ONE entry refusal since stage 5's E13 (the config-time arm — `validate_config`'s
     ## profile check, E-03 — left at E13 with the grammar profile; no configuration field is refusable since: an unknown `flavor_tag`
     ## throws `flavor_for`'s own message below, a range is taken plain — E8): the registry must be PUBLISHED; an unpublished value
-    ## refuses typed (`REG_UNPUBLISHED`, naming RegistryBuilder → validate → publish) and a published value mutated after
+    ## refuses coded (`REG_UNPUBLISHED`, naming RegistryBuilder → validate → publish) and a published value mutated after
     ## publication refuses `POST_SEAL_MUTATION` (the live fields against the publish-time snapshot — the real freeze gate). The
     ## fail-closed PROCESS_ERROR GoMetaDelivery is built in the `@noinline` cold `_entryErrorDelivery` helper (its `init_state` +
     ## `GoMetaDelivery` construction stay OUT of this hot path); the input bytes are never touched — the error-path delivery
@@ -314,7 +314,7 @@ function goMeta(
         return _entryErrorDelivery(BLS.setUpToProcessFromBytes(UInt8[]), config, registry, door_diags)
 
     ## Resolve the flavor ONCE, after the door above (an unknown tag throws raw
-    ## HERE — `flavor_for`'s stable message naming the closed inventory; its typed refusal left at
+    ## HERE — `flavor_for`'s stable message naming the closed inventory; its coded refusal left at
     ## stage 5's E8 of the v0.4 build, census row 30), and thread
     ## the record through the ParseState — every downstream flavor read rides
     ## `parse_state.flavor` (zero `config.flavor_tag` reads downstream of setup).
@@ -328,7 +328,7 @@ function goMeta(
     ## (parseBLS.jl: `fromLine` has no use but its signature; a non-positive `toLine` becomes the line count — the seat's F2: the
     ## former citation of docs/SYNTAX-AND-SEMANTICS.md named a page that holds no range contract), so a non-positive `to` parses the whole file. The range is taken
     ## PLAIN, as his legacy took its arguments: `first` is never read (`5:10` parses lines 1..10; `3:2` lines
-    ## 1..2; `1:0` the whole file) — the typed range refusal left at stage 5's E8 of the v0.4 build, census row 30.
+    ## 1..2; `1:0` the whole file) — the coded range refusal left at stage 5's E8 of the v0.4 build, census row 30.
     ## Sub-range note: for a `parse_range = 1:N` run the development tool's render is an exact PREFIX of its whole-file render
     ## for the same input — the divergence is purely the parse range, not the caps. The parse store is read
     ## off `parse_state` below; `parseBLS` is called for its parse SIDE-EFFECT (its return is discarded).

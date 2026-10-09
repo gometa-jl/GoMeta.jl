@@ -38,11 +38,11 @@ as the paragraph above says — not from this entry). Status and diagnostics go 
 |---|---|
 | `tree` | the BLS Component tree, one row per input line (`Main.BasicRenderer.outputs(result).blsStructure_bytes`) |
 | `segments` | the same rows with input line numbers in front — "what is line N?" |
-| `evals` | the evaluated values, one row per line: `attr => value (polarity) "cell excerpt"` — the compact census form |
-| `trace` | `evals` plus each row's decoded key: namespace · grain · path · origin |
+| `evals` | the evaluated values, one row per line: `attr => value (polarity) "cell excerpt"` — the evals-rows-only view (no Component identity: a glance, not a census) |
+| `trace` | the evals-rows-with-keys view: `evals` plus each row's decoded key: namespace · grain · path · origin |
 | `render` | the share-view bytes (the basic renderer's output) |
-| `evals-tree` | **`print_altValues_evals`, the FULL form** — the rows placed in the Component tree, every Component shown, absence labelled `(no evals — defaults apply)`, every row with its decoded handle and the Segment that caused it |
-| `bls-tree` | **`print_BLS_Component_Tree`** (`style=:mix`) — the tree with every Component's typed named-int and settribute dumps |
+| `evals-tree` | **`print_altValues_evals`, the FULL delivery view** — the rows placed in the Component tree, every Component shown, absence labelled `(no evals — defaults apply)`, every row with its decoded handle and the Segment that caused it |
+| `bls-tree` | **`print_BLS_Component_Tree`** (`style=:mix`) — the Component-tree view: the tree with every Component's typed named-int and settribute dumps |
 | `comparison` | **`comparisonForm`** — the comparison form of R-V04B-36 (stage 4): one line per Component and one per Component per Alterant, sorted; the definition `tests/comparison/README.md` |
 
 ## From Julia (the REPL, a script, a test)
@@ -53,9 +53,9 @@ include(joinpath(pkgdir(GoMeta), "devtools", "devtools.jl"))
 result = GoMeta.goMeta(read("some.jl"))
 
 print_altValues_evals(result)                                      # compact tree (R-DEV-4 default)
-print_altValues_evals(result; include_empty = true, show_handles = true)   # the FULL form
-print_altValues_evals(result; layout = :cells)                     # per-cell dossiers
-print_altValues_evals(result; layout = :rows, attrs = :visib)      # one line per row, filtered
+print_altValues_evals(result; include_empty = true, show_handles = true)   # the FULL delivery view
+print_altValues_evals(result; layout = :cells)                     # the per-cell view
+print_altValues_evals(result; layout = :rows, attrs = :visib)      # the evals-rows-by-Component view, filtered
 print_BLS_Component_Tree(result)                                   # :mix — tree + typed dumps
 print_BLS_Component_Tree(result; style = :tree, detail = :full)    # plain tree + dumps
 

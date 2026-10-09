@@ -59,7 +59,7 @@ function applyAbsorbFn(
     # Segment-attached metaLine therefore inherits the metaLine's level, the hd-2
     # inheritance law, by construction), so `st.crnt_idx` IS the application level. The
     # userMH feed does NOT pass through here and NULLS the record instead — the heading
-    # recognizer's context-less typed applicability refusal keys on that absence.
+    # recognizer's context-less guarded applicability refusal keys on that absence.
     # (delta-review trued: applyAbsorbFn has Line/Segment-grain call sites only, so
     # the Block arm below is DEFENSIVE — depth is 0 on every live path at v0.2; the
     # field is the context record's designed shape, populated when a Block-grain
@@ -108,7 +108,7 @@ function applyAbsorbFn(
     ## regexes are DERIVED from one body string in flavor.jl (closing the drift-copy hazard); the `::RegexMatch` typed assert stays: a mis-typed slice
     ## still fails LOUD. ## FUTURE-BLS(M6): one profile-owned grammar for parse AND walk.
     ## The bare `::RegexMatch` assert alone would throw a raw TypeError on a
-    ## nomatch (unreachable today — the walk only sees parse-flagged components, which always match the tightened grammar); a typed internal-error message
+    ## nomatch (unreachable today — the walk only sees parse-flagged components, which always match the tightened grammar); a guarded internal-error message
     ## replaces it so an unreachable-become-reachable regression fails NAMED, not raw.
     _mf = match(
         parse_state.flavor.re_meta_leaded,

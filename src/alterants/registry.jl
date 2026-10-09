@@ -26,7 +26,7 @@
 #     normalization); an unknown label APPLIED meets the stable refusal that
 #     names the accepted set; a label QUERIED answers false when unknown or unset — the legacy's checker, since stage 5's E9
 #     (the T4 membership refusal and the R-V04-36 write-only valve left, census row 55). `setId` parses values into the Int16 domain; the value/arity walls
-#     around these setters are Julia's own since stage 5's E6 of the v0.4 build (the apply seam's typed
+#     around these setters are Julia's own since stage 5's E6 of the v0.4 build (the apply seam's guarded
 #     refusal left — census row 14; docs/public-api.md §3.4). Only the labels
 #     row has a query getter (`checkLabels`); Visib/Id carry none — `cell`/`parent`/`file` as a
 #     condition atom meets the usual unknown-condition-key refusal (the registry's rule since stage 5's E12; the
@@ -170,7 +170,7 @@ end
 ## (the publishing term — running head, head levels). Single-action inventory
 ## {head}; `title`/`subhead` stay unminted (mint-at-need; hyphen-free spelling if a
 ## compound ever mints). The store records captured headings and OWNS the corners
-## via its validation seam: empty heading text meets the typed refusal — a STANDING
+## via its validation seam: empty heading text meets the guarded refusal — a STANDING
 ## v0.2 semantic, not a transitional default (docs/public-api.md §3.4).
 ## NON-QUERYABLE (getAltInstance = nothing): a condition naming `head` meets the usual
 ## unknown-condition-key refusal (the registry's rule, stage 5's E12). In a HEADING's own
@@ -218,7 +218,7 @@ _heading_validate_level(lvl::Int) =
 ## per call. The explicit level arrives as Symbol text (`Symbol("2")`: the literal
 ## floor keeps the integer space RESERVED out of the args wall) and is parsed
 ## here — the setId precedent; a non-parseable level is `parse`'s own ArgumentError (the seam's
-## typed refusal left at stage 5's E6 of the v0.4 build — census row 14).
+## guarded refusal left at stage 5's E6 of the v0.4 build — census row 14).
 function setHead(crntHeading::Heading, actionName::Symbol, headingText::AbstractString)
     _heading_validate_text(headingText)
     push!(crntHeading.entries, (String(headingText), nothing))
@@ -1964,12 +1964,12 @@ IS: the R-V04-34 STRICT door of `goMeta` — the published-only entry — in its
 the ONE entry refusal since stage 5's E13.
 
 DOES: returns the door's diagnostics, empty when the registry passes. An UNPUBLISHED registry (`_snapshot === nothing`)
-refuses typed — one `REG_UNPUBLISHED` error row naming the sanctioned path (RegistryBuilder → validate → publish); else
+refuses coded — one `REG_UNPUBLISHED` error row naming the sanctioned path (RegistryBuilder → validate → publish); else
 the nine (ten before stage 5's E13, eleven before E12) `_SNAPSHOT_FIELDS` are compared field-by-field against the
 publish-time snapshot by the ONE structural deep-egal walk (`_deep_egal`: `===`-only leaves; no
 `hash`/`isequal`/`==`/user `show` dispatched anywhere, rendering included) and the FIRST divergent path fires exactly
 one `POST_SEAL_MUTATION` row (the loop breaks at the first; the path rendered by `_render_path` as the row's message
-and context) — the real freeze gate (M-AC-9), accident-grade: typed refusal of post-seal mutation by conforming code.
+and context) — the real freeze gate (M-AC-9), accident-grade: coded refusal of post-seal mutation by conforming code.
 Its one Engine caller is `goMeta`, before the parse: a non-empty return becomes the fail-closed `PROCESS_ERROR`
 delivery (`_entryErrorDelivery`). The retired seal re-mint, derived-table re-derivation and callable-identity compare
 lose no detection for conforming code (the field lists being COMPLETE): re-derivation is deterministic, so it never

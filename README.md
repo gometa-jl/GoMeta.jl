@@ -92,7 +92,7 @@ extends the label whitelist by a fixed **pictograph vocabulary** (byte-exact nam
   unknown-label refusal (`GoMeta apply: unknown
   label …` on an applied out-of-whitelist name; a queried unknown label answers false since stage 5's E9 of the v0.4
   build — `docs/public-api.md` §3.4), catalogued in `docs/public-api.md` §3. Malformed action ARGUMENTS are Julia's own
-  error out of the `goMeta` call since stage 5's E6 of the v0.4 build (the apply seam's typed refusal left — census
+  error out of the `goMeta` call since stage 5's E6 of the v0.4 build (the apply seam's guarded refusal left — census
   row 14; his legacy called the setters directly).
   The documented exception — the guarded `#~9` depth refusal — is likewise catalogued honestly in `docs/public-api.md`
   §3.1/§3.2/§3.4 (a condition is Julia's since `0.4.0`, stage 5's E13: GoMeta's own refusals are the unknown condition key, the
@@ -145,7 +145,7 @@ evals = GoMeta.readAltValuesEvals(result.altValues_evals)    # the part `altValu
                                           # of the file, read through the Engine's reader (`evals` = evaluated metadata
                                           # values — unrelated to Julia's `eval`)
 evals[1]                                  # (cell_handle, attr, value, polarity), e.g. (…, :label_label1, true, true)
-result.diagnostics                        # the part `diagnostics`: the run's typed diagnostics (a non-OK status ⇒ non-empty)
+result.diagnostics                        # the part `diagnostics`: the run's coded diagnostics (a non-OK status ⇒ non-empty)
 
 include(joinpath(pkgdir(GoMeta), "devtools", "load_basic_renderer.jl"))   # the basic renderer — a DEVELOPMENT TOOL, not part of
                                           # the Engine's output (R-V04B-24) — loaded through its ONE path, at the top level

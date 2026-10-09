@@ -6,7 +6,7 @@
 #       Symbol|String args wall (AlterantArgT), the kind-preserving coercion, and the quote
 #       NEGATIVE rows — while NO metaLine grammar accepts a string argument (the step-8 gate:
 #       suite byte-identical before any grammar accepts strings). The law is held by a
-#       TRANSITIONAL typed refusal at absorbMeta's ENQUEUE seam — dispatch CANNOT hold it,
+#       TRANSITIONAL guarded refusal at absorbMeta's ENQUEUE seam — dispatch CANNOT hold it,
 #       because the built-in toy setters keep an UNTYPED value slot (`setId` parses
 #       `string(idValue)`, so `cell("7")` would silently ACCEPT through dispatch;
 #       byte-probed — an earlier revision of this header claimed the dispatch seam held
@@ -17,7 +17,7 @@
 #       malformed/glued, on the parseArgs route; the former quote-blind one-word-label route is gone since stage 5's s5c29 —
 #       a '"' after ':' meets the grammar's one refusal, the rows below) ·
 #       [SLE] end-to-end: a quoted argument at the metaLine surface meets the TRANSITIONAL
-#       typed refusal at the enqueue seam (nothing accepted strings at step 8; step 9 carved
+#       guarded refusal at the enqueue seam (nothing accepted strings at step 8; step 9 carved
 #       the head text slot out — the step-9 sections below own that surface), and the
 #       pre-widening quote-free envelope is untouched (numeric args stay Symbol-kind — the integer
 #       space is RESERVED out of the literal floor, hd-5).
@@ -100,7 +100,7 @@ import GoMeta as GM
 
     @testset "[SLE] no grammar accepts strings at step 8 — the transitional wall + untouched pre-widening envelope" begin
         # a quoted argument at the metaLine surface flows the lane as a String KIND and
-        # meets the TRANSITIONAL typed refusal at absorbMeta's enqueue seam. The wall must
+        # meets the TRANSITIONAL guarded refusal at absorbMeta's enqueue seam. The wall must
         # sit THERE, not at dispatch: the built-in toy setters keep an UNTYPED value slot, so
         # `cell("7")` would otherwise silently ACCEPT (parse(Int16, string("7")) succeeds)
         # — the byte-probed reason this row exists. `cell("7")` is therefore the SHARPEST
@@ -128,7 +128,7 @@ import GoMeta as GM
         ed = _err("#~ :a\"b\n# c\n")
         @test ed isa ErrorException && occursin("unexpected character '\"' after the metaStatement \":a\"", ed.msg)
         # QUOTE × INVALID UTF-8 (the module's own doctrine class): a quoted span carrying
-        # an invalid byte sequence stays a LOUD typed refusal, never a raw decode crash —
+        # an invalid byte sequence stays a LOUD guarded refusal, never a raw decode crash —
         # and the CLASS is pinned (delta-review: the span is well-formed, its content the
         # invalid byte, so the fate is the transitional wall, not some accidental refusal)
         ei = _err("#~ cell(\"\xff\")\n# c\n")
@@ -227,7 +227,7 @@ end
         # inside the span refuses — not merely `\"`. The pre-cure grammar accepted `"a\b"`
         # while refusing `"a\\"` (the trailing backslash read as `\"`) — that ragged
         # acceptance is exactly what the ruling closed; all four shapes now meet ONE
-        # typed refusal, and the future escape grammar mints on a clean slate.
+        # guarded refusal, and the future escape grammar mints on a clean slate.
         ee = _err("#~ \"a\\\"b\"\nx = 1\n")
         @test ee isa ErrorException && occursin("backslash in a quoted span", ee.msg)
         el = _err("#~ \"a\\b\"\nx = 1\n")                          # lone mid-span backslash
@@ -240,7 +240,7 @@ end
         @test ea isa ErrorException && occursin("backslash in a quoted span", ea.msg)
     end
 
-    @testset "test_usermh_contextless_refusal — derived context absent ⇒ typed applicability refusal" begin
+    @testset "test_usermh_contextless_refusal — derived context absent ⇒ guarded applicability refusal" begin
         e = try
             GM.goMeta(Vector{UInt8}(codeunits("x = 1\n"));
                 config = GM.GoMetaConfig(user_mh_profile = "\"T\""))
@@ -355,7 +355,7 @@ end
         # a label QUERY in a heading condition formerly evaluated against the stale
         # apply residue (order-dependent wrong verdicts: the identical condition
         # minted or dropped the row depending on unrelated preceding content). It now
-        # meets the typed reservation refusal — settribute predicates remain the
+        # meets the guarded reservation refusal — settribute predicates remain the
         # heading condition's legal vocabulary (the false-arm settribute pin lives in
         # test_quoted_first_lowering).
         ec1 = _err("#~ head(\"T\", 2){ :label2 }\nx = 1\n")
@@ -376,7 +376,7 @@ end
         @test any(a === :head_3 && v == "U"
                   for (_, a, v, _) in GM.readAltValuesEvals(ru.altValues_evals))
         # NEW at the user-context build (the reserved wall): a CONDITIONED head in
-        # a fed profile meets its typed refusal — the feed carries no evaluable
+        # a fed profile meets its guarded refusal — the feed carries no evaluable
         # settribute state (unconditioned heads record; the lifting condition is
         # recorded at the wall)
         ecf = try

@@ -5,7 +5,7 @@
 #     defaults.
 # REASONING: this is part of the declared public API (docs/public-api.md §2; its versioning policy §6 — clean cuts until at least v0.7, R-V04B-61). `parse_range` is
 #     taken plain: `nothing` ⇒ whole input; a given range's `last` is the parse end line and its `first` is never
-#     read (the typed range refusal left at stage 5's E8 of the v0.4 build — census row 30).
+#     read (the coded range refusal left at stage 5's E8 of the v0.4 build — census row 30).
 # PURPOSE: the stable, documented surface a caller uses to drive one `goMeta` call.
 
 """
@@ -23,7 +23,7 @@ DOES: carries the four fields, read by the run as named:
 - `flavor_tag::Symbol` — the content flavor, a CLOSED inventory: `:julia` (the default — the `#` lead
   alphabet, byte-untouched) or `:c` (the C-family `//` line-comment flavor: C, Rust & Co.) or `:latex`
   (the `%` lead alphabet, `.tex`); any other value throws at `BLS.flavor_for` (a stable message naming the
-  inventory, no fallback — docs/public-api.md §3.4; the typed config-time refusal left at stage 5's E8 of the v0.4
+  inventory, no fallback — docs/public-api.md §3.4; the coded config-time refusal left at stage 5's E8 of the v0.4
   build, census row 30). Selected, never inferred — the engine never sniffs file extensions or content to choose a
   flavor. Read once, by `goMeta` before the parse (`BLS.flavor_for(config.flavor_tag)`); the profile then rides the
   parse state.

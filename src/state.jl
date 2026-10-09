@@ -350,7 +350,7 @@ struct AlterantRegistry
     # construct an unvalidated published value — that caller is a loaded module with full process
     # authority, OUTSIDE the trust model by the security frame's bound B-2 ("no in-process
     # arrangement in Julia constrains a loaded module"). Every integrity claim of this type is
-    # accident-grade: typed refusal of post-seal mutation by CONFORMING code, never security-grade.
+    # accident-grade: coded refusal of post-seal mutation by CONFORMING code, never security-grade.
     # T2-bis FORM (T2BIS-DESIGN §5): the seven derived tables (eight before stage 5's E12) enter BY NAME as ONE NamedTuple
     # argument, destructured by field name HERE — the one reviewed destructuring site. No
     # hand-written table binding exists at any snapshot-carrying call site, so the two
@@ -378,7 +378,7 @@ error-severity defect throws `RegistrationRefused` with EVERY collected diagnost
 co-occurs with an error diagnostic, thrown first; were that ever false, the route refuses TYPED with its own
 `REG_DERIVED_TABLES` row rather than reaching the token form (T2-bis §15 (8)). A conforming construction yields an
 UNPUBLISHED registry (`_snapshot === nothing`) whose tables are the DERIVED objects (`==`-equal to the caller's,
-distinct identity — recorded, not silent; no pin reads their identity) — the `goMeta` door refuses it typed, naming
+distinct identity — recorded, not silent; no pin reads their identity) — the `goMeta` door refuses it coded, naming
 the sanctioned path (`RegistryBuilder → validate → publish`); route U therefore dies at the entry too (R-V04-34's
 STRICT door). No positional form accepts a snapshot: for conforming callers, published values come from `publish`
 (the honest bound: the token form is reachable by any loaded module — accident-grade, B-2).
@@ -434,7 +434,7 @@ DOES: `register!(builder, plugin, specs...)` appends an Alterant registration re
 declaration order. `register!` performs its two IMMEDIATE refusals (throwing `RegistrationRefused`): the records must
 name the plugin index being appended (`REG_PROTOCOL`), and the Int8 slot pool (127 plugins, 127 actions) must not
 overflow (`REG_SLOT_EXHAUSTED`); every other check is DEFERRED to `validate(builder)`, which collects EVERY defect as
-typed diagnostics (full collection before the one terminal outcome, never throwing), and `publish(builder)` refuses
+coded diagnostics (full collection before the one terminal outcome, never throwing), and `publish(builder)` refuses
 on any error, else DEEP-copies every container into a SEALED — published, the snapshot taken — `AlterantRegistry`
 (the sanctioned route to a sealed value; `next_plugin_index(builder)` gives the index the next record must name).
 `default_registry_builder()` returns the four shipped Alterants with their eight action records in one
@@ -549,7 +549,7 @@ when the contained copy meets a value the record shape law refuses (`REG_PROTOCO
 copy fails (`REG_PROTOCOL`). `Base.showerror` prints the error count, the total count and one line per diagnostic
 (`[severity] code — message`). Catch it, read `.diagnostics` (stable `code`s), fix the record, re-validate.
 
-REASONING: a registration's defects are reported whole, as typed rows with stable codes, so an author fixes the
+REASONING: a registration's defects are reported whole, as rows with stable codes, so an author fixes the
 record once rather than meeting one defect per attempt.
 
 PURPOSE: the one package-public exception type of the registration lifecycle (docs/public-api.md §1.2).
@@ -633,7 +633,7 @@ src/absorb/absorb_meta.jl, the one coercion point). ONE grammar accepts the Stri
 slot (`accepts_string_slot = 1`, the quoted-first sugar); every other slot of every action refuses a quoted argument
 at `absorbMeta`'s enqueue seam, and `_absorb_local_only!` refuses one in any slot but the declared one — each
 refusal an `ErrorException` raised by `error` ("GoMeta absorb: string argument not accepted — …"; the file's own
-word for its refusals: untyped, the typed conversion deferred). Dispatch alone cannot hold that law: the built-in
+word for its refusals: without a code, its coded conversion deferred). Dispatch alone cannot hold that law: the built-in
 setters keep an untyped value slot that would parse `cell("7")`. *(This docstring said "NO metaLine grammar accepts
 it yet" — stale since the heading registration; corrected at v0.4 T2 on a CrossReview finding.)*
 
@@ -811,7 +811,7 @@ R-V04B-29 the shape, R-V04B-30 the name, 2026-09-15/16; docs/public-api.md §1.1
   handle and attribute, as the run recorded them; the reader over it is `readAltValuesEvals`.
 - `status::ProcessStatus` — `PROCESS_OK` (no error-severity diagnostic) or `PROCESS_ERROR` (at least one;
   non-OK ⇒ non-empty diagnostics).
-- `diagnostics::Vector{Diagnostic}` — the run's typed diagnostics: every row the run recorded, `:error` and
+- `diagnostics::Vector{Diagnostic}` — the run's coded diagnostics: every row the run recorded, `:error` and
   `:warning` alike; empty when it recorded none (a `PROCESS_OK` run may still carry `:warning` rows —
   `PROCESS_OK` means no `:error` row).
 

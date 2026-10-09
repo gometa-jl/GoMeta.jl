@@ -43,7 +43,7 @@ end
     r = GM.goMeta(_cn_mk("isCode"))
     @test r.status === GM.PROCESS_OK && _cn_hidden(r)
     # Id's and the Heading's actions answer no query either — the same refusal, with or without an argument list (the E-07 shape — E13:
-    # `{ cell }` of the former §3.2 retired with the interpreter at E13, no typed mint pending, the rule decides at absorb)
+    # `{ cell }` of the former §3.2 retired with the interpreter at E13, no code mint pending, the rule decides at absorb)
     e1 = _cn_err(_cn_mk("cell(7)"))
     @test e1 isa ErrorException && occursin("unknown condition key \"cell\"", e1.msg)
     e2 = _cn_err(_cn_mk("head"))
@@ -80,7 +80,7 @@ end
 end
 
 @testset "what refuses, and in which class (register E13-6; his §341)" begin
-    # a body Julia cannot parse — Julia's own ParseError out of the goMeta call (the former typed "unparsable condition", E13)
+    # a body Julia cannot parse — Julia's own ParseError out of the goMeta call (the former coded "unparsable condition", E13)
     @test _cn_err(_cn_mk("isCode !")) isa Base.Meta.ParseError
     @test _cn_err(Vector{UInt8}(codeunits("#~ hide{ :(:x)) }\nx = 1\n"))) isa Base.Meta.ParseError   # the unbalanced ')'
     # an INCOMPLETE body is thrown as the same class AT ABSORB — never stored for a later reader (the legacy stored it and threw at apply)

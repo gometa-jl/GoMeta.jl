@@ -1,16 +1,16 @@
 # src/result.jl — the typed result-support types: ProcessStatus, Diagnostic, EvalStore.
 #
 # IS: the dep-free pieces of the public `GoMetaDelivery` surface — the run status (set at the delivery,
-#     never stored on `ProcessState` — `goMeta` computes it from the diagnostics at its exit), the typed
-#     diagnostic record (the typed form of the DELIVERED errors and warnings — the partition below), and the evals store (these two embedded in
+#     never stored on `ProcessState` — `goMeta` computes it from the diagnostics at its exit), the coded
+#     diagnostic record (the coded form of the DELIVERED errors and warnings — the partition below), and the evals store (these two embedded in
 #     `ProcessState`). (The top-level `GoMetaDelivery` aggregate is defined in `state.jl`, AFTER
 #     `ProcessState` — the run builds it from the state's own pieces at exit; the two the state embeds must
 #     precede `ProcessState`, and the status enum lives beside them, so all three live here.)
 # DOES: declares `ProcessStatus` (the OK/non-OK enum), `Diagnostic` (`{code, severity, message, context}`),
 #     and `EvalStore` (a growable set of `EvalRecord`s) + its empty constructor.
-# REASONING: catalogued failures surface as typed `Diagnostic`s where they are DELIVERED — the registry door's refusals
+# REASONING: catalogued failures surface as coded `Diagnostic`s where they are DELIVERED — the registry door's refusals
 #     (`REG_UNPUBLISHED`, `POST_SEAL_MUTATION`) and the capture-floor warnings; the config-time row E-03 left at stage 5's E13
-#     with the grammar profile, the typed condition rows (E-01/E-02, the arg-domain and parse rows, E-07's pending mint — E13) with
+#     with the grammar profile, the condition rows (E-01/E-02, the arg-domain and parse rows, E-07's pending mint — E13) with
 #     the closed interpreter at E13 (a condition is Julia's since — GoMeta's own refusals the unknown condition key, the no-expression
 #     guard and, since s5c31, the unterminated `(` inside a body, `ErrorException`s at the absorb seam; a body Julia cannot parse its own `Meta.ParseError`), E-08 at E8; the E-06 row
 #     still throws (docs/public-api.md §3; E-04 left with the Visib write-back at stage 3's commit 4). `captureEvals!` (the apply sites, before the
@@ -39,7 +39,7 @@ PURPOSE: the fail-closed signal of the delivered object (R-V04B-28: one of its f
 """
     Diagnostic(code, severity, message, context)
 
-IS: a typed, non-throwing diagnostic — the form in which a run DELIVERS its errors and warnings
+IS: a coded, non-throwing diagnostic — the form in which a run DELIVERS its errors and warnings
 (`GoMetaDelivery.diagnostics`); not every refusal is delivered — some still throw at v0 (the partition,
 docs/public-api.md §3).
 
@@ -54,7 +54,7 @@ a rendered path text, a field name, or `nothing` when absent (the three-argument
 `goMeta` computes the status from the severity: `PROCESS_ERROR` iff an `:error` row exists; `RegistrationRefused`'s
 `showerror` counts its `:error` rows the same way.
 
-REASONING: catalogued failures surface as typed rows with stable codes where they are delivered, so a consumer reads
+REASONING: catalogued failures surface as rows with stable codes where they are delivered, so a consumer reads
 a code, never a message, and the status invariant (non-OK ⇒ non-empty diagnostics) holds by construction.
 
 PURPOSE: the element of the delivered object's `diagnostics` part (R-V04B-28) and of `RegistrationRefused`.

@@ -11,7 +11,7 @@
 #                                      settribute state; restores the February
 #                                      `printComponentStates` capability, superseding it)
 #         `print_altValues_evals`     (the evals rows placed IN the component tree /
-#                                      as rows / as per-cell dossiers)
+#                                      as the evals-rows-by-Component view / as the per-cell view)
 #       plus their file twins (`write_*_to_file`) and
 #       the comparison form's producer and writer `comparisonForm` / `writeComparisonFormToFile` (§I — stage 4, R-V04B-36).
 #       (The `slide` output option and the three surface writers left at stage 5's T2 — census rows 2 and 9, his §317.)
@@ -723,7 +723,7 @@ const _DT_T2_LAYOUTS = (:tree, :rows, :cells)
 
 IS: the second of the two owner-ruled print tools (R-DEV-1..9; the canon AGENT-RULES_GoMeta.md §R4b) — the
     `altValues_evals` rows of one `goMeta` result, each evals row placed AT its BLS Component (which label landed WHERE,
-    which metaSegment caused it), with the input-line spans the raw rows lack (the F-LED-7 gap). The FULL form — every
+    which metaSegment caused it), with the input-line spans the raw rows lack (the F-LED-7 gap). The FULL delivery view — every
     Component shown, absence labelled, every row with its decoded handle — is `layout = :tree, include_empty = true,
     show_handles = true` (the verb `evals-tree`); the compact tree (the R-DEV-4 default) is the canon's compact form for
     a census (§R4b). A development tool: nothing under `src/` reads it.
@@ -747,8 +747,8 @@ DOES: reads the rows through the public reader `GoMeta.readAltValuesEvals(result
                one minted (none by the default registry since E1), would attach to its owning Line with a dim
                `[Segment #N]` target tag; File-grain rows render at a `[File]` bullet under the header. Every counted row
                renders somewhere. Segment STRUCTURE questions belong to `print_BLS_Component_Tree`.
-      `:rows`  — one line per eval, input-line span first, sorted by input line then attr: THE grep/census form.
-      `:cells` — per-cell dossiers with the decoded handle (ns · grain · path · origin), one dossier per handle in
+      `:rows`  — one line per eval, input-line span first, sorted by input line then attr: the evals-rows-by-Component view.
+      `:cells` — the per-cell view: one dossier per cell with the decoded handle (ns · grain · path · origin), one dossier per handle in
                input-line order. Unanchored rows appear as red `### CELL (… no document tree position)` dossiers (this
                layout has no counting header and no separate section).
     - `include_empty = nothing` — `:tree` ONLY; any other layout ERRORS on an explicit `true`/`false` (the `nothing`
@@ -777,7 +777,7 @@ REASONING: what a run evaluated, for which Component, is stated from the Engine'
     defensive contract left); `polarity` renders DIM because it is constant `true` at v0 — a polarity-driven color would
     be constant fake signal. An absence label never asserts a value the Engine did not record.
 PURPOSE: the canon's rule (AGENT-RULES_GoMeta.md §R4b): no claim about what a run evaluated, for which Component, without
-    one of these printouts — the compact form for a census, the FULL form for the owner — and the printout goes,
+    one of these printouts — the compact form for a census, the FULL delivery view for the owner — and the printout goes,
     unabridged, into any page or record that carries the claim. The "why NOT" companion: when a label/action you expected
     is ABSENT here, the next step is the canon-R4 command-line entry `devtools.jl trace <file>` (evals rows + decoded
     handles) and `print_BLS_Component_Tree` (the settribute state the conditions tested).
@@ -874,7 +874,7 @@ function _dt_handle_note(io, row, indent)
     _dt_sty(io, indent * body * "\n", color = _DT_C_CHROME)
 end
 
-## ── :rows — the grep/census form ───────────────────────────────────────────────────────
+## ── :rows — the evals-rows-by-Component view ───────────────────────────────────────────────────────
 function _dt_t2_rows(io, doc, frows, allrows, echo; show_handles::Bool = false)
     ncells = length(unique(r.handle for r in allrows))
     _dt_sty(io, "altValues_evals  ", bold = true); _dt_sty(io, doc.name, bold = true)
@@ -996,7 +996,7 @@ function _dt_t2_tree(io, doc, frows, allrows, echo;
     _dt_print_unanchored(io, doc, _dt_unanchored(frows); show_handles)
 end
 
-## ── :cells — per-cell dossiers with decoded handles ────────────────────────────────────
+## ── :cells — the per-cell view: dossiers with decoded handles ────────────────────────────────────
 function _dt_t2_cells(io, doc, frows, allrows, echo)
     H(n) = repeat('#', n)
     groups = Dict{Vector{UInt8},Vector{DTEvalRow}}()
@@ -1103,7 +1103,7 @@ DOES: same format/color/title/_name rules as [`write_BLS_Component_Tree_to_file`
 REASONING: one renderer, three sinks — the HTML sink is the core method rendered into an `IOContext` carrying
     `:gm_html => true`, routed by the one styled-run emitter `_dt_sty`; the page wrapper is the mockup generator's,
     byte-identical.
-PURPOSE: the FULL form as a file for the owner (`include_empty = true, show_handles = true`): the site's capture of the
+PURPOSE: the FULL delivery view as a file for the owner (`include_empty = true, show_handles = true`): the site's capture of the
     authored tests (`agent-doc/site/capture-devtools.jl`) writes it as `.html` through this twin; the JuliaCon deck's
     dev-tool slides and the demo deck were produced from its output with the tools' former `slide` option (left at
     stage 5's T2).
@@ -1374,7 +1374,7 @@ function _dt_cli_main(args)
         ## the comparison form (stage 4; R-V04B-36; §I): the header names the input, the producing commit unknown here (`-`)
         print(comparisonForm(r; name = basename(path), at = "-"))
     elseif cmd == "evals-tree"
-        ## the owner's print tool, FULL form (R-DEV-4's option): every Component visible,
+        ## the owner's print tool, the FULL delivery view (R-DEV-4's option): every Component visible,
         ## absence labelled "(no evals — defaults apply)", every row with its decoded handle
         print_altValues_evals(stdout, r; layout = :tree, include_empty = true,
                               show_handles = true, _name = basename(path))

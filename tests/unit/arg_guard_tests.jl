@@ -1,10 +1,10 @@
-# arg_guard_tests.jl — the documented WORKING argument forms (the typed argument guard left at stage 5's E6
+# arg_guard_tests.jl — the documented WORKING argument forms (the argument guard left at stage 5's E6
 # of the v0.4 build with its refusal witnesses — census row 14).
 #
 # IS:   witnesses that every documented WORKING form stays PROCESS_OK, double-call byte-deterministic,
 #       and render-pinned byte-exact.
 # DOES: drives the working twins through goMeta and pins status, determinism and the render bytes.
-# REASONING: the typed "invalid arguments" refusal at the setter seam `_invoke_set` left at stage 5's E6 of the
+# REASONING: the guarded "invalid arguments" refusal at the setter seam `_invoke_set` left at stage 5's E6 of the
 #       v0.4 build with its crash-leg and sole-exception-surface witnesses (census row 14 — his §120, the framework
 #       before hardening; his legacy called the setter directly): a malformed argument meets Julia's own dispatch
 #       or the setter's own error out of the `goMeta` call, measured on both trees by the build's probe

@@ -5,11 +5,11 @@
 #       the token-gated constructor; the token form itself is reachable by loaded code, the
 #       disclosed accident-grade bound; the validation chain of v0.4 T2–T4 left at stage 5's E4 — census
 #       row 3, OWNER-WORDS §317: the domain probe and the capture mode-gate laws remain — the vocabulary check
-#       left at stage 5's E9), the typed diagnostics with FULL collection (validate
+#       left at stage 5's E9), the coded diagnostics with FULL collection (validate
 #       never throws), atomic domain-copy publication, the T2-bis ONE-check door (the fingerprint `seal` left at stage 5's E13 —
 #       census row 6; the nine `_SNAPSHOT_FIELDS` — ten before E13, eleven before stage 5's E12, census row 45 — compared structurally against the publish-time snapshot —
 #       REPRESENTATIVE fields mutated here, not every one; the property file is the proof), the STRICT
-#       published-only door at `goMeta(bytes; registry)` (an unpublished value refuses typed NAMING the
+#       published-only door at `goMeta(bytes; registry)` (an unpublished value refuses coded NAMING the
 #       sanctioned path; the internal callable seam that ran the door too left at stage 5's E2), the real freeze gate
 #       (`POST_SEAL_MUTATION` on declared, derived, re-ordered, cyclic and callable-identity mutations by
 #       conforming code), `register!`'s binding + pool refusals, the slot encoding's distinctions

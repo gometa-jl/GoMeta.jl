@@ -206,7 +206,7 @@ end
 """
     _capture_floor!(st, p, code) -> nothing
 
-IS: the typed capture-floor diagnostic of the Heading lane's flush (src/absorb/absorb_meta.jl): the disclosure that a
+IS: the coded capture-floor diagnostic of the Heading lane's flush (src/absorb/absorb_meta.jl): the disclosure that a
 localOnly Alterant's applied state minted no rows (`WARN_CAPTURE_FLOOR`: no capture row declared) or that its store was
 outside the flush's readable shape (`WARN_CAPTURE_UNREADABLE`). The capture walk above calls neither arm since stage 5's
 E5 of the v0.4 build (census row 33 — the walk reads its stores bare); the flush keeps both until the Heading runs
@@ -216,7 +216,7 @@ DOES: pushes ONE WARNING-severity (non-fatal) diagnostic per call per (alterant,
 `st.diagnostics` — the O(n) linear-scan policy `_putEval!` already ratifies; ZERO state-shape change.
 
 REASONING: a warning, not an error — the run stays `PROCESS_OK` and the row rides the delivery's diagnostics, so a
-store the flush cannot read is disclosed rather than refused (the T5 floor law: the typed warning, never a raw
+store the flush cannot read is disclosed rather than refused (the T5 floor law: the coded warning, never a raw
 `TypeError` in the flush); the dedupe keeps one row per (Alterant, code) however many regions meet the floor, and the
 `UNREADABLE` arm reads `p.capture` defensively, so the floor's own message can never itself throw.
 

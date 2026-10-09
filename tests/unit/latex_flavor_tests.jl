@@ -42,7 +42,7 @@ end
         ## (the extensions pin, the seam pins and the digest distinctness left at stage 5's P1 of the v0.4 build — census rows 72, 63, 39)
     end
 
-    @testset "[2] the inventory rows: flavor_for (the typed config-time refusal left at stage 5's E8 — census row 30)" begin
+    @testset "[2] the inventory rows: flavor_for (the coded config-time refusal left at stage 5's E8 — census row 30)" begin
         @test _LX_BLS.flavor_for(:latex) === _LX_BLS.FLAVOR_LATEX
         r_ok = GM.goMeta(_lx_bytes("x 1\n"); config = _lx_cfg)
         @test r_ok.status === GM.PROCESS_OK

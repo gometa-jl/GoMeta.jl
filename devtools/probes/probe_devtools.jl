@@ -122,13 +122,13 @@ b = IOBuffer()
 print_altValues_evals(IOContext(b, :color => true), mini)
 check(occursin('\e', String(take!(b))), ":auto did not pass a :color=>true IOContext through")
 
-## 9 — friendly kwarg validation (typed errors, not raw MethodErrors)
+## 9 — friendly kwarg validation (friendly errors, not raw MethodErrors)
 expect_throw(() -> plain(io -> print_altValues_evals(io, mini; attrs = "visib")),
-             "attrs=\"visib\" (a String) must raise the typed error")
+             "attrs=\"visib\" (a String) must raise the friendly error")
 expect_throw(() -> plain(io -> print_altValues_evals(io, mini; lines = "5:12")),
-             "lines=\"5:12\" (a String) must raise the typed error")
+             "lines=\"5:12\" (a String) must raise the friendly error")
 expect_throw(() -> plain(io -> print_BLS_Component_Tree(io, mini; blocks = :al)),
-             "blocks=:al must raise the typed error")
+             "blocks=:al must raise the friendly error")
 
 ## 10 — invalid UTF-8 content renders without throwing (byte-faithful engine input)
 raw = vcat(Vector{UInt8}(codeunits("# ok line\n# bad ")), [0xff, 0xc3], Vector{UInt8}(codeunits(" tail\n")))
@@ -162,7 +162,7 @@ check(occursin("path=[(direct,1)]", out), "show_handles did not print the full d
 
 ## 13 — an error delivery prints as the empty document its tree is (the status-first banner left at stage 5's T3 — the
 ## command-line entry prints the status to stderr); empty docs show the File summary in EVERY style
-_pbD = GoMeta.DEFAULT_REGISTRY   # a conforming UNPUBLISHED registry (route U) — the door refuses it typed (REG_UNPUBLISHED);
+_pbD = GoMeta.DEFAULT_REGISTRY   # a conforming UNPUBLISHED registry (route U) — the door refuses it coded (REG_UNPUBLISHED);
 _pbU = GoMeta.AlterantRegistry(_pbD.plugins, _pbD.sorted_alt_actions, _pbD.action_to_plugin, _pbD.action_index,   # the unknown-
                                _pbD.alt_index, _pbD.accum_alt_idxs, _pbD.mutex_alt_idxs, _pbD.action_specs, _pbD.spec_index)   # profile route left at stage 5's E13
 err = GoMeta.goMeta(read(joinpath(_PB_FIX, "mini-Documenter-Source-File.jl")); registry = _pbU)

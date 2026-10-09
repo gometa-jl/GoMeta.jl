@@ -19,13 +19,13 @@
 #     (stage 5's E13 of the v0.4 build, census row 1; R-V04B-106; his §120, §D174).
 #     An alterant already set in an earlier-processed slot is never re-set. The queued args tuple is
 #     splatted once into the setter, bare, as his legacy called it (goMetaAddOns.jl); a malformed argument
-#     meets Julia's own dispatch or the setter's own error — the seam's typed refusal left at stage 5's E6 of
+#     meets Julia's own dispatch or the setter's own error — the seam's guarded refusal left at stage 5's E6 of
 #     the v0.4 build (census row 14; his §120, the framework before hardening).
 # REASONING: conditions travel as Julia `Expr`s and arguments as opaque tuples, so there
 #     are two evaluation sites of one form (`Core.eval` in the two passes below) and direct setter calls
 #     (the auditable setter seam and its internal-invariant guards left at stage 5's E6 of the v0.4 build —
 #     census row 14). Honest edges: the E-06 absorb-path guarded refusal keeps
-#     its typed conversion deferred (the E-04 apply-path crash origin left with the Visib write-back, stage 3's commit 4)
+#     its coded conversion deferred (the E-04 apply-path crash origin left with the Visib write-back, stage 3's commit 4)
 #     (docs/public-api.md §3.1); a condition that fails at evaluation — a non-Bool value where a Bool is needed, an
 #     argument Julia cannot dispatch — is Julia's own error out of the goMeta call (the E-07 row retired at E13 with the
 #     interpreter: a getter-less action is no condition key since E12).

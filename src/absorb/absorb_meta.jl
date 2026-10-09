@@ -296,7 +296,7 @@ refusal — the unknown key's or the scanner's unterminated `(` — its one exit
 with `ctx().registry`.
 
 REASONING: his design — the condition is Julia: GoMeta recognises its own parts and Julia does the rest, so the parser
-carries no condition grammar of its own (the closed interpreter's walls and typed codes left at E13); the vocabulary
+carries no condition grammar of its own (the closed interpreter's walls and condition codes left at E13); the vocabulary
 stays the registry's (settribute keys, queryable actions), the spelling of a label through `repr` keeps one form
 for every admitted name (register E13-8), and ONE scanner serves both planes — the condition's own `(…)` finder left at
 s5c31 (his §342: one of each).
@@ -588,7 +588,7 @@ function absorbMeta(
     ## the key's origin for an inline metaSegment, R-V04B-98); on the userMH feed it is
     ## the minted USER-CONTEXT handle + the profile's verbatim bytes. The WRONG-SHAPE
     ## check runs HERE, BEFORE any typed conversion (the T5 floor law — a mismatched or
-    ## entries-less store takes the typed WARNING, never a raw TypeError in the poison
+    ## entries-less store takes the coded WARNING, never a raw TypeError in the poison
     ## window); the attr stem comes from the DECLARED row. Delivery is COMPLETE here:
     ## nothing was queued, so the apply plane never revisits localOnly values.
     for pidx in sort!(collect(keys(pendingLocal)))
@@ -654,7 +654,7 @@ end
 ##   R-V04B-101 — the ONE minimal refusal R-V04B-106 (3) keeps; the closed interpreter's full-eval arm (E13)
 ##   left with its marker at stage 5's E13);
 ## - the setter is called bare, as on the apply plane — its guard `_invoke_set` left at stage 5's E6
-##   of the v0.4 build with its typed refusals (census row 14).
+##   of the v0.4 build with its guarded refusals (census row 14).
 ## Registry-driven WHERE THE REGISTRY CAN DRIVE IT: the DIVERT (mode),
 ## the constructor, the setter, the String-slot capability
 ## (`accepts_string_slot`), and the VALIDATION seam (the spec's `validate` slot)
@@ -721,7 +721,7 @@ function _absorb_local_only!(
                 error("GoMeta absorb: heading without a document context — ",
                     "the deriving head form infers its level from the ",
                     "metaLine's attachment, and this surface carries no ",
-                    "document line (typed applicability refusal; the ",
+                    "document line (a guarded applicability refusal; the ",
                     "explicit head(text, level) form is the context-free ",
                     "sibling; see docs/public-api.md §3.4)")
             argsTup = (argsTup[1],
