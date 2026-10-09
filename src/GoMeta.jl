@@ -1,8 +1,8 @@
 # GoMeta.jl — the top module: the include spine + the public `goMeta` entry
 #
 # IS: the GoMeta package top module. It holds the ordered include spine — config.jl, result.jl,
-#     bls/BLS.jl, state.jl, alterants/registry.jl, annotations.jl,
-#     absorb/absorb_meta.jl, absorb/walk.jl, alterants/apply.jl — and declares the
+#     bls/BLS.jl, occurrence.jl, state.jl, alterants/registry.jl, annotations.jl, absorb/absorb_meta.jl,
+#     absorb/walk.jl, alterants/apply.jl, answer.jl, scan.jl, childdiff.jl — and declares the
 #     exported semver surface: `goMeta`, `readAltValuesEvals`, `GoMetaConfig`, `GoMetaDelivery`
 #     (docs/public-api.md §1.1; asserted by tests/unit/public_surface_tests.jl), plus the
 #     declared `public` tier of qualified names (docs/public-api.md §1.2 — e.g. `GoMeta.serialize_evals`,
@@ -261,7 +261,7 @@ Arguments:
   (the typed flavor and range refusals left at stage 5's E8 of the v0.4 build — census row 30).
 - `registry::AlterantRegistry` — the alterant inventory; defaults to the deterministic `DEFAULT_REGISTRY`.
 
-The `GoMetaDelivery` is `{altValues_evals::EvalStore, blsComponentTree::BLS.ParseState, status::ProcessStatus, diagnostics::Vector{Diagnostic}}` — the four public parts, read by name (R-V04B-28/29/30) — and is
+The `GoMetaDelivery` is `{blsComponentTree::BLS.ParseState, altValues_evals::EvalStore, status::ProcessStatus, diagnostics::Vector{Diagnostic}}` — the four public parts, read by name (R-V04B-28/29/30), in his pipeline order (R-V04B-89) — and is
 TOTAL over the ENTRY surface (the registry door's refusals are delivered typed; an unknown flavor_tag throws its stable message, §3.4); absorb/apply-plane catalogued failures can still throw at v0 (see below): `status` is
 `PROCESS_OK` (no error diagnostics) or `PROCESS_ERROR` (>=1 error `Diagnostic`; non-OK => non-empty diagnostics).
 Obtain the Engine's output via `readAltValuesEvals(result.altValues_evals)` (the evals map, keyed by (handle, attr); its byte form

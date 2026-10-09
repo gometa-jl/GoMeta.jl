@@ -9,7 +9,8 @@
 # DIVERGENCES from the reference ((1)/(2): documented, not exercised by this corpus so not asserted
 #   here; (3): reconciled here via the input-keyed oracle-parity check):
 #   (1) discard component-skip vs the reference finalVisib-precedence (a show-override inside a
-#       discard-skipped ancestor is omitted; documented in src/emit/emit.jl) — accept-as-documented;
+#       discard-skipped ancestor is omitted; documented in devtools/basic_renderer.jl — the renderer's home since 2026-09-12, R-V04B-24,
+#       formerly src/emit/emit.jl; its header states the write-side law: no `:discard` subtree-skip, an inner answer resurfaces) — accept-as-documented;
 #   (2) multi-byte segment-slicing: this engine's parse layer is byte-correct on multi-byte
 #       segment bounds where the reference truncates;
 #   (3) terminal-newline byte-faithfulness: render_bytes is byte-faithful on the WHOLE-FILE terminal

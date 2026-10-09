@@ -84,8 +84,11 @@ extends the label whitelist by a fixed **pictograph vocabulary** (byte-exact nam
   whitespace-alphabet, Unicode-correctness, directive-adjacency and condition-path families — green
   under a plain `Pkg.test()`).
 - **Robustness:** the metaLine GRAMMAR surface refuses out-of-vocabulary input with **stable, documented refusals** —
-  an unknown action, an unknown condition key — (the walls against malformed metaLines and the slot-capacity refusal left at
-  `0.4.0`, stage 5's E7 — census row 41: a malformed metaLine is read as the legacy read it), and the Labels Alterant's own
+  an unknown action, an unknown condition key — (a malformed metaLine meets the grammar's one refusal naming the character at fault —
+  "GoMeta absorb: unexpected character '<c>' <where> …" — and a ninth action in one meta-hierarchy slot the stable "GoMeta absorb:
+  more than 8 actions in one meta-hierarchy slot …", both since stage 5's s5c29 of the v0.4 build — the owner's Decisions 1 and 3 of
+  2026-10-08, §356 / §358; the four guarded refusals of v0.2–v0.3 left at stage 5's E7 — census row 41 — and between E7 and s5c29 a
+  malformed metaLine was read as the legacy read it), and the Labels Alterant's own
   unknown-label refusal (`GoMeta apply: unknown
   label …` on an applied out-of-whitelist name; a queried unknown label answers false since stage 5's E9 of the v0.4
   build — `docs/public-api.md` §3.4), catalogued in `docs/public-api.md` §3. Malformed action ARGUMENTS are Julia's own
@@ -234,7 +237,7 @@ Three references, in reading order:
 
 1. [`docs/SYNTAX-AND-SEMANTICS.md`](docs/SYNTAX-AND-SEMANTICS.md) — the language: every rule
    cites a runnable committed example.
-2. [`docs/public-api.md`](docs/public-api.md) — the API: four exported names (plus thirty-nine
+2. [`docs/public-api.md`](docs/public-api.md) — the API: four exported names (plus twenty-seven
    qualified-public names, reached as `GoMeta.*`), the error-mode catalogue, the refusal strings.
 3. [`docs/CANONICAL-OUTPUT.md`](docs/CANONICAL-OUTPUT.md) — the package's canonical observable output
    (`altValues_evals`) and the development tool's (tree, render) pair with its six render rules.

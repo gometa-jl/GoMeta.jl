@@ -29,9 +29,11 @@
 #     `accum_alt_idxs` must stay sorted
 #     ascending (the apply phase's `insorted` membership test depends on it). The queue matrices are
 #     sized `numAltActions × num_slots` as the per-slot upper bound (8 actions today — the registered count; the pages'
-#     "7" was stale since the heading action's registration); a further action meets Julia's own BoundsError at the
-#     enqueue write — the capacity guard left at stage 5's E7 of the v0.4 build (census row 41; tests/unit/slot_overflow_tests.jl
-#     pins the boundary).
+#     "7" was stale since the heading action's registration); a further action meets GoMeta's own message "GoMeta absorb: more than 8
+#     actions in one meta-hierarchy slot …" BEFORE the enqueue write (the slot bound in src/absorb/absorb_meta.jl — stage 5's s5c29;
+#     his Decision 3 of 2026-10-08, OWNER-WORDS §358: a fixed size, raised by hand when an example needs it; between E7 — census row 41,
+#     where the v0.2 capacity guard left — and s5c29 a further action met Julia's own BoundsError; tests/unit/slot_overflow_tests.jl pins
+#     the boundary and the ninth).
 # PURPOSE: a reentrant, reset-safe, eval-compatible per-call state + the typed public surface.
 
 using Base.ScopedValues

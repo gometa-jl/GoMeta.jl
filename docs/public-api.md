@@ -33,15 +33,17 @@ v0 — the §3 partition (the stable-message refusals of §3.4; the E-04 crash-o
 commit 4 of the v0.4 build — its origin was the Visib write-back). Honesty over completeness: the row not yet armed
 (the E-06 guarded refusal — §3.1) and the crashes still latent or refused with a stable message (§3.4) are documented
 **as such**, never papered over with a fabricated typed code. A `{…}` condition is Julia's since stage 5's E13: the
-unknown condition key (the vocabulary's) and the no-expression guard of an empty block or a bare literal are the two
-condition refusals GoMeta mints (stable `GoMeta absorb:` messages); a body Julia cannot parse is Julia's own
-`Meta.ParseError`; a condition that fails at evaluation is Julia's own error (§3.2).
+unknown condition key (the vocabulary's), the no-expression guard of an empty block or a bare literal and — since s5c31, the
+owner's word §366 — a `(` left open inside the body are the three condition refusals GoMeta mints (stable `GoMeta absorb:`
+messages); a body Julia cannot parse is Julia's own `Meta.ParseError`; a condition that fails at evaluation is Julia's own error (§3.2).
 
 **PURPOSE.** The stable contract a consumer programs against and a reviewer audits the surface
 against — the human-readable mirror of the machine-checkable export set (`names(GoMeta)`, asserted
 by `tests/unit/public_surface_tests.jl`) and of the refusal behavior the shipped witnesses assert
-(`tests/unit/error_message_tests.jl` · `tests/unit/arg_guard_tests.jl` · `tests/unit/condition_tests.jl`; the
-slot-overflow and malformed-metaLine refusal witnesses left at stage 5's E7 of the v0.4 build — census row 41).
+(`tests/unit/error_message_tests.jl` · `tests/unit/arg_guard_tests.jl` · `tests/unit/condition_tests.jl` ·
+`tests/unit/slot_overflow_tests.jl` · `tests/unit/malformed_meta_tests.jl` · `tests/unit/parser_quality_tests.jl` — the last three
+re-cut at stage 5's s5c29 for the grammar's one refusal and the slot bound; the witnesses of the former v0.2–v0.3 walls left at E7 —
+census row 41).
 
 ## §1 — The public surface
 
@@ -558,7 +560,8 @@ arg2)` — parsed with the metaLine and handed to the action when it fires. The 
 `Diagnostic = {code::Symbol, severity, message, context}`; a catalogued failure is a typed
 `Diagnostic` except where its row says otherwise — the E-06 GUARDED refusal
 still throws (§3.1; its typed conversion deferred at v0; the E-04 crash origin RETIRED at stage 3's commit 4), and the
-condition path is Julia's since stage 5's E13 (§3.2: one stable `GoMeta absorb:` refusal of GoMeta's, Julia's own errors
+condition path is Julia's since stage 5's E13 (§3.2: three stable `GoMeta absorb:` refusals of GoMeta's — the unknown condition key, the
+no-expression guard of an empty block or a bare literal and, since s5c31, the unterminated `(` inside a body — Julia's own errors
 for the rest — the typed condition rows REMOVED). The
 catalogue's inventory IS the tables of §3.1–§3.5
 below (no aggregate count is maintained by hand — two hand-written counts drifted at v0.4 T2);
