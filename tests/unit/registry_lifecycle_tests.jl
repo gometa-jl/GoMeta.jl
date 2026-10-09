@@ -22,7 +22,7 @@
 # DOES: builds registries through every route, mutates published values, drives the door, and pins
 #       the codes and the messages' load-bearing substrings.
 # REASONING: the golden layer proves the PUBLISHED default is byte-neutral; only these witnesses prove
-#       the refusals fire, fully, typed, and in deterministic order.
+#       the refusals fire, fully, coded, and in deterministic order.
 # PURPOSE: the T2 acceptance rows of the v0.4 build (M-AC-9 registry gates; the door; FM-REG rows).
 
 using Test
@@ -288,7 +288,7 @@ _plugin_with_default(p, d) = GM.Alterant(; altName = p.altName, setMode = p.setM
         # check warns; publish's warning path stands unexercised)
     end
 
-    @testset "register!'s refusals + the remaining validate rows (re-cut at stage 5's E4: the typed inventory refusals left with the chain)" begin
+    @testset "register!'s refusals + the remaining validate rows (re-cut at stage 5's E4: the coded inventory refusals left with the chain)" begin
         base = GM.default_registry_builder()
         # slot-pool exhaustion at the REGISTRY grain (the Int8 index space): `register!` refuses the 128th
         # append (cure batch 1); the validate-time pool row for a directly-pushed builder left at E4 — such a
@@ -316,7 +316,7 @@ _plugin_with_default(p, d) = GM.Alterant(; altName = p.altName, setMode = p.setM
     end
 
     @testset "T2-bis: the EIGHT snapshot-door witnesses W1–W8 (T2BIS-DESIGN §8; APPENDED)" begin
-        # W1 — the CONTAINED route refuses a published value mutated into a CYCLE, typed,
+        # W1 — the CONTAINED route refuses a published value mutated into a CYCLE, coded,
         # naming the record + slot via the path (Rcx/Rcy above are testset-locals — rebuilt)
         b1 = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
         b1.plugins[2] = _plugin_with_default(b1.plugins[2], GM.Declared(Any[]))
@@ -342,7 +342,7 @@ _plugin_with_default(p, d) = GM.Alterant(; altName = p.altName, setMode = p.setM
         # (W4 — the seal-via-token-seam witness, a FOREIGN seal beside DEFAULT's snapshot firing at path `seal` — left at stage 5's
         # E13 of the v0.4 build with the seal field, census row 6; W1–W3 and W5–W8 carry the door's classes.)
         # W5 — KNOWN OPEN (v) closes: `altConstructor = Val{'c'}` is a SLOT-NAMED validate row
-        # (record in context, slot in the message) + a typed publish refusal
+        # (record in context, slot in the message) + a coded publish refusal
         b5 = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
         b5.plugins[1] = GM.Alterant(; altName = :labels, setMode = :accumulate, altConstructor = Val{'c'},
                                     setAltInstance = GM.Alterants.setLabels,
@@ -352,7 +352,7 @@ _plugin_with_default(p, d) = GM.Alterant(; altName = p.altName, setMode = p.setM
                        occursin("altConstructor", x.message), d5)
         @test_throws GM.RegistrationRefused GM.publish(b5)
         # W6 — a RECORD STRUCT in declared data refuses at validate (the slot-named row, never
-        # the publish-containment generic row) + a typed publish refusal
+        # the publish-containment generic row) + a coded publish refusal
         b6 = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
         b6.plugins[2] = _plugin_with_default(b6.plugins[2], GM.Declared(GM.ActionSpec(; name = :zz, plugin = Int8(1))))   # a record struct in data (ActionSpec since stage 5's E11 — the overload row left, census row 16)
         d6 = GM.validate(b6)
@@ -360,7 +360,7 @@ _plugin_with_default(p, d) = GM.Alterant(; altName = p.altName, setMode = p.setM
                        occursin("slot default", x.message) && occursin("ActionSpec", x.message), d6)
         @test_throws GM.RegistrationRefused GM.publish(b6)
         # W7 — the contained route ENFORCES the position rules on its unvalidated input: a
-        # Function IN DATA refuses typed, the message naming the position rule + the path
+        # Function IN DATA refuses coded, the message naming the position rule + the path
         b7 = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
         b7.plugins[2] = _plugin_with_default(b7.plugins[2], GM.Declared(Any[1]))
         R7 = GM.publish(b7)
@@ -396,7 +396,7 @@ _plugin_with_default(p, d) = GM.Alterant(; altName = p.altName, setMode = p.setM
         @test isempty(GM._registry_door_check(Rc1))
         # CW2 (A2) — a flag-armed THROWING user `hash` on an own Type key: validation and the
         # fold never hash, but the copier's Dict-rebuild fill does — the throw converts to a
-        # TYPED refusal, never a raw exception out of `publish` (probe P6-A2)
+        # coded refusal, never a raw exception out of `publish` (probe P6-A2)
         @eval module _CrxHashBomb
             struct K end
             const ARMED = Base.RefValue(false)
@@ -413,7 +413,7 @@ _plugin_with_default(p, d) = GM.Alterant(; altName = p.altName, setMode = p.setM
         # CW3 (A3) — UNDEFINED container elements never read raw: a resize!-widened published
         # vector FIRES at the door (was an UndefRefError leak — probe P6-A3); an undef-slot
         # declared vector refuses slot-named at validate (never a throw); the contained
-        # preload route refuses typed
+        # preload route refuses coded
         bc3 = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
         s3c = bc3.action_specs[3]
         bc3.plugins[2] = _plugin_with_default(bc3.plugins[2], GM.Declared(Any[1]))

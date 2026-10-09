@@ -17,7 +17,7 @@ canon's R5. The build record: `plan/2026-08-24-gometa-v04-build/`
 
 ```
 GM=/home/fido/Dropbox/_01_Crypto_Dropbox/07_Claude/GoMetaEcosystem/GoMeta
-julia --startup-file=no --project=$GM/tests $GM/devtools/devtools.jl evals-tree <file>   # print_altValues_evals, FULL form
+julia --startup-file=no --project=$GM/tests $GM/devtools/devtools.jl evals-tree <file>   # print_altValues_evals, the FULL delivery view
 julia --startup-file=no --project=$GM/tests $GM/devtools/devtools.jl bls-tree   <file>   # print_BLS_Component_Tree (:mix)
 julia --startup-file=no --project=$GM/tests $GM/devtools/devtools.jl segments   <file>   # the tree with line numbers
 julia --startup-file=no --project=$GM/tests $GM/devtools/devtools.jl trace      <file>   # evals rows + decoded keys

@@ -210,7 +210,7 @@ function feed_user_mh!(st::ProcessState)
     CnS.updateMetaHierarchy(userMHIdx)
     # This surface has NO document line/component behind it, so the MetaContext record is
     # NULLED — a derived-context action (the quoted-first heading) fed through here meets
-    # the TYPED applicability refusal in absorbMeta, never a fabricated context (hd-6).
+    # the guarded applicability refusal in absorbMeta, never a fabricated context (hd-6).
     # The feed's OWN identity rides `user_context` below: the explicit head records against the
     # minted user-context handle (the user-context build; no copy of the profile's bytes rides the row
     # since commit 9b, R-V04B-43 (1)).
@@ -306,7 +306,7 @@ function goMeta(
     ## publication refuses `POST_SEAL_MUTATION` (the live fields against the publish-time snapshot — the real freeze gate). The
     ## fail-closed PROCESS_ERROR GoMetaDelivery is built in the `@noinline` cold `_entryErrorDelivery` helper (its `init_state` +
     ## `GoMetaDelivery` construction stay OUT of this hot path); the input bytes are never touched — the error-path delivery
-    ## carries a parse state built from EMPTY bytes (container sizing only). The E-06 (absorb) guarded refusal remains untyped
+    ## carries a parse state built from EMPTY bytes (container sizing only). The E-06 (absorb) guarded refusal remains without a code
     ## at v0 (the E-04 apply crash origin left with the write-back, stage 3's commit 4); the condition path's three refusals of
     ## GoMeta's — the unknown condition key, the no-expression guard, the unterminated `(` inside a body (s5c31) — abort the statement at the absorb seam (`absorb_meta.jl`).
     door_diags = _registry_door_check(registry)

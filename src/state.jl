@@ -375,7 +375,7 @@ DOES: runs the remaining checks over `(plugins, action_specs)` (`_validate_regis
 the declarations (`_derive_tables`); the hand-built derived tables must equal the derived ones — each of the seven
 compared by `==` — else a `REG_DERIVED_TABLES` diagnostic is collected ALONGSIDE the others (full collection); any
 error-severity defect throws `RegistrationRefused` with EVERY collected diagnostic. A `_derive_tables` failure always
-co-occurs with an error diagnostic, thrown first; were that ever false, the route refuses TYPED with its own
+co-occurs with an error diagnostic, thrown first; were that ever false, the route refuses coded with its own
 `REG_DERIVED_TABLES` row rather than reaching the token form (T2-bis §15 (8)). A conforming construction yields an
 UNPUBLISHED registry (`_snapshot === nothing`) whose tables are the DERIVED objects (`==`-equal to the caller's,
 distinct identity — recorded, not silent; no pin reads their identity) — the `goMeta` door refuses it coded, naming
@@ -412,7 +412,7 @@ function AlterantRegistry(plugins::Vector{Alterant}, sorted_alt_actions::Vector{
     any(d -> d.severity === :error, diags) && throw(RegistrationRefused(diags))
     # T2-bis (§15 (8)): `derived === nothing` is unreachable here — a `_derive_tables` failure
     # always co-occurs with an error diagnostic, thrown above. Were the invariant ever false,
-    # route U refuses TYPED before the token form rather than passing `t === nothing`.
+    # route U refuses coded before the token form rather than passing `t === nothing`.
     derived === nothing && throw(RegistrationRefused([Diagnostic(:REG_DERIVED_TABLES, :error,
         "GoMeta registry: positional construction could not derive tables from the declared " *
         "record (route U is GATED at v0.4.0; build via RegistryBuilder → validate → publish)")]))
@@ -456,7 +456,7 @@ RegistryBuilder() = RegistryBuilder(Alterant[], ActionSpec[])
 IS: the declaration-order index the NEXT `register!`ed record must name — `length(builder.plugins) + 1`.
 
 DOES: returns that index typed `Int8`, so it passes straight into `ActionSpec(; plugin = …)`; at capacity (127
-plugins already) it throws the lifecycle's typed `REG_SLOT_EXHAUSTED` refusal (a `RegistrationRefused` carrying one
+plugins already) it throws the lifecycle's coded `REG_SLOT_EXHAUSTED` refusal (a `RegistrationRefused` carrying one
 diagnostic) instead of an unusable 128. Reads the builder, writes nothing.
 
 REASONING: `register!` refuses a record naming another index, so the author needs the index before writing the
@@ -483,13 +483,13 @@ src/alterants/registry.jl — one memo across both fields): nothing mutable shar
 carried by reference; `deepcopy` is never dispatched. This is the ONE route that meets UNVALIDATED values (the input
 may carry a post-publication cycle, an out-of-domain value, or a position-rule offense), so the copy is CONTAINED
 (T2BIS-DESIGN §3 route 2): a cycle, an outside-domain value, or a `Function`/record struct outside its lawful position
-converts to a typed `RegistrationRefused` (`REG_PROTOCOL`) whose message names the offending type and the path — as
+converts to a coded `RegistrationRefused` (`REG_PROTOCOL`) whose message names the offending type and the path — as
 do the copier's two path-less classes (a user method thrown at a Dict rebuild; an undefined container element); any
 other exception is rethrown (`_route2_refuse`). No internal exception and no unbounded recursion leaves this public
 constructor. The derived tables are not copied: `publish` derives them again from the declarations.
 
 REASONING: an Extension extends the shipped inventory by adding to a copy of its declarations, never by touching the
-published value; a published value mutated after publication is met here with a typed refusal, not a raw exception.
+published value; a published value mutated after publication is met here with a coded refusal, not a raw exception.
 
 PURPOSE: the extension route of the lifecycle — from `DEFAULT_REGISTRY` to a builder an Extension registers into.
 """
@@ -540,7 +540,7 @@ end
 """
     RegistrationRefused(diagnostics)
 
-IS: the typed refusal of a registration — an `Exception` carrying `diagnostics::Vector{Diagnostic}`.
+IS: the coded refusal of a registration — an `Exception` carrying `diagnostics::Vector{Diagnostic}`.
 
 DOES: thrown by `publish` (and by the gated positional route) with EVERY collected error/warning diagnostic — never
 the first one only — and by `register!` / `next_plugin_index` for their two IMMEDIATE checks (the plugin-index
@@ -693,7 +693,7 @@ builds it from the component + the post-update MH cursor and sets `st.meta_conte
 stored in NO Component (the evaluation-free-tree law). Consumers at this step:
 the quoted-first heading recognizer's APPLICABILITY check (the userMH feed NULLS the
 record before its absorb call — no document line exists there — so a derived-context
-heading through that surface meets a TYPED applicability refusal, never fabrication)
+heading through that surface meets a guarded applicability refusal, never fabrication)
 and the head evals row's level (the attr-fold: the level rides the attr NAME
 `head_<level>`; no fabricated rows, no record-schema change). `level` is the
 application level — the RAW MH-ladder index the walk set for this component (a

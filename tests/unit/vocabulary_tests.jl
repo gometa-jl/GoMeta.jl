@@ -251,7 +251,7 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
               GM._key_order_budget(_VocR3.HG)
         # (C1, probe P63) a to-be-refused Function KEY inside a declared Dict: the
         # ordering prepass falls back to iteration order on ANY key-encode throw (the
-        # pirated nameof never escapes) and the WALK refuses the key typed.
+        # pirated nameof never escapes) and the WALK refuses the key coded.
         bk = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
         sk = bk.action_specs[4]
         bk.action_specs[4] = GM.ActionSpec(; name = sk.name, plugin = sk.plugin, accepts_string_slot = sk.accepts_string_slot,

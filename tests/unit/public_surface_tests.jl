@@ -46,7 +46,7 @@ import TOML
     # The supporting PACKAGE-PUBLIC surface (docs/public-api.md §1.2): documented + qualified-access, NOT exported.
     SUPPORTING_PUBLIC = [:serialize_evals, :EvalRecord, :EvalStore, :ProcessStatus, :PROCESS_OK,
                          :PROCESS_ERROR, :Diagnostic, :AlterantRegistry, :DEFAULT_REGISTRY,
-                         # the registration LIFECYCLE (Builder → validate → publish; the typed refusal) and the record VOCABULARY a
+                         # the registration LIFECYCLE (Builder → validate → publish; the coded refusal) and the record VOCABULARY a
                          # third-party author constructs — the sanctioned Extension-facing seam
                          :RegistryBuilder, :register!, :next_plugin_index, :validate, :publish, :RegistrationRefused,
                          :Alterant, :ActionSpec, :CaptureDecl, :DefaultSlot, :NoDefault, :Declared,

@@ -748,7 +748,7 @@ DOES: reads the rows through the public reader `GoMeta.readAltValuesEvals(result
                `[Segment #N]` target tag; File-grain rows render at a `[File]` bullet under the header. Every counted row
                renders somewhere. Segment STRUCTURE questions belong to `print_BLS_Component_Tree`.
       `:rows`  — one line per eval, input-line span first, sorted by input line then attr: the evals-rows-by-Component view.
-      `:cells` — the per-cell view: one dossier per cell with the decoded handle (ns · grain · path · origin), one dossier per handle in
+      `:cells` — the per-cell view: dossiers with the decoded handle (ns · grain · path · origin), one dossier per handle in
                input-line order. Unanchored rows appear as red `### CELL (… no document tree position)` dossiers (this
                layout has no counting header and no separate section).
     - `include_empty = nothing` — `:tree` ONLY; any other layout ERRORS on an explicit `true`/`false` (the `nothing`

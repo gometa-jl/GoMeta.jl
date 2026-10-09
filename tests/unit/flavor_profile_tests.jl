@@ -8,7 +8,7 @@
 # glued/bare policies + the run-arm strictness; the lead codeunit generalization; the
 # record guards (incl. the F-18 collision/consume vocabularies + the positional-constructor
 # removal); ParseState threading (setup default · kwarg · goMeta resolve-once for
-# BOTH armed tags + the coded invalid-tag path). (The parse_header! seam identity left at stage 5's P1 of the
+# BOTH armed tags + the guarded invalid-tag path). (The parse_header! seam identity left at stage 5's P1 of the
 # v0.4 build (census rows 63, 39, 72, 58) with the header_strategy pins, the digest PROPERTIES testset, the
 # extensions pin and the compat-alias identities — each with its subject.)
 

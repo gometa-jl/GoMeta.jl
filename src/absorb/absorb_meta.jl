@@ -39,7 +39,7 @@
 #     sugar and the quoted arguments, his decision's two producers (U8 :1310) — while a condition's quoted text is Julia's — copied WHOLE by the rewrite, never read — and its `\`
 #     Julia's escape (his §D174; his word of 2026-10-08, §366). The scanner's form is the quote-scan
 #     panel's judge's specification (wf-s10-quote-scan-design, B.2).
-#     Honest edges: each refusal is an untyped ErrorException raised via error() ("the usual error / refusal message", U8 :1473); a body
+#     Honest edges: each refusal is an ErrorException without a code, raised via error() ("the usual error / refusal message", U8 :1473); a body
 #     Julia cannot parse is Julia's own `Meta.ParseError` (his §319); an argument's arity or type fault is the Alterant's own setter
 #     error (§359 (9)); the Labels Alterant's character law and whitelist judge the label names handed over (U8 :1252).
 # PURPOSE: turn each metaLine of a BLS input into queued alterant work the apply phase consumes, refusing every malformed metaStatement

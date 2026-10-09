@@ -38,7 +38,7 @@ as the paragraph above says — not from this entry). Status and diagnostics go 
 |---|---|
 | `tree` | the BLS Component tree, one row per input line (`Main.BasicRenderer.outputs(result).blsStructure_bytes`) |
 | `segments` | the same rows with input line numbers in front — "what is line N?" |
-| `evals` | the evaluated values, one row per line: `attr => value (polarity) "cell excerpt"` — the evals-rows-only view (no Component identity: a glance, not a census) |
+| `evals` | the evaluated values, one row per line: `attr => value (polarity) "cell excerpt"` — the evals-rows-only view (no Component identity) |
 | `trace` | the evals-rows-with-keys view: `evals` plus each row's decoded key: namespace · grain · path · origin |
 | `render` | the share-view bytes (the basic renderer's output) |
 | `evals-tree` | **`print_altValues_evals`, the FULL delivery view** — the rows placed in the Component tree, every Component shown, absence labelled `(no evals — defaults apply)`, every row with its decoded handle and the Segment that caused it |

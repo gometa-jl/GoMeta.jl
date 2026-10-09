@@ -610,7 +610,7 @@ _slot_text(x::Symbol)::String = string("y", _ns(String(x)))
 # `_domain_leaf`'s own String-only law: the former `::AbstractString` arm ran the
 # EXTENSIBLE `String(x)` on a caller-owned string subtype (probe P80: a stateful
 # specialization threw at validate, raw, through the ordering prepass). A non-String
-# AbstractString value now falls to the `_UnencodableSlot` fallback — the typed
+# AbstractString value now falls to the `_UnencodableSlot` fallback — the coded
 # refusal, zero caller code run — exactly where the domain law always placed it.
 _slot_text(x::String)::String = string("s", _ns(x))
 _slot_text(x::Bool)::String = x ? "T" : "F"
@@ -850,7 +850,7 @@ function _key_order_budget(k)::Bool
         if x isa Function
             # (the t3t4r4 B1 cure) a Function ANYWHERE in a key graph fails the order
             # budget outright — the prepass then never encodes the key (live iteration
-            # order; the WALK refuses it typed), so no user method executes even
+            # order; the WALK refuses it coded), so no user method executes even
             # contained (probe P71: the pirated nameof ran TWICE under the old catch)
             return false
         elseif x isa Type || x isa TypeVar || x isa Core.TypeofVararg
@@ -1128,18 +1128,18 @@ struct _OutsideDomain <: Exception
 end
 "internal: a cycle met by `_domain_copy` on the contained route (path to the revisited
 container). Named beside `_OutsideDomain` per T2BIS-DESIGN §3 route 2 — both convert to
-the typed refusal, never escape a public constructor."
+the coded refusal, never escape a public constructor."
 struct _CyclicValue <: Exception
     path::Vector{Any}
 end
 "internal (crx-t2bis cure A2): a USER method (`hash`/`isequal`/`convert`) thrown while a
 rebuilt `Dict` was being filled — the one rebuild step that dispatches user-extensible
-code. Converted to a typed refusal at both public copy boundaries, never leaked raw."
+code. Converted to a coded refusal at both public copy boundaries, never leaked raw."
 struct _RebuildFailed <: Exception
     T::Type
 end
 "internal (crx-t2bis cure A3): an UNDEFINED container element met by a walk — a
-`resize!`-widened published Vector, or an undef-slot declared vector. Refused typed at
+`resize!`-widened published Vector, or an undef-slot declared vector. Refused coded at
 validate and the contained route; a divergence at the door."
 struct _UndefSlot <: Exception end
 
@@ -1181,7 +1181,7 @@ function _copy_rebuild(fr::_CopyFrame)
         for j in 1:n
             k = fr.out[2j - 1]
             # the fill dispatches hash/isequal (copy-side only, never the door); a USER
-            # method throwing here is contained TYPED (crx-t2bis cure A2), never leaked raw
+            # method throwing here is contained coded (crx-t2bis cure A2), never leaked raw
             try
                 out[k] = fr.out[2j]
             catch e
@@ -1222,7 +1222,7 @@ are ENFORCED (a `Function` in data or outside a designated field, or a record st
 throws `_OutsideDomain`); cycles throw `_CyclicValue`. Both carry the path. On the publish route (`visiting ===
 nothing`, `publish`'s two stages) the copy is TYPE-based — `validate` has already run, so every value is in-domain and
 acyclic. The internal exceptions never leave the public routes: `_route2_refuse` converts all four on the contained
-route, `publish`'s copy wrapper the two its route can meet (`_RebuildFailed`, `_UndefSlot`) — each to a typed
+route, `publish`'s copy wrapper the two its route can meet (`_RebuildFailed`, `_UndefSlot`) — each to a coded
 `RegistrationRefused`.
 
 REASONING: a later mutation of the builder cannot reach a published registry and vice versa, and no user type can
@@ -1713,7 +1713,7 @@ end
 _domain_type_name(T::Type)::String = String(nameof(T))
 
 function _route2_refuse(r::AlterantRegistry, e, field::Symbol)
-    # (crx-t2bis cures A2/A3) the two path-less internal classes convert typed too
+    # (crx-t2bis cures A2/A3) the two path-less internal classes convert coded too
     if e isa _RebuildFailed || e isa _UndefSlot
         throw(RegistrationRefused([Diagnostic(:REG_PROTOCOL, :error, string(
             "GoMeta registry: RegistryBuilder(published) could not copy field ", field, " (",
@@ -1905,7 +1905,7 @@ copy of all nine `_SNAPSHOT_FIELDS` (ten before stage 5's E13 — the `seal` fin
 digest, census row 6; eleven before stage 5's E12 — census row 45) under a SEPARATE memo, built mechanically over the
 field-name tuple; the disjointness asserted (`_assert_snapshot_disjoint`); the value constructed through the
 token-gated constructor `AlterantRegistry(_SealToken(), …)`. A copy that cannot complete — a user `hash`/`isequal`
-thrown at a `Dict` rebuild, an undefined container element — converts to a typed `RegistrationRefused`
+thrown at a `Dict` rebuild, an undefined container element — converts to a coded `RegistrationRefused`
 (`REG_PROTOCOL`), never a raw exception. The published value's containers are READ-ONLY by contract — a mutation
 through them is detected at the door (`POST_SEAL_MUTATION`) by the structural deep-egal comparison against the
 snapshot, never silently effective — for conforming code (the disclosed bounds apply, docs/public-api.md §1.2).
@@ -1931,7 +1931,7 @@ function publish(b::RegistryBuilder)
     # declared types + their construction from the already-copied record) — ONE stage-1 memo.
     # (crx-t2bis cures A2/A3) the ONE remaining escape class — a USER `hash`/`isequal`
     # thrown at a Dict rebuild fill, or an undefined element racing in after validate —
-    # converts to the typed refusal here, never a raw exception out of `publish`.
+    # converts to the coded refusal here, never a raw exception out of `publish`.
     copyc = (x, m) -> try
         _domain_copy(x, m)
     catch e
