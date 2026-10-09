@@ -725,8 +725,8 @@ IS: the second of the two owner-ruled print tools (R-DEV-1..9; the canon AGENT-R
     `altValues_evals` rows of one `goMeta` result, each evals row placed AT its BLS Component (which label landed WHERE,
     which metaSegment caused it), with the input-line spans the raw rows lack (the F-LED-7 gap). The FULL delivery view — every
     Component shown, absence labelled, every row with its decoded handle — is `layout = :tree, include_empty = true,
-    show_handles = true` (the verb `evals-tree`); the compact tree (the R-DEV-4 default) is the canon's compact form for
-    a census (§R4b). A development tool: nothing under `src/` reads it.
+    show_handles = true` (the verb `evals-tree`); the compact tree (the R-DEV-4 default) is the compact delivery view — a reading form inside
+    a session (§R4b; his §377). A development tool: nothing under `src/` reads it.
 DOES: reads the rows through the public reader `GoMeta.readAltValuesEvals(result.altValues_evals)`, decodes each handle
     with the shared `decode_handle` and resolves its Component by the plain path walk through the door (`DTEvalRow`); a
     row's text is the door's `BLS.content` of that Component. Absence is explicit: a shown component with no rows reads
@@ -757,7 +757,7 @@ DOES: reads the rows through the public reader `GoMeta.readAltValuesEvals(result
       (`… N Blocks/Lines (no evals)`); `true` keeps every node visible, making ABSENCE readable ("why did `:label1` NOT
       apply?"). With a filter active the absence labels say `(no matching evals)` — never asserting engine-level absence
       for filtered rows.
-    - `attrs = :all` — a `Symbol` or `Vector{Symbol}` filter (e.g. `:visib`, `[:label_label3]` — the label census). The
+    - `attrs = :all` — a `Symbol` or `Vector{Symbol}` filter (e.g. `:visib`, `[:label_label3]` — the label rows alone). The
       header echoes the filter with per-attr match counts; a requested attr with NO rows prints an explicit
       "0 matches — :attr never minted" line, never silence.
     - `lines = nothing` — an input-line range: keeps rows whose target span intersects; unanchored rows have no span and
@@ -777,7 +777,7 @@ REASONING: what a run evaluated, for which Component, is stated from the Engine'
     defensive contract left); `polarity` renders DIM because it is constant `true` at v0 — a polarity-driven color would
     be constant fake signal. An absence label never asserts a value the Engine did not record.
 PURPOSE: the canon's rule (AGENT-RULES_GoMeta.md §R4b): no claim about what a run evaluated, for which Component, without
-    one of these printouts — the compact form for a census, the FULL delivery view for the owner — and the printout goes,
+    one of these printouts — the FULL delivery view for any claim that leaves a session; inside a session any view naming the Component — and the printout goes,
     unabridged, into any page or record that carries the claim. The "why NOT" companion: when a label/action you expected
     is ABSENT here, the next step is the canon-R4 command-line entry `devtools.jl trace <file>` (evals rows + decoded
     handles) and `print_BLS_Component_Tree` (the settribute state the conditions tested).

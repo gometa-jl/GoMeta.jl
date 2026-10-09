@@ -52,7 +52,7 @@ using GoMeta
 include(joinpath(pkgdir(GoMeta), "devtools", "devtools.jl"))
 result = GoMeta.goMeta(read("some.jl"))
 
-print_altValues_evals(result)                                      # compact tree (R-DEV-4 default)
+print_altValues_evals(result)                                      # the compact delivery view (R-DEV-4 default)
 print_altValues_evals(result; include_empty = true, show_handles = true)   # the FULL delivery view
 print_altValues_evals(result; layout = :cells)                     # the per-cell view
 print_altValues_evals(result; layout = :rows, attrs = :visib)      # the evals-rows-by-Component view, filtered
