@@ -8,7 +8,7 @@
 #       `VISIB_TO_SETTRIBUTE` were already GONE); the closed enums of the two slots that remain (their record-shape refusals left at
 #       stage 5's E4 of the v0.4 build; the enums of the seven other slots went with those slots at E10);
 #       the registration digest's coverage witness and the seal-participation pin left at stage 5's E13 of the v0.4 build with the
-#       digest and the seal field (census row 6; the slot TEXT's distinctness, :36, stays — the encoder serves the validate walk).
+#       digest and the seal field (census row 6; the slot TEXT's distinctness, :33, stays — the encoder serves the validate walk).
 # DOES: constructs records by keyword (the positional forms left at stage 5's E11 — census row 65) and inspects DEFAULT_REGISTRY.
 # REASONING: the golden layer proves T1 is BEHAVIOR-NEUTRAL (byte-identical renders); only unit
 #       introspection can prove the schema carries what the later cures consume.
@@ -23,7 +23,7 @@ import GoMeta as GM
     # v0.3.2 positional constructors of PlugIn and ActionSpec, census row 65, R-V04B-61; a positional construction is
     # Julia's own MethodError now, measured on both trees by the build's probe.)
 
-    @testset "keyword shapes round-trip every slot" begin
+    @testset "keyword shapes: CaptureDecl's two- and three-positional forms and its slot text, the Alterant's capture slot, ActionSpec without its settribute slot (stage 5's E12)" begin
         cap = GM.CaptureDecl(:per_key, nothing)
         # v0.4 T5 (T5-DESIGN §6, the +3 declared movements): the attr_stem default
         # admits through the 2-positional outer method; the 3-positional round-trips (stage 5's E5: the row's 3 fields);

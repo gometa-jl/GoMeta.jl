@@ -3,7 +3,7 @@
 # the rows-only-grow sense — the F-18 record reshape trued the construction kwargs
 # and the [3] identity pins to the live regime, the declared witness churn).
 #
-# Covers: construction green for both armed records; the six prototype fields
+# Covers: construction green for both armed records; the five prototype fields (six before stage 5's P1 — the extensions pin left, census row 72)
 # VERBATIM-pinned; the directive TABLE rows (now with the F-18 consume verbs); the
 # glued/bare policies + the run-arm strictness; the lead codeunit generalization; the
 # record guards (incl. the F-18 collision/consume vocabularies + the positional-constructor
@@ -60,7 +60,7 @@ _fp_julia_kwargs(; overrides...) = merge((
 
 @testset "flavor_profile_tests (WP1-W1 record + threading)" begin
 
-    @testset "[1] construction + the six prototype fields, verbatim" begin
+    @testset "[1] construction + the five prototype fields, verbatim (the extensions pin left at stage 5's P1)" begin
         @test _FP_BLS.FLAVOR_JULIA isa _FP_BLS.FlavorProfile
         @test _FP_BLS.FLAVOR_CFAM  isa _FP_BLS.FlavorProfile
         jl = _FP_BLS.FLAVOR_JULIA; cf = _FP_BLS.FLAVOR_CFAM

@@ -1297,7 +1297,7 @@ DOES: writes `comparisonForm(result; name, at)` to `path`, verbatim (`write(path
     states it; `-` when unknown). The form is a comparison surface, not a share-view.
 REASONING: the committed form's body must equal the producer's byte for byte — `regenerate.jl --check` compares each
     committed file's body (the lines after the header) with the form produced in memory; a changed body is re-made
-    through this writer with `--at <the new sha>` in the commit that changes it, never edited.
+    through this writer with `--at <the re-making commit's parent sha>` (the commit it builds on — a commit cannot carry its own sha; tests/comparison/README.md §2) in the commit that changes it, never edited.
 PURPOSE: `tests/comparison/regenerate.jl` writes the twelve through it (`--at <sha>`, optionally `--out <dir>`); the
     battery's §18 writes one per fixture through it.
 """

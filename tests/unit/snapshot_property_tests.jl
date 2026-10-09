@@ -9,9 +9,9 @@
 # DOES: N = 1024 iterations — each takes a FRESH publish of the fixed generator builder, checks
 #       the door EMPTY, applies one site mutation (sites cycle deterministically; the rng picks
 #       only replacement values), and checks ONE fire at a segment-prefix-comparable path — plus
-#       the 8 false-positive rebuild cases, the named cases (Σ = 44 asserts — the v0.4 T4 VocabularyRef case's
-#       two left at stage 5's E9 of the v0.4 build), and 5 aggregate
-#       coverage asserts. P = 1024×3 + 8 + 44 + 5 = 3129 (T2BIS-DESIGN §9's closed arithmetic).
+#       the 8 false-positive rebuild cases, the named cases (Σ = 42 asserts — the v0.4 T4 VocabularyRef case's
+#       two left at stage 5's E9 of the v0.4 build, the overload-leaf case's two at E11), and 5 aggregate
+#       coverage asserts. P = 1024×3 + 8 + 42 + 5 = 3127 (T2BIS-DESIGN §9's closed arithmetic, re-counted at stage 5).
 # REASONING: the enumerated door witnesses cannot prove coverage over the whole walked domain;
 #       the site-cycling property can — full site coverage is guaranteed by |sites| ≤ N.
 # PURPOSE: the T2-bis acceptance row (R-V04B-4 (iv)); the door's coverage proof.
@@ -460,7 +460,7 @@ end
         push!(dagseen, :join)
     end
 
-    # ═══ the NAMED cases (§9): Σ = 44 asserts (44 at T2-bis; the T4 VocabularyRef case's two left at stage 5's E9) ═══
+    # ═══ the NAMED cases (§9): Σ = 42 asserts (44 at T2-bis; the T4 VocabularyRef case's two left at stage 5's E9; the overload-leaf case's two at E11) ═══
     _with_ctor(b, T) = (b.plugins[2] = GM.Alterant(; altName = :Visib, setMode = :mutExclusive,
         altConstructor = T, setAltInstance = GM.Alterants.setVisib); b)
     _swap_ctor!(R, T) = (R.plugins[2] = GM.Alterant(; altName = :Visib, setMode = :mutExclusive,

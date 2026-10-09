@@ -3,7 +3,7 @@
 # lastindex), so end-of-text is just another delimiter — a multibyte-FINAL atom flush
 # against the closing brace takes its ORDINARY vocabulary fate (flush ≡ spaced). The
 # companion U2 cure widens the content slice's final character (nextind; the slice is `BLS.content`'s since stage 2), keeping a
-# multibyte final character whole in the verdict store.
+# multibyte final character whole in the slice the door hands out and in every derived content payload ([6] holds it).
 # Every assertion below pins a MEASURED value. GENERATED file:
 # exotic characters are REAL codepoints, byte-verified at authoring.
 # v0.4 T4 HAND-EDIT (T4B-3) and stage 5's E9 HAND-EDIT: testset [7]'s membership probes read the plain
@@ -13,7 +13,7 @@
 # [1], [3] and [5] drove `parse_condition` and `print_condition` directly (E13); they drive the whole run now (the same shapes END-TO-END,
 # 37 → 34 asserts: [1] 4 → 3, [3] 3 → 2, [5] 4 → 3). The CURE this file holds — a multibyte-final atom flush against the closing
 # brace takes its ordinary fate — is held by the rewrite's CHAR walk (never the legacy's byte-count end test); [4] and [7] are its
-# live witnesses. A regeneration of this file must re-apply all three forms.
+# live witnesses. The s5close HAND-EDIT (2026-10-09): the header's store clause above re-cut to the door's slice (the Engine stores no copy). A regeneration of this file must re-apply all four forms.
 
 using Test
 import GoMeta as GM

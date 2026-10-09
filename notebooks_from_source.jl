@@ -470,9 +470,9 @@ end
 # stripping to the sigil is no longer refused (the forged-envelope and reserved-mention
 # refusals of the review rounds left at stage 5's N1). Scope note (reconfirm wave 2): an
 # authored Julia comment inside a generated CODE fence can still place the sigil bytes at
-# a line start on the built page, so decoders identify envelopes NAME-FIRST (the reserved
-# `gometa_carriage_`/`gometa_` namespaces are disjoint — the stem-prefix refusal left at
-# stage 5's N1), never by
+# a line start on the built page, so decoders identify envelopes NAME-FIRST (the two names
+# differ for the shipped stems; a stem beginning `carriage_` would collide — the stem-prefix refusal left at
+# stage 5's N1, census row 12), never by
 # scanning for the sigil alone. Indices are 0-based over the cell's
 # reconstructable sequence [attached meta run…, non-discarded content lines…]: `carried=`
 # lists the envelope-carried entries, `hidden=` the natively-hidden-in-place executed lines

@@ -56,8 +56,8 @@ out = Main.BasicRenderer.outputs(result)  # (blsStructure_bytes, render_bytes) �
 print(String(copy(out.render_bytes)))
 
 # ## Find it again
-# The shipped query demo indexes exactly these rows — the part `altValues_evals`, read
-# through the reader — across the whole committed corpus; run it yourself:
+# The shipped query demo indexes the Components that carry a label — `GoMeta.scanAlterant(result, :labels)` through the tree, each piece's
+# text through `GoMeta.BLS.content`, its visibility the Engine's answer `GoMeta.evaluatedAltValue` — across the whole committed corpus; the evals rows read here are counted there, not joined (R-V04B-43 (2)). Run it yourself:
 # `julia --startup-file=no --project=. extensions/find_by_label.jl label5`
 
 count(e -> e[2] === :label_label5 && e[3] === true, evals)

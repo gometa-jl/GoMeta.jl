@@ -301,7 +301,7 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
         @test GM._callable_text(sin) == String(nameof(sin))
     end
 
-    @testset "[17] the crx-t3t4r5 cures — the String-only encoder + the guarded sig render" begin
+    @testset "[17] the crx-t3t4r5 cures — the String-only encoder (the SIG_MISMATCH render's witness left at stage 5's E4 with the reflection cross-check)" begin
         # (three seats convergent, probe P80) a caller-owned non-String AbstractString
         # as a declared Dict KEY: the encoder is now String-only (matching
         # _domain_leaf's own law), so validate REFUSES coded with ZERO validate-time
@@ -320,7 +320,7 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
         # with its subject, the reflection cross-check.)
     end
 
-    @testset "[18] the crx-t3t4r6 cures — the getfield numeric leaf + the guarded declared render" begin
+    @testset "[18] the crx-t3t4r6 cures — the getfield numeric leaf (the declared-sig render's witness left at stage 5's E4)" begin
         # (r6-A1, probe P90) the domain predicate reads Complex/Rational PARTS via
         # getfield — a caller's `Base.real(::Complex{MyReal})` specialization never
         # dispatches (pre-cure it executed and threw from `_domain_leaf` itself).

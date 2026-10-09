@@ -12,10 +12,10 @@
 #   can render byte-faithfully. Line ENDINGS
 #   normalize CRLF→LF; content bytes stay faithful (docs/CANONICAL-OUTPUT.md §6).
 #   `parseBLS(state)` runs the line loop: empty lines; ```-fences (md or untagged → Text,
-#   julia/jl → Code, an unknown tag → generic Code); `#`-headers via `parseHashHeader!` —
-#   whitespace→Text, `~`→metaLine (depth digit, trailing-`!` ignore), `##`→comment,
-#   `-`/`[`/`]` block boundaries, `+`/`>` directives; an unrecognized form is a plain
-#   comment, never a metaLine (of its branches only `~` sets `:hasMetaStr`). Children are
+#   julia/jl → Code, an unknown tag → generic Code); lead-led headers (`#` in Julia, `//` in C, `%` in LaTeX) via `parseLeadHeader!` (the table-driven reader of every flavor, :376; the character-dispatch `parseHashHeader!` retired, :372–:375) —
+#   whitespace→Text, `~`→metaLine (depth digit, trailing-`!` ignore), the comment run→comment, and the flavor's directive table: Julia claims
+#   `-`/`[`/`]` block boundaries and `+`/`>` directives, C and LaTeX claim the `]` close alone (their other four rows absent, flavor.jl :153–:157); an unrecognized, glued or absent form follows the flavor's glued policy — plain content for Julia (the bucket-A sentinel, its type inherited from the neighbourhood), a plain comment for C and LaTeX —
+#   never a metaLine (of its arms only `~` sets `:hasMetaStr`). Children are
 #   added via `addChildComponentTo`; fixed per-type child capacities overflow into
 #   extension chains (`createExtensionFor`, `getLastInExtensionChain`); store growth is
 #   normal. Content flags propagate
@@ -541,8 +541,8 @@ end
 ## composition witness (the latex battery's [12] row — a 2-codeunit-lead sentinel
 ## profile makes sentinel-before-width observable); no ARMED flavor combines a
 ## sentinel-capable reader with a multi-unit lead, so only the width MAGNITUDE is
-## differential-live for real flavors. The `::Int` assert restores inference
-## through the deliberately-loose `::Function` field at the hottest per-head site.
+## differential-live for real flavors. The helper calls `parseLeadHeader!` directly (the record's loose `::Function`
+## header-strategy field left at stage 5's P1 of the v0.4 build — census row 63); that reader declares an `Int` return type.
 @inline function _lead_head!(profile::FlavorProfile, line::AbstractString,
         startSegment::Int,
         thisComponentSettribute::ComponentSettribute)::Tuple{Bool,Int}

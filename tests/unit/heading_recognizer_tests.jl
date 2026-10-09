@@ -166,7 +166,7 @@ end
         # existing envelope's condition-attachment law — spaced '{' refuses today for
         # every action; the sugar changes nothing there). The settribute condition
         # evaluates ONCE at the HEADING's own line: a metaLine is not code, so
-        # { isCode } is FALSE there — zero rows, no refusal (the ratified verdict flip
+        # { isCode } is FALSE there — zero rows, no refusal (the ratified flip of the evals rows
         # from the queued era's per-cell evaluation, pinned here — panel-found gap)
         @test string(_run("#~ \"T\" :label1\nx = 1\n").status) == "PROCESS_OK"
         ric = _run("#~ \"T\"{ isCode }\nx = 1\n")
@@ -353,7 +353,7 @@ end
         @test (:head_2, "A") in hp && (:head_2_2, "B") in hp
         # CONSCIOUS PIN FLIP (the query-atom wall — panel-found MAJOR, probe-verified):
         # a label QUERY in a heading condition formerly evaluated against the stale
-        # apply residue (order-dependent wrong verdicts: the identical condition
+        # apply residue (order-dependent wrong evals rows: the identical condition
         # minted or dropped the row depending on unrelated preceding content). It now
         # meets the guarded reservation refusal — settribute predicates remain the
         # heading condition's legal vocabulary (the false-arm settribute pin lives in

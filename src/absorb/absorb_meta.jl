@@ -6,8 +6,8 @@
 #     one-word labels (parseOneWordLabel) and `()` argument lists (parseArgs) with ONE scanner (_span) and ONE splitter (_split_args),
 #     RE-WRITES each condition body's GoMeta-specific parts to Julia text and has Julia's parser read it once (`_rewrite_condition` +
 #     `Meta.parse` in parseConditions — his legacy's produceConditionStr read from the ground up, stage 5's E13, R-V04B-106 (2); his §D174),
-#     and ENQUEUEs action + condition + args into the per-call queue tensors (absorbMeta — the module's sole export). It enqueues, never
-#     applies: applying queued alterants is apply.jl's job.
+#     and ENQUEUEs action + condition + args into the per-call queue tensors (absorbMeta — the module's sole export). It enqueues every action whose Alterant's setMode is not `:localOnly` —
+#     applying the queued actions is apply.jl's job; a `:localOnly` action (the Heading's) is evaluated and applied ONCE at this seam (`_absorb_local_only!`) and never queued.
 # DOES: a metaStatement is a HEAD — a name, a `:` label, or (the region's first statement only) a `"…"` heading — then at most one `(…)`,
 #     then at most one `{…}`, and ENDS at white space or at the region's end; any other character meets the one refusal `_refuse_char`,
 #     which names the character, the token it begins and the region (his §341). The six structural characters `( ) { } , "` end a name or
@@ -22,9 +22,9 @@
 #     argument piece (`cell(7,)`) is handed on as the empty token — the Alterant decides (§359 (1)). A condition body is READ HERE: a
 #     settribute key becomes its state read `getState(:key)`, an action of an Alterant that answers queries becomes its query
 #     `getAltState(Int8(p), Symbol("…"), …)` (the registry's one rule `queryable_action`, stage 5's E12 — R-V04B-99), a label test `:name`
-#     the Labels query of that name, his `,` becomes `||`, everything else — `&&`, `!`, `()`, `|`, `&`, numbers, Julia operators,
+#     the Labels query of that name, his `,` becomes `||`, everything else — `&&`, `!`, `()`, `|`, `&`, decimal integers and plain decimal floats (a numeral with a letter or an underscore — `1e3`, `0xff`, `1_000` — starts a key at its letter and refuses, the register's PB-16), Julia operators but `:` (every `:` outside a quoted text is a label test — PB-17),
 #     whitespace — is copied verbatim (a bare word that is neither a settribute key nor a queryable action — `true`, `false`, `nothing`
-#     among them — is a condition key and refuses, as his legacy read it; a quoted text is copied WHOLE to Julia, never read — his §366); the result is parsed ONCE by `Meta.parse`
+#     among them — is a condition key and refuses, as his legacy read it; a quoted text is copied WHOLE to Julia, never read — his §366; except a triple-quoted text with inner quotes or an interpolation holding a quoted text, which the one scanner mis-pairs — PB-15); the result is parsed ONCE by `Meta.parse`
 #     and the `Expr` evaluated by Julia at apply time (apply.jl; `Core.eval`), or, for a heading's condition, once at this seam
 #     (`_absorb_local_only!`).
 # REASONING: his design — the condition is Julia (OWNER-WORDS §120, §D174): GoMeta recognises its own parts and Julia does the rest; the
@@ -39,7 +39,7 @@
 #     sugar and the quoted arguments, his decision's two producers (U8 :1310) — while a condition's quoted text is Julia's — copied WHOLE by the rewrite, never read — and its `\`
 #     Julia's escape (his §D174; his word of 2026-10-08, §366). The scanner's form is the quote-scan
 #     panel's judge's specification (wf-s10-quote-scan-design, B.2).
-#     Honest edges: each refusal is an ErrorException without a code, raised via error() ("the usual error / refusal message", U8 :1473); a body
+#     Honest edges: each refusal is an ErrorException without a code, raised via error() ("the usual error / refusal message", U8 :1473); two string shapes are copied in pieces and re-read SILENTLY — a quoted text nested inside an interpolation `$(…)` and an even number of bare `"` inside a triple-quoted text (the register's PB-15); the operator `:` and a numeral with letters are read as a label test and a key (PB-17, PB-16); a body
 #     Julia cannot parse is Julia's own `Meta.ParseError` (his §319); an argument's arity or type fault is the Alterant's own setter
 #     error (§359 (9)); the Labels Alterant's character law and whitelist judge the label names handed over (U8 :1252).
 # PURPOSE: turn each metaLine of a BLS input into queued alterant work the apply phase consumes, refusing every malformed metaStatement
@@ -127,7 +127,7 @@ conditions: now", §366).
 REASONING: his legacy counted brackets in three loops and the v0.2 additions added quote arms and backslash checks at three
 more places; one walk with one quote state serves every span. Julia's other literal delimiters are not known — a Char
 literal (`'}'`; `'` is also Julia's adjoint `x'`), a backtick, an odd `"` inside a triple-quoted text, a string prefix's
-word: each ends in a loud refusal or Julia's own error (the register's PB-5).
+word: each ends in a loud refusal or Julia's own error (the register's PB-5 names the Char literal; its note of 2026-10-09 the others). Two shapes are copied in pieces and re-read SILENTLY — a quoted text nested inside an interpolation `\$(…)` and an even number of bare `"` inside a triple-quoted text (the register's PB-15).
 
 PURPOSE: where a span ends, for every reader: parseArgs (the argument list and the label list), parseConditions, the quoted
 heading, the splitter and — since s5c31, his §366 — the condition rewrite (a body's `(…)` lists and its quoted texts).
@@ -179,7 +179,7 @@ function _refuse_char(metaSS::SubString{String}, i::Int, where::String, hint::St
         " (the token ", repr(first(SubString(metaSS, i, prevind(metaSS, j)), 40)), ")", hint, " (see docs/public-api.md §3.4)")
 end
 
-"the argument list's interior split at its TOP-LEVEL commas — a quoted text is jumped whole by the one scanner, so its commas are content; each piece edge-stripped by the one white-space test; a piece carrying a `\"` must be exactly one well-formed `\"…\"` span (the token law at its ONE seam — the only producer of a quoted argument token; the heading's token is one by construction of `_span`); an empty piece among several is handed on as the empty token — the Alterant decides (his §359 (1)); `()` is no argument (his legacy's normalisation, AbsorbMeta.jl :57–:60 — `hide()` ≡ `hide`)"
+"the argument list's interior split at its commas outside quoted texts — a quoted text is jumped whole by the one scanner, so its commas are content; a nested `(…)` inside a bare piece does not suppress the split (`f(a,b), c` is three pieces, as his legacy's `split` at AbsorbMeta.jl :56); each piece edge-stripped by the one white-space test; a piece carrying a `\"` must be exactly one well-formed `\"…\"` span (the token law at its ONE seam — the only producer of a quoted argument token; the heading's token is one by construction of `_span`); an empty piece among several is handed on as the empty token — the Alterant decides (his §359 (1)); `()` is no argument (his legacy's normalisation, AbsorbMeta.jl :57–:60 — `hide()` ≡ `hide`)"
 function _split_args(argtext::SubString{String})::Vector{SubString{String}}
     argsSSVec = SubString{String}[]
     indStart = thisInd = firstindex(argtext)
@@ -240,9 +240,9 @@ end
 ##                       → `getAltState(Int8(p), Symbol("key"), args)`             (a QUERYABLE action — `queryable_action`: an Alterant
 ##                         that declares `getAltInstance`; Labels at v0 — the registry's rule, R-V04B-99 / E12, kept)
 ##                       → the usual unknown-condition-key refusal                   (anything else — the legacy's :231–:234)
-##   `"…"`               → verbatim, WHOLE                                       (a quoted text is Julia's — never read by the rewrite; its end
+##   `"…"`               → verbatim, WHOLE                                       (a quoted text is Julia's — never read by the rewrite, but for the two mis-paired shapes of PB-15; its end
 ##                         found by the one scanner `_span(…; julia = true)`, its `\` Julia's escape; his §D174, his word §366 — s5c31)
-##   everything else — `&&`, `!`, `()`, `|`, `&`, `||`, numbers, Julia operators, whitespace — verbatim.
+##   everything else — `&&`, `!`, `()`, `|`, `&`, `||`, decimal integers and plain decimal floats (a numeral with letters starts a key — PB-16), Julia operators but `:` (a label test — PB-17), whitespace — verbatim.
 ## A bare WORD that is neither a settribute key nor a queryable action IS a condition key and meets the refusal — `true`, `false`,
 ## `nothing` among them (his legacy's reading, :231–:234; register E13-14, his to widen); a quoted text is not a word (s5c31). A worded label
 ## with a parenthesized list (`:abc(:xyz)` — the K6 corner) reads as the label test of the word followed by a Julia call on its
@@ -289,8 +289,8 @@ balanced `(args)` spliced raw) → `_cond_target`: a settribute key (`keys(BLS.C
 registry's one rule, R-V04B-99 / E12: the three Visib names `hide` / `show` / `discard` are neither) becomes
 `getAltState(Int8(p), Symbol("key")[, args])` with `p` its plugin index, anything else — `true`, `false`, `nothing` among
 them — meets the refusal `error("GoMeta absorb: unknown condition key …")`, an `ErrorException` naming the key (bounded
-to 40 characters); a quoted text (`"…"`) is copied WHOLE, never read — its end found by `_span(…; julia = true)`, its `\`
-Julia's escape (his §D174; his word of 2026-10-08, §366: strings in conditions now — s5c31); every other character — operators, parentheses, numbers,
+to 40 characters); a quoted text (`"…"`) is copied WHOLE, never read (but for the two mis-paired shapes of PB-15) — its end found by `_span(…; julia = true)`, its `\`
+Julia's escape (his §D174; his word of 2026-10-08, §366: strings in conditions now — s5c31); every other character — operators but `:`, parentheses, decimal integers and plain decimal floats (PB-16, PB-17),
 whitespace — verbatim. Returns the re-written text as a `String`. Pure over its two arguments (no state read; a
 refusal — the unknown key's or the scanner's unterminated `(` — its one exit besides the return); `Meta.parse` reads the result ONCE in its one caller, `parseConditions`,
 with `ctx().registry`.
@@ -342,7 +342,7 @@ function _rewrite_condition(text::String, r)::String
             end
             print(out, _cond_target(key, args, r)); i = k
         else
-            print(out, c); i = nextind(text, i)                       # operators, a bare grouping, numbers, whitespace — Julia's, verbatim
+            print(out, c); i = nextind(text, i)                       # operators, a bare grouping, plain numbers (a numeral with letters starts a key — PB-16), whitespace — Julia's, verbatim
         end
     end
     return String(take!(out))
@@ -587,9 +587,9 @@ function absorbMeta(
     ## whole-line or a comment-split metaLine forms, R-V04B-50; the LINE with the Segment as
     ## the key's origin for an inline metaSegment, R-V04B-98); on the userMH feed it is
     ## the minted USER-CONTEXT handle + the profile's verbatim bytes. The WRONG-SHAPE
-    ## check runs HERE, BEFORE any typed conversion (the T5 floor law — a mismatched or
-    ## entries-less store takes the coded WARNING, never a raw TypeError in the poison
-    ## window); the attr stem comes from the DECLARED row. Delivery is COMPLETE here:
+    ## check runs HERE, BEFORE any typed conversion (the T5 floor law — a mismatched store — another type, or a row whose gate or scheme disagrees — takes the coded WARNING,
+    ## never a raw TypeError in the poison window; an entries-less store cannot arrive: `validate` refuses a :localOnly record whose constructor lacks
+    ## `entries::Vector{Tuple{String,Union{Nothing,Int}}}` at publish (registry.jl `_mode_gate_collect!`) and the door admits published registries only); the attr stem comes from the DECLARED row. Delivery is COMPLETE here:
     ## nothing was queued, so the apply plane never revisits localOnly values.
     for pidx in sort!(collect(keys(pendingLocal)))
         inst = pendingLocal[pidx]
@@ -621,7 +621,7 @@ end
 ## that formerly lived on the queued path, verbatim in force:
 ## - the SLOT-SCOPED String law: the localOnly action admits
 ##   a String in its TEXT slot (position 1) ONLY — a quoted LEVEL (`head("T", "2")`)
-##   meets the same wall as every queued String, so the setter's untyped level slot
+##   meets the same wall as a String in any undeclared slot, so the setter's untyped level slot
 ##   (the setId-class hazard) can never silently parse one, and a String in a
 ##   malformed position never reaches the wrong validation class;
 ## - the Heading VALIDATION (condition-independent, BEFORE the condition): the
@@ -729,8 +729,8 @@ function _absorb_local_only!(
         end
     end
     ## THE QUERY WALL (see the function header; R-V04B-106 (3) — ONE minimal refusal kept until the Heading runs through the
-    ## apply loop, R-V04B-101): a heading condition may test settribute predicates only — a label test (`getAltState` in the
-    ## stored Expr, found by `_has_query`) would read the PREVIOUS apply's residue at this seam.
+    ## apply loop, R-V04B-101): a heading condition cannot query alterant state at this seam — a label test (`getAltState` in the
+    ## stored Expr, found by `_has_query`) would read the PREVIOUS apply's residue; every other condition is Julia's, evaluated once against the metaLine's own settribute snapshot (stage 5's E13).
     if conditionExpr !== nothing && _has_query(conditionExpr)
         error("GoMeta absorb: alterant-state query in a heading condition — a ",
             "heading condition may test only settribute predicates at v0.2 (the ",

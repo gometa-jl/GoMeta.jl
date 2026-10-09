@@ -13,7 +13,7 @@
 #       namespace. It never half-decodes into a wrong anchor.
 # REASONING: one layout, one reader. The two consumers' ARMS stay at their call sites: the tools render a handle that does not decode as
 #       unanchored; the runner raises its own error on `nothing` (`decode_handle_strict`).
-# PURPOSE: the handle's parts for a human's eye (the tools' `trace` and the FULL evals form) and for the runner's provenance assertion.
+# PURPOSE: the handle's parts for a human's eye (the evals-rows-with-keys view — the tools' `trace` verb — and the FULL delivery view — `evals-tree`, `show_handles = true`) and for the runner's provenance assertion.
 
 _hd_u16(b, i) = (UInt16(b[i]) << 8) | UInt16(b[i+1])
 _hd_u32(b, i) = (UInt32(b[i]) << 24) | (UInt32(b[i+1]) << 16) | (UInt32(b[i+2]) << 8) | UInt32(b[i+3])

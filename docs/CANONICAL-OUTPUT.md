@@ -17,7 +17,7 @@
   pin's public statement. A change to the surface is a conscious, versioned change — never silent
   drift.
 - **PURPOSE:** GoMeta's observable behavior is **pinned, deterministic, and hash-stable** for the Engine's
-  own operations and for conditions free of side effects (a condition body is Julia, evaluated by Julia since
+  own operations and for conditions free of side effects and of reads of changing state (a condition body is Julia, evaluated by Julia since
   `0.4.0` — what it reads or does is the author's act; see the SECURITY section of `README.md`); the committed example
   corpus and the golden test layer prove it byte-for-byte.
 

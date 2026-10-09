@@ -351,7 +351,7 @@ three guarantees — purity, determinism, isolation — cover the ENGINE'S OWN O
 callable closing over mutable state or performing I/O is that Alterant's act, outside the
 engine's guarantee — the user-loads-trustworthy-Alterants trust model); a `{…}` condition body is Julia text
 evaluated by Julia (stage 5's E13 of the v0.4 build; the owner's §120 and §D174), so what it reads or does is the
-author's act in the same way — the guarantees hold for inputs whose conditions are free of side effects.** The
+author's act in the same way — the guarantees hold for inputs whose conditions are free of side effects and of reads of changing state (a clock, a file, the environment).** The
 registry door's refusal (below) fail-closes into a `PROCESS_ERROR` `GoMetaDelivery` **before any parse** — the input
 bytes are never touched; no parse or verdict work occurs (§3.5); the Engine renders nothing since
 0.4.0 (§1.3), and the development tool's `Main.BasicRenderer.outputs` on such a result is the empty pair. (The
@@ -383,7 +383,7 @@ of the v0.4 build — census row 30.)*
 `namespace::Symbol` — the occurrence-key namespace every `altValues_evals` cell handle is scoped
 under (`:default` by default; encoded as the key's length-prefixed namespace segment). One
 constructor-time guard: a namespace over 65535 bytes throws an `ArgumentError` at
-`GoMetaConfig(...)` construction — before any `goMeta` run, hence outside the fail-close rows
+`GoMetaConfig(; …)` construction (the keyword form; the generated positional form carries no guard) — before any `goMeta` run, hence outside the fail-close rows
 below (which require a constructed config).
 `parse_range::Union{Nothing,UnitRange{Int}}` — `nothing` ⇒ the whole input; a given range is taken
 **plain**: `last` is the parse end line and `first` is never read (`5:10` parses lines 1..10). Its unit is
@@ -813,8 +813,8 @@ the parse/absorb/apply pipeline is STABLE and explanatory — a malformed condit
 `Meta.ParseError` since stage 5's E13 as a malformed action argument is Julia's own error since E6 (stage-honest prefix
 `GoMeta parse:` / `GoMeta absorb:` / `GoMeta apply:` — the development tool's render plane carries no message of its
 own since stage 3's commit 1 of the v0.4 build, the renderer consuming the Engine's answer; the offending token
-bounded, what v0 accepts, this section as the pointer); three catalogued messages are
-parse-plane — the multi-inline-meta refusal and the two directive-adjacency refusals
+bounded, what v0 accepts, this section as the pointer); four catalogued messages are
+parse-plane — the bang-first meta-marker refusal (`0.3.1`), the multi-inline-meta refusal and the two directive-adjacency refusals
 (segment grain and line grain, `0.2.3`) above. The not-input-reachable internal checks say
 "GoMeta internal invariant violated … please report". The vendored parse layer's OTHER messages
 keep their existing forms; they are not part of the coded catalogue above.

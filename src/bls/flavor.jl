@@ -14,9 +14,9 @@
 # position).
 
 ## The shared introducer-BODY grammar string — the SINGLE SOURCE: `_re_meta`
-## (parseBLS.jl) is DERIVED from it (`Regex("^" * …)`), as are both lead-anchored walk
-## recognizers (plus the record's lead), so the marker grammar cannot drift between
-## parse and walk in either flavor.
+## (parseBLS.jl) is DERIVED from it (`Regex("^" * …)`), as is every flavor's lead-anchored walk
+## recognizer (the record's `re_meta_leaded`) — so the marker grammar cannot drift between
+## parse and walk in any flavor.
 ## Token-delimiter law: the head must be TERMINATED by
 ## ws-or-EOL — the zero-width lookahead; a glued shape (`#~hide`, `#~9x`) no longer
 ## matches (bucket (A), resolved by the parse callers). `metaDef` is a nothing-
@@ -31,8 +31,8 @@
 const _RE_META_BODY_STR = raw"(?<hashDef>[~]+)(?<metaDef>[0-9]+!?|!)?(?=[\h]|$)(?<postDef>[\h])?"
 
 ## Whitespace-alphabet unification: THE delimiter class = Unicode horizontal
-## whitespace — exactly the grammar's `[\h]`, unified across every token head, both
-## flavors, and the before-side mid-line scanners. ONE predicate, derived from the PCRE
+## whitespace — exactly the grammar's `[\h]`, unified across every token head, every
+## flavor, and the before-side mid-line scanners. ONE predicate, derived from the PCRE
 ## class itself (never a hand-copied codepoint list, so it can never drift from the
 ## grammar), with an ASCII fast path for the hot scanners. Newline-class characters stay
 ## LINE boundaries (never in-line delimiters); zero-width format characters (U+200B et

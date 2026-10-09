@@ -392,8 +392,8 @@ function goMeta(
                 ## Components — the Block's Visib is CAPTURED (below) and read through the one answer function (R-V04B-16 (1)).
                 # Capture this Block's FINAL evals rows (Labels + Visib + Id) into st.evals BEFORE the
                 #   next apply wipes st.working — the cell is this Block. Render-neutral: it reads
-                #   st.working, puts or supersedes rows in st.evals and may append warning diagnostics
-                #   (no parse-tree or render mutation).
+                #   st.working and puts or supersedes rows in st.evals (no parse-tree or render mutation; no diagnostic —
+                #   the two capture-floor warnings are the absorb seam's flush, until R-V04B-101).
                 captureEvals!(st, childComponent)
             end
         end
@@ -406,11 +406,11 @@ function goMeta(
     ## refusal fail-closes through `_entryErrorDelivery` before the parse; the absorb/apply-path refusals still
     ## THROW — the unknown-condition-key refusal at the absorb seam, Julia's own ParseError for a body it cannot read,
     ## the E-06 row raw), so a run that returns
-    ## here is `PROCESS_OK` — but the vector need NOT be empty: the walk's and the capture's `:warning` rows
+    ## here is `PROCESS_OK` — but the vector need NOT be empty: the absorb seam's flush `:warning` rows
     ## (the Heading lane's two capture-floor codes, until R-V04B-101) ride the delivery
     ## (the type's docstring). The evaluated values are read by `readAltValuesEvals(result.altValues_evals)`; the development tool's
     ## (tree, render) pair (`Main.BasicRenderer.outputs`) is a pure function of the delivery — the tree READ, never written
-    ## (stage 3's commit 4), every Visib verdict the Engine's answer (stage 3's commit 1).
+    ## (stage 3's commit 4), every Visib value the Engine's answer (`evaluatedAltValue`; stage 3's commit 1).
     status = any(d -> d.severity === :error, st.diagnostics) ? PROCESS_ERROR : PROCESS_OK
     return GoMetaDelivery(st.parse, st.evals, status, st.diagnostics)   # the field order R-V04B-89
 end

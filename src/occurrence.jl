@@ -173,7 +173,7 @@ function _step_of(c::BLS.AbstractComponent)
 end
 
 # The root→cell store-explicit path (extension-normalized at every level). TOTAL: any broken
-# link / cap overrun yields a path ending in the TRUNCATED marker — deterministic, never throws.
+# link / cap overrun yields a path that BEGINS with the TRUNCATED marker (pushed last on the cell→root collection, first after the reverse) — deterministic, never throws.
 function _ordinal_path(ps::BLS.ParseState, cell::BLS.AbstractComponent)
     rev = OccurrenceStep[]          # collected cell→root, reversed at the end
     c = cell
@@ -214,8 +214,8 @@ never throws, pure function of its inputs (no clock / random / env / global stat
 
 DOES: builds the key from the schema version, `namespace`, the cell's grain code (`_grain_code`, by the cell's type)
 and its root→cell store-explicit path (`_ordinal_path`: the upward `idParent` walk, every component normalized to
-its extension-chain root first; a broken link, an out-of-bounds store index or a hop-cap overrun ends the path in the
-TRUNCATED marker step, never a throw). `origin` (a Segment, typically) mints the segment-carried target/origin split
+its extension-chain root first; a broken link, an out-of-bounds store index or a hop-cap overrun puts the TRUNCATED marker step at the HEAD of
+the returned root→cell path, never a throw). `origin` (a Segment, typically) mints the segment-carried target/origin split
 of the segment-carried remap: the KEY's `path` addresses `cell` (the remap TARGET, e.g. the owning Line) while
 `origin` carries the origin cell's OWN path — two same-kind inline Segment evals on one Line stay distinct through
 the remap (injective by construction); `nothing` ⇒ an empty origin. `namespace` is the opaque pure input (constraint
@@ -252,7 +252,7 @@ DOES: writes `schema_version (1B)` · `namespace` (UInt16-BE byte-length prefix 
 sized once by `sizehint!`. Length-prefixed variable field + fixed-width steps ⇒ INJECTIVE per namespace by
 construction (no two distinct keys share bytes). NO hashing — these are the plain structural bytes. The UInt16
 prefixes are written through `_push_u16!`, which clamps at 65535: the namespace is bounded to 65535 bytes at
-`GoMetaConfig`'s construction, and a path's length by the hop cap (`_MAX_HOPS`).
+`GoMetaConfig`'s keyword construction (the generated positional form carries no guard), and a path's length by the hop cap (`_MAX_HOPS`).
 
 REASONING: a fixed field order with length prefixes makes the bytes injective and byte-sortable per namespace, and
 decodable at fixed offsets by a reader that never sees the struct.

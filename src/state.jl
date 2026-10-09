@@ -173,7 +173,7 @@ struct Alterant
     default::DefaultSlot                           # slot (3) at the ALTERANT: its ONE declared default value (R-V04B-51 (1)–(2);
                                                    #   R-V04B-55 (1)) — `NoDefault()` undeclared | `Declared(v)`; stage 2's commit 3;
                                                    #   delivered by the answer function with the source "default" (R-V04B-55 (2)) —
-                                                   #   Visib declares `:show`; Labels, Heading and Id await the owner's word
+                                                   #   Visib declares `:show` (R-V04B-51 (2)); Labels `Symbol[]`, Heading `nothing`, Id the zero compound — his word of 2026-10-02, R-V04B-92, PROVISIONAL (the values may change once used on real examples)
     # --- the capture declaration (v0.4 T5; the seven other declared slots of T1 left at stage 5's E10 of the v0.4 build) ---
     capture::Union{Nothing,CaptureDecl}            # slot (2): the capture declaration
 end
@@ -195,7 +195,7 @@ DOES: carries the action `name`, the owning `plugin` index (`Int8` — the Alter
 literal-slot position, retiring the former name literals at the absorb seams — and the `validate` slot (Alterant-owned
 handover validation; `nothing` when absent). The localOnly path of the absorb seam reads both from the record: a String
 argument in any position but the declared one refuses, and the declared `validate` runs on the String text of that
-slot (`_absorb_local_only!`, src/absorb/absorb_meta.jl); a queued action refuses every String at the enqueue seam.
+slot (`_absorb_local_only!`, src/absorb/absorb_meta.jl); the enqueue seam applies the same slot rule, without `validate` — a String only in the declared slot (`_string_slot_check`, since s5c29; the register's PB-7, the session's default); the shipped queued actions declare none.
 The shipped records: `:` for Labels; `hide` / `show` / `discard` for Visib; `cell` / `parent` / `file` for Id; `head`
 for the Heading — the one record with a String slot (`accepts_string_slot = 1`) and a validator. The declared
 `settribute` write-back key left the record at stage 5's E12 of the v0.4 build (census row 45 — his §317 mark and his
@@ -489,7 +489,7 @@ other exception is rethrown (`_route2_refuse`). No internal exception and no unb
 constructor. The derived tables are not copied: `publish` derives them again from the declarations.
 
 REASONING: an Extension extends the shipped inventory by adding to a copy of its declarations, never by touching the
-published value; a published value mutated after publication is met here with a coded refusal, not a raw exception.
+published value; a published value mutated after publication into a cycle, an outside-domain value or a position-rule offense is met here with a coded refusal, not a raw exception; an in-domain edit is copied — the door, not this constructor, compares against the snapshot.
 
 PURPOSE: the extension route of the lifecycle — from `DEFAULT_REGISTRY` to a builder an Extension registers into.
 """
@@ -630,8 +630,8 @@ DOES: an enqueued argument is a `Symbol` (every bare token, INCLUDING numeric te
 space is deliberately not an arm of this union, so numeric arguments keep their exact fates at the setter, which
 parses them itself) or a `String` (the CONTENT of a well-formed quoted token — `_coerce_arg_token`,
 src/absorb/absorb_meta.jl, the one coercion point). ONE grammar accepts the String kind — the Heading action's TEXT
-slot (`accepts_string_slot = 1`, the quoted-first sugar); every other slot of every action refuses a quoted argument
-at `absorbMeta`'s enqueue seam, and `_absorb_local_only!` refuses one in any slot but the declared one — each
+slot (`accepts_string_slot = 1`, the quoted-first sugar); every slot a record does not declare refuses a quoted argument
+at `absorbMeta`'s enqueue seam and at `_absorb_local_only!` alike (`_string_slot_check`, since s5c29 — PB-7, the session's default) — each
 refusal an `ErrorException` raised by `error` ("GoMeta absorb: string argument not accepted — …"; the file's own
 word for its refusals: without a code, its coded conversion deferred). Dispatch alone cannot hold that law: the built-in
 setters keep an untyped value slot that would parse `cell("7")`. *(This docstring said "NO metaLine grammar accepts
@@ -820,7 +820,7 @@ core (R-V04B-28). The parts are plain fields, in his pipeline order (R-V04B-89):
 `d.status`, `d.diagnostics`. The BLS Component tree is the SAME object the run read (`init_state` keeps the parse state by
 identity; the Engine writes nothing into it since stage 3's commit 4 of the v0.4 build, R-V04B-42 (1)), and it is MUTABLE:
 every reader of one delivery shares that one object — a discipline, not a copy. On a fail-closed run (`PROCESS_ERROR`
-before any parse of that call — an invalid config or a refused registry, refused at the entry) the tree is a container
+before any parse of that call — a registry refused at the entry door, `REG_UNPUBLISHED` / `POST_SEAL_MUTATION`, the ONE entry refusal since stage 5's E13; an unknown `flavor_tag` throws at `flavor_for` instead, E8) the tree is a container
 built from EMPTY bytes and the store is empty.
 
 REASONING: his words and his selections — `altValues_evals` and the BLS Component tree are "BY FAR the two MOST

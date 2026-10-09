@@ -25,7 +25,7 @@ _ws_err(s; kw...)    = try _ws_r(s; kw...); nothing catch e sprint(showerror, e)
 
     @testset "[1] NBSP postDef: live token end-to-end (the dead crash class's witness)" begin
         # formerly a StringIndexError in the walk body extraction (byte+1 arithmetic on a
-        # 2-byte postDef); now char-safe via nextind — the hide verdict LANDS through NBSP
+        # 2-byte postDef); now char-safe via nextind — the hide action applies through NBSP
         s = "#~ hide\nx = 1\n"
         @test _ws_err(s) === nothing
         @test _ws_r(s).status == GM.PROCESS_OK

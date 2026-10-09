@@ -8,20 +8,25 @@
 #   newline-terminated files + modulo exactly one trailing 0x0a on JuliaCon (divergence (3) below).
 # DIVERGENCES from the reference ((1)/(2): documented, not exercised by this corpus so not asserted
 #   here; (3): reconciled here via the input-keyed oracle-parity check):
-#   (1) discard component-skip vs the reference finalVisib-precedence (a show-override inside a
-#       discard-skipped ancestor is omitted; documented in devtools/basic_renderer.jl — the renderer's home since 2026-09-12, R-V04B-24,
-#       formerly src/emit/emit.jl; its header states the write-side law: no `:discard` subtree-skip, an inner answer resurfaces) — accept-as-documented;
+#   (1) discard precedence — as captured (2026-08-02) this engine's discard component-skip omitted a
+#       show-override inside a discard-skipped ancestor, where the reference applies finalVisib-precedence;
+#       the basic renderer today (devtools/basic_renderer.jl — the renderer's home since 2026-09-12, R-V04B-24,
+#       formerly src/emit/emit.jl) applies no `:discard` subtree-skip: an inner answer resurfaces (its header,
+#       :73–:77; the direction the v0.2/v0.3 records date to 2026-08-07 — the records' attribution, U8 :833, OQ-84;
+#       scenario 002's values confirmed on its bytes, R-V04B-20) — not exercised by this corpus;
 #   (2) multi-byte segment-slicing: this engine's parse layer is byte-correct on multi-byte
 #       segment bounds where the reference truncates;
 #   (3) terminal-newline byte-faithfulness: render_bytes is byte-faithful on the WHOLE-FILE terminal
 #       newline (output ends 0x0a IFF input does — v0's file-level rule), whereas the reference
 #       corpus's writer appends one unconditionally. UNLIKE (1)/(2) this IS reconciled here:
 #       JuliaCon's input ends 0x22, so its render ends without a trailing 0x0a — the committed
-#       OutFileFolder copy EQUALS the 1656 B render — and the oracle-parity check
+#       OutFileFolder copy EQUALS the pinned render (1632 B since the 2026-08-07 re-pin below; 1656 B when this note was written, 2026-08-02) — and the oracle-parity check
 #       (golden_tests.jl's drift-check) accepts modulo one trailing 0x0a, keyed on the input's
 #       terminal byte. The JuliaCon fixture carries a category-(i) [[fixture.repin]] row.
 # Missing-key policy: required keys missing => HARD test error (fail-closed). Only optional: annotations golden.
-# Append-only: rows are NEVER rewritten; a re-pin adds a [[fixture.repin]] row. (ONE dispositioned
+# Append-only: a [[fixture.repin]] row, once written, is NEVER rewritten; a [[fixture]] row's fields never move except its
+#   active *_golden_sha256, which a re-pin moves while APPENDING a [[fixture.repin]] row (old → new sha256, the reason, the
+#   ratifying word; R-V04B-108 (2) for the 2026-10-05 re-pin). (ONE dispositioned
 #   exception: the constructed rr48 rows' input_path values moved in place for the
 #   git-mv relocation corpus/ -> constructed/ — shas untouched; tool-emitted since.)
 

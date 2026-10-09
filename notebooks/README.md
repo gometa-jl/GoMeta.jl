@@ -10,7 +10,7 @@ julia --startup-file=no --project=. notebooks_from_source.jl --check
 
 | artifact | what it is |
 |---|---|
-| `src/montecarlo.jl` | the hero source: an ordinary, runnable Julia file (`include` it) whose marks derive every artifact below |
+| `src/montecarlo.jl` | the hero source: an ordinary, runnable Julia file (`include` it) whose marks derive the Monte Carlo notebook and manual pages |
 | `montecarlo.ipynb` | the full edition — every surviving cell, with legend-driven tags (`parameters`, `skip-execution`, `solution`, `deep-dive`); the GoMeta data travels with it (see below) |
 | `montecarlo-executed.ipynb` | the ONE executed edition: real outputs from a standard `jupyter nbconvert --execute` run under the `julia-1.12` kernel, deterministic via the seeded source; volatile execution-timing metadata removed. Outside the `--check` byte gate (it carries kernel outputs), validated separately |
 | `src/quickstart.jl` + `quickstart.ipynb` | one source, two faces: the quickstart runs as a script from the checkout root AND as the derived notebook from this folder — the onboarding artifact demonstrates the pipeline it teaches |
@@ -35,10 +35,10 @@ between every dash pair; unescape reverses). Hidden lines do NOT execute in note
 (carriers don't run — code a source so shown code never depends on hidden
 definitions). An INVISIBLE cell is not a policy surface: it takes no edition tags, so
 papermill's singular `parameters` anchor falls to the first VISIBLE parameters cell. A DISCARDED line
-travels nowhere — discard is the removing form, hide the visibility form. The two derived manual pages are VIEWS: hidden lines are simply
-not on them (except the lines of EXECUTED blocks — `# hide`-marked `@example` lines
-and whole `@setup` bodies — which Documenter runs and display-hides on the built page
-while they remain present in the raw page markdown), and metaLines do not ride them.
+travels nowhere — discard is the removing form, hide the visibility form. The two derived manual pages differ. The FULL page (`docs/montecarlo-full.md`) is a transformation artifact like the
+notebook: every non-discarded metaLine and every hidden NON-executed line rides invisibly in its `@setup gometa_carriage_…` blocks (`## `-commented original bytes under an `##gometa carriage v1` index header — absent from the built site and its search index), while hidden lines of EXECUTED blocks (`# hide`-marked `@example` lines, whole `@setup` bodies) stay in place, run at the docs build and are
+display-hidden on the built page. The READER page (`docs/montecarlo-reader.md`) is a VIEW: no carriage envelopes, its trimmed sections travel
+nowhere (the committed reader selection carries no hidden line today).
 
 **Honesty notes.**
 - In real use the marked `.jl` source stays private and only derived views are shared.

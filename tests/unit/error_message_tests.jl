@@ -4,10 +4,10 @@
 # DOES: proves those messages carry their stable substrings on real triggers. The deep-state
 #       loci (duplicate-conditions; the condition-key family — witnessed in condition_tests.jl since stage 5's E13) and the
 #       internal-invariant messages ship unwitnessed here, as does the unknown-action message.
-# REASONING: the spaced `#~ : x` form is rejected before label handling by the absorb grammar's "misplaced
-#       one-word label" refusal (MEASURED by stage 5's E6 probe of the v0.4 build, its J5 — not by the set-invocation
-#       seam the first draft of this line named, left at E6),
-#       so the unspaced form is the true label path exercised below.
+# REASONING: the spaced `#~ : x` form reads as TWO metaStatements since the metaLine parser effort (stage 5's s5c29): the lone `:`
+#       with zero arguments is the Labels Alterant's (his §359 (7); the register's PB-2) and `x` meets the registry's unknown-action
+#       refusal at absorb (the battery's r13; the former "misplaced one-word label" refusal left at s5c29 — the set-invocation seam the
+#       first draft of this line named left at E6), so the unspaced form is the true label path exercised below.
 # PURPOSE: no bare stack traces — every user-triggerable failure names what went wrong.
 
 using Test

@@ -49,12 +49,12 @@ using Test
     include(joinpath(@__DIR__, "record_schema_tests.jl"))           # v0.4 T1: the registration-record schema extension witnesses (APPEND-ONLY)
     include(joinpath(@__DIR__, "registry_lifecycle_tests.jl"))      # v0.4 T2: Builder → validate → publish, the one chain, the STRICT door, the seal gate, the exhaustion refusals (APPEND-ONLY)
     include(joinpath(@__DIR__, "snapshot_property_tests.jl"))       # v0.4 T2-bis: the snapshot door's PROPERTY proof (N=1024 site mutations + FP rebuilds + named cases; T2BIS-DESIGN §9)
-    include(joinpath(@__DIR__, "seam_envelope_tests.jl"))           # v0.4 T3: the seams — query/validate/ctor envelopes, store identity (T3-DESIGN §8; DEP_MISSING left at stage 5's E4, the state-seam ledger at E2)
+    include(joinpath(@__DIR__, "seam_envelope_tests.jl"))           # v0.4 T3: the seams — the bare getter call (its throw raw, a non-Bool Julia's TypeError; the query envelope left at stage 5's E13), the handover validation CONSUMED, the InterruptException pass-through (T3-DESIGN §8; the ctor-mint envelope and the store-identity check left at E6, DEP_MISSING at E4, the state-seam ledger at E2)
     include(joinpath(@__DIR__, "vocabulary_tests.jl"))              # v0.4 T4's whitelist relocation, trimmed at stage 5's E9: the plain file's membership, the zero-literal law, the crx cure witnesses
     include(joinpath(@__DIR__, "fallback_order_tests.jl"))          # stage 2 commit 3a (R-V04B-55 (3)): the fallBack level consulted LAST — three witnesses over a prepared slot
-    include(joinpath(@__DIR__, "userfeed_visib_tests.jl"))        # stage 2 commit 7b (REAL-1 R2 #13): the fed Visib verdict against an authored one — four witnesses at the public entry
+    include(joinpath(@__DIR__, "userfeed_visib_tests.jl"))        # stage 2 commit 7b (REAL-1 R2 #13): the fed Visib evals rows against authored ones — four witnesses at the public entry
     include(joinpath(@__DIR__, "origin_tests.jl"))                  # stage 2 commit 2 (R-V04B-35 (d)): the provenance field decided_by — recorded at the enqueue, carried through the apply, captured with the row
-    include(joinpath(@__DIR__, "answer_tests.jl"))                  # stage 2 commit 4 (R-V04B-35 (c)): THE ONE ANSWER FUNCTION — seven witnesses over measured rows
+    include(joinpath(@__DIR__, "answer_tests.jl"))                  # stage 2 commit 4 (R-V04B-35 (c)): THE ONE ANSWER FUNCTION — nine witnesses over measured rows
     include(joinpath(@__DIR__, "scan_tests.jl"))                    # stage 2 commit 5 (his 9.A; the plan :57): the scan by Alterant and the access by Component — six witnesses
     include(joinpath(@__DIR__, "childdiff_tests.jl"))               # stage 2 commit 6 (R-V04B-35 (e)): the child-differs signal — four witnesses over measured rows
     include(joinpath(@__DIR__, "capture_tests.jl"))                 # v0.4 T5: the capture re-home — the registration-driven walk (the sadd2 anti-T1 cure), the per-plugin localOnly flush, the mode-gate laws (T5-DESIGN §6; the floor, gate and algebra witnesses left at stage 5's E5)

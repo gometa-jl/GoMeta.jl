@@ -40,7 +40,7 @@ DOES: carries the four fields, read by the run as named:
 - `namespace::Symbol` — the occurrence-key namespace every `altValues_evals` cell handle is scoped
   under (`:default` by default; encoded as the key's length-prefixed namespace segment — docs/public-api.md
   §2). One constructor-time guard: a namespace over 65535 bytes throws an `ArgumentError` AT
-  CONSTRUCTION (a `GoMetaConfig(...)` call error, before any `goMeta` run; no config-time refusal remains since
+  CONSTRUCTION by the keyword form (a `GoMetaConfig(; …)` call error, before any `goMeta` run; the generated positional form carries no guard; no config-time refusal remains since
   stage 5's E13 — the entry refusals are the registry door's). Read wherever a key is minted: the capture
   (`captureEvals!`), the walk's context record, the user-context mint (`st.config.namespace`).
 
@@ -48,7 +48,7 @@ The whole value rides the run as `ProcessState.config` (`init_state`); nothing o
 
 REASONING: this is part of the declared public API (docs/public-api.md §2; its versioning policy §6 — clean cuts
 until at least v0.7, R-V04B-61): the options are selected by the caller, never inferred by the Engine, and the one
-bound that would break a key's serialization is refused at the type's own door.
+bound that would break a key's serialization is refused at the keyword constructor (the generated positional form carries no guard).
 
 PURPOSE: the stable, documented surface a caller uses to drive one `goMeta` call.
 """

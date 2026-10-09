@@ -39,7 +39,7 @@ import GoMeta as GM
     @testset "the remaining checks precede construction; the record is total" begin
         # (re-scoped at stage 5's E4 — the validation chain of v0.4 T2–T4 left, census row 3, OWNER-WORDS
         # §317; the referents moved — recorded, not silently re-pinned) two source-order assertions:
-        # (i) the three remaining collectors are wired inside `_validate_registration` and the retired
+        # (i) the two remaining collectors are wired inside `_validate_registration` (the third, `_vocabulary_collect!`, left at stage 5's E9) and the retired
         # ones never return; (ii) `publish` calls `validate(` before `return AlterantRegistry(` and
         # derives its tables through `_derive_tables`, whose spec index is FIRST-wins (the clash law
         # that refused a duplicate left; the legacy's Dict assignment was last-wins).

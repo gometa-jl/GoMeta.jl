@@ -1777,8 +1777,8 @@ end
 # `nameof` would collapse). (cure batch 5) a NON-type parameter is a VALUE and folds type-tagged
 # through `_slot_text` (`Val{Int8(1)}` ≠ `Val{Int64(1)}`, `Val{:x}` ≠ `Val{1}`; a parameter value
 # outside the closed domain is unencodable); TypeVar / Vararg parameters keep their text. NOTE
-# (recorded limits): the `string` fallback for UnionAll/Union sig types is show-context-dependent
-# (may qualify); and two SAME-NAMED types from DIFFERENT modules collide as one identity (the
+# (recorded limits): UnionAll / Union / TypeVar nodes encode STRUCTURALLY below (crx-t2bis cure A1 — never
+# `string`); two SAME-NAMED types from DIFFERENT modules collide as one identity (the
 # unqualified choice's deliberate trade — dispatch treats them as distinct; a second
 # type-contributing module is the revisit trigger). No shipped record row reaches these — extend
 # consciously.

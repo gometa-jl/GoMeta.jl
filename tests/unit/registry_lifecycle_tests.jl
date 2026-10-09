@@ -315,7 +315,7 @@ _plugin_with_default(p, d) = GM.Alterant(; altName = p.altName, setMode = p.setM
         # their subjects — the overload rows and the grant register, census row 16)
     end
 
-    @testset "T2-bis: the EIGHT snapshot-door witnesses W1–W8 (T2BIS-DESIGN §8; APPENDED)" begin
+    @testset "T2-bis: the EIGHT snapshot-door witnesses W1–W8 (T2BIS-DESIGN §8; APPENDED — W4 left at stage 5's E13, W8 at E10: six stand)" begin
         # W1 — the CONTAINED route refuses a published value mutated into a CYCLE, coded,
         # naming the record + slot via the path (Rcx/Rcy above are testset-locals — rebuilt)
         b1 = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
@@ -340,7 +340,7 @@ _plugin_with_default(p, d) = GM.Alterant(; altName = p.altName, setMode = p.setM
         @test _codes(d3) == [:POST_SEAL_MUTATION]
         @test occursin("at plugins", d3[1].message)
         # (W4 — the seal-via-token-seam witness, a FOREIGN seal beside DEFAULT's snapshot firing at path `seal` — left at stage 5's
-        # E13 of the v0.4 build with the seal field, census row 6; W1–W3 and W5–W8 carry the door's classes.)
+        # E13 of the v0.4 build with the seal field, census row 6; W1–W3 and W5–W7 carry the door's classes — W8 left at E10, the note below.)
         # W5 — KNOWN OPEN (v) closes: `altConstructor = Val{'c'}` is a SLOT-NAMED validate row
         # (record in context, slot in the message) + a coded publish refusal
         b5 = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)

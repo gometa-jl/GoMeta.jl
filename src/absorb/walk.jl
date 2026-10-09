@@ -10,7 +10,7 @@
 #     negative child id selects the `[2]` insert store — dormant at v0, which never populates it
 #     (a documented latent path — docs/public-api.md §3.4). `applyAbsorbFn` snapshots the component's settribute
 #     (`snapshot_settribute!`), pulls the line text from the parse store (`collectedLines`, or
-#     `addedStrings` for a negative string index), matches the `#~` header (one to eight tildes plus an
+#     `addedStrings` for a negative string index), matches the `#~` header (one or more tildes — the unnumbered depth clamped to eight by the parser — plus an
 #     optional definition token), and calls `absorbMeta` on the text after the header (an empty
 #     SubString when nothing follows); the dispatch tuples resolve every path to `absorbMeta`.
 #     `metaEnvInt` tracks the grain owning the open meta environment: a Block or Line updates the
@@ -102,9 +102,9 @@ function applyAbsorbFn(
     end
     ## The lead-anchored introducer recognizer, selected by the document's flavor (the
     ## FlavorProfile record rides the ParseState — populated at setup, so the recognizer and the stored slice can never disagree about the lead;
-    ## the stored Meta slice begins at the lead's first byte in BOTH flavors, and
+    ## the stored Meta slice begins at the lead's first byte in every flavor, and
     ## `offsets[end]` is slice-relative, so the body arithmetic below self-adjusts
-    ## under the two-byte `//` lead). Both
+    ## under the two-byte `//` lead). The parser's and every flavor's walk
     ## regexes are DERIVED from one body string in flavor.jl (closing the drift-copy hazard); the `::RegexMatch` typed assert stays: a mis-typed slice
     ## still fails LOUD. ## FUTURE-BLS(M6): one profile-owned grammar for parse AND walk.
     ## The bare `::RegexMatch` assert alone would throw a raw TypeError on a

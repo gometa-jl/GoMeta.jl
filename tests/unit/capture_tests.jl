@@ -6,7 +6,7 @@
 #       at stage 5's E4 of the v0.4 build — the measured consequences pinned at [9] and [11]), and the `:per_field` positive
 #       fixture the corpus never reaches.
 # DOES: registers mock Alterants through the sanctioned lifecycle (the PROBE-proven
-#       shapes: register! varargs; the record's five-field keyword form since stage 5's E11 — census row 16),
+#       shapes: register! varargs; the record's four-field keyword form since stage 5's E12 — five at E11, census row 16; the settribute key left at E12, census row 45),
 #       drives them through goMeta, and pins rows + diagnostics.
 # REASONING: PROBE-14's sadd2 measurement — on v0.3.2 a conforming mock registered,
 #       absorbed, applied PROCESS_OK and minted NO evals row (the 3-name ladder). These
