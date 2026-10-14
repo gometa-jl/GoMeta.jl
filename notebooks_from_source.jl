@@ -268,11 +268,11 @@ html_comment(s::String) = "<!-- " * carrier_escape(s) * " -->"
 # verbatim inside the wrapper, then the body lines
 md_lines(c::Cell) = vcat([html_comment(lf.text) for lf in c.carried], md_lines_body(c))
 
-# the DOCUMENTER PAGE view of a markdown cell: hidden lines DROP (owner-ruled
-# 2026-08-12: pages are derived VIEWS like the student edition of that time — HTML comments
-# do not survive the Documenter markdown pipeline, probe-proven, and the pages are also
-# GitHub-browsable; the notebook full edition is the metadata-bearing artifact); the student
-# edition left at stage 5's N1
+# the DOCUMENTER PAGE body of a markdown cell: hidden lines DROP from the body on BOTH pages
+# (owner-ruled 2026-08-12 for the then-views: HTML comments do not survive the Documenter markdown
+# pipeline, probe-proven, and the pages are also GitHub-browsable); since v0.3.1 the FULL page carries
+# them in its carriage envelope instead (`_carriage_envelope`, below) — the READER page alone is the
+# envelope-free view; the student edition left at stage 5's N1
 md_lines_page(c::Cell) = md_lines_body(c; hidden = :drop)
 
 # the body alone; `hidden = :comment` carries hidden prose as wrapper-only HTML

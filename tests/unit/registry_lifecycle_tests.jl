@@ -140,8 +140,8 @@ _plugin_with_default(p, d) = GM.Alterant(; altName = p.altName, setMode = p.setM
         @test GM._slot_text(Int8(1)) != GM._slot_text(Int64(1))
         @test GM._slot_text([:a]) != GM._slot_text((:a,))
         @test GM._slot_text(GM.Declared(Int8(1))) != GM._slot_text(GM.Declared(1))
-        # (cure batch 2) validate is total over a PARAMETRIC (`where`) setter — a UnionAll method
-        # signature is unwrapped, never indexed
+        # (cure batch 2) validate is total over a PARAMETRIC (`where`) setter — since stage 5's E4 (the reflection cross-check
+        # left, census row 3) no method signature is read: the setter is a Function leaf in a designated field (registry.jl :1025–:1027)
         @eval module _ParamSetter
             paramset(store::T, ::Symbol, x::Symbol) where {T<:AbstractDict} = (store[x] = true; nothing)
         end

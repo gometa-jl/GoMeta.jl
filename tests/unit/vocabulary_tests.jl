@@ -246,7 +246,7 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
         bq.action_specs[1] = GM.ActionSpec(; name = sq.name, plugin = sq.plugin, accepts_string_slot = sq.accepts_string_slot,
             validate = sq.validate)
         dq = GM.validate(bq)
-        @test dq isa Vector && _VocR3.EQCALLS[] == 0     # (r4-B2) the piracy was never SELECTED under ===
+        @test dq isa Vector && _VocR3.EQCALLS[] == 0     # (r4-B2) the pirated == never dispatched from validate (the exact-signature === match it once guarded left at stage 5's E4)
         # (A2, probe P62) the budget walkers read the type graph via getfield only: a
         # type whose getproperty throws walks clean (pre-cure the walk itself threw).
         @test GM._type_budget_check(_VocR3.HG)[1] === :ok &&
@@ -285,9 +285,9 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
         # (r4-A1, probe P70) a Function is a LEGITIMATE isbits type parameter of a
         # declared signature (`Store{tag}`): reflection's param render reached
         # `_slot_text(::Function)` whose nameof dispatched a pirated specialization
-        # raw out of validate. The structural `_callable_text` render cures the whole
-        # route: validate RETURNS (since stage 5's E4, with no reflection row to mint; the
-        # pirated nameof still never runs).
+        # raw out of validate. Since stage 5's E4 (the reflection cross-check left, census row 3) no validate path reaches `_slot_text(::Function)`: the constructor slot
+        # passes the domain probe as a Type leaf whose Function parameter is in-domain, and the encoder's one caller, the Dict-entry order, refuses any
+        # Function in a key graph. The assert below therefore pins validate's totality only (the structural render is pinned on `sin` at :303).
         bs = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
         bs.plugins[2] = GM.Alterant(; altName = :Visib, setMode = :mutExclusive,
             altConstructor = _VocR4.Store{_VocR4.tag}, setAltInstance = _VocR4.setS)

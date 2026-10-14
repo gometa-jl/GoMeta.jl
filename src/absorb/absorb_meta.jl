@@ -22,7 +22,7 @@
 #     argument piece (`cell(7,)`) is handed on as the empty token — the Alterant decides (§359 (1)). A condition body is READ HERE: a
 #     settribute key becomes its state read `getState(:key)`, an action of an Alterant that answers queries becomes its query
 #     `getAltState(Int8(p), Symbol("…"), …)` (the registry's one rule `queryable_action`, stage 5's E12 — R-V04B-99), a label test `:name`
-#     the Labels query of that name, his `,` becomes `||`, everything else — `&&`, `!`, `()`, `|`, `&`, decimal integers and plain decimal floats (a numeral with a letter or an underscore — `1e3`, `0xff`, `1_000` — starts a key at its letter and refuses, the register's PB-16), Julia operators but `:` (every `:` outside a quoted text is a label test — PB-17),
+#     the Labels query of that name, his `,` becomes `||`, everything else — `&&`, `!`, `()`, `|`, `&`, decimal integers and plain decimal floats (a numeral with a letter or an underscore — `1e3`, `0xff`, `1_000` — starts a key at its letter and refuses, the register's PB-16), Julia operators but `:` (every `:` outside a quoted text is a label test — PB-17; this rule and the numerals' hold where the walk reads: the interior of a `:(…)` or `key(…)` argument list is spliced to Julia unread — `{ :(:a) }`),
 #     whitespace — is copied verbatim (a bare word that is neither a settribute key nor a queryable action — `true`, `false`, `nothing`
 #     among them — is a condition key and refuses, as his legacy read it; a quoted text is copied WHOLE to Julia, never read — his §366; except a triple-quoted text with inner quotes or an interpolation holding a quoted text, which the one scanner mis-pairs — PB-15); the result is parsed ONCE by `Meta.parse`
 #     and the `Expr` evaluated by Julia at apply time (apply.jl; `Core.eval`), or, for a heading's condition, once at this seam
@@ -127,7 +127,7 @@ conditions: now", §366).
 REASONING: his legacy counted brackets in three loops and the v0.2 additions added quote arms and backslash checks at three
 more places; one walk with one quote state serves every span. Julia's other literal delimiters are not known — a Char
 literal (`'}'`; `'` is also Julia's adjoint `x'`), a backtick, an odd `"` inside a triple-quoted text, a string prefix's
-word: each ends in a loud refusal or Julia's own error (the register's PB-5 names the Char literal; its note of 2026-10-09 the others). Two shapes are copied in pieces and re-read SILENTLY — a quoted text nested inside an interpolation `\$(…)` and an even number of bare `"` inside a triple-quoted text (the register's PB-15).
+word: the shapes the register names — `'}'` and `` `}` `` (the span ends early), the odd `"` (the span left open), a prefix's word (`r"a}b"`, read as a condition key) — end in a loud refusal or Julia's own error (the register's PB-5 names the Char literal; its note of 2026-10-09 the others); a Char or backtick literal the walk reads nothing of (no word, no `{`, `}`, `"`, `,` or `:` — `'1' == '1'`) reaches Julia unchanged and evaluates. Two shapes are copied in pieces and re-read SILENTLY — a quoted text nested inside an interpolation `\$(…)` and an even number of bare `"` inside a triple-quoted text (the register's PB-15).
 
 PURPOSE: where a span ends, for every reader: parseArgs (the argument list and the label list), parseConditions, the quoted
 heading, the splitter and — since s5c31, his §366 — the condition rewrite (a body's `(…)` lists and its quoted texts).

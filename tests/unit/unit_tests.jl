@@ -3,7 +3,7 @@
 #
 # IS:   the unit layer's index, dispatched by tests/runtests.jl as the "unit" layer. It holds no assertions
 #       of its own; each included member self-contains its own `using Test` + `import GoMeta as GM` and
-#       contributes one focused @testset. Some members reference the shared `TestSupport` module, which
+#       contributes its focused @testsets. Some members reference the shared `TestSupport` module, which
 #       tests/runtests.jl loads once before the layers — so members run via the dispatcher, not standalone.
 # DOES: wires the per-concern members, in order:
 #   - public_surface_tests.jl — the export set equals the declared semver surface (docs/public-api.md §1);

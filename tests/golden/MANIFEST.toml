@@ -23,6 +23,10 @@
 #       OutFileFolder copy EQUALS the pinned render (1632 B since the 2026-08-07 re-pin below; 1656 B when this note was written, 2026-08-02) — and the oracle-parity check
 #       (golden_tests.jl's drift-check) accepts modulo one trailing 0x0a, keyed on the input's
 #       terminal byte. The JuliaCon fixture carries a category-(i) [[fixture.repin]] row.
+#   (4) the comment-aware hide fold (owner-ruled (a)-(c), 2026-08-07): the origin implementation double-prefixed a `##`-headed
+#       hidden line; the Extended and JuliaCon fixtures carry the fold since the 2026-08-07 re-pins below, and their committed
+#       examples/OutFileFolder copies carry it too (golden_tests.jl :200–:201) — parity with the ORIGIN output is modulo the fold
+#       on those two; parity with the committed copies is byte-for-byte (the drift-check).
 # Missing-key policy: required keys missing => HARD test error (fail-closed). Only optional: annotations golden.
 # Append-only: a [[fixture.repin]] row, once written, is NEVER rewritten; a [[fixture]] row's fields never move except its
 #   active *_golden_sha256, which a re-pin moves while APPENDING a [[fixture.repin]] row (old → new sha256, the reason, the

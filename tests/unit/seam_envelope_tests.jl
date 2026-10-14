@@ -14,7 +14,7 @@
 #       through goMeta, and pins the catalogue-name tokens + codes.
 # REASONING: T3's refusals fire only on defective callables/records/states — no golden or
 #       corpus path reaches them; these witnesses are the only proof the envelopes fire.
-# PURPOSE: the T3 acceptance rows (Σ = 34 asserts at T3 — T3-DESIGN §8's closed arithmetic; the ledger testset's 14 — ten of
+# PURPOSE: the T3 acceptance rows (Σ = 36 asserts at T3 — T3-DESIGN §8's closed arithmetic, its 34 amended to 36 at the realized count (the two fixture-soundness asserts; the T3 land, log §S2.15); the ledger testset's 14 — ten of
 #       T3's and the four C14 pins (g4)–(g6), (h4) — left at stage 5's E2; 9 more — the mint-wrap assert, the ctor-mint 4,
 #       the store-identity 2, the two source greps — left at stage 5's E6 of the v0.4 build, census row 14; 2 more left at stage 5's E5
 #       of the v0.4 build (measured per file — the stage-5 brief §0)).
@@ -25,7 +25,7 @@ import GoMeta as GM
 @eval module _SeamT
     import GoMeta as GM
     struct QEx <: Exception end                       # the custom query-throw class
-    # exact-signature setters (the reflection cross-check matches per-signature):
+    # (a throwing setter fixture, shaped exact-signature for the reflection cross-check of the time — left at stage 5's E4, census row 3; its last driver, the state-seam ledger's abort re-injection cell, left with the ledger at stage 5's E2, census rows 42 and 21; driven by no testset since)
     boom_set(store::Dict{Symbol,Bool}, a::Symbol, rest::Symbol...) = error("boom-set")
 end
 

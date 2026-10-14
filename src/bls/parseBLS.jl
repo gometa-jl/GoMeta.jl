@@ -20,7 +20,7 @@
 #   extension chains (`createExtensionFor`, `getLastInExtensionChain`); store growth is
 #   normal. Content flags propagate
 #   child→parent→file; the return is the component-store dict plus a config dict (the
-#   first-metaLine index, when one exists). The tree print (`structural_serialization` over
+#   first-metaLine index, when one exists — absent when an inline metaSegment comes first: the segment arm sets the local only, his legacy's asymmetry; read by nothing since the delivery dropped it, src/GoMeta.jl :402). The tree print (`structural_serialization` over
 #   `writeBlsStructureToIO`; the file-writing twin `writeBlsStructureToFile`) LEFT this file on
 #   2026-09-12 (R-V04B-24) for the development tool `devtools/basic_renderer.jl`, which reads the
 #   `ParseState` through BLS's door alone since stage 5's s5c8 (the exemption D-6(a) of 2026-08-20 lapsed 2026-09-16; its texts left; R-V04B-116 (3)).
@@ -966,9 +966,9 @@ function parseBLS(
         ## state, the md-Text-unfaithful arm of the Julia-faithful trade); a
         ## FOUR-quote line-start OPENER keeps the markdown exact-length arm
         ## (pre-existing, unchanged — asymmetric with the rN closer re-pin); the
-        ## counter's single-quote-string bound (see its header) undercounts, never
-        ## phantom-toggles. The bounds are WITNESSED in the fence-exit testset;
-        ## real Julia string extents are what the v0.2 gate needs.
+        ## counter's single-quote-string bound (see its header) undercounts on simple shapes and, on a compound
+        ## close / `#`-carrying single-quote string / re-opener line, can flip parity into a phantom deferred
+        ## CLOSE (its RECORDED BOUNDS); real Julia string extents are what the v0.2 gate needs.
         ## The toggle is FULLY DEFERRED (both halves): the tracker line itself keeps
         ## its own classification (the opener stays a plain code line in its current
         ## block; a mid-line terminator stays fence interior) — an eager toggle

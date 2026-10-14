@@ -598,7 +598,7 @@ end
 ## container parameters (`Any[1]` ≡ `Int[1]`) — were FINGERPRINT-only, each caught at the door by the snapshot's `===`
 ## leaf compare; for a key ORDER a collision means two keys sort as equal texts — the sort is stable. The former (iv)/(v) hard-stop classes are
 ## CLOSED (`String`-only values; every type-bearing field probed at validate under the node
-## budget); non-DataType type nodes encode STRUCTURALLY (crx-t2bis cure A1 — never `string`)
+## budget); non-DataType type nodes encode STRUCTURALLY (crx-t2bis cure A1 — never `string`) — a TypeVar only as a DataType parameter or a UnionAll's variable: met as another TypeVar's bound, a Union member or a Vararg element type it throws `_UnencodableSlot` and `_walk_dict_entries` takes that Dict's live iteration order (register E13-2's note)
 ## (cure batch 1: the first encoding joined elements with delimiters, so `[Symbol("a,b")]` and
 ## `[:a, :b]` folded identically — every element, every string leaf and every component is now
 ## LENGTH-PREFIXED, netstring-style `<bytes>:<text>`, so no boundary can be re-cut).
@@ -1709,7 +1709,7 @@ function _assert_snapshot_disjoint(live::NamedTuple, snap::NamedTuple)
 end
 
 # a type NAME for the contained route's messages — category text via `nameof`, never a
-# dispatched `show` (the non-dispatching rule applies to this route's messages too)
+# dispatched `show`; `nameof` is itself extensible (:1045) — a registrant's own `Base.nameof(::Type{Theirs})` runs here (register M-L2-3)
 _domain_type_name(T::Type)::String = String(nameof(T))
 
 function _route2_refuse(r::AlterantRegistry, e, field::Symbol)
@@ -1777,8 +1777,8 @@ end
 # `nameof` would collapse). (cure batch 5) a NON-type parameter is a VALUE and folds type-tagged
 # through `_slot_text` (`Val{Int8(1)}` ≠ `Val{Int64(1)}`, `Val{:x}` ≠ `Val{1}`; a parameter value
 # outside the closed domain is unencodable); TypeVar / Vararg parameters keep their text. NOTE
-# (recorded limits): UnionAll / Union / TypeVar nodes encode STRUCTURALLY below (crx-t2bis cure A1 — never
-# `string`); two SAME-NAMED types from DIFFERENT modules collide as one identity (the
+# (recorded limits): UnionAll / Union nodes encode STRUCTURALLY below (crx-t2bis cure A1 — never
+# `string`), a TypeVar only as a DataType parameter or a UnionAll's variable (as another TypeVar's bound, a Union member or a Vararg element type it throws `_UnencodableSlot` at the end of `_type_text` — the Dict's live-order fallback, E13-2's note); two SAME-NAMED types from DIFFERENT modules collide as one identity (the
 # unqualified choice's deliberate trade — dispatch treats them as distinct; a second
 # type-contributing module is the revisit trigger). No shipped record row reaches these — extend
 # consciously.
@@ -1794,7 +1794,7 @@ function _type_text(t)::String
         isempty(getfield(t, :parameters)) && return String(nm)
         return string(nm, "{", join((_type_param_text(p) for p in getfield(t, :parameters)), ","), "}")
     end
-    # (T2-bis crx cure A1) non-DataType type nodes encode STRUCTURALLY — `string()` on a
+    # (T2-bis crx cure A1) the Bottom, UnionAll and Union nodes encode STRUCTURALLY (a bare TypeVar has no arm — the throw below) — `string()` on a
     # UnionAll/Union/TypeVar dispatches `show`, and a user's own display method on its own
     # admitted type (legitimate specialization, not piracy) could throw out of the mint. The
     # structural text dispatches nothing (`nameof`/`Symbol` reads only) and stays
@@ -1807,7 +1807,7 @@ function _type_text(t)::String
                                     _type_text(getfield(t, :body)), ")")
     t isa Union && return string("union(", _type_text(getfield(t, :a)), ",",
                                  _type_text(getfield(t, :b)), ")")
-    throw(_UnencodableSlot(typeof(t)))   # unreachable for an admitted `Type` leaf
+    throw(_UnencodableSlot(typeof(t)))   # reached by an admitted `Type` leaf through a TypeVar in a bound / Union-member / Vararg position — caught at `_walk_dict_entries` (E13-2's note)
 end
 _typevar_text(v::TypeVar)::String =
     string("tv(", String(getfield(v, :name)), ",", _type_text(getfield(v, :lb)), ",",

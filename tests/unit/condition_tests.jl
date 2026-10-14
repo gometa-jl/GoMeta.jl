@@ -13,8 +13,8 @@
 #       the error class or message substring. Every pinned value of the E13 rows was MEASURED on the E13 build — the edges receipts
 #       receipts/S8-branch/PROBES-e13-edges-* for the Julia-intake rows, the suite run on the build (precheck-s5c25/PRE-s5c25-suite.txt)
 #       for the re-homed E12 rows (PROBES-e12-edges-* measured them first) and the two render pins; a row added or re-pinned since
-#       names its own build in its comment — s5c29's unterminated-block head (:113–:115), the s5c31 scratch's quoted-text rows
-#       (:98–:108), the s5c37 scratch's timing witness at 0cf389d4 (:88–:92; PROBES-s5c37-witness-values_on-0cf389d4.txt [C]).
+#       names its own build in its comment — s5c29's unterminated-block head (:115–:117), the s5c31 scratch's quoted-text rows
+#       (:100–:110), the s5c37 scratch's timing witness at 0cf389d4 (:90–:94; PROBES-s5c37-witness-values_on-0cf389d4.txt [C]).
 # PURPOSE: the condition path's witnesses in one file — the vocabulary rule's and the Julia intake's.
 
 using Test

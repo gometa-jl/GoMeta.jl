@@ -288,7 +288,7 @@ end
         @test (:head_1, "A") in _heads(rw)
         # CONDITION-ONCE, true arm: the condition gates the HEADING at its own context
         # (evaluated exactly once, at absorb) — a true condition mints ONE row, never
-        # one per governed cell (the false arm is pinned in the delta-round set below)
+        # one per governed cell (the false arm is pinned in test_quoted_first_lowering above)
         rc1 = _run("#~ \"T\"{ isMeta }\nx = 1\ny = 2\n")
         @test string(rc1.status) == "PROCESS_OK"
         @test length(_heads(rc1)) == 1
@@ -355,9 +355,9 @@ end
         # a label QUERY in a heading condition formerly evaluated against the stale
         # apply residue (order-dependent wrong evals rows: the identical condition
         # minted or dropped the row depending on unrelated preceding content). It now
-        # meets the guarded reservation refusal — settribute predicates remain the
-        # heading condition's legal vocabulary (the false-arm settribute pin lives in
-        # test_quoted_first_lowering).
+        # meets the guarded reservation refusal — a condition with a label test the wall finds (a bare `getAltState`
+        # call in the stored Expr, `_has_query`) is refused at this seam; on the document surface every other condition is
+        # Julia's, evaluated once against the metaLine's own snapshot (the false-arm settribute pin lives in test_quoted_first_lowering).
         ec1 = _err("#~ head(\"T\", 2){ :label2 }\nx = 1\n")
         @test ec1 isa ErrorException && occursin("alterant-state query in a heading condition", ec1.msg)
         # the residue-leak shape itself (the probe's smoking gun) must refuse too —

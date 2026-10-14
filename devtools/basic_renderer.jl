@@ -27,7 +27,7 @@ Core.eval(Main, :(const _BASIC_RENDERER_LOADED = true))
 #     his legacy's one test (WriteOutFile.jl :124–:128; a tab or a multibyte leading space renders as spaces; nothing is
 #     restored when the first segment is discarded; the four-local indent restore of v0.4 left at stage 5's R1 of the
 #     v0.4 build, census row 60); a line that is neither included verbatim nor segmented
-#     contributes zero bytes. The render ends 0x0a exactly when the PARSED source content did, but for two edges the trim's note below records — an input whose every line is discarded renders EMPTY, and an unterminated whitespace-only TAIL line renders as a bare empty line, so its render still ends 0x0a:
+#     contributes zero bytes. The render ends 0x0a exactly when the PARSED source content did, but for two edges the trim's note below records — an input whose every line is discarded renders EMPTY, and an unterminated whitespace-only TAIL line renders as a bare empty line, so a render that emitted a line before it still ends 0x0a (when that bare line is the ONLY emitted line — a whitespace-only one-line input, or a tail after all-discarded lines — the trim below leaves the render EMPTY):
 #     every emitted line is "\n"-terminated, then one trailing 0x0a is trimmed iff
 #     `BLS.endsWithNewline(parse_state)` is false — for a whole-file parse that is the input's terminal
 #     byte; for a prefix `parse_range` the parser completes the fact (a range stopping before the
@@ -267,9 +267,9 @@ function render_bytes(
     ## the PARSED source content did NOT end at a line boundary (`BLS.endsWithNewline(parse_state)`, the door's read
     ## — captured pre-`eachline` at setUpToProcessFromBytes for the whole file, and
     ## COMPLETED by parseBLS for a prefix range, whose last line is terminated by
-    ## construction): the render ends 0x0a IFF the parsed content did (one recorded edge:
-    ## a whitespace-only TAIL line normalizes to a bare empty line, so its unterminated
-    ## form still renders ending 0x0a; pinned in the render-fidelity witnesses). The
+    ## construction): the render ends 0x0a IFF the parsed content did (one recorded edge: a whitespace-only TAIL line normalizes to a bare empty line, so its unterminated form still renders ending 0x0a
+    ## unless that line is the only one emitted — then the trim leaves the render EMPTY; the terminal-newline witnesses are tests/unit/token_law_tests.jl testset [12] — the empty input,
+    ## card C14 (c)'s LF-only input, row 17 without a terminal newline — and the JuliaCon fixture's repin note tests/golden/MANIFEST.toml :135; this tail edge is unpinned). The
     ## `!isempty(out)` guard keeps empty renders untouched.
     out = take!(io)
     if !BLS.endsWithNewline(parse_state) && !isempty(out) && @inbounds(out[end]) == 0x0a

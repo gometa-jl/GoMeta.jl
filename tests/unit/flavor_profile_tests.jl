@@ -156,8 +156,8 @@ _fp_julia_kwargs(; overrides...) = merge((
         @test_throws AssertionError _FP_BLS._mk_flavor(;
             _fp_julia_kwargs(directives = bad_status_rows)...)
         ## ── WP1-W3 (F-18) guard witnesses ──
-        ## The consume-vocabulary guard: an out-of-domain verb refuses (unique
-        ## targeting mirrors the status witness: julia-tagged, flags empty).
+        ## The consume-vocabulary guard: an out-of-domain verb refuses (unique targeting as the status witness's: julia-tagged so the INTERIM law short-circuits; the row otherwise the julia table's own `-` row
+        ## — status :claimed, flags (:startNewBlock,) — so the order, status and absent guards pass and only the consume assert can fire).
         bad_consume_rows = ((char = '-', status = :claimed, flags = (:startNewBlock,),
             ws_strict = false, consume = :gulp),
             _FP_BLS.FLAVOR_JULIA.directives[2:5]...)

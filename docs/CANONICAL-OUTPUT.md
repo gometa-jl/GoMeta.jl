@@ -56,7 +56,7 @@ bytes regardless of their alterant behavior.
 The render half completes the share-target emit over both non-show verdicts (`:hide` /
 `:discard`). The six rules:
 
-1. **`:discard` (any grain)** → **zero subtree bytes**.
+1. **`:discard` (any grain)** → **zero bytes for the discarded Component and for every descendant that inherits its answer** (the corpus case: the `Extended` pair's input line 15, `… #~ discard`, absent from the output); an inner `show` or `hide` under a discarded ancestor RESURFACES — the renderer applies no subtree-skip, it writes each Component's own answer (`devtools/basic_renderer.jl`, the write-side law in its header; scenario 002 confirmed on its bytes, R-V04B-20; not exercised by the committed corpus).
 2. **`:hide` at Line grain** → literal **`## ` prefix + the line's rendered bytes** (on a segmented line the first
    segment's indentation is restored as SPACES *after* the marker when that segment is emitted — his legacy's test,
    since stage 5's R1 of the v0.4 build, census row 60). On a hidden line with MULTIPLE rendered segments, **each
@@ -67,7 +67,7 @@ The render half completes the share-target emit over both non-show verdicts (`:h
    `using Plots ## This …` renders hidden as `## using Plots ## This …` (the line-start marker;
    the trailing comment segment already carries `## `), and a line with a trailing inline
    metaLine renders it `## `-marked too (`… ## #~ hide`).
-3. **`:hide` at Block grain** → **every emitted NON-EMPTY subtree line** prefixed.
+3. **`:hide` at Block grain** → **every emitted NON-EMPTY subtree line that inherits the hide** prefixed; an inner own `show` renders plain — the write-side law of rule 1 (the committed `Proposal` pair: its input line 30, `… #~ show`, inside a hidden text Block, renders unprefixed).
 4. **`:hide` at Segment grain** → **lift-to-Line at v0** — a mid-line `## ` would comment out all
    following shown segments (a correctness hazard); inline segment-hide is reserved as a
    profile-versioned extension.
@@ -103,7 +103,7 @@ choose `discard` when metadata must not survive the share; choose `hide` when th
 stay a living GoMeta document.
 
 These rules are **oracle-grounded where exercised**: rules 1–4 ride the
-committed corpus (`examples/`), whose renders the golden test layer pins **byte-for-byte** (7/7);
+committed corpus (`examples/`; rule 1's resurface arm excepted — not exercised there), whose renders the golden test layer pins **byte-for-byte** (7/7);
 the rule-5 empty-line fact and the rule-6 ensure-token fact ride it too — the `Extended` pair's hidden text block
 carries the blank input line (L40, rendered as a bare empty line) and the `## `-headed narration lines (L46–L49,
 rendered as-is, no doubling; `docs/SYNTAX-AND-SEMANTICS.md` §7 cites them); the rule-6 one-way fact and
@@ -130,7 +130,7 @@ query-facing write payload; it does **not** enter the `(tree, render)` pair.
 | Invariant | Falsification | Enforced by |
 |---|---|---|
 | same `(bytes, profile, config)` ⇒ a byte-identical (tree, render) pair from the development tool's `Main.BasicRenderer.outputs`, across fresh processes (the tool's property over the Engine's stored values; see README SECURITY) | any byte diff | the golden layer (`tests/golden/golden_tests.jl`) — every fresh run must reproduce the pinned golden bytes byte-for-byte (the test layer's property) |
-| discard ⇒ zero subtree bytes; hide ⇒ all NON-EMPTY subtree lines `## `-prefixed (§3 rules 3+5) | a leak or an absence | the golden render-polarity + not-tree-only canary testsets (`tests/golden/golden_tests.jl`) |
+| discard ⇒ zero bytes for a discarded Component and every descendant inheriting its answer; hide ⇒ every NON-EMPTY line inheriting a hide `## `-prefixed; an inner own `show`/`hide` resurfaces (§3 rules 1, 3, 5) | a leak or an absence | the golden render-polarity + not-tree-only canary testsets and the byte-pinned corpus pairs (`tests/golden/golden_tests.jl` — the hide-resurface case rides the `Proposal` pair; the discard-resurface case's render is pinned by no shipped test — `tests/authored/002_block_discard_resurface` pins its values) |
 | tree half identical pre/post-apply (verdict-free) | verdict leakage into tree bytes | the verdict-free-tree testset (`tests/golden/golden_tests.jl`) |
 | the evals surface deterministic + total over applied verdicts | nondeterminism / a dropped verdict | the golden layer's net-new-surface testsets (`tests/golden/golden_tests.jl`) — serialized evals against pinned shas + a double-run equality |
 
@@ -140,7 +140,7 @@ object.
 
 ## §6 — CRLF normalization (documented convention, NOT an error)
 
-Both setup paths **chomp `\r\n`** → line **ENDINGS** normalize to **LF**; line **CONTENT bytes
+The parser's one setup path **chomps `\r\n`** → line **ENDINGS** normalize to **LF**; line **CONTENT bytes
 stay faithful** (invalid UTF-8 preserved). **Goldens are LF.** This is a documented normalization
 convention, not a defect: it does not alter content bytes, only the line terminator. The
 hide-prefix rules (§3) respect LF endings.

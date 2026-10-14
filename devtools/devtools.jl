@@ -825,8 +825,8 @@ print_altValues_evals(result::GoMeta.GoMetaDelivery; kwargs...) =
 
 ## IS: the §4 filter contract. DOES: normalizes `attrs` (:all | Symbol | Vector),
 ## validates + filters BEFORE layout, keeps unanchored rows immune to `lines`, and
-## returns `(filtered_rows, echo_lines)` — the echo lines carry the active filters,
-## per-attr match counts and the EXPLICIT never-minted state.
+## returns `(filtered_rows, echo_lines, active)` — the echo lines carry the active filters, per-attr match counts and the EXPLICIT never-minted state;
+## `active` is true when an attrs or lines filter was supplied (the one flag the absence labels read, :939–:940).
 function _dt_filter_rows(rows, attrs, lines_r)
     echo = Vector{Tuple{String,Union{Symbol,Nothing}}}()   # (text, color-key) pairs
     fr = rows
