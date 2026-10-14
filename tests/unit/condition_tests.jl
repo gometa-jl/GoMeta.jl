@@ -10,9 +10,11 @@
 #       empty block or a bare literal — register E13-6; Julia's own error at apply for an argument it cannot dispatch), and the
 #       operators his corpus writes (`,` as OR, `&&`, `!`, `()`).
 # DOES: drives each shape through goMeta on a one-line document and pins the status, the render (the development tool's pair) and
-#       the error class or message substring. Every pinned value was MEASURED on the E13 build — the edges receipts
+#       the error class or message substring. Every pinned value of the E13 rows was MEASURED on the E13 build — the edges receipts
 #       receipts/S8-branch/PROBES-e13-edges-* for the Julia-intake rows, the suite run on the build (precheck-s5c25/PRE-s5c25-suite.txt)
-#       for the re-homed E12 rows (PROBES-e12-edges-* measured them first) and the two render pins.
+#       for the re-homed E12 rows (PROBES-e12-edges-* measured them first) and the two render pins; a row added or re-pinned since
+#       names its own build in its comment — s5c29's unterminated-block head (:113–:115), the s5c31 scratch's quoted-text rows
+#       (:98–:108), the s5c37 scratch's timing witness at 0cf389d4 (:88–:92; PROBES-s5c37-witness-values_on-0cf389d4.txt [C]).
 # PURPOSE: the condition path's witnesses in one file — the vocabulary rule's and the Julia intake's.
 
 using Test

@@ -17,8 +17,9 @@
 #       (crx-s5close; his word §383 of 2026-10-09) with its outcome MEASURED on the s5c37 scratch at 0cf389d4 from the FULL delivery
 #       view (PROBES-s5c37-witness-values_on-0cf389d4.txt); its comment names the panel row and the receipt.
 #       A row marked GUARD (s5c38) pins the invalid-Char guard of the condition rewrite's two identifier tests (his word §384 of 2026-10-09;
-#       the closing set's panel row L7 r6): an invalid UTF-8 byte inside a condition body meets Julia's parse error or the unknown-key
-#       refusal where the base tree threw a raw InvalidCharError; its document is built from BYTES (the extra row's `doc_hex`), its outcome
+#       the closing set's panel row L7 r6): an invalid UTF-8 byte at the rewrite's identifier tests inside a condition body meets Julia's
+#       parse error or the unknown-key refusal where the base tree threw a raw InvalidCharError; its document is built from BYTES (the
+#       extra row's `doc_hex`), its outcome
 #       MEASURED on the s5c38 scratch (PROBES-s5c38-guard-AFTER_s5c38-scratch.txt) beside the base tree's at 344e92dd (PROBES-s5c38-guard-BEFORE_344e92dd.txt).
 # REASONING: a refusal is pinned by its GoMeta head, never by Julia's message text (the judge's (E).2); an accepted row's count was
 #       measured on the build with the development tool's printout (canon R4b; the AFTER receipt beside the pre-check).

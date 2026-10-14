@@ -16,7 +16,8 @@
 #       corpus path reaches them; these witnesses are the only proof the envelopes fire.
 # PURPOSE: the T3 acceptance rows (Σ = 34 asserts at T3 — T3-DESIGN §8's closed arithmetic; the ledger testset's 14 — ten of
 #       T3's and the four C14 pins (g4)–(g6), (h4) — left at stage 5's E2; 9 more — the mint-wrap assert, the ctor-mint 4,
-#       the store-identity 2, the two source greps — left at stage 5's E6 of the v0.4 build, census row 14).
+#       the store-identity 2, the two source greps — left at stage 5's E6 of the v0.4 build, census row 14; 2 more left at stage 5's E5
+#       of the v0.4 build (measured per file — the stage-5 brief §0)).
 
 using Test
 import GoMeta as GM
