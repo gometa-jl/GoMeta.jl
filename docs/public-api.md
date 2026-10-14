@@ -1,7 +1,7 @@
 # public-api.md — GoMeta's declared public API (the semver surface) + the error-mode catalogue
 
-**Status:** the declared public API and error-mode catalogue of GoMeta `0.4.0` (candidate; the v0.4
-build's branch `cc/v04-delivery` in progress — its stages and every ruling in the build record
+**Status:** the declared public API and error-mode catalogue of GoMeta `0.4.0` (the v0.4 build,
+from its branch `cc/v04-delivery` — its stages and every ruling in the build record
 `plan/2026-08-24-gometa-v04-build/`; alpha maturity). Backward compatibility with 0.3.x is NOT
 promised (the v0.4 ruling); the breaking-change register ships with the release.
 
@@ -105,7 +105,7 @@ These are part of the documented public surface — declared with Julia's `publi
   non-throwing diagnostic record.
 - `AlterantRegistry` + the `const DEFAULT_REGISTRY` — the deterministic alterant inventory (the
   `goMeta` default registry), a PUBLISHED (validated + sealed) value since v0.4. **What a custom
-  registry can do at THIS build state (v0.4.0-candidate; Stage-A rows T0–T5 landed; no registration-time
+  registry can do at THIS build state (v0.4.0; Stage-A rows T0–T5 landed; no registration-time
   signature reflection since stage 5's E4 of the v0.4 build; T11's catalogue sitting):** it is
   built through the lifecycle below, its declared record + derived tables + callables are
   sealed and door-checked, its setters DISPATCH (the apply plane is registry-data-driven) and a

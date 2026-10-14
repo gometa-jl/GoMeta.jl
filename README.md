@@ -45,7 +45,7 @@ x = 1                          # ...content...
 
 ## Status: alpha
 
-`0.4.0` (candidate; the v0.4 build's branch `cc/v04-delivery` in progress; alpha maturity; `Project.toml` carries `0.3.2`) — a working, tested engine for the **v0 subset** of the GoMeta
+`0.4.0` (alpha maturity; the v0.4 build, from its branch `cc/v04-delivery`) — a working, tested engine for the **v0 subset** of the GoMeta
 language. `0.2.0` brought a closed no-eval condition interpreter (REMOVED at `0.4.0`, stage 5's E13 of the v0.4 build —
 a condition is read by Julia's parser and evaluated by Julia, as the original engine did; `docs/public-api.md` §3.2); `0.2.1` added the
 token-delimiter law (every marker token requires whitespace-or-line-boundary on BOTH

@@ -56,7 +56,7 @@ error-mode catalogue ([Public API + error modes](public-api.md) §3).
 
 ## Status
 
-`0.4.0` (candidate; the v0.4 build's branch `cc/v04-delivery` in progress; alpha maturity; `Project.toml` carries `0.3.2`) — a working, tested engine for the **v0 subset** of the GoMeta language, with a
+`0.4.0` (alpha maturity; the v0.4 build, from its branch `cc/v04-delivery`) — a working, tested engine for the **v0 subset** of the GoMeta language, with a
 byte-exact oracle: the seven committed example pairs under `examples/` render byte-identically,
 pinned by the shipped test suite under a plain `Pkg.test()`. The language grows by design; the
 v0 subset forecloses none of it.
