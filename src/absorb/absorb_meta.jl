@@ -291,7 +291,8 @@ registry's one rule, R-V04B-99 / E12: the three Visib names `hide` / `show` / `d
 them — meets the refusal `error("GoMeta absorb: unknown condition key …")`, an `ErrorException` naming the key (bounded
 to 40 characters); a quoted text (`"…"`) is copied WHOLE, never read (but for the two mis-paired shapes of PB-15) — its end found by `_span(…; julia = true)`, its `\`
 Julia's escape (his §D174; his word of 2026-10-08, §366: strings in conditions now — s5c31); every other character — operators but `:`, parentheses, decimal integers and plain decimal floats (PB-16, PB-17),
-whitespace — verbatim. Returns the re-written text as a `String`. Pure over its two arguments (no state read; a
+whitespace, an invalid UTF-8 byte (never a key's start or character — the guard of his §384, s5c38; Julia's parser refuses the text
+it reaches) — verbatim. Returns the re-written text as a `String`. Pure over its two arguments (no state read; a
 refusal — the unknown key's or the scanner's unterminated `(` — its one exit besides the return); `Meta.parse` reads the result ONCE in its one caller, `parseConditions`,
 with `ctx().registry`.
 
@@ -328,9 +329,9 @@ function _rewrite_condition(text::String, r)::String
                 name = text[j:prevind(text, k)]
                 print(out, _cond_target(Symbol(":"), isempty(name) ? nothing : string("Symbol(", repr(name), ")"), r)); i = k
             end
-        elseif Base.is_id_start_char(c)
+        elseif isvalid(c) && Base.is_id_start_char(c)                 # an invalid Char never starts a key — it falls to the verbatim arm and Julia's parser refuses it (his §384; the guard of _isspace_valid's class)
             k = nextind(text, i)
-            while k <= n && Base.is_id_char(text[k]) && text[k] ∉ _COND_DELIMS
+            while k <= n && isvalid(text[k]) && Base.is_id_char(text[k]) && text[k] ∉ _COND_DELIMS
                 k = nextind(text, k)
             end
             key = Symbol(text[i:prevind(text, k)])
@@ -766,8 +767,9 @@ function _absorb_local_only!(
 end
 
 ## THE ONE WHITE-SPACE PREDICATE over possibly-invalid UTF-8 (his §359 (10): his legacy's `isspace`): an invalid byte sequence is
-## CONTENT — never white space (`isspace` throws at decode on sequences that require it, so every input-facing test of this module goes
-## through this guard); on every VALID char it is exactly `isspace`.
+## CONTENT — never white space (`isspace` throws at decode on sequences that require it, so every input-facing test of this module that
+## decodes a character carries this guard — the white-space tests through this predicate, the condition rewrite's two identifier tests in
+## line (`_rewrite_condition`; his §384)); on every VALID char it is exactly `isspace`.
 _isspace_valid(c::AbstractChar) = isvalid(c) && isspace(c)
 
 "THE ONE TEXT-ARGUMENT RULE (his §359 (8)): a quoted (String) argument is accepted in the one slot the action's DECLARED record names (`accepts_string_slot` — `head`'s text slot; 0 for every other shipped action) and refused in every other — the shipped setters keep untyped value slots, so dispatch alone cannot hold the law (byte-probed: `cell(\"7\")` would parse)"

@@ -883,7 +883,13 @@ at the Int8 store, as in 0.3.2; the walk allocates at most one slot per live lev
 Both setup paths chomp `\r\n` — line **endings** normalize to LF; CONTENT-line **content** bytes
 stay faithful for arbitrary bytes, including invalid UTF-8 (documented engine behavior for BOTH
 invalid-byte classes — lone invalid bytes and decode-requiring sequences such as overlong
-encodings; the shipped suite does not exercise invalid-byte content). The
+encodings). The shipped suite pins both planes: an overlong sequence inside a hidden content
+line is carried byte-faithfully (`tests/unit/ensure_token_tests.jl`, row [8]); on the meta-line
+plane an invalid byte inside a quoted argument meets the string-argument refusal
+(`tests/unit/heading_recognizer_tests.jl`, the QUOTE × INVALID UTF-8 row) and inside a condition
+body Julia's own `Meta.ParseError` or the unknown-key refusal — the condition rewrite's two
+identifier tests guarded since stage 5's s5c38 of the v0.4 build, the owner's §384
+(`tests/unit/parser_quality_tests.jl`, the rows jG1–jG3). The
 **meta-line plane indexes on character boundaries**: non-ASCII inside a metaLine parses
 correctly, and — the ACTION set being ASCII-named at v0, while the label whitelist carries a
 fixed pictograph vocabulary since 0.3.0 (`src/alterants-std/labels_vocabulary.txt`) — a
