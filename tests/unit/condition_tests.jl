@@ -85,6 +85,11 @@ end
     @test _cn_err(Vector{UInt8}(codeunits("#~ hide{ :(:x)) }\nx = 1\n"))) isa Base.Meta.ParseError   # the unbalanced ')'
     # an INCOMPLETE body is thrown as the same class AT ABSORB — never stored for a later reader (the legacy stored it and threw at apply)
     @test _cn_err(_cn_mk("isCode &&")) isa Base.Meta.ParseError
+    # the TIMING witness — one metaLine, two statements: the incomplete body first, an unknown action second. absorbMeta reads every
+    # statement of the region before any apply, so an incomplete Expr STORED instead of refused would let `zzznotanaction` meet the
+    # unknown-action refusal (an ErrorException); the ParseError thrown at parseConditions comes first (MEASURED on the s5c37 scratch at
+    # 0cf389d4: PROBES-s5c37-witness-values_on-0cf389d4.txt [C]; the closing set's row L4 r3)
+    @test _cn_err(Vector{UInt8}(codeunits("#~ hide{ isCode && } zzznotanaction\nx = 1\n"))) isa Base.Meta.ParseError
     # an EMPTY block or a bare literal carries no condition expression — GoMeta's refusal (the legacy applied unconditionally, silently)
     for body in ("{}", "{ }", "{ 1 }", "{ | }")
         e = _cn_err(Vector{UInt8}(codeunits("#~ hide" * body * "\nx = 1\n")))

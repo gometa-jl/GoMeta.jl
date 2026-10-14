@@ -103,6 +103,7 @@ end
                                    altConstructor = SubString{String},
                                    setAltInstance = GM.Alterants.setVisib)
         @test isempty(GM.validate(b))
+        @test GM.publish(b) isa GM.AlterantRegistry   # the title's verb exercised (publish on the clean validate — MEASURED on the s5c37 scratch at 0cf389d4: PROBES-s5c37-witness-values_on-0cf389d4.txt [H]; the closing set's row L5 r4)
         # (the mint wrap's CB_CTOR_THROW witness left at stage 5's E6 of the v0.4 build — census row 14: the bare
         # mint is Julia's own MethodError out of the goMeta call, measured by the build's probe)
     end

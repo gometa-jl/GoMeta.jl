@@ -70,17 +70,17 @@ import GoMeta as GM
     end
 
     @testset "a duplicate action name resolves FIRST-wins at publish (stage 5's E4; the legacy was last-wins)" begin
-        # (replaces arm-W consistency, retired with the clash law; measured on the E4 scratch —
-        # PROBES-e4-validate_stage1-src-cut_on-1c9d013f.txt [4])
+        # (replaces arm-W consistency, retired with the clash law; the one-Alterant form measured on the E4 scratch —
+        # PROBES-e4-validate_stage1-src-cut_on-1c9d013f.txt [4]; the TWO-Alterant form below — the duplicate on plugins 1 and 2, so the
+        # OWNER table's first-wins is discriminated and not only the spec index's — MEASURED on the s5c37 scratch at 0cf389d4:
+        # PROBES-s5c37-witness-values_on-0cf389d4.txt [F]; the closing set's row L5 r2)
         b = GM.RegistryBuilder()
-        GM.register!(b, GM.Alterant(; altName = :bag, setMode = :accumulate, altConstructor = Dict{Symbol,Bool}, setAltInstance = GM.Alterants.setLabels, getAltInstance = GM.Alterants.checkLabels),
-            GM.ActionSpec(; name = :alpha, plugin = Int8(1), accepts_string_slot = 1),
-            GM.ActionSpec(; name = :alpha, plugin = Int8(1), accepts_string_slot = 0))
+        GM.register!(b, GM.Alterant(; altName = :bag, setMode = :accumulate, altConstructor = Dict{Symbol,Bool}, setAltInstance = GM.Alterants.setLabels, getAltInstance = GM.Alterants.checkLabels), GM.ActionSpec(; name = :alpha, plugin = Int8(1), accepts_string_slot = 1))
+        GM.register!(b, GM.Alterant(; altName = :bag2, setMode = :accumulate, altConstructor = Dict{Symbol,Bool}, setAltInstance = GM.Alterants.setLabels, getAltInstance = GM.Alterants.checkLabels), GM.ActionSpec(; name = :alpha, plugin = Int8(2), accepts_string_slot = 0))
         @test isempty(GM.validate(b))                        # no clash law refuses it
         R = GM.publish(b)
-        @test R.spec_index[:alpha] == 1                      # the FIRST declaration is the one dispatched
-        @test R.action_specs[R.spec_index[:alpha]].accepts_string_slot == 1   # the FIRST declaration's datum (the overload rows left at stage 5's E11)
-        @test R.sorted_alt_actions == [:alpha] && R.action_to_plugin == Int8[1]
+        @test R.spec_index[:alpha] == 1 && R.action_specs[1].accepts_string_slot == 1   # the FIRST declaration dispatched
+        @test R.sorted_alt_actions == [:alpha] && R.action_to_plugin == Int8[1]   # the FIRST declaration's OWNER (registry.jl :1854 first-wins; a last-wins table would give Int8[2])
     end
 
     # (the record shape law testset was CONSCIOUSLY RETIRED at stage 5's E4 with its subject — census

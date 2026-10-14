@@ -511,7 +511,7 @@ end
         d = R.plugins[2].default.value
         d[:b] = 2
         @test _codesp(GM._registry_door_check(R)) == [:POST_SEAL_MUTATION]
-        @test _reported_segments(R) == _dpath
+        @test _reported_segments(R) == _dpath && only(GM._registry_door_check(R)).context == "plugins[2].default.value"   # …and the door's OWN rendered path (registry.jl :1997–:1999) at depth — the oracle recomputes the comparator; this pins the door's assembly (MEASURED on the s5c37 scratch at 0cf389d4: PROBES-s5c37-witness-values_on-0cf389d4.txt [I]; the closing set's row L5 r5)
     end
     let R = _dict_reg()
         delete!(R.plugins[2].default.value, :a)

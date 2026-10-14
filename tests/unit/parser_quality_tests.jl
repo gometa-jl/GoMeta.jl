@@ -13,6 +13,9 @@
 #       CHANGED (s5c31 — strings in conditions now, his §366) pins the lever's outcome, MEASURED on the s5c31 scratch
 #       (PROBES-parser-*-AFTER_s5c31-scratch.txt): a quoted text inside a condition body is Julia's — copied whole, never read by
 #       the rewrite — and the body's `(…)` lists are found by the one scanner (an unclosed `(` meets "unterminated '('").
+#       A row marked WITNESS (s5close) was added after the parser effort on a row of the closing CrossReview set's verification panel
+#       (crx-s5close; his word §383 of 2026-10-09) with its outcome MEASURED on the s5c37 scratch at 0cf389d4 from the FULL delivery
+#       view (PROBES-s5c37-witness-values_on-0cf389d4.txt); its comment names the panel row and the receipt.
 # REASONING: a refusal is pinned by its GoMeta head, never by Julia's message text (the judge's (E).2); an accepted row's count was
 #       measured on the build with the development tool's printout (canon R4b; the AFTER receipt beside the pre-check).
 # PURPOSE: the parser's quality, shape by shape — his two example files and the twelve frozen forms are the oracle's other half
@@ -1488,5 +1491,10 @@ end
         k, st, n, e = _pq("#~ +:(label1)\nx = 1\n")
         @test k === :throw && e isa ErrorException
         @test occursin("GoMeta absorb: unknown alterant action \"+:\"", e.msg)
+    end
+    # jC1 [s5close-witness] — WITNESS (s5close — the closing set's panel row L4 r6 'j03u does not enforce copied whole, never read for the comma'; his word §383; the outcome MEASURED on the s5c37 scratch at 0cf389d4 from the FULL delivery view: PROBES-s5c37-witness-values_on-0cf389d4.txt [D]) — BEFORE: (the row is new — no measurement before the build) at 0cf389d4: OK PROCESS_OK, 2 evals rows — the comma inside the quoted text is Julia's, copied whole, never split by the rewrite's `,` arm; the condition `"," == "\x2c"` is true and the hide applies (0 rows if the comma were rewritten to ` || `)
+    @testset "jC1" begin
+        k, st, n, e = _pq("#~ hide{ \",\" == \"\\x2c\" }\nx = 1\n")
+        @test k === :ok && st == GM.PROCESS_OK && n == 2
     end
 end

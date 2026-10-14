@@ -2,8 +2,8 @@
 # build: the digest pin, the capture cache, the artifact grammar, the scope law, the G-VOC read surface and the write-only
 # valve left with their subjects — census rows 10, 28 and 55, OWNER-WORDS §317; the 38 names stay in the plain file).
 #
-# IS:   the membership witnesses over the plain file ([2] the set role refuses an unknown name; [3] the late-order name in
-#       both roles — the ∈-scan, never `insorted`), the zero-literal law in its DECIDABLE form ([10]: no Core literal of the
+# IS:   the membership witnesses over the plain file ([2] the set role refuses an unknown name; [3] the late-order name — the ∈-scan
+#       in the set role, the applied hide in the query role), the zero-literal law in its DECIDABLE form ([10]: no Core literal of the
 #       names re-enters src outside alterants-std/), and the crx-t3t4 cure witnesses that live here by history ([11]'s A3,
 #       [12]–[18]: the zero-dispatch validate chain, the DomainRef read-once law ([14] — retired at stage 5's E10 with `DomainRef`), the identity/getfield hardening, the
 #       structural callable name, the String-only encoder, the getfield numeric leaf).
@@ -130,13 +130,15 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
     end
 
     @testset "[3] the LATE-order name :💫 (the C4E-4 order-independence pin)" begin
-        # `:💫` sits late in DECLARATION order, which is UNSORTED — an `insorted` scan
-        # over it would silently lose the names after the first sort break while the
-        # corpus stayed green (the 28/38 class). Both roles must pass through the ∈-scan.
+        # `:💫` sits late in DECLARATION order, which is UNSORTED — an `insorted` scan over it would silently lose the names after
+        # the first sort break while the corpus stayed green (the 28/38 class). The SET role passes through the ∈-scan; the QUERY role
+        # has had no membership gate since stage 5's E9 (`checkLabels`: a label not set answers false — census row 55; the register's
+        # D-11 / PB-9), so the query witness pins the applied hide, never a refusal.
         rs = _drive("x = 1\n#~ :💫\n\ny = 2\n")
         @test rs isa GM.GoMetaDelivery && rs.status === GM.PROCESS_OK
         rq = _drive("x = 1\n#~1 :💫 hide{ :💫 }\n\ny = 2\n")
         @test rq isa GM.GoMetaDelivery && rq.status === GM.PROCESS_OK
+        @test any(t -> t[2] === :visib && t[3] === :hide, GM.readAltValuesEvals(rq.altValues_evals))   # the late-order label SET then QUERIED on one metaLine: the hide APPLIES (MEASURED on the s5c37 scratch at 0cf389d4: PROBES-s5c37-witness-values_on-0cf389d4.txt [G]; a query answering false would leave PROCESS_OK with no hide row)
     end
 
     @testset "[10] the zero-literal law (the C4E-7 DECIDABLE form)" begin

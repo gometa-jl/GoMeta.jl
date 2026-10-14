@@ -12,8 +12,10 @@
 # census row 55). Assert-count neutral. Stage 5's E13 HAND-EDIT: the closed interpreter left (census row 1; R-V04B-106) — testsets
 # [1], [3] and [5] drove `parse_condition` and `print_condition` directly (E13); they drive the whole run now (the same shapes END-TO-END,
 # 37 → 34 asserts: [1] 4 → 3, [3] 3 → 2, [5] 4 → 3). The CURE this file holds — a multibyte-final atom flush against the closing
-# brace takes its ordinary fate — is held by the rewrite's CHAR walk (never the legacy's byte-count end test); [4] and [7] are its
-# live witnesses. The s5close HAND-EDIT (2026-10-09): the header's store clause above re-cut to the door's slice (the Engine stores no copy). A regeneration of this file must re-apply all four forms.
+# brace takes its ordinary fate — is held by the rewrite's CHAR walk (never the legacy's byte-count end test); [1] and [4] carry the
+# flush shapes; the known-label asserts of [3] and [7] fix where a name ends (the s5c37 HAND-EDIT of 2026-10-09 — the closing set's row
+# L4 r2, his word §383; each count MEASURED on the s5c37 scratch from the FULL delivery view, PROBES-s5c37-witness-values_on-0cf389d4.txt). The s5close HAND-EDIT
+# (2026-10-09): the header's store clause above re-cut to the door's slice (the Engine stores no copy). A regeneration of this file must re-apply all five forms.
 
 using Test
 import GoMeta as GM
@@ -50,6 +52,11 @@ _uc_err(s)     = try _uc_full(s); nothing catch e sprint(showerror, e) end
         # run is PROCESS_OK, the unknown label false
         @test _uc_full("#~ hide{ :x }\nx = 1\n").status == GM.PROCESS_OK
         @test _uc_full("#~ hide{ :x  }\nx = 1\n").status == GM.PROCESS_OK
+        # the KNOWN label set, then queried with the NBSP flush before the brace: the name walk ENDS at the Unicode whitespace (the ws-alphabet
+        # law) and the known label applies — a walk that swallowed the NBSP would query an unknown name, false, 2 rows; MEASURED on the s5c37
+        # scratch at 0cf389d4 from the FULL delivery view: 4 rows (PROBES-s5c37-witness-values_on-0cf389d4.txt [A]; the closing set's row L4 r2)
+        r = _uc_full("#~ :label1 hide{ :label1 }\nx = 1\n")
+        @test r.status == GM.PROCESS_OK && length(GM.readAltValuesEvals(r.altValues_evals)) == 4
     end
 
     @testset "[4] CAL-14 + the honest worst case (comma-OR, unknown silently false)" begin
@@ -100,6 +107,11 @@ _uc_err(s)     = try _uc_full(s); nothing catch e sprint(showerror, e) end
         end
         r = _uc_full("#~ :⛔ hide{ :⛔ }\n# content\n")
         @test r.status == GM.PROCESS_OK           # set role + condition role, end-to-end
+        # the pictograph label FLUSH against the brace (the multibyte-final atom flush this file's cure holds): the name is read whole to the
+        # body's end and the known label applies — read short it would be unknown, false, 2 rows (the legacy's byte-count end test threw);
+        # MEASURED on the s5c37 scratch at 0cf389d4 from the FULL delivery view: 4 rows (PROBES-s5c37-witness-values_on-0cf389d4.txt [B]; the closing set's row L4 r2)
+        r7 = _uc_full("#~ :⛔ hide{ :⛔}\nx = 1\n")
+        @test r7.status == GM.PROCESS_OK && length(GM.readAltValuesEvals(r7.altValues_evals)) == 4
         @test Symbol("⛓") ∉ GM.Alterants.LABELS_VOCABULARY   # no VS16 ⇒ unknown
         m = _uc_err("#~ :⛓\n# content\n")
         @test m !== nothing && occursin("unknown label", m)

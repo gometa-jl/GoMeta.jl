@@ -50,6 +50,7 @@ _plugin_with_default(p, d) = GM.Alterant(; altName = p.altName, setMode = p.setM
             @test getfield(R, f) == getfield(D, f)
         end
         @test length(R.plugins) == 4 && length(R.action_specs) == 8
+        @test GM._deep_egal(R.plugins, D.plugins) === nothing && GM._deep_egal(R.action_specs, D.action_specs) === nothing   # the two record vectors structurally equal — the door's own comparator (the seal's whole-record compare left at stage 5's E13, census row 6; MEASURED on the s5c37 scratch: PROBES-s5c37-witness-values_on-0cf389d4.txt [E])
         # publication COPIES: no container is shared with the builder
         @test R.plugins !== b.plugins && R.action_specs !== b.action_specs
         push!(b.plugins, GM.Alterant(; altName = :zz, setMode = :accumulate, altConstructor = Dict{Symbol,Bool}, setAltInstance = identity))
@@ -115,8 +116,10 @@ _plugin_with_default(p, d) = GM.Alterant(; altName = p.altName, setMode = p.setM
         @eval module _EvilVisib; setVisib(args...) = nothing; end
         evil = _EvilVisib.setVisib
         @test nameof(evil) === nameof(GM.Alterants.setVisib)
-        R5.plugins[2] = GM.Alterant(; altName = :Visib, setMode = :mutExclusive, altConstructor = GM.Alterants.Visib, setAltInstance = evil)
-        @test _codes(GM._registry_door_check(R5)) == [:POST_SEAL_MUTATION]
+        p5 = R5.plugins[2]
+        R5.plugins[2] = GM.Alterant(; altName = p5.altName, setMode = p5.setMode, altConstructor = p5.altConstructor, setAltInstance = evil, getAltInstance = p5.getAltInstance, precedencesTuple = p5.precedencesTuple, default = p5.default, capture = p5.capture)   # every field the published record's but the setter
+        d5 = GM._registry_door_check(R5)
+        @test _codes(d5) == [:POST_SEAL_MUTATION] && d5[1].context == "plugins[2].setAltInstance"   # the setter's === leaf alone (the path MEASURED on the s5c37 scratch at 0cf389d4: PROBES-s5c37-witness-values_on-0cf389d4.txt [J])
         # (T2-bis — one of the TWO named append-only exceptions, T2BIS-DESIGN §8) the snapshot
         # BINDING is immutable: a NamedTuple has no `setindex!`, so the baseline binding cannot
         # be rewritten to match the swap through the published value (the snapshot's MEMBERS are
