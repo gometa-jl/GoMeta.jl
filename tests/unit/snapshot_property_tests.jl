@@ -632,8 +632,8 @@ end
         d2s[:self] = d2s
         @test isempty(GM._registry_door_check(R))
     end
-    # the REJECTED-TWIN depth tower, DEPTH-CAPPED AT 10 (1): crosswise-equal values in REVERSED
-    # entry order — ≈2^10 compares, exponential-in-depth by disclosure (§11), completes SILENT
+    # the CROSSWISE-EQUAL twin tower, depth 10 (1): two-entry equal-key Dicts over EQUAL leaves, x and y crossed in REVERSED entry order —
+    # every candidate matches, so no probe is rejected; the compares are LINEAR in depth as measured 2026-10-14 (R-V04B-129) — completes SILENT
     let
         mk(depth, rev) = begin
             x = Any[Int8(1)]

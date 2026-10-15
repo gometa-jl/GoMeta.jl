@@ -61,7 +61,7 @@
 #   documented decision — design §2 ¶No-benchmarks).
 # - Excerpt quote-escaping (CrossReview T1-L2 #3) is DEFERRED: the owner ruled on the
 #   rendered look with raw embedded quotes; only control bytes / invalid UTF-8 are
-#   escaped (safety). `""` still renders zero-length content.
+#   escaped (safety — by the excerpt's own loop; the `strip` before it decodes an overlong invalid sequence at a content's head or tail and throws: R-V04B-128 (6), recorded at v0.4, the BLS flag and the door's text read at v0.5). `""` still renders zero-length content.
 # - Non-ASCII typography in PLAIN sinks: Block spans use an en-dash (`L35–L49`) and
 #   the reserved polarity marker a typographic minus (`(−)`, dead at v0) — byte-pinned
 #   to the owner-approved mockups; grep with the literal characters (or `grep -P`).
@@ -175,7 +175,7 @@ _dt_tpad(s, w) = s * ' '^max(0, w - textwidth(s))
 ## a RESIDUAL belt for invalid-UTF-8 throw classes a future Julia might reintroduce —
 ## on 1.12.5 the char loop is total, so the fallback is defensively dead. REASONING:
 ## §6 excerpt-safety contract; the printer must survive every input the byte-faithful
-## engine accepts.
+## engine accepts — with ONE recorded exception at v0.4 (R-V04B-128 (6)): the `strip` the callers apply before this excerpt decodes an overlong invalid UTF-8 sequence at a content's head or tail and throws; cured at v0.5 by the BLS flag and the door's text read, not here.
 function _dt_excerpt(s::AbstractString, maxw::Int = 48)
     try
         out = IOBuffer(); w = 0

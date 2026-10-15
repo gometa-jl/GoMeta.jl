@@ -79,6 +79,7 @@ a BLS object. No read outside the door remains since stage 5's s5c8 (his word of
 whitespace guard before the hide marker reads `isHorizontalSpace`; the tools read the File's text through `content(tree)`); the
 texts of the former exemption D-6(a) of 2026-08-20 left with it. Consumer code — an Extension — reads the tree the same way, through the door
 (`docs/public-api.md` §1.2; R-V04B-45).
+A recorded limit at v0.4 (R-V04B-128 (6) of the build record; measured 2026-10-14 at 91c4b02c): the evals printouts (`evals-tree`, `evals`, `trace`, the per-cell layout) turn a Component's content bytes into text for the excerpt and throw Julia's InvalidCharError when an invalid UTF-8 sequence that needs decoding (a 3- or 4-byte overlong encoding) stands at a content's head or tail; the Component-tree view (`bls-tree`, `tree`) does not. The guarantee moves to BLS at v0.5 — the flag `containsInvalidUTF8` on every Component and the door's one text read that never throws (his §405) — and these tools take the text read then.
 The assertion battery
 `devtools/probes/probe_devtools.jl` is the drift alarm: if the surface changes, it fails loudly. Run it after every change to `src/` (the tools' own self-check left at stage 5's T1 — R-V04B-111). It lives beside them since 2026-09-12 (OWNER-WORDS §26 of the
 build record: the play became a self-contained fork and keeps its own frozen copy of the tools and
