@@ -25,8 +25,8 @@
 #     development tool's — `devtools/basic_renderer.jl`, loaded through `devtools/load_basic_renderer.jl`,
 #     never by the Engine (R-V04B-24, 2026-09-12). The optional
 #     `config.user_mh_profile` seeds the reserved user slot of the meta-hierarchy before the walk
-#     (`feed_user_mh!`; a fed explicit `head` records one row against the minted user-context
-#     handle — docs/public-api.md §2; experimental).
+#     (`feed_user_mh!`; a heading in the profile meets the one refusal at the read — his §D242, stage 1 of the Alterants
+#     build; docs/public-api.md §2; experimental).
 # REASONING: the public contract (docs/public-api.md §2) requires `goMeta` to be pure and
 #     deterministic FOR THE ENGINE'S OWN OPERATIONS (no filesystem / clock / environment read; a `{…}` condition is
 #     Julia text evaluated by Julia since stage 5's E13 — his design, §120 and §D174 — so what a condition body reads or
@@ -186,13 +186,13 @@ both `applyAltActionFns` walks, and fed by no other call site) with the metaLine
 user-level configuration system; internal (NOT exported); called from `goMeta` iff `config.user_mh_profile !==
 nothing`. Experimental — see docs/public-api.md §2.
 
-DOES: reuses the standard machinery VERBATIM — no parallel intake — queued actions enqueue, the localOnly heading class
-diverts to absorb-seam delivery and an explicit `head` RECORDS against the minted user-context handle (grain 0xe0; no
-copy of the profile's bytes on the row since commit 9b, R-V04B-43 (1)): saves the meta-hierarchy cursor `st.crnt_idx`;
+DOES: reuses the standard machinery VERBATIM — no parallel intake — queued actions enqueue; a heading (an action of an
+Alterant of the set mode `localOnly`) REFUSES at the read with his message (§D242; R-ALT-9: no Component of the file levels
+to be local to — stage 1 of the Alterants build; before it the separate lane recorded one row against the minted
+user-context handle, grain 0xe0): saves the meta-hierarchy cursor `st.crnt_idx`;
 `updateMetaHierarchy(userMHIdx)` allocates + occupies the slot (its `10..12` branch; the depth-window wipes at `<10`
 never touch it, so the fed slot SURVIVES the whole file walk); NULLS `st.meta_context` (no document line stands behind
-this surface — a derived-context action fed here meets the guarded applicability refusal in `absorbMeta`, never a
-fabricated context); sets `st.user_context` to the minted handle `UserContext(key_bytes(user_context_key(namespace, 1)))`
+this surface); sets `st.user_context` to the minted handle `UserContext(key_bytes(user_context_key(namespace, 1)))`
 inside a try/finally that restores the prior value; then `absorbMeta` routes the profile's actions through the SAME
 parseAlt path authored metaLines use; the meta-hierarchy cursor is restored so the walk starts exactly as un-fed.
 First-wins per non-accumulate alterant across the user-slot-first scans ⇒ the fed profile OVERRIDES authored Visib
@@ -209,11 +209,9 @@ function feed_user_mh!(st::ProcessState)
     prev_idx = st.crnt_idx
     CnS.updateMetaHierarchy(userMHIdx)
     # This surface has NO document line/component behind it, so the MetaContext record is
-    # NULLED — a derived-context action (the quoted-first heading) fed through here meets
-    # the guarded applicability refusal in absorbMeta, never a fabricated context (hd-6).
-    # The feed's OWN identity rides `user_context` below: the explicit head records against the
-    # minted user-context handle (the user-context build; no copy of the profile's bytes rides the row
-    # since commit 9b, R-V04B-43 (1)).
+    # NULLED. The feed's OWN identity rides `user_context` below: the queued actions' `decided_by`, and the trigger of
+    # the one refusal a heading meets here (his §D242; stage 1 of the Alterants build; no copy of the profile's bytes
+    # rides any row since commit 9b, R-V04B-43 (1)).
     st.meta_context = nothing
     # The stack-disciplined bracket: save prior, set, restore in the finally (never merely
     # null) — re-entry-safe before any nested-feed path exists, and the restore runs even
@@ -390,10 +388,9 @@ function goMeta(
                 applyAltActionFns(childComponent::BLS.Block)
                 ## The Block-grain Visib write-back LEFT here (stage 3's commit 4 of the v0.4 build, R-V04B-42 (1)): the Engine writes NOTHING into the caller's BLS
                 ## Components — the Block's Visib is CAPTURED (below) and read through the one answer function (R-V04B-16 (1)).
-                # Capture this Block's FINAL evals rows (Labels + Visib + Id) into st.evals BEFORE the
+                # Capture this Block's FINAL evals rows (Labels + Visib + Id + Heading) into st.evals BEFORE the
                 #   next apply wipes st.working — the cell is this Block. Render-neutral: it reads
-                #   st.working and puts or supersedes rows in st.evals (no parse-tree or render mutation; no diagnostic —
-                #   the two capture-floor warnings are the absorb seam's flush, until R-V04B-101).
+                #   st.working and puts or supersedes rows in st.evals (no parse-tree or render mutation; no diagnostic).
                 captureEvals!(st, childComponent)
             end
         end
@@ -406,9 +403,8 @@ function goMeta(
     ## refusal fail-closes through `_entryErrorDelivery` before the parse; the absorb/apply-path refusals still
     ## THROW — the unknown-condition-key refusal at the absorb seam, Julia's own ParseError for a body it cannot read,
     ## the E-06 row raw), so a run that returns
-    ## here is `PROCESS_OK` — but the vector need NOT be empty: the absorb seam's flush `:warning` rows
-    ## (the Heading lane's two capture-floor codes, until R-V04B-101) ride the delivery
-    ## (the type's docstring). The evaluated values are read by `readAltValuesEvals(result.altValues_evals)`; the development tool's
+    ## here is `PROCESS_OK`, its diagnostics vector empty — the two capture-floor warnings of the Heading's separate lane left
+    ## with that lane at stage 1 of the Alterants build (the type's docstring). The evaluated values are read by `readAltValuesEvals(result.altValues_evals)`; the development tool's
     ## (tree, render) pair (`Main.BasicRenderer.outputs`) is a pure function of the delivery — the tree READ, never written
     ## (stage 3's commit 4), every Visib value the Engine's answer (`evaluatedAltValue`; stage 3's commit 1).
     status = any(d -> d.severity === :error, st.diagnostics) ? PROCESS_ERROR : PROCESS_OK

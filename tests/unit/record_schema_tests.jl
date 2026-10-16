@@ -23,15 +23,17 @@ import GoMeta as GM
     # v0.3.2 positional constructors of PlugIn and ActionSpec, census row 65, R-V04B-61; a positional construction is
     # Julia's own MethodError now, measured on both trees by the build's probe.)
 
-    @testset "keyword shapes: CaptureDecl's two- and three-positional forms and its slot text, the Alterant's capture slot, ActionSpec without its settribute slot (stage 5's E12)" begin
-        cap = GM.CaptureDecl(:per_key, nothing)
+    @testset "keyword shapes: CaptureDecl's one- and two-positional forms and its slot text, the Alterant's capture slot, ActionSpec without its settribute slot (stage 5's E12)" begin
+        cap = GM.CaptureDecl(:per_key)
         # v0.4 T5 (T5-DESIGN §6, the +3 declared movements): the attr_stem default
-        # admits through the 2-positional outer method; the 3-positional round-trips (stage 5's E5: the row's 3 fields);
+        # admits through the 1-positional outer method; the 2-positional round-trips (the row's 2 fields since stage 1 of the
+        # Alterants build — the `mode_gate` field left with the Heading's separate lane, R-ALT-12);
         # two rows differing only in stem encode differently (the slot text — the seal fold it joined left at stage 5's E13).
         @test cap.attr_stem === nothing
-        @test GM.CaptureDecl(:per_key, nothing, :st5).attr_stem === :st5
+        @test GM.CaptureDecl(:per_key, :st5).attr_stem === :st5
+        @test !hasfield(GM.CaptureDecl, :mode_gate)   # stage 1 of the Alterants build
         @test GM._slot_text(cap) !=
-              GM._slot_text(GM.CaptureDecl(:per_key, nothing, :st5))
+              GM._slot_text(GM.CaptureDecl(:per_key, :st5))
         p = GM.Alterant(; altName = :zz, setMode = :accumulate, altConstructor = Dict{Symbol,Bool},
                         setAltInstance = identity, capture = cap)
         @test p.capture === cap

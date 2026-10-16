@@ -124,7 +124,7 @@ _an_id(c) = _AN_BLS.getElement(c.cmpntNamedInt, :idComponent)
             default = p.default, capture = cap)
         k = findfirst(p -> p.altName === :Visib, GM.DEFAULT_REGISTRY.plugins); @test k !== nothing
         b1 = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
-        b1.plugins[k] = _with_capture(b1.plugins[k], GM.CaptureDecl(:single, nothing; attr_stem = nothing))
+        b1.plugins[k] = _with_capture(b1.plugins[k], GM.CaptureDecl(:single; attr_stem = nothing))
         R1 = GM.publish(b1)
         r1 = GM.goMeta(_an_bytes("#~ hide\nx = 1\n"); registry = R1); @test r1.status === GM.PROCESS_OK
         bs1 = _AN_BLS.children(r1.blsComponentTree); @test length(bs1) == 2

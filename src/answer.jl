@@ -81,11 +81,11 @@ function _starts_with(h::Vector{UInt8}, p::Vector{UInt8})
 end
 
 ## the attribute family of an Alterant's rows, from its capture declaration: `:single` the stem itself (`:visib`); `:per_key`
-## and `:per_field` the stem plus `_<member>` (`:label_<name>`, `:id_<field>`); `:per_occurrence` the stem, leveled or not
-## (`:head`, `:head_<level>`, `:head_<level>_<k>`).
+## and `:per_field` the stem plus `_<member>` (`:label_<name>`, `:id_<field>`); `:per_entry` (the Heading's — stage 1 of the Alterants
+## build; `:per_occurrence` before it) the stem, leveled or not (`:head`, `:head_<level>`, `:head_<level>_<k>`).
 function _attr_matches(attr::Symbol, stem::Symbol, scheme::Symbol)
     scheme === :single && return attr === stem
-    attr === stem && return scheme === :per_occurrence
+    attr === stem && return scheme === :per_entry
     return startswith(String(attr), String(stem) * "_")
 end
 
@@ -108,7 +108,7 @@ function _answer_value(rows::Vector{EvalRecord}, stem::Symbol, scheme::Symbol)
         ks = Tuple(Symbol(String(r.attr)[cut:end]) for r in rows)
         return NamedTuple{ks}(Tuple(r.value for r in rows))
     end
-    return rows[1].value                        # :per_occurrence — the first row in attr order (a repeat stays in the rows)
+    return rows[1].value                        # :per_entry — the first row in attr order (a repeat stays in the rows)
 end
 
 ## the Component a deciding handle names — read DIRECTLY from the handle's LAST path step (store byte · u32 ordinal: the handle's

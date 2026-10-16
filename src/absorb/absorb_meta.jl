@@ -6,8 +6,8 @@
 #     one-word labels (parseOneWordLabel) and `()` argument lists (parseArgs) with ONE scanner (_span) and ONE splitter (_split_args),
 #     RE-WRITES each condition body's GoMeta-specific parts to Julia text and has Julia's parser read it once (`_rewrite_condition` +
 #     `Meta.parse` in parseConditions — his legacy's produceConditionStr read from the ground up, stage 5's E13, R-V04B-106 (2); his §D174),
-#     and ENQUEUEs action + condition + args into the per-call queue tensors (absorbMeta — the module's sole export). It enqueues every action whose Alterant's setMode is not `:localOnly` —
-#     applying the queued actions is apply.jl's job; a `:localOnly` action (the Heading's) is evaluated and applied ONCE at this seam (`_absorb_local_only!`) and never queued.
+#     and ENQUEUEs action + condition + args into the per-call queue tensors (absorbMeta — the module's sole export). It enqueues EVERY action — the Heading's too since stage 1 of the Alterants build (his §D241: the same process as any
+#     other Alterant; R-V04B-101 (1)) — applying the queued actions is apply.jl's job; a heading in the profile feed meets the one refusal of his §D242.
 # DOES: a metaStatement is a HEAD — a name, a `:` label, or (the region's first statement only) a `"…"` heading — then at most one `(…)`,
 #     then at most one `{…}`, and ENDS at white space or at the region's end; any other character meets the one refusal `_refuse_char`,
 #     which names the character, the token it begins and the region (his §341). The six structural characters `( ) { } , "` end a name or
@@ -25,8 +25,7 @@
 #     the Labels query of that name, his `,` becomes `||`, everything else — `&&`, `!`, `()`, `|`, `&`, decimal integers and plain decimal floats (a numeral with a letter or an underscore — `1e3`, `0xff`, `1_000` — starts a key at its letter and refuses, the register's PB-16), Julia operators but `:` (every `:` outside a quoted text is a label test — PB-17; this rule and the numerals' hold where the walk reads: the interior of a `:(…)` or `key(…)` argument list is spliced to Julia unread — `{ :(:a) }`),
 #     whitespace — is copied verbatim (a bare word that is neither a settribute key nor a queryable action — `true`, `false`, `nothing`
 #     among them — is a condition key and refuses, as his legacy read it; a quoted text is copied WHOLE to Julia, never read — his §366; except a triple-quoted text with inner quotes or an interpolation holding a quoted text, which the one scanner mis-pairs — PB-15); the result is parsed ONCE by `Meta.parse`
-#     and the `Expr` evaluated by Julia at apply time (apply.jl; `Core.eval`), or, for a heading's condition, once at this seam
-#     (`_absorb_local_only!`).
+#     and the `Expr` evaluated by Julia at apply time (apply.jl; `Core.eval`).
 # REASONING: his design — the condition is Julia (OWNER-WORDS §120, §D174): GoMeta recognises its own parts and Julia does the rest; the
 #     metaLine grammar is his legacy's with its two missing arms supplied: his `parseAlt` had arms for `(`, the label, `{` and white
 #     space and no "anything else" case (AbsorbMeta.jl :307–:340), and its outer `ispunct` gate (:304) skipped a leading punctuation — so
@@ -63,15 +62,9 @@ import ..GoMeta: ctx
 import ..GoMeta: queryable_action
 # v0.2 CH-3 step 8: the widened action-argument literal floor (Symbol|String; ints reserved).
 import ..GoMeta: AlterantArgT
-# v0.2 CH-3 step 9: the context record type (the enqueue-seam applicability + derivation
-# reads it) and the Alterants submodule (the Heading validation seam lives there).
+# v0.2 CH-3 step 9: the context record type (the enqueue's provenance columns and the deriving head form's level
+# read it) and the user-context record (the feed's identity).
 import ..GoMeta: MetaContext, UserContext   # UserContext since stage 2's commit 3a — the enqueue's origin line (commit 2) reads it on the user feed
-import ..Alterants
-# v0.2 localOnly delivery: the absorb seam calls the record's setter directly (its guard
-# `_invoke_set` left at stage 5's E6 of the v0.4 build — census row 14), evaluates
-# conditions ONCE (`Core.eval` on the stored Expr — Julia's evaluation, stage 5's E13), and mints the heading rows
-# (`capture_heading!`, annotations.jl) — all reached via the parent module.
-import ..GoMeta as GMX
 export absorbMeta
 
 #########################################################################################
@@ -230,7 +223,7 @@ end
 ## storing the condition as a Julia Expression which gets then evaluated on demand by Julia". His legacy's produceConditionStr
 ## (GoMetaRetro AbsorbMeta.jl :116–:245) read from the ground up (his §342): the GoMeta-specific parts of a `{…}` body become Julia
 ## text, the rest is copied verbatim, and Julia's parser reads the result ONCE here; the stored `Expr` is evaluated by Julia at apply
-## (apply.jl) or, for a heading, once at this seam (`_absorb_local_only!`):
+## (apply.jl):
 ##   `,`                 → ` || `                                              (his OR — the legacy's :139–:145)
 ##   `:name`             → `getAltState(Int8(p), Symbol(":"), Symbol("name"))`      (a label test: the Labels Alterant's `:` action,
 ##                         p its plugin index; the name quoted by `repr`, so EVERY name the vocabulary admits — a ZWJ pictograph too —
@@ -302,8 +295,7 @@ stays the registry's (settribute keys, queryable actions), the spelling of a lab
 for every admitted name (register E13-8), and ONE scanner serves both planes — the condition's own `(…)` finder left at
 s5c31 (his §342: one of each).
 
-PURPOSE: the text Julia's parser turns into the stored `Expr` a queued action's condition evaluates at apply (or, for a
-heading, once at the absorb seam).
+PURPOSE: the text Julia's parser turns into the stored `Expr` a queued action's condition evaluates at apply.
 """
 function _rewrite_condition(text::String, r)::String
     out = IOBuffer()
@@ -349,9 +341,6 @@ function _rewrite_condition(text::String, r)::String
     return String(take!(out))
 end
 
-"the stored condition `Expr` names a label test (`getAltState` — the alterant-state query) somewhere in its tree"
-_has_query(x) = x isa Expr && ((x.head === :call && !isempty(x.args) && x.args[1] === :getAltState) || any(_has_query, x.args))
-
 """
     parseConditions(metaSS, i) -> (index after the closing `}`, the condition's `Expr`)
 
@@ -366,7 +355,7 @@ Julia cannot parse is Julia's own error out of the goMeta call. The echoed body 
 
 REASONING: his design — a condition is Julia (OWNER-WORDS §120, §D174); the parser carries no condition grammar of its own.
 
-PURPOSE: the stored `Expr` a queued action's condition evaluates at apply, or a heading's once at the absorb seam.
+PURPOSE: the stored `Expr` a queued action's condition evaluates at apply.
 """
 function parseConditions(metaSS::SubString{String}, i::Int)::Tuple{Int,Expr}
     j = _span(metaSS, i; julia = true)                   # the matching `}` — quote-aware; the body is Julia's text (its `\` Julia's escape)
@@ -482,18 +471,6 @@ function absorbMeta(
     local altActionOnRow::Int8
     firstTok::Bool = true   # the quoted-first recognizer fires only for the FIRST
                             # metaComponent of the meta region (hd-2/hd-3)
-    ## localOnly delivery (set mode `:localOnly`): ONE pending store PER localOnly
-    ## PLUGIN per meta region (v0.4 T5 — the round's T5P-C row-1 cure: the former single
-    ## Heading-typed local made a second localOnly plugin either raw-TypeError
-    ## post-latch or non-injective over the shared store) — every localOnly action sets
-    ## into ITS OWNING PLUGIN's store (entry order preserved per store, so the
-    ## per-region fold's injectivity ordinals keep their key), and the region flushes
-    ## ONCE after the component loop via the REGISTRY-DRIVEN loop below (keyed on the
-    ## Component the statement is APPLIED TO and decided by the carrier — the metaBlock a
-    ## whole-line or a comment-split metaLine forms, R-V04B-50; the LINE with the Segment as
-    ## the key's origin for an inline metaSegment, R-V04B-98).
-    local pendingLocal::Dict{Int8,Any} = Dict{Int8,Any}()
-    local isLocalOnly::Bool = false
     while (thisInd = nextind(metaSS, thisInd)) < ncodeunits(metaSS) + 1
 
         if !_isspace_valid(metaSS[thisInd])
@@ -512,21 +489,14 @@ function absorbMeta(
 
                 crntAltActionIdx = st.registry.action_index[
                     Symbol(altActionName)]
-                ## v0.2 localOnly delivery: the mode is read FROM THE REGISTRY (the
-                ## plugin's declared setMode — never a name literal), so a localOnly
-                ## action DIVERTS here, BEFORE any queue bookkeeping: it never enters
-                ## the slot tensors, never consumes slot capacity, and the inheritance
-                ## backtrack (both apply passes) never sees it — "applies once, where
-                ## it stands". The whole head path (wall, validation, applicability,
-                ## materialization, the ONE condition evaluation, the setter call)
-                ## lives in `_absorb_local_only!` below.
-                local loPlugIdx = st.registry.action_to_plugin[crntAltActionIdx]
-                isLocalOnly = st.registry.plugins[loPlugIdx].setMode === :localOnly
-                if isLocalOnly
-                    _absorb_local_only!(
-                        st, metaSS, Symbol(altActionName), argsSSVec, conditionExpr,
-                        pendingLocal, loPlugIdx)
-                else
+                ## THE ONE REFUSAL of a heading in the profile feed (his decision on point (1) of the eight, §D242 of the
+                ## documentation lane's record — no row, one refusal at the read; the message HIS WORDS, the Alterants build's
+                ## OWNER-WORDS §2, R-ALT-9): a statement of an Alterant of the set mode `localOnly` applies only at the Component
+                ## it is applied to, and the profile feed has no Component of the file levels (his term) to be local to.
+                st.user_context !== nothing &&
+                    st.registry.plugins[st.registry.action_to_plugin[crntAltActionIdx]].setMode === :localOnly &&
+                    error("GoMeta absorb: a heading (Heading Alterant) in the profile feed has no Component of the file levels to be local to",
+                        " (see docs/public-api.md §3.4)")
                 ## THE SLOT BOUND (his Decision 3 of 2026-10-08, §358): the queue tensors hold size(queued, 2) = the registered action
                 ## count of actions per meta-hierarchy slot — a fixed size, raised by hand when an example needs it (the slower overflow
                 ## buffer a later design, V05-14); a further action meets GoMeta's message here, BEFORE the write.
@@ -548,13 +518,17 @@ function absorbMeta(
                     st.user_context !== nothing ? (st.user_context::UserContext).handle :
                     error("GoMeta absorb: an action enqueued without a document or user context — ",
                         "please report this (not reachable from any input by construction)")
+                ## stage 1 of the Alterants build: the Component the statement is APPLIED TO (the walk's record; `nothing` on the
+                ## feed) — the referent of the apply loop's one rule for the set mode `localOnly` (R-V04B-101 (1); his §286 (i)/(ii),
+                ## R-V04B-98: the metaBlock for a metaLine's statement, the Line for a Code Line's trailing metaSegment).
+                st.queue.applied_to[altActionOnRow, crntSlot] =
+                    st.meta_context !== nothing ? (st.meta_context::MetaContext).applied : nothing
 
                 if !st.mh.slot_has_accum[crntSlot] &&
                    insorted(st.registry.action_to_plugin[crntAltActionIdx],
                     st.registry.accum_alt_idxs)
 
                     st.mh.slot_has_accum[crntSlot] = true
-                end
                 end
             else
                 error("GoMeta absorb: unknown alterant action ",
@@ -565,7 +539,6 @@ function absorbMeta(
             end
             # The queue condition/args matrices are `Ref`-free: the `Expr` / arg-tuple VALUE is
             # stored directly and the read sites use no `[]` deref.
-            if !isLocalOnly     ## a localOnly action never queues — fully handled above
             if conditionExpr !== nothing            # v0.2 FLIP: the no-condition sentinel is `nothing`
                 st.queue.conditions[altActionOnRow, crntSlot] = conditionExpr
             end
@@ -573,196 +546,57 @@ function absorbMeta(
                 ## the kind-preserving coercion: a bare token stays the Symbol it always was; a well-formed quoted token (the
                 ## splitter's or the heading arm's — both scanned by `_span`) becomes its String content (`_coerce_arg_token`).
                 argsTup = Tuple{Vararg{AlterantArgT}}(_coerce_arg_token.(argsSSVec))
+                local spec = st.registry.action_specs[st.registry.spec_index[Symbol(altActionName)]]
                 ## THE ONE TEXT-ARGUMENT RULE (his §359 (8)): the declared record says which slot takes a quoted text.
-                _string_slot_check(st.registry.action_specs[st.registry.spec_index[Symbol(altActionName)]], argsTup, metaSS)
+                _string_slot_check(spec, argsTup, metaSS)
+                ## THE DECLARED HANDOVER VALIDATION, at the read (stage 1 of the Alterants build — one seam for every action, where
+                ## the Heading's separate path ran it before; the Heading's empty-text refusal thereby stays condition-independent,
+                ## R-REL-69 item 4): the spec's `validate` runs on the String text of the declared slot (`_declared_validation`).
+                if spec.validate !== nothing && spec.accepts_string_slot in 1:length(argsTup) && argsTup[spec.accepts_string_slot] isa String
+                    _declared_validation(spec, argsTup[spec.accepts_string_slot], Symbol(altActionName), metaSS)
+                end
+                ## THE DERIVING FORM's LEVEL (his July words — `head()` infers its level from where it is placed, U8 §8.3; the level
+                ## vocabulary his approval of 2026-08-02: `#~` ⇒ 1, `#~0` ⇒ 0, an inline metaSegment ⇒ 10 = lineMHIdx − 1, R-ALT-4 (7)):
+                ## a one-argument statement OF AN ALTERANT OF THE SET MODE `localOnly` whose only argument fills the declared String
+                ## slot takes the placement's level from the walk's record as its second argument — the scope the retired separate
+                ## path had (the review's cure A1 of stage 1 of the Alterants build) — so the setter the apply calls is the explicit
+                ## two-argument form; the level rides from the queue, never read from the Component's depth (the investigation's
+                ## MAJOR 2 of 2026-10-03); every other action's tuple is handed over as stated.
+                if length(argsTup) == 1 && spec.accepts_string_slot == 1 && argsTup[1] isa String &&
+                   st.registry.plugins[st.registry.action_to_plugin[crntAltActionIdx]].setMode === :localOnly
+                    st.meta_context === nothing &&
+                        error("GoMeta absorb: an action deriving its level without a document context — please report this ",
+                            "(not reachable from any input by construction: the profile feed refuses every statement of the set mode localOnly before this point)")
+                    argsTup = (argsTup[1], Symbol(string((st.meta_context::MetaContext).level - 1)))
+                end
                 st.queue.args[altActionOnRow, crntSlot] = argsTup
             end
-            end
-        end
-    end
-    ## v0.2 localOnly delivery — the ONCE-per-region FLUSH (v0.4 T5: REGISTRY-DRIVEN,
-    ## per-plugin, deterministic order): each pending store (every condition-passing
-    ## localOnly action of this meta region, in source order per store) mints its rows
-    ## with the heading's verbatim text as the value: on the document surface keyed on the
-    ## Component the statement is APPLIED TO and decided by the carrier (the metaBlock a
-    ## whole-line or a comment-split metaLine forms, R-V04B-50; the LINE with the Segment as
-    ## the key's origin for an inline metaSegment, R-V04B-98); on the userMH feed it is
-    ## the minted USER-CONTEXT handle + the profile's verbatim bytes. The WRONG-SHAPE
-    ## check runs HERE, BEFORE any typed conversion (the T5 floor law — a mismatched store — another type, or a row whose gate or scheme disagrees — takes the coded WARNING,
-    ## never a raw TypeError in the poison window; an entries-less store cannot arrive: `validate` refuses a :localOnly record whose constructor lacks
-    ## `entries::Vector{Tuple{String,Union{Nothing,Int}}}` at publish (registry.jl `_mode_gate_collect!`) and the door admits published registries only); the attr stem comes from the DECLARED row. Delivery is COMPLETE here:
-    ## nothing was queued, so the apply plane never revisits localOnly values.
-    for pidx in sort!(collect(keys(pendingLocal)))
-        inst = pendingLocal[pidx]
-        p = st.registry.plugins[pidx]
-        cap = p.capture
-        ## (the crx-t5 A1 cure) `capture === nothing` branches FIRST to the FLOOR arm —
-        ## the old else-route sent it to UNREADABLE, whose message reads
-        ## `p.capture.attr_scheme` on nothing: a raw post-latch throw.
-        if cap === nothing
-            GMX._capture_floor!(st, p, :WARN_CAPTURE_FLOOR)
-        ## (the crx-t5 A4/A5 cures) the scheme IS consulted (`:per_occurrence` — the one
-        ## implemented localOnly scheme; tier 1 refuses other localOnly schemes) and the
-        ## entries protocol is the CONCRETE type via getfield — `hasfield` alone admitted
-        ## a wrong-shaped `entries` that threw inside `capture_heading!`, and property
-        ## syntax dispatched an extensible getproperty. The Vector type makes iteration
-        ## Base-concrete and every text a String.
-        elseif cap.mode_gate === :localOnly && cap.attr_scheme === :per_occurrence &&
-               inst isa p.altConstructor &&                       # the record's own store type (the row's instance_type left at stage 5's E5)
-               getfield(inst, :entries) isa Vector{Tuple{String,Union{Nothing,Int}}}
-            GMX.capture_heading!(st, inst, GMX._capture_stem(p))
-        else
-            GMX._capture_floor!(st, p, :WARN_CAPTURE_UNREADABLE)
         end
     end
 end
 
-## v0.2 localOnly delivery — the WHOLE head path at the absorb seam (the delivery law:
-## "applies once, where it stands"). Carries the head-path laws
-## that formerly lived on the queued path, verbatim in force:
-## - the SLOT-SCOPED String law: the localOnly action admits
-##   a String in its TEXT slot (position 1) ONLY — a quoted LEVEL (`head("T", "2")`)
-##   meets the same wall as a String in any undeclared slot, so the setter's untyped level slot
-##   (the setId-class hazard) can never silently parse one, and a String in a
-##   malformed position never reaches the wrong validation class;
-## - the Heading VALIDATION (condition-independent, BEFORE the condition): the
-##   empty-`""` refusal is STANDING — it fires whether or not a condition would have
-##   gated the action — pinned;
-## - the APPLICABILITY law for the DERIVING one-argument form: the MetaContext
-##   record must be PRESENT (the userMH feed nulls it — no document line exists
-##   there, and the USER context is not a placement: the deriving refusal stands on
-##   the feed BY CONSTRUCTION); the EXPLICIT two-argument form passes context-free
-##   and as-given (it derives nothing; on the feed surface it
-##   RECORDS against the minted user-context handle — the user-context build);
-## - THE LEVEL VOCABULARY (one vocabulary for depth-marked and explicit forms): the derived level
-##   MATERIALIZES as ladder−1 — exactly the author's own `#~`-digit vocabulary (BLS
-##   documents `#~`=depth 1 … `#~8`, digit 0 = the file level; ladder =
-##   author-digit+1) — so depth-marked and explicit vocabularies COINCIDE (`#~2 "T"`
-##   ≡ `head("T", 2)` ⇒ head_2; plain `#~` ⇒ 1; `#~0` ⇒ 0; inline segment ⇒ 10 =
-##   lineMHIdx−1, the documented constant). The MetaContext record stays as derived from
-##   the parse and the configured namespace, mutated by nothing; the normalization lives
-##   at THIS one materialization seam. Materialized as
-##   a floor-legal Symbol (`Symbol("2")` — the literal floor reserves ints);
-## - THE ONE CONDITION EVALUATION (condition-evaluated-once-at-the-heading): a
-##   SETTRIBUTE condition gates the HEADING at its own context (the metaLine's
-##   snapshot) — ON THE DOCUMENT SURFACE a false condition means no row, no refusal
-##   (pinned); ON THE FEED SURFACE a conditioned head refuses BEFORE evaluation (the
-##   user-context build's reserved wall below: the feed carries no evaluable settribute
-##   state — the pre-walk snapshot describes no component). A QUERY atom
-##   (alterant-state query) REFUSES here at v0.2 (at absorb time `st.working` holds the PREVIOUS apply's residue, so a query
-##   would gate the heading on unrelated preceding content — the order-dependent
-##   wrong-outcome class; the query form is RESERVED until the Heading runs through the apply loop,
-##   R-V04B-101 — the ONE minimal refusal R-V04B-106 (3) keeps; the closed interpreter's full-eval arm (E13)
-##   left with its marker at stage 5's E13);
-## - the setter is called bare, as on the apply plane — its guard `_invoke_set` left at stage 5's E6
-##   of the v0.4 build with its guarded refusals (census row 14).
-## Registry-driven WHERE THE REGISTRY CAN DRIVE IT: the DIVERT (mode),
-## the constructor, the setter, the String-slot capability
-## (`accepts_string_slot`), and the VALIDATION seam (the spec's `validate` slot)
-## come from the registry record. STILL Heading/grammar-specific in this
-## function's own bytes: the arity-keyed deriving-form APPLICABILITY refusal and
-## the ladder−1 LEVEL MATERIALIZATION (the record's applicability/phase fields
-## DOCUMENT them; their runtime consult is deferred), plus the
-## wall message's naming of the head action. (v0.4 T5: the pending store is the
-## PER-PLUGIN `Dict{Int8,Any}` and `capture_heading!` is widened to the declared-row
-## drive `(st, heading, stem)` — the flush's concrete entries-Vector gate is the
-## runtime shape law.) (v0.4 T3 sweep: the former "custom
-## localOnly is OUTSIDE the v0.2 envelope / registry reserved" posture note was
-## STALE — T2 made published custom registries RUN at the seam; the mint and the set below
-## are bare since stage 5's E6 of the v0.4 build (the wrap and the store check left — census row 14);
-## `capture_heading!`'s Heading-typing is the T5 capture re-home's row.)
-function _absorb_local_only!(
-    st, metaSS::SubString{String}, actionName::Symbol,
-    argsSSVec::Vector{SubString{String}},
-    conditionExpr::Union{Nothing,Expr},
-    pendingLocal::Dict{Int8,Any}, plugIdx::Int8
-)
-    plug = st.registry.plugins[plugIdx]
-    ## The String slot law and the validation seam consult the DECLARED registration
-    ## record — the spec's `accepts_string_slot` capability and `validate` slot (no
-    ## hard-coded slot position or validator call). (What still rides grammar-level head
-    ## semantics in this function is enumerated at the function header.)
-    spec = st.registry.action_specs[st.registry.spec_index[actionName]]
-    argsTup = isempty(argsSSVec) ? () :
-        Tuple{Vararg{AlterantArgT}}(_coerce_arg_token.(argsSSVec))
-    if any(_a -> _a isa String, argsTup)
-        _string_slot_check(spec, argsTup, metaSS)
-        # the declared validation runs on the STRING text (a bare-word text in
-        # the accepting slot rides to the setter's own dispatch — Julia's MethodError since stage 5's E6
-        # of the v0.4 build, census row 14, the build's probe, its B3 — never the wrong-class validation message).
-        # v0.4 T3 (T3-DESIGN §3; FM-CB-5) — the result is CONSUMED: `true` accepts;
-        # `false` refuses (REG_VALIDATE_FALSE); a non-Bool refuses (RES_RETURN_TYPE — the `-> Bool`
-        # contract); a FOREIGN throw wraps (CB_VALIDATE_THROW) — each a catalogue-named stable-message
-        # ErrorException (docs/public-api.md §3.4); the engine's own "GoMeta "-prefixed refusals (the
-        # ratified empty-heading class) pass through VERBATIM (the pass-through law).
-        if spec.validate !== nothing && argsTup[spec.accepts_string_slot] isa String
-            ok = try
-                spec.validate(argsTup[spec.accepts_string_slot])
-            catch e
-                e isa InterruptException && rethrow()
-                (e isa ErrorException && startswith(e.msg, "GoMeta ")) && rethrow()
-                error("GoMeta absorb: the declared handover validation of action ",
-                    repr(first(String(actionName), 40)), " threw (CB_VALIDATE_THROW): ",
-                    String(nameof(typeof(e))),
-                    " — the validate contract is `(text::String) -> Bool` ",
-                    "(see docs/public-api.md §3.4)")
-            end
-            ok === true || (ok === false ?
-                error("GoMeta absorb: the declared handover validation of action ",
-                    repr(first(String(actionName), 40)), " REFUSED this text ",
-                    "(REG_VALIDATE_FALSE) in the meta region ", repr(first(metaSS, 40)),
-                    " (see docs/public-api.md §3.4)") :
-                error("GoMeta absorb: the declared handover validation of action ",
-                    repr(first(String(actionName), 40)), " returned ",
-                    String(nameof(typeof(ok))), " (RES_RETURN_TYPE) — the validate ",
-                    "contract is `(text::String) -> Bool` (see docs/public-api.md §3.4)"))
-        end
-        if length(argsTup) == 1
-            st.meta_context === nothing &&
-                error("GoMeta absorb: heading without a document context — ",
-                    "the deriving head form infers its level from the ",
-                    "metaLine's attachment, and this surface carries no ",
-                    "document line (a guarded applicability refusal; the ",
-                    "explicit head(text, level) form is the context-free ",
-                    "sibling; see docs/public-api.md §3.4)")
-            argsTup = (argsTup[1],
-                Symbol(string((st.meta_context::MetaContext).level - 1)))
-        end
+"THE DECLARED HANDOVER VALIDATION of one String argument at the read (the spec's `validate` slot — v0.4 T3's consumed result; the envelope moved from the Heading's separate path to the enqueue seam at stage 1 of the Alterants build, one seam for every action): `true` accepts; `false` refuses (REG_VALIDATE_FALSE); a non-Bool refuses (RES_RETURN_TYPE — the `-> Bool` contract); a FOREIGN throw wraps (CB_VALIDATE_THROW); the Engine's own \"GoMeta \"-prefixed refusals pass through VERBATIM (the pass-through law — the Heading's ratified empty-text refusal among them); an InterruptException is rethrown"
+function _declared_validation(spec, text::String, actionName::Symbol, metaSS::SubString{String})
+    ok = try
+        spec.validate(text)
+    catch e
+        e isa InterruptException && rethrow()
+        (e isa ErrorException && startswith(e.msg, "GoMeta ")) && rethrow()
+        error("GoMeta absorb: the declared handover validation of action ",
+            repr(first(String(actionName), 40)), " threw (CB_VALIDATE_THROW): ",
+            String(nameof(typeof(e))),
+            " — the validate contract is `(text::String) -> Bool` ",
+            "(see docs/public-api.md §3.4)")
     end
-    ## THE QUERY WALL (see the function header; R-V04B-106 (3) — ONE minimal refusal kept until the Heading runs through the
-    ## apply loop, R-V04B-101): a heading condition cannot query alterant state at this seam — a label test (`getAltState` in the
-    ## stored Expr, found by `_has_query`) would read the PREVIOUS apply's residue; every other condition is Julia's, evaluated once against the metaLine's own settribute snapshot (stage 5's E13).
-    if conditionExpr !== nothing && _has_query(conditionExpr)
-        error("GoMeta absorb: alterant-state query in a heading condition — a ",
-            "heading condition may test only settribute predicates at v0.2 (the ",
-            "heading applies at its own line, where no alterant state exists yet; ",
-            "the query form is reserved) in the meta region ",
-            repr(first(metaSS, 40)), " (see docs/public-api.md §3.4)")
-    end
-    ## The user-context build's reserved wall (ratified standing; seated AFTER the query wall,
-    ## BEFORE evaluation; fires only on the feed surface): a CONDITIONED
-    ## head in a fed profile refuses — the feed has no evaluable settribute state (the
-    ## pre-walk snapshot describes NO component; a negated atom would evaluate true
-    ## against init filler — the fabricated-state class). LIFTING CONDITION (recorded):
-    ## the refusal lifts when a build supplies the profile's OWN deserialized settribute
-    ## state for this evaluation — not merely when feed state "arrives".
-    if conditionExpr !== nothing && st.user_context !== nothing
-        error("GoMeta absorb: a conditioned heading in a profile feed — the feed ",
-            "surface carries no evaluable settribute state at v0.2 (an unconditioned ",
-            "head records; conditions on fed headings are reserved) in the meta ",
-            "region ", repr(first(metaSS, 40)),
-            " (see docs/public-api.md §3.4)")
-    end
-    ## THE ONE CONDITION EVALUATION of a heading: Julia evaluates the stored Expr in module GoMeta (where `getState`/`getAltState`
-    ## are bound by name) against this metaLine's own snapshot — his legacy's form (goMetaAddOns.jl :37), stage 5's E13
-    local _condOutcome = conditionExpr === nothing ? nothing : Core.eval(GMX, conditionExpr)
-    if conditionExpr === nothing || _condOutcome
-        # v0.4 T5: the store is the OWNING PLUGIN's pending entry (per-plugin injective)
-        store = get(pendingLocal, plugIdx, nothing)
-        store === nothing && (store = plug.altConstructor())   # the bare mint since stage 5's E6 (census row 14)
-        plug.setAltInstance(store, actionName, argsTup...)
-        pendingLocal[plugIdx] = store
-    end
+    ok === true || (ok === false ?
+        error("GoMeta absorb: the declared handover validation of action ",
+            repr(first(String(actionName), 40)), " REFUSED this text ",
+            "(REG_VALIDATE_FALSE) in the meta region ", repr(first(metaSS, 40)),
+            " (see docs/public-api.md §3.4)") :
+        error("GoMeta absorb: the declared handover validation of action ",
+            repr(first(String(actionName), 40)), " returned ",
+            String(nameof(typeof(ok))), " (RES_RETURN_TYPE) — the validate ",
+            "contract is `(text::String) -> Bool` (see docs/public-api.md §3.4)"))
     return nothing
 end
 

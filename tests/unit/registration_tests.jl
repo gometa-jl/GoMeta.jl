@@ -39,7 +39,8 @@ import GoMeta as GM
     @testset "the remaining checks precede construction; the record is total" begin
         # (re-scoped at stage 5's E4 — the validation chain of v0.4 T2–T4 left, census row 3, OWNER-WORDS
         # §317; the referents moved — recorded, not silently re-pinned) two source-order assertions:
-        # (i) the two remaining collectors are wired inside `_validate_registration` (the third, `_vocabulary_collect!`, left at stage 5's E9) and the retired
+        # (i) the one remaining collector is wired inside `_validate_registration` (`_vocabulary_collect!` left at stage 5's E9, `_mode_gate_collect!`
+        # with the Heading's separate lane at stage 1 of the Alterants build) and the retired
         # ones never return; (ii) `publish` calls `validate(` before `return AlterantRegistry(` and
         # derives its tables through `_derive_tables`, whose spec index is FIRST-wins (the clash law
         # that refused a duplicate left; the legacy's Dict assignment was last-wins).
@@ -47,13 +48,14 @@ import GoMeta as GM
             "registry.jl"), String)
         chain = src[findfirst("function _validate_registration", src)[1]:end]
         chain = chain[1:findfirst("return diags", chain)[1]]
-        for checkname in ("_encodability_collect!", "_mode_gate_collect!")
-            @test occursin(checkname, chain)   # every remaining check is wired
+        for checkname in ("_encodability_collect!",)
+            @test occursin(checkname, chain)   # the remaining check is wired
         end
         for gone in ("_record_wellformed_collect!", "_dependency_collect!", "_inventory_collect!",
                      "_register_actions_collect!", "_reflection_collect!", "_value_algebra_collect!",
                      "_reachability_collect!", "_candidacy_collect!", "_CLASH_DISPOSITION",
-                     "_vocabulary_collect!")   # stage 5's E9: the vocabulary check left with the record's vocabulary slot
+                     "_vocabulary_collect!",   # stage 5's E9: the vocabulary check left with the record's vocabulary slot
+                     "_mode_gate_collect!")    # stage 1 of the Alterants build: the mode-gate laws left with the Heading's separate lane
             @test !occursin(gone, src)         # the retired names never return
         end
         pub = src[findfirst("function publish(", src)[1]:end]
@@ -105,13 +107,14 @@ import GoMeta as GM
             nothing
         catch er; er end
         @test ee isa ErrorException && occursin("empty heading text", ee.msg)
-        # the delivery path carries no hard-coded action/plugin literal (the
-        # retirement grep-witness — the mode divert + spec consults only)
+        # the enqueue path carries no hard-coded action/plugin literal (the retirement grep-witness — the spec consults only;
+        # since stage 1 of the Alterants build the one path for every action, the Heading's separate path gone)
         src = read(joinpath(dirname(dirname(@__DIR__)), "src", "absorb",
             "absorb_meta.jl"), String)
-        fn = src[findfirst("function _absorb_local_only!", src)[1]:end]
+        fn = src[findfirst("function absorbMeta(", src)[1]:end]
         fn = fn[1:findfirst("\nend\n", fn)[1]]
         @test !occursin("=== :head", fn) && !occursin("_heading_validate_text(", fn)
+        @test !occursin("_absorb_local_only!", src)   # the separate path is gone (stage 1 of the Alterants build)
     end
 
     # (the dispatch-boundary return-type validation testset was CONSCIOUSLY RETIRED at stage 5's E11 of the v0.4 build

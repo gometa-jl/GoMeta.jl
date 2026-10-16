@@ -65,7 +65,7 @@ end
         b.plugins[1] = GM.Alterant(; altName = :labels, setMode = :accumulate,
             altConstructor = Dict{Symbol,Bool},
             setAltInstance = GM.Alterants.setLabels, getAltInstance = GM.Alterants.checkLabels,
-            capture = GM.CaptureDecl(:per_key, nothing),
+            capture = GM.CaptureDecl(:per_key),
             # stage 2's commit 3-ii: the default slot is the ALTERANT's — the value-domain carrier (formerly action 1's) rides plugin 1
             default = GM.Declared(Any[Int8(3), 1.5, Float32(2.5), Float16(1.0), _nan64,
                                       "str", :sym, true, Int128(7), UInt8(2),
@@ -80,7 +80,7 @@ end
         # nested in the data since stage 5's E10 of the v0.4 build (the `EffectRow` that carried the case left with its slot)
         b.plugins[2] = GM.Alterant(; altName = :Visib, setMode = :mutExclusive, altConstructor = GM.Alterants.Visib,
             setAltInstance = GM.Alterants.setVisib,
-            capture = GM.CaptureDecl(:single, nothing; attr_stem = :visib),
+            capture = GM.CaptureDecl(:single; attr_stem = :visib),
             default = GM.Declared(GM.Declared(Dict{Any,Any}(Int16(2) => "pv"))))
         GM.register!(b,
             GM.Alterant(; altName = Symbol("prop"), setMode = :accumulate, altConstructor = Dict{Symbol,Bool}, setAltInstance = _closure_ref),
@@ -179,10 +179,9 @@ end
     function _single_substitute(pT, pf, v)
         pT === GM.Alterant && pf === :getAltInstance && return GM.Alterants.checkLabels
         pT === GM.Alterant && pf === :precedencesTuple && return ntuple(i -> Symbol("p", i), GM.NUM_MH_LEVELS)
-        pT === GM.Alterant && pf === :capture && return GM.CaptureDecl(:single, nothing)
+        pT === GM.Alterant && pf === :capture && return GM.CaptureDecl(:single)
         pT === GM.ActionSpec && pf === :validate && return _swap_fn_a
         pT === GM.Alterant && pf === :default && return GM.Declared(1)   # stage 2's commit 3-ii: the slot is the Alterant's
-        pT === GM.CaptureDecl && pf === :mode_gate && return :localOnly
         pT === GM.CaptureDecl && pf === :attr_stem && return :zz   # v0.4 T5 (the round's B-3 cure — the raw error() fault otherwise)
         error("no single-point substitute for ($pT, $pf)")
     end
@@ -427,8 +426,8 @@ end
     end
     let R = GM.publish(_mk_prop_builder())                       # (6) slot struct rebuilt
         cd = R.plugins[1].capture
-        _set_at!(R, Any[:plugins, 1, :capture],                  # every field carried (B-3 — a dropped field made this a NON-faithful rebuild); three since stage 5's E5
-                 GM.CaptureDecl(cd.attr_scheme, cd.mode_gate, cd.attr_stem))
+        _set_at!(R, Any[:plugins, 1, :capture],                  # every field carried (B-3 — a dropped field made this a NON-faithful rebuild); two since stage 1 of the Alterants build
+                 GM.CaptureDecl(cd.attr_scheme, cd.attr_stem))
         @test isempty(GM._registry_door_check(R))
     end
     # stage 2's commit 3-ii: the default slot is the ALTERANT's — `_with_default(b, i, v)` declares `v` on the plugin OWNING action i

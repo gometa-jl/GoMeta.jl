@@ -46,7 +46,8 @@
 end
 
 function detAltValuesForSetOfSlots(
-    checkTheseSlotsInOrderVec::AbstractVector{Int8}
+    checkTheseSlotsInOrderVec::AbstractVector{Int8},
+    appliedKey::Vector{UInt8}   # the applying Component's own key (stage 1 of the Alterants build) — the referent of the localOnly rule
 )
     # ── THE EVALUATION MECHANICS (the algorithm this function implements) ─────────────────────────
     # For ONE entity, resolve every alterant's value from the meta-hierarchy lineage. The slots to
@@ -63,9 +64,12 @@ function detAltValuesForSetOfSlots(
     #     skips the remaining rows of that alterant WITHOUT evaluating their conditions.
     #   `:mutExclusivePerField` alterants (the `id` compound — fields fill independently) take
     #   neither the accumulate pass nor the within-slot stop; see the registry's set derivations.
-    #   `:localOnly` alterants (the Heading — set mode `:localOnly`) NEVER appear
-    #   here at all: their actions never enqueue, so neither pass can visit one — the value
-    #   applied once, where it stood, at the absorb seam (delivery = `capture_heading!`).
+    #   `:localOnly` alterants (the Heading — his set mode of 2026-08-02) take ONE RULE inside pass 2 (stage 1 of the Alterants
+    #   build; his §D241 point 2, R-V04B-101 (1)): a row of this mode applies ONLY at the Component the statement is applied to —
+    #   `applied_to[row, slot]` equals `appliedKey`, the applying Component's own key — and every other Component that meets it
+    #   on a shared level PASSES OVER it: its condition unevaluated, nothing marked set, nothing blocked. In NEITHER index set,
+    #   so pass 1 never collects it and the within-slot mutex stop never applies; two heads in one slot both apply (the capture's
+    #   attr-fold keeps them distinct).
     # The winner lands in `st.working` (one instance per alterant); the capture reads from there.
     # ──────────────────────────────────────────────────────────────────────────────────────────────
     # The per-call `ProcessState` is hoisted once: the working alterant-instance dict
@@ -161,6 +165,15 @@ function detAltValuesForSetOfSlots(
                     ## WITHOUT evaluating its condition, mirroring the prior-slot guard above.
                     continue
                 end
+                ## THE ONE RULE of the set mode `localOnly` (his §D241 point 2; R-V04B-101 (1); stage 1 of the Alterants build): a row of
+                ## this mode applies ONLY at the Component the statement is applied to — the metaBlock for a metaLine's statement, the
+                ## Line for a Code Line's trailing metaSegment (his §286 (i)/(ii); R-V04B-98) — and every other Component that meets it
+                ## on a shared level passes over it: the condition unevaluated, nothing marked set, nothing blocked (his §12: "applied
+                ## to the first Block only, that is it"). A fed heading never reaches here (the feed refuses it at the read, §D242).
+                if st.registry.plugins[crntAltIdx].setMode === :localOnly &&
+                   st.queue.applied_to[idx, crntSlot] != appliedKey
+                    continue
+                end
                 local _cond = st.queue.conditions[idx, crntSlot]
                 local _condOutcome = _cond === nothing ? nothing : Core.eval(GoMeta, _cond)   # Julia evaluates the stored Expr (stage 5's E13; the legacy's :37/:95)
                 if _cond === nothing || _condOutcome
@@ -212,6 +225,10 @@ function applyAltActionFns(
     # (`NUM_MH_LEVELS`/`userMHIdx`/`lineMHIdx`) live in state.jl.
     local st = ctx()
     snapshot_settribute!(st, BLS.getParentComponent(st.parse, aSegment))
+    ## the applying Component's own key (stage 1 of the Alterants build): the LINE with this Segment as the key's origin — as
+    ## `captureEvals!` keys this grain's rows (R-V04B-98) — the referent of the localOnly rule
+    local appliedKey::Vector{UInt8} = key_bytes(occurrence_key(st.parse, BLS.getParentComponent(st.parse, aSegment);
+        origin = aSegment, namespace = st.config.namespace))
     attachedToMeta::Bool = BLS.getElement(
         BLS.getParentComponent(st.parse, BLS.getParentComponent(st.parse, aSegment)).componentSettribute,
         :attachedToMeta
@@ -249,7 +266,7 @@ function applyAltActionFns(
         countEligibleSlots += 1
         checkTheseSlotsInOrderVec[countEligibleSlots] = crntSlot
     end
-    detAltValuesForSetOfSlots(view(checkTheseSlotsInOrderVec, 1:countEligibleSlots))
+    detAltValuesForSetOfSlots(view(checkTheseSlotsInOrderVec, 1:countEligibleSlots), appliedKey)
 end
 
 #########################################################################################
@@ -263,6 +280,8 @@ function applyAltActionFns(
     # read `st.mh`/`st.crnt_depth_idx`, and the structural index constants live in state.jl.
     local st = ctx()
     snapshot_settribute!(st, thisBlock)
+    ## the applying Component's own key (stage 1 of the Alterants build) — as `captureEvals!` keys this grain's rows
+    local appliedKey::Vector{UInt8} = key_bytes(occurrence_key(st.parse, thisBlock; namespace = st.config.namespace))
     local crntSlot::Int8
 
     checkTheseSlotsInOrderVec = Vector{Int8}(undef, NUM_MH_LEVELS)
@@ -291,5 +310,5 @@ function applyAltActionFns(
         countEligibleSlots += 1
         checkTheseSlotsInOrderVec[countEligibleSlots] = crntSlot
     end
-    detAltValuesForSetOfSlots(view(checkTheseSlotsInOrderVec, 1:countEligibleSlots))
+    detAltValuesForSetOfSlots(view(checkTheseSlotsInOrderVec, 1:countEligibleSlots), appliedKey)
 end

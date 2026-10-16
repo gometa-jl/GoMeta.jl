@@ -14,9 +14,10 @@
 #       rule — a Segment-carried row keyed on its Line counts as the Line's; the step count leads the path section, so no
 #       other Component's key is a prefix); `hex(BLS.content(tree, component))`. (3) A handle that MORE THAN ONE Component's
 #       prefix matches is an error (fail-closed — the prefix rule promises uniqueness). (4) A handle that NO Component
-#       carries (the non-document plane — a heading fed through the configuration's user profile; its bytes live in the
-#       configuration, not in the tree) yields an EMPTY fifth column: what the tree holds for that handle. That row is
-#       R-V04B-43 (4)'s — shown to the owner before the unit 8–9 lands; nothing here asserts on it.
+#       carries yields an EMPTY fifth column: what the tree holds for that handle (the non-document plane — a heading fed
+#       through the configuration's user profile — produced such a row until stage 1 of the Alterants build; since then a
+#       heading in the profile refuses at the read, §D242, and no shipped path produces one — the arm kept). That row was
+#       R-V04B-43 (4)'s — shown to the owner before the unit 8–9 landed; nothing here asserts on it.
 # REASONING: the pins stay byte-identical under the removals of commit 9 only if the test layer can produce the fifth column
 #       without the Engine's stored copy; the proof is binary — the golden runner compares these bytes with the Engine's
 #       producer (while it exists) AND with the pinned file: one differing byte stops the act.

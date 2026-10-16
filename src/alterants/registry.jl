@@ -173,8 +173,12 @@ end
 ## via its validation seam: empty heading text meets the guarded refusal — a STANDING
 ## v0.2 semantic, not a transitional default (docs/public-api.md §3.4).
 ## NON-QUERYABLE (getAltInstance = nothing): a condition naming `head` meets the usual
-## unknown-condition-key refusal (the registry's rule, stage 5's E12). In a HEADING's own
-## condition, a label test refuses (see `_absorb_local_only!`).
+## unknown-condition-key refusal (the registry's rule, stage 5's E12). A heading's own condition is Julia's, evaluated
+## at the apply like every condition — a label test in it is legal since stage 1 of the Alterants build (his §D243; the
+## loop's order: the labels of the levels above and those stated before the heading on its metaLine are seen, those
+## after it are not — without a fed profile; with one the user level is the loop's primary slot and the metaBlock's own
+## labels are collected before its heading is decided, so a label stated after it is seen too: the lane's oracle P24;
+## whether a fed profile may change that order is his question).
 mutable struct Heading
     entries::Vector{Tuple{String,Union{Nothing,Int}}}   # (text, explicit level | nothing ⇒ derived)
 end
@@ -296,6 +300,7 @@ function wipeAltActionSlots(fromIdx::Int, toIdx::Int)
                     st.queue.conditions[actionIdx, crntSlot] = nothing
                     st.queue.args[actionIdx, crntSlot] = nothing
                     st.queue.decided_by[actionIdx, crntSlot] = nothing   # R-V04B-35 (d): the origin references, like the single-index wipe
+                    st.queue.applied_to[actionIdx, crntSlot] = nothing   # stage 1 of the Alterants build: the applied Component's key, wiped with its slot
                 end
                 st.mh.count_actions_per_slot[crntSlot] = 0
             end
@@ -317,6 +322,7 @@ function wipeAltActionSlots(idx::Int)
                 st.queue.conditions[actionIdx, crntSlot] = nothing
                 st.queue.args[actionIdx, crntSlot] = nothing
                 st.queue.decided_by[actionIdx, crntSlot] = nothing
+                st.queue.applied_to[actionIdx, crntSlot] = nothing
             end
             st.mh.count_actions_per_slot[crntSlot] = 0
         end
@@ -419,13 +425,13 @@ DOES: builds the four records in the keyword form, each with its declared defaul
 (`:accumulate`; `Dict{Symbol,Bool}`; setter `setLabels`, getter `checkLabels`; default the EMPTY SET, R-V04B-92; capture
 `:per_key`, stem `:label`), `Visib` (`:mutExclusive`; default `:show`, R-V04B-51 (2); `:single`, stem `:visib`), `id`
 (`:mutExclusivePerField`; default the ZERO compound, R-V04B-92; `:per_field`, stem `:id`) and `heading` (`:localOnly` —
-never enqueued, delivered at the absorb seam keyed to the Component the statement is applied to and decided by the
-carrier (R-V04B-98; the metaBlock a whole-line metaLine forms, R-V04B-50); default `nothing`; `:per_occurrence` gated
-`:localOnly`, stem `:head`) — and the eight `ActionSpec` records: `:` (plugin 1), `hide` / `show` / `discard` (2),
+queued like every action, applied by the apply loop's one rule for this mode ONLY at the Component the statement is applied
+to (R-V04B-101 (1); R-V04B-50 the metaBlock for a metaLine's statement, R-V04B-98 the Line for a trailing metaSegment);
+default `nothing`; `:per_entry`, stem `:head`) — and the eight `ActionSpec` records: `:` (plugin 1), `hide` / `show` / `discard` (2),
 `cell` / `parent` / `file` (3) and `head` (4; `accepts_string_slot = 1`, `validate = Alterants._heading_validate_text`).
-The plugin index IS the position here. `publish` runs the remaining checks (the domain probe — R-V04B-4 (iii); the
-Heading lane's mode-gate laws — the vocabulary check left at stage 5's E9, the validation chain of v0.4 T2–T4 at E4,
-census row 3), derives the tables (a duplicate action name resolving first-wins), and takes the publish-time snapshot;
+The plugin index IS the position here. `publish` runs the remaining check (the domain probe — R-V04B-4 (iii); the
+vocabulary check left at stage 5's E9, the validation chain of v0.4 T2–T4 at E4, census row 3, the Heading lane's mode-gate
+laws with that lane at stage 1 of the Alterants build), derives the tables (a duplicate action name resolving first-wins), and takes the publish-time snapshot;
 `DEFAULT_REGISTRY` is that published value, consumed READ-ONLY. Pure — no module-load side-effects.
 
 REASONING: the inventory is deterministic BY CONSTRUCTION — declaration order fixes every index, never a `Dict`
@@ -447,28 +453,26 @@ function default_registry_builder()
         Alterant(; altName = :labels, setMode = :accumulate, altConstructor = Dict{Symbol,Bool},
                    setAltInstance = Alterants.setLabels, getAltInstance = Alterants.checkLabels,
                    default = Declared(Symbol[]),   # R-V04B-92 (card C2, his word of 2026-10-02 (OWNER-WORDS §287; R-V04B-92: 'I do approve your recommendation: declare.' — provisional, his (ii))): Labels' declared default is the EMPTY SET — the answer's shape, a sorted Vector{Symbol}
-                   capture = CaptureDecl(:per_key, nothing; attr_stem = :label)),
+                   capture = CaptureDecl(:per_key; attr_stem = :label)),
         Alterant(; altName = :Visib, setMode = :mutExclusive, altConstructor = Alterants.Visib,
                    setAltInstance = Alterants.setVisib,
                    default = Declared(:show),   # R-V04B-51 (2): Visib's ONE declared default is 'show' (his lean §11; his word §180)
-                   capture = CaptureDecl(:single, nothing; attr_stem = :visib)),
+                   capture = CaptureDecl(:single; attr_stem = :visib)),
         Alterant(; altName = :id, setMode = :mutExclusivePerField, altConstructor = Alterants.Id,
                    setAltInstance = Alterants.setId,
                    default = Declared((cell = Int16(0), parent = Int16(0), file = Int16(0))),   # R-V04B-92 (card C2): Id's declared default is the ZERO compound — every recorded field zero, in the answer's NamedTuple shape
-                   capture = CaptureDecl(:per_field, nothing; attr_stem = :id)),
-        # The Heading plugin. setMode `:localOnly` — the `:localOnly` set mode:
-        # a localOnly alterant's value applies ONCE, WHERE IT STANDS — its
-        # actions NEVER ENQUEUE into the slot tensors, so the inheritance
-        # backtrack (both apply passes) never visits them; delivery happens at
-        # the absorb seam, keyed on the Component the statement is APPLIED TO and decided by
-        # the carrier (the metaBlock a whole-line or a comment-split metaLine forms, R-V04B-50;
-        # the LINE with the Segment as the key's origin for an inline metaSegment, R-V04B-98;
-        # the outline model: one row per heading occurrence, document order recoverable from
-        # the carriers' handles, the rows' origins). Deliberately in NEITHER derived set below.
+                   capture = CaptureDecl(:per_field; attr_stem = :id)),
+        # The Heading. setMode `:localOnly` — his set mode of 2026-08-02 (U8 §8.4): the value applies ONLY at the
+        # Component the statement is applied to — the metaBlock for a metaLine's statement, the Line for a Code Line's
+        # trailing metaSegment (his §286 (i)/(ii); R-V04B-98) — and every other Component that meets it on a shared level
+        # passes over it. Since stage 1 of the Alterants build the Heading goes through EXACTLY the same process as any
+        # other Alterant (his §D241 point 2; R-V04B-101 (1)): queued like every action, decided by the apply loop's one
+        # rule for this mode (apply.jl), recorded by the one capture walk (`:per_entry`: one row per heading occurrence,
+        # the level in the attr name — the outline model). Deliberately in NEITHER derived set below.
         Alterant(; altName = :heading, setMode = :localOnly, altConstructor = Alterants.Heading,
                    setAltInstance = Alterants.setHead,
                    default = Declared(nothing),   # R-V04B-92 (card C2): Heading's declared default is NONE — no heading, delivered as `nothing` with the source `:default`
-                   capture = CaptureDecl(:per_occurrence, :localOnly; attr_stem = :head)),
+                   capture = CaptureDecl(:per_entry; attr_stem = :head)),
     ]
 
     # v0.2 registration build: THE DECLARED REGISTRATION RECORD — one ActionSpec per action, declaration
@@ -492,8 +496,8 @@ function default_registry_builder()
         ActionSpec(; name = :cell, plugin = Int8(3)),
         ActionSpec(; name = :parent, plugin = Int8(3)),
         ActionSpec(; name = :file, plugin = Int8(3)),
-        # head — the single Heading action; its two forms (deriving / explicit) are the setter's methods,
-        # both delivering at the ABSORB seam (the localOnly phase). accepts_string_slot = 1 (the capability
+        # head — the single Heading action; its two forms (deriving / explicit) are the setter's methods — the deriving
+        # form takes its level at the enqueue (absorb_meta.jl). accepts_string_slot = 1 (the capability
         # that retired the wall's name literal); the quoted-first sugar is the second activated sugar; the
         # validate slot carries the Heading-owned empty-text refusal (the handover-validation slot).
         ActionSpec(; name = :head, plugin = Int8(4), accepts_string_slot = 1, validate = Alterants._heading_validate_text),
@@ -501,8 +505,8 @@ function default_registry_builder()
 
     # The registration (stage 5's E4 — his §317, census rows 3 and 51: the validation chain of v0.4 T2–T4
     # and the clash law with its disposition switch left; his legacy registered unchecked): the declarations
-    # above are the DEFAULT BUILDER; `publish` runs the remaining checks (`_validate_registration`: the domain
-    # probe, the Heading lane's mode-gate laws — the vocabulary check left at stage 5's E9), then `_derive_tables` derives the hot-path
+    # above are the DEFAULT BUILDER; `publish` runs the remaining check (`_validate_registration`: the domain
+    # probe — the vocabulary check left at stage 5's E9, the mode-gate laws with the Heading's lane at stage 1 of the Alterants build), then `_derive_tables` derives the hot-path
     # tables (the sorted action table, the parallel action→plugin index, the name→index Dicts, the SORTED
     # accumulate/mutExclusive index sets the apply-phase `insorted` consumers depend on — a duplicate action
     # name resolving first-wins; the `action_to_settribute` table left at stage 5's E12, census row 45) from the
@@ -516,8 +520,8 @@ end
 
 IS: the v0 alterant inventory, PUBLISHED — the one-line composition `publish(default_registry_builder())`.
 
-DOES: returns a published `AlterantRegistry` carrying its publish-time snapshot: the remaining checks (the domain probe ·
-the mode-gate laws — the vocabulary check left at stage 5's E9 —, inside `publish`) run before the object exists, the
+DOES: returns a published `AlterantRegistry` carrying its publish-time snapshot: the remaining check (the domain probe —
+the vocabulary check left at stage 5's E9, the mode-gate laws at stage 1 of the Alterants build —, inside `publish`) run before the object exists, the
 derived tables come from the declarations, and the publish-time snapshot is taken. Every call builds a FRESH value (the
 tests publish their own). Pure — no module-load side-effects beyond the const it feeds.
 
@@ -527,66 +531,6 @@ validate → publish) — no second construction route for the default.
 PURPOSE: the builder of `const DEFAULT_REGISTRY` (the tail of this file).
 """
 build_default_registry() = publish(default_registry_builder())
-
-"""
-    _mode_gate_collect!(diags, plugins) -> nothing
-
-IS: the collector of the four capture MODE-GATE laws of the Heading's :localOnly lane — the gate's closed set, the
-setMode⟺gate coherence, the one implemented scheme and the entries protocol of a :localOnly store (the former tier-1
-plugin-level collector's four gate rows) — KEPT at `validate` until the Heading runs through the apply loop and the lane
-retires (R-V04B-101, after the branch); the rest of the tier-1 record shape law left at stage 5's E4 (census row 3,
-his §317).
-
-DOES: for every record that declares a capture row (one without is skipped): (1) `mode_gate` must be in
-`_CAPTURE_MODE_GATES` (`nothing` | `:localOnly`); (2) `setMode === :localOnly` iff `mode_gate === :localOnly` (either
-mismatch is a silent zero-rows class); (3) a `:localOnly` row declares `attr_scheme === :per_occurrence` — the one scheme
-the absorb-seam delivery implements; (4) a `:localOnly` record's `altConstructor` carries the field `entries` of the
-exact type `Vector{Tuple{String,Union{Nothing,Int}}}` — the shape the seam's flush reads. Accumulating: every finding
-is pushed as ONE `REG_PROTOCOL` error diagnostic naming the Alterant (its `context`); the collector raises no refusal
-of its own (never throws); returns `nothing`. Its one caller is `_validate_registration`.
-
-REASONING: a row that passes registration but is heading-folded against its own declaration, or floored at the flush,
-would fail silently at run time — so the seam's assumptions are refused at publish, where every defect is collected.
-
-PURPOSE: the registry-side half of the Heading lane's contract with the absorb seam, until R-V04B-101 retires the lane.
-"""
-function _mode_gate_collect!(diags::Vector{Diagnostic}, plugins::Vector{Alterant})
-    proto(msg, ctx) = push!(diags, Diagnostic(:REG_PROTOCOL, :error, msg, ctx))
-    for p in plugins
-        p.capture === nothing && continue
-        p.capture.mode_gate in _CAPTURE_MODE_GATES ||
-            proto(string("GoMeta registry: unknown capture mode gate ", repr(p.capture.mode_gate),
-                " on alterant ", repr(p.altName), " (the mode-gate law; the closed set is ",
-                _CAPTURE_MODE_GATES, ")"), p.altName)
-        ((p.setMode === :localOnly) == (p.capture.mode_gate === :localOnly)) ||
-            proto(string("GoMeta registry: capture mode gate ", repr(p.capture.mode_gate),
-                " is INCOHERENT with setMode ", repr(p.setMode), " on alterant ",
-                repr(p.altName), " — a :localOnly record captures at the absorb seam and",
-                " MUST gate :localOnly; a queued record must not (either mismatch is a",
-                " silent zero-rows class — the capture coherence law)"), p.altName)
-        ## (the crx-t5 A5 cure) the localOnly seam implements ONE scheme — a gated
-        ## row declaring any other scheme would be heading-folded against its own
-        ## declaration (or falsely floored): refuse at publish.
-        (p.capture.mode_gate !== :localOnly || p.capture.attr_scheme === :per_occurrence) ||
-            proto(string("GoMeta registry: a :localOnly capture row on alterant ",
-                repr(p.altName), " declares scheme ", repr(p.capture.attr_scheme),
-                " — the absorb-seam delivery implements :per_occurrence only at v0.4",
-                " (the localOnly scheme law)"), p.altName)
-        ## (the crx-t5 A4/C3 cure — STATIC) a localOnly store must carry the
-        ## CONCRETE entries protocol the seam folds; anything else would be
-        ## registrable-then-floored, and the relay's "any lane" claim narrows to
-        ## exactly this protocol (the correction relayed).
-        (p.capture.mode_gate !== :localOnly ||
-         (hasfield(p.altConstructor, :entries) &&                      # the record's own store type (the row's instance_type left at stage 5's E5)
-          fieldtype(p.altConstructor, :entries) === Vector{Tuple{String,Union{Nothing,Int}}})) ||
-            proto(string("GoMeta registry: a :localOnly capture row on alterant ",
-                repr(p.altName), " declares the store type ",
-                _ctor_type_name(p.altConstructor), " without the entries",
-                " protocol (`entries::Vector{Tuple{String,Union{Nothing,Int}}}`) — the",
-                " absorb-seam fold reads exactly that shape (the localOnly store law)"), p.altName)
-    end
-    return nothing
-end
 
 ## v0.4 T2 — the canonical TEXT of a declared slot: deterministic, module-unqualified, callables by NAME, containers
 ## element-wise in declaration order, and BOUNDARY-UNAMBIGUOUS (no element boundary can be re-cut) — NOT globally
@@ -700,8 +644,8 @@ _slot_text(nt::NamedTuple)::String =
 _slot_text(x::NoDefault)::String = "NoDefault"
 _slot_text(x::Declared)::String =
     Base.ScopedValues.with(_IN_DATA => true) do; string("Declared", _ns(_slot_text(x.value))) end
-_slot_text(x::CaptureDecl)::String =   # v0.4 T5: the stem joined the seal's fold (the SEVENTH re-mint's locus — the fold left at stage 5's E13); the instance type and the multiplicity left the row at stage 5's E5
-    string("Capture", _nsv((String(x.attr_scheme), _slot_text(x.mode_gate), _slot_text(x.attr_stem))))
+_slot_text(x::CaptureDecl)::String =   # v0.4 T5: the stem joined the seal's fold (the SEVENTH re-mint's locus — the fold left at stage 5's E13); the instance type and the multiplicity left the row at stage 5's E5; the mode gate at stage 1 of the Alterants build
+    string("Capture", _nsv((String(x.attr_scheme), _slot_text(x.attr_stem))))
 # (cure batch 4) NO opaque fallback: a value of a type without an encoder is UNENCODABLE — refused
 # at validation as `REG_PROTOCOL`; a value type a later cure admits gets its own encoder then.
 _slot_text(x)::String = throw(_UnencodableSlot(typeof(x)))
@@ -1820,8 +1764,8 @@ _type_param_text(p)::String =
 
 ## The registration's remaining checks at `validate` (stage 5's E4, census rows 3 and 51 — his §317; the validation chain of v0.4
 ## T2–T4 left: his legacy registered unchecked and failed at dispatch): the DOMAIN PROBE (R-V04B-4 (iii) — the one domain definition
-## shared by `validate`, `publish`'s copier and the door's walker; `publish` relies on it), the Heading lane's four mode-gate laws
-## (kept until R-V04B-101); the vocabulary check left at stage 5's E9, census row 10. Then the derived
+## shared by `validate`, `publish`'s copier and the door's walker; `publish` relies on it); the vocabulary check left at stage 5's E9, census row 10, the Heading lane's four mode-gate laws
+## with that lane at stage 1 of the Alterants build. Then the derived
 ## tables + the publish-time snapshot + the lifecycle (the seal's mint left at stage 5's E13 — census row 6).
 """
     _validate_registration(plugins, action_specs) -> Vector{Diagnostic}
@@ -1829,9 +1773,9 @@ _type_param_text(p)::String =
 IS: the registration's remaining checks at `validate` (stage 5's E4, census rows 3 and 51 — his §317; the validation
 chain of v0.4 T2–T4 left: his legacy registered unchecked and failed at dispatch).
 
-DOES: runs, in fixed order, the domain probe over every declared field (`_encodability_collect!`, R-V04B-4 (iii)) and
-the capture mode-gate laws (`_mode_gate_collect!`, the Heading lane's — R-V04B-101: after the branch; the vocabulary
-check left at stage 5's E9) into one fresh `Diagnostic` vector and returns it. FULL collection: every defect is
+DOES: runs the domain probe over every declared field (`_encodability_collect!`, R-V04B-4 (iii); the vocabulary
+check left at stage 5's E9, the capture mode-gate laws with the Heading's separate lane at stage 1 of the Alterants build)
+into one fresh `Diagnostic` vector and returns it. FULL collection: every defect is
 reported; the caller decides the terminal outcome (error present ⇒ refuse). Two callers: `validate(builder)` and the
 gated positional `AlterantRegistry` constructor (route U, src/state.jl).
 
@@ -1843,7 +1787,6 @@ PURPOSE: the one definition of what a registration must satisfy before it is pub
 function _validate_registration(plugins::Vector{Alterant}, action_specs::Vector{ActionSpec})
     diags = Diagnostic[]
     _encodability_collect!(diags, plugins, action_specs)   # the domain probe (R-V04B-4 (iii))
-    _mode_gate_collect!(diags, plugins)                    # the Heading lane's laws (R-V04B-101: after the branch)
     return diags
 end
 
@@ -1875,7 +1818,8 @@ end
 IS: the lifecycle's VALIDATE step (Builder → validate → publish; package-public, docs/public-api.md §1.2) over a
 builder's declarations.
 
-DOES: Run the remaining checks (the domain probe, the mode-gate laws — the vocabulary check left at stage 5's E9) over
+DOES: Run the remaining check (the domain probe — the vocabulary check left at stage 5's E9, the mode-gate laws with the
+Heading's separate lane at stage 1 of the Alterants build) over
 the builder's declarations (`plugins` and `action_specs`, through `_validate_registration`) and return EVERY
 diagnostic (deterministic order; no remaining check warns since stage 5's E4) — never throws. Empty ⇒ publishable.
 `publish` calls it first; a caller wanting the diagnostics as data calls it itself.

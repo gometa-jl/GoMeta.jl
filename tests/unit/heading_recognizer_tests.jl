@@ -240,15 +240,19 @@ end
         @test ea isa ErrorException && occursin("backslash in a quoted span", ea.msg)
     end
 
-    @testset "test_usermh_contextless_refusal — derived context absent ⇒ guarded applicability refusal" begin
-        e = try
-            GM.goMeta(Vector{UInt8}(codeunits("x = 1\n"));
-                config = GM.GoMetaConfig(user_mh_profile = "\"T\""))
-            nothing
-        catch er
-            er
+    @testset "test_usermh_heading_refusal — a heading in the profile feed meets the ONE refusal at the read (his §D242; the wording his, R-ALT-9)" begin
+        # stage 1 of the Alterants build: the sugar, the deriving form and the explicit form alike — the feed has no Component of the
+        # file levels (his term) for a statement of the set mode `localOnly` to be local to (before: the deriving form met
+        # "heading without a document context", the explicit form recorded one row against the user-context handle)
+        for prof in ("\"T\"", "head(\"T\")", "head(\"U\", 3)")
+            e = try
+                GM.goMeta(Vector{UInt8}(codeunits("x = 1\n")); config = GM.GoMetaConfig(user_mh_profile = prof))
+                nothing
+            catch er
+                er
+            end
+            @test e isa ErrorException && occursin("a heading (Heading Alterant) in the profile feed has no Component of the file levels to be local to", e.msg)
         end
-        @test e isa ErrorException && occursin("heading without a document context", e.msg)
     end
 
     @testset "canonical calls — position-free deriving + the explicit sibling (N6 pair)" begin
@@ -265,12 +269,13 @@ end
         # the build's probe)
     end
 
-    @testset "localOnly delivery — the ratified `:localOnly` set mode (witnesses)" begin
+    @testset "the set mode `:localOnly` through the apply loop (witnesses; stage 1 of the Alterants build — his §D241 point 2, R-V04B-101 (1))" begin
         # LOCALITY: one heading governing several components mints EXACTLY ONE row,
         # keyed to the occurrence handle of the metaBLOCK the metaLine forms (R-V04B-50,
-        # stage 2's commit 1 — before it, the metaLine's own Line; the outline model). The
-        # per-component inheritance repetition of the first build is GONE — flipped
-        # consciously at the ratified delivery decision.
+        # stage 2's commit 1 — before it, the metaLine's own Line; the outline model): the apply loop's ONE RULE for the
+        # set mode `localOnly` — a row applies only at the Component the statement is applied to; the attached Code Block
+        # and the Lines pass over it (his §12: "applied to the first Block only, that is it"). The per-component
+        # inheritance repetition of the first build is GONE.
         rl = _run("#~ \"Title\"\nx = 1\ny = 2\nz = 3\n")
         @test string(rl.status) == "PROCESS_OK"
         @test length(_heads(rl)) == 1 && (:head_1, "Title") in _heads(rl)
@@ -282,47 +287,34 @@ end
         mb = GM.BLS.parent(rl.blsComponentTree, ml)                   # the metaBlock it forms — the row's Component
         @test hrow == GM.key_bytes(GM.occurrence_key(rl.blsComponentTree, mb; namespace = :default))
         @test hrow != GM.key_bytes(GM.occurrence_key(rl.blsComponentTree, ml; namespace = :default))   # no longer the Line's
-        # SLOT-WIPE INDEPENDENCE: delivery happens at absorb, so a LATER same-depth
-        # metaLine (which reuses/wipes the slot) cannot disturb an earlier heading's row
+        # A LATER same-depth metaLine (which reuses/wipes the slot) cannot disturb an earlier heading's row: the metaBlock is
+        # queued, applied and recorded in one step of the walk, before the next region's wipe
         rw = _run("#~ \"A\"\nx = 1\n#~ :label1\ny = 2\n")
         @test (:head_1, "A") in _heads(rw)
-        # CONDITION-ONCE, true arm: the condition gates the HEADING at its own context
-        # (evaluated exactly once, at absorb) — a true condition mints ONE row, never
-        # one per governed cell (the false arm is pinned in test_quoted_first_lowering above)
+        # THE CONDITION, true arm: a heading's condition is evaluated at the apply of the Component the heading is applied to
+        # (the metaBlock — his decision on point (4), §D245) — a true condition mints ONE row, never one per governed
+        # cell (the false arm is pinned in test_quoted_first_lowering above)
         rc1 = _run("#~ \"T\"{ isMeta }\nx = 1\ny = 2\n")
         @test string(rc1.status) == "PROCESS_OK"
         @test length(_heads(rc1)) == 1
-        # userMH RECORDS (the user-context build — this pin FLIPPED consciously WITH
-        # the public-doc statement in the same commit, superseding the former
-        # zero-rows fate): the EXPLICIT head fed on the userMH surface mints exactly
-        # ONE row keyed by the minted USER-CONTEXT handle (grain 0xe0 at the fixed
-        # class offset) — no copy of the profile's bytes on the row since commit 9b (R-V04B-43 (1));
-        # the deriving form still meets the applicability refusal there
-        ru0 = GM.goMeta(Vector{UInt8}(codeunits("x = 1\n"));
-            config = GM.GoMetaConfig(user_mh_profile = "head(\"U\", 3)"))
-        u_rows = [(h, a, v) for (h, a, v, _) in GM.readAltValuesEvals(ru0.altValues_evals)
-                  if startswith(String(a), "head")]
-        @test length(u_rows) == 1
-        let (h, a, v) = u_rows[1]
-            @test a === :head_3 && v == "U"
-            nslen = (UInt16(h[2]) << 8) | h[3]
-            @test h[3 + Int(nslen) + 1] == 0xe0          # the class grain, fixed offset
-            @test h == GM.key_bytes(GM.user_context_key(:default, 1))
-        end
-        # …and the fed row's FIFTH COLUMN in the test layer's derived five-column form is EMPTY: no Component of the
-        # tree carries the user-context handle — the profile's bytes live in the configuration, which the delivery does
-        # not carry (R-V04B-43 (4); his word OWNER-WORDS §277, R-V04B-90, on the row shown to him; the Engine stores no copy since
-        # commit 9b, R-V04B-43 (1); the former witness pinned the configuration's bytes in the Engine's five-column form)
-        fed = only(l for l in split(String(TestSupport.derive_annotations_golden(ru0)), '\n'; keepempty = false) if startswith(l, "head_3\t"))
-        @test endswith(fed, string('\t', bytes2hex(u_rows[1][1]), '\t'))   # the four columns, then the empty fifth
-        # NEVER-QUEUED: a heading action consumes NO slot capacity — a metaLine
-        # carrying the capacity-count of OTHER enqueued actions PLUS a heading still
-        # absorbs (the head never occupies a queue row)
-        rq = _run("#~ \"H\" hide show discard cell( 1) parent( 2) file( 3) :label1 :label2\nx = 1\n")
-        @test string(rq.status) == "PROCESS_OK" && (:head_1, "H") in _heads(rq)
+        # a WHOLE-LINE heading's condition reads the metaBlock's facts (his §D245; MEASURED: the lane's oracle P23 on both trees) — the
+        # meta string is the metaLine's flag, not the metaBlock's: no row (the separate lane read the metaLine's and recorded head_1)
+        @test isempty(_heads(_run("#~ \"T\"{ hasMetaStr }\nx = 1\n")))
+        # THE PROFILE FEED (his decision on point (1) of the eight, §D242 — stage 1 of the Alterants build; the wording his,
+        # R-ALT-9): a heading fed on the userMH surface — the explicit form as the sugar — meets the ONE refusal at the read; no
+        # row (before: the explicit form recorded one row against the minted user-context handle, grain 0xe0 — the separate lane's)
+        eu0 = try
+            GM.goMeta(Vector{UInt8}(codeunits("x = 1\n")); config = GM.GoMetaConfig(user_mh_profile = "head(\"U\", 3)"))
+            nothing
+        catch er; er end
+        @test eu0 isa ErrorException && occursin("in the profile feed has no Component of the file levels to be local to", eu0.msg)
+        # THE SLOT (his decision on point (6), §D247 — stage 1 of the Alterants build): a heading action takes a place in its slot
+        # like every action — a metaLine carrying the capacity-count of OTHER actions PLUS a heading meets the slot refusal (the
+        # capacity eight, raised by hand if an example needs it; before: the head never occupied a queue row)
+        eq9 = _err("#~ \"H\" hide show discard cell( 1) parent( 2) file( 3) :label1 :label2\nx = 1\n")
+        @test eq9 isa ErrorException && occursin("more than 8 actions in one meta-hierarchy slot", eq9.msg)
         # …and, through the delivered rows, a heading-only document mints its head row and nothing else
-        # — the observable face of "the slot tensors untouched"; the tensors themselves are the working
-        # state's and are not delivered (the direct pin is lost — the record names it)
+        # (the queued head applied at the metaBlock, nothing else on the surface)
         rz = _run("#~ \"Only\"\nx = 1\n")
         @test [a for (_, a, _, _) in GM.readAltValuesEvals(rz.altValues_evals)] == [:head_1]
         # THE RATIFIED VOCABULARY BOUNDARIES (panel-found coverage gap): `#~0` = the
@@ -332,7 +324,7 @@ end
         r8 = _run("#~8 \"Deep\"\nx = 1\n")
         @test (:head_8, "Deep") in _heads(r8)
         # THE RATIFIED REGISTRY ROW, pinned directly (panel-found gap: behavioral
-        # guards only) — the 4th plugin IS :heading in :localOnly mode
+        # guards only) — the 4th plugin IS :heading in :localOnly mode (the set mode's name stays — his §D249)
         @test GM.DEFAULT_REGISTRY.plugins[4].altName === :heading
         @test GM.DEFAULT_REGISTRY.plugins[4].setMode === :localOnly
         # a quoted span after ':' is not a label: the grammar's one refusal names the quote (the metaLine parser effort, stage 5's
@@ -341,51 +333,55 @@ end
         @test eb3 isa ErrorException && occursin("unexpected character '\"' after ':'", eb3.msg)
     end
 
-    @testset "delta-round pins — injectivity, condition fates, userMH explicit, slot-scoped wall" begin
+    @testset "delta-round pins — injectivity, the label test in a heading's condition (his §D243), the fed heading, slot-scoped wall" begin
         # SAME-CELL SAME-LEVEL headings stay DISTINCT rows (review-found MAJOR: the
         # (handle, attr) dedup collapsed them later-wins with a bogus collision warning;
-        # the attr is injective per (metaLine, level) — the first keeps head_<level>,
-        # repeats gain the source-order ordinal (delivery-era wording: the pending
-        # store preserves the meta region's source order)):
+        # the attr is injective per (Component, level) — the first keeps head_<level>,
+        # repeats gain the source-order ordinal (the Heading store's `entries` keep the applied statements'
+        # source order — the `:per_entry` arm's attr-fold, annotations.jl)):
         rp = _run("#~ head(\"A\", 2) head(\"B\", 2)\nx = 1\n")
         @test string(rp.status) == "PROCESS_OK"
         hp = _heads(rp)
         @test (:head_2, "A") in hp && (:head_2_2, "B") in hp
-        # CONSCIOUS PIN FLIP (the query-atom wall — panel-found MAJOR, probe-verified):
-        # a label QUERY in a heading condition formerly evaluated against the stale
-        # apply residue (order-dependent wrong evals rows: the identical condition
-        # minted or dropped the row depending on unrelated preceding content). It now
-        # meets the guarded reservation refusal — a condition with a label test the wall finds (a bare `getAltState`
-        # call in the stored Expr, `_has_query`) is refused at this seam; on the document surface every other condition is
-        # Julia's, evaluated once against the metaLine's own snapshot (the false-arm settribute pin lives in test_quoted_first_lowering).
-        ec1 = _err("#~ head(\"T\", 2){ :label2 }\nx = 1\n")
-        @test ec1 isa ErrorException && occursin("alterant-state query in a heading condition", ec1.msg)
-        # the residue-leak shape itself (the probe's smoking gun) must refuse too —
-        # never again gate on a preceding block's labels:
-        ec2 = _err("#~ :label1\nx = 1\n#~ \"T\"{ :label1 }\ny = 2\n")
-        @test ec2 isa ErrorException && occursin("alterant-state query in a heading condition", ec2.msg)
-        # the EXPLICIT sibling through the context-less userMH surface ACCEPTS (it
-        # derives nothing — the applicability law binds the deriving form only; pinned
-        # as the boundary's conscious other half)
-        ru = GM.goMeta(Vector{UInt8}(codeunits("x = 1\n"));
-            config = GM.GoMetaConfig(user_mh_profile = "head(\"U\", 3)"))
-        @test string(ru.status) == "PROCESS_OK"
-        # …EXTENDED at the user-context build: the PROCESS_OK half now records too —
-        # the fed head's row is PRESENT (the row-shape pins live in the flipped
-        # witness above; this asserts presence on this route's own run)
-        @test any(a === :head_3 && v == "U"
-                  for (_, a, v, _) in GM.readAltValuesEvals(ru.altValues_evals))
-        # NEW at the user-context build (the reserved wall): a CONDITIONED head in
-        # a fed profile meets its guarded refusal — the feed carries no evaluable
-        # settribute state (unconditioned heads record; the lifting condition is
-        # recorded at the wall)
-        ecf = try
-            GM.goMeta(Vector{UInt8}(codeunits("x = 1\n"));
-                config = GM.GoMetaConfig(user_mh_profile = "head(\"U\", 2){ isCode }"))
-            nothing
-        catch e; e end
-        @test ecf isa ErrorException &&
-              occursin("conditioned heading in a profile feed", ecf.msg)
+        # TWO HEADING metaLines GLUED into one metaBlock at the same level (stage 1 of the Alterants build, the review's B1 — MEASURED:
+        # the lane's oracle P22 on both trees): one row per heading occurrence (his §D246); the separate lane's per-metaLine flush kept
+        # only the later
+        @test _heads(_run("#~ \"A\"\n#~ \"B\"\nx = 1\n")) == [(:head_1, "A"), (:head_1_2, "B")]
+        # THE LABEL TEST IN A HEADING'S OWN CONDITION — LEGAL since stage 1 of the Alterants build (his decision on point (2),
+        # §D243: the refusal lifts with the move; the loop's order his meaning); the former wall "alterant-state query in a
+        # heading condition" is gone. The loop's order: the labels of the levels ABOVE and those stated BEFORE the heading on
+        # its metaLine are seen, those stated AFTER it are not (as for `hide`) — these pins run WITHOUT a fed profile; with one the
+        # user level is the loop's primary slot and a label stated after the heading is seen too (the lane's oracle P24, and P25
+        # for `hide` on both trees; the design question his); the quoted-first sugar is always first on its
+        # line, so on a metaBlock's first metaLine its condition sees the levels above only (on a metaLine glued to an earlier one it
+        # also sees the labels stated on the metaBlock's earlier metaLines — P05). MEASURED on the scratch (the lane's AFTER oracle:
+        # rl1 P20, rl2 P08, rl3 the variants probe's rl3b, rl4 P06, rl5 P07, rl6 P19).
+        rl1 = _run("#~ head(\"T\", 2){ :label2 }\nx = 1\n")             # no label2 anywhere: the condition false — no row, no refusal
+        @test string(rl1.status) == "PROCESS_OK" && isempty(_heads(rl1))
+        rl2 = _run("#~ :label1\nx = 1\n#~ \"T\"{ :label1 }\ny = 2\n")   # a SIBLING region's label is not in the lineage: no row
+        @test string(rl2.status) == "PROCESS_OK" && isempty(_heads(rl2))
+        rl3 = _run("#~ :label1\nx = 1\n#~2 \"T\"{ :label1 }\ny = 2\n")   # the level ABOVE: seen — the heading records (MEASURED: a `#~2` metaLine GLUED to a
+        @test (:head_2, "T") in _heads(rl3)                                      #   `#~` metaLine forms ONE metaBlock with it and its heading takes the region's level, head_1 —
+                                                                                  #   the lane's PROBES-rl3-variants_scratch.txt; the shape with a Code Line between is the depth-2 region)
+        rl4 = _run("#~2 :label2 head(\"T\"){ :label2 }\nx = 1\n")         # stated BEFORE the heading on its metaLine: seen
+        @test (:head_2, "T") in _heads(rl4)
+        rl5 = _run("#~2 head(\"T\"){ :label2 } :label2\nx = 1\n")         # stated AFTER it: not seen — no row
+        @test string(rl5.status) == "PROCESS_OK" && isempty(_heads(rl5))
+        rl6 = _run("#~ \"T\"{ :label9 }\nx = 1\n")                        # a label unknown to the vocabulary answers false (his Q4.2 (a)): no row
+        @test string(rl6.status) == "PROCESS_OK" && isempty(_heads(rl6))
+        # THE CONDITION'S SUBJECT (his decision on point (4), §D245): a trailing heading's condition reads the LINE's facts
+        # (before: the carrier metaSegment's) — `{ isCode }` on a Code Line is now TRUE, `{ isMeta }` there FALSE
+        @test (:head_10, "T") in _heads(_run("z = 3 #~ \"T\"{ isCode }\n"))
+        @test isempty(_heads(_run("z = 3 #~ \"T\"{ isMeta }\n")))
+        # THE FED HEADING, explicit and conditioned alike — the ONE refusal (§D242; the former "a conditioned heading in a profile
+        # feed" wall left with the lane, his decision on point (3), §D244)
+        for prof in ("head(\"U\", 3)", "head(\"U\", 2){ isCode }")
+            ef = try
+                GM.goMeta(Vector{UInt8}(codeunits("x = 1\n")); config = GM.GoMetaConfig(user_mh_profile = prof))
+                nothing
+            catch e; e end
+            @test ef isa ErrorException && occursin("in the profile feed has no Component of the file levels to be local to", ef.msg)
+        end
         # the SLOT-SCOPED wall (review-found: the setter's untyped level slot would have
         # parsed a QUOTED level — the setId-class hazard): a String outside head's TEXT
         # slot refuses; the empty-heading validation never fires on a non-String slot
@@ -393,9 +389,8 @@ end
         @test eq isa ErrorException && occursin("string argument not accepted", eq.msg)
         em = _err("#~ head(, \"T\")\nx = 1\n")
         @test em isa ErrorException && !occursin("empty heading text", em.msg)
-        # the empty-"" refusal (ratified standing) is CONDITION-INDEPENDENT (it fires in
-        # the localOnly delivery seam BEFORE the condition evaluation — witnessed with
-        # one attached; delivery-era wording, formerly "the enqueue seam")
+        # the empty-"" refusal (ratified standing) is CONDITION-INDEPENDENT (the declared validation runs at the READ —
+        # the enqueue seam, for every action with a String slot — before any condition is evaluated at the apply)
         ec = _err("#~ \"\"{ isCode }\nx = 1\n")
         @test ec isa ErrorException && occursin("empty heading text", ec.msg)
     end

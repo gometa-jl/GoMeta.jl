@@ -1,10 +1,10 @@
 # capture_tests.jl — v0.4 T5: the CAPTURE RE-HOME witnesses (T5-DESIGN v2 §6).
 #
 # IS:   the T5 acceptance rows — the registration-driven walk mints for a CONFORMING
-#       mock (the sadd2 anti-T1 cure), the per-plugin localOnly flush, the ctor
-#       triple, the mode-gate laws (coherence · scheme · store; the identity and stem-clash laws left
-#       at stage 5's E4 of the v0.4 build — the measured consequences pinned at [9] and [11]), and the `:per_field` positive
-#       fixture the corpus never reaches.
+#       mock (the sadd2 anti-T1 cure), a second Alterant of the set mode `localOnly` through the apply loop beside the
+#       Heading (stage 1 of the Alterants build — the per-plugin flush of the separate lane, the mode-gate laws and the
+#       `:per_occurrence` presence arm left with that lane, his R-ALT-12; the measured consequences pinned at [9] and [11]),
+#       the ctor pair, and the `:per_field` positive fixture the corpus never reaches.
 # DOES: registers mock Alterants through the sanctioned lifecycle (the PROBE-proven
 #       shapes: register! varargs; the record's four-field keyword form since stage 5's E12 — five at E11, census row 16; the settribute key left at E12, census row 45),
 #       drives them through goMeta, and pins rows + diagnostics.
@@ -22,6 +22,9 @@
 #       at stage 5's E5 20 stand: the floor, gate and algebra witnesses — [1]'s algebra drive, [2]'s floor assert, [3] whole,
 #       [8]'s field assert, [9]'s instance-type arm, [11]'s Float and keys-less mocks — 9 asserts, left with their subjects,
 #       census rows 33 and 34).
+#       At stage 1 of the Alterants build 19 stand: [6] left (−1), [9]'s coherence arm (−1) and [11]'s A5 and A4/C3 (−2) with the
+#       Heading's separate lane; [7]'s locality pin (+1), [8]'s field-names pin (+1) and [12], the witness of the review's cure A1
+#       (+1), added — every movement declared.
 
 using Test
 import GoMeta as GM
@@ -29,13 +32,13 @@ import GoMeta as GM
 @eval module _CapM
     zset(d::Dict{Symbol,Bool}, a::Symbol, r::Symbol...) = (for x in r; d[x] = true; end; nothing)
     yset(d::Dict{Symbol,Bool}, a::Symbol, r::Symbol...) = (for x in r; d[x] = true; end; nothing)
-    badset(d::Dict{Symbol,Bool}, a::Symbol, r::Symbol...) = (d[a] = true; nothing)
+    nset(d::Dict{Symbol,Bool}, a::Symbol, r...) = (d[Symbol("n", length(r))] = true; nothing)   # [12]: records how many arguments the apply handed over
 end
 
 @testset "capture (v0.4 T5)" begin
 
     _doc(s) = Vector{UInt8}(codeunits(s))
-    function _mockb(; capture = GM.CaptureDecl(:per_key, nothing; attr_stem = :zm),
+    function _mockb(; capture = GM.CaptureDecl(:per_key; attr_stem = :zm),
                       setter = _CapM.zset, store = Dict{Symbol,Bool}, name = :zmark)
         b = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
         pi = GM.next_plugin_index(b)
@@ -84,69 +87,63 @@ end
               occursin("actions (show/hide/discard) are mutually exclusive per component ", src)
     end
 
-    @testset "[6] the ungated :per_occurrence fifth arm (one presence row per governed cell)" begin
-        R = GM.publish(_mockb(; capture = GM.CaptureDecl(:per_occurrence, nothing; attr_stem = :zp)))
-        r = GM.goMeta(_doc("x = 1\n#~ zmark(aa)\n\ny = 2\n"); registry = R)
-        prow = [t for t in GM.readAltValuesEvals(r.altValues_evals) if t[2] === :zp]
-        @test length(prow) == 1 && prow[1][3] === true
-    end
+    # ([6] — the ungated `:per_occurrence` presence arm — was RETIRED at stage 1 of the Alterants build with the Heading's separate
+    # lane, on his selection of 2026-10-16 (R-ALT-12): after the move no shipped Alterant used it; a future Alterant declares what it
+    # needs when it comes.)
 
-    @testset "[7] the localOnly plumbing — per-plugin flush; the wrong-shape floor, NO poison" begin
-        # a SECOND localOnly plugin (a Heading-shaped store of its own) flushes
-        # independently under its own stem
+    @testset "[7] a SECOND Alterant of the set mode `localOnly` beside the Heading — both through the apply loop, each under its own stem" begin
+        # stage 1 of the Alterants build (his §D241 point 2 — the same process for every Alterant; R-V04B-101 (1)): a Heading-shaped
+        # store registered as a second `localOnly` Alterant with the `:per_entry` scheme is queued, applied by the loop's one rule at
+        # the metaBlock and recorded by the one capture walk under ITS stem — beside the shipped Heading's row on the same metaBlock
         b = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
         pi = GM.next_plugin_index(b)
         GM.register!(b,
             GM.Alterant(; altName = :zhead, setMode = :localOnly,
                 altConstructor = GM.Alterants.Heading, setAltInstance = GM.Alterants.setHead,
-                capture = GM.CaptureDecl(:per_occurrence, :localOnly; attr_stem = :zh)),
+                capture = GM.CaptureDecl(:per_entry; attr_stem = :zh)),
             GM.ActionSpec(; name = :zhd, plugin = pi, accepts_string_slot = 1))
         R = GM.publish(b)
         r = GM.goMeta(_doc("x = 1\n#~ \"T\" zhd(\"U\", 2)\n\ny = 2\n"); registry = R)
         rows = GM.readAltValuesEvals(r.altValues_evals)
         @test r.status === GM.PROCESS_OK &&
               any(t -> t[2] === :head_1 && t[3] == "T", rows) &&
-              any(t -> startswith(String(t[2]), "zh_") && t[3] == "U", rows)
-        # (B6) the CROSS-STEM ABSENCES pin the per-plugin injectivity: no head-row
-        # carries "U" and no zh-row carries "T" (the shared-store failure's signature)
+              any(t -> t[2] === :zh_2 && t[3] == "U", rows)
+        # (B6) the CROSS-STEM ABSENCES pin the per-Alterant stores: no head-row carries "U" and no zh-row carries "T"
         @test !any(t -> startswith(String(t[2]), "head") && t[3] == "U", rows) &&
               !any(t -> startswith(String(t[2]), "zh") && t[3] == "T", rows)
-        # (the crx-t5 evolution) the RUNTIME wrong-shape floor became lifecycle-
-        # unreachable — the tier-1 localOnly STORE LAW (witnessed at [11]) refuses an
-        # entries-less gated row at publish; the flush's floor branch stays as
-        # defense-in-depth against post-publication mutation (the B-2 class).
+        # the LOCALITY of the second Alterant too: the attached Code Block (`y = 2`) carries neither row — only the metaBlock does
+        @test count(t -> t[2] === :zh_2, rows) == 1 && count(t -> t[2] === :head_1, rows) == 1
     end
 
-    @testset "[8] the CaptureDecl ctor triple" begin
-        c4 = GM.CaptureDecl(:per_key, nothing)
-        c5 = GM.CaptureDecl(:per_key, nothing, :zz)
-        ck = GM.CaptureDecl(:per_key, nothing; attr_stem = :zz)
+    @testset "[8] the CaptureDecl ctor triple (the two-field row since stage 1 of the Alterants build)" begin
+        c4 = GM.CaptureDecl(:per_key)
+        c5 = GM.CaptureDecl(:per_key, :zz)
+        ck = GM.CaptureDecl(:per_key; attr_stem = :zz)
         @test c4.attr_stem === nothing
         @test c5.attr_stem === :zz && ck.attr_stem === :zz
+        @test fieldnames(GM.CaptureDecl) == (:attr_scheme, :attr_stem)
     end
 
-    @testset "[9] the mode-gate coherence law (the identity and stem-clash laws left at stage 5's E4)" begin
-        # gate/setMode incoherence: an :accumulate record gating :localOnly refuses
-        bi = _mockb(; capture = GM.CaptureDecl(:per_key, :localOnly; attr_stem = :zi))
-        @test any(x -> x.code === :REG_PROTOCOL && occursin("INCOHERENT", x.message), GM.validate(bi))
+    @testset "[9] the stem-overlap collapse (the identity and stem-clash laws left at stage 5's E4; the mode-gate coherence law with the Heading's separate lane at stage 1 of the Alterants build)" begin
         # a mock declaring the shipped :label stem PUBLISHES since E4; on ONE cell the two plugins' same-attr
         # rows collapse to one `label_label1` row — the silent cross-plugin supersede the stem-clash law refused
         # (measured: [b]; full structural namespacing is T11's row)
-        bc = _mockb(; capture = GM.CaptureDecl(:per_key, nothing; attr_stem = :label))
+        bc = _mockb(; capture = GM.CaptureDecl(:per_key; attr_stem = :label))
         rc = GM.goMeta(_doc("x = 1\n#~ :label1 zmark(label1)\n\ny = 2\n"); registry = GM.publish(bc))
         @test rc.status === GM.PROCESS_OK &&
               [t[2] for t in GM.readAltValuesEvals(rc.altValues_evals)] == [:label_label1]
     end
 
     @testset "[10] the derived-fallback stem (a mock with attr_stem = nothing)" begin
-        R = GM.publish(_mockb(; capture = GM.CaptureDecl(:per_key, nothing)))
+        R = GM.publish(_mockb(; capture = GM.CaptureDecl(:per_key)))
         r = GM.goMeta(_doc("x = 1\n#~ zmark(aa)\n\ny = 2\n"); registry = R)
         @test any(t -> t[2] === :zmock_aa, GM.readAltValuesEvals(r.altValues_evals))   # lowercase(String(:zmock)) = "zmock"
     end
 
-    @testset "[11] the crx-t5 cure witnesses" begin
-        # (A1) a localOnly plugin with capture === nothing: the FLOOR arm, never the
-        # UNREADABLE-with-nothing crash — the drive completes and floors coded
+    @testset "[11] the crx-t5 cure witnesses (re-cut at stage 1 of the Alterants build: the floor warning, the scheme law and the store law left with the Heading's separate lane)" begin
+        # (A1) a `localOnly` Alterant with capture === nothing: through the loop it is queued and applied like every action and
+        # MINTS NOTHING — no row, no diagnostic (the capture floor's coded warning left with the lane; a record without a row
+        # mints nothing, as for every Alterant since stage 5's E5)
         b1 = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
         p1 = GM.next_plugin_index(b1)
         GM.register!(b1,
@@ -154,26 +151,32 @@ end
                 altConstructor = GM.Alterants.Heading, setAltInstance = GM.Alterants.setHead),
             GM.ActionSpec(; name = :znh, plugin = p1, accepts_string_slot = 1))
         r1 = GM.goMeta(_doc("x = 1\n#~ \"T\" znh(\"V\", 2)\n\ny = 2\n"); registry = GM.publish(b1))
-        @test r1.status === GM.PROCESS_OK &&
-              any(d -> d.code === :WARN_CAPTURE_FLOOR && d.context === :znone, r1.diagnostics)
-        # (A5) the localOnly scheme law: a gated row declaring :per_key refuses at tier 1
-        bs = _mockb(; capture = GM.CaptureDecl(:per_key, :localOnly; attr_stem = :zs))
-        @test any(x -> x.code === :REG_PROTOCOL && occursin("localOnly scheme law", x.message), GM.validate(bs))
-        # (A4/C3) the localOnly store law: a gated :per_occurrence row on an
-        # entries-less instance type refuses at tier 1 (STATIC — the fieldtype check)
-        b4 = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
-        p4 = GM.next_plugin_index(b4)
-        GM.register!(b4,
-            GM.Alterant(; altName = :zle, setMode = :localOnly,
-                altConstructor = Dict{Symbol,Bool}, setAltInstance = _CapM.badset,
-                capture = GM.CaptureDecl(:per_occurrence, :localOnly; attr_stem = :ze)),
-            GM.ActionSpec(; name = :zle1, plugin = p4))
-        @test any(x -> x.code === :REG_PROTOCOL && occursin("localOnly store law", x.message), GM.validate(b4))
+        @test r1.status === GM.PROCESS_OK && isempty(r1.diagnostics) &&
+              !any(t -> t[3] == "V", GM.readAltValuesEvals(r1.altValues_evals)) &&
+              any(t -> t[2] === :head_1 && t[3] == "T", GM.readAltValuesEvals(r1.altValues_evals))
+        # (A5 — the localOnly scheme law — and A4/C3 — the localOnly store law — were RETIRED at stage 1 of the Alterants build with
+        # the separate lane's flush they guarded: a `localOnly` record declares its scheme like any record, and a store outside
+        # its scheme's shape is Julia's own error at the capture, as for every Alterant.)
         # (A6; re-cut at stage 5's E4 — the stem-clash law left) :label_x beside the shipped :label family
         # PUBLISHES; distinct keys mint distinct rows (measured: PROBES-e4-capture-laws [b2] — label_label1 · label_x_aa)
-        bp = _mockb(; capture = GM.CaptureDecl(:per_key, nothing; attr_stem = :label_x))
+        bp = _mockb(; capture = GM.CaptureDecl(:per_key; attr_stem = :label_x))
         rp = GM.goMeta(_doc("x = 1\n#~ :label1 zmark(aa)\n\ny = 2\n"); registry = GM.publish(bp))
         @test rp.status === GM.PROCESS_OK &&
               sort([t[2] for t in GM.readAltValuesEvals(rp.altValues_evals)]) == [:label_label1, :label_x_aa]
+    end
+
+    @testset "[12] the deriving form's level is the set mode `localOnly`'s alone (stage 1 of the Alterants build, the review's cure A1)" begin
+        # a String-slot action of ANOTHER set mode, stated with ONE quoted argument, is handed that one argument — no placement level
+        # appended (the retired separate path's scope); fed through the profile it queues like every action, no internal error
+        b = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
+        pi = GM.next_plugin_index(b)
+        GM.register!(b,
+            GM.Alterant(; altName = :znote, setMode = :accumulate, altConstructor = Dict{Symbol,Bool},
+                setAltInstance = _CapM.nset, capture = GM.CaptureDecl(:per_key; attr_stem = :zn)),
+            GM.ActionSpec(; name = :znt, plugin = pi, accepts_string_slot = 1))
+        R = GM.publish(b)
+        rows = GM.readAltValuesEvals(GM.goMeta(_doc("#~ znt(\"x\")\nx = 1\n"); registry = R).altValues_evals)
+        rf = GM.goMeta(_doc("x = 1\n"); config = GM.GoMetaConfig(user_mh_profile = "znt(\"y\")"), registry = R)
+        @test any(t -> t[2] === :zn_n1, rows) && !any(t -> t[2] === :zn_n2, rows) && rf.status === GM.PROCESS_OK
     end
 end

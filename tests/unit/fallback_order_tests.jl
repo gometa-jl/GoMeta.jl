@@ -105,7 +105,8 @@ import GoMeta as GM
 
     @testset "[F4] the public path: a user profile with a QUEUED action runs (the defect of commit 2, found by F3, cured here)" begin
         # since commit 2 the enqueue records the statement's origin; on the user feed that is the user-context handle — read through a type
-        # the absorb module did not import (`UserContext`): every earlier user-profile test fed a heading, which diverts before the enqueue
+        # the absorb module did not import (`UserContext`): every earlier user-profile test fed a heading, which the separate lane of the
+        # time diverted before the enqueue (a fed heading refuses at the read since stage 1 of the Alterants build, §D242)
         r = GM.goMeta(_bytes("#~ :label1\nx = 1\n"); config = GM.GoMetaConfig(; user_mh_profile = "discard"))
         @test r.status === GM.PROCESS_OK
         uc = GM.key_bytes(GM.user_context_key(:default, 1))

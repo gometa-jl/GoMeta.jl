@@ -43,12 +43,15 @@ check(!occursin("label_", out), "attrs=:visib leaked label rows")
 out = plain(io -> print_altValues_evals(io, ext; layout = :rows, attrs = [:label_nope]))
 check(occursin("0 matches — :label_nope never minted", out), "never-minted state not explicit")
 
-## 3 — lines filter keeps unanchored rows + restricts anchored ones
-uctx = GoMeta.goMeta(read(joinpath(_PB_FIX, "mini-Documenter-Source-File.jl"));
-                     config = GoMeta.GoMetaConfig(user_mh_profile = "head(\"Fed head\", 1)"))
-out = plain(io -> print_altValues_evals(io, uctx; layout = :rows, lines = 1:1))
-check(occursin("USER_CONTEXT", out), "lines= hid an unanchored row (must never)")
+## 3 — lines filter restricts anchored rows (the unanchored-row half of this probe — a heading fed through the user profile — left at
+##     stage 1 of the Alterants build: a heading in the profile refuses at the read, §D242; no shipped path produces an unanchored row)
+out = plain(io -> print_altValues_evals(io, mini; layout = :rows, lines = 1:1))
 check(!occursin("label_🍻", out), "lines=1:1 leaked a row outside the range")
+check(occursin("filter lines=", out), "the lines filter echo missing")
+uhd = try GoMeta.goMeta(read(joinpath(_PB_FIX, "mini-Documenter-Source-File.jl"));
+                         config = GoMeta.GoMetaConfig(user_mh_profile = "head(\"Fed head\", 1)")); nothing catch e; e end
+check(uhd isa ErrorException && occursin("in the profile feed has no Component of the file levels to be local to", uhd.msg),
+      "a heading fed through the user profile must meet the one refusal (stage 1 of the Alterants build)")
 
 ## 4 — blocks= selects the named Blocks; an id that names no Block selects nothing (the checked fetch left at stage 5's T3)
 out = plain(io -> print_BLS_Component_Tree(io, mini; blocks = [999, 2]))
@@ -143,22 +146,22 @@ out = plain(io -> print_altValues_evals(io, nsr; layout = :rows))
 check(!occursin("unanchored", out) && occursin("label_🍻", out),
       "namespace=:other rows failed to anchor against their own result")
 
-## 12 — USER_CONTEXT totality in ALL THREE layouts + the ordinal tag
+## 12 — (the USER_CONTEXT totality probe over a fed heading's unanchored row left at stage 1 of the Alterants build: no shipped path
+##       produces an unanchored row since a heading in the profile refuses at the read — §D242; the tools' unanchored arms stand, their
+##       producer gone — a later clean-up is his to order) — a fed QUEUED action anchors on the Components as every row does
 uctx2 = GoMeta.goMeta(read(joinpath(_PB_FIX, "mini-Documenter-Source-File.jl"));
-                      config = GoMeta.GoMetaConfig(user_mh_profile = "head(\"Fed head\", 1)"))
+                      config = GoMeta.GoMetaConfig(user_mh_profile = "show"))
 nraw = length(GoMeta.readAltValuesEvals(uctx2.altValues_evals))
 out = plain(io -> print_altValues_evals(io, uctx2; layout = :rows))
 nrend = count(l -> occursin("=>", l), split(out, '\n'))
 check(nrend == nraw, ":rows rendered $nrend rows for $nraw raw rows — totality broken")
-for lay in (:rows, :tree, :cells)
-    o = plain(io -> print_altValues_evals(io, uctx2; layout = lay,
-                                          (lay === :tree ? (include_empty = true,) : ())...))
-    check(occursin("USER_CONTEXT", o), "USER_CONTEXT row missing from layout=$lay")
-end
-out = plain(io -> print_altValues_evals(io, uctx2; layout = :rows))
-check(occursin("USER_CONTEXT #1", out), "USER_CONTEXT ordinal tag missing in the unanchored label")
-out = plain(io -> print_altValues_evals(io, uctx2; layout = :rows, show_handles = true))
-check(occursin("path=[(direct,1)]", out), "show_handles did not print the full decoded path for the unanchored row")
+check(count(l -> occursin("=> :show", l), split(out, '\n')) >
+      count(l -> occursin("=> :show", l), split(plain(io -> print_altValues_evals(io, mini; layout = :rows)), '\n')),
+      "the fed show minted no anchored row")   # the review's C12: the fixture's own `#~1 show{ :🍻 && !isMeta }` mints one
+                                               # `=> :show` row WITHOUT a feed (Block #6), so the fed run must render MORE of them
+                                               # (MEASURED: 4 with the feed, the lane's PROBE-c12-fed-show_scratch.txt; 1 without, the
+                                               # lane's receipts/measure-labels/views/A at da86f4c2)
+check(!occursin("unanchored", out) && !occursin("USER_CONTEXT", out), "a fed queued action produced an unanchored row")
 
 ## 13 — an error delivery prints as the empty document its tree is (the status-first banner left at stage 5's T3 — the
 ## command-line entry prints the status to stderr); empty docs show the File summary in EVERY style

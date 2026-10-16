@@ -83,44 +83,38 @@ const fallBackMHIdx = maxDepthMH + 3   # 12 == NUM_MH_LEVELS — the fallBack le
 # PURPOSE: one record, extended never replaced, that a registration can declare completely.
 
 ## Slot (2): the capture declaration — HOW an Alterant's applied value becomes evals rows.
-const _CAPTURE_MODE_GATES = (nothing, :localOnly)   # v0.4 T5: the closed gate set (the scheme and multiplicity sets left with their enum checks at stage 5's E4)
 """
-    CaptureDecl(attr_scheme, mode_gate[, attr_stem]; attr_stem = nothing)
+    CaptureDecl(attr_scheme[, attr_stem]; attr_stem = nothing)
 
 IS: the declared capture row of an Alterant — slot (2) of its registration record: HOW the Alterant's applied
 value becomes evals rows.
 
 DOES: The declared capture row (CONSUMED by the capture walk since v0.4 T5 — the registration-driven re-home of the
-retired alt-name ladder): `attr_scheme` ∈ `(:per_key, :single, :per_field, :per_occurrence)` = how attr names mint
+retired alt-name ladder): `attr_scheme` ∈ `(:per_key, :single, :per_field, :per_entry)` = how attr names mint
 (`<stem>_<key>` per Dict entry · one `<stem>` row for a NamedElements-shaped single evals row · `<stem>_<field>` per
-non-default numeric field · one presence row per occurrence handle); `mode_gate` ∈ `(nothing, :localOnly)` —
-`:localOnly` delivers at the absorb seam keyed on the Component the statement is APPLIED TO and decided by the carrier
-(the metaBlock a whole-line or a comment-split metaLine forms, R-V04B-50; the LINE with the Segment as the key's origin for
-an inline metaSegment, R-V04B-98), and `validate` enforces the BIDIRECTIONAL
-coherence with the record's `setMode` (the mode-gate laws, kept until R-V04B-101); `attr_stem` = the declared attr name
-stem (`nothing` ⇒ the derived fallback `lowercase(String(altName))`, `_capture_stem` below — the shipped four DECLARE
-theirs explicitly). The walk reads the store's shape from the record's own `altConstructor` — the row's former `instance_type` and `multiplicity` fields left at stage 5's E5
-of the v0.4 build (census row 34; his §317 mark): the one restated `altConstructor`, the other was read by nothing. A PLAIN
-3-field struct — NO inner constructor that changes the positional
-signature (the domain copier rebuilds slot structs POSITIONALLY over all fields at the exact concrete type,
-src/alterants/registry.jl) — with ONE outer two-positional method, the row's own keyword-default form (the records'
-v0.3.2 compatibility constructors left at stage 5's E11 of the v0.4 build — census row 65, R-V04B-61).
+non-default numeric field · one row per entry `(text, level)` of a Heading-shaped store — `<stem>_<level>`, a repeat at
+the same level `<stem>_<level>_<k>`, the text the value); `attr_stem` = the declared attr name stem (`nothing` ⇒ the
+derived fallback `lowercase(String(altName))`, `_capture_stem` below — the shipped four DECLARE theirs explicitly). The
+walk reads the store's shape from the record's own `altConstructor`. EVERY Alterant's rows are minted by the one walk
+`captureEvals!` at the two apply sites — the Heading's too since stage 1 of the Alterants build (his §D241: the same
+process as any other Alterant; the former `mode_gate` field, its closed set, the mode-gate laws and the `:per_occurrence`
+presence scheme of the separate delivery left with it — his R-ALT-12). A PLAIN 2-field struct — NO inner constructor that
+changes the positional signature (the domain copier rebuilds slot structs POSITIONALLY over all fields at the exact concrete
+type, src/alterants/registry.jl) — with ONE outer one-positional method, the row's own keyword-default form.
 
 REASONING: the capture walk is registration-driven (v0.4 T5) — never an alt-name ladder — and the struct is plain
 (no inner constructor) because the domain copier rebuilds slot structs positionally.
 
-PURPOSE: the row `captureEvals!` reads to mint an Alterant's evals rows, and the row `validate` checks for
-coherence with the record's `setMode`.
+PURPOSE: the row `captureEvals!` reads to mint an Alterant's evals rows.
 """
 struct CaptureDecl
     attr_scheme::Symbol
-    mode_gate::Union{Nothing,Symbol}
     attr_stem::Union{Nothing,Symbol}    # v0.4 T5 (additive; LAST — the positional law)
 end
-CaptureDecl(attr_scheme::Symbol, mode_gate::Union{Nothing,Symbol}; attr_stem::Union{Nothing,Symbol} = nothing) =
-    CaptureDecl(attr_scheme, mode_gate, attr_stem)
+CaptureDecl(attr_scheme::Symbol; attr_stem::Union{Nothing,Symbol} = nothing) =
+    CaptureDecl(attr_scheme, attr_stem)
 "The attr-name stem a plugin's rows mint under: the declared `attr_stem`, or the derived fallback `lowercase(String(altName))` —
-ONE derivation for the capture walk, the answer function, the scan and the Heading lane's flush (stage 5's E5: the four copies folded)."
+ONE derivation for the capture walk, the answer function and the scan (stage 5's E5: the four copies folded)."
 _capture_stem(p) = p.capture.attr_stem === nothing ? Symbol(lowercase(String(p.altName))) : p.capture.attr_stem
 
 ## Slot (3): the presence-typed explicit default — undeclared is a TYPE, never a sentinel value. Since stage 2's
@@ -151,8 +145,9 @@ DOES: carries the Alterant's name (`altName`); its set-mode (`setMode` — `:acc
     set-mode table by design); at v0.4 the nearest statement sets the compound as a WHOLE (an unset field is not inherited from an
     outer slot) and within one slot the LAST row of a field wins (MEASURED at stage 2's commit 7, `tests/authored/006_id_compound.toml`,
     a draft put to the owner; card 8 "next"; the CrossReview set REAL-1 R1 #1 — the contract narrowed, no Engine change) ·
-    `:localOnly`: the value applies ONCE, where it stands — never enqueued, never visited by the backtrack, delivered at the absorb
-    seam); the alterant-instance constructor type (`altConstructor`); the setter and the query getter (`setAltInstance`,
+    `:localOnly`: the value applies ONLY at the Component the statement is applied to — queued like every action, decided by the
+    apply loop's one rule for this mode (apply.jl), every other Component passing over it; the Heading's, his set mode of 2026-08-02);
+    the alterant-instance constructor type (`altConstructor`); the setter and the query getter (`setAltInstance`,
     `getAltInstance` — the getter `nothing` for an Alterant that answers no query); the precedence tuple (`precedencesTuple`, always
     `nothing` at v0; sized by `NUM_MH_LEVELS`, the unified meta-hierarchy level count); the Alterant's ONE declared default value
     (`default` — `NoDefault()` | `Declared(v)`; R-V04B-51 (1)–(2), R-V04B-55: Visib's is `:show`; delivered by the answer function
@@ -193,9 +188,10 @@ in declaration order (`action_specs`) and appended with its Alterant by `registe
 DOES: carries the action `name`, the owning `plugin` index (`Int8` — the Alterant's declaration-order index, which
 `register!` checks) and the CAPABILITIES: `accepts_string_slot` — 0 = no String literal slot; N = the accepting
 literal-slot position, retiring the former name literals at the absorb seams — and the `validate` slot (Alterant-owned
-handover validation; `nothing` when absent). The localOnly path of the absorb seam reads both from the record: a String
-argument in any position but the declared one refuses, and the declared `validate` runs on the String text of that
-slot (`_absorb_local_only!`, src/absorb/absorb_meta.jl); the enqueue seam applies the same slot rule, without `validate` — a String only in the declared slot (`_string_slot_check`, since s5c29; the register's PB-7, the session's default); the shipped queued actions declare none.
+handover validation; `nothing` when absent). The enqueue seam reads both from the record for EVERY action: a String
+argument in any position but the declared one refuses (`_string_slot_check`, since s5c29; the register's PB-7), and the declared
+`validate` runs AT THE READ on the String text of that slot (`absorbMeta`, src/absorb/absorb_meta.jl — since stage 1 of the
+Alterants build, when the Heading's separate path left; the shipped actions but `head` declare none).
 The shipped records: `:` for Labels; `hide` / `show` / `discard` for Visib; `cell` / `parent` / `file` for Id; `head`
 for the Heading — the one record with a String slot (`accepts_string_slot = 1`) and a validator. The declared
 `settribute` write-back key left the record at stage 5's E12 of the v0.4 build (census row 45 — his §317 mark and his
@@ -624,14 +620,14 @@ end
     AlterantArgT
 
 IS: the action-argument LITERAL FLOOR — exactly `Union{Symbol,String}` — the element type of an enqueued argument
-tuple (`AlterantQueue.args`) and of the tuple a localOnly action's setter receives.
+tuple (`AlterantQueue.args`) and of the tuple a setter receives.
 
 DOES: an enqueued argument is a `Symbol` (every bare token, INCLUDING numeric text — `Symbol("7")`; the integer
 space is deliberately not an arm of this union, so numeric arguments keep their exact fates at the setter, which
 parses them itself) or a `String` (the CONTENT of a well-formed quoted token — `_coerce_arg_token`,
 src/absorb/absorb_meta.jl, the one coercion point). ONE grammar accepts the String kind — the Heading action's TEXT
 slot (`accepts_string_slot = 1`, the quoted-first sugar); every slot a record does not declare refuses a quoted argument
-at `absorbMeta`'s enqueue seam and at `_absorb_local_only!` alike (`_string_slot_check`, since s5c29 — PB-7, the session's default) — each
+at `absorbMeta`'s enqueue seam (`_string_slot_check`, since s5c29 — PB-7, the session's default) — each
 refusal an `ErrorException` raised by `error` ("GoMeta absorb: string argument not accepted — …"; the file's own
 word for its refusals: without a code, its coded conversion deferred). Dispatch alone cannot hold that law: the built-in
 setters keep an untyped value slot that would parse `cell("7")`. *(This docstring said "NO metaLine grammar accepts
@@ -647,8 +643,8 @@ const AlterantArgT = Union{Symbol,String}
 """
     AlterantQueue
 
-IS: the per-call enqueue tensors: `queued` (`2 × numAltActions × num_slots`), `conditions`, `args` and — since stage
-2's commit 2 of the v0.4 build (R-V04B-35 (d)) — `decided_by`.
+IS: the per-call enqueue tensors: `queued` (`2 × numAltActions × num_slots`), `conditions`, `args`, `decided_by` (since stage
+2's commit 2 of the v0.4 build, R-V04B-35 (d)) and `applied_to` (since stage 1 of the Alterants build).
 
 DOES: `queued[1, row, slot]` holds the declaration-order plugin index and `queued[2, row, slot]` the action index
 (into `sorted_alt_actions`) of the enqueued action; `conditions` carries the condition as Julia's `Expr` (what
@@ -657,13 +653,17 @@ apply), `nothing` for an action without `{}`; `args` carries tuples over the arg
 (`Symbol` | `String` — see that type's docstring), `nothing` for no arguments; `decided_by` carries per enqueued
 action the `key_bytes` handle of the Component that STATED it (the carrying Component's handle published at the walk
 handover — the metaBlock a whole-line metaLine forms, the Segment of an inline one, R-V04B-50; on the userMH feed the
-minted user-context handle), carried through the apply into the stored row's provenance field. All three matrices
+minted user-context handle), carried through the apply into the stored row's provenance field; `applied_to` carries per
+enqueued action the `key_bytes` of the Component the statement is APPLIED TO (the walk's `MetaContext.applied`: the metaBlock
+for a metaLine's statement, a comment-split metaLine included — R-V04B-50; the Line with the Segment as the key's origin for
+an inline metaSegment — R-V04B-98; `nothing` on the userMH feed) — the referent of the apply loop's one rule for the set mode
+`localOnly` (his §D241 point 2; R-V04B-101 (1)). All four matrices
 are indexed `[row, slot_index]`: dim-1 is the per-slot enqueue ROW counter (`1..count_actions_per_slot[slot]` — the
 sequential order in which actions were absorbed into that slot, NOT a registry action index; the matrices are merely
 SIZED `numAltActions × num_slots` as the per-slot upper bound), dim-2 = slot, parallel to `queued[:, row, slot]`.
 The apply phase MUST index `[row, slot]` consistently (a row/slot transposition would corrupt the queue). Written by
 `absorbMeta` (src/absorb/absorb_meta.jl), read by `detAltValuesForSetOfSlots` (src/alterants/apply.jl), wiped per
-slot by `wipeAltActionSlots`; a localOnly action never enters it. Sized once by `init_state`.
+slot by `wipeAltActionSlots`. Sized once by `init_state`.
 
 REASONING: the queue holds the absorbed statements as values — the `Expr`, the tuple, the handle — in source order
 per slot, so the apply can evaluate each condition against the Component it applies to and record which statement
@@ -677,6 +677,7 @@ struct AlterantQueue
     conditions::Matrix{Union{Nothing,Expr}}
     args::Matrix{Union{Nothing,Tuple{Vararg{AlterantArgT}}}}
     decided_by::Matrix{Union{Nothing,Vector{UInt8}}}
+    applied_to::Matrix{Union{Nothing,Vector{UInt8}}}   # stage 1 of the Alterants build: the applied Component's key — the referent of the localOnly rule
 end
 
 """
@@ -691,25 +692,24 @@ derived from the parse and the run's configured namespace (`st.config.namespace`
 nothing else of the configuration enters), published at the walk→absorb handover (`applyAbsorbFn`
 builds it from the component + the post-update MH cursor and sets `st.meta_context`) and
 stored in NO Component (the evaluation-free-tree law). Consumers at this step:
-the quoted-first heading recognizer's APPLICABILITY check (the userMH feed NULLS the
-record before its absorb call — no document line exists there — so a derived-context
-heading through that surface meets a guarded applicability refusal, never fabrication)
-and the head evals row's level (the attr-fold: the level rides the attr NAME
-`head_<level>`; no fabricated rows, no record-schema change). `level` is the
+the enqueue's two provenance columns (`decided_by` ← `handle`, `applied_to` ← `applied`) and the deriving head form's
+level (the attr-fold: the level rides the attr NAME `head_<level>`; no fabricated rows, no record-schema change; the
+userMH feed NULLS the record before its absorb call — no document line exists there — and a heading fed through that
+surface meets the one refusal of his §D242, its wording his, R-ALT-9). `level` is the
 application level — the RAW MH-ladder index the walk set for this component (a
 Segment-attached metaLine inherits the metaLine's `lineMHIdx`, so the inheritance
 law holds by construction); the RECORDED level is normalized to ladder−1 — the
 author's own `#~`-digit vocabulary — at the enqueue materialization seam (the documented
 level vocabulary; the record itself stays as derived — from the parse and the configured
 namespace, mutated by nothing). `handle` is the carrier's
-serialized occurrence key (`key_bytes`) — under localOnly delivery the heading row's DECIDING STATEMENT; `applied` is the key of the
-Component the statement is APPLIED TO (R-V04B-98; stage 5's E1) — under localOnly delivery LOAD-BEARING as the heading row's KEY.
+serialized occurrence key (`key_bytes`) — every row's DECIDING STATEMENT; `applied` is the key of the
+Component the statement is APPLIED TO (R-V04B-98; stage 5's E1) — the referent of the apply loop's rule for the set mode
+`localOnly` (stage 1 of the Alterants build).
 
 REASONING: derived from the parse and the configured namespace, stored in no Component (the evaluation-free-tree
 law), so a consumer reads a record rather than a mutated BLS Component tree.
 
-PURPOSE: the consumers' record: the quoted-first heading recognizer's applicability check, the head evals row's
-level (the attr-fold) and, under localOnly delivery, the heading row's key.
+PURPOSE: the consumers' record: the enqueue's provenance columns and the deriving head form's level (the attr-fold).
 """
 struct MetaContext
     grain::Symbol            # :Block | :Line | :Segment
@@ -719,12 +719,12 @@ struct MetaContext
                              # the field is the record's designed shape (delta-review trued)
     level::Int               # the APPLICATION level — the MH-ladder index at absorb time
     handle::Vector{UInt8}    # the CARRIER's occurrence-key bytes (from the parse and the configured
-                             # namespace) — the heading row's deciding statement
+                             # namespace) — every row's deciding statement
     applied::Vector{UInt8}   # R-V04B-98 (stage 5's E1; his §309 with his §286 (ii)): the occurrence-key bytes of the Component the
                              # statement is APPLIED TO — the metaBlock for a metaLine's statement (his §286 (i); R-V04B-50), the LINE
                              # for a Code Line's trailing metaSegment, keyed as the apply path keys it (the Line with the Segment as
                              # the key's origin), the metaBlock for the statement Segment of a metaLine split by a trailing comment —
-                             # the heading row's KEY under localOnly delivery; differs from `handle` only for an inline metaSegment of a Code Line
+                             # the referent of the localOnly rule (the queue's `applied_to`); differs from `handle` only for an inline metaSegment of a Code Line
 end
 
 """
@@ -736,9 +736,9 @@ ordinal 1 at v0 — one feed, one region).
 
 DOES: constructed by the feed routine (`feed_user_mh!`, src/GoMeta.jl) immediately before its absorb call and
 RESTORED-to-prior in a `finally` right after (the stack-disciplined bracket); the document-side `meta_context` stays
-`nothing` on the feed, so the deriving-form refusal holds by construction. Read at the absorb seam as the enqueued
-action's `decided_by` handle when no document context exists, as the trigger of the conditioned-head refusal on the
-feed, and by `capture_heading!` as both the key and the deciding statement of a fed profile's heading row. The fed
+`nothing` on the feed. Read at the absorb seam as the enqueued
+action's `decided_by` handle when no document context exists, and as the trigger of the one refusal a heading in the
+profile feed meets (his §D242; the wording his, R-ALT-9: no Component of the file levels to be local to). The fed
 profile's bytes are NOT carried on the record since stage 2's commit 9b (R-V04B-43 (1); the row has no piece in the
 tree — its derived fifth column is empty: R-V04B-43 (4), his word OWNER-WORDS §277, R-V04B-90). Immutable; per-call
 config inputs only.
@@ -887,7 +887,7 @@ IS: the constructor of a FRESH `ProcessState`, sized once per call from the regi
 DOES: Build a FRESH `ProcessState`, sizing every container ONCE from `registry` + `NUM_MH_LEVELS`. Every
 per-field init is performed here, so each call is independent — no tensor or cursor carries over:
 `slots = zeros(Int8, NUM_MH_LEVELS)`; the `slot_*`/`count_*` per-slot vectors `fill(false,·)`/`zeros(Int8,·)`;
-`queued = zeros(Int8, 2, nAct, nSlot)`; `conditions`/`args`/`decided_by` matrices filled with `nothing`; `working` and `working_origin`
+`queued = zeros(Int8, 2, nAct, nSlot)`; `conditions`/`args`/`decided_by`/`applied_to` matrices filled with `nothing`; `working` and `working_origin`
 empty `Dict`s; `evals` empty; `snapshot` a FRESH `ComponentSettribute` (its `array` is COPIED into by
 `snapshot_settribute!`, never aliased); the three cursors all `fileMHIdx` (= 1).
 `num_slots == NUM_MH_LEVELS`.
@@ -911,6 +911,7 @@ function init_state(parse_state::BLS.ParseState, config::GoMetaConfig, registry:
         fill!(Matrix{Union{Nothing,Expr}}(undef, n_act, n_slot), nothing),                 # conditions
         fill!(Matrix{Union{Nothing,Tuple{Vararg{AlterantArgT}}}}(undef, n_act, n_slot), nothing),# args
         fill!(Matrix{Union{Nothing,Vector{UInt8}}}(undef, n_act, n_slot), nothing),               # decided_by (R-V04B-35 (d))
+        fill!(Matrix{Union{Nothing,Vector{UInt8}}}(undef, n_act, n_slot), nothing),               # applied_to (stage 1 of the Alterants build)
     )
     return ProcessState(
         parse_state, config, registry, mh, queue,

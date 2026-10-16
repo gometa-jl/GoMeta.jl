@@ -195,8 +195,9 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
 
     @testset "[12] the crx-t3t4r reconfirm cure — the NON-DISPATCHING ctor renderer" begin
         # (the three DEP_MISSING render arms were CONSCIOUSLY RETIRED at stage 5's E4 with their subject, the
-        # eager dependency closure — census row 3; the structural renderer stays for the localOnly store
-        # law's row — its bottom leaf pinned)
+        # eager dependency closure — census row 3; the structural renderer stays for the domain probe's unencodable-value row
+        # (`_emit_unencodable!`, registry.jl; the localOnly store law it also served left with the Heading's separate lane at
+        # stage 1 of the Alterants build) — its bottom leaf pinned)
         @test GM._ctor_type_name(Union{}) == "Union{}"   # the bottom leaf, pinned total
     end
 

@@ -11,7 +11,7 @@
 #     non-empty (a structural cell that addresses no content is skipped); the Engine stores NO copy of a piece's
 #     text since stage 2's commit 9b (R-V04B-43 (1)). (2) `captureEvals!(st, cell)` —
 #     called from the apply sites right after a cell's alterant state is finalized and BEFORE
-#     the next slot reset wipes it; records the cell's final label / Visib / Id evals rows into
+#     the next slot reset wipes it; records the cell's final label / Visib / Id / heading evals rows into
 #     the `EvalStore`, deduped per `(cell_handle, attr)` with later-wins supersede.
 #     (3) `readAltValuesEvals(result.altValues_evals)` — the exported accessor: sorts by `(cell_handle, attr, value)`,
 #     returns the pinned `Vector{Tuple{Vector{UInt8},Symbol,Any,Bool}}` — empty when no metaLine
@@ -44,8 +44,7 @@ IS: the deduped put of ONE final evals row into `st.evals` — the one door into
 DOES: records the row `(handle, attr, value, polarity, decided_by)`, DEDUPED per `(cell_handle, attr)`: a later put
 for the same occurrence+attribute SUPERSEDES the earlier one (later wins), so the store holds at most one record
 per `(cell_handle, attr)` by construction. **Occurrence-addressing.** `handle` is the
-`key_bytes` of the row's handle — a cell's NORMALIZED STRUCTURAL occurrence key (src/occurrence.jl), or a fed
-profile's user-context key for its heading rows (`capture_heading!`) — two DISTINCT cells never
+`key_bytes` of the row's handle — a cell's NORMALIZED STRUCTURAL occurrence key (src/occurrence.jl) — two DISTINCT cells never
 share a slot, even with byte-identical content (the distinct-cell content-collision class of a purely
 content-keyed store cannot occur by construction; PRECISE BOUND: this holds for WELL-FORMED keys — two DEGENERATE
 truncated-walk keys could alias each other, a case no real parse produces). A slot match here is therefore the
@@ -57,8 +56,8 @@ write time, a later put superseding, rather than by a later pass, and the reader
 repeats; the linear scan — O(n) per put, n = the rows already in the store — is accepted at v0 for the corpus's
 small files, a Dict-keyed store being the O(1) successor.
 
-PURPOSE: the single primitive both `captureEvals!` (the apply sites' rows) and `capture_heading!` (the absorb
-seam's heading rows) write through — every evals row a run records enters the store here.
+PURPOSE: the single primitive `captureEvals!` (the apply sites' rows — every Alterant's, the Heading's included since stage 1
+of the Alterants build) writes through — every evals row a run records enters the store here.
 """
 function _putEval!(st::ProcessState, handle::Vector{UInt8}, attr::Symbol, value, polarity::Bool,
                        decided_by::Vector{Vector{UInt8}})
@@ -104,11 +103,16 @@ alterant instances the apply left in `st.working`:
 - **Id** (`:mutExclusivePerField`, `@namedElement … Int16`): one row per NON-default field —
   `(handle, :id_<name>, value::Int16, true)`. The corpus does NOT exercise Id (SYNTAX-AND-SEMANTICS §13;
   no read site), so this path is contract-completeness ("total over the applied evals rows").
+- **Heading** (`:localOnly`, `Heading.entries`; `:per_entry`): one row PER ENTRY `(text, level)` of the store —
+  `(handle, :head_<level>, text::String, true)`, a same-level repeat `:head_<level>_<k>` (k ≥ 2, source order); the apply loop's
+  one rule for the set mode `localOnly` applies the statement only at the Component it is applied to, so the row is keyed on the
+  metaBlock, or on the Line with the Segment as the key's origin (R-V04B-98); each row's `decided_by` the carrier of its own
+  `head` statement (the i-th entry the i-th applied statement).
 
 `polarity` is `true` for every applied evals row at v0 (all captured evals rows are "set/on"); the field is in
 the pinned tuple to distinguish on/off and is reserved for a future negated-row encoding — an evals row with
 `polarity == false`. The dispatch iterates the per-call `st.registry.plugins` and reads each plugin's declared
-`CaptureDecl` (its scheme, gate and stem; the store's shape the record's own `altConstructor` — NOT the global `DEFAULT_REGISTRY`), so a custom
+`CaptureDecl` (its scheme and stem; the store's shape the record's own `altConstructor` — NOT the global `DEFAULT_REGISTRY`), so a custom
 registry threads through.
 
 Each row's `decided_by` (R-V04B-35 (d); stage 2's commit 2) is the list the apply recorded for the Alterant in
@@ -125,14 +129,12 @@ slot, and the capture happens between the apply's finalization and the next wipe
 transient — what is not captured here is gone with the wipe.
 
 PURPOSE: the write path for a Component's evals rows from the APPLY — the rows of every Alterant the apply
-left in `st.working` (the shipped Labels, Visib and Id), put from the two apply sites: `src/GoMeta.jl` (the
-Block grain) and `src/absorb/walk.jl` (the Segment grain, `origin` = the Segment, the row keyed on the owning
-Line). The heading rows — a metaLine region's, keyed on the Component the statement is APPLIED TO and decided by the
-carrier (the metaBlock a whole-line or a comment-split metaLine forms, R-V04B-50; the LINE with the Segment as the key's origin for an
-inline metaSegment, R-V04B-98), and the fed
-profile's, keyed on the user-context handle — are NOT put here: `capture_heading!` puts them from the absorb
-seam's flush (its one call in `src/absorb/absorb_meta.jl`). Both writers go through the one primitive
-`_putEval!`.
+left in `st.working` (the shipped Labels, Visib, Id and, since stage 1 of the Alterants build, the Heading — ONE process for
+every Alterant, his §D241), put from the two apply sites: `src/GoMeta.jl` (the Block grain) and `src/absorb/walk.jl` (the
+Segment grain, `origin` = the Segment, the row keyed on the owning Line). A heading's row is thereby keyed on the Component
+the statement is applied to by the machinery itself (the metaBlock a whole-line or a comment-split metaLine forms, R-V04B-50;
+the LINE with the Segment as the key's origin for an inline metaSegment, R-V04B-98); a heading in the profile feed records
+no row — it meets the one refusal at the read (his §D242). The one primitive is `_putEval!`.
 """
 function captureEvals!(st::ProcessState, cell::BLS.AbstractComponent;
                            origin::Union{Nothing,BLS.AbstractComponent} = nothing)
@@ -154,12 +156,10 @@ function captureEvals!(st::ProcessState, cell::BLS.AbstractComponent;
     ## (`keys(Alterants.Visib)[…array][1]`): the hardening of stage 5's census row 33 — the instance-type check, the per-arm
     ## try/catch, the value algebra, the shape and length gates and the walk's two capture-floor calls — left at E5 of the v0.4
     ## build (his §317 mark; his §120: a basic framework BEFORE HARDENING). A store outside its declared scheme's shape errors as
-    ## Julia does; a plugin without a capture row mints nothing (the Heading lane's flush keeps its two floor warnings until
-    ## R-V04B-101 — `_capture_floor!` below).
+    ## Julia does; a plugin without a capture row mints nothing.
     for (i, p) in pairs(st.registry.plugins)
         idx8 = Int8(i)
         p.capture === nothing && continue
-        p.capture.mode_gate === nothing || continue      # :localOnly delivers at the absorb seam
         haskey(st.working, idx8) || continue
         inst = st.working[idx8]
         decided = get(st.working_origin, idx8, Vector{UInt8}[])   # R-V04B-35 (d): the applied statements' handles
@@ -194,113 +194,23 @@ function captureEvals!(st::ProcessState, cell::BLS.AbstractComponent;
             for (fi, name) in enumerate(ks)
                 arr[fi] != z && _putEval!(st, handle, Symbol(stem, :_, name), arr[fi], true, decided)
             end
-        elseif sch === :per_occurrence
-            # the ungated fifth arm: one presence row per governed cell — the
-            # occurrence handle IS the locus (the value = `true` at v0.4; T11's row)
-            _putEval!(st, handle, stem, true, true, decided)
+        elseif sch === :per_entry
+            # one row per entry `(text, level)` of a Heading-shaped store (stage 1 of the Alterants build — the separate
+            # recorder `capture_heading!` folded into this one walk): THE ATTR-FOLD — the level rides the attr NAME, the FIRST
+            # entry at a level `<stem>_<level>`, a repeat at the same level `<stem>_<level>_<k>` (k ≥ 2, source order; the store
+            # dedupes per (handle, attr), so the fold keeps same-level repeats distinct — the v0.2 build's injectivity law); an
+            # entry without a level `<stem>`, its repeats `<stem>_u<k>` (dead on live paths — every path materialises a level at
+            # the enqueue; kept defensive); the VALUE the text; each entry's deciding statement is its own applied row's origin
+            # (the i-th entry ← the i-th applied statement: `_record_origin!` and the setter push in one order).
+            lvlseen = Dict{Union{Nothing,Int},Int}()
+            for (ei, (text, lvl)) in enumerate(getfield(inst, :entries))
+                k = (lvlseen[lvl] = get(lvlseen, lvl, 0) + 1)
+                attr = lvl === nothing ?
+                    (k == 1 ? stem : Symbol(stem, :_u, k)) :
+                    (k == 1 ? Symbol(stem, :_, lvl) : Symbol(stem, :_, lvl, :_, k))
+                _putEval!(st, handle, attr, text, true, ei <= length(decided) ? [copy(decided[ei])] : decided)
+            end
         end
-    end
-    return nothing
-end
-
-"""
-    _capture_floor!(st, p, code) -> nothing
-
-IS: the coded capture-floor diagnostic of the Heading lane's flush (src/absorb/absorb_meta.jl): the disclosure that a
-localOnly Alterant's applied state minted no rows (`WARN_CAPTURE_FLOOR`: no capture row declared) or that its store was
-outside the flush's readable shape (`WARN_CAPTURE_UNREADABLE`). The capture walk above calls neither arm since stage 5's
-E5 of the v0.4 build (census row 33 — the walk reads its stores bare); the flush keeps both until the Heading runs
-through the apply loop and the lane retires (R-V04B-101).
-
-DOES: pushes ONE WARNING-severity (non-fatal) diagnostic per call per (alterant, code), deduped by scanning
-`st.diagnostics` — the O(n) linear-scan policy `_putEval!` already ratifies; ZERO state-shape change.
-
-REASONING: a warning, not an error — the run stays `PROCESS_OK` and the row rides the delivery's diagnostics, so a
-store the flush cannot read is disclosed rather than refused (the T5 floor law: the coded warning, never a raw
-`TypeError` in the flush); the dedupe keeps one row per (Alterant, code) however many regions meet the floor, and the
-`UNREADABLE` arm reads `p.capture` defensively, so the floor's own message can never itself throw.
-
-PURPOSE: to make the Heading lane's floor visible to whoever reads the diagnostics, until R-V04B-101.
-"""
-function _capture_floor!(st::ProcessState, p, code::Symbol)
-    any(d -> d.code === code && d.context === p.altName, st.diagnostics) && return nothing
-    msg = code === :WARN_CAPTURE_FLOOR ?
-        string("GoMeta capture: alterant ", repr(p.altName), " produced applied state but ",
-            "declares no capture row — its outcomes mint NO evals rows (the capture floor; ",
-            "declare a CaptureDecl to lift it)") :
-        string("GoMeta capture: alterant ", repr(p.altName), " declares scheme ",
-            repr(p.capture === nothing ? :none : p.capture.attr_scheme),   # (crx-t5 A1) defensive — the UNREADABLE arm must never itself throw
-            " but the live instance/value is outside the ",
-            "scheme's readable shape — the affected rows are not minted (the capture ",
-            "floor's second arm)")
-    push!(st.diagnostics, Diagnostic(code, :warning, msg, p.altName))
-    return nothing
-end
-
-"""
-    capture_heading!(st::ProcessState, heading, stem::Symbol) -> nothing
-
-IS: the localOnly delivery's capture (the outline model) — the writer of the Heading's evals rows from the absorb seam:
-called ONCE per (meta region × localOnly plugin) from the absorb seam's REGISTRY-DRIVEN flush
-(src/absorb/absorb_meta.jl; v0.4 T5 — the flush checks the declared row's gate, the instance shape, and the entries
-protocol BEFORE this call; the Heading typing retired with the re-home, and the four attr spellings re-derive from the
-DECLARED `stem` — byte-identical for the shipped `:head`). The separate road retires when the Heading runs through the
-apply loop (R-V04B-101, after the branch).
-
-DOES: mints one row per captured entry of `heading.entries` (a `(text, level | nothing)` pair each), KEYED to the
-Component the statement is APPLIED TO and DECIDED BY the carrier (R-V04B-98; stage 5's E1): `_putEval!(st, applied,
-attr, text, true, [copy(handle)])` — the value the heading text, the polarity `true`. TWO sources: the DOCUMENT surface
-supplies both through the walk's record — `st.meta_context.applied`, the applied Component's handle (the metaBlock a
-whole-line metaLine forms, R-V04B-50; the LINE for a Code Line's trailing metaSegment, keyed as the apply path keys it
-with the Segment as the key's origin; the metaBlock for the statement Segment of a metaLine split by a trailing
-comment), and `st.meta_context.handle`, the carrier's own handle (the metaBlock; the Segment of an inline metaSegment)
-— the row's deciding statement; the userMH FEED supplies the minted user-context handle (`st.user_context`) for both.
-No copy of the carrier's text rides the row (R-V04B-43 (1), commit 9b). One shared fold/dedup body serves both
-sources, so the evals surface stays uniformly `(cell_handle, attr, value, polarity)`. BOTH sources populated at once is
-an INTERNAL-INVARIANT ERROR (unreachable by construction — the feed nulls the document context and the walk never sets
-the user context; a defect that made it reachable gets the loud rejection, never a silent pick). Neither source ⇒ no
-row. The attr is the ATTR-FOLD: the level rides the attr NAME — the FIRST entry at a level `<stem>_<level>`, a repeat
-at the same level `<stem>_<level>_<k>` (k ≥ 2, source order); an entry without a level (dead on live paths, kept
-defensive) `<stem>`, its repeats `<stem>_u<k>`; a `:depth` record column is deliberately deferred.
-
-REASONING: the store dedupes per (handle, attr), so two same-level headings on one metaLine would collapse later-wins
-— the attr is therefore injective per (metaLine, level): distinct rows, no supersede, deterministic; the `_u<k>`
-spelling keeps a level-less repeat from aliasing a genuine `<stem>_<k>` level attr.
-
-PURPOSE: the Heading's rows in the delivered evals, until the apply loop carries the Heading like every Alterant.
-"""
-function capture_heading!(st::ProcessState, heading, stem::Symbol)
-    if st.meta_context !== nothing && st.user_context !== nothing
-        error("GoMeta internal invariant violated: document context AND user context ",
-            "both populated at a heading capture — please report this ",
-            "(not reachable from any input by construction)")
-    end
-    local handle::Vector{UInt8}; local applied::Vector{UInt8}
-    if st.meta_context !== nothing
-        handle = (st.meta_context::MetaContext).handle      # the carrier — the row's deciding statement
-        applied = (st.meta_context::MetaContext).applied    # R-V04B-98: the Component the statement is applied to — the row's KEY
-    elseif st.user_context !== nothing
-        handle = (st.user_context::UserContext).handle; applied = handle
-    else
-        return nothing
-    end
-    # INJECTIVITY over entries (review-found MAJOR, two seats convergent; carried
-    # verbatim from the retired per-cell arm): the store dedupes per (handle, attr),
-    # so two same-level headings on one metaLine would collapse later-wins. The attr is therefore injective per (metaLine, level):
-    # the FIRST entry at a level keeps the plain `head_<level>`, repeats gain a
-    # source-order ordinal (`head_<level>_2`, …) — distinct rows, no supersede, deterministic.
-    lvlseen = Dict{Union{Nothing,Int},Int}()
-    for (text, lvl) in getfield(heading, :entries)   # (crx-t5 A4) getfield — the flush's concrete-Vector gate makes this iteration Base-concrete
-        k = (lvlseen[lvl] = get(lvlseen, lvl, 0) + 1)
-        # the nothing-level arm (dead on live paths — every metaLine path
-        # materializes a level; kept defensive) spells its repeats :head_u<k>, NOT
-        # Symbol(:head, :_, k): the latter aliases the genuine :head_<k> level attr
-        # (delta-review latent-collision cure). Leveled repeats stay :head_<lvl>_<k>
-        # — collision-free among leveled attrs since levels are Ints and k ≥ 2.
-        attr = lvl === nothing ?
-            (k == 1 ? stem : Symbol(stem, :_u, k)) :
-            (k == 1 ? Symbol(stem, :_, lvl) : Symbol(stem, :_, lvl, :_, k))
-        _putEval!(st, applied, attr, text, true, [copy(handle)])   # keyed on the APPLIED Component (R-V04B-98); the never-enqueued :localOnly Heading's deciding statement: its own carrier (R-V04B-35 (d))
     end
     return nothing
 end
@@ -319,9 +229,9 @@ R-V04B-29's record; the branch's default under R-V04B-40 (2)). Named by the owne
 a function.
 
 DOES: returns one row `(cell_handle, attr, value, polarity)` per final evaluation recorded for a handle and an
-attribute — the per-cell rows (a Component's: put at the two apply sites, and a metaLine's own heading rows at
-the absorb seam's flush) plus the handle-classed non-cell rows the explicit headings of a fed profile record
-against the user-context handle, one per entry (docs/public-api.md §2, the reader's own section) — **sorted by
+attribute — the per-cell rows (a Component's, put at the two apply sites — every Alterant's, the Heading's rows keyed on the
+Component the statement is applied to; a heading in the profile feed records no row — it meets the one refusal at the read,
+his §D242; docs/public-api.md §2, the reader's own section) — **sorted by
 `(cell_handle, attr, value)`** so that the order is deterministic and content-hashable; final evals only (the
 store is deduped at capture); total over the recorded evals (the row count == the deduped `EvalStore`); empty
 when no metaLine exists on ANY surface (the fed profile IS a metaLine body; a run over an un-fed meta-free input
@@ -349,9 +259,8 @@ development tool's `outputs` pair — the BLS Component tree's print and the ren
 (`Main.BasicRenderer.outputs`, R-V04B-24) — is the tool's own, and no ruling foresees the two joined.
 
 PURPOSE: what an Extension, a test, a development tool or a DB-interface reads to learn the final Alterant
-values a run recorded and for which handle — a Component's rows from the apply, a metaLine region's heading
-rows from the absorb seam's flush, and the non-cell rows the explicit headings of a fed profile record against
-the user-context handle, one per entry — the evals rows as the recorded truth of the run.
+values a run recorded and for which handle — a Component's rows from the apply, the Heading's among them
+— the evals rows as the recorded truth of the run.
 """
 function readAltValuesEvals(altValues_evals::EvalStore)
     recs   = altValues_evals.records
