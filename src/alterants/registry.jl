@@ -178,7 +178,7 @@ end
 ## loop's order: the labels of the levels above and those stated before the heading on its metaLine are seen, those
 ## after it are not — without a fed profile; with one the user level is the loop's primary slot and the metaBlock's own
 ## labels are collected before its heading is decided, so a label stated after it is seen too: the lane's oracle P24;
-## whether a fed profile may change that order is his question).
+## accepted by him as the loop's order on 2026-10-16 — the Alterants build's R-ALT-15 (ii)(3)).
 mutable struct Heading
     entries::Vector{Tuple{String,Union{Nothing,Int}}}   # (text, explicit level | nothing ⇒ derived)
 end

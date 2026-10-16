@@ -792,8 +792,8 @@ mutable struct ProcessState
                                                # inside the feed routine's bracket (set
                                                # before its absorb call, restored-to-prior
                                                # in the finally) — never set on the
-                                               # document walk; the capture's second
-                                               # (handle, content) source.
+                                               # document walk; read at the absorb seam as
+                                               # a fed action's `decided_by` handle and as the trigger of the one refusal a `localOnly` statement meets in the feed (no capture reads it since stage 1 of the Alterants build).
 end
 
 """
@@ -812,7 +812,7 @@ R-V04B-29 the shape, R-V04B-30 the name, 2026-09-15/16; docs/public-api.md §1.1
 - `status::ProcessStatus` — `PROCESS_OK` (no error-severity diagnostic) or `PROCESS_ERROR` (at least one;
   non-OK ⇒ non-empty diagnostics).
 - `diagnostics::Vector{Diagnostic}` — the run's coded diagnostics: every row the run recorded, `:error` and
-  `:warning` alike; empty when it recorded none (a `PROCESS_OK` run may still carry `:warning` rows —
+  `:warning` alike; empty when it recorded none (the type admits `:warning` rows, yet none is minted under `src/` since stage 1 of the Alterants build, so a `PROCESS_OK` run's vector is empty (the entry door's fail-closed `PROCESS_ERROR` delivery, `_entryErrorDelivery` in src/GoMeta.jl, carries its `:error` rows) —
   `PROCESS_OK` means no `:error` row).
 
 DOES: carries these four and NOTHING internal — the per-call working state (`ProcessState`) never leaves the

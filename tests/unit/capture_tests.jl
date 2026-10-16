@@ -24,14 +24,13 @@
 #       census rows 33 and 34).
 #       At stage 1 of the Alterants build 19 stand: [6] left (−1), [9]'s coherence arm (−1) and [11]'s A5 and A4/C3 (−2) with the
 #       Heading's separate lane; [7]'s locality pin (+1), [8]'s field-names pin (+1) and [12], the witness of the review's cure A1
-#       (+1), added — every movement declared.
+#       (+1), added — every movement declared. After the CrossReview set alt-stage1's cures 20 stand: [7]'s key pin (+1).
 
 using Test
 import GoMeta as GM
 
 @eval module _CapM
     zset(d::Dict{Symbol,Bool}, a::Symbol, r::Symbol...) = (for x in r; d[x] = true; end; nothing)
-    yset(d::Dict{Symbol,Bool}, a::Symbol, r::Symbol...) = (for x in r; d[x] = true; end; nothing)
     nset(d::Dict{Symbol,Bool}, a::Symbol, r...) = (d[Symbol("n", length(r))] = true; nothing)   # [12]: records how many arguments the apply handed over
 end
 
@@ -113,6 +112,10 @@ end
               !any(t -> startswith(String(t[2]), "zh") && t[3] == "T", rows)
         # the LOCALITY of the second Alterant too: the attached Code Block (`y = 2`) carries neither row — only the metaBlock does
         @test count(t -> t[2] === :zh_2, rows) == 1 && count(t -> t[2] === :head_1, rows) == 1
+        ml7 = only(l for bk in GM.BLS.children(r.blsComponentTree) for l in GM.BLS.children(r.blsComponentTree, bk)
+                     if GM.BLS.getElement(l, :inputLineNum) == 2)   # the metaLine at input line 2, through the door
+        mb7 = GM.key_bytes(GM.occurrence_key(r.blsComponentTree, GM.BLS.parent(r.blsComponentTree, ml7); namespace = :default))
+        @test only(t[1] for t in rows if t[2] === :zh_2) == mb7 && only(t[1] for t in rows if t[2] === :head_1) == mb7
     end
 
     @testset "[8] the CaptureDecl ctor triple (the two-field row since stage 1 of the Alterants build)" begin
@@ -167,7 +170,8 @@ end
 
     @testset "[12] the deriving form's level is the set mode `localOnly`'s alone (stage 1 of the Alterants build, the review's cure A1)" begin
         # a String-slot action of ANOTHER set mode, stated with ONE quoted argument, is handed that one argument — no placement level
-        # appended (the retired separate path's scope); fed through the profile it queues like every action, no internal error
+        # appended (the retired separate path's scope); fed through the profile it meets no internal error — the status alone asserts it:
+        # over this meta-free document the fed action applies nowhere (no Block attached to meta — userfeed_visib_tests.jl [U3])
         b = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
         pi = GM.next_plugin_index(b)
         GM.register!(b,

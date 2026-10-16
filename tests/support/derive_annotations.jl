@@ -4,7 +4,7 @@
 #       (the twelve annotation pins' form), its fifth column DERIVED through the BLS Component tree and the door's
 #       content function `BLS.content` — never read from the Engine (R-V04B-43 (1): "it is read from the BLS Component
 #       tree through BLS's own access function"). Lives in the support hub (module TestSupport) because the golden
-#       runner AND three unit-layer witnesses produce this form (the plan :60 names `tests/golden/`; the hub is the one
+#       runner AND two unit-layer witnesses produce this form (`unicode_cure_tests.jl`, `latex_flavor_tests.jl`; the third, the fed heading's, left at stage 1 of the Alterants build) (the plan :60 names `tests/golden/`; the hub is the one
 #       file every layer loads once — the placement named in the recipe).
 # DOES: (1) the four columns are the public reader's rows (`readAltValuesEvals`, the reader's sort order) — one row per
 #       line, `<attr>\t<repr(value)>\t<polarity>\t<hex(cell_handle)>`, the attr column RAW as the Engine's five-column

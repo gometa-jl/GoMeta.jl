@@ -22,7 +22,8 @@
 #     its fifth column derived through the BLS Component tree.
 # REASONING: final results are observable, deterministic, and hash-stable.
 #     The store keys by the row's handle — a NORMALIZED STRUCTURAL occurrence handle (src/occurrence.jl)
-#     or a fed profile's user-context handle — so two distinct cells never share a slot even with
+#     (no row is keyed on a fed profile's user-context handle since stage 1 of the Alterants build — that handle rides
+#     the fed actions' `decided_by` only) — so two distinct cells never share a slot even with
 #     byte-identical content; a value-CHANGING re-apply of
 #     the SAME occurrence supersedes, later wins (the collision warning left at stage 5's E5 of the v0.4
 #     build — census row 66). A row is recorded for every captured cell —
@@ -118,7 +119,7 @@ registry threads through.
 Each row's `decided_by` (R-V04B-35 (d); stage 2's commit 2) is the list the apply recorded for the Alterant in
 `st.working_origin`: the handles of the statements it APPLIED, in application order — ONE for a single-valued mode
 (the deciding statement), the contributing statements' for an accumulating one (which statement contributed which
-label stays Q4 (ii)), the applied fields' for the compound; own when it names the row's own Component (a Block's: the entry equals the
+label stays Q4 (ii)), the applied fields' for the compound — and for a `:per_entry` row ONE element of it, the origin of the row's own applied statement (the Heading bullet above; under the scheme's contract of one entry per applied call — a surplus entry carries the whole list, the `:per_entry` arm below); own when it names the row's own Component (a Block's: the entry equals the
 row's handle; a Segment-carried row's: the entry is the Segment's own key — its row is keyed on the Line with the
 Segment as the key's origin — and the answer function reads that entry as the LINE's own statement, the Segment being its
 carrier: the Line answers `:own`, the Segment its Line's answer marked `:indirect` (his words of 2026-10-02, OWNER-WORDS
@@ -201,7 +202,9 @@ function captureEvals!(st::ProcessState, cell::BLS.AbstractComponent;
             # dedupes per (handle, attr), so the fold keeps same-level repeats distinct — the v0.2 build's injectivity law); an
             # entry without a level `<stem>`, its repeats `<stem>_u<k>` (dead on live paths — every path materialises a level at
             # the enqueue; kept defensive); the VALUE the text; each entry's deciding statement is its own applied row's origin
-            # (the i-th entry ← the i-th applied statement: `_record_origin!` and the setter push in one order).
+            # (the i-th entry ← the i-th applied statement: `_record_origin!` and the setter push in one order — the scheme's CONTRACT is a
+            # setter appending EXACTLY ONE entry per applied call, as `setHead` does; a setter appending none or several is not refused
+            # and mis-pairs, a surplus entry taking the whole origin list — docs/public-api.md §1.2).
             lvlseen = Dict{Union{Nothing,Int},Int}()
             for (ei, (text, lvl)) in enumerate(getfield(inst, :entries))
                 k = (lvlseen[lvl] = get(lvlseen, lvl, 0) + 1)

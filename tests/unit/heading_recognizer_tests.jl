@@ -165,7 +165,7 @@ end
         # sugar composes with a following label and with a GLUED condition block (the
         # existing envelope's condition-attachment law — spaced '{' refuses today for
         # every action; the sugar changes nothing there). The settribute condition
-        # evaluates ONCE at the HEADING's own line: a metaLine is not code, so
+        # evaluates ONCE, at the apply of the Component the heading is applied to — the metaBlock (his §D245; stage 1 of the Alterants build; before it the metaLine's own snapshot at the absorb seam): a metaBlock is not Code, so
         # { isCode } is FALSE there — zero rows, no refusal (the ratified flip of the evals rows
         # from the queued era's per-cell evaluation, pinned here — panel-found gap)
         @test string(_run("#~ \"T\" :label1\nx = 1\n").status) == "PROCESS_OK"
@@ -317,6 +317,12 @@ end
         # (the queued head applied at the metaBlock, nothing else on the surface)
         rz = _run("#~ \"Only\"\nx = 1\n")
         @test [a for (_, a, _, _) in GM.readAltValuesEvals(rz.altValues_evals)] == [:head_1]
+        # (MEASURED: the lane's oracle P04 and P15) a heading on a metaLine split by a trailing `##` comment records on the metaBlock
+        # alone; a heading beside `hide` records ONCE while `hide` governs both Blocks (the two pins below count the rows and their attrs;
+        # the Components are the oracle's views — the metaBlock key itself is pinned for a plain metaLine above, `hrow`)
+        @test [a for (_, a, _, _) in GM.readAltValuesEvals(_run("#~ \"T\" ## a trailing comment\nx = 1\n").altValues_evals)] == [:head_1]
+        r15 = GM.readAltValuesEvals(_run("#~ \"T\" hide\nx = 1\n").altValues_evals)
+        @test length(r15) == 3 && count(t -> t[2] === :head_1, r15) == 1 && count(t -> t[2] === :visib && t[3] === :hide, r15) == 2
         # THE RATIFIED VOCABULARY BOUNDARIES (panel-found coverage gap): `#~0` = the
         # file level records head_0; `#~8` = the deepest depth-digit records head_8
         r0 = _run("#~0 \"Root\"\nx = 1\n")
@@ -352,7 +358,7 @@ end
         # heading condition" is gone. The loop's order: the labels of the levels ABOVE and those stated BEFORE the heading on
         # its metaLine are seen, those stated AFTER it are not (as for `hide`) — these pins run WITHOUT a fed profile; with one the
         # user level is the loop's primary slot and a label stated after the heading is seen too (the lane's oracle P24, and P25
-        # for `hide` on both trees; the design question his); the quoted-first sugar is always first on its
+        # for `hide` on both trees — pinned below; accepted by him as the loop's order, R-ALT-15 (ii)(3)); the quoted-first sugar is always first on its
         # line, so on a metaBlock's first metaLine its condition sees the levels above only (on a metaLine glued to an earlier one it
         # also sees the labels stated on the metaBlock's earlier metaLines — P05). MEASURED on the scratch (the lane's AFTER oracle:
         # rl1 P20, rl2 P08, rl3 the variants probe's rl3b, rl4 P06, rl5 P07, rl6 P19).
@@ -363,12 +369,22 @@ end
         rl3 = _run("#~ :label1\nx = 1\n#~2 \"T\"{ :label1 }\ny = 2\n")   # the level ABOVE: seen — the heading records (MEASURED: a `#~2` metaLine GLUED to a
         @test (:head_2, "T") in _heads(rl3)                                      #   `#~` metaLine forms ONE metaBlock with it and its heading takes the region's level, head_1 —
                                                                                   #   the lane's PROBES-rl3-variants_scratch.txt; the shape with a Code Line between is the depth-2 region)
+        @test _heads(_run("#~ :label1\n#~2 \"T\"{ :label1 }\ny = 2\n")) == [(:head_1, "T")]    # GLUED (P05; the variants probe's rl3a): ONE metaBlock, its level
+        @test _heads(_run("#~ :label1\n\n#~2 \"T\"{ :label1 }\ny = 2\n")) == [(:head_2, "T")]  # a BLANK Line between (the variants probe's rl3c): the depth-2 region
         rl4 = _run("#~2 :label2 head(\"T\"){ :label2 }\nx = 1\n")         # stated BEFORE the heading on its metaLine: seen
         @test (:head_2, "T") in _heads(rl4)
         rl5 = _run("#~2 head(\"T\"){ :label2 } :label2\nx = 1\n")         # stated AFTER it: not seen — no row
         @test string(rl5.status) == "PROCESS_OK" && isempty(_heads(rl5))
         rl6 = _run("#~ \"T\"{ :label9 }\nx = 1\n")                        # a label unknown to the vocabulary answers false (his Q4.2 (a)): no row
         @test string(rl6.status) == "PROCESS_OK" && isempty(_heads(rl6))
+        # WITH a fed profile the user level is the loop's primary slot, so the metaBlock's own labels are collected before its heading
+        # and its `hide` are decided (his acceptance of 2026-10-16, R-ALT-15 (ii)(3): the loop's order — MEASURED: the lane's oracle P24
+        # against P07, rl5 above; P25 against P26)
+        _fed(s, p) = GM.goMeta(Vector{UInt8}(codeunits(s)); config = GM.GoMetaConfig(user_mh_profile = p))
+        _vis(r) = [v for (_, a, v, _) in GM.readAltValuesEvals(r.altValues_evals) if a === :visib]
+        @test (:head_2, "T") in _heads(_fed("#~2 head(\"T\"){ :label2 } :label2\nx = 1\n", ":label3"))
+        @test _vis(_fed("#~ hide{ :label1 } :label1\nx = 1\n", ":label3")) == [:hide, :hide] &&
+              isempty(_vis(_run("#~ hide{ :label1 } :label1\nx = 1\n")))
         # THE CONDITION'S SUBJECT (his decision on point (4), §D245): a trailing heading's condition reads the LINE's facts
         # (before: the carrier metaSegment's) — `{ isCode }` on a Code Line is now TRUE, `{ isMeta }` there FALSE
         @test (:head_10, "T") in _heads(_run("z = 3 #~ \"T\"{ isCode }\n"))

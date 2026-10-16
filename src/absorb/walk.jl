@@ -275,8 +275,8 @@ function absorbWalk(
                 ## of the v0.4 build (census row 45 — the word R-V04B-42 (2) waited for). The E-04 flagless read (`keys(Visib)[array][1]`) went with the write.
                 # Capture the Segment-grain FINAL evals rows before the next apply wipes `st.working`;
                 # the cell is the LINE (`crntComponent`) the Segment's meta applies to, NOT the Segment.
-                # Reads `st.working`, puts or supersedes rows in `st.evals` (and may append warning
-                # diagnostics) — never alters render bytes.
+                # Reads `st.working`, puts or supersedes rows in `st.evals` (it appends no diagnostic: the capture-floor
+                # warnings left with the Heading's separate lane at stage 1 of the Alterants build, as src/GoMeta.jl's twin call says) — never alters render bytes.
                 # v0.2 CH-1 (step 3): the ORIGIN rides the key — `childComponent` (the Segment) mints
                 #   the target/origin split, so two same-kind inline Segment evals on one Line stay
                 #   DISTINCT through the segment-carried remap.
