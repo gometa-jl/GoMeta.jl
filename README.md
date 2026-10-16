@@ -62,7 +62,8 @@ message names the escapes); `0.3.0` arms **three content flavors** (`:julia` the
 an unknown tag throws its stable message), makes the hide render **idempotent** (the ensure-token write:
 `render ∘ ingest ∘ render == render` — see the canonical-output reference, rule 6), and
 extends the label whitelist by a fixed **pictograph vocabulary** (byte-exact names like
-`:💡`, `:📝`, `:🔥`).
+`:💡`, `:📝`, `:🔥`); since stage 2 of the Alterants build the whole list — those names, `:label1`..`:label5` and `:doc` — is
+hard-coded in the Labels Alterant's own file (`src/alterants-std/labels.jl`), where a further name is one line.
 
 **What works today** (the feature list below is test-pinned in this repository):
 
@@ -228,8 +229,9 @@ action arguments are refused; label names are validated against the engine's clo
 APPLIED — an out-of-whitelist name refuses; a label QUERIED in a condition answers false when it is unknown
 or unset (the legacy's checker; since stage 5's E9 of the v0.4 build). The corpus-documented labels are
 `:label1`..`:label5`; since `0.3.0` the closed whitelist also accepts the fixed pictograph
-vocabulary (byte-exact names — the refusal message lists the full accepted set). The full
-catalogue: `docs/public-api.md` §3.
+vocabulary (byte-exact names — the refusal message lists the full accepted set), and since stage 2
+of the Alterants build `:doc` — the whole list hard-coded in the Labels Alterant's own file
+`src/alterants-std/labels.jl`. The full catalogue: `docs/public-api.md` §3.
 
 ## Documentation
 

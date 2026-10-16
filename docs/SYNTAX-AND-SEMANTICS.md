@@ -306,8 +306,9 @@ content-only block across the blank.
 - **IS** — labels are accumulative tags a metaLine applies to the content in its scope. **Label
   names are validated when APPLIED** against the engine's closed whitelist — the
   corpus-documented set `:label1` … `:label5` plus, since `0.3.0`, a fixed pictograph
-  vocabulary (byte-exact names like `:💡`, `:🔥`; the refusal message lists the full accepted
-  set): applying a label from outside the whitelist refuses with a stable message naming the
+  vocabulary (byte-exact names like `:💡`, `:🔥`) plus, since stage 2 of the Alterants build, `:doc` — the
+  whole list hard-coded in the Labels Alterant's own file `src/alterants-std/labels.jl` (the refusal message lists the
+  full accepted set): applying a label from outside the whitelist refuses with a stable message naming the
   accepted set; a label QUERIED in a condition answers false when it is unknown or unset (the
   legacy's checker; since stage 5's E9 of the v0.4 build).
 - **Conditional application** — `:labelN{ condition }` applies the label **only** to components satisfying the
@@ -546,7 +547,8 @@ To keep the verified claims honest, these are **known but not established here**
   same-statement pair whose second value would apply; the first-wins rule above is the contract.)
 - **Engine limits** — metaLines live in comments (`#`/`##`), not as executable code. The label
   whitelist is closed: the corpus-documented `:label1`..`:label5` plus (since `0.3.0`) the fixed
-  pictograph vocabulary — byte-exact names, no normalization —
+  pictograph vocabulary plus (since stage 2 of the Alterants build) `:doc`, the whole list hard-coded in the Labels
+  Alterant's own file `src/alterants-std/labels.jl` — byte-exact names, no normalization —
   and **label names are validated against it when APPLIED** — an unknown label refuses with the stable
   `GoMeta apply: unknown label …` message, which names the accepted set; a label QUERIED in a condition
   answers false when it is unknown or unset (the legacy's checker; since stage 5's E9 of the v0.4

@@ -15,7 +15,9 @@
 # brace takes its ordinary fate — is held by the rewrite's CHAR walk (never the legacy's byte-count end test); [1] and [4] carry the
 # flush shapes; the known-label asserts of [3] and [7] fix where a name ends (the s5c37 HAND-EDIT of 2026-10-09 — the closing set's row
 # L4 r2, his word §383; each count MEASURED on the s5c37 scratch from the FULL delivery view, PROBES-s5c37-witness-values_on-0cf389d4.txt). The s5close HAND-EDIT
-# (2026-10-09): the header's store clause above re-cut to the door's slice (the Engine stores no copy). A regeneration of this file must re-apply all five forms.
+# (2026-10-09): the header's store clause above re-cut to the door's slice (the Engine stores no copy). The stage-2 HAND-EDIT of the Alterants build
+# (2026-10-16): [7]'s membership comment re-cut — the constant is the Labels Alterant's hard-coded list in `alterants-std/labels.jl` since
+# that stage (R-ALT-20), the plain file gone; assert-count neutral. A regeneration of this file must re-apply all six forms.
 
 using Test
 import GoMeta as GM
@@ -103,7 +105,7 @@ _uc_err(s)     = try _uc_full(s); nothing catch e sprint(showerror, e) end
         # regional-indicator pair and a ZWJ sequence; a variation-selector-less base
         # char is a DIFFERENT byte sequence and refuses like any unknown name.
         for name in ("⛔", "💯", "🇨🇭", "⛓️‍💥", "🌛", "💫")
-            @test Symbol(name) ∈ GM.Alterants.LABELS_VOCABULARY   # the plain shipped list (stage 5's E9)
+            @test Symbol(name) ∈ GM.Alterants.LABELS_VOCABULARY   # the Labels Alterant's hard-coded list (stage 2 of the Alterants build; the plain file's until then — stage 5's E9)
         end
         r = _uc_full("#~ :⛔ hide{ :⛔ }\n# content\n")
         @test r.status == GM.PROCESS_OK           # set role + condition role, end-to-end

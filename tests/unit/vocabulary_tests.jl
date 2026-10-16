@@ -1,8 +1,11 @@
 # vocabulary_tests.jl — the Labels vocabulary witnesses (v0.4 T4's whitelist relocation, trimmed at stage 5's E9 of the v0.4
 # build: the digest pin, the capture cache, the artifact grammar, the scope law, the G-VOC read surface and the write-only
-# valve left with their subjects — census rows 10, 28 and 55, OWNER-WORDS §317; the 38 names stay in the plain file).
+# valve left with their subjects — census rows 10, 28 and 55, OWNER-WORDS §317; the 38 names stayed in the plain file until stage 2 of
+# the Alterants build moved them — with `:doc` — into the Labels Alterant's own file `alterants-std/labels.jl` as a hard-coded list,
+# his R-V04-20 / §D202, R-ALT-20 / R-ALT-21; [2b] below its witnesses).
 #
-# IS:   the membership witnesses over the plain file ([2] the set role refuses an unknown name; [3] the late-order name — the ∈-scan
+# IS:   the membership witnesses over the Labels Alterant's hard-coded list ([2] the set role refuses an unknown name; [2b] `:doc`
+#       applied and queried; [3] the late-order name — the ∈-scan
 #       in the set role, the applied hide in the query role), the zero-literal law in its DECIDABLE form ([10]: no Core literal of the
 #       names re-enters src outside alterants-std/), and the crx-t3t4 cure witnesses that live here by history ([11]'s A3,
 #       [12]–[18]: the zero-dispatch validate chain, the DomainRef read-once law ([14] — retired at stage 5's E10 with `DomainRef`), the identity/getfield hardening, the
@@ -122,11 +125,19 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
         e
     end
 
-    @testset "[2] membership over the plain file: a shipped name applies, an unknown name refuses in the SET role" begin
+    @testset "[2] membership over the Alterant's hard-coded list: a shipped name applies, an unknown name refuses in the SET role" begin
         r = _drive("x = 1\n#~ :label1\n\ny = 2\n")
         @test r isa GM.GoMetaDelivery && r.status === GM.PROCESS_OK
         e = _drive("x = 1\n#~ :nope\n\ny = 2\n")
         @test e isa ErrorException && occursin("unknown label", e.msg)
+    end
+
+    @testset "[2b] `:doc` — hard-coded into the Labels Alterant at stage 2 of the Alterants build (his §D202, §D252; R-ALT-21; MEASURED: the lane's oracle L01, L02, L03)" begin
+        rd = _drive("#~ :doc\nx = 1\n")                                  # L01: two `label_doc` rows — the metaBlock and the attached Code Block
+        @test rd isa GM.GoMetaDelivery && rd.status === GM.PROCESS_OK && count(t -> t[2] === :label_doc, GM.readAltValuesEvals(rd.altValues_evals)) == 2
+        rq = _drive("#~ :doc\n#~2 hide{ :doc }\nx = 1\n")              # L02: the label SET then QUERIED (two glued metaLines, ONE metaBlock): the hide APPLIES on both Blocks
+        @test rq isa GM.GoMetaDelivery && rq.status === GM.PROCESS_OK && count(t -> t[2] === :visib && t[3] === :hide, GM.readAltValuesEvals(rq.altValues_evals)) == 2
+        @test :doc ∈ GM.Alterants.LABELS_VOCABULARY && length(GM.Alterants.LABELS_VOCABULARY) == 39   # the 38 shipped + `:doc`, none beyond (R-ALT-21)
     end
 
     @testset "[3] the LATE-order name :💫 (the C4E-4 order-independence pin)" begin
@@ -146,7 +157,8 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
         # `alterants-std/` on a NON-comment line (the tombstone comments are prose);
         # (b) the vocabulary-name literal census over src (the union pattern
         # `label1` ∪ `:🔥`) equals EXACTLY the enumerated survivor set — every survivor
-        # is prose (docstrings, comments, the two kept empty-list-message examples), so
+        # is prose (docstrings and comments — the two kept empty-list-message examples moved with `setLabels` / `checkLabels`
+        # into `alterants-std/labels.jl` at stage 2 of the Alterants build, outside this scan), so
         # any new enumeration of shipped names re-entering Core trips this comparison.
         srcdir = joinpath(dirname(dirname(@__DIR__)), "src")
         id_offenders = String[]
@@ -172,7 +184,10 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
                          "GoMeta.jl" => 1,                    # the profile-feed docstring example
                          # (apply.jl's one — the seam header's condition-side-atoms comment — left with the set-invocation seam at stage 5's E6
                          # of the v0.4 build, census row 14; measured on both trees: apply.jl 1 → 0, every other file equal)
-                         "alterants/registry.jl" => 3)        # the header note + the TWO kept empty-list messages
+                         "alterants/registry.jl" => 1)        # the header note alone since stage 2 of the Alterants build: the TWO kept
+                                                              # empty-list messages moved with `setLabels` / `checkLabels` into
+                                                              # `alterants-std/labels.jl`, which this scan skips (MEASURED on the scratch:
+                                                              # registry.jl 1, config.jl 1, GoMeta.jl 1 by `grep -c` — instruments/stage2-build-fix1.py; the failing run receipts/stage2/scratch-suite.txt)
         # DISCLOSED LIMIT (the crx-t3t4 C3 row): this is a SOURCE-TEXT tripwire, not a
         # semantic guarantee — a computed enumeration (names built from strings or
         # codepoints, or a literal subset avoiding both sentinel patterns) passes both

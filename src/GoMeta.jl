@@ -183,8 +183,9 @@ end
 IS: the feed of the RESERVED user slot of the meta-hierarchy (`userMHIdx` in `state.jl` — defined + scanned FIRST by
 both `applyAltActionFns` walks, and fed by no other call site) with the metaLine-body profile in
 `st.config.user_mh_profile`, BEFORE the absorb walk. SCOPE: a minimal caller-supplied feed ONLY — not a general
-user-level configuration system; internal (NOT exported); called from `goMeta` iff `config.user_mh_profile !==
-nothing`. Experimental — see docs/public-api.md §2.
+user-level configuration system; internal (NOT exported); called from `goMeta` iff `config.user_mh_profile` is a NON-EMPTY
+String (an empty or whitespace-only profile is inert like `nothing` — stage 2 of the Alterants build, R-ALT-18 / R-ALT-22).
+Experimental — see docs/public-api.md §2.
 
 DOES: reuses the standard machinery VERBATIM — no parallel intake — queued actions enqueue; a heading (an action of an
 Alterant of the set mode `localOnly`) REFUSES at the read with his message (§D242; R-ALT-9: no Component of the file levels
@@ -356,9 +357,13 @@ function goMeta(
     ## for injected states left with the seam.
     st = init_state(parse_state, config, registry)
     with(STATE => st) do
-        ## Seed the reserved user slot of the meta-hierarchy BEFORE the walk iff configured — the
-        ## default-`nothing` no-feed path takes one `isnothing` branch and is otherwise untouched.
-        if !isnothing(config.user_mh_profile)
+        ## Seed the reserved user slot of the meta-hierarchy BEFORE the walk iff a profile is FED — `nothing` (the default) and,
+        ## since stage 2 of the Alterants build, an EMPTY or whitespace-only String are the no-feed path (inert: the user slot is
+        ## neither allocated nor occupied, so the loop's order is the un-fed one — his word of 2026-10-16, R-ALT-18 / R-ALT-22; the
+        ## CrossReview set alt-stage1's E2 had traced an empty profile occupying the slot).
+        ## (white space as the absorb reads it — its ONE predicate `_isspace_valid`, his §359 (10): Julia's bare `isspace` throws at decode
+        ## on an overlong sequence, so an invalid edge byte is content here too — the profile is fed and the absorb refuses it, as at the tip)
+        if !isnothing(config.user_mh_profile) && !isempty(strip(AbsorbMeta._isspace_valid, config.user_mh_profile))
             feed_user_mh!(st)
         end
         ## The File loop (the legacy's; its `_walk_and_apply!` factoring of stage 2's commit 3a left at stage 5's E2 —

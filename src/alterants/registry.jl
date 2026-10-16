@@ -1,9 +1,10 @@
 # registry.jl — the alterant inventory: the vocabulary-gated setters, state accessors, the default registry
 #
 # IS: the register file of the alterant layer — two nested sub-modules plus a top-level tail. `module
-#     Alterants`: the shipped Labels vocabulary's include (the 38 names of `alterants-std/labels_vocabulary.txt`, a plain
-#     file read at load — its digest pin, capture cache and scope law left at stage 5's E9 of the v0.4 build) + the toy
-#     setters `setLabels`/`checkLabels`/`setVisib`/`setId` over the `@namedElement` types `Visib` (Bool: hide/show/discard)
+#     Alterants`: the Labels Alterant's own file's include (`alterants-std/labels.jl` since stage 2 of the Alterants build: the
+#     hard-coded list of 39 names — the 38 shipped + `:doc` — with `setLabels`/`checkLabels`; the plain file and its loader left with
+#     that stage, its digest pin, capture cache and scope law at stage 5's E9 of the v0.4 build) + the toy
+#     setters `setVisib`/`setId` over the `@namedElement` types `Visib` (Bool: hide/show/discard)
 #     and `Id` (Int16: cell/parent/file). `module CnS`: the per-call state accessors `wipeAltActionSlots`/
 #     `updateMetaHierarchy`/`getState`/`getAltState`. The tail builds the immutable `AlterantRegistry`
 #     (type: src/state.jl) — `build_default_registry()` → `const DEFAULT_REGISTRY` (v0.4 T1: the former
@@ -23,7 +24,8 @@
 #     the settribute keys and the queryable actions (`queryable_action`, src/state.jl), read by the rewrite at absorb.
 # EDGES (honest): the label whitelist is closed and fixed — the corpus-documented labels
 #     :label1..:label5 plus (since 0.3.0) a fixed pictograph vocabulary (byte-exact names, no
-#     normalization); an unknown label APPLIED meets the stable refusal that
+#     normalization) plus `:doc` (stage 2 of the Alterants build, his §D202 / §D252) — hard-coded in the Labels Alterant's own file
+#     `alterants-std/labels.jl` (R-ALT-20); an unknown label APPLIED meets the stable refusal that
 #     names the accepted set; a label QUERIED answers false when unknown or unset — the legacy's checker, since stage 5's E9
 #     (the T4 membership refusal and the R-V04-36 write-only valve left, census row 55). `setId` parses values into the Int16 domain; the value/arity walls
 #     around these setters are Julia's own since stage 5's E6 of the v0.4 build (the apply seam's guarded
@@ -53,70 +55,13 @@ using StaticArrays: SVector
 #########################################################################################
 ## Labels.jl for `alterant` `Labels`:
 
-## The Labels vocabulary: the 38 shipped names, read from `alterants-std/labels_vocabulary.txt` by the std file
-## below (R-V04B-6 (a): under alterants-std/, never a Core literal). `setLabels` checks a label against them — the
-## legacy's closed check (GoMetaRetro Alterants.jl :73–:78); `checkLabels` answers false for an unset label, as the
-## legacy did (:87–:99). The v0.4 T4 relocation's digest pin, capture cache, scope law, G-VOC read surface and
-## write-only valve left at stage 5's E9 of the v0.4 build (census rows 10, 28 and 55; his §317 mark, R-V04B-105).
-include(joinpath(@__DIR__, "..", "alterants-std", "labels_vocabulary.jl"))
-
-function setLabels(
-    crntLabels::Dict{Symbol,Bool}, # The Alterant here.
-    actionName::Symbol,
-    labels::Vararg{Symbol} # 
-)
-
-    if actionName == :(:)
-        ## §4.8 guard (v0.3.1, "fixed WITHIN THE Labels Alterant"): a lone ':'
-        ## (or ':()') reaches this setter with ZERO labels — the vacuous loop below then stored
-        ## nothing, minted no evals row, and the author's mistyped label vanished SILENTLY
-        ## (probe m_lone_colon). The Alterant verifies its own input: an empty label list
-        ## refuses loudly. error() (not ArgumentError): chosen when the setter seam — left at stage 5's E6 of
-        ## the v0.4 build, census row 14 — reduced an ArgumentError to its type name; an ArgumentError now
-        ## propagates with its message; kept as the Alterant's own refusal (the unknown-label mechanics below).
-        isempty(labels) && error("GoMeta apply: empty label list — the labels action ':' ",
-            "names no label; v0 requires at least one label (e.g. ':label1'); ",
-            "see docs/public-api.md §3.4")
-        ## the closed check (the legacy's): the ∈-scan over the file's order (never `insorted` over declaration
-        ## order — the C4E-4 law); the refusal renders a SORTED display copy of the accepted set
-        for label ∈ labels
-            if label ∈ LABELS_VOCABULARY
-                crntLabels[label] = true
-            else
-                error("GoMeta apply: unknown label ", repr(first(String(label), 40)),
-                    " — not in v0's closed label whitelist (the accepted set = ",
-                    sort(copy(LABELS_VOCABULARY)), "); see docs/public-api.md §3.4")
-            end
-        end
-    else
-        error("GoMeta internal invariant violated: setLabels called with actionName = ",
-            actionName, " != :(:) — please report this (not reachable from any v0 input)")
-    end
-end
-
-function checkLabels(
-    crntLabels::Dict{Symbol,Bool}, # The Alterant here.
-    actionName::Symbol,
-    labels::Vararg{Symbol}
-)
-    ## §4.8 twin guard (v0.3.1, with the setLabels guard above): the word-less
-    ## label query ':()' reached this checker with ZERO labels and returned a vacuous TRUE —
-    ## a wrong-outcome class (the K5/K6 family). The K2 pin that held the misapply at its old
-    ## fate ("so it cannot drift silently") is flipped by name in the same change. The corpus
-    ## sweep (v0.3.1) found no input depending on the vacuous form.
-    isempty(labels) && error("GoMeta apply: empty label query — ':()' names no label to ",
-        "check; v0 requires at least one label (e.g. ':(:label1)'); ",
-        "see docs/public-api.md §3.4")
-    ## no membership gate, no valve: a label outside the shipped set is simply not set — the query answers false
-    ## (the legacy's checker, GoMetaRetro Alterants.jl :87–:99; the T4 membership refusal and the R-V04-36 write-only
-    ## valve left at stage 5's E9 of the v0.4 build, census row 55)
-    for label ∈ labels
-        if label ∉ keys(crntLabels)
-            return false
-        end
-    end
-    return true
-end
+## The Labels Alterant has its OWN file since stage 2 of the Alterants build (his R-V04-20 — the whitelist belongs in the Labels
+## Alterant, "fixing a bug"; his §D202 — "writing it into the code of the Labels Alterant (i.e.: hard coded)"; R-ALT-20): the
+## hard-coded list `LABELS_VOCABULARY` (the 38 shipped names + `:doc`, R-ALT-21), `setLabels` (the closed check — the legacy's,
+## GoMetaRetro Alterants.jl :73–:78) and `checkLabels` (false for an unset or unknown name — the legacy's :87–:99) live in
+## `alterants-std/labels.jl` (R-V04B-6 (a): std-Alterant territory, never a Core literal — vocabulary_tests [10] scans around it).
+## The plain file `labels_vocabulary.txt` and its loader left with that stage.
+include(joinpath(@__DIR__, "..", "alterants-std", "labels.jl"))
 
 #########################################################################################
 #########################################################################################

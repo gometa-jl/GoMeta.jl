@@ -23,7 +23,8 @@
 #   (the file lives under extensions/ since stage 5 of the v0.4 build — R-V04B-27; run it from the code home's root)
 #
 # The corpus-documented labels are `:label1`..`:label5`; since 0.3.0 the closed whitelist also
-# accepts a fixed pictograph vocabulary (this driver's index covers the corpus labels).
+# accepts a fixed pictograph vocabulary, and since stage 2 of the Alterants build `:doc` — the whole list
+# hard-coded in `src/alterants-std/labels.jl` (this driver's index covers the corpus labels).
 # A query outside that set is refused with the accepted list — the engine-side refusal
 # behaviour for out-of-whitelist names is documented in `docs/public-api.md` §3.4.
 

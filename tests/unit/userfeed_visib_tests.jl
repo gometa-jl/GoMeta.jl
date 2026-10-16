@@ -3,11 +3,16 @@
 # authored '#~ hide', asserting the fed verdict wins and the rows carry the user-context handle"; the plan v8.1 :62 — the R2 test proposals that
 # witness stage-2 code; the brief v2 §1 row 7a–c).
 #
-# IS:   four witnesses over the public entry, every value MEASURED first (R4b; receipts/S8-branch/precheck-s2c4/PROBES-origins_decided_by.txt
+# IS:   five witnesses over the public entry, every value MEASURED first but one — [U5]'s "  " on the P25 document, the testset's own
+#       run, disclosed there — (R4b; receipts/S8-branch/precheck-s2c4/PROBES-origins_decided_by.txt
 #       cases E and F; the fed verdict's handle = the user-context key of ordinal 1): [U1] fed `show` against authored `#~ hide` — the fed
 #       verdict wins on the metaBlock and the attached Block, the rows carry the user-context handle; [U2] fed `hide` against authored `#~ show`
 #       — the same, the other way; [U3] fed `discard` over a meta-free input — PROCESS_OK and ZERO rows (no Block is attached to meta, the
-#       apply runs for none); [U4] the fed verdict read through the answer function: `:user`.
+#       apply runs for none); [U4] the fed verdict read through the answer function: `:user`; [U5] (stage 2 of the Alterants build,
+#       his word of 2026-10-16 — R-ALT-18 / R-ALT-22) an EMPTY or whitespace-only profile is INERT like no profile: it feeds nothing and
+#       occupies no slot, so the loop's order is the un-fed one (MEASURED: the lane's oracle L04, L05, L06 against P07 and P26 — before
+#       the stage an empty profile occupied the user slot, the CrossReview set alt-stage1's E2); a profile whose edge character is an INVALID
+#       byte sequence is content, never white space — fed and refused by the absorb as at the tip (MEASURED: the lane's oracle L08).
 # REASONING: the user slot is scanned FIRST by both apply walks (feed_user_mh!'s docstring: "the fed profile OVERRIDES authored Visib");
 #       a queued fed action reaches the enqueue's origin line (commit 2) that no heading-only profile reaches — the path commit 3a's witness F3
 #       found broken (the UserContext import) is witnessed here at the public entry for its own sake.
@@ -52,5 +57,24 @@ _uf_bytes(s::String) = Vector{UInt8}(codeunits(s))
         end
         ls = _UF_BLS.children(ps, bs[2]); @test length(ls) == 2
         @test all(l -> GM.evaluatedAltValue(r, l, :Visib).source === :user, ls)        # the rowless Lines inherit the fed verdict
+    end
+
+    @testset "[U5] an EMPTY or whitespace-only profile is INERT like no profile; an invalid edge byte is no white space (R-ALT-18 / R-ALT-22; his §359 (10); MEASURED: the lane's oracle L04–L06, L08)" begin
+        # the P25 document: `hide{ :label1 }` stated BEFORE `:label1` on one metaLine — un-fed, the hide's condition does not see the label
+        # (no visib row); a NON-EMPTY profile made the user slot primary and the hide applied (P25); "" and "  " must behave as no profile
+        # ("" on this document MEASURED by the oracle's L05; "  " on this document is this testset's own run on the scratch, green — the
+        # oracle's L06 measured "  " on the P24 document below)
+        for p in ("", "  ")
+            r = GM.goMeta(_uf_bytes("#~ hide{ :label1 } :label1\nx = 1\n"); config = GM.GoMetaConfig(; user_mh_profile = p))
+            @test r.status === GM.PROCESS_OK && isempty(_visib_rows(r))
+        end
+        # the P24 document: a heading whose condition tests a label stated after it — no head row un-fed (P07); none with "" either (L04)
+        r24 = GM.goMeta(_uf_bytes("#~2 head(\"T\"){ :label2 } :label2\nx = 1\n"); config = GM.GoMetaConfig(; user_mh_profile = ""))
+        @test r24.status === GM.PROCESS_OK && !any(x -> startswith(String(x.attr), "head"), r24.altValues_evals.records)
+        # an INVALID edge byte is content, never white space (the absorb's one predicate, his §359 (10)): a profile whose only character is
+        # an overlong sequence is FED and meets the absorb's unknown-action refusal, as at the tip — never Julia's raw InvalidCharError out
+        # of the driver's feed test (MEASURED: the lane's oracle L08 on the tip and on the cured scratch)
+        e8 = try GM.goMeta(_uf_bytes("x = 1\n"); config = GM.GoMetaConfig(; user_mh_profile = "\xe0\x80\x80")); nothing catch err; err end
+        @test e8 isa ErrorException && occursin("GoMeta absorb: unknown alterant action", e8.msg)
     end
 end
