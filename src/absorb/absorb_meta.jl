@@ -497,12 +497,13 @@ function absorbMeta(
                     st.registry.plugins[st.registry.action_to_plugin[crntAltActionIdx]].setMode === :localOnly &&
                     error("GoMeta absorb: a heading (Heading Alterant) in the profile feed has no Component of the file levels to be local to",
                         " (see docs/public-api.md §3.4)")
-                ## THE SLOT BOUND (his Decision 3 of 2026-10-08, §358): the queue tensors hold size(queued, 2) = the registered action
-                ## count of actions per meta-hierarchy slot — a fixed size, raised by hand when an example needs it (the slower overflow
-                ## buffer a later design, V05-14); a further action meets GoMeta's message here, BEFORE the write.
+                ## THE SLOT BOUND (his Decision 3 of 2026-10-08, §358 — the matrix size he chose to start with, increased by hand (hard coded) if 8 proves too small — and his approval of 2026-10-15 of the session's option (a), the documentation lane's §D247 — the size raised by hand when an example asks): the queue
+                ## tensors hold size(queued, 2) = SLOT_CAPACITY (state.jl) actions per meta-hierarchy slot — 8, a named constant DECOUPLED
+                ## from the registered action count since stage 3 of the Alterants build (R-ALT-31; the slower overflow buffer a later
+                ## design, V05-14); a further action meets GoMeta's message here, BEFORE the write.
                 st.mh.count_actions_per_slot[crntSlot] == size(st.queue.queued, 2) &&
                     error("GoMeta absorb: more than ", size(st.queue.queued, 2), " actions in one meta-hierarchy slot — the queue holds ",
-                        "the registered action count (", size(st.queue.queued, 2), ") per slot in the meta region ", repr(first(metaSS, 40)),
+                        size(st.queue.queued, 2), " actions per slot (the slot capacity) in the meta region ", repr(first(metaSS, 40)),
                         " (see docs/public-api.md §3.4)")
                 altActionOnRow = (st.mh.count_actions_per_slot[crntSlot] += 1)
                 st.queue.queued[1,

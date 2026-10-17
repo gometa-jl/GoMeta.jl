@@ -1,7 +1,7 @@
 # answer_tests.jl — stage 2's commit 4 of the v0.4 build: THE ONE ANSWER FUNCTION `evaluatedAltValue` (R-V04B-35 (c); R-V04B-52 (2);
 # R-V04B-55 (2); the plan v8.1 :56).
 #
-# IS:   nine witnesses ([A1]–[A9]) of the answer's value and SOURCE over small inputs whose rows and deciding handles were MEASURED first
+# IS:   ten witnesses ([A1]–[A10]) of the answer's value and SOURCE over small inputs whose rows and deciding handles were MEASURED first
 #       (R4b — the evals-tree printouts and the origin probe banked at receipts/S8-branch/precheck-s2c4/PROBES-*).
 # DOES: [A1] Visib — the metaBlock's own statement, the attached Block indirect through it, a rowless Line inherits; [A2] Labels —
 #       the SET with one source; [A3] no rows anywhere — the declared default of each built-in Alterant (R-V04B-92), the File `:none`; [A4] a
@@ -10,7 +10,8 @@
 #       the Blocks, the Line and its Segments alike (a Segment answers as its Line answers); [A6] the refusals and the registry keyword; [A7] the
 #       surface (package-public, not exported; the one method); [A8] a custom registry — an undeclared capture stem derived as the walk
 #       derives it, a capture-less Alterant its declared default; [A9] the Id compound — a NamedTuple of the recorded fields, the nearest
-#       statement's compound as a whole.
+#       statement's compound as a whole; [A10] the `ids` action's compound — the three fields at once, the stated zero absent, the later
+#       single action overwriting a field (stage 3 of the Alterants build).
 # PURPOSE: the measured consult of the answer's two parts — the value and the source — never inferred from a row's presence.
 
 using Test
@@ -150,6 +151,16 @@ _an_id(c) = _AN_BLS.getElement(c.cmpntNamedInt, :idComponent)
         d = GM.evaluatedAltValue(r, bs[4], :id); @test d.value == (cell = 9,) && d.source === :indirect && _an_id(d.via) == _an_id(bs[3])
         z = GM.goMeta(_an_bytes("#~ cell(0) parent(5)\nx = 1\n"))
         za = GM.evaluatedAltValue(z, _AN_BLS.children(z.blsComponentTree)[1], :id); @test za.value == (parent = 5,) && za.source === :own   # a stated zero is not recorded (zero-versus-unset)
+    end
+
+    @testset "[A10] the `ids` action — the three fields at once, as the single actions set them (stage 3 of the Alterants build; his §D218 (3), R-ALT-30; MEASURED: the lane's oracle I01–I03; the compound's FORM — the fields in alphabetical order — by instruments/probe-ids-compound.jl)" begin
+        r = GM.goMeta(_an_bytes("#~ ids(1, 2, 3)\nx = 1\n")); bs = _AN_BLS.children(r.blsComponentTree)
+        a = GM.evaluatedAltValue(r, bs[1], :id); @test a.value == (cell = 1, file = 3, parent = 2) && a.source === :own   # the answer's compound names its fields alphabetically (MEASURED)
+        b = GM.evaluatedAltValue(r, bs[2], :id); @test b.value == (cell = 1, file = 3, parent = 2) && b.source === :indirect && _an_id(b.via) == _an_id(bs[1])
+        z = GM.goMeta(_an_bytes("#~ ids(0, 5, 2)\nx = 1\n"))                 # I02: the stated zero is not recorded (zero-versus-unset, OQ-15 untouched)
+        za = GM.evaluatedAltValue(z, _AN_BLS.children(z.blsComponentTree)[1], :id); @test za.value == (file = 2, parent = 5) && za.source === :own
+        o = GM.goMeta(_an_bytes("#~ ids(1, 2, 3) cell(7)\nx = 1\n"))           # I03: the later statement overwrites the field, as `cell(1) cell(7)` does
+        oa = GM.evaluatedAltValue(o, _AN_BLS.children(o.blsComponentTree)[1], :id); @test oa.value == (cell = 7, file = 3, parent = 2) && oa.source === :own
     end
 
     @testset "[A7] the surface: package-public, NOT exported; the one method over the delivered object" begin

@@ -49,7 +49,7 @@ _plugin_with_default(p, d) = GM.Alterant(; altName = p.altName, setMode = p.setM
                   :accum_alt_idxs, :mutex_alt_idxs, :spec_index)
             @test getfield(R, f) == getfield(D, f)
         end
-        @test length(R.plugins) == 4 && length(R.action_specs) == 8
+        @test length(R.plugins) == 4 && length(R.action_specs) == 9   # 9 since the `ids` action of stage 3 of the Alterants build (R-ALT-30; 8 from the heading registration until then — a MEASURED re-pin)
         @test GM._deep_egal(R.plugins, D.plugins) === nothing && GM._deep_egal(R.action_specs, D.action_specs) === nothing   # the two record vectors structurally equal — the door's own comparator (the seal's whole-record compare left at stage 5's E13, census row 6; MEASURED on the s5c37 scratch: PROBES-s5c37-witness-values_on-0cf389d4.txt [E])
         # publication COPIES: no container is shared with the builder
         @test R.plugins !== b.plugins && R.action_specs !== b.action_specs

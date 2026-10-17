@@ -310,7 +310,7 @@ end
         @test eu0 isa ErrorException && occursin("in the profile feed has no Component of the file levels to be local to", eu0.msg)
         # THE SLOT (his decision on point (6), §D247 — stage 1 of the Alterants build): a heading action takes a place in its slot
         # like every action — a metaLine carrying the capacity-count of OTHER actions PLUS a heading meets the slot refusal (the
-        # capacity eight, raised by hand if an example needs it; before: the head never occupied a queue row)
+        # capacity eight, raised by hand if an example needs it — the session's reading of his approval (a), not his words; before: the head never occupied a queue row)
         eq9 = _err("#~ \"H\" hide show discard cell( 1) parent( 2) file( 3) :label1 :label2\nx = 1\n")
         @test eq9 isa ErrorException && occursin("more than 8 actions in one meta-hierarchy slot", eq9.msg)
         # …and, through the delivered rows, a heading-only document mints its head row and nothing else

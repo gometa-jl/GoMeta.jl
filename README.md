@@ -220,7 +220,8 @@ as Julia `Symbol`s, which persist for the session — the symbol table only grow
 over many untrusted files accretes entries. (The closed no-eval interpreter of `0.2.0`–`0.3.x` and its opt-in modes left at E13 —
 `0.4.0`, stage 5's E13 of the v0.4 build; `docs/public-api.md` §6.)
 
-Documented v0 limits: the queue tensor holds as many actions per meta-hierarchy slot as the registry declares (8 today) —
+Documented v0 limits: the queue tensor holds 8 actions per meta-hierarchy slot (`SLOT_CAPACITY` in `src/state.jl` — a named constant
+since stage 3 of the Alterants build, decoupled from the registered action count, 9 with the `ids` action) —
 a further action meets the stable message "GoMeta absorb: more than 8 actions in one meta-hierarchy slot …" (stage 5's s5c29;
 the owner's §358); a malformed metaLine meets the grammar's one refusal naming the character at fault — "GoMeta absorb: unexpected
 character '<c>' <where> …" (stage 5's s5c29, the metaLine parser effort: a metaStatement is a name, a ':' label or the region's first

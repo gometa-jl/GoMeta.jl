@@ -80,6 +80,15 @@ end
         @test !any(t -> t[2] === :id_parent || t[2] === :id_file, rows)   # defaulted fields absent
     end
 
+    @testset "[4b] the :per_field arm with the `ids` action — three fields in one statement (stage 3 of the Alterants build; the rows' names and values MEASURED by the lane's oracle I01 / I02 on `#~ ids(…)⏎x = 1`; on THIS document — the metaLine after `x = 1`, the [4] shape — the one recorded Component and its exact row set by the testset's own run)" begin
+        R = GM.publish(GM.default_registry_builder())
+        r = GM.goMeta(_doc("x = 1\n#~ ids(1, 2, 3)\n\ny = 2\n"); registry = R)
+        idrows = sort([(t[2], t[3]) for t in GM.readAltValuesEvals(r.altValues_evals) if startswith(String(t[2]), "id_")])
+        @test idrows == [(:id_cell, Int16(1)), (:id_file, Int16(3)), (:id_parent, Int16(2))]     # one row per non-default field, the three at once
+        r0 = GM.goMeta(_doc("x = 1\n#~ ids(0, 5, 2)\n\ny = 2\n"); registry = R)
+        @test !any(t -> t[2] === :id_cell, GM.readAltValuesEvals(r0.altValues_evals))            # the stated zero (the default) mints no row
+    end
+
     @testset "[5] the Visib multiplicity refuse VERBATIM through the :single arm" begin
         src = read(joinpath(dirname(dirname(@__DIR__)), "src", "annotations.jl"), String)
         @test occursin("more than one Visib value set for one component — v0's Visib ", src) &&

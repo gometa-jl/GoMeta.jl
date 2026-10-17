@@ -312,7 +312,14 @@ end
             error("no mutable descendant for imm site at $path")
         elseif site.kind === :vec
             v = _objs_along(R, path)[end]::Vector
-            op = (:push, :pop, :set)[1 + i % 3]
+            # the op ROTATES per pass over the sites since stage 3 of the Alterants build: with |sites| = 225 (a multiple of 3 — the `ids`
+            # action's 11 sites joined the 214) the former `i % 3` froze ONE op per site and `:vec_push` was never drawn (MEASURED by the
+            # lane's diagnostic copy at N = 1024 and N = 2048 — receipts/stage3/snapshot-diag_N1024.txt, _N2048.txt); the site's ordinal plus
+            # the pass count rotates the op per pass at EVERY site for EVERY |sites| — all three ops at a site once it sees three passes, so at
+            # every site while |sites| ≤ N ÷ 3 (341 at N = 1024; at 225 every site sees four or five passes); above that some sites see two
+            # passes or one, and §9's amend rule (|sites| > N) does not fire (the pass count added to `i` itself would freeze again whenever
+            # |sites| ≡ 2 mod 3; the Dict op below the same). T2BIS-DESIGN §9's budget and arithmetic unchanged (N = 1024, P = 3127).
+            op = (:push, :pop, :set)[1 + ((i - 1) % length(sites) + (i - 1) ÷ length(sites)) % 3]
             if op === :pop && !isempty(v)
                 pop!(v)
                 push!(opseen, :vec_pop)
@@ -328,7 +335,10 @@ end
             end
         elseif site.kind === :dict
             d = _objs_along(R, path)[end]::Dict
-            op = (:new, :del, :set)[1 + i % 3]
+            # the Dict op ROTATES per pass at EVERY site for EVERY |sites| (stage 3 of the Alterants build): under the former `i % 3` a |sites|
+            # that is a multiple of 3 — 225 since the `ids` action — held ONE op per Dict site for the whole run, where the tip's 214 cycled
+            # all three; the site's ordinal plus the pass count, as the vector op above
+            op = (:new, :del, :set)[1 + ((i - 1) % length(sites) + (i - 1) ÷ length(sites)) % 3]
             if op === :del && !isempty(d)
                 delete!(d, first(keys(d)))
                 push!(opseen, :dict_del)

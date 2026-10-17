@@ -9,7 +9,7 @@
 #     (`NUM_MH_LEVELS = 12`: the file level, the depth window `1..maxDepthMH`, then the user / line /
 #     fallBack levels — the user level is the reserved slot that `GoMetaConfig.user_mh_profile`
 #     seeds; docs/public-api.md §2); `Alterant`; `AlterantRegistry` with
-#     `num_alterants` / `num_alt_actions` (4 alterants / 8 actions since the heading registration,
+#     `num_alterants` / `num_alt_actions` (4 alterants / 9 actions since the `ids` action of stage 3 of the Alterants build — 8 from the heading registration until then,
 #     the generic action → settribute write-back table left at stage 5's E12 — census row 45); `MetaHierarchyState`; `AlterantQueue`;
 #     `ProcessState`; `GoMetaDelivery`; the `STATE` ScopedValue + `ctx()`; `init_state`;
 #     `snapshot_settribute!`; `get_state`; the v0.4 record SLOTS + the registration LIFECYCLE types.
@@ -28,10 +28,10 @@
 #     conforming code carries a publish-time snapshot (accident-grade: any loaded module can reach the token — B-2);
 #     `accum_alt_idxs` must stay sorted
 #     ascending (the apply phase's `insorted` membership test depends on it). The queue matrices are
-#     sized `numAltActions × num_slots` as the per-slot upper bound (8 actions today — the registered count; the pages'
+#     sized `SLOT_CAPACITY × num_slots` as the per-slot upper bound (8 — the named capacity, DECOUPLED from the registered count, 9, since stage 3 of the Alterants build, R-ALT-31; the pages'
 #     "7" was stale since the heading action's registration); a further action meets GoMeta's own message "GoMeta absorb: more than 8
 #     actions in one meta-hierarchy slot …" BEFORE the enqueue write (the slot bound in src/absorb/absorb_meta.jl — stage 5's s5c29;
-#     his Decision 3 of 2026-10-08, OWNER-WORDS §358: a fixed size, raised by hand when an example needs it; between E7 — census row 41,
+#     his Decision 3 of 2026-10-08, OWNER-WORDS §358 — in the session's reading, not his words: a fixed size, raised by hand when an example needs it; between E7 — census row 41,
 #     where the v0.2 capacity guard left — and s5c29 a further action met Julia's own BoundsError; tests/unit/slot_overflow_tests.jl pins
 #     the boundary and the ninth).
 # PURPOSE: a reentrant, reset-safe, eval-compatible per-call state + the typed public surface.
@@ -49,6 +49,16 @@ using Base.ScopedValues
 authorable depth window, and the user / line / fallBack levels — 12 at v0. The level formerly named 'default'
 is `fallBack` since stage 2's commit 3 (his word, R-V04B-55 (3)): the word 'default' is the Alterant's declared VALUE."
 const NUM_MH_LEVELS = 12
+
+"The per-slot CAPACITY of the alterant queue — the number of actions one meta-hierarchy slot holds: 8, a NAMED CONSTANT, DECOUPLED
+from the registered action count since stage 3 of the Alterants build (his word of 2026-10-17, R-ALT-31; the registered count is 9
+with the `ids` action). His word behind it: his Decision 3 of 2026-10-08 (OWNER-WORDS §358) — the slot limit is the matrix size he chose to start with,
+increased by hand (hard coded) if 8 proves too small; and his approval of 2026-10-15 (the documentation lane's OWNER-WORDS §D247, his
+letter (a) on the session's option) — the size raised by hand when an example asks. Until this stage the size was the registered action
+count (`num_alt_actions(registry)`, as his legacy's `numAltActions` sized its queue tensor — GoMetaRetro src/CnS.jl :135–:136): a sizing
+of the code, not a sentence of his. A further action in a slot meets the absorb's refusal (absorb_meta.jl: \"more than 8
+actions in one meta-hierarchy slot\"); the slower overflow buffer is a later design (V05-14)."
+const SLOT_CAPACITY = 8
 
 const maxDepthMH = length(BLS.depthLevelsMH)   # 9 — `depthLevelsMH` incl. `:depth0`
 @assert maxDepthMH + 3 == NUM_MH_LEVELS "NUM_MH_LEVELS ($NUM_MH_LEVELS) must equal maxDepthMH+3 ($(maxDepthMH+3)) — the meta-hierarchy sizing invariant"
@@ -192,7 +202,7 @@ handover validation; `nothing` when absent). The enqueue seam reads both from th
 argument in any position but the declared one refuses (`_string_slot_check`, since s5c29; the register's PB-7), and the declared
 `validate` runs AT THE READ on the String text of that slot (`absorbMeta`, src/absorb/absorb_meta.jl — since stage 1 of the
 Alterants build, when the Heading's separate path left; the shipped actions but `head` declare none).
-The shipped records: `:` for Labels; `hide` / `show` / `discard` for Visib; `cell` / `parent` / `file` for Id; `head`
+The shipped records: `:` for Labels; `hide` / `show` / `discard` for Visib; `cell` / `parent` / `file` / `ids` for Id (`ids` since stage 3 of the Alterants build); `head`
 for the Heading — the one record with a String slot (`accepts_string_slot = 1`) and a validator. The declared
 `settribute` write-back key left the record at stage 5's E12 of the v0.4 build (census row 45 — his §317 mark and his
 §319 order; his legacy wrote the Visib flag into the Component directly (its GoMeta.jl :103–:110), and v0.4 writes
@@ -299,7 +309,7 @@ destructured by field name there — the one reviewed destructuring site, so the
 (`action_index` / `alt_index`; `action_to_plugin` / `accum_alt_idxs` / `mutex_alt_idxs`) cannot be swapped by a
 caller (T2BIS-DESIGN §5). The `goMeta` door (`_registry_door_check`) refuses an unpublished value (`REG_UNPUBLISHED`)
 and compares the live fields against `_snapshot` by the ONE structural deep-egal walk (`===`-only leaves), firing
-`POST_SEAL_MUTATION` at the first divergent path. The counts: `num_alterants` / `num_alt_actions` (4 / 8 since the
+`POST_SEAL_MUTATION` at the first divergent path. The counts: `num_alterants` / `num_alt_actions` (4 / 9 since the `ids` action of stage 3 of the Alterants build; 4 / 8 since the
 heading registration).
 
 REASONING: `DEFAULT_REGISTRY` is read-only after construction: its `Dict`/`Vector` fields are mutable
@@ -433,7 +443,7 @@ overflow (`REG_SLOT_EXHAUSTED`); every other check is DEFERRED to `validate(buil
 coded diagnostics (full collection before the one terminal outcome, never throwing), and `publish(builder)` refuses
 on any error, else DEEP-copies every container into a SEALED — published, the snapshot taken — `AlterantRegistry`
 (the sanctioned route to a sealed value; `next_plugin_index(builder)` gives the index the next record must name).
-`default_registry_builder()` returns the four shipped Alterants with their eight action records in one
+`default_registry_builder()` returns the four shipped Alterants with their nine action records (eight before the `ids` action of stage 3 of the Alterants build) in one
 (src/alterants/registry.jl); `RegistryBuilder(published)` preloads one from a published value.
 
 REASONING: declaring is mutable and checking is deferred so that a whole record is collected before one terminal
@@ -560,7 +570,7 @@ function Base.showerror(io::IO, e::RegistrationRefused)
         print(io, "\n  [", d.severity, "] ", d.code, " — ", d.message)
     end
 end
-"The number of registered alterant actions (8 since CH-3 step 9; 7 before the heading registration)."
+"The number of registered alterant actions (9 since the `ids` action of stage 3 of the Alterants build; 8 since CH-3 step 9; 7 before the heading registration) — not the queue's per-slot capacity, which is `SLOT_CAPACITY` (R-ALT-31)."
 num_alt_actions(r::AlterantRegistry) = length(r.sorted_alt_actions)
 """
     queryable_action(r::AlterantRegistry, key::Symbol) -> Bool
@@ -574,7 +584,7 @@ not `nothing` (the lookup through `action_index` and `action_to_plugin` runs onl
 condition's bare name is a settribute key, or a queryable action, or it meets the usual unknown-key refusal — the
 owner's R-V04B-99 delivered by this one rule (the three Visib names, no longer settribute keys, are the actions of a
 getter-less Alterant — as are Id's and the Heading's; Labels' `:` is the one queryable action among the shipped
-eight). The caller is the rewrite's `_cond_target` (src/absorb/absorb_meta.jl), which spells a queryable action as
+nine — eight before the `ids` action of stage 3 of the Alterants build). The caller is the rewrite's `_cond_target` (src/absorb/absorb_meta.jl), which spells a queryable action as
 `getAltState(Int8(p), Symbol("key"), …)`.
 
 REASONING: the rule is the registry's, not a condition reader's: it outlived the closed interpreter (left at stage
@@ -643,7 +653,7 @@ const AlterantArgT = Union{Symbol,String}
 """
     AlterantQueue
 
-IS: the per-call enqueue tensors: `queued` (`2 × numAltActions × num_slots`), `conditions`, `args`, `decided_by` (since stage
+IS: the per-call enqueue tensors: `queued` (`2 × SLOT_CAPACITY × num_slots`), `conditions`, `args`, `decided_by` (since stage
 2's commit 2 of the v0.4 build, R-V04B-35 (d)) and `applied_to` (since stage 1 of the Alterants build).
 
 DOES: `queued[1, row, slot]` holds the declaration-order plugin index and `queued[2, row, slot]` the action index
@@ -660,7 +670,7 @@ an inline metaSegment — R-V04B-98; `nothing` on the userMH feed) — the refer
 `localOnly` (his §D241 point 2; R-V04B-101 (1)). All four matrices
 are indexed `[row, slot_index]`: dim-1 is the per-slot enqueue ROW counter (`1..count_actions_per_slot[slot]` — the
 sequential order in which actions were absorbed into that slot, NOT a registry action index; the matrices are merely
-SIZED `numAltActions × num_slots` as the per-slot upper bound), dim-2 = slot, parallel to `queued[:, row, slot]`.
+SIZED `SLOT_CAPACITY × num_slots` as the per-slot upper bound — 8, decoupled from the registered action count since stage 3 of the Alterants build), dim-2 = slot, parallel to `queued[:, row, slot]`.
 The apply phase MUST index `[row, slot]` consistently (a row/slot transposition would corrupt the queue). Written by
 `absorbMeta` (src/absorb/absorb_meta.jl), read by `detAltValuesForSetOfSlots` (src/alterants/apply.jl), wiped per
 slot by `wipeAltActionSlots`. Sized once by `init_state`.
@@ -882,9 +892,9 @@ eval'd `getState`/`getAltState` reach `ctx()` with zero change to the generated 
 """
     init_state(parse_state, config, registry) -> ProcessState
 
-IS: the constructor of a FRESH `ProcessState`, sized once per call from the registry and `NUM_MH_LEVELS`.
+IS: the constructor of a FRESH `ProcessState`, sized once per call from `SLOT_CAPACITY` and `NUM_MH_LEVELS` (the registry's action count sized the queue until stage 3 of the Alterants build, R-ALT-31).
 
-DOES: Build a FRESH `ProcessState`, sizing every container ONCE from `registry` + `NUM_MH_LEVELS`. Every
+DOES: Build a FRESH `ProcessState`, sizing every container ONCE from `SLOT_CAPACITY` + `NUM_MH_LEVELS` (the registry is carried, never a size, since stage 3 of the Alterants build). Every
 per-field init is performed here, so each call is independent — no tensor or cursor carries over:
 `slots = zeros(Int8, NUM_MH_LEVELS)`; the `slot_*`/`count_*` per-slot vectors `fill(false,·)`/`zeros(Int8,·)`;
 `queued = zeros(Int8, 2, nAct, nSlot)`; `conditions`/`args`/`decided_by`/`applied_to` matrices filled with `nothing`; `working` and `working_origin`
@@ -898,7 +908,7 @@ carries over (the reset-safe law).
 PURPOSE: the reset-safe start of every run, the only route to a `ProcessState`.
 """
 function init_state(parse_state::BLS.ParseState, config::GoMetaConfig, registry::AlterantRegistry)
-    n_act  = num_alt_actions(registry)   # 8 since CH-3 step 9 (was 7; the head action joined)
+    n_act  = SLOT_CAPACITY               # the per-slot capacity, 8 — DECOUPLED from num_alt_actions (9 since the `ids` action) at stage 3 of the Alterants build (R-ALT-31); until then the registered count (8 since CH-3 step 9)
     n_slot = NUM_MH_LEVELS               # 12
     mh = MetaHierarchyState(
         zeros(Int8, NUM_MH_LEVELS),      # slots

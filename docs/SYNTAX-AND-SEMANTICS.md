@@ -52,8 +52,9 @@ can learn GoMeta exactly, and verify it, before writing or changing a metaLine.
   `GoMeta.BLS.content(delivery.blsComponentTree, component)` — "through BLS's own access function"
   (R-V04B-43 (1); `content_fingerprint` left at 0.4.0's stage-2 commit 9b).
 - **meta-hierarchy / slot** — the engine's per-depth store of pending alterant actions: one slot per
-  open depth; its capacity is the registered action count (8 at v0.4; a fixed size, raised by hand — the owner's Decision 3 of
-  2026-10-08, OWNER-WORDS §358) — a further action meets the stable message "GoMeta absorb: more than 8 actions in one meta-hierarchy
+  open depth; its capacity is 8 (`SLOT_CAPACITY`, `src/state.jl` — a named constant since stage 3 of the Alterants build, decoupled from
+  the registered action count, 9; a fixed size, raised by hand — the owner's Decision 3 of 2026-10-08, OWNER-WORDS §358, and his approval of
+  2026-10-15 of the session's option (a), the documentation lane's §D247 — the size raised by hand when an example asks) — a further action meets the stable message "GoMeta absorb: more than 8 actions in one meta-hierarchy
   slot …" since stage 5's s5c29 (between E7 and s5c29 Julia's own `BoundsError`).
 - **verdict** — a final evaluated alterant value for one cell.
 - **State-refs** — built-in predicates that query a BLS component's type/content (`isCode`, `isText`, `isMeta`,
@@ -475,8 +476,9 @@ drops `:label1` from depth 1 to depth 2. One blank line, two flips, two reasons.
   label APPLIED is checked against the closed whitelist (an unknown label refuses with a stable
   message); a label QUERIED answers false when unknown or unset (since stage 5's E9 —
   `docs/public-api.md` §3.4).
-- **Id actions (`cell` / `parent` / `file`) — EXPERIMENTAL at this release:** one integer value
-  argument (`#~ cell(7)`), Int16 domain. The Id alterant is a v0 placeholder implementation; this
+- **Id actions (`cell` / `parent` / `file`, and `ids` since stage 3 of the Alterants build) — EXPERIMENTAL at this release:** one integer value
+  argument each (`#~ cell(7)`), Int16 domain; `#~ ids(c, p, f)` sets the three fields at once, exactly as `cell(c) parent(p) file(f)`
+  would (the owner's §D218 (3); the same parse, rows and fault class). The Id alterant is a v0 placeholder implementation; this
   syntax may change — do not build durable content on it at v0.
 - **Visib actions (`show` / `hide` / `discard`) take NO arguments;** an empty list (`hide()`) is
   accepted as the bare form.
@@ -525,7 +527,7 @@ its committed example.
 To keep the verified claims honest, these are **known but not established here** — do not assume their behaviour:
 
 - **Alterant actions beyond Visib + labels.** The engine's action whitelist also contains `head` (the
-  Heading action) and `cell`, `file`, `parent` (the Id actions). The Id actions' v0 *argument forms*
+  Heading action) and `cell`, `file`, `ids`, `parent` (the Id actions — `ids` since stage 3 of the Alterants build). The Id actions' v0 *argument forms*
   are documented in §10 (EXPERIMENTAL); their *rendering behaviour* is not exercised by this corpus
   and is not documented here.
 - **Section-title metaLines** (`#~2 "Title"` — a first-token quoted string lowering to the `head`
@@ -552,7 +554,8 @@ To keep the verified claims honest, these are **known but not established here**
   and **label names are validated against it when APPLIED** — an unknown label refuses with the stable
   `GoMeta apply: unknown label …` message, which names the accepted set; a label QUERIED in a condition
   answers false when it is unknown or unset (the legacy's checker; since stage 5's E9 of the v0.4
-  build). As many actions accumulate per meta-hierarchy slot as the registry declares (8 at v0.4)
+  build). Eight actions accumulate per meta-hierarchy slot (`SLOT_CAPACITY` — since stage 3 of the Alterants build a named constant,
+  decoupled from the registered action count of 9)
   (a further one meets the stable message "GoMeta absorb: more than 8 actions in one meta-hierarchy slot …" since stage 5's s5c29 — the owner's §358; `docs/public-api.md` §3.4). The
   authorable depth window is 1–8 in the digit form (§2). Custom label names applied (a queried one
   answers false — `docs/public-api.md` §3.4), and

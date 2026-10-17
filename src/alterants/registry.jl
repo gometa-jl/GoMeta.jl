@@ -9,7 +9,7 @@
 #     `updateMetaHierarchy`/`getState`/`getAltState`. The tail builds the immutable `AlterantRegistry`
 #     (type: src/state.jl) — `build_default_registry()` → `const DEFAULT_REGISTRY` (v0.4 T1: the former
 #     `VISIB_TO_SETTRIBUTE` alias is retired; the generic `action_to_settribute` table left at stage 5's E12 — census row 45).
-# DOES: declares the closed default inventory (4 alterants / 8 actions since the heading registration) in
+# DOES: declares the closed default inventory (4 alterants / 9 actions — the `ids` action since stage 3 of the Alterants build; 8 from the heading registration until then) in
 #     DECLARATION order (labels=1, Visib=2, id=3, heading=4 — the live keys are :id / :heading) and PUBLISHES
 #     it through the v0.4 lifecycle (Builder → validate → publish): the sorted action table, the parallel action→plugin index, the name→index Dicts,
 #     the SORTED `accum_alt_idxs` (the apply-phase `insorted` consumer in apply.jl depends on the sort),
@@ -108,6 +108,29 @@ function setId(
     idValue::SubString{String}
 )
     setElement(crntId, Symbol(idName) => parse((eltype(Id)), idValue))
+end
+
+## `ids(c, p, f)` — the three fields at once, each set as the single action sets it (his §D218 (3): "#~ ids( c, p, f)"; stage 3 of the
+## Alterants build, R-ALT-30): the same `Int16` parse of each written value, in the order cell, parent, file. A wrong arity or a
+## non-parsable value meets Julia's own error out of `goMeta`, as the three single actions' do (R-ALT-32): `ids(1, 2)` finds no
+## method; the ONE-VALUE form reaches the single-value method above with `idName == :ids` — MEASURED by the lane's probe I11.
+function setId(
+    crntId::Id,
+    idName::Symbol,
+    c, p, f
+)
+    ## the guard (the stage's plan §2 item 2): a THREE-value SINGLE action — `cell(1, 2, 3)`, `parent` and `file` alike — reaches this
+    ## method too and would otherwise set all three fields silently; its ArgumentError (the Alterant's own setter error, R-ALT-32's standing
+    ## class; the wording the session's, his to re-word) is where the tip met Julia's MethodError (MEASURED: the lane's probe I14)
+    idName === :ids || throw(ArgumentError("setId: three values belong to the action `ids` alone (got `$(idName)`)"))
+    setElement(crntId, :cell => parse((eltype(Id)), string(c)), :parent => parse((eltype(Id)), string(p)), :file => parse((eltype(Id)), string(f)))
+end
+function setId(
+    crntId::Id,
+    idName::SubString{String},
+    c::SubString{String}, p::SubString{String}, f::SubString{String}
+)
+    setId(crntId, Symbol(idName), c, p, f)
 end
 
 #########################################################################################
@@ -372,8 +395,8 @@ DOES: builds the four records in the keyword form, each with its declared defaul
 (`:mutExclusivePerField`; default the ZERO compound, R-V04B-92; `:per_field`, stem `:id`) and `heading` (`:localOnly` —
 queued like every action, applied by the apply loop's one rule for this mode ONLY at the Component the statement is applied
 to (R-V04B-101 (1); R-V04B-50 the metaBlock for a metaLine's statement, R-V04B-98 the Line for a trailing metaSegment);
-default `nothing`; `:per_entry`, stem `:head`) — and the eight `ActionSpec` records: `:` (plugin 1), `hide` / `show` / `discard` (2),
-`cell` / `parent` / `file` (3) and `head` (4; `accepts_string_slot = 1`, `validate = Alterants._heading_validate_text`).
+default `nothing`; `:per_entry`, stem `:head`) — and the nine `ActionSpec` records: `:` (plugin 1), `hide` / `show` / `discard` (2),
+`cell` / `parent` / `file` / `ids` (3; `ids` since stage 3 of the Alterants build) and `head` (4; `accepts_string_slot = 1`, `validate = Alterants._heading_validate_text`).
 The plugin index IS the position here. `publish` runs the remaining check (the domain probe — R-V04B-4 (iii); the
 vocabulary check left at stage 5's E9, the validation chain of v0.4 T2–T4 at E4, census row 3, the Heading lane's mode-gate
 laws with that lane at stage 1 of the Alterants build), derives the tables (a duplicate action name resolving first-wins), and takes the publish-time snapshot;
@@ -436,11 +459,14 @@ function default_registry_builder()
         ActionSpec(; name = :hide, plugin = Int8(2)),
         ActionSpec(; name = :show, plugin = Int8(2)),
         ActionSpec(; name = :discard, plugin = Int8(2)),
-        # Id cell/parent/file — ONE literal slot (the setter parses the Symbol text); NON-queryable
-        # (experimental, I21).
+        # Id cell/parent/file — ONE literal slot each (the setter parses the Symbol text); NON-queryable
+        # (experimental, I21). `ids` — THREE literal slots: the three fields cell, parent, file at once, each set as the single
+        # action sets it (his §D218 (3): "#~ ids( c, p, f)"; stage 3 of the Alterants build, R-ALT-30; its faults the standing
+        # class, R-ALT-32). A meta-hierarchy slot's capacity is SLOT_CAPACITY (state.jl), DECOUPLED from this count (R-ALT-31).
         ActionSpec(; name = :cell, plugin = Int8(3)),
         ActionSpec(; name = :parent, plugin = Int8(3)),
         ActionSpec(; name = :file, plugin = Int8(3)),
+        ActionSpec(; name = :ids, plugin = Int8(3)),
         # head — the single Heading action; its two forms (deriving / explicit) are the setter's methods — the deriving
         # form takes its level at the enqueue (absorb_meta.jl). accepts_string_slot = 1 (the capability
         # that retired the wall's name literal); the quoted-first sugar is the second activated sugar; the
@@ -1912,7 +1938,7 @@ REASONING: one deterministic inventory, published through the same lifecycle eve
 a const and read per call through the state — no module-global mutable inventory (v0.4 T1: the `===` alias onto its
 write-back Dict retired).
 
-PURPOSE: the Alterant inventory of a run that names none — the four shipped Alterants and their eight actions.
+PURPOSE: the Alterant inventory of a run that names none — the four shipped Alterants and their nine actions (the `ids` action since stage 3 of the Alterants build).
 """
 const DEFAULT_REGISTRY = build_default_registry()
 

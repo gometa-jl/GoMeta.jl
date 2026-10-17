@@ -49,8 +49,9 @@ end
     # a DEFAULT-derived builder with the HEAD spec's validate slot swapped
     function _head_builder(validatefn)
         b = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
-        s = b.action_specs[8]
-        b.action_specs[8] = GM.ActionSpec(; name = s.name, plugin = s.plugin,
+        i = findfirst(s -> s.name === :head, b.action_specs)   # BY NAME since stage 3 of the Alterants build: the `ids` action holds position 8
+        s = b.action_specs[i]                                    # (the head is 9th); the positional [8] had swapped the wrong spec — MEASURED: the
+        b.action_specs[i] = GM.ActionSpec(; name = s.name, plugin = s.plugin,   # three handover pins returned `nothing` on the stage-3 scratch
             accepts_string_slot = s.accepts_string_slot, validate = validatefn)
         return b
     end

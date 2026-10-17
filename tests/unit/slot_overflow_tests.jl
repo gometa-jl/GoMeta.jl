@@ -1,7 +1,8 @@
 # slot_overflow_tests.jl — the per-slot capacity witnesses: the BOUNDARY and the BOUND
 #
 # IS:   the witness set of the queue tensor's width: as many actions in ONE meta-hierarchy slot as the queue tensor holds
-#       (size(queued, 2) = the registered action count, 8 since the heading action's registration) stay green; the ninth meets
+#       (size(queued, 2) = SLOT_CAPACITY, 8 — a named constant DECOUPLED from the registered action count since stage 3 of the Alterants build,
+#       R-ALT-31; the registered count is 9 with the `ids` action) stay green; the ninth meets
 #       GoMeta's message (the metaLine parser effort, stage 5's s5c29; his Decision 3 of 2026-10-08, OWNER-WORDS §358).
 # DOES: proves (1) the 8-action boundary stays PROCESS_OK and byte-deterministic (double-call identical); (2) a ninth action in the
 #       same slot meets "GoMeta absorb: more than 8 actions in one meta-hierarchy slot" — the stable message, not Julia's BoundsError.
