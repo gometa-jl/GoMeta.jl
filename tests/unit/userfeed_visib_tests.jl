@@ -12,7 +12,8 @@
 #       his word of 2026-10-16 — R-ALT-18 / R-ALT-22) an EMPTY or whitespace-only profile is INERT like no profile: it feeds nothing and
 #       occupies no slot, so the loop's order is the un-fed one (MEASURED: the lane's oracle L04, L05, L06 against P07 and P26 — before
 #       the stage an empty profile occupied the user slot, the CrossReview set alt-stage1's E2); a profile whose edge character is an INVALID
-#       byte sequence is content, never white space — fed and refused by the absorb as at the tip (MEASURED: the lane's oracle L08).
+#       byte sequence is content, never white space — FED; the one-character overlong profile refused by the absorb as at the tip (MEASURED:
+#       the lane's oracle L08), an invalid sequence glued to the label sugar `:` fed and NOT refused (MEASURED: L09 — PROCESS_OK, no row).
 # REASONING: the user slot is scanned FIRST by both apply walks (feed_user_mh!'s docstring: "the fed profile OVERRIDES authored Visib");
 #       a queued fed action reaches the enqueue's origin line (commit 2) that no heading-only profile reaches — the path commit 3a's witness F3
 #       found broken (the UserContext import) is witnessed here at the public entry for its own sake.
@@ -61,7 +62,7 @@ _uf_bytes(s::String) = Vector{UInt8}(codeunits(s))
 
     @testset "[U5] an EMPTY or whitespace-only profile is INERT like no profile; an invalid edge byte is no white space (R-ALT-18 / R-ALT-22; his §359 (10); MEASURED: the lane's oracle L04–L06, L08)" begin
         # the P25 document: `hide{ :label1 }` stated BEFORE `:label1` on one metaLine — un-fed, the hide's condition does not see the label
-        # (no visib row); a NON-EMPTY profile made the user slot primary and the hide applied (P25); "" and "  " must behave as no profile
+        # (no visib row); a FED profile (P25's `:label3`) made the user slot primary and the hide applied (P25); "" and "  " must behave as no profile
         # ("" on this document MEASURED by the oracle's L05; "  " on this document is this testset's own run on the scratch, green — the
         # oracle's L06 measured "  " on the P24 document below)
         for p in ("", "  ")

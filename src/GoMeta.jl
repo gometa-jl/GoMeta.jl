@@ -183,8 +183,10 @@ end
 IS: the feed of the RESERVED user slot of the meta-hierarchy (`userMHIdx` in `state.jl` — defined + scanned FIRST by
 both `applyAltActionFns` walks, and fed by no other call site) with the metaLine-body profile in
 `st.config.user_mh_profile`, BEFORE the absorb walk. SCOPE: a minimal caller-supplied feed ONLY — not a general
-user-level configuration system; internal (NOT exported); called from `goMeta` iff `config.user_mh_profile` is a NON-EMPTY
-String (an empty or whitespace-only profile is inert like `nothing` — stage 2 of the Alterants build, R-ALT-18 / R-ALT-22).
+user-level configuration system; internal (NOT exported); called from `goMeta` iff `config.user_mh_profile` is a String
+holding at least one character of content — one the absorb's ONE white-space predicate `AbsorbMeta._isspace_valid` does not
+read as white space, an invalid byte sequence among them (R-ALT-25); an empty or whitespace-only profile is inert like
+`nothing` — stage 2 of the Alterants build, R-ALT-18 / R-ALT-22.
 Experimental — see docs/public-api.md §2.
 
 DOES: reuses the standard machinery VERBATIM — no parallel intake — queued actions enqueue; a heading (an action of an
@@ -362,7 +364,8 @@ function goMeta(
         ## neither allocated nor occupied, so the loop's order is the un-fed one — his word of 2026-10-16, R-ALT-18 / R-ALT-22; the
         ## CrossReview set alt-stage1's E2 had traced an empty profile occupying the slot).
         ## (white space as the absorb reads it — its ONE predicate `_isspace_valid`, his §359 (10): Julia's bare `isspace` throws at decode
-        ## on an overlong sequence, so an invalid edge byte is content here too — the profile is fed and the absorb refuses it, as at the tip)
+        ## on an overlong sequence, so an invalid edge byte is content here too — the profile is FED; the one-character overlong profile the
+        ## absorb refuses, as at the tip (the lane's oracle L08); an invalid sequence glued to the label sugar `:` it does not refuse (L09) — R-ALT-25)
         if !isnothing(config.user_mh_profile) && !isempty(strip(AbsorbMeta._isspace_valid, config.user_mh_profile))
             feed_user_mh!(st)
         end

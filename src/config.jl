@@ -33,7 +33,9 @@ DOES: carries the four fields, read by the run as named:
   by `goMeta` (`to = last(range)`, `-1` for `nothing`).
 - `user_mh_profile::Union{Nothing,String}` — `nothing` (the default) ⇒ NO feed, byte-identical to the
   no-feed path — and so an EMPTY or whitespace-only `String` (inert like `nothing` since stage 2 of the Alterants build; his
-  word of 2026-10-16, R-ALT-18 / R-ALT-22); a non-empty `String` ⇒ the metaLine BODY seeded into the reserved user meta-hierarchy slot
+  word of 2026-10-16, R-ALT-18 / R-ALT-22 — white space as the absorb's ONE
+  predicate `_isspace_valid` reads it, R-ALT-25: an invalid byte sequence is content); any other `String` ⇒ the metaLine BODY
+  seeded into the reserved user meta-hierarchy slot
   (`userMHIdx`, state.jl) BEFORE the walk, via the standard `absorbMeta` intake (queued actions
   enqueue; a heading in any form REFUSES at the read with his message — docs/public-api.md §2 and §3.4; before stage 1
   of the Alterants build an explicit `head` recorded against the minted user-context handle; e.g. the profile

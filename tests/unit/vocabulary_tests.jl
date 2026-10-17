@@ -5,7 +5,7 @@
 # his R-V04-20 / §D202, R-ALT-20 / R-ALT-21; [2b] below its witnesses).
 #
 # IS:   the membership witnesses over the Labels Alterant's hard-coded list ([2] the set role refuses an unknown name; [2b] `:doc`
-#       applied and queried; [3] the late-order name — the ∈-scan
+#       applied and queried, and in the accepted set an unknown name's refusal names; [3] the late-order name — the ∈-scan
 #       in the set role, the applied hide in the query role), the zero-literal law in its DECIDABLE form ([10]: no Core literal of the
 #       names re-enters src outside alterants-std/), and the crx-t3t4 cure witnesses that live here by history ([11]'s A3,
 #       [12]–[18]: the zero-dispatch validate chain, the DomainRef read-once law ([14] — retired at stage 5's E10 with `DomainRef`), the identity/getfield hardening, the
@@ -137,6 +137,8 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
         @test rd isa GM.GoMetaDelivery && rd.status === GM.PROCESS_OK && count(t -> t[2] === :label_doc, GM.readAltValuesEvals(rd.altValues_evals)) == 2
         rq = _drive("#~ :doc\n#~2 hide{ :doc }\nx = 1\n")              # L02: the label SET then QUERIED (two glued metaLines, ONE metaBlock): the hide APPLIES on both Blocks
         @test rq isa GM.GoMetaDelivery && rq.status === GM.PROCESS_OK && count(t -> t[2] === :visib && t[3] === :hide, GM.readAltValuesEvals(rq.altValues_evals)) == 2
+        ez = _drive("#~ :zzz\nx = 1\n")                                  # L03: an unknown name REFUSED, the accepted set named — `:doc` in it (its place in the sorted display not pinned: R-ALT-24's one re-pin)
+        @test ez isa ErrorException && occursin("unknown label", ez.msg) && occursin("the accepted set = [", ez.msg) && occursin(":doc,", ez.msg)
         @test :doc ∈ GM.Alterants.LABELS_VOCABULARY && length(GM.Alterants.LABELS_VOCABULARY) == 39   # the 38 shipped + `:doc`, none beyond (R-ALT-21)
     end
 
