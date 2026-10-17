@@ -65,9 +65,21 @@
 # - Non-ASCII typography in PLAIN sinks: Block spans use an en-dash (`L35–L49`) and
 #   the reserved polarity marker a typographic minus (`(−)`, dead at v0) — byte-pinned
 #   to the owner-approved mockups; grep with the literal characters (or `grep -P`).
-# - Rows outside the document tree (the user-context plane — grain > 0xd2, the plane law of
-#   src/occurrence.jl) render in the `unanchored rows` section with their grain and path ordinal;
-#   `show_handles` prints their decoded handle too.
+# - A row the tools cannot place — a handle that does not decode, a grain above the File grain
+#   (> 0xd2: the user-context plane, the plane law of src/occurrence.jl), a path step with no such
+#   child — renders in the `unanchored rows` section: its grain name (`?` for a handle that does not
+#   decode) and, for a grain above the File grain, its first path ordinal; `show_handles` adds the
+#   handle note (the decoded handle, or the raw bytes marked UNDECODED). No shipped path keys an evals
+#   row on the user-context plane since stage 1 of the Alterants build (da86f4c2..d904689, 2026-10-16)
+#   on his decision on point (1) of the eight, §D242 of the documentation lane's record (2026-10-14):
+#   a statement of a `localOnly` Alterant fed through the profile is refused at the read
+#   (src/absorb/absorb_meta.jl — the condition keys on the set mode with a user context present, so
+#   every registry's; the reach beyond the Heading R-ALT-15 (ii)(1)), and the user-context handle is
+#   read once, into the fed rows' `decided_by` — no writer of a row's key reads it. The section is the
+#   tools' totality guard: WITNESSED at b70d5b7 over eleven inputs — ten runs with zero unanchored rows,
+#   the fed heading refused (PROBE-plane-rows_b70d5b7.txt, the Alterants build lane's
+#   receipts/devtools-cleanup/; the clean-up of 2026-10-17, R-ALT-41) — a witness beside the structural
+#   basis above, not a proof over every shipped path.
 # - `detail` validation is STRICTER than a pure conflict rule: any explicit value for
 #   a non-:tree style errors, even one naming the style's inherent detail — inherent
 #   details are only ever selected via :auto (no silent no-op, no lookalike accept).
@@ -317,8 +329,10 @@ end
 IS: one evals row of `altValues_evals`, resolved for rendering; built by `_dt_eval_rows(doc)` — one per row of
     `GoMeta.readAltValuesEvals`.
 DOES: carries the evals row (`attr`, `value`, `polarity` — polarity is constant `true` at v0, a reserved field, so it
-    renders DIM), the resolved target Component (`comp`; `nothing` = unanchored: the user-context plane, grain > 0xd2, has
-    no document tree position), the origin metaSegment (`origin`; `nothing` when the key carries no origin steps), the raw
+    renders DIM), the resolved target Component (`comp`; `nothing` = unanchored — a row the tools cannot place: a handle
+    that does not decode, a grain above the File grain 0xd2 (the user-context plane — no shipped path keys a row on it
+    since stage 1 of the Alterants build, d904689, 2026-10-16, his §D242 of 2026-10-14), a path step with no such child),
+    the origin metaSegment (`origin`; `nothing` when the key carries no origin steps), the raw
     occurrence-handle bytes (`handle` — row identity, cell grouping) and the decoded key (`key` — the shared decoder's
     named tuple `(; namespace, grain, path, origin)`; `nothing` when the bytes do not decode). A row's text is the door's
     `BLS.content` of its resolved Component.
@@ -340,8 +354,11 @@ struct DTEvalRow
     key::Any
 end
 
-## The row builder: every `altValues_evals` row decoded (the shared decoder) and resolved through the door. The
-## user-context plane (grain > 0xd2 — the plane law of src/occurrence.jl) has no document tree position.
+## The row builder: every `altValues_evals` row decoded (the shared decoder) and resolved through the door. A grain
+## above the File grain (> 0xd2 — the user-context plane, the plane law of src/occurrence.jl) has no document tree
+## position, and the user-context key's one path step would walk to the File root — so the branch stays as the guard (the
+## v0.4 build record §S8.330 (i)); no shipped path produces such a row since stage 1 of the Alterants build (d904689,
+## 2026-10-16; his §D242 of 2026-10-14) — the clean-up of 2026-10-17, R-ALT-41.
 function _dt_eval_rows(doc)
     rows = DTEvalRow[]
     for (h, attr, v, pol) in GoMeta.readAltValuesEvals(doc.r.altValues_evals)
@@ -384,7 +401,7 @@ function _dt_print_unanchored(io, doc, rows; show_handles::Bool = false)
     isempty(rows) && return
     _dt_sty(io, "\nunanchored rows (no document tree position):\n", color = _DT_C_BAD, bold = true)
     for row in rows
-        d = row.key   # the plane's rows carry their first path ordinal (e.g. USER_CONTEXT #1): distinct feeds stay distinguishable
+        d = row.key   # a row of a grain above the File grain would carry its first path ordinal (e.g. USER_CONTEXT #1); none is produced by a shipped path since stage 1 of the Alterants build (d904689; his §D242) — the tag stays with the guard
         tag = d === nothing ? "?" : _dt_grainname(d.grain) * (d.grain > 0xd2 && !isempty(d.path) ? " #$(Int(d.path[1][2]))" : "")
         _dt_sty(io, "  [" * tag * "]  ", color = _DT_C_BAD)
         _dt_sty(io, _dt_tpad(string(row.attr), 12), color = _DT_C_ATTR, bold = true)
@@ -767,10 +784,12 @@ DOES: reads the rows through the public reader `GoMeta.readAltValuesEvals(result
     - `_name::AbstractString = ""` — the display name in the header line (internal-ish; the write twin defaults it to
       `basename(path)`).
     An unknown `layout`, `color`, `attrs` or `lines` value ERRORS with a message naming the accepted forms. Every row
-    renders in every layout: a row outside the document tree (the user-context plane) is never dropped — `:rows`/`:tree`
-    render it in a red `unanchored rows` section (the headers count it); `:cells` renders it as a red
-    `### CELL (… no document tree position)` dossier of its own. The two `print_altValues_evals` methods return
-    `nothing`; `write_altValues_evals_to_file` returns `path`.
+    renders in every layout: a row the tools cannot place (a handle that does not decode; a grain above the File grain —
+    the user-context plane, on which no shipped path keys a row since stage 1 of the Alterants build, d904689, 2026-10-16,
+    his §D242 of 2026-10-14; a path step with no such child) is never dropped — `:rows`/`:tree` render it in a red
+    `unanchored rows` section (the headers count it); `:cells` renders it as a red `### CELL (… no document tree position)`
+    dossier of its own. The two `print_altValues_evals` methods return `nothing`; `write_altValues_evals_to_file`
+    returns `path`.
 REASONING: what a run evaluated, for which Component, is stated from the Engine's rows (`altValues_evals`) and the
     delivered tree — the run's two MAIN PRODUCTS (his words of 2026-09-30, OWNER-WORDS §242 item 3) — never re-derived
     from raw text (canon R1). The row's Component is resolved by the plain walk stage 5's T3 kept (the design note's §6
@@ -1366,7 +1385,7 @@ function _dt_cli_main(args)
         rows = _dt_eval_rows(doc)
         isempty(rows) && println(stderr, "(no evals rows — no LIVE metaLine on any surface)")
         for row in rows
-            cell = replace(row.comp === nothing ? "" : _dt_content(doc, row.comp), '\n' => '⏎')   # an unanchored row (the user-context plane): no piece in the tree
+            cell = replace(row.comp === nothing ? "" : _dt_content(doc, row.comp), '\n' => '⏎')   # a row the tools cannot place (no Component): no piece in the tree — none produced by a shipped path since stage 1 of the Alterants build (d904689; his §D242)
             println(rpad(String(row.attr), 14), " => ", rpad(repr(row.value), 40), " (", row.polarity, ")  \"",
                     first(cell, 60), length(cell) > 60 ? "…\"" : "\"")
         end
@@ -1386,7 +1405,7 @@ function _dt_cli_main(args)
         rows = _dt_eval_rows(doc)
         isempty(rows) && println(stderr, "(no evals rows — no LIVE metaLine on any surface)")
         for row in rows
-            cell = replace(row.comp === nothing ? "" : _dt_content(doc, row.comp), '\n' => '⏎')   # an unanchored row (the user-context plane): no piece in the tree
+            cell = replace(row.comp === nothing ? "" : _dt_content(doc, row.comp), '\n' => '⏎')   # a row the tools cannot place (no Component): no piece in the tree — none produced by a shipped path since stage 1 of the Alterants build (d904689; his §D242)
             println(rpad(String(row.attr), 14), " => ", rpad(repr(row.value), 40), " (", row.polarity, ")  \"",
                     first(cell, 60), length(cell) > 60 ? "…\"" : "\"")
             d = decode_handle(row.handle)

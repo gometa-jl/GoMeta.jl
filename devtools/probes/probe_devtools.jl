@@ -147,8 +147,11 @@ check(!occursin("unanchored", out) && occursin("label_🍻", out),
       "namespace=:other rows failed to anchor against their own result")
 
 ## 12 — (the USER_CONTEXT totality probe over a fed heading's unanchored row left at stage 1 of the Alterants build: no shipped path
-##       produces an unanchored row since a heading in the profile refuses at the read — §D242; the tools' unanchored arms stand, their
-##       producer gone — a later clean-up is his to order) — a fed QUEUED action anchors on the Components as every row does
+##       produces an unanchored row since a `localOnly` statement in the profile refuses at the read — his §D242 on the fed heading;
+##       the reach to every `localOnly` statement of every registry the condition's (src/absorb/absorb_meta.jl), R-ALT-15 (ii)(1);
+##       landed d904689, 2026-10-16; the tools' unanchored arms stand as the totality guard for a row the tools cannot place, their
+##       texts re-cut to the dated fact at the clean-up of 2026-10-17 on his word — the Alterants build lane's R-ALT-41) — a fed
+##       QUEUED action anchors on the Components as every row does
 uctx2 = GoMeta.goMeta(read(joinpath(_PB_FIX, "mini-Documenter-Source-File.jl"));
                       config = GoMeta.GoMetaConfig(user_mh_profile = "show"))
 nraw = length(GoMeta.readAltValuesEvals(uctx2.altValues_evals))
