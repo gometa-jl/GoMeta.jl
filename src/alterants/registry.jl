@@ -121,7 +121,7 @@ function setId(
 )
     ## the guard (the stage's plan §2 item 2): a THREE-value SINGLE action — `cell(1, 2, 3)`, `parent` and `file` alike — reaches this
     ## method too and would otherwise set all three fields silently; its ArgumentError (the Alterant's own setter error, R-ALT-32's standing
-    ## class; the wording the session's, his to re-word) is where the tip met Julia's MethodError (MEASURED: the lane's probe I14)
+    ## class; the wording the session's, his to re-word) is where the base 63ffff7 — no five-argument `setId` there — met Julia's MethodError (MEASURED: the lane's probe I14 on both trees)
     idName === :ids || throw(ArgumentError("setId: three values belong to the action `ids` alone (got `$(idName)`)"))
     setElement(crntId, :cell => parse((eltype(Id)), string(c)), :parent => parse((eltype(Id)), string(p)), :file => parse((eltype(Id)), string(f)))
 end

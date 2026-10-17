@@ -336,7 +336,7 @@ end
         elseif site.kind === :dict
             d = _objs_along(R, path)[end]::Dict
             # the Dict op ROTATES per pass at EVERY site for EVERY |sites| (stage 3 of the Alterants build): under the former `i % 3` a |sites|
-            # that is a multiple of 3 — 225 since the `ids` action — held ONE op per Dict site for the whole run, where the tip's 214 cycled
+            # that is a multiple of 3 — 225 since the `ids` action — held ONE op per Dict site for the whole run, where the base 63ffff7's 214 cycled
             # all three; the site's ordinal plus the pass count, as the vector op above
             op = (:new, :del, :set)[1 + ((i - 1) % length(sites) + (i - 1) ÷ length(sites)) % 3]
             if op === :del && !isempty(d)

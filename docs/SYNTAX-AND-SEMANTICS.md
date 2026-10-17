@@ -476,7 +476,7 @@ drops `:label1` from depth 1 to depth 2. One blank line, two flips, two reasons.
   label APPLIED is checked against the closed whitelist (an unknown label refuses with a stable
   message); a label QUERIED answers false when unknown or unset (since stage 5's E9 —
   `docs/public-api.md` §3.4).
-- **Id actions (`cell` / `parent` / `file`, and `ids` since stage 3 of the Alterants build) — EXPERIMENTAL at this release:** one integer value
+- **Id actions (`cell` / `parent` / `file`, and `ids` since stage 3 of the Alterants build) — EXPERIMENTAL at this release:** the three single actions take one integer value
   argument each (`#~ cell(7)`), Int16 domain; `#~ ids(c, p, f)` sets the three fields at once, exactly as `cell(c) parent(p) file(f)`
   would (the owner's §D218 (3); the same parse, rows and fault class). The Id alterant is a v0 placeholder implementation; this
   syntax may change — do not build durable content on it at v0.

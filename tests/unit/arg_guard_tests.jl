@@ -50,6 +50,6 @@ import GoMeta as GM
         @test _err("#~ ids(1, 2, 3, 4)\n# c\n") isa MethodError              # I15: four values — no method (the second arity R-ALT-32 names)
         @test _err("#~ ids()\n# c\n") isa MethodError                         # I16: no value — no method (`()` is no argument; a bare `ids` reaches the same call — traced, not measured)
         e3 = _err("#~ cell(1, 2, 3)\n# c\n")                                  # I14: THREE values to a SINGLE action reach the three-value method's guard —
-        @test e3 isa ArgumentError && occursin("belong to the action `ids` alone", sprint(showerror, e3))   # the setter's ArgumentError where the tip met Julia's MethodError
+        @test e3 isa ArgumentError && occursin("belong to the action `ids` alone", sprint(showerror, e3))   # the setter's ArgumentError where the base 63ffff7 met Julia's MethodError
     end
 end

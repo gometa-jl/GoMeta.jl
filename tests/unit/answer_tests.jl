@@ -2,7 +2,9 @@
 # R-V04B-55 (2); the plan v8.1 :56).
 #
 # IS:   ten witnesses ([A1]–[A10]) of the answer's value and SOURCE over small inputs whose rows and deciding handles were MEASURED first
-#       (R4b — the evals-tree printouts and the origin probe banked at receipts/S8-branch/precheck-s2c4/PROBES-*).
+#       (R4b — the evals-tree printouts and the origin probe banked at receipts/S8-branch/precheck-s2c4/PROBES-* for [A1]–[A9], a testset
+#       naming its own receipt where it differs; [A10] by the Alterants build lane's stage-3 oracle I01–I03 and its
+#       instruments/probe-ids-compound.jl — plan/2026-10-15-gometa-alterants-build/receipts/stage3/).
 # DOES: [A1] Visib — the metaBlock's own statement, the attached Block indirect through it, a rowless Line inherits; [A2] Labels —
 #       the SET with one source; [A3] no rows anywhere — the declared default of each built-in Alterant (R-V04B-92), the File `:none`; [A4] a
 #       Segment's statement — its Line OWN (the trailing metaSegment applies directly to it, R-V04B-93), its Segments the Line's

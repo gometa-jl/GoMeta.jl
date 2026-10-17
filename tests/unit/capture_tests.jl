@@ -25,6 +25,7 @@
 #       At stage 1 of the Alterants build 19 stand: [6] left (−1), [9]'s coherence arm (−1) and [11]'s A5 and A4/C3 (−2) with the
 #       Heading's separate lane; [7]'s locality pin (+1), [8]'s field-names pin (+1) and [12], the witness of the review's cure A1
 #       (+1), added — every movement declared. After the CrossReview set alt-stage1's cures 20 stand: [7]'s key pin (+1).
+#       At stage 3 of the Alterants build 22 stand: [4b], the `ids` action's `:per_field` rows (+2).
 
 using Test
 import GoMeta as GM
