@@ -10,6 +10,10 @@
 #                               the Engine's output surface (`altValues_evals`) and the development tool's
 #                               pair (`Main.BasicRenderer.outputs`, the one-path assertions; R-V04B-24).
 #   - slot_overflow_tests.jl  — the per-slot capacity boundary and the ninth action's message (stage 5's s5c29).
+#   - custom_localonly_feed_tests.jl — the profile feed's refusal at the read is not the shipped Heading's alone: a custom registry's
+#                               Alterant declared as the Heading is (set mode `localOnly`) meets it when fed, a custom Alterant of another
+#                               set mode does not (the Alterants build's residues round, 2026-10-17; MEASURED by the lane's oracle on ONE
+#                               custom registry — the condition keys on the set mode, every registry's by shape).
 #   - malformed_meta_tests.jl — the metaLine parser's valid twins; the glued form refused by name since stage 5's s5c29.
 #   - error_message_tests.jl  — stable-message witnesses, e.g. "GoMeta apply: unknown label".
 #   - arg_guard_tests.jl      — the documented WORKING argument forms (the refusal witnesses left at
@@ -31,6 +35,7 @@ using Test
 @testset "unit" begin
     include(joinpath(@__DIR__, "public_surface_tests.jl"))
     include(joinpath(@__DIR__, "slot_overflow_tests.jl"))           # the per-slot capacity boundary and the ninth action's message (stage 5's s5c29) + [C] the capacity EIGHT for every registry — a custom registry of 4 actions and an extended one of 11 (his R-ALT-36; the CrossReview set alt-stage3's fold)
+    include(joinpath(@__DIR__, "custom_localonly_feed_tests.jl"))   # the profile feed's refusal is not the shipped Heading's alone — a custom registry's `localOnly` Alterant meets it too, MEASURED on one (the condition keys on the set mode) — [W1]–[W5] (the Alterants build's residues round, 2026-10-17; the oracle plan/2026-10-15-gometa-alterants-build/receipts/residues/PROBE-custom-localonly-feed_611a0bcd.txt)
     include(joinpath(@__DIR__, "malformed_meta_tests.jl"))          # the metaLine parser's valid twins; the glued form refused by name since stage 5's s5c29
     include(joinpath(@__DIR__, "error_message_tests.jl"))           # stable error-message witnesses
     include(joinpath(@__DIR__, "arg_guard_tests.jl"))               # the documented WORKING argument forms (the refusal witnesses left at stage 5's E6 — census row 14) + [F] the `ids` faults' standing class (stage 3 of the Alterants build)

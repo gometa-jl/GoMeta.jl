@@ -365,7 +365,8 @@ function goMeta(
         ## CrossReview set alt-stage1's E2 had traced an empty profile occupying the slot).
         ## (white space as the absorb reads it — its ONE predicate `_isspace_valid`, his §359 (10): Julia's bare `isspace` throws at decode
         ## on an overlong sequence, so an invalid edge byte is content here too — the profile is FED; the one-character overlong profile the
-        ## absorb refuses, as at the tip (the lane's oracle L08); an invalid sequence glued to the label sugar `:` it does not refuse (L09) — R-ALT-25)
+        ## absorb refuses, as at the stage-2 base 9bde47d (the lane's oracle L08); an invalid sequence glued to the label sugar `:` it does not
+        ## refuse (L09) — R-ALT-25)
         if !isnothing(config.user_mh_profile) && !isempty(strip(AbsorbMeta._isspace_valid, config.user_mh_profile))
             feed_user_mh!(st)
         end

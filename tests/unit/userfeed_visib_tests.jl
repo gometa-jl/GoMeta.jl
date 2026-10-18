@@ -12,8 +12,9 @@
 #       his word of 2026-10-16 — R-ALT-18 / R-ALT-22) an EMPTY or whitespace-only profile is INERT like no profile: it feeds nothing and
 #       occupies no slot, so the loop's order is the un-fed one (MEASURED: the lane's oracle L04, L05, L06 against P07 and P26 — before
 #       the stage an empty profile occupied the user slot, the CrossReview set alt-stage1's E2); a profile whose edge character is an INVALID
-#       byte sequence is content, never white space — FED; the one-character overlong profile refused by the absorb as at the tip (MEASURED:
-#       the lane's oracle L08), an invalid sequence glued to the label sugar `:` fed and NOT refused (MEASURED: L09 — PROCESS_OK, no row).
+#       byte sequence is content, never white space — FED; the one-character overlong profile refused by the absorb as at the stage-2 base
+#       9bde47d (MEASURED: the lane's oracle L08), an invalid sequence glued to the label sugar `:` fed and NOT refused (MEASURED: L09 —
+#       PROCESS_OK, no row).
 # REASONING: the user slot is scanned FIRST by both apply walks (feed_user_mh!'s docstring: "the fed profile OVERRIDES authored Visib");
 #       a queued fed action reaches the enqueue's origin line (commit 2) that no heading-only profile reaches — the path commit 3a's witness F3
 #       found broken (the UserContext import) is witnessed here at the public entry for its own sake.
@@ -73,8 +74,10 @@ _uf_bytes(s::String) = Vector{UInt8}(codeunits(s))
         r24 = GM.goMeta(_uf_bytes("#~2 head(\"T\"){ :label2 } :label2\nx = 1\n"); config = GM.GoMetaConfig(; user_mh_profile = ""))
         @test r24.status === GM.PROCESS_OK && !any(x -> startswith(String(x.attr), "head"), r24.altValues_evals.records)
         # an INVALID edge byte is content, never white space (the absorb's one predicate, his §359 (10)): a profile whose only character is
-        # an overlong sequence is FED and meets the absorb's unknown-action refusal, as at the tip — never Julia's raw InvalidCharError out
-        # of the driver's feed test (MEASURED: the lane's oracle L08 on the tip and on the cured scratch)
+        # an overlong sequence is FED and meets the absorb's unknown-action refusal, as at the stage-2 base 9bde47d — never Julia's raw
+        # InvalidCharError out of the driver's feed test (MEASURED: the lane's oracle L08 on the stage-2 base 9bde47d and on the stage-2
+        # scratch after the review's cures — receipts/stage2/oracle-run_AFTER_scratch-cured.log, its diff 31ca0fa7…; the scratch landed as
+        # 18cf332 after the judge-only check's six text folds)
         e8 = try GM.goMeta(_uf_bytes("x = 1\n"); config = GM.GoMetaConfig(; user_mh_profile = "\xe0\x80\x80")); nothing catch err; err end
         @test e8 isa ErrorException && occursin("GoMeta absorb: unknown alterant action", e8.msg)
     end
