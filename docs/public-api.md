@@ -942,7 +942,9 @@ later stage — maybe v0.8, maybe later — by the creator's decision; nothing i
 carries the version.
 
 **The breaking-change register (every removal, rename or ADDITION of a public name of EITHER tier is written here — the
-non-silent record under the policy above; no deprecation for a name of either tier until at least v0.7).**
+non-silent record under the policy above; no deprecation for a name of either tier until at least v0.7).** A row's REMOVED or
+ADDED at 0.4.0 also covers what was added and removed again within the 0.4 development, before the tag: such a thing was
+in no released version.
 
 - **`GoMeta.outputs` — §1.2 public-not-exported since 0.3.0 — REMOVED at 0.4.0** (no deprecation stub, by the
   creator's decision); ground: the renderer and the tree print are development tools;
@@ -950,7 +952,7 @@ non-silent record under the policy above; no deprecation for a name of either ti
   caller's top level; a 0.3.0 caller sees `UndefVarError`; the same-commit triple (code + the document's
   §1.2/§1.3/§2/§3.4/§6 + the surface oracle);
   `docs/CANONICAL-OUTPUT.md` re-scoped (the package's canonical observable output = `altValues_evals` (+
-  `serialize_evals`, `content_fingerprint`); the pair = the tool's output pinned by the golden layer); the Engine's
+  `serialize_evals`, `content_fingerprint` — itself REMOVED at 0.4.0, its row below); the pair = the tool's output pinned by the golden layer); the Engine's
   delivered surface after the move = the run and the evaluated values.
   The row's practice — the same-commit triple:
   code + this document + the surface oracle
