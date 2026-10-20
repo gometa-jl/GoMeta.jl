@@ -180,8 +180,10 @@ end
 """
     feed_user_mh!(st::ProcessState) -> nothing
 
-IS: the feed of the RESERVED user slot of the meta-hierarchy (`userMHIdx` in `state.jl` — defined + scanned FIRST by
-both `applyAltActionFns` walks, and fed by no other call site) with the metaLine-body profile in
+IS: the feed of the RESERVED user slot of the meta-hierarchy (`userMHIdx` in `state.jl` — THE USER LEVEL: placed FIRST in the
+eligible-slot order by both `applyAltActionFns` walks (its PRIORITY) and, since stage 0 of the Labels lane (0.4.1, R-LAB-8 /
+R-LAB-15), EVALUATED after the Component's own slot — its accumulating rows collected first as the outermost level, its other
+rows decided with full sight of the Component's own labels and with the override; fed by no other call site) with the metaLine-body profile in
 `st.config.user_mh_profile`, BEFORE the absorb walk. SCOPE: a minimal caller-supplied feed ONLY — not a general
 user-level configuration system; internal (NOT exported); called from `goMeta` iff `config.user_mh_profile` is a String
 holding at least one character of content — one the absorb's ONE white-space predicate `AbsorbMeta._isspace_valid` does not
@@ -198,8 +200,9 @@ never touch it, so the fed slot SURVIVES the whole file walk); NULLS `st.meta_co
 this surface); sets `st.user_context` to the minted handle `UserContext(key_bytes(user_context_key(namespace, 1)))`
 inside a try/finally that restores the prior value; then `absorbMeta` routes the profile's actions through the SAME
 parseAlt path authored metaLines use; the meta-hierarchy cursor is restored so the walk starts exactly as un-fed.
-First-wins per non-accumulate alterant across the user-slot-first scans ⇒ the fed profile OVERRIDES authored Visib
-(e.g. `"discard{ :label1 } show"`). An action name outside the registry errors loudly inside `absorbMeta` (the same
+The user level's OVERRIDE per non-accumulate alterant (evaluated after the Component's own slot, with priority over it —
+stage 0 of the Labels lane) ⇒ the fed profile OVERRIDES authored Visib (e.g. `"discard{ :label1 } show"`), and a fed
+condition sees the Component's own labels. An action name outside the registry errors loudly inside `absorbMeta` (the same
 crash-loud class as an authored non-member). Returns `nothing`.
 
 REASONING: one intake for authored and fed metadata — the fed profile is a metaLine body read by the same parser and
