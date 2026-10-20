@@ -224,7 +224,7 @@ a further action meets the stable message "GoMeta absorb: more than 8 actions in
 a malformed metaLine meets the grammar's one refusal naming the character at fault — "GoMeta absorb: unexpected
 character '<c>' <where> …" (a metaStatement is a name, a ':' label or the region's first
 quoted heading, then at most one `()`, then at most one `{}`, and ends at white space; `docs/public-api.md` §3.4); malformed
-action arguments are refused; label names are validated against the engine's closed whitelist when
+action arguments are Julia's own error out of the `goMeta` call; label names are validated against the engine's closed whitelist when
 APPLIED — an out-of-whitelist name refuses; a label QUERIED in a condition answers false when it is unknown
 or unset (as the original engine answered; since `0.4.0`). The corpus-documented labels are
 `:label1`..`:label5`; since `0.3.0` the closed whitelist also accepts the fixed pictograph

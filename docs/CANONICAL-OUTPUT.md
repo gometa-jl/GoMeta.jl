@@ -77,7 +77,7 @@ The render half completes the share-target emit over both non-show verdicts (`:h
    hide write is skipped when the source line's POST-INDENT head already begins with the
    flavor's hide marker, so a line already starting `## ` renders AS-IS and
    `render ∘ ingest ∘ render == render` holds over the hide battery (a standing idempotence
-   differential in the development fork proves it per armed flavor, with a stacking-forgery
+   differential outside the shipped suite proves it per armed flavor, with a stacking-forgery
    negative control). THE FIDELITY BOUND, disclosed: an authored marker-headed line under hide
    renders AS-IS — byte-indistinguishable from engine-hidden output; the bound only NARROWS
    distinguishability. **Recovery is NOT a v0 behavior:** the hide render remains ONE-WAY — no
@@ -106,8 +106,8 @@ committed corpus (`examples/`; rule 1's resurface arm excepted — not exercised
 the rule-5 empty-line fact and the rule-6 ensure-token fact ride it too — the `Extended` pair's hidden text block
 carries the blank input line (L40, rendered as a bare empty line) and the `## `-headed narration lines (L46–L49,
 rendered as-is, no doubling; `docs/SYNTAX-AND-SEMANTICS.md` §7 cites them); the rule-6 one-way fact and
-re-ingestion idempotence are NOT exercised by the corpus — they are proven by a standing differential in the
-development fork. *(Since `0.3.0` the
+re-ingestion idempotence are NOT exercised by the corpus — they are proven by a standing differential outside the
+shipped suite (the fixed point itself is pinned for the three armed flavors by `tests/unit/ensure_token_tests.jl`). *(Since `0.3.0` the
 doubling is gone — the ensure-token rule replaced it; the corpus outputs carry no doubled shapes.)*
 
 **Share-profiles** parametrize the render half (one source, N profile-keyed outputs);
