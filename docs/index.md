@@ -60,5 +60,5 @@ error-mode catalogue ([Public API + error modes](public-api.md) §3).
 byte-exact oracle: the seven committed example pairs under `examples/` render byte-identically,
 pinned by the shipped test suite under a plain `Pkg.test()`. The language grows by design; the
 v0 subset forecloses none of it. `0.4.1` changes one behaviour under a fed profile (`GoMetaConfig.user_mh_profile`):
-the Component's own slot applies in written order with or without a feed, and the user level's other statements are
-evaluated after it, with priority (`docs/public-api.md` §6, its last row).
+the Component's own slot applies in written order with or without a feed; the profile's labels are collected first, as the
+outermost level, and its other statements are evaluated after it, with priority (`docs/public-api.md` §6, its last row).

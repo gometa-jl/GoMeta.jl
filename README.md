@@ -65,8 +65,8 @@ extends the label whitelist by a fixed **pictograph vocabulary** (byte-exact nam
 `:💡`, `:📝`, `:🔥`); since `0.4.0` the whole list — those names, `:label1`..`:label5` and `:doc` — is
 hard-coded in the Labels Alterant's own file (`src/alterants-std/labels.jl`), where a further name is one line.
 `0.4.1` changes one behaviour under a fed profile (`GoMetaConfig.user_mh_profile`): the Component's own slot applies in
-written order with or without a feed, and the user level's other statements are evaluated after it, with priority
-(`docs/public-api.md` §6, its last row).
+written order with or without a feed; the profile's labels are collected first, as the outermost level, and its other
+statements are evaluated after the Component's own slot, with priority (`docs/public-api.md` §6, its last row).
 
 **What works today** (the feature list below is test-pinned in this repository):
 
