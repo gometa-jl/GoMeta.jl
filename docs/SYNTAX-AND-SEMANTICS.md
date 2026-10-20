@@ -50,19 +50,17 @@ can learn GoMeta exactly, and verify it, before writing or changing a metaLine.
   is the cell's occurrence key — opaque, namespace-scoped bytes naming WHICH component, never its text
   (`docs/public-api.md` §1.2/§2). A cell's text is read from the BLS Component tree through
   `GoMeta.BLS.content(delivery.blsComponentTree, component)` — "through BLS's own access function"
-  (R-V04B-43 (1); `content_fingerprint` left at 0.4.0's stage-2 commit 9b).
+  (`content_fingerprint` was removed at `0.4.0`).
 - **meta-hierarchy / slot** — the engine's per-depth store of pending alterant actions: one slot per
-  open depth; its capacity is 8 (`SLOT_CAPACITY`, `src/state.jl` — a named constant since stage 3 of the Alterants build, decoupled from
-  the registered action count, 9; a fixed size, raised by hand — the owner's Decision 3 of 2026-10-08, OWNER-WORDS §358, and his approval of
-  2026-10-15 of the session's option (a), the documentation lane's §D247 — the size raised by hand when an example asks) — a further action meets the stable message "GoMeta absorb: more than 8 actions in one meta-hierarchy
-  slot …" since stage 5's s5c29 (between E7 and s5c29 Julia's own `BoundsError`).
+  open depth; its capacity is 8 (`SLOT_CAPACITY`, `src/state.jl` — a named constant, decoupled from
+  the registered action count, 9; a fixed size by the creator's decision, raised by hand when an example asks for more) — a further action meets the stable message "GoMeta absorb: more than 8 actions in one meta-hierarchy
+  slot …" since `0.4.0`.
 - **verdict** — a final evaluated alterant value for one cell.
 - **State-refs** — built-in predicates that query a BLS component's type/content (`isCode`, `isText`, `isMeta`,
   `containsMeta`), used inside conditions to decide whether an alterant applies (§6).
 - **settribute** — a component's flag record (its settings/attributes: e.g. `depthN`, `isCode`), carried per BLS
   component (`componentSettribute` in the source) and read by State-refs — the Visib verdict is the Engine's evaluated value
-  (`evaluatedAltValue`), not a flag of the record since stage 3's commit 4 of the v0.4 build; its three names left the record at
-  stage 5's E12 (census row 45). The coinage joins *settings* + *attribute*.
+  (`evaluatedAltValue`), not a flag of the record since `0.4.0`, when its three names left the record as well. The coinage joins *settings* + *attribute*.
 - **depth** — a metaBlock's nesting level (1, 2, 3, …), set by tilde-count or a digit (§2); v0 supports
   depths 1 through 8, and the digit `0` addresses the file level — `#~0` is **accepted**, not
   refused: it processes to `PROCESS_OK` with no diagnostic (the form is outside the committed
@@ -307,11 +305,11 @@ content-only block across the blank.
 - **IS** — labels are accumulative tags a metaLine applies to the content in its scope. **Label
   names are validated when APPLIED** against the engine's closed whitelist — the
   corpus-documented set `:label1` … `:label5` plus, since `0.3.0`, a fixed pictograph
-  vocabulary (byte-exact names like `:💡`, `:🔥`) plus, since stage 2 of the Alterants build, `:doc` — the
+  vocabulary (byte-exact names like `:💡`, `:🔥`) plus, since `0.4.0`, `:doc` — the
   whole list hard-coded in the Labels Alterant's own file `src/alterants-std/labels.jl` (the refusal message lists the
   full accepted set): applying a label from outside the whitelist refuses with a stable message naming the
-  accepted set; a label QUERIED in a condition answers false when it is unknown or unset (the
-  legacy's checker; since stage 5's E9 of the v0.4 build).
+  accepted set; a label QUERIED in a condition answers false when it is unknown or unset (as
+  the original engine answered; since `0.4.0`).
 - **Conditional application** — `:labelN{ condition }` applies the label **only** to components satisfying the
   condition. Cite: `Extended L8` `#~ :label1{ isText && containsMeta }` — `:label1` reaches only text that
   contains meta; `Proposal L3` `#~ :label1{ (isText && containsMeta), isMeta }`.
@@ -329,9 +327,9 @@ content-only block across the blank.
 Conditions guard **alterant actions** (`discard{…}`/`hide{…}`/`show{…}`) and **conditional labels**
 (`:labelN{…}`).
 
-> **SECURITY — a condition is Julia.** Since `0.4.0` (stage 5's E13 of the v0.4 build) the `{…}` body is re-written at
+> **SECURITY — a condition is Julia.** Since `0.4.0` the `{…}` body is re-written at
 > absorb (its GoMeta-specific parts to Julia text), read once by Julia's parser and evaluated by Julia at apply — the
-> owner's design (OWNER-WORDS §120, §D174), as the original engine did. A condition body can therefore execute code and
+> creator's design, as the original engine did. A condition body can therefore execute code and
 > have effects: process input you trust. Full statement: the README's SECURITY section and `docs/public-api.md` §3.2.
 
 The operators (all verified against the corpus):
@@ -347,8 +345,8 @@ The operators (all verified against the corpus):
 > than `||`; `!` is prefix) and **not exercised by this corpus** — **write explicit `()`** to make intent unambiguous, as
 > `Proposal L3` does. (See §13.) Inside `{}` a `)` glued to a following atom or operator is read by Julia's parser since
 > `0.4.0` (`{(isCode)}` reads — the former scanner refused it). (Outside `{}`, on the metaLine itself, a token glued to a
-> closing `)`/`}` is REFUSED by name since stage 5's s5c29 — "GoMeta absorb: unexpected character 'j' after the metaStatement "hide()" …",
-> "… 's' after the metaStatement "hide{isCode}" …" (between E7 and s5c29 it was dropped as the legacy dropped it) — `docs/public-api.md`
+> closing `)`/`}` is REFUSED by name since `0.4.0` — "GoMeta absorb: unexpected character 'j' after the metaStatement "hide()" …",
+> "… 's' after the metaStatement "hide{isCode}" …" — `docs/public-api.md`
 > §3.4; write the space.)
 
 **State-refs** read the BLS component's type/content: `isCode`, `isText`, `isMeta`, `containsMeta`. Verified:
@@ -362,8 +360,8 @@ The operators (all verified against the corpus):
 (`containsText` exists as a BLS attribute but is **not** used as a condition predicate anywhere in this corpus —
 see §13.)
 
-The three Visib names `hide`, `show` and `discard` are **no condition keys** since stage 5's E12 of the v0.4 build (census row 45; the
-owner's R-V04B-99): `#~ hide{ show }` meets the unknown-condition-key refusal — before E12 the key was accepted and silently false
+The three Visib names `hide`, `show` and `discard` are **no condition keys** since `0.4.0`: `#~ hide{ show }` meets the
+unknown-condition-key refusal — before `0.4.0` the key was accepted and silently false
 (`docs/public-api.md` §3.4). The rule: a bare name in `{}` is a BLS state-ref or an action of an Alterant that answers queries
 (Labels at v0); a query of Visib, Id or the Heading refuses the same way.
 
@@ -383,7 +381,7 @@ owner's R-V04B-99): `#~ hide{ show }` meets the unknown-condition-key refusal �
   hidden/discarded (e.g. `Extended L51` `#~2 :label2` is discarded along with its markdown).
 - **When a block is hidden, every NON-EMPTY line in it carries the `## ` marker** — a single-hash `# `
   content line becomes `## #`; a double-hash `## ` comment ALREADY heads with the marker and renders
-  AS-IS (ensure-token — no `## ##` doubling; *dated true-up 2026-08-12 for `0.3.0`, superseding the
+  AS-IS (ensure-token — no `## ##` doubling; *since `0.3.0`, superseding the
   `0.2.3` doubling behavior*); an EMPTY line inside the hidden block stays
   a bare empty line (the marker applies to non-empty lines only). Cite: in the hidden text block of `Extended`,
   the `# ` content lines (`L35–L38`) → `## #`, the `## ` narration (`L46–L49`) stays `## `, and the blank `L40`
@@ -474,20 +472,20 @@ drops `:label1` from depth 1 to depth 2. One blank line, two flips, two reasons.
 - **Labels (the `:` action) — documented, both forms:** repeated one-word labels
   (`#~ :label1 :label2`) AND the parenthesized list (`#~ :(label1, label2)`) are equivalent; each
   label APPLIED is checked against the closed whitelist (an unknown label refuses with a stable
-  message); a label QUERIED answers false when unknown or unset (since stage 5's E9 —
+  message); a label QUERIED answers false when unknown or unset (since `0.4.0` —
   `docs/public-api.md` §3.4).
-- **Id actions (`cell` / `parent` / `file`, and `ids` since stage 3 of the Alterants build) — EXPERIMENTAL at this release:** the three single actions take one integer value
+- **Id actions (`cell` / `parent` / `file`, and `ids` since `0.4.0`) — EXPERIMENTAL at this release:** the three single actions take one integer value
   argument each (`#~ cell(7)`), Int16 domain; `#~ ids(c, p, f)` sets the three fields at once, exactly as `cell(c) parent(p) file(f)`
-  would (the owner's §D218 (3); the same parse, rows and fault class). The Id alterant is a v0 placeholder implementation; this
+  would (the same parse, rows and fault class). The Id alterant is a v0 placeholder implementation; this
   syntax may change — do not build durable content on it at v0.
 - **Visib actions (`show` / `hide` / `discard`) take NO arguments;** an empty list (`hide()`) is
   accepted as the bare form.
 - **Malformed arguments** (wrong arity; non-parsable or overflowing values) are Julia's own error out of the
-  `goMeta` call since stage 5's E6 of the v0.4 build (the stable `GoMeta apply: invalid arguments …` refusal
-  left with the set-invocation seam — census row 14; `docs/public-api.md` §3.4).
+  `goMeta` call since `0.4.0` (the former stable `GoMeta apply: invalid arguments …` refusal
+  was removed at `0.4.0`; `docs/public-api.md` §3.4).
 - **Condition-side atoms** (`{ cell(7) }`, `{ cell }` inside `{}`) meet the usual unknown-condition-key refusal at absorb,
-  with or without arguments — `cell` answers no query (the registry's rule since stage 5's E12 of the v0.4 build; the
-  closed intake's argument-domain refusal left with the interpreter at E13 — `docs/public-api.md` §3.2/§3.4).
+  with or without arguments — `cell` answers no query (the registry's rule since `0.4.0`; the
+  former closed interpreter's argument-domain refusal went with that interpreter at `0.4.0` — `docs/public-api.md` §3.2/§3.4).
 
 ---
 
@@ -527,7 +525,7 @@ its committed example.
 To keep the verified claims honest, these are **known but not established here** — do not assume their behaviour:
 
 - **Alterant actions beyond Visib + labels.** The engine's action whitelist also contains `head` (the
-  Heading action) and `cell`, `file`, `ids`, `parent` (the Id actions — `ids` since stage 3 of the Alterants build). The Id actions' v0 *argument forms*
+  Heading action) and `cell`, `file`, `ids`, `parent` (the Id actions — `ids` since `0.4.0`). The Id actions' v0 *argument forms*
   are documented in §10 (EXPERIMENTAL); their *rendering behaviour* is not exercised by this corpus
   and is not documented here.
 - **Section-title metaLines** (`#~2 "Title"` — a first-token quoted string lowering to the `head`
@@ -549,14 +547,14 @@ To keep the verified claims honest, these are **known but not established here**
   same-statement pair whose second value would apply; the first-wins rule above is the contract.)
 - **Engine limits** — metaLines live in comments (`#`/`##`), not as executable code. The label
   whitelist is closed: the corpus-documented `:label1`..`:label5` plus (since `0.3.0`) the fixed
-  pictograph vocabulary plus (since stage 2 of the Alterants build) `:doc`, the whole list hard-coded in the Labels
+  pictograph vocabulary plus (since `0.4.0`) `:doc`, the whole list hard-coded in the Labels
   Alterant's own file `src/alterants-std/labels.jl` — byte-exact names, no normalization —
   and **label names are validated against it when APPLIED** — an unknown label refuses with the stable
   `GoMeta apply: unknown label …` message, which names the accepted set; a label QUERIED in a condition
-  answers false when it is unknown or unset (the legacy's checker; since stage 5's E9 of the v0.4
-  build). Eight actions accumulate per meta-hierarchy slot (`SLOT_CAPACITY` — since stage 3 of the Alterants build a named constant,
+  answers false when it is unknown or unset (as the original engine answered; since
+  `0.4.0`). Eight actions accumulate per meta-hierarchy slot (`SLOT_CAPACITY` — a named constant,
   decoupled from the registered action count of 9)
-  (a further one meets the stable message "GoMeta absorb: more than 8 actions in one meta-hierarchy slot …" since stage 5's s5c29 — the owner's §358; `docs/public-api.md` §3.4). The
+  (a further one meets the stable message "GoMeta absorb: more than 8 actions in one meta-hierarchy slot …" since `0.4.0`; `docs/public-api.md` §3.4). The
   authorable depth window is 1–8 in the digit form (§2). Custom label names applied (a queried one
   answers false — `docs/public-api.md` §3.4), and
   bare names outside the settribute keys and the queryable actions, are refused; a Julia Boolean expression over those

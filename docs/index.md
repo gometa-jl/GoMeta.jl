@@ -49,14 +49,14 @@ example corpus live in the repository: clone it and start from the README's Quic
 ## Security
 
 A `{…}` condition is **Julia** since `0.4.0`: its GoMeta-specific parts are re-written to Julia text at absorb, Julia's
-parser reads the body once, and Julia evaluates it at apply — the owner's design, as the original engine did. A condition
+parser reads the body once, and Julia evaluates it at apply — the creator's design, as the original engine did. A condition
 body can therefore execute code, read files or have effects: process input you trust, as you would any Julia file you
 `include`. The full statement, with the documented limits, is in the README's SECURITY section and the
 error-mode catalogue ([Public API + error modes](public-api.md) §3).
 
 ## Status
 
-`0.4.0` (alpha maturity; the v0.4 build, from its branch `cc/v04-delivery`) — a working, tested engine for the **v0 subset** of the GoMeta language, with a
+`0.4.0` (alpha maturity) — a working, tested engine for the **v0 subset** of the GoMeta language, with a
 byte-exact oracle: the seven committed example pairs under `examples/` render byte-identically,
 pinned by the shipped test suite under a plain `Pkg.test()`. The language grows by design; the
 v0 subset forecloses none of it.

@@ -45,8 +45,8 @@ x = 1                          # ...content...
 
 ## Status: alpha
 
-`0.4.0` (alpha maturity; the v0.4 build, from its branch `cc/v04-delivery`) — a working, tested engine for the **v0 subset** of the GoMeta
-language. `0.2.0` brought a closed no-eval condition interpreter (REMOVED at `0.4.0`, stage 5's E13 of the v0.4 build —
+`0.4.0` (alpha maturity) — a working, tested engine for the **v0 subset** of the GoMeta
+language. `0.2.0` brought a closed no-eval condition interpreter (REMOVED at `0.4.0` —
 a condition is read by Julia's parser and evaluated by Julia, as the original engine did; `docs/public-api.md` §3.2); `0.2.1` added the
 token-delimiter law (every marker token requires whitespace-or-line-boundary on BOTH
 sides of its head — an undelimited shape is plain content, never special, never refused)
@@ -58,11 +58,11 @@ the verdict store whole; `0.2.3` converts the structural-directive adjacency cra
 directly adjacent to metadata) into stable, early refusals at both grains (the line-grain
 message names the escapes); `0.3.0` arms **three content flavors** (`:julia` the default,
 `:c` for the `//` line-comment family, `:latex` for `%` — selected explicitly via
-`GoMetaConfig(flavor_tag = …)`, never inferred, with a fail-closed `ERR_UNKNOWN_FLAVOR` refusal — left at `0.4.0`, stage 5's E8:
-an unknown tag throws its stable message), makes the hide render **idempotent** (the ensure-token write:
+`GoMetaConfig(flavor_tag = …)`, never inferred, with a fail-closed `ERR_UNKNOWN_FLAVOR` refusal — that coded refusal was removed at `0.4.0`:
+an unknown tag throws a stable error message instead), makes the hide render **idempotent** (the ensure-token write:
 `render ∘ ingest ∘ render == render` — see the canonical-output reference, rule 6), and
 extends the label whitelist by a fixed **pictograph vocabulary** (byte-exact names like
-`:💡`, `:📝`, `:🔥`); since stage 2 of the Alterants build the whole list — those names, `:label1`..`:label5` and `:doc` — is
+`:💡`, `:📝`, `:🔥`); since `0.4.0` the whole list — those names, `:label1`..`:label5` and `:doc` — is
 hard-coded in the Labels Alterant's own file (`src/alterants-std/labels.jl`), where a further name is one line.
 
 **What works today** (the feature list below is test-pinned in this repository):
@@ -76,8 +76,7 @@ hard-coded in the Labels Alterant's own file (`src/alterants-std/labels.jl`), wh
   segment handling; CRLF→LF normalization.
 - **The pipeline:** the input file → BLS parses it into the BLS Component tree → the GoMeta Engine evaluates the
   altValues over it (`altValues_evals`) → the Extensions use both MAIN PRODUCTS; ONE run, `goMeta`, delivers
-  both in `GoMetaDelivery` (the (tree, render) pair is a development tool's, `devtools/basic_renderer.jl`, since
-  R-V04B-24) — pure and deterministic for the
+  both in `GoMetaDelivery` (the (tree, render) pair is a development tool's, `devtools/basic_renderer.jl`) — pure and deterministic for the
   engine's own operations (see SECURITY), with a byte-exact oracle: the 7 committed example pairs
   under `examples/` render **byte-identically**,
   pinned by the shipped test suite (the golden byte-oracle and
@@ -87,19 +86,18 @@ hard-coded in the Labels Alterant's own file (`src/alterants-std/labels.jl`), wh
 - **Robustness:** the metaLine GRAMMAR surface refuses out-of-vocabulary input with **stable, documented refusals** —
   an unknown action, an unknown condition key — (a malformed metaLine meets the grammar's one refusal naming the character at fault —
   "GoMeta absorb: unexpected character '<c>' <where> …" — and a ninth action in one meta-hierarchy slot the stable "GoMeta absorb:
-  more than 8 actions in one meta-hierarchy slot …", both since stage 5's s5c29 of the v0.4 build — the owner's Decisions 1 and 3 of
-  2026-10-08, §356 / §358; the four guarded refusals of v0.2–v0.3 left at stage 5's E7 — census row 41 — and between E7 and s5c29 a
-  malformed metaLine was read as the legacy read it), and the Labels Alterant's own
+  more than 8 actions in one meta-hierarchy slot …", both since `0.4.0`; the four guarded refusals of v0.2–v0.3 were removed at
+  `0.4.0`), and the Labels Alterant's own
   unknown-label refusal (`GoMeta apply: unknown
-  label …` on an applied out-of-whitelist name; a queried unknown label answers false since stage 5's E9 of the v0.4
-  build — `docs/public-api.md` §3.4), catalogued in `docs/public-api.md` §3. Malformed action ARGUMENTS are Julia's own
-  error out of the `goMeta` call since stage 5's E6 of the v0.4 build (the apply seam's guarded refusal left — census
-  row 14; his legacy called the setters directly).
-  The documented exception — the guarded `#~9` depth refusal — is likewise catalogued honestly in `docs/public-api.md`
-  §3.1/§3.2/§3.4 (a condition is Julia's since `0.4.0`, stage 5's E13: GoMeta's own refusals are the unknown condition key, the
-  block that carries no condition expression and — since s5c31, the owner's word §366 — a `(` left open inside the body; a body
+  label …` on an applied out-of-whitelist name; a queried unknown label answers false since `0.4.0` —
+  `docs/public-api.md` §3.4), catalogued in `docs/public-api.md` §3. Malformed action ARGUMENTS are Julia's own
+  error out of the `goMeta` call since `0.4.0` (the former guarded refusal was removed at `0.4.0`; the original engine
+  called the setters directly).
+  The documented exception — the guarded `#~9` depth refusal — is likewise catalogued in `docs/public-api.md`
+  §3.1/§3.2/§3.4 (a condition is Julia's since `0.4.0`: GoMeta's own refusals are the unknown condition key, the
+  block that carries no condition expression and a `(` left open inside the body; a body
   Julia cannot parse is Julia's own parse error — §3.2). The former second exception — the apply-path crash
-  edge, a flagless-Visib write-back — left with the write-back at stage 3's commit 4 of the v0.4 build.
+  edge, a flagless-Visib write-back — went with the write-back at `0.4.0`.
 
 **The language grows by design; the v0 subset forecloses none of it.** `using()` is a reserved
 name.
@@ -149,7 +147,7 @@ evals[1]                                  # (cell_handle, attr, value, polarity)
 result.diagnostics                        # the part `diagnostics`: the run's coded diagnostics (a non-OK status ⇒ non-empty)
 
 include(joinpath(pkgdir(GoMeta), "devtools", "load_basic_renderer.jl"))   # the basic renderer — a DEVELOPMENT TOOL, not part of
-                                          # the Engine's output (R-V04B-24) — loaded through its ONE path, at the top level
+                                          # the Engine's output — loaded through its ONE path, at the top level
 out    = Main.BasicRenderer.outputs(result)  # the tool's (blsStructure_bytes, render_bytes) pair
 print(String(copy(out.render_bytes)))     # the rendered share-view of the file — the way to inspect a run by eye
 ```
@@ -195,7 +193,7 @@ julia --startup-file=no --project=. -e 'using Pkg; Pkg.instantiate()'   # once, 
 julia --startup-file=no --project=. devtools/run_examples.jl
 ```
 
-A small query demo ships under `extensions/` — "find it again" over the same committed corpus (an Extension of GoMeta, not the Engine; R-V04B-27):
+A small query demo ships under `extensions/` — "find it again" over the same committed corpus (an Extension of GoMeta, not the Engine):
 
 ```
 julia --startup-file=no --project=. extensions/find_by_label.jl            # per-label overview
@@ -205,33 +203,33 @@ julia --startup-file=no --project=. extensions/find_by_label.jl label5     # whi
 
 ## SECURITY
 
-A `{…}` condition is **Julia** — since `0.4.0` (stage 5's E13 of the v0.4 build; the owner's order, OWNER-WORDS §319), as the
+A `{…}` condition is **Julia** — since `0.4.0`, by the creator's decision, as the
 original engine read it: at absorb the body's GoMeta-specific parts are re-written to Julia text (a settribute key to its
-state read, a queryable Alterant action or a label test to its query call, the owner's `,` to `||`; the rest verbatim),
-Julia's parser reads the result once, and Julia evaluates the stored expression at apply in GoMeta's module — the owner's
-design (OWNER-WORDS §120: a full parser *"for those users who for instance work only with their private GoMeta statements
-(i.e.: If there is NO security risk whatsoever)"*; §D174). **Processing a file you did not write therefore runs its
+state read, a queryable Alterant action or a label test to its query call, GoMeta's `,` (OR) to `||`; the rest verbatim),
+Julia's parser reads the result once, and Julia evaluates the stored expression at apply in GoMeta's module. This is the
+creator's design: GoMeta is meant first for people who process their own GoMeta statements, where there is no security
+risk. **Processing a file you did not write therefore runs its
 conditions as Julia code** — a condition body can read files, take time or have effects, exactly as a custom Alterant's
 callables can: use GoMeta on input you trust, as you would any Julia file you `include`. The Engine's own operations stay
 pure and deterministic (`docs/public-api.md` §2). The vocabulary stays GoMeta's: a bare name inside `{}` must be a
 settribute key or an action of an Alterant that answers queries, else the stable `GoMeta absorb: unknown condition key …`
 refusal; a body Julia cannot parse is Julia's own `Meta.ParseError` (§3.2). One caveat remains: metaLine names intern
-as Julia `Symbol`s, which persist for the session — the symbol table only grows as new names arrive, so a long session
-over many untrusted files accretes entries. (The closed no-eval interpreter of `0.2.0`–`0.3.x` and its opt-in modes left at E13 —
-`0.4.0`, stage 5's E13 of the v0.4 build; `docs/public-api.md` §6.)
+as Julia `Symbol`s, which persist for the Julia session — the symbol table only grows as new names arrive, so a long session
+over many untrusted files accretes entries. (The closed no-eval interpreter of `0.2.0`–`0.3.x` and its opt-in modes were removed at
+`0.4.0`; `docs/public-api.md` §6.)
 
-Documented v0 limits: the queue tensor holds 8 actions per meta-hierarchy slot (`SLOT_CAPACITY` in `src/state.jl` — a named constant
-since stage 3 of the Alterants build, decoupled from the registered action count, 9 with the `ids` action) —
-a further action meets the stable message "GoMeta absorb: more than 8 actions in one meta-hierarchy slot …" (stage 5's s5c29;
-the owner's §358); a malformed metaLine meets the grammar's one refusal naming the character at fault — "GoMeta absorb: unexpected
-character '<c>' <where> …" (stage 5's s5c29, the metaLine parser effort: a metaStatement is a name, a ':' label or the region's first
+Documented v0 limits: the queue tensor holds 8 actions per meta-hierarchy slot (`SLOT_CAPACITY` in `src/state.jl` — a named constant,
+decoupled from the registered action count, 9 with the `ids` action) —
+a further action meets the stable message "GoMeta absorb: more than 8 actions in one meta-hierarchy slot …";
+a malformed metaLine meets the grammar's one refusal naming the character at fault — "GoMeta absorb: unexpected
+character '<c>' <where> …" (a metaStatement is a name, a ':' label or the region's first
 quoted heading, then at most one `()`, then at most one `{}`, and ends at white space; `docs/public-api.md` §3.4); malformed
 action arguments are refused; label names are validated against the engine's closed whitelist when
 APPLIED — an out-of-whitelist name refuses; a label QUERIED in a condition answers false when it is unknown
-or unset (the legacy's checker; since stage 5's E9 of the v0.4 build). The corpus-documented labels are
+or unset (as the original engine answered; since `0.4.0`). The corpus-documented labels are
 `:label1`..`:label5`; since `0.3.0` the closed whitelist also accepts the fixed pictograph
-vocabulary (byte-exact names — the refusal message lists the full accepted set), and since stage 2
-of the Alterants build `:doc` — the whole list hard-coded in the Labels Alterant's own file
+vocabulary (byte-exact names — the refusal message lists the full accepted set), and since `0.4.0`
+`:doc` — the whole list hard-coded in the Labels Alterant's own file
 `src/alterants-std/labels.jl`. The full catalogue: `docs/public-api.md` §3.
 
 ## Documentation
@@ -249,8 +247,8 @@ The docs site also carries a **derived manual** pair — two pages generated fro
 marked Julia source file, where the `#~` marks choose the content AND which `jldoctest`
 blocks each page carries (the docs build runs exactly the tests the marks kept). The
 same pipeline derives the notebook under [`notebooks/`](notebooks/README.md): one
-source file, one notebook (the full edition) plus one executed twin (the student, report and
-slides editions left at stage 5's N1 of the v0.4 build). Every GENERATED file regenerates byte-identically —
+source file, one notebook (the full edition) plus one executed twin (the former student, report and
+slides editions were removed at `0.4.0`). Every GENERATED file regenerates byte-identically —
 `julia --startup-file=no --project=. notebooks_from_source.jl --check` — while the
 executed twin carries real kernel outputs and is validated separately, outside that
 byte gate.
@@ -302,10 +300,10 @@ of `GoMeta`"*, 2026-08-14.
 ## Versioning + compatibility
 
 The alpha status states the maturity honestly: the surface may still move. **No backward
-compatibility and no deprecation until at least GoMeta v0.7** (the owner's typed policy of
-2026-09-28): every change of the public surface is a clean cut — the old name removed; no stub,
+compatibility and no deprecation until at least GoMeta v0.7** (the creator's
+policy): every change of the public surface is a clean cut — the old name removed; no stub,
 no alias, no leftover of an older version in a newer one — and every removal or rename is written
 into the breaking-change register (`docs/public-api.md` §6) with its ground, its replacement and
 what an older caller sees. The policy will change at a later stage — maybe v0.8, maybe later — by
-the owner's word. Compatibility: Julia **1.12**; the core dependency **StaticArrays**
+the creator's decision. Compatibility: Julia **1.12**; the core dependency **StaticArrays**
 (exact-pinned; SHA is a standard library).

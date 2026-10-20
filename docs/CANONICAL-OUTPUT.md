@@ -3,11 +3,11 @@
 - **IS:** the record of GoMeta's **canonical observable output** — the single, deterministic,
   content-hashable artifact a golden test or a downstream consumer obtains from a
   `goMeta(bytes; config)` run: the evaluated values, `altValues_evals` (+ `serialize_evals`; a piece's text
-  through `GoMeta.BLS.content` — `content_fingerprint` REMOVED at 0.4.0's stage-2 commit 9b, R-V04B-43 (1)) — the Engine's delivered surface — and, beside it, the DEVELOPMENT TOOL's
+  through `GoMeta.BLS.content` — `content_fingerprint` REMOVED at 0.4.0) — the Engine's delivered surface — and, beside it, the DEVELOPMENT TOOL's
   `(blsStructure_bytes, render_bytes)` pair (`Main.BasicRenderer.outputs`, `devtools/basic_renderer.jl`,
-  loaded through `devtools/load_basic_renderer.jl`; R-V04B-24, 2026-09-12) which the golden layer pins.
+  loaded through `devtools/load_basic_renderer.jl`) which the golden layer pins.
   (This document's name — CANONICAL-OUTPUT — predates the move; it kept its name.) **Trust note:**
-  a `{…}` condition is Julia text evaluated by Julia (since `0.4.0`, stage 5's E13 of the v0.4 build) — a run over a
+  a `{…}` condition is Julia text evaluated by Julia (since `0.4.0`) — a run over a
   file executes its conditions; `docs/public-api.md` §2/§3.2 and the SECURITY section of `README.md` state the posture.
 - **DOES:** (1) names the observable surface; (2) defines each half of the tool's pair; (3) states the hide/discard
   render rules of the `jl-share-v1` profile; (4) defines the evals surface; (5) carries
@@ -25,9 +25,8 @@
 
 ## §1 — The observable surface
 
-**In R-V04B-24's own words: "the package's canonical observable output = `altValues_evals` (+
-`serialize_evals`, `content_fingerprint`)" and "the Engine's delivered surface after the move = the run and
-the evaluated values".** `readAltValuesEvals(result.altValues_evals)` is the deterministic, final-verdicts-only per-cell map of
+**The package's canonical observable output is `altValues_evals` (+ `serialize_evals`); the Engine's delivered
+surface is the run and the evaluated values.** `readAltValuesEvals(result.altValues_evals)` is the deterministic, final-verdicts-only per-cell map of
 evaluated Alterant values (GoMeta's semantic deliverable; the query-facing write payload; §4).
 
 **The development tool's pair** — `Main.BasicRenderer.outputs(result) -> (blsStructure_bytes, render_bytes)`,
@@ -39,9 +38,9 @@ the basic renderer's own function (`devtools/basic_renderer.jl`, reached only th
 
 The render is the basic renderer's **reference / verification render** — a development tool's output that
 doubles as the conformance anchor, pinned by the golden layer; it is NOT an Engine output. **No Extension takes
-the pair** (R-V04B-56 — the owner's word of 2026-09-24: "no Extension takes the pair"): an Extension consumes the
+the pair** (the creator's rule): an Extension consumes the
 Engine's answer through the delivered object and the BLS Component tree (the part `blsComponentTree`, BLS's own
-delivery, R-V04B-45); the pair is the tool's own, proved by its seven render reference files, never by an Extension.
+delivery); the pair is the tool's own, proved by its seven render reference files, never by an Extension.
 
 ## §2 — The tree half (the tool's tree print)
 
@@ -56,13 +55,13 @@ bytes regardless of their alterant behavior.
 The render half completes the share-target emit over both non-show verdicts (`:hide` /
 `:discard`). The six rules:
 
-1. **`:discard` (any grain)** → **zero bytes for the discarded Component and for every descendant that inherits its answer** (the corpus case: the `Extended` pair's input line 15, `… #~ discard`, absent from the output); an inner `show` or `hide` under a discarded ancestor RESURFACES — the renderer applies no subtree-skip, it writes each Component's own answer (`devtools/basic_renderer.jl`, the write-side law in its header; scenario 002 confirmed on its bytes, R-V04B-20; not exercised by the committed corpus).
+1. **`:discard` (any grain)** → **zero bytes for the discarded Component and for every descendant that inherits its answer** (the corpus case: the `Extended` pair's input line 15, `… #~ discard`, absent from the output); an inner `show` or `hide` under a discarded ancestor RESURFACES — the renderer applies no subtree-skip, it writes each Component's own answer (`devtools/basic_renderer.jl`, the write-side law in its header; confirmed on the authored scenario `tests/authored/002_block_discard_resurface`; not exercised by the committed corpus).
 2. **`:hide` at Line grain** → literal **`## ` prefix + the line's rendered bytes** (on a segmented line the first
-   segment's indentation is restored as SPACES *after* the marker when that segment is emitted — his legacy's test,
-   since stage 5's R1 of the v0.4 build, census row 60). On a hidden line with MULTIPLE rendered segments, **each
+   segment's indentation is restored as SPACES *after* the marker when that segment is emitted — the original engine's
+   behaviour, since `0.4.0`). On a hidden line with MULTIPLE rendered segments, **each
    rendered segment carries its own `## ` marker UNLESS the segment already heads with the
    marker's bytes** (the ensure-token rule — a trailing `## `-comment segment renders as-is;
-   *dated true-up 2026-08-12 for `0.3.0`, superseding the `0.2.3` per-segment doubling*) —
+   *since `0.3.0`, superseding the `0.2.3` per-segment doubling*) —
    pinned by the committed pairs: the code line
    `using Plots ## This …` renders hidden as `## using Plots ## This …` (the line-start marker;
    the trailing comment segment already carries `## `), and a line with a trailing inline
@@ -73,7 +72,7 @@ The render half completes the share-target emit over both non-show verdicts (`:h
    profile-versioned extension.
 5. **A hidden EMPTY line renders as a BARE empty line** — the hide marker is applied only to
    non-empty lines (the emit's hide write sits in the non-empty branch). There is NO `## `-only encoding for hidden empties at v0.
-6. **Ensure-token, render-idempotent** *(dated true-up 2026-08-12 for `0.3.0` — supersedes the
+6. **Ensure-token, render-idempotent** *(since `0.3.0` — supersedes the
    `0.2.3` "prefix doubling" rule: a line already starting `## ` used to become `## ## …`)*: a
    hide write is skipped when the source line's POST-INDENT head already begins with the
    flavor's hide marker, so a line already starting `## ` renders AS-IS and
@@ -108,9 +107,8 @@ the rule-5 empty-line fact and the rule-6 ensure-token fact ride it too — the 
 carries the blank input line (L40, rendered as a bare empty line) and the `## `-headed narration lines (L46–L49,
 rendered as-is, no doubling; `docs/SYNTAX-AND-SEMANTICS.md` §7 cites them); the rule-6 one-way fact and
 re-ingestion idempotence are NOT exercised by the corpus — they are proven by a standing differential in the
-development fork. *(Dated true-up
-2026-08-12 for `0.3.0`: the former sentence grounded the rule-6 DOUBLING in the corpus; the
-doubling died with the ensure-token rule and the corpus outputs carry no doubled shapes.)*
+development fork. *(Since `0.3.0` the
+doubling is gone with the ensure-token rule; the corpus outputs carry no doubled shapes.)*
 
 **Share-profiles** parametrize the render half (one source, N profile-keyed outputs);
 `jl-share-v1` is the v0 profile and the only one at this release.
