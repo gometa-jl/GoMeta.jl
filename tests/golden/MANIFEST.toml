@@ -10,10 +10,10 @@
 #   here; (3): reconciled here via the input-keyed oracle-parity check):
 #   (1) discard precedence — as captured (2026-08-02) this engine's discard component-skip omitted a
 #       show-override inside a discard-skipped ancestor, where the reference applies finalVisib-precedence;
-#       the basic renderer today (devtools/basic_renderer.jl — the renderer's home since 2026-09-12, R-V04B-24,
+#       the basic renderer today (devtools/basic_renderer.jl — the renderer's home since 2026-09-12,
 #       formerly src/emit/emit.jl) applies no `:discard` subtree-skip: an inner answer resurfaces (its header,
-#       :73–:77; the direction the v0.2/v0.3 records date to 2026-08-07 — the records' attribution, U8 :833, OQ-84;
-#       scenario 002's values confirmed on its bytes, R-V04B-20) — not exercised by this corpus;
+#       :73–:77; the direction decided on 2026-08-07;
+#       scenario 002's values confirmed on its bytes) — not exercised by this corpus;
 #   (2) multi-byte segment-slicing: this engine's parse layer is byte-correct on multi-byte
 #       segment bounds where the reference truncates;
 #   (3) terminal-newline byte-faithfulness: render_bytes is byte-faithful on the WHOLE-FILE terminal
@@ -23,14 +23,14 @@
 #       OutFileFolder copy EQUALS the pinned render (1632 B since the 2026-08-07 re-pin below; 1656 B when this note was written, 2026-08-02) — and the oracle-parity check
 #       (golden_tests.jl's drift-check) accepts modulo one trailing 0x0a, keyed on the input's
 #       terminal byte. The JuliaCon fixture carries a category-(i) [[fixture.repin]] row.
-#   (4) the comment-aware hide fold (owner-ruled (a)-(c), 2026-08-07): the origin implementation double-prefixed a `##`-headed
+#   (4) the comment-aware hide fold (the creator's decision of 2026-08-07, three sub-rules (a)-(c)): the origin implementation double-prefixed a `##`-headed
 #       hidden line; the Extended and JuliaCon fixtures carry the fold since the 2026-08-07 re-pins below, and their committed
 #       examples/OutFileFolder copies carry it too (golden_tests.jl :200–:201) — parity with the ORIGIN output is modulo the fold
 #       on those two; parity with the committed copies is byte-for-byte (the drift-check).
 # Missing-key policy: required keys missing => HARD test error (fail-closed). Only optional: annotations golden.
 # Append-only: a [[fixture.repin]] row, once written, is NEVER rewritten; a [[fixture]] row's fields never move except its
 #   active *_golden_sha256, which a re-pin moves while APPENDING a [[fixture.repin]] row (old → new sha256, the reason, the
-#   ratifying word; R-V04B-108 (2) for the 2026-10-05 re-pin). (ONE dispositioned
+#   ratifying word). (ONE dispositioned
 #   exception: the constructed rr48 rows' input_path values moved in place for the
 #   git-mv relocation corpus/ -> constructed/ — shas untouched; tool-emitted since.)
 
@@ -108,7 +108,7 @@ render_golden_sha256 = "5e58757192aa1b5eb1f4ac1f87689cbc8a5dc95b4e12bc2fbbce1e12
 [[fixture.repin]]
 date = "2026-08-07"
 category = "i"
-reason = "the v0.3 comment-aware hide fold (owner-ruled (a)-(c) 2026-08-07): a comment-CLASSIFIED, `##`-initial line/segment takes NO additional hide marker (ensure-token). The origin oracle double-prefixed unconditionally (a NEW rule, not a reversion); oracle-parity for this fixture is now modulo the fold (the hidden `## ` narration lines L46-L49 render unchanged, formerly `## ##`; one segment-grain case per ruling (c)). Tree golden UNCHANGED (render-only rule)."
+reason = "the v0.3 comment-aware hide fold (the creator's decision of 2026-08-07, (a)-(c)): a comment-CLASSIFIED, `##`-initial line/segment takes NO additional hide marker (ensure-token). The origin oracle double-prefixed unconditionally (a NEW rule, not a reversion); oracle-parity for this fixture is now modulo the fold (the hidden `## ` narration lines L46-L49 render unchanged, formerly `## ##`; one segment-grain case per sub-rule (c)). Tree golden UNCHANGED (render-only rule)."
 old_sha256 = "d604af7ebe8bf3fa834bedcf8fa84556e0432506eeaeb20e94a572f2f7c6ae7d"
 new_sha256 = "5e58757192aa1b5eb1f4ac1f87689cbc8a5dc95b4e12bc2fbbce1e12f13330ed"
 # Annotation (appended — the row above is immutable): the "comment-CLASSIFIED" scope was
@@ -116,7 +116,7 @@ new_sha256 = "5e58757192aa1b5eb1f4ac1f87689cbc8a5dc95b4e12bc2fbbce1e12f13330ed"
 # comment-classified (bucket (A) content) and thus no longer fold-eligible; hidden they take
 # the `## ` marker. This fixture's bytes are unaffected (its `## ` narration lines remain
 # comment-classified; recorded in the development fork's provenance ledger).
-ratified_by = "the comment-aware-hide-fold ruling, three sub-rulings (a)-(c), owner-ratified 2026-08-07, with its recorded adjudications"
+ratified_by = "the comment-aware hide fold, three sub-rules (a)-(c), decided by the creator 2026-08-07"
 
 [[fixture]]
 id = "file_for_Example_Proposal_JuliaCon.jl"
@@ -139,13 +139,13 @@ new_sha256 = "34d6b878f5c0cdcefbe148ff53ed136c683b44592fee7d71288820964fe094b2"
 [[fixture.repin]]
 date = "2026-08-07"
 category = "i"
-reason = "the v0.3 comment-aware hide fold (owner-ruled (a)-(c)): comment-CLASSIFIED `##`-initial lines/segments take NO additional hide marker (ensure-token) — this fixture's hidden `## ` narration block (8 lines) renders unchanged, formerly `## ##`; render 1656→1632 B (−24 = 8 removed 3-byte markers). The origin engine double-prefixed unconditionally (a NEW rule, not a reversion); oracle-parity is now modulo the fold + the newline-key convention. Tree golden UNCHANGED."
+reason = "the v0.3 comment-aware hide fold (the creator's decision of 2026-08-07, (a)-(c)): comment-CLASSIFIED `##`-initial lines/segments take NO additional hide marker (ensure-token) — this fixture's hidden `## ` narration block (8 lines) renders unchanged, formerly `## ##`; render 1656→1632 B (−24 = 8 removed 3-byte markers). The origin engine double-prefixed unconditionally (a NEW rule, not a reversion); oracle-parity is now modulo the fold + the newline-key convention. Tree golden UNCHANGED."
 old_sha256 = "34d6b878f5c0cdcefbe148ff53ed136c683b44592fee7d71288820964fe094b2"
 new_sha256 = "490dd6ef20b6c2fda0b4aa1ed99cf4c037a583eb15f51f97575ea802824d2533"
 # Annotation (appended — the row above is immutable): the "comment-CLASSIFIED" fold scope
 # was later NARROWED by the token-delimiter law (`###+`/glued `##x` → bucket (A), marked
 # when hidden). This fixture's bytes are unaffected (development-fork provenance ledger).
-ratified_by = "the comment-aware-hide-fold ruling, three sub-rulings (a)-(c), owner-ratified 2026-08-07, with its recorded adjudications"
+ratified_by = "the comment-aware hide fold, three sub-rules (a)-(c), decided by the creator 2026-08-07"
 
 [[fixture]]
 id = "annotations@file_for_Example_Extended.jl"
@@ -193,18 +193,18 @@ annotations_golden_sha256 = "41b7ed3f30cc8167cebfca8e9a9e5b8b5abfe0df46f9f14dd73
 [[fixture.repin]]
 date = "2026-10-01"
 category = "engine-ruled"
-reason = "the heading re-key (R-V04B-50; stage 2's commit 1 of the v0.4 build): a whole-line metaLine's heading row is keyed to the metaBlock the metaLine forms, no longer to the metaLine's own Line — the three Line-keyed head_ rows of this fixture (head_1, head_2, head_4) become Block-keyed; the inline head_10 row unchanged; the content column unchanged (single-line metaBlocks)"
+reason = "the heading re-key (within the 0.4 development): a whole-line metaLine's heading row is keyed to the metaBlock the metaLine forms, no longer to the metaLine's own Line — the three Line-keyed head_ rows of this fixture (head_1, head_2, head_4) become Block-keyed; the inline head_10 row unchanged; the content column unchanged (single-line metaBlocks)"
 old_sha256 = "0459799d9f9b0f4ef40dbe640933923acb30c378a538a7f61d1f8e91b080dc21"
 new_sha256 = "9e6000667ba04cca1d56b7e29b9666dc023b824bdb00aed51930d0aa259f6324"
-ratified_by = "the owner's typed re-mint order, OWNER-WORDS §269 (2026-10-01); R-V04B-50's effects; R-V04B-15 (a)"
+ratified_by = "the creator's re-mint order of 2026-10-01"
 
 [[fixture.repin]]
 date = "2026-10-05"
 category = "engine-ruled"
-reason = "the inline heading's key moves to the Line (R-V04B-98; stage 5's E1 of the v0.4 build; his word of 2026-10-03, OWNER-WORDS §309 '(b)'): the one inline row head_10 of this fixture, keyed to the inline metaSegment (grain Segment, Segment 5:7-25), is keyed to its LINE (grain Line, Line 5-5) with the Segment as the key's origin — that row's handle column and its content column (the Line's bytes now) move; the three Block-keyed head_ rows unchanged"
+reason = "the inline heading's key moves to the Line (within the 0.4 development; the creator's decision of 2026-10-03): the one inline row head_10 of this fixture, keyed to the inline metaSegment (grain Segment, Segment 5:7-25), is keyed to its LINE (grain Line, Line 5-5) with the Segment as the key's origin — that row's handle column and its content column (the Line's bytes now) move; the three Block-keyed head_ rows unchanged"
 old_sha256 = "9e6000667ba04cca1d56b7e29b9666dc023b824bdb00aed51930d0aa259f6324"
 new_sha256 = "41b7ed3f30cc8167cebfca8e9a9e5b8b5abfe0df46f9f14dd7356eee7787ec3f"
-ratified_by = "R-V04B-108 (his typed word of 2026-10-05, OWNER-WORDS §323 item 3: 'I approve E1's golden re-pin.'); R-V04B-98 (3); R-V04B-15 (a)"
+ratified_by = "the creator's approval of the golden re-pin, 2026-10-05"
 
 [[fixture]]
 id = "annotations@negation_discard_tworegion.jl"
@@ -256,7 +256,7 @@ annotations_golden_sha256 = "5888faa06c4f4b96a7d4498bc7611bd8291ffb8d56ddb80c220
 [[fixture]]
 id = "annotations@feature_contiguous_metablock.jl"
 partition = "net_new_surface"
-source = "captured"   # R-V04B-15 (b), 2026-08-28: the evaluated values pinned for every golden input (the owner:
+source = "captured"   # 2026-08-28: the evaluated values pinned for every golden input (the creator:
                       #   "THE MOST IMPORTANT, DEFINING measures of GoMeta"); minted at code 7009ec3 from this engine's own
                       #   output — a regression pin, not an authored expectation (the authored-truth set is tests/authored/).
 input_path = "tests/golden/corpus/InFileFolder/feature_contiguous_metablock.jl"
@@ -266,7 +266,7 @@ annotations_golden_sha256 = "e5d32746939c1a8efab0ad9760813a012033949c00a7535002c
 [[fixture]]
 id = "annotations@feature_contiguous_metablock_blankline.jl"
 partition = "net_new_surface"
-source = "captured"   # R-V04B-15 (b), 2026-08-28: the evaluated values pinned for every golden input (the owner:
+source = "captured"   # 2026-08-28: the evaluated values pinned for every golden input (the creator:
                       #   "THE MOST IMPORTANT, DEFINING measures of GoMeta"); minted at code 7009ec3 from this engine's own
                       #   output — a regression pin, not an authored expectation (the authored-truth set is tests/authored/).
 input_path = "tests/golden/corpus/InFileFolder/feature_contiguous_metablock_blankline.jl"
@@ -276,7 +276,7 @@ annotations_golden_sha256 = "3fac9f3051dcd397fb13a8f4dab9902dfd7ca6ac0b37010a454
 [[fixture]]
 id = "annotations@feature_explicit_close.jl"
 partition = "net_new_surface"
-source = "captured"   # R-V04B-15 (b), 2026-08-28: the evaluated values pinned for every golden input (the owner:
+source = "captured"   # 2026-08-28: the evaluated values pinned for every golden input (the creator:
                       #   "THE MOST IMPORTANT, DEFINING measures of GoMeta"); minted at code 7009ec3 from this engine's own
                       #   output — a regression pin, not an authored expectation (the authored-truth set is tests/authored/).
 input_path = "tests/golden/corpus/InFileFolder/feature_explicit_close.jl"
@@ -286,7 +286,7 @@ annotations_golden_sha256 = "3c26933a88edc1b0810f7e869b3e48c4d0875a5952f812190cf
 [[fixture]]
 id = "annotations@feature_order_of_application.jl"
 partition = "net_new_surface"
-source = "captured"   # R-V04B-15 (b), 2026-08-28: the evaluated values pinned for every golden input (the owner:
+source = "captured"   # 2026-08-28: the evaluated values pinned for every golden input (the creator:
                       #   "THE MOST IMPORTANT, DEFINING measures of GoMeta"); minted at code 7009ec3 from this engine's own
                       #   output — a regression pin, not an authored expectation (the authored-truth set is tests/authored/).
 input_path = "tests/golden/corpus/InFileFolder/feature_order_of_application.jl"
@@ -296,7 +296,7 @@ annotations_golden_sha256 = "6e212e5380a66fe06f737a46da8e7a33c6f639b42a69967f832
 [[fixture]]
 id = "annotations@feature_triple_tilde.jl"
 partition = "net_new_surface"
-source = "captured"   # R-V04B-15 (b), 2026-08-28: the evaluated values pinned for every golden input (the owner:
+source = "captured"   # 2026-08-28: the evaluated values pinned for every golden input (the creator:
                       #   "THE MOST IMPORTANT, DEFINING measures of GoMeta"); minted at code 7009ec3 from this engine's own
                       #   output — a regression pin, not an authored expectation (the authored-truth set is tests/authored/).
 input_path = "tests/golden/corpus/InFileFolder/feature_triple_tilde.jl"

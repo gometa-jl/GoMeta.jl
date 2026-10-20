@@ -1,35 +1,35 @@
 schema = 1
 stem = "003_no_meta_defaults"
 status = "confirmed"
-drafted_by = "session S3B, 2026-08-28; restated by session S5, 2026-09-10, as positions and values in the owner's terms"
-confirmed_by = "owner, 2026-09-10"
+drafted_by = "a draft of 2026-08-28, restated 2026-09-10 as positions and values in the creator's terms"
+confirmed_by = "the creator, 2026-09-10"
 scenario = "No metaStatement anywhere: three code lines (a = 1, b = 2, c = 3) forming one Code Block. No Component is decided by any metaStatement; the default applies to the Block and to each of its three Lines: show. The File is not stated in this scenario."
-history = ["2026-09-10: confirmed by the owner on these exact bytes (transaction S5-CONFIRM-003). The truth: his word of 2026-09-10 on the four statements (the RULINGS row of that date); the default show is the language reference's rule (docs/SYNTAX-AND-SEMANTICS.md §7: 'The default is show'). The earlier draft's file statement was removed from the active expectations at this rewrite: whether the File is a governed Component is OPEN (D-4; the catalogue's row 21a carries the File case). Whether the Engine answers a default itself, or a consumer reads it, is OPEN (3a-DESIGN, a D-4 matter); whether a default is delivered to a Line through its Block or on its own is part of that question and changes no value here. His lean of 2026-09-10 on default values (OWNER-WORDS §11: a declared default per Alterant, at the Engine's default level, overrulable at the user level, delivered in altValues_evals) is recorded for the D-4 sitting."]
+history = ["2026-09-10: confirmed by the creator on these exact bytes. The truth: his word of 2026-09-10 on the four statements; the default show is the language reference's rule (docs/SYNTAX-AND-SEMANTICS.md §7: 'The default is show'). The earlier draft's file statement was removed from the active expectations at this rewrite: whether the File is a governed Component is OPEN (the catalogue's row 21a carries the File case). Whether the Engine answers a default itself, or a consumer reads it, is OPEN; whether a default is delivered to a Line through its Block or on its own is part of that question and changes no value here. His lean of 2026-09-10 on default values — a declared default per Alterant, at the Engine's default level, overrulable at the user level, delivered in altValues_evals — is recorded for the File-level decision."]
 
 [[expect]]
 component = "block@1"
 alterant = "Visib"
 value = "show"
 decided_by = "default"
-note = "the one Code Block (lines 1-3): no metaStatement governs it; the documented default applies. Provenance: no evals row at ac29037 (observed 2026-09-10; gometa.jl evals-tree prints '(no evals rows — no metaLine on any surface)'); the three Visib actions carry NoDefault() at ac29037 (registry.jl:541/544/547) and a repository-wide search found no declared default under src/ (the build record's receipt GREPS-ac29037.txt) — the default is the documented semantics and the observed share-view (the file unchanged), not a declared datum"
+note = "the one Code Block (lines 1-3): no metaStatement governs it; the documented default applies. Provenance: no evals row at ac29037 (observed 2026-09-10; the evals-tree printout reads '(no evals rows — no metaLine on any surface)'); the three Visib actions carry NoDefault() at ac29037 (registry.jl:541/544/547) and a repository-wide search found no declared default under src/ — the default is the documented semantics and the observed share-view (the file unchanged), not a declared datum"
 
 [[expect]]
 component = "line@1"
 alterant = "Visib"
 value = "show"
 decided_by = "default"
-note = "a child of block@1; no metaStatement governs it; the documented default applies (whether through its Block or on its own is a delivery question, D-4). Provenance: no evals row at ac29037 (observed 2026-09-10)"
+note = "a child of block@1; no metaStatement governs it; the documented default applies (whether through its Block or on its own is a delivery question). Provenance: no evals row at ac29037 (observed 2026-09-10)"
 
 [[expect]]
 component = "line@2"
 alterant = "Visib"
 value = "show"
 decided_by = "default"
-note = "a child of block@1; no metaStatement governs it; the documented default applies (whether through its Block or on its own is a delivery question, D-4). Provenance: no evals row at ac29037 (observed 2026-09-10)"
+note = "a child of block@1; no metaStatement governs it; the documented default applies (whether through its Block or on its own is a delivery question). Provenance: no evals row at ac29037 (observed 2026-09-10)"
 
 [[expect]]
 component = "line@3"
 alterant = "Visib"
 value = "show"
 decided_by = "default"
-note = "a child of block@1; no metaStatement governs it; the documented default applies (whether through its Block or on its own is a delivery question, D-4). Provenance: no evals row at ac29037 (observed 2026-09-10)"
+note = "a child of block@1; no metaStatement governs it; the documented default applies (whether through its Block or on its own is a delivery question). Provenance: no evals row at ac29037 (observed 2026-09-10)"
