@@ -61,4 +61,4 @@ byte-exact oracle: the seven committed example pairs under `examples/` render by
 pinned by the shipped test suite under a plain `Pkg.test()`. The language grows by design; the
 v0 subset forecloses none of it. `0.4.1` changes one behaviour under a fed profile (`GoMetaConfig.user_mh_profile`):
 the Component's own slot applies in written order with or without a feed; the profile's labels are collected first, as the
-outermost level, and its other statements are evaluated after the Component's own slot, with priority (`docs/public-api.md` §6, its last row).
+outermost level, and its other statements are evaluated after the Component's own slot, with priority (`docs/public-api.md` §6, the row on the user level's place in the apply loop).

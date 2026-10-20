@@ -68,7 +68,7 @@ hard-coded in the Labels Alterant's own file (`src/alterants-std/labels.jl`), wh
 and `:--x` / `:(--, x)` (`docs/public-api.md` §3.4).
 `0.4.1` changes one behaviour under a fed profile (`GoMetaConfig.user_mh_profile`): the Component's own slot applies in
 written order with or without a feed; the profile's labels are collected first, as the outermost level, and its other
-statements are evaluated after the Component's own slot, with priority (`docs/public-api.md` §6, its last row).
+statements are evaluated after the Component's own slot, with priority (`docs/public-api.md` §6, the row on the user level's place in the apply loop).
 
 **What works today** (the feature list below is test-pinned in this repository):
 

@@ -224,7 +224,7 @@ These are part of the documented public surface — declared with Julia's `publi
     neither the String-slot law nor the declared `validate` runs for it — and the value becomes the Alterant's per-run state, handed
     back on the hook's next call and to `altConstructor(run)` for every later instance of that run (the zero-argument call where none
     was minted); a hook's own throw, and a run state handed to a constructor without a one-argument method, are Julia's own error out
-    of `goMeta`. A designated callable field like the setter; the Labels Alterant's hook records the vocabulary statements (§3.4); every
+    of `goMeta`. A designated callable field like the setter; the Labels Alterant's hook records the vocabulary statements (their contract: §2, THE VOCABULARY STATEMENTS; their refusals: §3.4); every
     other shipped Alterant leaves it `nothing`. The positional 0.3.x form was REMOVED at
     0.4.0 (a clean cut, §6): the keyword form is the one form.
   - `ActionSpec(; name, plugin, accepts_string_slot = 0, validate = nothing)` — one action
@@ -259,9 +259,9 @@ These are part of the documented public surface — declared with Julia's `publi
     whose message begins `"GoMeta "` — the engine's guarded-refusal vocabulary, passed
     through the envelope verbatim (the shipped heading validator's empty-text refusal
     is exactly this class); any other throw is a validator DEFECT.
-  - **The constructor dependency** (`Alterant.altConstructor`): must be ZERO-ARG constructible —
-    it is called bare at the apply loop's two instance-mint sites since 0.4.0 (a third, the absorb heading seam's, was removed with the Heading's separate delivery, also at 0.4.0 — §6): an
-    absent zero-arg method or a throwing constructor is Julia's own error out of the `goMeta` call (the eager
+  - **The constructor dependency** (`Alterant.altConstructor`): is called in one of TWO forms since 0.4.1 —
+    bare, `altConstructor()`, at the apply loop's instance-mint sites (`_freshInstance`, `src/alterants/apply.jl`) where the Alterant's read-time hook minted no run state — every Alterant without a hook, and the Labels Alterant in a run without a vocabulary statement — and with the run state, `altConstructor(run)`, where it did (the `onRead` contract above); so a registration without a hook must be ZERO-ARG constructible, one with a hook ONE-ARG constructible as well (the bare call alone since 0.4.0; the absorb heading seam's call was removed with the Heading's separate delivery, also at 0.4.0 — §6): an
+    absent method for the call made, or a throwing constructor, is Julia's own error out of the `goMeta` call (the eager
     `DEP_MISSING` gate at `validate` REMOVED at 0.4.0; the mint wrap `CB_CTOR_THROW` REMOVED at 0.4.0, and the
     per-invocation store-identity check `RES_FOREIGN_STORE` with it — both with the set-invocation seam).
   - **The plugin index rule:** `ActionSpec.plugin` is the declaration-order index of the owning
@@ -290,7 +290,7 @@ These are part of the documented public surface — declared with Julia's `publi
     a plain file read at load):** the 39 names — the 38 shipped names in the former plain
     file's order plus `:doc` — are the Julia literal `LABELS_VOCABULARY` in `src/alterants-std/labels.jl`, beside
     `setLabels` and `checkLabels` (std-Alterant territory, never a Core literal); a later name is one line there; the
-    plain file `labels_vocabulary.txt` and its loader were REMOVED at 0.4.0. `setLabels` refuses a name outside them
+    plain file `labels_vocabulary.txt` and its loader were REMOVED at 0.4.0. `setLabels` refuses a name outside the run's vocabulary — since 0.4.1 these 39 names are the BASE, extended and pruned per run by the vocabulary statements of §2 (the setter's kept `Dict{Symbol,Bool}` method checks the shipped list alone); the refusal
     (§3.4); `checkLabels` answers false for an unset or unknown name, as the original engine did. The Labels vocabulary machinery — the record's
     `vocabulary` slot with its two types, the digest pin, the capture cache, the artifact grammar, the scope law, the
     `vocabulary` / `vocabulary_member` / `vocabulary_queryable` triple, the `SRC_DIGEST_MISMATCH` row, the write-only valve and the labels record's policy identity — REMOVED at 0.4.0 (§6).
@@ -791,13 +791,14 @@ fabricated code:
   bounded `ErrorException` ("GoMeta absorb: unknown alterant action …"). Its coded-`Diagnostic`
   conversion is deferred (the E-01 family).
 - **The unknown-label refusal:** a name APPLIED as a label (`#~ :labelX`, including the conditional form
-  `:labelX{ … }`) from outside the shipped set — `:label1`..`:label5` plus, since `0.3.0`, the fixed pictograph
+  `:labelX{ … }`) from outside the Labels Alterant's vocabulary — since `0.4.1` the RUN's: the shipped list, the base — `:label1`..`:label5` plus, since `0.3.0`, the fixed pictograph
   vocabulary, plus `:doc` since `0.4.0` (the hard-coded list in the Labels Alterant's own file
-  `src/alterants-std/labels.jl`, 39 names) — raises the stable `ErrorException`
-  `"GoMeta apply: unknown label …"`, which names the accepted set SORTED (the §2 argument-forms contract). A label
+  `src/alterants-std/labels.jl`, 39 names) — plus the names the run's vocabulary statements ADDED, minus the names they REMOVED (§2, THE VOCABULARY STATEMENTS: a declared name applies, a removed shipped name refuses) — raises the stable `ErrorException`
+  `"GoMeta apply: unknown label …"`, which names the accepted set SORTED — the run's (the §2 argument-forms contract). A label
   QUERIED in a condition (`{ :labelX }`) is never refused for being unknown: the query answers false, as the original engine's
   checker did (since `0.4.0` — the membership refusal in the query role and the write-only
-  valve were removed). Witnesses: `tests/unit/error_message_tests.jl` (both roles).
+  valve were removed). Witnesses: `tests/unit/error_message_tests.jl` (both roles); `tests/unit/labels_vocabulary_tests.jl` [V-W4] (the accepted set the run's).
+- **The vocabulary-statement refusals (since `0.4.1`; the contract: §2, THE VOCABULARY STATEMENTS):** a vocabulary statement of the Labels Alterant — `:++x` / `:(++, x, y)` / `:--x` / `:(--, x)` — is read by the Alterant's read-time hook (§1.2) before the slot bound and, where it is misplaced or malformed, refused THERE with a stable `ErrorException` whose message begins "GoMeta absorb: " and ends "; see docs/public-api.md §3.4" — the run stops at the statement; nothing is delivered for a declaration. THE PLACE is checked first: anywhere but a metaBlock opened by `#~0` or the user's profile, "GoMeta absorb: a vocabulary statement (…) is legal at `#~0` and in the user level's profile only — here …" (the forms named with the statement's sign; the tail names the offending place — a metaBlock of depth N, an inline metaSegment); a misplaced AND malformed statement meets this one. Then the five malformed shapes, each with its own message: the prefixed sign with several arguments ("… the prefixed vocabulary statement … takes one name — N arguments given (the list form is …)"), a statement naming no label ("… the vocabulary statement … names no label — the forms are …"), a list with an EMPTY member, a stray comma ("… names an empty label (a stray comma) — the forms are …"), a declared name beginning with `+` or `-` ("… a label name in a vocabulary statement may not begin with `+` or `-` — got …"), a condition on the statement ("… a vocabulary statement takes no condition — … (a declaration is a fact of the run, not of a Component)"). A name later APPLIED from outside the run's vocabulary meets the unknown-label refusal above. Witnesses: `tests/unit/labels_vocabulary_tests.jl` [V-W3], [V-W7], [V-W15], [V-W16].
 - **The unknown flavor_tag — a stable-message throw (since `0.4.0`):**
   a `config.flavor_tag` outside the closed inventory `(:julia, :c, :latex)` raises the stable `ErrorException`
   `"flavor_for: unknown flavor_tag …"` at `goMeta`'s flavor resolve, before any parse — no fallback, no
@@ -924,7 +925,7 @@ rows; **(iv) DOOR results** — `REG_UNPUBLISHED` / `POST_SEAL_MUTATION` come ba
 | `REG_DERIVED_TABLES` | error | positional (route-U) construction whose hand-built tables differ from the tables derived from the declarations | `nothing` |
 | `REG_UNPUBLISHED` (door) | error | an unsealed registry reached `goMeta` — the message names `RegistryBuilder → validate → publish` | `nothing` |
 | `POST_SEAL_MUTATION` (door) | error | a published registry whose live fields no longer match the publish-time snapshot — the message carries "at <path>", the first divergent path; re-publication is the change path | the rendered path |
-| `DEP_MISSING` | **REMOVED at 0.4.0** | the eager dependency closure at publication was removed; an `altConstructor` with no zero-argument method publishes and is Julia's own `MethodError` at first apply out of the `goMeta` call (the mint wrap `CB_CTOR_THROW` that named it was removed at 0.4.0; §3.4); the §6 register row | — |
+| `DEP_MISSING` | **REMOVED at 0.4.0** | the eager dependency closure at publication was removed; an `altConstructor` without a method for the call the apply makes — the zero-argument call, or since 0.4.1 the one-argument call with the run state where the Alterant's read-time hook minted one (§1.2) — publishes and is Julia's own error at first apply out of the `goMeta` call (a `MethodError` for the missing zero-argument method) (the mint wrap `CB_CTOR_THROW` that named it was removed at 0.4.0; §3.4); the §6 register row | — |
 | `STATE_REUSE_REFUSED` (driver seam) | **REMOVED at 0.4.0** | the seam ledger was removed with the callable driver seam: `goMeta` builds its parse state itself, one per call — nothing is injected, nothing can be in flight twice; the §6 register row | — |
 | `STATE_SEAL_MISMATCH` (driver seam) | **REMOVED at 0.4.0** | it guarded the Visib write-backs a run left in the caller's state; nothing is written back any more — the §6 register row | — |
 | `SRC_DIGEST_MISMATCH` | **REMOVED at 0.4.0** | the vocabulary artifact's digest pin was removed with the record's vocabulary slot — the 38 names are hard-coded, with `:doc`, in the Labels Alterant's own file `src/alterants-std/labels.jl` since 0.4.0; the §6 register rows | — |
@@ -946,10 +947,10 @@ and, at the condition rewrite's two identifier tests inside a condition body (gu
 0.4.0), Julia's own `Meta.ParseError` or the
 unknown-key refusal (`tests/unit/parser_quality_tests.jl`, the rows jG1–jG3). The
 **meta-line plane indexes on character boundaries**: non-ASCII inside a metaLine parses
-correctly, and — the ACTION set being ASCII-named at v0, while the label whitelist carries a
+correctly, and — the ACTION set being ASCII-named at v0, while the Labels Alterant's vocabulary carries a
 fixed pictograph vocabulary since 0.3.0 (hard-coded in the Labels Alterant's own file `src/alterants-std/labels.jl`
 since 0.4.0) — a
-non-ASCII label APPLIED from outside the shipped set or a non-ASCII action meets the stable
+non-ASCII label APPLIED from outside the run's vocabulary (the shipped list with the run's vocabulary statements folded in, §2) or a non-ASCII action meets the stable
 unknown-label/unknown-action refusal naming the FULL token
 (a GUARDED edge). Goldens are LF. This is a documented normalization, not an error. See
 `docs/CANONICAL-OUTPUT.md`.

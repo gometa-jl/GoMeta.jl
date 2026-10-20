@@ -184,8 +184,9 @@ const _LV_V01 = "#~0 :++label6\n#~ :label6\nx = 1\n"
         @test GM.evaluatedAltValue(r, bs[1], :labels).value == [:doc, :label1, :label2, :label3, :label4, :label5]
     end
 
-    @testset "[V-W13] re-entrancy: nothing persists between two `goMeta` calls (V28) — after V01, `#~ :label6` alone refuses and the hard-coded list keeps its 39 names; after `#~0 :--label1` alone (V04), `#~ :label1` alone applies" begin
+    @testset "[V-W13] re-entrancy: nothing persists between two `goMeta` calls (V28) — after V01 and after V07 fed with `:++label6` (the oracle's order: V28 right after V07), `#~ :label6` alone refuses and the hard-coded list keeps its 39 names; after `#~0 :--label1` alone (V04), `#~ :label1` alone applies" begin
         r1 = _lv_run(_LV_V01); @test r1.status === GM.PROCESS_OK
+        r7 = _lv_run("#~ :label6\nx = 1\n"; profile = ":++label6"); @test r7.status === GM.PROCESS_OK   # V07 fed (AFTER trace V07: PROCESS_OK, 2 rows decided_by the file's metaBlock), run IMMEDIATELY before the un-fed run of the same document below — the oracle's order (V28 stands right after V07)
         @test _lv_msg("#~ :label6\nx = 1\n") == raw"""GoMeta apply: unknown label "label6" — not in the Labels Alterant's vocabulary (the accepted set = [:doc, :label1, :label2, :label3, :label4, :label5, :⌛, :⛓️, Symbol("⛓️\u200d💥"), :⛔, :🇨🇭, :🌍, :🌛, :🌞, :🌳, :🌷, :🌹, :🌼, :🍀, :🍒, :🍻, :🎨, :🎿, :🏔️, :🐣, :💕, :💡, :💣, :💫, :💯, :💸, :💾, :📝, :📸, :🔥, :😘, :🚀, :🧮, :🫕]); see docs/public-api.md §3.4"""
         @test length(GM.Alterants.LABELS_VOCABULARY) == 39 && GM.Alterants.base_vocabulary() === GM.Alterants.LABELS_VOCABULARY
         r4 = _lv_run("#~0 :--label1\nx = 1\n"); @test r4.status === GM.PROCESS_OK && isempty(_lv_recs(r4))     # AFTER trace V04: 0 rows

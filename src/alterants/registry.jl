@@ -395,7 +395,7 @@ instances (the `state.jl` record type) for `labels` / `Visib` / `Id` / `Heading`
 returned as an UNVALIDATED `RegistryBuilder`.
 
 DOES: builds the four records in the keyword form, each with its declared default and its capture row — `labels`
-(`:accumulate`; `Dict{Symbol,Bool}`; setter `setLabels`, getter `checkLabels`; default the EMPTY SET, R-V04B-92; capture
+(`:accumulate`; `Alterants.LabelsInstance` since 0.4.1 — the applied labels and the run's vocabulary, iterating as the former bare `Dict{Symbol,Bool}` did (labels.jl); setter `setLabels`, getter `checkLabels`; the read-time hook `onRead = Alterants.declareLabels!` — the vocabulary statements consumed at the read; the setter's and the checker's kept `Dict{Symbol,Bool}` methods serve a custom registration with `altConstructor = Dict{Symbol,Bool}` and NO hook — with a hook, a minted run state reaches `Dict{Symbol,Bool}(run)` and is Julia's own error (apply.jl `_freshInstance`; labels.jl); default the EMPTY SET, R-V04B-92; capture
 `:per_key`, stem `:label`), `Visib` (`:mutExclusive`; default `:show`, R-V04B-51 (2); `:single`, stem `:visib`), `id`
 (`:mutExclusivePerField`; default the ZERO compound, R-V04B-92; `:per_field`, stem `:id`) and `heading` (`:localOnly` —
 queued like every action, applied by the apply loop's one rule for this mode ONLY at the Component the statement is applied

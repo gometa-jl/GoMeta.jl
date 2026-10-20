@@ -83,7 +83,8 @@ end
             capture = GM.CaptureDecl(:single; attr_stem = :visib),
             default = GM.Declared(GM.Declared(Dict{Any,Any}(Int16(2) => "pv"))))
         GM.register!(b,
-            GM.Alterant(; altName = Symbol("prop"), setMode = :accumulate, altConstructor = Dict{Symbol,Bool}, setAltInstance = _closure_ref),
+            GM.Alterant(; altName = Symbol("prop"), setMode = :accumulate, altConstructor = Dict{Symbol,Bool}, setAltInstance = _closure_ref,
+                        onRead = _swap_fn_a),   # the ninth field INSTALLED on one generated record (the four others keep `nothing` — the single-point substitute path): a function leaf, mutated function → function by `_distinct_value` — the designated callable's identity compare, as every setAltInstance leaf is; the record is never applied (the door's walk alone reads it)
             GM.ActionSpec(; name = :propset, plugin = Int8(5)))
         return b
     end

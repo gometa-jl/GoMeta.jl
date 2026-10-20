@@ -560,7 +560,7 @@ To keep the verified claims honest, these are **known but not established here**
   `0.4.0`). Eight actions accumulate per meta-hierarchy slot (`SLOT_CAPACITY` — a named constant,
   decoupled from the registered action count of 9)
   (a further one meets the stable message "GoMeta absorb: more than 8 actions in one meta-hierarchy slot …" since `0.4.0`; `docs/public-api.md` §3.4). The
-  authorable depth window is 1–8 in the digit form (§2). Custom label names applied (a queried one
+  authorable depth window is 1–8 in the digit form (§2). Custom label names applied without a vocabulary statement admitting them (since `0.4.1` a file at `#~0` or the profile may add names — `docs/public-api.md` §2; a queried name that is unset or unknown
   answers false — `docs/public-api.md` §3.4), and
   bare names outside the settribute keys and the queryable actions, are refused; a Julia Boolean expression over those
   names is accepted and evaluated by Julia (`0.4.0`; `docs/public-api.md` §3.2).
