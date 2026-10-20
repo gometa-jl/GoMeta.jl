@@ -91,13 +91,13 @@ hard-coded in the Labels Alterant's own file (`src/alterants-std/labels.jl`), wh
   unknown-label refusal (`GoMeta apply: unknown
   label …` on an applied out-of-whitelist name; a queried unknown label answers false since `0.4.0` —
   `docs/public-api.md` §3.4), catalogued in `docs/public-api.md` §3. Malformed action ARGUMENTS are Julia's own
-  error out of the `goMeta` call since `0.4.0` (the former guarded refusal was removed at `0.4.0`; the original engine
+  error out of the `goMeta` call since `0.4.0` (the apply seam's former guarded refusal was removed; the original engine
   called the setters directly).
-  The documented exception — the guarded `#~9` depth refusal — is likewise catalogued in `docs/public-api.md`
+  The documented exception — the guarded `#~9` depth refusal — is likewise catalogued honestly in `docs/public-api.md`
   §3.1/§3.2/§3.4 (a condition is Julia's since `0.4.0`: GoMeta's own refusals are the unknown condition key, the
   block that carries no condition expression and a `(` left open inside the body; a body
   Julia cannot parse is Julia's own parse error — §3.2). The former second exception — the apply-path crash
-  edge, a flagless-Visib write-back — went with the write-back at `0.4.0`.
+  edge, a flagless-Visib write-back — was removed with the write-back at `0.4.0`.
 
 **The language grows by design; the v0 subset forecloses none of it.** `using()` is a reserved
 name.
@@ -203,11 +203,11 @@ julia --startup-file=no --project=. extensions/find_by_label.jl label5     # whi
 
 ## SECURITY
 
-A `{…}` condition is **Julia** — since `0.4.0`, by the creator's decision, as the
+A `{…}` condition is **Julia** — since `0.4.0`, by the decision of GoMeta's creator, as the
 original engine read it: at absorb the body's GoMeta-specific parts are re-written to Julia text (a settribute key to its
 state read, a queryable Alterant action or a label test to its query call, GoMeta's `,` (OR) to `||`; the rest verbatim),
 Julia's parser reads the result once, and Julia evaluates the stored expression at apply in GoMeta's module. This is the
-creator's design: GoMeta is meant first for people who process their own GoMeta statements, where there is no security
+creator's design: a full parser must be available to those who, for instance, work only with their own GoMeta statements, where there is no security
 risk. **Processing a file you did not write therefore runs its
 conditions as Julia code** — a condition body can read files, take time or have effects, exactly as a custom Alterant's
 callables can: use GoMeta on input you trust, as you would any Julia file you `include`. The Engine's own operations stay
@@ -228,7 +228,7 @@ action arguments are refused; label names are validated against the engine's clo
 APPLIED — an out-of-whitelist name refuses; a label QUERIED in a condition answers false when it is unknown
 or unset (as the original engine answered; since `0.4.0`). The corpus-documented labels are
 `:label1`..`:label5`; since `0.3.0` the closed whitelist also accepts the fixed pictograph
-vocabulary (byte-exact names — the refusal message lists the full accepted set), and since `0.4.0`
+vocabulary (byte-exact names — the refusal message lists the full accepted set), and, since `0.4.0`,
 `:doc` — the whole list hard-coded in the Labels Alterant's own file
 `src/alterants-std/labels.jl`. The full catalogue: `docs/public-api.md` §3.
 

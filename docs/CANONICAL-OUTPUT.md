@@ -6,7 +6,7 @@
   through `GoMeta.BLS.content` — `content_fingerprint` REMOVED at 0.4.0) — the Engine's delivered surface — and, beside it, the DEVELOPMENT TOOL's
   `(blsStructure_bytes, render_bytes)` pair (`Main.BasicRenderer.outputs`, `devtools/basic_renderer.jl`,
   loaded through `devtools/load_basic_renderer.jl`) which the golden layer pins.
-  (This document's name — CANONICAL-OUTPUT — predates the move; it kept its name.) **Trust note:**
+  (This document's name — CANONICAL-OUTPUT — predates the (tree, render) pair's move out of the Engine at `0.4.0`; it kept its name.) **Trust note:**
   a `{…}` condition is Julia text evaluated by Julia (since `0.4.0`) — a run over a
   file executes its conditions; `docs/public-api.md` §2/§3.2 and the SECURITY section of `README.md` state the posture.
 - **DOES:** (1) names the observable surface; (2) defines each half of the tool's pair; (3) states the hide/discard
@@ -38,14 +38,14 @@ the basic renderer's own function (`devtools/basic_renderer.jl`, reached only th
 
 The render is the basic renderer's **reference / verification render** — a development tool's output that
 doubles as the conformance anchor, pinned by the golden layer; it is NOT an Engine output. **No Extension takes
-the pair** (the creator's rule): an Extension consumes the
+the pair** (the rule of GoMeta's creator): an Extension consumes the
 Engine's answer through the delivered object and the BLS Component tree (the part `blsComponentTree`, BLS's own
 delivery); the pair is the tool's own, proved by its seven render reference files, never by an Extension.
 
 ## §2 — The tree half (the tool's tree print)
 
 The deterministic tree print of the final parse tree (`structural_serialization`, in the basic renderer since
-2026-09-12). It is **parse-stage** and
+`0.4.0`). It is **parse-stage** and
 **verdict-free**: identical pre- and post-apply — it carries **no** verdict information. Its
 role is discriminating parse defects: two engines that parse identically produce identical tree
 bytes regardless of their alterant behavior.
@@ -58,7 +58,7 @@ The render half completes the share-target emit over both non-show verdicts (`:h
 1. **`:discard` (any grain)** → **zero bytes for the discarded Component and for every descendant that inherits its answer** (the corpus case: the `Extended` pair's input line 15, `… #~ discard`, absent from the output); an inner `show` or `hide` under a discarded ancestor RESURFACES — the renderer applies no subtree-skip, it writes each Component's own answer (`devtools/basic_renderer.jl`, the write-side law in its header; confirmed on the authored scenario `tests/authored/002_block_discard_resurface`; not exercised by the committed corpus).
 2. **`:hide` at Line grain** → literal **`## ` prefix + the line's rendered bytes** (on a segmented line the first
    segment's indentation is restored as SPACES *after* the marker when that segment is emitted — the original engine's
-   behaviour, since `0.4.0`). On a hidden line with MULTIPLE rendered segments, **each
+   behavior, since `0.4.0`). On a hidden line with MULTIPLE rendered segments, **each
    rendered segment carries its own `## ` marker UNLESS the segment already heads with the
    marker's bytes** (the ensure-token rule — a trailing `## `-comment segment renders as-is;
    *since `0.3.0`, superseding the `0.2.3` per-segment doubling*) —
@@ -108,7 +108,7 @@ carries the blank input line (L40, rendered as a bare empty line) and the `## `-
 rendered as-is, no doubling; `docs/SYNTAX-AND-SEMANTICS.md` §7 cites them); the rule-6 one-way fact and
 re-ingestion idempotence are NOT exercised by the corpus — they are proven by a standing differential in the
 development fork. *(Since `0.3.0` the
-doubling is gone with the ensure-token rule; the corpus outputs carry no doubled shapes.)*
+doubling is gone — the ensure-token rule replaced it; the corpus outputs carry no doubled shapes.)*
 
 **Share-profiles** parametrize the render half (one source, N profile-keyed outputs);
 `jl-share-v1` is the v0 profile and the only one at this release.

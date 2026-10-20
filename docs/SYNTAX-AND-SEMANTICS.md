@@ -49,11 +49,11 @@ can learn GoMeta exactly, and verify it, before writing or changing a metaLine.
 - **cell** — the component a verdict attaches to (a Block, a Line, or a Segment); its **cell_handle**
   is the cell's occurrence key — opaque, namespace-scoped bytes naming WHICH component, never its text
   (`docs/public-api.md` §1.2/§2). A cell's text is read from the BLS Component tree through
-  `GoMeta.BLS.content(delivery.blsComponentTree, component)` — "through BLS's own access function"
+  `GoMeta.BLS.content(delivery.blsComponentTree, component)` — through BLS's own access function
   (`content_fingerprint` was removed at `0.4.0`).
 - **meta-hierarchy / slot** — the engine's per-depth store of pending alterant actions: one slot per
   open depth; its capacity is 8 (`SLOT_CAPACITY`, `src/state.jl` — a named constant, decoupled from
-  the registered action count, 9; a fixed size by the creator's decision, raised by hand when an example asks for more) — a further action meets the stable message "GoMeta absorb: more than 8 actions in one meta-hierarchy
+  the registered action count, 9; a fixed size by the decision of GoMeta's creator, raised by hand when an example asks for more) — a further action meets the stable message "GoMeta absorb: more than 8 actions in one meta-hierarchy
   slot …" since `0.4.0`.
 - **verdict** — a final evaluated alterant value for one cell.
 - **State-refs** — built-in predicates that query a BLS component's type/content (`isCode`, `isText`, `isMeta`,
@@ -250,9 +250,9 @@ section-swap fixture in the development fork, outside this document's §11 proof
 v0.3.1: an inert `#~N!` HEAD does NOT belong in the non-retiring closer list above — it
 closes/supersedes at its depth exactly like the live marker, so at `P ≤ N` it RETIRES the
 superseded block's rules via the sibling rule (§9's ≡ law; test-pinned —
-`inert_semantics_tests.jl` [P]/[O] and the banked `p_discrim2_POSTFIX` re-probe: an inert
-depth-2 sibling after `#~2 hide{ isText }` leaves the later block SHOWN; the ORIGINAL banked
-`p_discrim2` render predates the v0.3.1 fix and shows the pre-fix outcome). Mid-run an inert line is a continuation
+`inert_semantics_tests.jl` [P]/[O], the `p_discrim2` shape among them: an inert
+depth-2 sibling after `#~2 hide{ isText }` leaves the later block
+SHOWN). Mid-run an inert line is a continuation
 and closes nothing (§3). `#~!` does not detach following content as `#]` does — a metaLine head
 conducts attachment (§9).)* Unpinned shapes: the corpus is the reference (§13).
 
@@ -361,7 +361,7 @@ The operators (all verified against the corpus):
 see §13.)
 
 The three Visib names `hide`, `show` and `discard` are **no condition keys** since `0.4.0`: `#~ hide{ show }` meets the
-unknown-condition-key refusal — before `0.4.0` the key was accepted and silently false
+unknown-condition-key refusal — earlier, within the 0.4 development, the key was accepted and silently false
 (`docs/public-api.md` §3.4). The rule: a bare name in `{}` is a BLS state-ref or an action of an Alterant that answers queries
 (Labels at v0); a query of Visib, Id or the Heading refuses the same way.
 
@@ -438,7 +438,7 @@ drops `:label1` from depth 1 to depth 2. One blank line, two flips, two reasons.
   Cite: `Extended L10` `#~! discard{ isMeta }` — the `discard{isMeta}` is **not** applied, purely because
   of the `!`. Mid-run, an inert line is a CONTINUATION line of its contiguous metaBlock (§3).
   The ≡ law holds at BOTH grains: an inline `… #~N! <content>` metaSegment ≡ an inline `… #~N`
-  (SD-2, v0.3.1; differential-oracle-pinned). *(Honesty note, v0.3.1: the cited fixture's own
+  (v0.3.1; pinned by `tests/unit/inert_semantics_tests.jl`). *(Honesty note, v0.3.1: the cited fixture's own
   frozen narration predates these corrections — its L9 says the line "will be ignored" (only its
   CONTENT is) and L10's in-line comment says it "ends" the metaBlock (a mid-run inert line ends
   nothing — §3). The fixture bytes stay frozen by the golden pin; the corrected law is this row.)*
@@ -485,7 +485,7 @@ drops `:label1` from depth 1 to depth 2. One blank line, two flips, two reasons.
   was removed at `0.4.0`; `docs/public-api.md` §3.4).
 - **Condition-side atoms** (`{ cell(7) }`, `{ cell }` inside `{}`) meet the usual unknown-condition-key refusal at absorb,
   with or without arguments — `cell` answers no query (the registry's rule since `0.4.0`; the
-  former closed interpreter's argument-domain refusal went with that interpreter at `0.4.0` — `docs/public-api.md` §3.2/§3.4).
+  closed intake's argument-domain refusal was removed with the interpreter at `0.4.0` — `docs/public-api.md` §3.2/§3.4).
 
 ---
 
