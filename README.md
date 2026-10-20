@@ -45,7 +45,7 @@ x = 1                          # ...content...
 
 ## Status: alpha
 
-`0.4.0` (alpha maturity) — a working, tested engine for the **v0 subset** of the GoMeta
+`0.4.1` (alpha maturity) — a working, tested engine for the **v0 subset** of the GoMeta
 language. `0.2.0` brought a closed no-eval condition interpreter (REMOVED at `0.4.0` —
 a condition is read by Julia's parser and evaluated by Julia, as the original engine did; `docs/public-api.md` §3.2); `0.2.1` added the
 token-delimiter law (every marker token requires whitespace-or-line-boundary on BOTH
@@ -64,6 +64,9 @@ an unknown tag throws a stable error message instead), makes the hide render **i
 extends the label whitelist by a fixed **pictograph vocabulary** (byte-exact names like
 `:💡`, `:📝`, `:🔥`); since `0.4.0` the whole list — those names, `:label1`..`:label5` and `:doc` — is
 hard-coded in the Labels Alterant's own file (`src/alterants-std/labels.jl`), where a further name is one line.
+`0.4.1` changes one behaviour under a fed profile (`GoMetaConfig.user_mh_profile`): the Component's own slot applies in
+written order with or without a feed, and the user level's other statements are evaluated after it, with priority
+(`docs/public-api.md` §6, its last row).
 
 **What works today** (the feature list below is test-pinned in this repository):
 
