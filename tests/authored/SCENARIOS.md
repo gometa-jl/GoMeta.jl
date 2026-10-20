@@ -19,7 +19,7 @@
 | 13 | A contiguous meta block and a blank line inside it | 1, 3 | OPEN | (`feature_contiguous_metablock*.jl` goldens) |
 | 14 | The C-family flavor: `//` lead, `//#` hide marker — same tree, same values as the Julia twin | 13 | OPEN | |
 | 15 | The LaTeX flavor: `%` lead, `%%` hide marker — same tree, same values as the Julia twin | 13 | OPEN | |
-| 16 | An Id Alterant with two fields set in two metaLines (`mutExclusivePerField`) — expectation to be decided (per-field semantics deferred) | 10 | DRAFT (2026-10-01): the three MEASURED behaviours — both fields on the depth-1 Blocks; the depth-2 statement's compound as a WHOLE, the unset field not inherited; a stated zero not recorded — and the compound's expectation vocabulary (an inline table) put to the creator; no authority until his word | `006_id_compound.toml` (draft) |
+| 16 | An Id Alterant with two fields set in two metaLines (`mutExclusivePerField`) — expectation to be decided (per-field semantics deferred) | 10 | DRAFT (2026-10-01): the three MEASURED behaviours — both fields on the depth-1 Blocks; the depth-2 statement's compound as a WHOLE, the unset field not inherited; a stated zero not recorded — and the compound's expectation vocabulary (an inline table) await the creator's decision; no authority until his word | `006_id_compound.toml` (draft) |
 | 17 | Invalid bytes (not UTF-8) in content: parsed as content, no crash | 13 | OPEN | |
 | 18 | An empty file; a file without a terminal newline | 13 | OPEN | |
 | 19 | (The opt-in condition modes — REMOVED at 0.4.0: a condition is read by Julia's parser, no second intake exists; this row retired with them) | 6 | RETIRED | |
