@@ -245,8 +245,8 @@ reach it — `feature_contiguous_metablock_blankline.jl` pins both (its blank li
 yet line A, attached to the (now separate) `:label1` block, renders hidden). The eviction side is
 the sibling rule: an implicit close by a following `#~P` with `P ≤ N` retires the superseded
 block's labels AND its standing rules for everything under the new block — a standing rule reaches
-later content only through DEEPER re-entry, never across a supersession (verified by a
-section-swap fixture not shipped in this repository, outside this document's §11 proof set). *(Trued at
+later content only through DEEPER re-entry, never across a supersession (outside this document's
+§11 proof set). *(Trued at
 v0.3.1: an inert `#~N!` HEAD does NOT belong in the non-retiring closer list above — it
 closes/supersedes at its depth exactly like the live marker, so at `P ≤ N` it RETIRES the
 superseded block's rules via the sibling rule (§9's ≡ law; test-pinned —

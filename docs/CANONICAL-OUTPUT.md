@@ -8,7 +8,7 @@
   loaded through `devtools/load_basic_renderer.jl`) which the golden layer pins.
   (This document's name — CANONICAL-OUTPUT — predates the (tree, render) pair's move out of the Engine at `0.4.0`; it kept its name.) **Trust note:**
   a `{…}` condition is Julia text evaluated by Julia (since `0.4.0`) — a run over a
-  file executes its conditions; `docs/public-api.md` §2/§3.2 and the SECURITY section of `README.md` state the posture.
+  file runs its conditions as Julia code; `docs/public-api.md` §2/§3.2 and the SECURITY section of `README.md` state the posture.
 - **DOES:** (1) names the observable surface; (2) defines each half of the tool's pair; (3) states the hide/discard
   render rules of the `jl-share-v1` profile; (4) defines the evals surface; (5) carries
   the invariant register the shipped suite asserts; (6) states the CRLF normalization convention;

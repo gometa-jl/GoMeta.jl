@@ -207,7 +207,7 @@ A `{…}` condition is **Julia** — since `0.4.0`, by the decision of GoMeta's 
 original engine read it: at absorb the body's GoMeta-specific parts are re-written to Julia text (a settribute key to its
 state read, a queryable Alterant action or a label test to its query call, GoMeta's `,` (OR) to `||`; the rest verbatim),
 Julia's parser reads the result once, and Julia evaluates the stored expression at apply in GoMeta's module. This is the
-creator's design: a full parser must be available to those who, for instance, work only with their own GoMeta statements, where there is no security
+creator's design: a full parser must be available to those who, for instance, work only with their own GoMeta statements, provided there is no security
 risk. **Processing a file you did not write therefore runs its
 conditions as Julia code** — a condition body can read files, take time or have effects, exactly as a custom Alterant's
 callables can: use GoMeta on input you trust, as you would any Julia file you `include`. The Engine's own operations stay
