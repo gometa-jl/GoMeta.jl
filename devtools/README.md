@@ -78,9 +78,9 @@ BLS's public functions and types — `GoMeta.BLS.root`, `children`, `getElement`
 `isHorizontalSpace`, the Component types, `keys` of the two named-element types (`docs/public-api.md` §1.2) — and no field of
 a BLS object. No read outside the door remains since 0.4.0 (the renderer's
 whitespace guard before the hide marker reads `isHorizontalSpace`; the tools read the File's text through `content(tree)`); the
-former exemption of the tools from the door, and its texts, were removed with it. Consumer code — an Extension — reads the tree the same way, through the door
+former exemption of the tools from the door, and its texts, were removed at the same time. Consumer code — an Extension — reads the tree the same way, through the door
 (`docs/public-api.md` §1.2).
-A recorded limit at v0.4 (measured 2026-10-14): the evals printouts (`evals-tree`, `evals`, `trace`, the per-cell layout) turn a Component's content bytes into text for the excerpt and throw Julia's InvalidCharError when an invalid UTF-8 sequence that needs decoding (a 3- or 4-byte overlong encoding) stands at a content's head or tail; the Component-tree view (`bls-tree`, `tree`) does not. The guarantee moves to BLS at v0.5 — the flag `containsInvalidUTF8` on every Component and the door's one text read that never throws — and these tools take the text read then.
+A recorded limit at v0.4 (measured 2026-10-14): the evals printouts (`evals-tree`, `evals`, `trace`, the per-cell layout) turn a Component's content bytes into text for the excerpt and throw Julia's InvalidCharError when an invalid UTF-8 sequence that needs decoding (a 3- or 4-byte overlong encoding) stands at a content's head or tail; the Component-tree view (`bls-tree`, `tree`) does not. By the creator's decision the guarantee is to move to BLS in a later version — a flag `containsInvalidUTF8` on every Component and one text read of the door that never throws — and these tools will take that read.
 The assertion battery
 `devtools/probes/probe_devtools.jl` is the drift alarm: if the surface changes, it fails loudly. Run it after every change to `src/`. It lives beside them since 2026-09-12;
 its fixture inputs are `devtools/probes/fixtures/` and `examples/InFileFolder/`;
@@ -89,7 +89,7 @@ run it with `julia --startup-file=no --project=$GM/tests $GM/devtools/probes/pro
 
 ## Where they are used
 
-- Pages and decks that show what a run produced embed these tools' output unabridged — never a retyped excerpt.
+- A page or a deck that shows what a run produced embeds these tools' output unabridged — never a retyped excerpt (the rule above: probe, then say).
 - The JuliaCon 2026 talk deck's dev-tool slides (2026-08-22/23) were produced from `write_altValues_evals_to_file`
   output with the tools' former `slide` option; the option and its three surface writers were removed within the 0.4
   development.

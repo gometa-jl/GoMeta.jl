@@ -12,7 +12,7 @@
 #       show-override inside a discard-skipped ancestor, where the reference applies finalVisib-precedence;
 #       the basic renderer today (devtools/basic_renderer.jl — the renderer's home since 2026-09-12,
 #       formerly src/emit/emit.jl) applies no `:discard` subtree-skip: an inner answer resurfaces (its header,
-#       :73–:77; the direction decided on 2026-08-07;
+#       :73–:77; the direction dated 2026-08-07, the creator's by his confirmation of 2026-09-10 —
 #       scenario 002's values confirmed on its bytes) — not exercised by this corpus;
 #   (2) multi-byte segment-slicing: this engine's parse layer is byte-correct on multi-byte
 #       segment bounds where the reference truncates;
@@ -28,7 +28,7 @@
 #       examples/OutFileFolder copies carry it too (golden_tests.jl :200–:201) — parity with the ORIGIN output is modulo the fold
 #       on those two; parity with the committed copies is byte-for-byte (the drift-check).
 # Missing-key policy: required keys missing => HARD test error (fail-closed). Only optional: annotations golden.
-# Append-only: a [[fixture.repin]] row, once written, is NEVER rewritten; a [[fixture]] row's fields never move except its
+# Append-only: a [[fixture.repin]] row's provenance (date, category, old_sha256, new_sha256), once written, is NEVER rewritten; a [[fixture]] row's fields never move except its
 #   active *_golden_sha256, which a re-pin moves while APPENDING a [[fixture.repin]] row (old → new sha256, the reason, the
 #   ratifying word). (ONE dispositioned
 #   exception: the constructed rr48 rows' input_path values moved in place for the
@@ -115,7 +115,7 @@ new_sha256 = "5e58757192aa1b5eb1f4ac1f87689cbc8a5dc95b4e12bc2fbbce1e12f13330ed"
 # later NARROWED by the token-delimiter law — `###+` runs and glued `##x` are no longer
 # comment-classified (bucket (A) content) and thus no longer fold-eligible; hidden they take
 # the `## ` marker. This fixture's bytes are unaffected (its `## ` narration lines remain
-# comment-classified; recorded in the development fork's provenance ledger).
+# comment-classified).
 ratified_by = "the comment-aware hide fold, three sub-rules (a)-(c), decided by the creator 2026-08-07"
 
 [[fixture]]
@@ -144,7 +144,7 @@ old_sha256 = "34d6b878f5c0cdcefbe148ff53ed136c683b44592fee7d71288820964fe094b2"
 new_sha256 = "490dd6ef20b6c2fda0b4aa1ed99cf4c037a583eb15f51f97575ea802824d2533"
 # Annotation (appended — the row above is immutable): the "comment-CLASSIFIED" fold scope
 # was later NARROWED by the token-delimiter law (`###+`/glued `##x` → bucket (A), marked
-# when hidden). This fixture's bytes are unaffected (development-fork provenance ledger).
+# when hidden). This fixture's bytes are unaffected.
 ratified_by = "the comment-aware hide fold, three sub-rules (a)-(c), decided by the creator 2026-08-07"
 
 [[fixture]]
@@ -192,7 +192,7 @@ annotations_golden_sha256 = "41b7ed3f30cc8167cebfca8e9a9e5b8b5abfe0df46f9f14dd73
 
 [[fixture.repin]]
 date = "2026-10-01"
-category = "engine-ruled"
+category = "engine-decided"
 reason = "the heading re-key (within the 0.4 development): a whole-line metaLine's heading row is keyed to the metaBlock the metaLine forms, no longer to the metaLine's own Line — the three Line-keyed head_ rows of this fixture (head_1, head_2, head_4) become Block-keyed; the inline head_10 row unchanged; the content column unchanged (single-line metaBlocks)"
 old_sha256 = "0459799d9f9b0f4ef40dbe640933923acb30c378a538a7f61d1f8e91b080dc21"
 new_sha256 = "9e6000667ba04cca1d56b7e29b9666dc023b824bdb00aed51930d0aa259f6324"
@@ -200,7 +200,7 @@ ratified_by = "the creator's re-mint order of 2026-10-01"
 
 [[fixture.repin]]
 date = "2026-10-05"
-category = "engine-ruled"
+category = "engine-decided"
 reason = "the inline heading's key moves to the Line (within the 0.4 development; the creator's decision of 2026-10-03): the one inline row head_10 of this fixture, keyed to the inline metaSegment (grain Segment, Segment 5:7-25), is keyed to its LINE (grain Line, Line 5-5) with the Segment as the key's origin — that row's handle column and its content column (the Line's bytes now) move; the three Block-keyed head_ rows unchanged"
 old_sha256 = "9e6000667ba04cca1d56b7e29b9666dc023b824bdb00aed51930d0aa259f6324"
 new_sha256 = "41b7ed3f30cc8167cebfca8e9a9e5b8b5abfe0df46f9f14dd7356eee7787ec3f"

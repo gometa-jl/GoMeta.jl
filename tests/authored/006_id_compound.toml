@@ -10,39 +10,39 @@ component = "block@1"
 alterant = "Id"
 value = { cell = 7, parent = 3 }
 decided_by = "block@1"
-note = "the depth-1 metaBlock: both fields its own (PROBES-F: id_cell 7, id_parent 3 on Block #2)."
+note = "the depth-1 metaBlock: both fields its own (the two-level input's evals-tree printout: id_cell 7, id_parent 3 on Block #2)."
 
 [[expect]]
 component = "block@2"
 alterant = "Id"
 value = { cell = 7, parent = 3 }
 decided_by = "block@1"
-note = "the Code Block 'x = 1', attached to the depth-1 meta: both fields inherited (PROBES-F: Block #3)."
+note = "the Code Block 'x = 1', attached to the depth-1 meta: both fields inherited (the two-level input's printout, Block #3)."
 
 [[expect]]
 component = "block@3"
 alterant = "Id"
 value = { cell = 9 }
 decided_by = "block@3"
-note = "the depth-2 metaBlock: cell = 9 only — parent(3) from depth 1 is NOT inherited (PROBES-F: Block #4 carries id_cell 9 and no id_parent row). THE QUESTION FOR THE OWNER: is this the intended reading of ':mutExclusivePerField' (first-wins per FIELD would have carried parent = 3 down)?"
+note = "the depth-2 metaBlock: cell = 9 only — parent(3) from depth 1 is NOT inherited (the two-level input's evals-tree printout: Block #4 carries id_cell 9 and no id_parent row). THE QUESTION FOR THE CREATOR: is this the intended reading of ':mutExclusivePerField' (first-wins per FIELD would have carried parent = 3 down)?"
 
 [[expect]]
 component = "block@4"
 alterant = "Id"
 value = { cell = 9 }
 decided_by = "block@3"
-note = "the Code Block 'y = 2', attached to the depth-2 meta (PROBES-F: Block #5)."
+note = "the Code Block 'y = 2', attached to the depth-2 meta (the two-level input's printout, Block #5)."
 
 [[expect]]
 component = "block@5"
 alterant = "Id"
 value = { parent = 5 }
 decided_by = "block@5"
-note = "the line-5 metaBlock: cell(0) leaves NO row — zero and unset are indistinguishable in the rows (PROBES-G: Block #2 carries id_parent 5 only). THE QUESTION FOR THE OWNER: should a stated zero be recorded?"
+note = "the line-5 metaBlock: cell(0) leaves NO row — zero and unset are indistinguishable in the rows (the zero-and-twice input's evals-tree printout: Block #2 carries id_parent 5 only). THE QUESTION FOR THE CREATOR: should a stated zero be recorded?"
 
 [[expect]]
 component = "block@6"
 alterant = "Id"
 value = { parent = 5 }
 decided_by = "block@5"
-note = "the Code Block 'z = 3', attached to the line-5 meta (PROBES-G: Block #3)."
+note = "the Code Block 'z = 3', attached to the line-5 meta (the zero-and-twice input's printout, Block #3)."

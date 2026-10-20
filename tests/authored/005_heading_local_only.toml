@@ -4,14 +4,14 @@ status = "confirmed"
 drafted_by = "a draft of 2026-08-28, restated 2026-09-10 as positions and values in the creator's terms"
 confirmed_by = "the creator, 2026-09-10"
 scenario = "A metaLine on line 1 states the heading 'Chapter one'. Line 2 (a = 1) carries no meta of its own. A metaLine on line 3, at depth 2, adds a label (not stated in this scenario; labels are scenario 004's). Line 4 (b = 2) carries no meta of its own. Block 1 (the metaBlock of line 1) carries 'Chapter one', by its own metaLine, and the heading applies indirectly to line 1 as Block 1's child. No other Block or Line carries a heading: Block 2 (the Code Block attached to that meta), line 2, Blocks 3 and 4 and lines 3 and 4 carry none. The File is not stated in this scenario."
-history = ["2026-09-10: confirmed by the creator on these exact bytes. The truth: his words of 2026-09-10: 'Chapter one' is applied to the first Block only, that is it — block@1 carries the heading; line@1 indirectly; block@2 absent; the line 1 statement applies his indirect-application principle (whose own example is a heading applied to a Block), confirmed by his word on these bytes; that the attached Code Block and the nested Block carry no heading is his 'that is it', which also agrees with the Engine's registered :localOnly set-mode. At ac29037 the Engine recorded the heading on the metaLine's own Line only, and this scenario was expected to FAIL until the Engine added the Block-level heading entry; since 0.4.0 it passes. Whether a consumer is told own/direct versus indirect for line 1 is OPEN; whether the File is a governed Component is OPEN (catalogue row 21a)."]
+history = ["2026-09-10: confirmed by the creator on these exact bytes. The truth: his words of 2026-09-10: 'Chapter one' is applied to the first Block only, that is it — matching in substance the reading put to him: block@1 carries the heading; line@1 indirectly; block@2 absent; the line 1 statement applies his indirect-application principle (whose own example is a heading applied to a Block), confirmed by his word on these bytes; that the attached Code Block and the nested Block carry no heading is his 'that is it', which also agrees with the Engine's registered :localOnly set-mode. At ac29037 the Engine recorded the heading on the metaLine's own Line only, and this scenario was expected to FAIL until the Engine added the Block-level heading entry; since 0.4.0 it passes. Whether a consumer is told own/direct versus indirect for line 1 is OPEN; whether the File is a governed Component is OPEN (catalogue row 21a)."]
 
 [[expect]]
 component = "block@1"
 alterant = "Heading"
 value = "Chapter one"
 decided_by = "block@1"
-note = "the metaBlock opened by the line-1 metaLine; its own heading. Provenance: at ac29037 the one head_1 row is keyed to the metaLine's own Line, not to this Block (observed 2026-09-10); this statement requires a Block-level entry the Engine does not yet deliver"
+note = "the metaBlock opened by the line-1 metaLine; its own heading. Provenance: at ac29037 the one head_1 row was keyed to the metaLine's own Line, not to this Block (observed 2026-09-10), and this statement required a Block-level entry the Engine did not then deliver; since 0.4.0 the row is keyed to this metaBlock and the statement is met"
 
 [[expect]]
 component = "line@1"
