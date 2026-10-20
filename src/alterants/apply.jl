@@ -48,6 +48,9 @@
     return nothing
 end
 
+"THE FRESH INSTANCE of an Alterant for the Component at hand (stage A of the Labels lane, R-LAB-20): the registered constructor, given the Alterant's PER-RUN state where its read-time hook minted one (`st.alt_run`), the zero-argument call otherwise — every Alterant without a hook, and the Labels Alterant in a run without a vocabulary statement, meets the former call"
+_freshInstance(st, idx) = (run = st.alt_run[idx]; run === nothing ? st.registry.plugins[idx].altConstructor() : st.registry.plugins[idx].altConstructor(run))
+
 function detAltValuesForSetOfSlots(
     checkTheseSlotsInOrderVec::AbstractVector{Int8},
     appliedKey::Vector{UInt8}   # the applying Component's own key (stage 1 of the Alterants build) — the referent of the localOnly rule
@@ -131,7 +134,7 @@ function detAltValuesForSetOfSlots(
                 local _condOutcome = _cond === nothing ? nothing : Core.eval(GoMeta, _cond)   # Julia evaluates the stored Expr (stage 5's E13; the legacy's :37/:95)
                 if _cond === nothing || _condOutcome
                     if crntAltIdx ∉ keys(st.working)
-                        st.working[crntAltIdx] = st.registry.plugins[crntAltIdx].altConstructor()
+                        st.working[crntAltIdx] = _freshInstance(st, crntAltIdx)   # stage A: the run state handed to the constructor where a hook minted one
                     end
                     _record_origin!(st, crntAltIdx, row, crntSlot)   # R-V04B-35 (d)
                     if st.queue.args[row, crntSlot] === nothing
@@ -219,7 +222,7 @@ function detAltValuesForSetOfSlots(
                     ## (a `:mutExclusive` one is stopped above; the Id compound's fields fill the same fresh instance).
                     if overridable && crntAltIdx ∈ view(previousSetAltIdxVec, 1:countPreviousSetAlts) &&
                        crntAltIdx ∉ view(previousSetAltIdxVec, (countPreviousSetAlts+1):(countPreviousSetAlts+countInCrntSlotSetAlts))
-                        st.working[crntAltIdx] = st.registry.plugins[crntAltIdx].altConstructor()
+                        st.working[crntAltIdx] = _freshInstance(st, crntAltIdx)   # stage A: the run state handed to the constructor where a hook minted one
                         empty!(st.working_origin[crntAltIdx])
                     end
                     if crntAltIdx ∉ view(previousSetAltIdxVec,
@@ -235,7 +238,7 @@ function detAltValuesForSetOfSlots(
                     end
 
                     if crntAltIdx ∉ keys(st.working)
-                        st.working[crntAltIdx] = st.registry.plugins[crntAltIdx].altConstructor()
+                        st.working[crntAltIdx] = _freshInstance(st, crntAltIdx)   # stage A: the run state handed to the constructor where a hook minted one
                     end
                     _record_origin!(st, crntAltIdx, idx, crntSlot)   # R-V04B-35 (d)
                     if st.queue.args[idx, crntSlot] === nothing

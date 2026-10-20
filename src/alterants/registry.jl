@@ -14,7 +14,7 @@
 #     it through the v0.4 lifecycle (Builder → validate → publish): the sorted action table, the parallel action→plugin index, the name→index Dicts,
 #     the SORTED `accum_alt_idxs` (the apply-phase `insorted` consumer in apply.jl depends on the sort),
 #     (the identity Visib-action→settribute-key map left at stage 5's E12 — census row 45). `setLabels` (the `:` labels action) checks every
-#     label against the whitelist; an unknown label raises the stable "GoMeta apply: unknown label"
+#     label against the Labels Alterant's vocabulary (the run's since stage A of the Labels lane, 0.4.1 — the base plus the run's own vocabulary statements, labels.jl `declareLabels!`); an unknown label raises the stable "GoMeta apply: unknown label"
 #     refusal, which names the accepted set (docs/public-api.md §3.4). `getState`/`getAltState` read the
 #     per-call `ProcessState` via `ctx()` (a ScopedValue — no module-global state). `updateMetaHierarchy`/`wipeAltActionSlots` maintain the meta-hierarchy cursor + the slot
 #     tensors on `ctx()` under the single-source `maxDepthMH`/`NUM_MH_LEVELS` consts (src/state.jl).
@@ -22,7 +22,7 @@
 #     rather than hanging on any iteration order. A `{…}` condition is read by Julia's parser and evaluated by Julia
 #     since stage 5's E13 of the v0.4 build (census row 1; R-V04B-106; his §D174) — this registry supplies its VOCABULARY:
 #     the settribute keys and the queryable actions (`queryable_action`, src/state.jl), read by the rewrite at absorb.
-# EDGES (honest): the label whitelist is closed and fixed — the corpus-documented labels
+# EDGES (honest): the Labels Alterant's BASE vocabulary is fixed, and since stage A of the Labels lane (0.4.1) a run's vocabulary statements at `#~0` or in the profile add names to it and remove names from it (labels.jl `declareLabels!`, the record's `onRead`) — the base: the corpus-documented labels
 #     :label1..:label5 plus (since 0.3.0) a fixed pictograph vocabulary (byte-exact names, no
 #     normalization) plus `:doc` (stage 2 of the Alterants build, his §D202 / §D252) — hard-coded in the Labels Alterant's own file
 #     `alterants-std/labels.jl` (R-ALT-20); an unknown label APPLIED meets the stable refusal that
@@ -50,6 +50,10 @@ module Alterants
 import ..BLS as BLS
 using ..BLS.NamedElements
 using StaticArrays: SVector
+## stage A of the Labels lane: the Labels Alterant's read-time hook checks the PLACE of a vocabulary statement by the meta-hierarchy
+## index the Engine hands it (`#~0` = the file slot, the user level, an inline metaSegment) — the structural consts have their single
+## source in state.jl, included before this file (the pattern of `module CnS` below).
+using ..GoMeta: fileMHIdx, userMHIdx, lineMHIdx
 
 #########################################################################################
 #########################################################################################
@@ -419,10 +423,11 @@ function default_registry_builder()
         ## capture plane; the stems are DECLARED — byte-compatibility never rides the
         ## derived fallback) — the three former legacy positional declarations migrated
         ## to the keyword form to carry `capture =`.
-        Alterant(; altName = :labels, setMode = :accumulate, altConstructor = Dict{Symbol,Bool},
+        Alterant(; altName = :labels, setMode = :accumulate, altConstructor = Alterants.LabelsInstance,   # stage A: the instance carries the run's vocabulary (labels.jl)
                    setAltInstance = Alterants.setLabels, getAltInstance = Alterants.checkLabels,
                    default = Declared(Symbol[]),   # R-V04B-92 (card C2, his word of 2026-10-02 (OWNER-WORDS §287; R-V04B-92: 'I do approve your recommendation: declare.' — provisional, his (ii))): Labels' declared default is the EMPTY SET — the answer's shape, a sorted Vector{Symbol}
-                   capture = CaptureDecl(:per_key; attr_stem = :label)),
+                   capture = CaptureDecl(:per_key; attr_stem = :label),
+                   onRead = Alterants.declareLabels!),   # stage A of the Labels lane (R-LAB-20): the vocabulary statements `:++x` / `:--x` consumed at the read
         Alterant(; altName = :Visib, setMode = :mutExclusive, altConstructor = Alterants.Visib,
                    setAltInstance = Alterants.setVisib,
                    default = Declared(:show),   # R-V04B-51 (2): Visib's ONE declared default is 'show' (his lean §11; his word §180)
@@ -678,12 +683,12 @@ _domain_leaf(x)::Bool =
     x isa Function || x isa Type || x isa Symbol || x === nothing || x isa String ||
     x isa VersionNumber || _numeric_leaf(x)
 
-## the per-record explicit field lists — 8/4 (four action fields since stage 5's E12 — the settribute slot left, census row 45; the Alterant's default slot since stage 2's commit 3; the action's gone since 3-ii; eight since stage 5's E10; five since stage 5's E11 — the overload rows left, census row 16), each asserted against the compiler at
+## the per-record explicit field lists — 9/4 (nine since stage A of the Labels lane — the read-time hook `onRead`, a designated callable field; four action fields since stage 5's E12 — the settribute slot left, census row 45; the Alterant's default slot since stage 2's commit 3; the action's gone since 3-ii; eight since stage 5's E10; five since stage 5's E11 — the overload rows left, census row 16), each asserted against the compiler at
 ## load (T2BIS-DESIGN §15 (7)); the two record structs are POSITION-RESTRICTED walker
 ## containers (elements of `plugins`/`action_specs`; the third, `ActionOverload` inside the overloads slot, left at stage 5's E11
 ## of the v0.4 build — census row 16) and are REFUSED anywhere else, declared data included.
 const _WALK_PLUGIN_FIELDS = (:altName, :setMode, :altConstructor, :setAltInstance,
-    :getAltInstance, :precedencesTuple, :default, :capture)
+    :getAltInstance, :precedencesTuple, :default, :capture, :onRead)
 @assert _WALK_PLUGIN_FIELDS == fieldnames(Alterant)
 const _WALK_ACTION_FIELDS = (:name, :plugin, :accepts_string_slot, :validate)   # the settribute slot left at stage 5's E12 (census row 45)
 @assert _WALK_ACTION_FIELDS == fieldnames(ActionSpec)
@@ -884,7 +889,7 @@ end
 # first/second · NamedTuple by name order · Dict per `_walk_dict_entries`). Work items are
 # `(value, pos, des)`: `pos` ∈ (:structural, :data) — flipped at the ONE DATA locus
 # `Declared.value` and never flipped back (DATA WINS — a Function nested in data is refused);
-# `des` = the value sits in a designated callable field (`setAltInstance`/`getAltInstance`/
+# `des` = the value sits in a designated callable field (`setAltInstance`/`getAltInstance`/`onRead`/
 # `validate`). (The `rk` rank that admitted `ActionOverload` rows inside the overloads slot left with them at stage 5's E11
 # of the v0.4 build — census row 16: a record struct inside a declared slot is unencodable.)
 # Cycle-guarded (visiting `IdSet`, push!/delete! bracketed) with a per-slot DONE-cache on
@@ -1002,12 +1007,12 @@ end
     _encodability_collect!(diags, plugins, action_specs) -> nothing
 
 IS: the DOMAIN probe (R-V04B-4 (iii); the record shape law's one remaining row since stage 5's E4) — T2-bis, replacing
-the cure-batch-4/5 `_slot_text` probe: the ONE walk with TWO predicates over EVERY record field (plugin × 8, spec × 4 —
+the cure-batch-4/5 `_slot_text` probe: the ONE walk with TWO predicates over EVERY record field (plugin × 9 — the ninth `onRead` since stage A of the Labels lane; spec × 4 —
 the four `ActionSpec` fields since stage 5's E12, the settribute slot left, census row 45; T2BIS-DESIGN §2; the overload
 rows walked within left at stage 5's E11 of the v0.4 build, census row 16).
 
 DOES: calls `_domain_slot_probe!` once per (record, slot) — every `_WALK_PLUGIN_FIELDS` slot of every `Alterant`, the
-designated flag set for `setAltInstance` / `getAltInstance`; every `_WALK_ACTION_FIELDS` slot of every `ActionSpec`,
+designated flag set for `setAltInstance` / `getAltInstance` / `onRead` (the ninth field, stage A of the Labels lane); every `_WALK_ACTION_FIELDS` slot of every `ActionSpec`,
 designated for `validate`: predicate 1 = membership AT POSITION (leaves via `_domain_leaf`; the value-domain containers;
 the record structs only at their structural positions — inside a declared slot one is unencodable; a `Function` only
 in the designated callable fields and never inside declared data; `String`-only string values; no undefined container
@@ -1025,7 +1030,7 @@ function _encodability_collect!(diags::Vector{Diagnostic}, plugins::Vector{Alter
     for p in plugins
         for slot in _WALK_PLUGIN_FIELDS
             _domain_slot_probe!(diags, "alterant", p.altName, slot, getfield(p, slot),
-                                slot === :setAltInstance || slot === :getAltInstance)
+                                slot === :setAltInstance || slot === :getAltInstance || slot === :onRead)   # onRead designated (stage A)
         end
     end
     for s in action_specs
@@ -1186,6 +1191,7 @@ function _domain_copy(x, memo::IdDict{Any,Any};
             if v isa Alterant
                 fr.kdes[4] = true            # setAltInstance
                 fr.kdes[5] = true            # getAltInstance
+                fr.kdes[9] = true            # onRead (stage A of the Labels lane — the ninth field, designated)
             elseif v isa ActionSpec
                 fr.kdes[4] = true            # validate
             end
@@ -1375,7 +1381,7 @@ function _egal_cmp(t::_EgalTask, work, guards)
         flds = a isa Alterant ? _WALK_PLUGIN_FIELDS : _WALK_ACTION_FIELDS
         for i in length(flds):-1:1
             f = flds[i]
-            des = (a isa Alterant && (f === :setAltInstance || f === :getAltInstance)) ||
+            des = (a isa Alterant && (f === :setAltInstance || f === :getAltInstance || f === :onRead)) ||   # onRead designated (stage A)
                   (a isa ActionSpec && f === :validate)
             push!(work, _EgalTask(getfield(a, f), getfield(b, f), (t.path, f), t.pos, des, 0x00))
         end

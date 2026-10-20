@@ -180,6 +180,7 @@ end
         pT === GM.Alterant && pf === :getAltInstance && return GM.Alterants.checkLabels
         pT === GM.Alterant && pf === :precedencesTuple && return ntuple(i -> Symbol("p", i), GM.NUM_MH_LEVELS)
         pT === GM.Alterant && pf === :capture && return GM.CaptureDecl(:single)
+        pT === GM.Alterant && pf === :onRead && return _swap_fn_a   # stage A of the Labels lane: the ninth record field, a designated callable (a `nothing` leaf — a single-point site)
         pT === GM.ActionSpec && pf === :validate && return _swap_fn_a
         pT === GM.Alterant && pf === :default && return GM.Declared(1)   # stage 2's commit 3-ii: the slot is the Alterant's
         pT === GM.CaptureDecl && pf === :attr_stem && return :zz   # v0.4 T5 (the round's B-3 cure — the raw error() fault otherwise)
@@ -710,7 +711,7 @@ end
         s.pT in (GM.Alterant, GM.ActionSpec) && s.path[end] isa Symbol &&
             push!(recfields, (s.pT, s.path[end]))
     end
-    @test length(recfields) == 12                                # every §1 record field exercised (12 since stage 5's E12 of the v0.4 build — census row 45, the action record's settribute slot left; 13 since stage 5's E11 of the v0.4 build — the overload rows' ten fields and the action record's spelling, sugar_candidacy and keyed_slot left, census row 16; 27 before: the Alterant's default slot joined at commit 3, the action's left at 3-ii — R-V04B-51; the vocabulary slot left at stage 5's E9; the record's eight slots at E10 — MEASURED, the second build's counts probe caught the stale 35)
+    @test length(recfields) == 13                                # every §1 record field exercised (13 since stage A of the Labels lane — the Alterant record's ninth field `onRead`, the read-time hook, R-LAB-20, 2026-10-20 — a re-pin that follows from his decision of the design, stated in the lane's record; 12 since stage 5's E12 of the v0.4 build — census row 45, the action record's settribute slot left; 13 since stage 5's E11 of the v0.4 build — the overload rows' ten fields and the action record's spelling, sugar_candidacy and keyed_slot left, census row 16; 27 before: the Alterant's default slot joined at commit 3, the action's left at 3-ii — R-V04B-51; the vocabulary slot left at stage 5's E9; the record's eight slots at E10 — MEASURED, the second build's counts probe caught the stale 35)
     leafcats = Set(s.cat for s in sites if s.kind in (:leaf, :single, :dictkey))
     @test issubset(Set([:bool, :symbol, :int, :float, :string, :type, :function, :version,
                         :complex, :rational, :nothing_leaf]), leafcats)

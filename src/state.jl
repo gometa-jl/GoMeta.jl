@@ -162,7 +162,7 @@ DOES: carries the Alterant's name (`altName`); its set-mode (`setMode` — `:acc
     `nothing` at v0; sized by `NUM_MH_LEVELS`, the unified meta-hierarchy level count); the Alterant's ONE declared default value
     (`default` — `NoDefault()` | `Declared(v)`; R-V04B-51 (1)–(2), R-V04B-55: Visib's is `:show`; delivered by the answer function
     with the source "default"; stage 2's commit 3); and the capture declaration (`capture` — `nothing` | a `CaptureDecl`; v0.4 T5:
-    the row that makes the Alterant's applied state mint evals rows). The keyword form below defaults every optional slot;
+    the row that makes the Alterant's applied state mint evals rows); and the read-time hook (`onRead` — `nothing` | a function `(run, mhIdx, actionName, args, hasCondition) -> nothing | run′`, called by `absorbMeta` for the Alterant's statements with arguments before the slot bound; stage A of the Labels lane, R-LAB-20). The keyword form below defaults every optional slot;
     `build_default_registry` builds the four shipped records.
 REASONING: one immutable record per Alterant, declared as DATA and read by the apply plane through the registry's derived tables — his
     legacy's form (one record per Alterant, registered as data); no fixed-size array inside it.
@@ -181,13 +181,20 @@ struct Alterant
                                                    #   Visib declares `:show` (R-V04B-51 (2)); Labels `Symbol[]`, Heading `nothing`, Id the zero compound — his word of 2026-10-02, R-V04B-92, PROVISIONAL (the values may change once used on real examples)
     # --- the capture declaration (v0.4 T5; the seven other declared slots of T1 left at stage 5's E10 of the v0.4 build) ---
     capture::Union{Nothing,CaptureDecl}            # slot (2): the capture declaration
+    onRead::Union{Nothing,Function}                # stage A of the Labels lane (R-LAB-20): THE READ-TIME HOOK — `nothing` for every Alterant
+                                                   #   but one that declares it; called by `absorbMeta` for the Alterant's statements WITH
+                                                   #   arguments, BEFORE the slot bound, as `onRead(run, mhIdx, actionName, args, hasCondition)`:
+                                                   #   `nothing` = not the hook's (enqueued as stated); any other value = CONSUMED at the read and
+                                                   #   stored as the Alterant's per-run state (`ProcessState.alt_run`), the statement's processing
+                                                   #   ends. A designated callable field (the registry's four loci), appended LAST (the copier
+                                                   #   rebuilds the record positionally). The Labels Alterant's hook: labels.jl `declareLabels!`.
 end
 "The keyword form: the two declared slots addressable by name; an unnamed slot takes its nothing/undeclared default."
 Alterant(; altName::Symbol, setMode::Symbol, altConstructor::Type, setAltInstance::Function,
            getAltInstance::Union{Nothing,Function} = nothing,
            precedencesTuple::Union{Nothing,NTuple{NUM_MH_LEVELS,Symbol}} = nothing,
-           default::DefaultSlot = NoDefault(), capture = nothing) =
-    Alterant(altName, setMode, altConstructor, setAltInstance, getAltInstance, precedencesTuple, default, capture)
+           default::DefaultSlot = NoDefault(), capture = nothing, onRead = nothing) =
+    Alterant(altName, setMode, altConstructor, setAltInstance, getAltInstance, precedencesTuple, default, capture, onRead)
 
 """
     ActionSpec
@@ -804,6 +811,11 @@ mutable struct ProcessState
                                                # in the finally) — never set on the
                                                # document walk; read at the absorb seam as
                                                # a fed action's `decided_by` handle and as the trigger of the one refusal a `localOnly` statement meets in the feed (no capture reads it since stage 1 of the Alterants build).
+    alt_run::Vector{Any}                       # stage A of the Labels lane (R-LAB-20): ONE cell per registered Alterant — its PER-RUN state,
+                                               # `nothing` at `init_state` and until the Alterant's read-time hook (`onRead`) consumes a statement
+                                               # and returns the state; read by the apply's instance constructor (`_freshInstance`) — the
+                                               # constructor is given the state where one was minted, called bare otherwise; dies with the call
+                                               # (the reset-safe law). The Labels Alterant's: the run's vocabulary (labels.jl `LabelsVocabulary`).
 end
 
 """
@@ -933,6 +945,7 @@ function init_state(parse_state::BLS.ParseState, config::GoMetaConfig, registry:
         fileMHIdx, fileMHIdx, fileMHIdx,   # crnt_depth_idx / first_parent_idx / crnt_idx
         nothing,                     # meta_context — published per component at the walk handover (step 9)
         nothing,                     # user_context — set only inside the feed routine's bracket
+        Any[nothing for _ in 1:num_alterants(registry)],   # alt_run (stage A of the Labels lane): every cell `nothing` until a hook mints one
     )
 end
 

@@ -1,0 +1,42 @@
+schema = 1
+stem = "028_labels_vocabulary_declared"
+status = "draft"
+drafted_by = "the Labels lane's session, 2026-10-20 (stage A — the vocabulary statements; every value by position FROM the AFTER printout V01 of the lane's receipts/stageA/AFTER_scratch/stageA-oracle/ — the FULL delivery view and the decided_by trace — on the built scratch off 0ae46fa0; the lane plan/2026-10-18-gometa-labels-add-remove/, its STAGE-A-PLAN v2 §3; his decisions R-LAB-6 / R-LAB-9 / R-LAB-12 of 2026-10-18 and R-LAB-20 … R-LAB-23 of 2026-10-20)"
+confirmed_by = ""
+scenario = "A metaLine on line 1, at the file level (#~0), ADDS the name label6 to the Labels Alterant's vocabulary for this run — a vocabulary statement (:++label6): it applies no label and mints no row. A metaLine on line 2, in the same metaBlock, applies the label label6 — a name of the run's vocabulary now. Line 3 (x = 1) carries no meta of its own. Block 1 (the metaBlock of lines 1–2) carries {label6}, by its own metaLine on line 2. Block 3 (the Code Block holding line 3) is attached to that meta and therefore inherits {label6}. Each set applies to its Block and indirectly to that Block's child Lines — line 1 {label6}, line 2 {label6}, line 3 {label6}; the Lines are not explicitly issued the label and did not explicitly inherit it. Without the line-1 statement the line-2 application would be refused (label6 is not a shipped name — the lane's V11 / V28); nothing of the declaration persists beyond this run. The File is not stated in this scenario."
+history = ["2026-10-20: DRAFTED by the Labels lane's session at stage A from the AFTER printout V01 (the FULL delivery view: Block #2 Meta L1–L2 one label_label6 row, Block #3 Code L3 one label_label6 row; the trace: both decided_by Block #2; the answer sources own / indirect) — a session's proposal with no specification authority until the owner confirms (README rule 3). The Line statements are the session's application of his indirect-application principle (OWNER-WORDS §8 item 3), as 004 states them. Whether a vocabulary statement is ever delivered (its own row or field) is stage C's question (his QA-4 (a) of 2026-10-20, R-LAB-23: nothing delivered now)."]
+
+[[expect]]
+component = "block@1"
+alterant = "Labels"
+value = ["label6"]
+decided_by = ["block@1"]
+note = "the metaBlock opened by the line-1 metaLine (#~0 :++label6) and holding the line-2 metaLine (#~ :label6): its own label, applied by line 2; the line-1 vocabulary statement mints no row. Provenance: one Block-grain row (label_label6), decided_by this Block, in the AFTER printout V01 on the stage-A scratch (observed 2026-10-20)"
+
+[[expect]]
+component = "block@3"
+alterant = "Labels"
+value = ["label6"]
+decided_by = ["block@1"]
+note = "the Code Block holding line 3: attached to that meta and therefore inherits label6. Provenance: one Block-grain row (label_label6), decided_by block@1, in the AFTER printout V01 (observed 2026-10-20)"
+
+[[expect]]
+component = "line@1"
+alterant = "Labels"
+value = ["label6"]
+decided_by = ["block@1"]
+note = "the vocabulary statement's own Line: a child of block@1; the set applies to it indirectly (the owner's principle, OWNER-WORDS §8 item 3); the session's application of the principle. Provenance: no per-Line row in the AFTER printout V01 (observed 2026-10-20)"
+
+[[expect]]
+component = "line@2"
+alterant = "Labels"
+value = ["label6"]
+decided_by = ["block@1"]
+note = "the applying metaLine's own Line: a child of block@1; the set applies to it indirectly (OWNER-WORDS §8 item 3); the session's application of the principle. Provenance: no per-Line row in the AFTER printout V01 (observed 2026-10-20)"
+
+[[expect]]
+component = "line@3"
+alterant = "Labels"
+value = ["label6"]
+decided_by = ["block@1"]
+note = "a plain Line: a child of block@3, which is attached to block@1's meta; the set applies to it indirectly (OWNER-WORDS §8 item 3); the session's application of the principle. Provenance: no per-Line row in the AFTER printout V01 (observed 2026-10-20)"

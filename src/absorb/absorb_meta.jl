@@ -40,7 +40,7 @@
 #     panel's judge's specification (wf-s10-quote-scan-design, B.2).
 #     Honest edges: each refusal is an ErrorException without a code, raised via error() ("the usual error / refusal message", U8 :1473); two string shapes are copied in pieces and re-read SILENTLY — a quoted text nested inside an interpolation `$(…)` and an even number of bare `"` inside a triple-quoted text (the register's PB-15); the operator `:` and a numeral with letters are read as a label test and a key (PB-17, PB-16); a body
 #     Julia cannot parse is Julia's own `Meta.ParseError` (his §319); an argument's arity or type fault is the Alterant's own setter
-#     error (§359 (9)); the Labels Alterant's character law and whitelist judge the label names handed over (U8 :1252).
+#     error (§359 (9)); the Labels Alterant's character law and vocabulary judge the label names handed over (U8 :1252).
 # PURPOSE: turn each metaLine of a BLS input into queued alterant work the apply phase consumes, refusing every malformed metaStatement
 #     with a stable GoMeta message that names the character at fault, and reading every well-formed one exactly as his legacy read it
 #     (his two example files and the twelve frozen forms byte-equal, his §78).
@@ -469,6 +469,7 @@ function absorbMeta(
     local conditionExpr::Union{Nothing,Expr}   # Julia's Expr, or the `nothing` sentinel (an action without `{}`)
     local crntAltActionIdx::Int8
     local altActionOnRow::Int8
+    local argsTup::Union{Nothing,Tuple{Vararg{AlterantArgT}}}   # stage A: the coerced arguments, hoisted to the statement's read — read by the hook and by the enqueue
     firstTok::Bool = true   # the quoted-first recognizer fires only for the FIRST
                             # metaComponent of the meta region (hd-2/hd-3)
     while (thisInd = nextind(metaSS, thisInd)) < ncodeunits(metaSS) + 1
@@ -480,6 +481,7 @@ function absorbMeta(
                 prevind(metaSS, thisInd),
                 firstTok)
             firstTok = false
+            ## the argument coercion (stage A) sits below — after the action lookup and the feed's one `localOnly` refusal, before the hook
             # `st.registry` supplies the sorted action table, the action→index map, the
             # declaration-order `action_to_plugin` index, and the accumulate-set; the slot tensors
             # (`count_actions_per_slot`/`slot_has_accum`) and the queue tensor (`queued`) are the
@@ -497,6 +499,28 @@ function absorbMeta(
                     st.registry.plugins[st.registry.action_to_plugin[crntAltActionIdx]].setMode === :localOnly &&
                     error("GoMeta absorb: a heading (Heading Alterant) in the profile feed has no Component of the file levels to be local to",
                         " (see docs/public-api.md §3.4)")
+                ## the kind-preserving coercion (stage A: moved from the enqueue to HERE — after the action lookup and the feed's one
+                ## `localOnly` refusal, before the hook and the slot bound, so those two refusals keep their order; the hook and the
+                ## enqueue read ONE tuple; `nothing` for a statement without arguments): a bare token stays the Symbol it always was; a
+                ## well-formed quoted token (the splitter's or the heading arm's — both scanned by `_span`) becomes its String content
+                ## (`_coerce_arg_token`).
+                argsTup = isempty(argsSSVec) ? nothing : Tuple{Vararg{AlterantArgT}}(_coerce_arg_token.(argsSSVec))
+                ## STAGE A OF THE LABELS LANE (R-LAB-20 … R-LAB-23): THE READ-TIME HOOK — an Alterant that declares `onRead` is consulted
+                ## for every one of its statements WITH arguments, HERE, before the slot bound: `nothing` = not the hook's — the statement
+                ## is enqueued exactly as before; any other value = CONSUMED at the read — stored as the Alterant's run state
+                ## (`st.alt_run`), and this statement's processing ENDS: no slot action (the capacity untouched), no queue, origin or
+                ## applied-to write, no condition or argument store, no evals row. A statement without arguments (the lone `:`) never
+                ## reaches the hook and meets the setter's §4.8 refusal as before. The Labels Alterant's hook records a vocabulary
+                ## statement (`:++x` / `:(++, x, y)` / `:--x` / `:(--, x)`; the place and the four malformed shapes refused there) and
+                ## hands every plain label statement back (labels.jl, `declareLabels!`); every other shipped Alterant declares no hook.
+                local _pIdx = st.registry.action_to_plugin[crntAltActionIdx]
+                if st.registry.plugins[_pIdx].onRead !== nothing && argsTup !== nothing
+                    local _hooked = st.registry.plugins[_pIdx].onRead(st.alt_run[_pIdx], st.crnt_idx, Symbol(altActionName), argsTup, conditionExpr !== nothing)
+                    if _hooked !== nothing
+                        st.alt_run[_pIdx] = _hooked
+                        continue
+                    end
+                end
                 ## THE SLOT BOUND (his Decision 3 of 2026-10-08, §358 — the matrix size he chose to start with, increased by hand (hard coded) if 8 proves too small — and his approval of 2026-10-15 of the session's option (a), the documentation lane's §D247 — the size raised by hand when an example asks): the queue
                 ## tensors hold size(queued, 2) = SLOT_CAPACITY (state.jl) actions per meta-hierarchy slot — 8, a named constant DECOUPLED
                 ## from the registered action count since stage 3 of the Alterants build (R-ALT-31; the slower overflow buffer a later
@@ -543,10 +567,7 @@ function absorbMeta(
             if conditionExpr !== nothing            # v0.2 FLIP: the no-condition sentinel is `nothing`
                 st.queue.conditions[altActionOnRow, crntSlot] = conditionExpr
             end
-            if !isempty(argsSSVec)
-                ## the kind-preserving coercion: a bare token stays the Symbol it always was; a well-formed quoted token (the
-                ## splitter's or the heading arm's — both scanned by `_span`) becomes its String content (`_coerce_arg_token`).
-                argsTup = Tuple{Vararg{AlterantArgT}}(_coerce_arg_token.(argsSSVec))
+            if argsTup !== nothing   # the tuple coerced at the statement's read (stage A — above)
                 local spec = st.registry.action_specs[st.registry.spec_index[Symbol(altActionName)]]
                 ## THE ONE TEXT-ARGUMENT RULE (his §359 (8)): the declared record says which slot takes a quoted text.
                 _string_slot_check(spec, argsTup, metaSS)

@@ -88,6 +88,9 @@ actions, and an optional human comment. Its general shape:
   as meta — the token-delimiter law below governs the boundary.
 - The middle carries **labels** (`:labelN`) and **actions** (`discard{…}` / `hide{…}` / `show{…}`), processed
   **left to right** (see §8 rule 4).
+- At `#~0` (a metaBlock opened by `#~0`) and in the user's profile the middle may also carry the Labels Alterant's **vocabulary
+  statements** — `:++x` / `:(++, x, y)` add names to the vocabulary for the run, `:--x` / `:(--, x)` remove names — recorded once when
+  read, applied to no Component (since `0.4.1`; `docs/public-api.md` §3.4).
 - Anything after a `## ` on the same line is a **human comment** — the meta-parser ignores it.
   Cite: `Extended L7` `#~ discard{ :label2 , isCode} ## This is a comment within a meta Block.` → the
   `## …` part has no effect.
@@ -303,11 +306,12 @@ content-only block across the blank.
 ## 5. Labels
 
 - **IS** — labels are accumulative tags a metaLine applies to the content in its scope. **Label
-  names are validated when APPLIED** against the engine's closed whitelist — the
+  names are validated when APPLIED** against the Labels Alterant's vocabulary — since `0.4.1` the run's: the shipped list below plus
+  the run's own vocabulary statements (`docs/public-api.md` §3.4) — the
   corpus-documented set `:label1` … `:label5` plus, since `0.3.0`, a fixed pictograph
   vocabulary (byte-exact names like `:💡`, `:🔥`) plus, since `0.4.0`, `:doc` — the
   whole list hard-coded in the Labels Alterant's own file `src/alterants-std/labels.jl` (the refusal message lists the
-  full accepted set): applying a label from outside the whitelist refuses with a stable message naming the
+  full accepted set): applying a label from outside the run's vocabulary refuses with a stable message naming the
   accepted set; a label QUERIED in a condition answers false when it is unknown or unset (as
   the original engine answered; since `0.4.0`).
 - **Conditional application** — `:labelN{ condition }` applies the label **only** to components satisfying the
@@ -471,7 +475,7 @@ drops `:label1` from depth 1 to depth 2. One blank line, two flips, two reasons.
 
 - **Labels (the `:` action) — documented, both forms:** repeated one-word labels
   (`#~ :label1 :label2`) AND the parenthesized list (`#~ :(label1, label2)`) are equivalent; each
-  label APPLIED is checked against the closed whitelist (an unknown label refuses with a stable
+  label APPLIED is checked against the Labels Alterant's vocabulary — the run's since `0.4.1` (an unknown label refuses with a stable
   message); a label QUERIED answers false when unknown or unset (since `0.4.0` —
   `docs/public-api.md` §3.4).
 - **Id actions (`cell` / `parent` / `file`, and `ids` since `0.4.0`) — EXPERIMENTAL at this release:** the three single actions take one integer value
@@ -545,11 +549,12 @@ To keep the verified claims honest, these are **known but not established here**
   and the remaining values are skipped without evaluating their conditions. `discard{ isCode } show`
   therefore discards code and shows everything else. (The corpus itself does not exercise a
   same-statement pair whose second value would apply; the first-wins rule above is the contract.)
-- **Engine limits** — metaLines live in comments (`#`/`##`), not as executable code. The label
-  whitelist is closed: the corpus-documented `:label1`..`:label5` plus (since `0.3.0`) the fixed
+- **Engine limits** — metaLines live in comments (`#`/`##`), not as executable code. The Labels Alterant's
+  shipped vocabulary is the corpus-documented `:label1`..`:label5` plus (since `0.3.0`) the fixed
   pictograph vocabulary plus (since `0.4.0`) `:doc`, the whole list hard-coded in the Labels
   Alterant's own file `src/alterants-std/labels.jl` — byte-exact names, no normalization —
-  and **label names are validated against it when APPLIED** — an unknown label refuses with the stable
+  and **label names are validated when APPLIED** against the Labels Alterant's vocabulary (since `0.4.1` the run's: that list plus
+  the run's own vocabulary statements, `docs/public-api.md` §3.4) — an unknown label refuses with the stable
   `GoMeta apply: unknown label …` message, which names the accepted set; a label QUERIED in a condition
   answers false when it is unknown or unset (as the original engine answered; since
   `0.4.0`). Eight actions accumulate per meta-hierarchy slot (`SLOT_CAPACITY` — a named constant,
