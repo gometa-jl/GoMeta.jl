@@ -77,7 +77,7 @@ The render half completes the share-target emit over both non-show verdicts (`:h
    hide write is skipped when the source line's POST-INDENT head already begins with the
    flavor's hide marker, so a line already starting `## ` renders AS-IS and
    `render ∘ ingest ∘ render == render` holds over the hide battery (a standing idempotence
-   differential outside the shipped suite proves it per armed flavor, with a stacking-forgery
+   differential outside the shipped suite — the fixed point itself pinned for the three armed flavors by `tests/unit/ensure_token_tests.jl` — proves it per armed flavor, with a stacking-forgery
    negative control). THE FIDELITY BOUND, disclosed: an authored marker-headed line under hide
    renders AS-IS — byte-indistinguishable from engine-hidden output; the bound only NARROWS
    distinguishability. **Recovery is NOT a v0 behavior:** the hide render remains ONE-WAY — no
