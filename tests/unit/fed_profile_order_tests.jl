@@ -11,14 +11,17 @@
 #       Component's own labels ([W3] on a Segment-carried label, [W4] on a metaBlock's; [W7] the other way — a file condition sees a fed
 #       label); (c) an applicable user-level value OVERRIDES the file's — `decided_by` the user context alone, replaced not appended ([W6]
 #       over an own CONDITIONED value, [W9] the Id compound replaced whole, [W11] the within-user-level stop and the set-vector's capacity; [W13] a second user-level Id row fills the same fresh instance — the build panel's measure-first cure C9).
-#       The user level's labels are the OUTERMOST level ([W10]: the profile's own conditions see its labels stated after them; a fed conditional label is blind to
+#       The user level's labels are the OUTERMOST level ([W10]: the profile's own NON-accumulate conditions see its labels stated after them; a fed conditional label is blind to
 #       the file's labels; a file's conditional label sees a fed label) and the answer function's Labels source under a feed reads `:user`
 #       ([W12]). WITHOUT a feed nothing changes — the no-feed twins inside [W1], [W2], [W5], [W6], [W8], [W12].
 # REASONING: before the cure the loop took the FIRST eligible slot for the Component's own; with a fed profile that slot was the user
 #       level's, so a Component's own labels were collected in the first pass before its own conditions ran (the lane's measurement E02 /
 #       E03; the BEFORE oracle). The cure identifies the own slot by what it is (the first non-user slot), evaluates the user level after
-#       it with full sight and with the override; every row is evaluated once. These witnesses pin the three limbs and the declared
-#       consequences (G11, G12, G15, G16) at the public entry, each against the measured AFTER rows.
+#       it with full sight and with the override; pass 1 walks the user level's slot when fed and the outer slots for their accumulate rows, pass 2 every slot for the rest, so no row is evaluated twice — a row the prior-slot guard, the within-slot
+#       `:mutExclusive` stop or the localOnly rule skips is not evaluated at all (G13's second user-level row, the `show`). These witnesses pin the three limbs and the declared
+#       consequences (G11, G12, G15, G16) at the public entry, each against the measured AFTER rows. NOT witnessed here: G03, the fed sweep's A07 / F07 / F08
+#       class, E01 / E04 and the 28-input sweep itself (measured by the lane's oracle, pinned by no unit test); the vector of the user level's slot alone
+#       (UNMEASURED — no fed oracle input reaches it); the fallBack slot under a feed is pinned by fallback_order_tests.jl [F3] over a test-built slot.
 # PURPOSE: the user level's place, measured — never inferred from the feed's docstring or from the loop's comments.
 
 using Test
@@ -104,7 +107,7 @@ const _FO_CORPUS = joinpath(@__DIR__, "..", "golden", "corpus", "InFileFolder") 
         end
     end
 
-    @testset "[W5] the two former pins P24 / P25 fed `:label3`: a label stated AFTER the heading or the `hide` is not seen — the fed label adds its row and changes nothing else" begin
+    @testset "[W5] the two former pins P24 / P25 fed `:label3`: a label stated AFTER the heading or the `hide` is not seen — the fed label adds its row and leaves the heading and the Visib rows the no-feed run's" begin
         # AFTER views P24_head_after_label_fed_label3 (4 rows: label_label2, label_label3 on both Blocks; NO head row) and
         # P25_hide_before_label_fed_label3 (4 rows: label_label1, label_label3 on both; NO visib row); the no-feed twins P24n / P25n 2 rows each
         p24 = "#~2 head(\"T\"){ :label2 } :label2\nx = 1\n"; p25 = "#~ hide{ :label1 } :label1\nx = 1\n"
@@ -153,14 +156,19 @@ const _FO_CORPUS = joinpath(@__DIR__, "..", "golden", "corpus", "InFileFolder") 
         @test isempty(_fo_visset(rn)) && length(_fo_recs(rn)) == 1
     end
 
-    @testset "[W9] G08 `#~ parent(2)⏎x = 1` fed `cell(7)`: the Id compound replaced WHOLE — `cell 7` alone, decided by the user context (as before the cure)" begin
+    @testset "[W9] G08 `#~ parent(2)⏎x = 1` fed `cell(7)`: the Id compound replaced WHOLE — `cell 7` alone, decided by the user context (as before the cure); G18 an own row that fails at evaluation fails the fed run as it fails the no-feed one" begin
+        # G18 (the oracle's AFTER REFUSED view and STAGE0-MANIFEST.tsv row 21; the no-feed twin PROBE_G18n_nofeed_scratch.txt): `#~ cell(x)⏎x = 1` fed `cell(7)`
+        # throws `ArgumentError: invalid base 10 digit 'x' in "x"` out of the goMeta call — the error the no-feed run throws on both trees (BEFORE the cure
+        # the fed run was PROCESS_OK with `cell 7` on both Blocks, the own row skipped unevaluated)
+        @test_throws ArgumentError _fo_run("#~ cell(x)\nx = 1\n"; profile = "cell(7)")
+        @test_throws ArgumentError _fo_run("#~ cell(x)\nx = 1\n")
         # AFTER trace G08: exactly 2 rows — id_cell => 7 on both Blocks, decided_by [uc]; no id_parent row
         rf = _fo_run("#~ parent(2)\nx = 1\n"; profile = "cell(7)")
         recs = _fo_recs(rf); @test length(recs) == 2
         @test all(x -> x.attr === :id_cell && x.value == 7 && x.decided_by == [_FO_UC], recs)
     end
 
-    @testset "[W10] the user level the OUTERMOST level: G11 the profile's own conditions see its labels stated after them; G12 a fed conditional label blind to the file's labels; G16 a file conditional label sees a fed label" begin
+    @testset "[W10] the user level the OUTERMOST level: G11 the profile's own non-accumulate conditions see its labels stated after them; G12 a fed conditional label blind to the file's labels; G16 a file conditional label sees a fed label" begin
         # AFTER traces: G11 — 6 rows, visib :discard (decided_by [uc]) and label_label1 + label_label3 on both Blocks; G12 — exactly 2 rows, both
         # label_label1 (no label_label2); G16 — 4 rows, label_label2 + label_label3 on both Blocks
         r11 = _fo_run("#~ :label3\nx = 1\n"; profile = "discard{ :label1 } :label1")
@@ -210,7 +218,7 @@ const _FO_CORPUS = joinpath(@__DIR__, "..", "golden", "corpus", "InFileFolder") 
         end
     end
 
-    @testset "[W12] G15 the answer function's Labels source under a feed: `:user` on 026's Blocks #6 / #7 (no feed: `:indirect`) and on B06's Code Block" begin
+    @testset "[W12] G15 the answer function's Labels source under a feed: `:user` on 026's Blocks #6 / #7 (no feed: `:indirect`) and on B06's Code Block; B06's Labels rows' `decided_by` begin with the user context" begin
         # AFTER trace T_E02: Blocks (direct,6) / (direct,7) `labels … source=user`; the no-feed trace S_D_026: `source=indirect`;
         # AFTER trace T_B06 (`#~0 :label1⏎x = 1` fed `:label2`): the Code Block `source=user` (BEFORE: `indirect`)
         doc = read(joinpath(_FO_CORPUS, "file_for_Example_Proposal_JuliaCon.jl"), String)
@@ -222,5 +230,8 @@ const _FO_CORPUS = joinpath(@__DIR__, "..", "golden", "corpus", "InFileFolder") 
         end
         rb = _fo_run("#~0 :label1\nx = 1\n"; profile = ":label2"); bb = _fo_blocks(rb); @test length(bb) == 2
         @test GM.evaluatedAltValue(rb, bb[2], :labels).source === :user
+        # AFTER trace T_B06: 4 rows, every one `decided_by` [USER_CONTEXT, Block #2 — the `#~0` metaBlock] — the user context FIRST (the COMPARE receipt lists
+        # T_B06 among the probes changed in order and answer source alone)
+        @test length(_fo_recs(rb)) == 4 && all(x -> x.decided_by == [_FO_UC, _fo_key(rb, bb[1])], _fo_recs(rb))
     end
 end

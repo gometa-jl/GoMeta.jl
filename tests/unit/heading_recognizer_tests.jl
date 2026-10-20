@@ -380,8 +380,10 @@ end
         # WITH a fed profile the metaBlock's own WRITTEN order holds as without one (stage 0 of the Labels lane, 0.4.1 — his R-LAB-8 of
         # 2026-10-18 and his build order R-LAB-15 of 2026-10-19, superseding his acceptance of 2026-10-16, R-ALT-15 (ii)(3), under which
         # the user level was the loop's first slot and the own labels were collected before the heading and the `hide` were decided): a
-        # label stated AFTER the heading or the `hide` is not seen — the fed `:label3` adds its label and changes nothing else (MEASURED:
-        # the Labels lane's AFTER oracle on the scratch — P24 = P07's rows, P25 = P26's rows; receipts/stage0/AFTER_scratch/stage0-oracle/views/)
+        # label stated AFTER the heading or the `hide` is not seen — the fed `:label3` adds its label row and leaves the heading and the Visib rows as in
+        # the no-feed run (MEASURED: the Labels lane's AFTER oracle on the scratch — P24 no head row as P07, P25 no Visib row as P26, each 4 rows where its
+        # no-feed twin has 2; the Labels rows' `decided_by` begin with the user context and their answer source reads `:user` where the no-feed twins read
+        # `own` / `indirect` — the traces; receipts/stage0/AFTER_scratch/stage0-oracle/{views,traces}/)
         _fed(s, p) = GM.goMeta(Vector{UInt8}(codeunits(s)); config = GM.GoMetaConfig(user_mh_profile = p))
         _vis(r) = [v for (_, a, v, _) in GM.readAltValuesEvals(r.altValues_evals) if a === :visib]
         @test isempty(_heads(_fed("#~2 head(\"T\"){ :label2 } :label2\nx = 1\n", ":label3")))

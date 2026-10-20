@@ -66,7 +66,11 @@ function detAltValuesForSetOfSlots(
     #   when fed (the outermost level), then the outer slots from the vector's end inward.
     #   Pass 2 (step 2): the slot walk in the order of EVALUATION [own, user, outer…] — ALL own-slot alterants in WRITTEN
     #   order (incl. its accumulate rows, which apply there) + the other slots' non-accumulate alterants; the user level's
-    #   rows are evaluated AFTER the own slot (a fed condition sees the Component's own labels) and with PRIORITY: an
+    #   NON-accumulate rows are evaluated AFTER the own slot (a fed non-accumulate condition sees the Component's own labels —
+    #   the lane's oracle G01 / G02 / B12; a fed CONDITIONAL label does not: collected in pass 1, before the file's labels — G12;
+    #   the sight is `getAltState` over `st.working`, so a custom queryable non-accumulate Alterant's own value is seen too, the
+    #   row's own target's included, the override's reset below coming after the condition — the code's reading, unmeasured: no
+    #   shipped Alterant but Labels answers a query) and with PRIORITY: an
     #   applicable non-accumulate row of the user level OVERRIDES the value the own slot decided (a fresh instance, the
     #   origin list replaced — the one place where a later-evaluated slot replaces an earlier one).
     #   TWO first-wins guards give one law — THE FIRST APPLICABLE VALUE WINS (the user level's override its one exception):

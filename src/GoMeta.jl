@@ -183,7 +183,9 @@ end
 IS: the feed of the RESERVED user slot of the meta-hierarchy (`userMHIdx` in `state.jl` — THE USER LEVEL: placed FIRST in the
 eligible-slot order by both `applyAltActionFns` walks (its PRIORITY) and, since stage 0 of the Labels lane (0.4.1, R-LAB-8 /
 R-LAB-15), EVALUATED after the Component's own slot — its accumulating rows collected first as the outermost level, its other
-rows decided with full sight of the Component's own labels and with the override; fed by no other call site) with the metaLine-body profile in
+rows decided with full sight of the Component's own labels and with the override — the one exception, UNMEASURED, the code's reading
+(`apply.jl` S1): a Component whose only eligible slot is the user level's has no own slot and runs the un-fed path, the profile's rows
+in written order, its labels not collected first; fed by no other call site) with the metaLine-body profile in
 `st.config.user_mh_profile`, BEFORE the absorb walk. SCOPE: a minimal caller-supplied feed ONLY — not a general
 user-level configuration system; internal (NOT exported); called from `goMeta` iff `config.user_mh_profile` is a String
 holding at least one character of content — one the absorb's ONE white-space predicate `AbsorbMeta._isspace_valid` does not
@@ -202,7 +204,8 @@ inside a try/finally that restores the prior value; then `absorbMeta` routes the
 parseAlt path authored metaLines use; the meta-hierarchy cursor is restored so the walk starts exactly as un-fed.
 The user level's OVERRIDE per non-accumulate alterant (evaluated after the Component's own slot, with priority over it —
 stage 0 of the Labels lane) ⇒ the fed profile OVERRIDES authored Visib (e.g. `"discard{ :label1 } show"`), and a fed
-condition sees the Component's own labels. An action name outside the registry errors loudly inside `absorbMeta` (the same
+non-accumulate condition sees the Component's own labels (the lane's oracle G01 / G02 / B12); a fed CONDITIONAL label does not — it is
+collected in pass 1, as the outermost level, before the file's labels (G12). An action name outside the registry errors loudly inside `absorbMeta` (the same
 crash-loud class as an authored non-member). Returns `nothing`.
 
 REASONING: one intake for authored and fed metadata — the fed profile is a metaLine body read by the same parser and
