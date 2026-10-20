@@ -65,3 +65,28 @@ such a claim. The battery `devtools/probes/probe_devtools.jl` must print ALL GRE
   INDENTED `# ` continuation line inside a code run into a standalone markdown cell — a pre-check of a source
   edit asserts the regenerated notebook's CELL STRUCTURE (the cell count; no prose cell holding a comment
   fragment), not only that `--check` regenerates byte-identically (a green check proves idempotence, not layout).
+- **Code-home facts from the lessons pool** (its GoMeta entries, landed by the pool-lessons sitting of 2026-10-20 on
+  the owner's phrase; each clause names its entry, the entry's evidence path and line — relative to `07_Claude/` —
+  and the day it was learned): a FRESH git worktree of this code home needs `Pkg.instantiate()` on its tests
+  project before any proof runs on it (`JULIA_LOAD_PATH=@:@stdlib julia --startup-file=no
+  --project=<worktree>/tests -e 'using Pkg; Pkg.instantiate()'` — the dev dependency on the package is recorded
+  per environment; a load failure is never banked as a proof receipt)
+  (20261016T190744Z_2e199e3b_fresh-worktree-instantiate-first; plan/2026-10-15-gometa-alterants-build/03_process_log.md:261;
+  2026-10-16); the release push is the OWNER's command, over the SSH alias `github-metaglobi` (`~/.ssh/config` →
+  `~/.gometa-keys/metaglobi`, IdentitiesOnly; the passphrase his, no agent holds it, no credential helper, no `gh`)
+  with the explicit alias URL, because the configured push remote is `no_push` by design — a session may, on his
+  word, create the tag and fast-forward the local main, and hands him the one command that asks for the passphrase
+  (20261018T130049Z_b47b00ac_package-push-over-metaglobi-alias;
+  GoMetaEcosystem/GoMetaPublic/dev-logs/2026-10-16_website-v04-recut.md:1077; 2026-10-18); every predicate over
+  bytes a user controls (a profile string, a metaLine's bytes) is the Engine's ONE white-space predicate
+  (`_isspace_valid` — his §342/§343), never Base's `strip`/`isspace`, which throw at decode on an invalid UTF-8
+  edge byte where the Engine's guarded walk refuses (20261016T165022Z_2e199e3b_engine-one-predicate-on-user-bytes;
+  plan/2026-10-15-gometa-alterants-build/receipts/stage2/AFTER_scratch-uncured-L08/ORACLE-MANIFEST.tsv:38;
+  2026-10-16); a test addresses a registry record (an action spec) by its NAME
+  (`findfirst(s -> s.name === :head, b.action_specs)`), never by its position — a newly registered action shifts
+  the positions and the test silently tests another record (20261017T115621Z_2e199e3b_positional-spec-index-brittle;
+  GoMetaEcosystem/GoMeta/tests/unit/seam_envelope_tests.jl:52; 2026-10-17); a Segment-carried evals row's cell
+  handle carries the Segment as its ORIGIN, so a test never keys a Line's rows by the Line's plain occurrence key —
+  compare the rows directly or decode the handle; the plain key matches Block-carried rows only
+  (20261020T063139Z_346a4218_segment-row-handle-origin; GoMetaEcosystem/GoMeta/tests/unit/fed_profile_order_tests.jl:84;
+  2026-10-19).

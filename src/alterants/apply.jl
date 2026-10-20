@@ -2,8 +2,9 @@
 #
 # IS: the Apply phase of the GoMeta engine. `detAltValuesForSetOfSlots` walks the eligible
 #     meta-hierarchy slots and decides every queued alterant action in two passes — the
-#     `:accumulate`-mode alterants over every slot except the primary (first) one, then all
-#     queued actions slot by slot — building alterant instances into the per-call working dict
+#     `:accumulate`-mode alterants over every slot except the Component's OWN one (the first eligible slot that is not the
+#     user level's — stage 0 of the Labels lane, 0.4.1, R-LAB-8 / R-LAB-15), then all queued actions slot by slot in the order
+#     of EVALUATION [own, user, outer…] — building alterant instances into the per-call working dict
 #     (`st.working` off `ctx()`, rebuilt fresh on every call) and returning the set-alterant
 #     index vector with its count. `applyAltActionFns(::BLS.Segment)` and
 #     `applyAltActionFns(::BLS.Block)` snapshot the settribute, gather the occupied eligible
@@ -17,7 +18,9 @@
 #     Julia at apply time — `Core.eval(GoMeta, ex)`, as his legacy's `eval` (goMetaAddOns.jl :37, :95) — against the
 #     per-call settribute snapshot and working stores reached by `getState`/`getAltState` through the ScopedValue
 #     (stage 5's E13 of the v0.4 build, census row 1; R-V04B-106; his §120, §D174).
-#     An alterant already set in an earlier-processed slot is never re-set. The queued args tuple is
+#     An alterant already set in an earlier-processed slot is never re-set — save the user level's OVERRIDE (stage 0 of the Labels
+#     lane, 0.4.1): under a fed profile an applicable non-accumulate row of the user level's slot, evaluated right after the
+#     Component's own slot, replaces the value the own slot decided. The queued args tuple is
 #     splatted once into the setter, bare, as his legacy called it (goMetaAddOns.jl); a malformed argument
 #     meets Julia's own dispatch or the setter's own error — the seam's guarded refusal left at stage 5's E6 of
 #     the v0.4 build (census row 14; his §120, the framework before hardening).
@@ -55,10 +58,22 @@ function detAltValuesForSetOfSlots(
     # queue matrices holds its enqueued (alterant, action) rows in SOURCE order, with the parallel
     # `conditions`/`args` matrices holding each row's condition expression and argument tuple.
     # A row is APPLICABLE when its condition evaluates true (no condition = implicit true).
-    #   Pass 1 (below): `:accumulate` alterants collect through the PRE-primary lineage slots.
-    #   Pass 2 (step 2): the priority-order slot walk — ALL primary-slot alterants (incl. its
-    #   accumulate rows, which apply there) + the outer slots' non-accumulate alterants.
-    #   TWO first-wins guards give one law — THE FIRST APPLICABLE VALUE WINS:
+    #   THE COMPONENT'S OWN SLOT = the first eligible slot that is NOT the user level's: position 1 without a fed profile,
+    #   position 2 with one (the overloads place the user level's slot first when it is occupied — its PRIORITY). Stage 0 of
+    #   the Labels lane (0.4.1; his R-LAB-8 / R-LAB-15): before it the loop called the FIRST slot the Component's own, which
+    #   under a feed was the user level's — a Component's own labels then went into pass 1 before its own conditions ran.
+    #   Pass 1 (below): `:accumulate` alterants collect through every slot BUT the own one — the user level's slot FIRST
+    #   when fed (the outermost level), then the outer slots from the vector's end inward.
+    #   Pass 2 (step 2): the slot walk in the order of EVALUATION [own, user, outer…] — ALL own-slot alterants in WRITTEN
+    #   order (incl. its accumulate rows, which apply there) + the other slots' non-accumulate alterants; the user level's
+    #   NON-accumulate rows are evaluated AFTER the own slot (a fed non-accumulate condition sees the Component's own labels —
+    #   the lane's oracle G01 / G02 / B12; a fed CONDITIONAL label does not: collected in pass 1, before the file's labels — G12;
+    #   the sight is `getAltState` over `st.working`, so a custom queryable non-accumulate Alterant's own value is seen too, the
+    #   row's own target's included, the override's reset below coming after the condition — the code's reading, unmeasured: no
+    #   shipped Alterant but Labels answers a query) and with PRIORITY: an
+    #   applicable non-accumulate row of the user level OVERRIDES the value the own slot decided (a fresh instance, the
+    #   origin list replaced — the one place where a later-evaluated slot replaces an earlier one).
+    #   TWO first-wins guards give one law — THE FIRST APPLICABLE VALUE WINS (the user level's override its one exception):
     #     across slots, an alterant set in a prior (higher-priority) slot is skipped entirely;
     #     within a slot, a `:mutExclusive` alterant already satisfied by an earlier applicable row
     #     skips the remaining rows of that alterant WITHOUT evaluating their conditions.
@@ -83,8 +98,8 @@ function detAltValuesForSetOfSlots(
     # cheaper, his to choose.
     local st = ctx()
     ## 1.1 Compute / Determine the values of all alterants of `:setMode`-type
-    ##      `:accumulate` up to BUT NOT including "primary" slot.
-    ##      I.e.: Not incl. the slot corresponding to `crntComponent`.
+    ##      `:accumulate` in every slot BUT the Component's OWN slot (`ownPos` below) —
+    ##      the user level's slot first when fed, then the outer slots from the vector's end.
     # The working dict is rebuilt fresh on every call: the Apply phase keeps no cross-call
     # accumulation store and returns only the set-alterant index vector plus its count.
     st.working = Dict{Int8,Any}()
@@ -92,9 +107,18 @@ function detAltValuesForSetOfSlots(
     local crntSlot::Int8
     local crntAltIdx::Int8
     local crntAltActionIdx::Int8
-    idxOfSlot = length(checkTheseSlotsInOrderVec)
-    while idxOfSlot > 1
-        crntSlot = checkTheseSlotsInOrderVec[idxOfSlot]
+    ## S1 (stage 0 of the Labels lane): THE OWN SLOT by what it is — the first eligible slot that is not the user level's. The
+    ## user level's slot index is 0 without a feed (`init_state` zeroes `slots`; `updateMetaHierarchy(userMHIdx)` is called by
+    ## `feed_user_mh!` alone, for a non-blank profile); detected by SLOT INDEX, never by a handle's grain. A vector holding the
+    ## user level's slot alone (length 1) runs the un-fed path: that slot is then the only one and its rows apply in written order.
+    userSlot = st.mh.slots[userMHIdx]
+    uFirst   = userSlot != 0 && length(checkTheseSlotsInOrderVec) >= 2 && checkTheseSlotsInOrderVec[1] == userSlot
+    ownPos   = uFirst ? 2 : 1
+    ## S2: pass 1 visits the user level's slot FIRST when fed (position 1 — the outermost level), then the outer slots from the
+    ## vector's end down to the slot after the own one; the own slot is never visited here (its rows apply in WRITTEN order in
+    ## pass 2). Without a feed the sequence is the former one exactly: from the end down to position 2.
+    for posOfSlot ∈ Iterators.flatten((1:(uFirst ? 1 : 0), length(checkTheseSlotsInOrderVec):-1:(ownPos + 1)))
+        crntSlot = checkTheseSlotsInOrderVec[posOfSlot]
         for row ∈ 1:st.mh.count_actions_per_slot[crntSlot]
             # Two scalar reads rather than a `queued[1:2, row, crntSlot]` slice: the slice would
             # heap-allocate a fresh 2-element `Vector{Int8}` (64 B) on every hot-loop iteration;
@@ -121,25 +145,29 @@ function detAltValuesForSetOfSlots(
                 end
             end
         end
-        idxOfSlot -= 1
     end
     ## FINISHED: "1.: Compute / Determine the values of all alterants of `:setMode`-type"
-    ##                  "`:accumulate` up to BUT NOT including "primary" slot."
+    ##                  "`:accumulate` in every slot BUT the Component's own."
     ## 2.: Compute / Determine the values of `altActions` in the order in which
-    ##      they appear in the queue (`st.queue.queued`) in "primary" slot.
-    previousSetAltIdxVec = Vector{Int8}(undef, num_alterants(st.registry))
+    ##      they appear in the queue (`st.queue.queued`) in the Component's OWN slot — in WRITTEN order — then in the
+    ##      user level's slot (when fed: with full sight of the own labels, and with the override), then in the outer slots.
+    ## S5: an Alterant the user level overrides stands TWICE in this vector (the own slot's range and the user level's) — hence 2×.
+    previousSetAltIdxVec = Vector{Int8}(undef, 2 * num_alterants(st.registry))
     countPreviousSetAlts::Int = 0
     local countInCrntSlotSetAlts::Int
     idxOfSlot = 0
-    for crntSlot ∈ checkTheseSlotsInOrderVec
+    ## S3: ONE loop over the permuted order of EVALUATION [own, user, outer…] — with a feed positions 1 and 2 swap (the own slot
+    ## is evaluated first, the user level's slot second); without one the order is the vector's own.
+    for k ∈ eachindex(checkTheseSlotsInOrderVec)
+        crntSlot = checkTheseSlotsInOrderVec[uFirst ? (k == 1 ? 2 : (k == 2 ? 1 : k)) : k]
         countInCrntSlotSetAlts = 0
         idxOfSlot += 1
         if idxOfSlot == 2
-            ## Before starting on next slot:
+            ## Before starting on the next slot (the second one EVALUATED — right after the Component's own slot):
             ##      Mark all `:accumulate` alterants as completed,
             ##      BECAUSE above in `detAltValuesForSetOfSlots()` in step 1,
             ##      we computed / determined all `:accumulate` alterants
-            ##      UP To the "primary" slot [the 1st on of `checkTheseSlotsInOrderVec`].
+            ##      of every slot BUT the own one — and the own slot's have just applied, in written order.
             for idxOfAccumAlt ∈ st.registry.accum_alt_idxs
                 if idxOfAccumAlt ∉ view(previousSetAltIdxVec, 1:countPreviousSetAlts)
                     countPreviousSetAlts += 1
@@ -148,13 +176,18 @@ function detAltValuesForSetOfSlots(
             end
         end
         for idx ∈ 1:st.mh.count_actions_per_slot[crntSlot]
-            # slice→scalars (the primary-slot loop) — same as the accumulate loop above: two scalar
+            # slice→scalars (the pass-2 slot loop) — same as the accumulate loop above: two scalar
             #   reads instead of a per-iteration slice allocation.
             crntAltIdx       = st.queue.queued[1, idx, crntSlot]
             crntAltActionIdx = st.queue.queued[2, idx, crntSlot]
+            ## S4: THE USER LEVEL'S OVERRIDE — a non-accumulate row of the user level's slot (evaluated after the own slot) may
+            ## replace the value the own slot decided (his typed exception of 2026-07-24 to the closer-wins rule: the user level
+            ## over-rules). The accumulate Alterants are EXCLUDED (their user-level rows applied in pass 1 — never twice); a
+            ## `localOnly` row never arrives from a feed (refused at the read).
+            overridable = uFirst && crntSlot == userSlot && !insorted(crntAltIdx, st.registry.accum_alt_idxs)
 
             if crntAltIdx ∉ view(
-                previousSetAltIdxVec, 1:countPreviousSetAlts)
+                previousSetAltIdxVec, 1:countPreviousSetAlts) || overridable
 
                 if insorted(crntAltIdx, st.registry.mutex_alt_idxs) &&
                    crntAltIdx ∈ view(previousSetAltIdxVec,
@@ -179,6 +212,16 @@ function detAltValuesForSetOfSlots(
                 if _cond === nothing || _condOutcome
 
 
+                    ## S4 (the override itself): on the user level's FIRST applicable row of an Alterant the own slot already set —
+                    ## a fresh instance (the Visib setter only sets a flag and never clears one; two set flags meet the capture's
+                    ## refusal) and the origin list EMPTIED before this row's own push, so `decided_by == [the user context]`; a
+                    ## later user-level row of the same Alterant finds it in the user level's in-slot range and never rebuilds it
+                    ## (a `:mutExclusive` one is stopped above; the Id compound's fields fill the same fresh instance).
+                    if overridable && crntAltIdx ∈ view(previousSetAltIdxVec, 1:countPreviousSetAlts) &&
+                       crntAltIdx ∉ view(previousSetAltIdxVec, (countPreviousSetAlts+1):(countPreviousSetAlts+countInCrntSlotSetAlts))
+                        st.working[crntAltIdx] = st.registry.plugins[crntAltIdx].altConstructor()
+                        empty!(st.working_origin[crntAltIdx])
+                    end
                     if crntAltIdx ∉ view(previousSetAltIdxVec,
                         (countPreviousSetAlts+1):(
                             countPreviousSetAlts+countInCrntSlotSetAlts))

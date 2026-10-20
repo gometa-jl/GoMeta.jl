@@ -68,6 +68,17 @@ Keywords of `print_altValues_evals`: `layout` (`:tree` | `:rows` | `:cells`), `i
 Vector), `lines` (an input-line range), `color` (`:auto` | `:always` | `:never`). The full
 docstrings are in `devtools.jl`.
 
+**Two facts for reading the printouts** (the lessons pool's GoMeta entries, landed by the pool-lessons sitting of
+2026-10-20 on the owner's phrase; each names its entry, the entry's evidence path and line — relative to
+`07_Claude/` — and the day it was learned): a byte comparison of a printout against a banked comparator runs the
+tool with the colour variable unset (`env -u FORCE_COLOR julia …`) — a shell environment carrying `FORCE_COLOR`
+makes Julia print ANSI escapes and the comparison then reports differences that are not differences of the
+evaluation (20261008T145409Z_5aa8e7bc_precheck-printout-colour-unset;
+plan/2026-08-24-gometa-v04-build/receipts/S8-branch/precheck-s5c29/PRE-s5c29-evals-tree_NOTE.txt:4; 2026-10-08);
+the views right-pad a short name before its arrow, so a value cut from a printout column by a regex has its
+padding stripped before it is compared with a name list (20261016T095915Z_2e199e3b_strip-padded-column-before-compare;
+plan/2026-10-15-gometa-alterants-build/instruments/collect-labels.py:22; 2026-10-15).
+
 ## What they read, and the alarm
 
 The tools AND the moved basic renderer (`basic_renderer.jl`, the tree print included) read the

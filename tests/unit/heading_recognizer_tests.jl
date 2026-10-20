@@ -356,9 +356,9 @@ end
         # THE LABEL TEST IN A HEADING'S OWN CONDITION — LEGAL since stage 1 of the Alterants build (his decision on point (2),
         # §D243: the refusal lifts with the move; the loop's order his meaning); the former wall "alterant-state query in a
         # heading condition" is gone. The loop's order: the labels of the levels ABOVE and those stated BEFORE the heading on
-        # its metaLine are seen, those stated AFTER it are not (as for `hide`) — these pins run WITHOUT a fed profile; with one the
-        # user level is the loop's primary slot and a label stated after the heading is seen too (the lane's oracle P24, and P25
-        # for `hide` on both trees — pinned below; accepted by him as the loop's order, R-ALT-15 (ii)(3)); the quoted-first sugar is always first on its
+        # its metaLine are seen, those stated AFTER it are not (as for `hide`) — with or without a fed profile since 0.4.1 (stage 0 of
+        # the Labels lane, his R-LAB-8 / R-LAB-15: the metaBlock's own written order holds under a feed too — pinned below with P24 /
+        # P25; before it a fed profile made the user level the loop's first slot, R-ALT-15 (ii)(3), superseded); the quoted-first sugar is always first on its
         # line, so on a metaBlock's first metaLine its condition sees the levels above only (on a metaLine glued to an earlier one it
         # also sees the labels stated on the metaBlock's earlier metaLines — P05). MEASURED on the scratch (the lane's AFTER oracle:
         # rl1 P20, rl2 P08, rl3 the variants probe's rl3b, rl4 P06, rl5 P07, rl6 P19).
@@ -377,13 +377,17 @@ end
         @test string(rl5.status) == "PROCESS_OK" && isempty(_heads(rl5))
         rl6 = _run("#~ \"T\"{ :label9 }\nx = 1\n")                        # a label unknown to the vocabulary answers false (his Q4.2 (a)): no row
         @test string(rl6.status) == "PROCESS_OK" && isempty(_heads(rl6))
-        # WITH a fed profile the user level is the loop's primary slot, so the metaBlock's own labels are collected before its heading
-        # and its `hide` are decided (his acceptance of 2026-10-16, R-ALT-15 (ii)(3): the loop's order — MEASURED: the lane's oracle P24
-        # against P07, rl5 above; P25 against P26)
+        # WITH a fed profile the metaBlock's own WRITTEN order holds as without one (stage 0 of the Labels lane, 0.4.1 — his R-LAB-8 of
+        # 2026-10-18 and his build order R-LAB-15 of 2026-10-19, superseding his acceptance of 2026-10-16, R-ALT-15 (ii)(3), under which
+        # the user level was the loop's first slot and the own labels were collected before the heading and the `hide` were decided): a
+        # label stated AFTER the heading or the `hide` is not seen — the fed `:label3` adds its label row and leaves the heading and the Visib rows as in
+        # the no-feed run (MEASURED: the Labels lane's AFTER oracle on the scratch — P24 no head row as P07, P25 no Visib row as P26, each 4 rows where its
+        # no-feed twin has 2; the Labels rows' `decided_by` begin with the user context and their answer source reads `:user` where the no-feed twins read
+        # `own` / `indirect` — the traces; receipts/stage0/AFTER_scratch/stage0-oracle/{views,traces}/)
         _fed(s, p) = GM.goMeta(Vector{UInt8}(codeunits(s)); config = GM.GoMetaConfig(user_mh_profile = p))
         _vis(r) = [v for (_, a, v, _) in GM.readAltValuesEvals(r.altValues_evals) if a === :visib]
-        @test (:head_2, "T") in _heads(_fed("#~2 head(\"T\"){ :label2 } :label2\nx = 1\n", ":label3"))
-        @test _vis(_fed("#~ hide{ :label1 } :label1\nx = 1\n", ":label3")) == [:hide, :hide] &&
+        @test isempty(_heads(_fed("#~2 head(\"T\"){ :label2 } :label2\nx = 1\n", ":label3")))
+        @test isempty(_vis(_fed("#~ hide{ :label1 } :label1\nx = 1\n", ":label3"))) &&
               isempty(_vis(_run("#~ hide{ :label1 } :label1\nx = 1\n")))
         # THE CONDITION'S SUBJECT (his decision on point (4), §D245): a trailing heading's condition reads the LINE's facts
         # (before: the carrier metaSegment's) — `{ isCode }` on a Code Line is now TRUE, `{ isMeta }` there FALSE

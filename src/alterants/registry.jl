@@ -143,10 +143,11 @@ end
 ## NON-QUERYABLE (getAltInstance = nothing): a condition naming `head` meets the usual
 ## unknown-condition-key refusal (the registry's rule, stage 5's E12). A heading's own condition is Julia's, evaluated
 ## at the apply like every condition — a label test in it is legal since stage 1 of the Alterants build (his §D243; the
-## loop's order: the labels of the levels above and those stated before the heading on its metaLine are seen, those
-## after it are not — without a fed profile; with one the user level is the loop's primary slot and the metaBlock's own
-## labels are collected before its heading is decided, so a label stated after it is seen too: the lane's oracle P24;
-## accepted by him as the loop's order on 2026-10-16 — the Alterants build's R-ALT-15 (ii)(3)).
+## loop's order: the labels of the levels above — the user level's among them — and those stated before the heading on its
+## metaLine are seen, those after it are not, WITH OR WITHOUT a fed profile since stage 0 of the Labels lane (0.4.1; his
+## R-LAB-8 / R-LAB-15 of 2026-10-18/19 superseding R-ALT-15 (ii)(3) of 2026-10-16, under which a fed profile made the user
+## level the loop's first slot and a metaBlock's own labels were collected before its heading was decided — the Labels
+## lane's oracle P24 before and after)).
 mutable struct Heading
     entries::Vector{Tuple{String,Union{Nothing,Int}}}   # (text, explicit level | nothing ⇒ derived)
 end
