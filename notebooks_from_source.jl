@@ -7,7 +7,7 @@
 #   2. takes each line's EFFECTIVE fate from the Engine's ANSWER for that line's Line
 #      Component of the BLS Component tree — `GoMeta.evaluatedAltValue(delivery, line, :Visib)`:
 #      the Component's own Visib rows, else its parent's up the tree, else the declared
-#      default (stage 2's re-route, R-V04B-43 (2)) — never from the render bytes (at the
+#      default — never from the render bytes (at the
 #      render grain an engine-hidden line and an authored marker-headed line are
 #      byte-INDISTINGUISHABLE, the ensure-token fidelity bound) and never from a content
 #      match. Ancestry and conditions are the Engine's business, never re-derived here;
@@ -23,7 +23,7 @@
 #      legend-driven tags (parameters · skip-execution · solution · deep-dive) — in
 #      deterministic nbformat 4.5 JSON (fixed key order; content-derived cell ids;
 #      a Julia kernelspec so standard executors pick the right kernel); the student,
-#      report and slides editions left at stage 5's N1 of the v0.4 build (census row 27);
+#      report and slides editions were removed within the 0.4 development);
 #   5. prints a content-free emission manifest per notebook (counts and label names,
 #      never removed content);
 #   6. `--check` regenerates every GENERATED artifact and byte-compares it against the
@@ -42,7 +42,7 @@
 
 import GoMeta
 import SHA
-## No development tool is loaded by this Extension (R-V04B-56): it consumes the Engine's answer through the
+## No development tool is loaded by this Extension: it consumes the Engine's answer through the
 ## delivered object and the BLS Component tree — through BLS's door — and nothing else.
 
 # ── the source registry: file → legend + emitted targets ────────────────────────────────
@@ -75,7 +75,7 @@ end
 # THE FATE SOURCE IS THE ENGINE's ANSWER, per Line Component of the BLS Component tree — never the
 # render (under the v0.3 ensure-token rule an authored `## `-headed line inside a hidden block
 # renders AS-IS, byte-indistinguishable from a shown line — a render walk mis-fates exactly that
-# class SILENTLY, probe-proven) and never a content match (stage 2's re-route, R-V04B-43 (2): the
+# class SILENTLY, probe-proven) and never a content match (the
 # former join of the `:visib` rows to source spans by their verbatim bytes went with the Engine's
 # stored copy of those bytes). Each source line's Line Component is found through the door by its
 # input line number; its fate is `evaluatedAltValue(delivery, line, :Visib).value` — the Line's own Visib
@@ -116,9 +116,9 @@ end
 ## The whitespace alphabet: the delimiter class is Unicode
 ## horizontal whitespace (`[\h]`) — unified with the engine.
 ## The bang-first family `#~!N`/`#~!N!` is NOT matched here (not a token) — DELIBERATE:
-## the ENGINE refuses that family at parse (§4.1, v0.3.1), and `goMeta` runs
+## the ENGINE refuses that family at parse (since v0.3.1), and `goMeta` runs
 ## before `partition`, so a bang-first line can never reach this out-of-tree mirror
-## alive (the correctness argument recorded in ENGINE-DESIGN_R-INERT-4.md §2).
+## alive.
 const _TOKEN_HEAD_RE = r"^#(?:~+(?:[0-9]+!?|!)?|\])(?=[\h]|$)"
 is_meta_line(t)  = occursin(_TOKEN_HEAD_RE, lstrip(t))
 is_prose_line(t) = begin
@@ -196,7 +196,7 @@ function partition(fates::Vector{LineFate})
     return cells
 end
 
-# join labels onto cells THROUGH THE TREE (stage 2's re-route, R-V04B-43 (2)): the Components that got
+# join labels onto cells THROUGH THE TREE: the Components that got
 # label values — `scanAlterant(delivery, :labels)`, each with its sorted label names — attach to every
 # content cell whose source-line span the Component's own span touches (a Block's line span through
 # the door; a Line's input line; an inline Segment's owning Line). A Meta Component (the metaBlock a
@@ -246,7 +246,7 @@ end
 
 cell_id(src::String, ordinal::Int) = bytes2hex(SHA.sha256(codeunits(src)))[1:16] * "-" * string(ordinal)
 
-# ── the invisible carriers (the transformation principle, owner-ruled 2026-08-12) ──────
+# ── the invisible carriers (the transformation principle, the creator's decision of 2026-08-12) ──────
 # The wrapper-only law: a carried line crosses into the artifact as its ORIGINAL BYTES
 # wrapped in the target format's comment form — the wrapper is the only added
 # transformation, so the GoMeta data can be read, modified, and re-evaluated in the
@@ -269,10 +269,10 @@ html_comment(s::String) = "<!-- " * carrier_escape(s) * " -->"
 md_lines(c::Cell) = vcat([html_comment(lf.text) for lf in c.carried], md_lines_body(c))
 
 # the DOCUMENTER PAGE body of a markdown cell: hidden lines DROP from the body on BOTH pages
-# (owner-ruled 2026-08-12 for the then-views: HTML comments do not survive the Documenter markdown
+# (the creator's decision of 2026-08-12 for the then-views: HTML comments do not survive the Documenter markdown
 # pipeline, probe-proven, and the pages are also GitHub-browsable); since v0.3.1 the FULL page carries
 # them in its carriage envelope instead (`_carriage_envelope`, below) — the READER page alone is the
-# envelope-free view; the student edition left at stage 5's N1
+# envelope-free view; the student edition was removed
 md_lines_page(c::Cell) = md_lines_body(c; hidden = :drop)
 
 # the body alone; `hidden = :comment` carries hidden prose as wrapper-only HTML
@@ -383,7 +383,7 @@ function write_notebook(path::String, cells::Vector{Tuple{Cell,Vector{String}}})
     return (path, String(take!(io)))
 end
 
-# ── the full edition (the ONE notebook per source; the student, report and slides editions left at stage 5's N1) ─────────────
+# ── the full edition (the ONE notebook per source; the student, report and slides editions were removed) ─────────────
 
 meaning(c::Cell, legend) = Set(get(legend, l, :none) for l in c.labels)
 
@@ -443,8 +443,8 @@ is_heading(c::Cell) = c.kind === :markdown && any(startswith(lstrip(lf.text), "#
 function sectionize(cells::Vector{Cell})
     sections = Section[]; cur = Cell[]; head = nothing
     for c in cells
-        # The V4-panel guard, in its v0.3.1 form (ruled: metaLines RIDE the full
-        # page — R-EXT-11's metaLine half reversed): line-less carrier cells now stay IN the
+        # The carrier-cell guard, in its v0.3.1 form (the decision: metaLines RIDE the full
+        # page): line-less carrier cells now stay IN the
         # section stream so the FULL page can place their carriage envelope at the right
         # position — and the guard's invariant moves to drops(), which must NEVER see a
         # line-less cell's labels (the reader page's section selection stays byte-identical).
@@ -459,29 +459,29 @@ function sectionize(cells::Vector{Cell})
     return sections
 end
 
-# ── the page-carriage envelope (v0.3.1: the ruled envelope law) ──────────
+# ── the page-carriage envelope (v0.3.1: the envelope law) ──────────
 # The FULL page is a transformation artifact: every non-discarded metaLine and every hidden
 # non-executed line rides INVISIBLY in a reserved-name `@setup`-class block at its cell's
 # head — lines are `## ` + the ORIGINAL bytes (a comments-only block builds, renders nothing,
 # and stays OUT of the site's search index — probed at v0.3.1; the `@raw html` alternative
-# leaks into search_index.js and was REJECTED by ruling). The header line starts `##gometa`
+# leaks into search_index.js and was REJECTED). The header line starts `##gometa`
 # — NO space after `##`, a shape no payload can produce (payloads are always `## ` + bytes),
 # so a decoder's envelope identity cannot be spoofed by PAYLOAD; an authored prose line
 # stripping to the sigil is no longer refused (the forged-envelope and reserved-mention
-# refusals of the review rounds left at stage 5's N1). Scope note (reconfirm wave 2): an
+# refusals were removed). Scope note: an
 # authored Julia comment inside a generated CODE fence can still place the sigil bytes at
 # a line start on the built page, so decoders identify envelopes NAME-FIRST (the two names
-# differ for the shipped stems; a stem beginning `carriage_` would collide — the stem-prefix refusal left at
-# stage 5's N1, census row 12), never by
+# differ for the shipped stems; a stem beginning `carriage_` would collide — the former stem-prefix refusal was
+# removed), never by
 # scanning for the sigil alone. Indices are 0-based over the cell's
 # reconstructable sequence [attached meta run…, non-discarded content lines…]: `carried=`
 # lists the envelope-carried entries, `hidden=` the natively-hidden-in-place executed lines
 # (the ` # hide` suffix / `@setup` body — strip/locate by exactly these indices), every other
 # index is a visible body line in order. The reader page is a VIEW: NO envelopes.
 _carriage_name(chain::String) = "gometa_carriage_" * chain
-# (The fence-pairing, reserved-mention and forged-envelope refusals — the fail-closed guards of the wave-5 review
-# rounds, with `_strip_lead`, which served them alone — left at stage 5's N1 of the v0.4 build, census row 12,
-# his §317 and §120; the carriage envelope below is the transformation's own.)
+# (The fence-pairing, reserved-mention and forged-envelope refusals — former fail-closed guards —
+# with `_strip_lead`, which served them alone, were removed within the 0.4 development;
+# the carriage envelope below is the transformation's own.)
 function _carriage_envelope(io, c::Cell, chain::String; hidden_idx::Vector{Int} = Int[])
     n = length(c.carried) + length(c.lines)
     carried_idx = Int[]
@@ -496,7 +496,7 @@ function _carriage_envelope(io, c::Cell, chain::String; hidden_idx::Vector{Int} 
             end
         end
     elseif c.kind === :code && !isempty(hidden_idx)
-        # executed cells: hidden lines stay IN PLACE natively (`# hide`/@setup — §4.3(a));
+        # executed cells: hidden lines stay IN PLACE natively (`# hide`/@setup);
         # only the meta run rides the envelope; `hidden=` records the in-place positions
     elseif c.kind === :code
         for (j, lf) in enumerate(c.lines)
@@ -517,32 +517,31 @@ function _carriage_envelope(io, c::Cell, chain::String; hidden_idx::Vector{Int} 
     println(io)
     return true
 end
-# a generated executed block's fence must outrun any backtick run in its body (§4.3 edge iii)
+# a generated executed block's fence must outrun any backtick run in its body
 _fence(bodylines) = "`" ^ max(3, 1 + maximum(vcat(0,
     [length(match(r"^`*", lstrip(l)).match) for l in bodylines])))
 
 function page_body(sections::Vector{Section}, legend, keep::Function, chain::String;
                    carriage::Bool = false)
     io = IOBuffer()
-    exec_chain = "gometa_" * chain     # the generated execution namespace (its mention refusal left at stage 5's N1)
+    exec_chain = "gometa_" * chain     # the generated execution namespace (its former mention refusal was removed)
     for s in sections
         keep(s) || continue
         if s.heading !== nothing
             carriage && _carriage_envelope(io, s.heading, chain)
-            # the same no-trace guard as body cells (reconfirm wave: a fully hidden
+            # the same no-trace guard as body cells (a fully hidden
             # heading must not leave stray blanks)
             hl = md_lines_page(s.heading)
             isempty(hl) || (println(io, join(hl, '\n')); println(io))
         end
         for c in s.cells
-            # FULL page (v0.3.1, §4.2): hidden content AND metaLines
+            # FULL page (v0.3.1): hidden content AND metaLines
             # ride in the carriage envelope; the READER page is a VIEW (carriage=false —
-            # NO envelopes, and trimmed sections travel nowhere). Ruled bound, stated
-            # exactly (reconfirm wave 2): hidden EXECUTED lines of a RETAINED section
-            # still ride the reader NATIVELY (' # hide' / @setup — §4.3(a) preserves
+            # NO envelopes, and trimmed sections travel nowhere). The bound, stated
+            # exactly: hidden EXECUTED lines of a RETAINED section
+            # still ride the reader NATIVELY (' # hide' / @setup preserves
             # execution continuity); the committed reader selection has zero hidden lines
-            # today — if a future selection gains one, surface it to the owner first (the
-            # adjudication ledger's reader-view row carries the re-raise trigger).
+            # today — if a future selection gains one, surface it to the creator first.
             # Carrier cells (detached meta runs) are envelope-only cells on the full
             # page and vanish from the reader.
             if c.kind === :carrier || isempty(c.lines)
@@ -553,14 +552,14 @@ function page_body(sections::Vector{Section}, legend, keep::Function, chain::Str
             if c.kind === :markdown
                 carriage && _carriage_envelope(io, c, chain)
                 pl = md_lines_page(c)
-                # a fully hidden markdown cell leaves NO trace on the page (panel V4:
+                # a fully hidden markdown cell leaves NO trace on the page (the guard:
                 # no stray blank lines for an invisible cell)
                 isempty(pl) || (println(io, join(pl, '\n')); println(io))
             elseif :expensive in ms
                 # the branch order is load-bearing: expensive-BEFORE-all-hidden keeps
                 # the never-execute law (an all-hidden expensive cell must not fall to
                 # the executing @setup branch below); hidden lines of a NEVER-executed
-                # cell ride the envelope (owner-ruled §4.3: only EXECUTED hidden code
+                # cell ride the envelope (the creator's decision: only EXECUTED hidden code
                 # stays in place natively)
                 carriage && _carriage_envelope(io, c, chain)
                 shown = code_lines(c)
@@ -574,13 +573,13 @@ function page_body(sections::Vector{Section}, legend, keep::Function, chain::Str
                     println(io)
                 end
             elseif all(lf.fate === :hide for lf in c.lines)
-                # execute-but-fully-hide → a NAMED @setup block (§4.3(a): the native
+                # execute-but-fully-hide → a NAMED @setup block (the native
                 # execute channel; `hidden=` indices record the in-place lines).
                 # An authored trailing `# hide` in THIS branch is deliberately NOT
                 # refused (unlike the @example branch below): no suffix is appended to
                 # @setup body lines, the whole cell is already display-hidden, and
                 # `hidden=` covers every body index — the marker is inert here and the
-                # decoder's suffix-strip stays exact (disclosed; reconfirm wave).
+                # decoder's suffix-strip stays exact (disclosed).
                 carriage && _carriage_envelope(io, c, chain;
                     hidden_idx = [length(c.carried) + j - 1 for j in eachindex(c.lines)])
                 bodyl = [lf.text for lf in c.lines]
@@ -590,7 +589,7 @@ function page_body(sections::Vector{Section}, legend, keep::Function, chain::Str
                 println(io, f)
                 println(io)
             else
-                # The §4.3(a) authored-marker refusal: an AUTHORED shown line already
+                # The authored-marker refusal: an AUTHORED shown line already
                 # ending in `# hide` would be display-hidden by Documenter AGAINST its
                 # GoMeta fate — refuse loudly; a HIDDEN line ending in `# hide` would
                 # double-suffix — refused outright too (stricter than edge (v)'s
@@ -688,11 +687,11 @@ derive(spec::SourceSpec) = derive_from_bytes(read(spec.path), spec)
 function derive_from_bytes(bytes::Vector{UInt8}, spec::SourceSpec)
     r = GoMeta.goMeta(bytes)
     r.status == GoMeta.PROCESS_OK || error("EMIT FAILURE: processing failed for $(spec.path): $(r.status)")
-    fates = verdict_fates(String(copy(bytes)), r)      # the Engine's answer per Line Component (R-V04B-43 (2)); no render witness (R-V04B-56)
+    fates = verdict_fates(String(copy(bytes)), r)      # the Engine's answer per Line Component; no render witness
     cells = partition(fates)
     join_labels!(cells, r)                              # the labelled Components' spans through the door
     # the two counts over NON-BLANK source lines: a blank line inside a discarded or hidden Block carries the Block's verdict
-    # since the re-route (R-V04B-43 (2)), but it is no content line — it travels nowhere either way (the former content-keyed
+    # since the re-route, but it is no content line — it travels nowhere either way (the former content-keyed
     # fates left such a line :show, so these counts always meant the content lines)
     n_discarded = count(lf -> lf.fate === :discard && !is_blank_line(lf.text), fates)
     n_hidden = count(lf -> lf.fate === :hide && !is_blank_line(lf.text), fates)
@@ -702,8 +701,8 @@ function derive_from_bytes(bytes::Vector{UInt8}, spec::SourceSpec)
     println("  labels on cells: ", isempty(label_counts) ? "(none)" : label_counts, " · verdict digest ", digest)
     outputs = Tuple{String,String}[]
     ecells = full_cells(cells, spec.legend)
-    # the footer's text is the committed notebooks' — byte-identical since the three further editions left at stage 5's
-    # N1 (the full edition omits no cell: "0 cell(s) omitted by this edition's policy" stays true)
+    # the footer's text is the committed notebooks' — byte-identical since the three further editions were removed
+    # (the full edition omits no cell: "0 cell(s) omitted by this edition's policy" stays true)
     footer_lines = ["---",
         "*How this notebook was made:* derived from `notebooks/src/$stem.jl` by " *
         "`notebooks_from_source.jl` (edition **full**; 0 cell(s) omitted by this " *
