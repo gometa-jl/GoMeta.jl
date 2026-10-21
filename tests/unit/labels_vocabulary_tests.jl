@@ -1,6 +1,6 @@
 # labels_vocabulary_tests.jl — 0.4.2: THE VOCABULARY STATEMENTS `:++x` / `:(++, x, y)` / `:--x` / `:(--, x)` —
 # the creator's design (the vocabulary first; the places `#~0` and the user level's profile; the mechanism at the read; the reach
-# from the own metaBlock onward; the malformed shapes refused; no row, nothing delivered, the noun re-cut); the build:
+# from the own metaBlock onward; the malformed shapes refused; no row, nothing delivered, the noun re-cut); the code:
 # src/alterants-std/labels.jl `declareLabels!` (the hook),
 # src/state.jl (`onRead`, `alt_run`), src/absorb/absorb_meta.jl (the hook before the slot bound), src/alterants/apply.jl (`_freshInstance`).
 #
