@@ -90,7 +90,7 @@ actions, and an optional human comment. Its general shape:
   **left to right** (see §8 rule 4).
 - At `#~0` (a metaBlock opened by `#~0`) and in the user's profile the middle may also carry the Labels Alterant's **vocabulary
   statements** — `:++x` / `:(++, x, y)` add names to the vocabulary for the run, `:--x` / `:(--, x)` remove names — recorded once when
-  read, applied to no Component (since `0.4.1`; `docs/public-api.md` §3.4).
+  read, applied to no Component (since `0.4.2`; `docs/public-api.md` §3.4).
 - Anything after a `## ` on the same line is a **human comment** — the meta-parser ignores it.
   Cite: `Extended L7` `#~ discard{ :label2 , isCode} ## This is a comment within a meta Block.` → the
   `## …` part has no effect.
@@ -306,7 +306,7 @@ content-only block across the blank.
 ## 5. Labels
 
 - **IS** — labels are accumulative tags a metaLine applies to the content in its scope. **Label
-  names are validated when APPLIED** against the Labels Alterant's vocabulary — since `0.4.1` the run's: the shipped list below plus
+  names are validated when APPLIED** against the Labels Alterant's vocabulary — since `0.4.2` the run's: the shipped list below plus
   the run's own vocabulary statements (`docs/public-api.md` §3.4) — the
   corpus-documented set `:label1` … `:label5` plus, since `0.3.0`, a fixed pictograph
   vocabulary (byte-exact names like `:💡`, `:🔥`) plus, since `0.4.0`, `:doc` — the
@@ -475,7 +475,7 @@ drops `:label1` from depth 1 to depth 2. One blank line, two flips, two reasons.
 
 - **Labels (the `:` action) — documented, both forms:** repeated one-word labels
   (`#~ :label1 :label2`) AND the parenthesized list (`#~ :(label1, label2)`) are equivalent; each
-  label APPLIED is checked against the Labels Alterant's vocabulary — the run's since `0.4.1` (an unknown label refuses with a stable
+  label APPLIED is checked against the Labels Alterant's vocabulary — the run's since `0.4.2` (an unknown label refuses with a stable
   message); a label QUERIED answers false when unknown or unset (since `0.4.0` —
   `docs/public-api.md` §3.4).
 - **Id actions (`cell` / `parent` / `file`, and `ids` since `0.4.0`) — EXPERIMENTAL at this release:** the three single actions take one integer value
@@ -553,14 +553,14 @@ To keep the verified claims honest, these are **known but not established here**
   shipped vocabulary is the corpus-documented `:label1`..`:label5` plus (since `0.3.0`) the fixed
   pictograph vocabulary plus (since `0.4.0`) `:doc`, the whole list hard-coded in the Labels
   Alterant's own file `src/alterants-std/labels.jl` — byte-exact names, no normalization —
-  and **label names are validated when APPLIED** against the Labels Alterant's vocabulary (since `0.4.1` the run's: that list plus
+  and **label names are validated when APPLIED** against the Labels Alterant's vocabulary (since `0.4.2` the run's: that list plus
   the run's own vocabulary statements, `docs/public-api.md` §3.4) — an unknown label refuses with the stable
   `GoMeta apply: unknown label …` message, which names the accepted set; a label QUERIED in a condition
   answers false when it is unknown or unset (as the original engine answered; since
   `0.4.0`). Eight actions accumulate per meta-hierarchy slot (`SLOT_CAPACITY` — a named constant,
   decoupled from the registered action count of 9)
   (a further one meets the stable message "GoMeta absorb: more than 8 actions in one meta-hierarchy slot …" since `0.4.0`; `docs/public-api.md` §3.4). The
-  authorable depth window is 1–8 in the digit form (§2). Custom label names applied without a vocabulary statement admitting them (since `0.4.1` a file at `#~0` or the profile may add names — `docs/public-api.md` §2; a queried name that is unset or unknown
+  authorable depth window is 1–8 in the digit form (§2). Custom label names applied without a vocabulary statement admitting them (since `0.4.2` a file at `#~0` or the profile may add names — `docs/public-api.md` §2; a queried name that is unset or unknown
   answers false — `docs/public-api.md` §3.4), and
   bare names outside the settribute keys and the queryable actions, are refused; a Julia Boolean expression over those
   names is accepted and evaluated by Julia (`0.4.0`; `docs/public-api.md` §3.2).

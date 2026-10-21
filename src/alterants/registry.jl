@@ -22,7 +22,7 @@
 #     rather than hanging on any iteration order. A `{…}` condition is read by Julia's parser and evaluated by Julia
 #     since 0.4.0 (the creator's design) — this registry supplies its VOCABULARY:
 #     the settribute keys and the queryable actions (`queryable_action`, src/state.jl), read by the rewrite at absorb.
-# EDGES (honest): the Labels Alterant's BASE vocabulary is fixed, and since stage A of the Labels lane (0.4.1) a run's vocabulary statements at `#~0` or in the profile add names to it and remove names from it (labels.jl `declareLabels!`, the record's `onRead`) — the base: the corpus-documented labels
+# EDGES (honest): the Labels Alterant's BASE vocabulary is fixed, and since 0.4.2 a run's vocabulary statements at `#~0` or in the profile add names to it and remove names from it (labels.jl `declareLabels!`, the record's `onRead`) — the base: the corpus-documented labels
 #     :label1..:label5 plus (since 0.3.0) a fixed pictograph vocabulary (byte-exact names, no
 #     normalization) plus `:doc` (since 0.4.0, the creator's decision) — hard-coded in the Labels Alterant's own file
 #     `alterants-std/labels.jl`; an unknown label APPLIED meets the stable refusal that
@@ -393,7 +393,7 @@ instances (the `state.jl` record type) for `labels` / `Visib` / `Id` / `Heading`
 returned as an UNVALIDATED `RegistryBuilder`.
 
 DOES: builds the four records in the keyword form, each with its declared default and its capture row — `labels`
-(`:accumulate`; `Alterants.LabelsInstance` — the applied labels and the run's vocabulary, iterating as the former bare `Dict{Symbol,Bool}` did (labels.jl); setter `setLabels`, getter `checkLabels`; the read-time hook `onRead = Alterants.declareLabels!` — the vocabulary statements consumed at the read; the setter's and the checker's kept `Dict{Symbol,Bool}` methods serve a custom registration with `altConstructor = Dict{Symbol,Bool}` and NO hook — with a hook, a minted run state reaches `Dict{Symbol,Bool}(run)` and is Julia's own error (apply.jl `_freshInstance`; labels.jl); default the EMPTY SET; capture
+(`:accumulate`; `Alterants.LabelsInstance` (since 0.4.2) — the applied labels and the run's vocabulary, iterating as the former bare `Dict{Symbol,Bool}` did (labels.jl); setter `setLabels`, getter `checkLabels`; the read-time hook `onRead = Alterants.declareLabels!` — the vocabulary statements consumed at the read; the setter's and the checker's kept `Dict{Symbol,Bool}` methods serve a custom registration with `altConstructor = Dict{Symbol,Bool}` and NO hook — with a hook, a minted run state reaches `Dict{Symbol,Bool}(run)` and is Julia's own error (apply.jl `_freshInstance`; labels.jl); default the EMPTY SET; capture
 `:per_key`, stem `:label`), `Visib` (`:mutExclusive`; default `:show`; `:single`, stem `:visib`), `id`
 (`:mutExclusivePerField`; default the ZERO compound; `:per_field`, stem `:id`) and `heading` (`:localOnly` —
 queued like every action, applied by the apply loop's one rule for this mode ONLY at the Component the statement is applied
@@ -421,7 +421,7 @@ function default_registry_builder()
         ## capture plane; the stems are DECLARED — byte-compatibility never rides the
         ## derived fallback) — the three former positional declarations (0.3.2's) migrated
         ## to the keyword form to carry `capture =`.
-        Alterant(; altName = :labels, setMode = :accumulate, altConstructor = Alterants.LabelsInstance,   # stage A: the instance carries the run's vocabulary (labels.jl)
+        Alterant(; altName = :labels, setMode = :accumulate, altConstructor = Alterants.LabelsInstance,   # the instance carries the run's vocabulary (labels.jl)
                    setAltInstance = Alterants.setLabels, getAltInstance = Alterants.checkLabels,
                    default = Declared(Symbol[]),   # Labels' declared default is the EMPTY SET (the creator's decision, provisional) — the answer's shape, a sorted Vector{Symbol}
                    capture = CaptureDecl(:per_key; attr_stem = :label),

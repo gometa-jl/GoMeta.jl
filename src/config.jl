@@ -39,7 +39,7 @@ DOES: carries the four fields, read by the run as named:
   (`userMHIdx`, state.jl) BEFORE the walk, via the standard `absorbMeta` intake (queued actions
   enqueue; a heading in any form REFUSES at the read with the creator's message — docs/public-api.md §2 and §3.4; before 0.4.0
   an explicit `head` recorded against the minted user-context handle; e.g. the profile
-  `"discard{ :label1 } show"`). The profile may also carry VOCABULARY statements (`:++x` /
+  `"discard{ :label1 } show"`). Since 0.4.2 the profile may also carry VOCABULARY statements (`:++x` /
   `:--x` — labels.jl `declareLabels!`), consumed at the read before the walk: the user level's vocabulary statements precede
   every statement of the file. Scope at v0 is deliberately MINIMAL: a single feed entry, NOT a general
   user-level configuration system (deliberately scope-limited at v0). Read by `goMeta` and `feed_user_mh!`.

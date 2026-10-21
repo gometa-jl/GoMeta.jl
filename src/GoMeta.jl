@@ -261,7 +261,7 @@ actions) -> Apply (evaluate conditions + apply), run inside one per-call dynamic
 
 Arguments:
 - `bytes` — the input document as raw bytes. Line ENDINGS normalize to LF (CRLF is chomped — documented, not an
-  error; see `docs/CANONICAL-OUTPUT.md`); content bytes are preserved faithfully for arbitrary bytes, including invalid UTF-8; non-ASCII inside a META line parses character-safely, a non-ASCII label APPLIED from outside the run's vocabulary (the shipped set with the run's vocabulary statements folded in since 0.4.1, docs/public-api.md §2) or a non-ASCII action meeting the stable unknown-label/unknown-action refusal (docs/public-api.md §4).
+  error; see `docs/CANONICAL-OUTPUT.md`); content bytes are preserved faithfully for arbitrary bytes, including invalid UTF-8; non-ASCII inside a META line parses character-safely, a non-ASCII label APPLIED from outside the run's vocabulary (the shipped set with the run's vocabulary statements folded in since 0.4.2, docs/public-api.md §2) or a non-ASCII action meeting the stable unknown-label/unknown-action refusal (docs/public-api.md §4).
 - `config::GoMetaConfig` — the v0 input options (flavor_tag / parse_range / user_mh_profile / namespace; see `GoMetaConfig`;
   the `profile` field was removed with the grammar profile it selected). An unknown `flavor_tag` throws raw at
   `BLS.flavor_for` (the closed inventory, no fallback — a stable message, docs/public-api.md §3.4); a given `parse_range`

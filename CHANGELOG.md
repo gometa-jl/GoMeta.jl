@@ -6,6 +6,20 @@ sees, in the breaking-change register of the API reference, [`docs/public-api.md
 **No backward compatibility and no deprecation until at least v0.7**: every change of the public surface is
 a clean cut. A date is the day of the version's tag (since 0.3.0) or, before 0.3.0, of the day the version reached `main` (those versions carry no tag).
 
+## 0.4.2 — unreleased
+
+- **The Labels Alterant's vocabulary statements.** A file at `#~0` or the user's profile adds names to the Labels
+  Alterant's vocabulary for the run and removes names from it: `:++x` / `:(++, x, y)` add, `:--x` / `:(--, x)` remove. A
+  vocabulary statement is consumed at the read — no label applied, no row; it holds from its own metaBlock onward; the place is
+  checked first (`#~0` or the profile, nothing else), then the malformed shapes are refused. The shipped list (39 names) is the
+  base behind `base_vocabulary()`; a run's additions and removals are kept apart from it, the effective set the base plus the
+  additions minus the removals. The unknown-label refusal reads "not in the Labels Alterant's vocabulary", the printed set the
+  run's. The user level's vocabulary statements are read first and a file's later statement wins for the same name.
+- **The registration record's ninth field.** `Alterant.onRead`, the read-time hook, `nothing` by default and for every other
+  shipped Alterant; `ProcessState.alt_run` holds an Alterant's per-run state; the instance constructor is given that state where
+  the hook minted one (`altConstructor(run)`), called bare otherwise. `LabelsInstance` is the Labels Alterant's instance type: the
+  applied labels and the run's vocabulary. The register's row: "The Labels Alterant's VOCABULARY STATEMENTS".
+
 ## 0.4.1 — 2026-10-20
 
 - **One behaviour under a fed user profile changed** (`GoMetaConfig(user_mh_profile = …)`, experimental): a

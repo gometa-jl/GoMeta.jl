@@ -47,7 +47,7 @@
     return nothing
 end
 
-"THE FRESH INSTANCE of an Alterant for the Component at hand (stage A of the Labels lane, R-LAB-20): the registered constructor, given the Alterant's PER-RUN state where its read-time hook minted one (`st.alt_run`), the zero-argument call otherwise — every Alterant without a hook, and the Labels Alterant in a run without a vocabulary statement, meets the former call"
+"THE FRESH INSTANCE of an Alterant for the Component at hand: the registered constructor, given the Alterant's PER-RUN state where its read-time hook minted one (`st.alt_run`), the zero-argument call otherwise — every Alterant without a hook, and the Labels Alterant in a run without a vocabulary statement, meets the former call"
 _freshInstance(st, idx) = (run = st.alt_run[idx]; run === nothing ? st.registry.plugins[idx].altConstructor() : st.registry.plugins[idx].altConstructor(run))
 
 function detAltValuesForSetOfSlots(

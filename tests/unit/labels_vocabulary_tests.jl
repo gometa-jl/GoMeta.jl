@@ -1,15 +1,14 @@
-# labels_vocabulary_tests.jl — STAGE A OF THE LABELS LANE (0.4.1): THE VOCABULARY STATEMENTS `:++x` / `:(++, x, y)` / `:--x` / `:(--, x)` —
-# his decisions R-LAB-6 / R-LAB-9 / R-LAB-12 of 2026-10-18 (the vocabulary first; the places `#~0` and the user level's profile; the
-# mechanism at the read) and R-LAB-20 … R-LAB-23 of 2026-10-20 (the design α′ geared to his wider aim — his §20 / §21; the reach from the
-# own metaBlock onward; the four malformed shapes refused; no row, nothing delivered, the noun re-cut); the plan: the lane
-# plan/2026-10-18-gometa-labels-add-remove/, its STAGE-A-PLAN v2 §3; the build: src/alterants-std/labels.jl `declareLabels!` (the hook),
+# labels_vocabulary_tests.jl — 0.4.2: THE VOCABULARY STATEMENTS `:++x` / `:(++, x, y)` / `:--x` / `:(--, x)` —
+# the creator's design (the vocabulary first; the places `#~0` and the user level's profile; the mechanism at the read; the reach
+# from the own metaBlock onward; the malformed shapes refused; no row, nothing delivered, the noun re-cut); the build:
+# src/alterants-std/labels.jl `declareLabels!` (the hook),
 # src/state.jl (`onRead`, `alt_run`), src/absorb/absorb_meta.jl (the hook before the slot bound), src/alterants/apply.jl (`_freshInstance`).
 #
-# IS:   sixteen witnesses [V-W1]–[V-W16] over the public entry, EVERY expected value READ from the lane's AFTER oracle on the built scratch
-#       (receipts/stageA/ — the AFTER run the final proofs name, AFTER_final-r7 after the build panel's cures (the empty-member refusals V42 … V45 and V46 pinned from it); the values first read from the build's earlier run AFTER_scratch/, which had no V41, and V41's from AFTER_final/, every literal re-checked against the proofs' run by the instrument's check mode — the FULL delivery views and the `decided_by` traces; every refusal
-#       message a byte-exact copy of its view's last line, inserted by the lane's instruments/stageA-witness-literals.py, never retyped — but for the build panel's three empty-member texts (V42 … V44), written at the panel's fold from its judge's predicted text and then found equal to the view's last line by the instrument's repin mode and to the proofs' run by its check mode —
-#       the `raw"""…"""` literals below; canon R4b) or from the custom-registration probe (receipts/stageA/AFTER_scratch/PROBE-custom-hook_r3.txt; the build panel's D17 … D19 in PROBE-custom-hook_r4.txt)
-#       and never written before those runs, but for those three texts — written before the run that measured the cured hook (the panel's fold), then confirmed against it and against the proofs' run as said above. THE FORMS at `#~0` and at the user level ([V-W1], [V-W2]); THE PLACE refused elsewhere, the
+# IS:   sixteen witnesses [V-W1]–[V-W16] over the public entry, EVERY expected value READ from the measured printouts of the built
+#       tree (the FULL delivery views and the `decided_by` traces; every literal re-checked against the proofs' run); every refusal
+#       message a byte-exact copy of its view's last line, never retyped —
+#       the `raw"""…"""` literals below — or from the custom-registration probe; every literal confirmed against the
+#       proofs' run. THE FORMS at `#~0` and at the user level ([V-W1], [V-W2]); THE PLACE refused elsewhere, the
 #       place checked first ([V-W3], [V-W15]); THE REFUSAL'S ACCEPTED SET the run's ([V-W4]); THE REACH — from the own metaBlock onward,
 #       a Block above untouched ([V-W5], [V-W10]); THE FOLD in reading order, the no-ops ([V-W6]); THE FOUR MALFORMED SHAPES ([V-W7]); a
 #       declared name in a condition ([V-W8]); the one-line orders ([V-W9]); the user level against the file ([V-W10]); THE ENGINE'S DOOR —
@@ -19,7 +18,7 @@
 #       vocabulary (the base plus the additions minus the removals, kept apart) is handed to every later instance; a run without a
 #       vocabulary statement is pinned already (fed_profile_order_tests.jl [W1]–[W13]; vocabulary_tests.jl [2] / [2b]) — no new testset for it.
 #       NOT witnessed here (the oracle's alone): V10, V18, V21, V23, V27 (026 with a declaration prepended: 28 rows unchanged), V38, the
-#       28-input fed sweep with `:++🪵 :🪵` and with `:++🪵` alone; the glued-digit gap (U8 §9) is his.
+#       28-input fed sweep with `:++🪵 :🪵` and with `:++🪵` alone; the glued-digit gap is open.
 # PURPOSE: the vocabulary statements, measured — never inferred from the hook's docstring or the plan's prose.
 
 using Test
@@ -52,7 +51,7 @@ function _lv_two_blocks(r, labels::Vector{Symbol}; i::Int = 1)
 end
 const _LV_V01 = "#~0 :++label6\n#~ :label6\nx = 1\n"
 
-@testset "the vocabulary statements of the Labels Alterant (stage A of the Labels lane, 0.4.1; R-LAB-6 / 9 / 12, R-LAB-20 … 23)" begin
+@testset "the vocabulary statements of the Labels Alterant (0.4.2)" begin
 
     @testset "[V-W1] the forms at `#~0`, each with a use after it: `:++x` (V01), `:(++, x, y)` (V02) applied; `:(--, x, y)` (V30) refused with label1 and label2 out of the set" begin
         # AFTER view V01: Block #2 Meta L1–L2 `#~0 :++label6⏎#~ :label6` one `label_label6` row, Block #3 Code L3 `x = 1` one `label_label6` row;
@@ -94,10 +93,10 @@ const _LV_V01 = "#~0 :++label6\n#~ :label6\nx = 1\n"
         m31 = _lv_msg("#~0 :++label6 :++label6\n#~ :zzz\nx = 1\n")
         @test m31 == raw"""GoMeta apply: unknown label "zzz" — not in the Labels Alterant's vocabulary (the accepted set = [:doc, :label1, :label2, :label3, :label4, :label5, :label6, :⌛, :⛓️, Symbol("⛓️\u200d💥"), :⛔, :🇨🇭, :🌍, :🌛, :🌞, :🌳, :🌷, :🌹, :🌼, :🍀, :🍒, :🍻, :🎨, :🎿, :🏔️, :🐣, :💕, :💡, :💣, :💫, :💯, :💸, :💾, :📝, :📸, :🔥, :😘, :🚀, :🧮, :🫕]); see docs/public-api.md §3.4"""
         @test m31 == m22 && count(":label6", m31) == 1
-        @test startswith(m3, "GoMeta apply: unknown label \"label1\" — not in the Labels Alterant's vocabulary (the accepted set = [")   # the noun re-cut (R-LAB-23)
+        @test startswith(m3, "GoMeta apply: unknown label \"label1\" — not in the Labels Alterant's vocabulary (the accepted set = [")   # the noun re-cut
     end
 
-    @testset "[V-W5] the reach (R-LAB-21): a declaration holds for a later `#~0` metaBlock (V09); a use in an earlier Block refuses (V11); a use before an exclusion on one line refuses (V34)" begin
+    @testset "[V-W5] the reach: a declaration holds for a later `#~0` metaBlock (V09); a use in an earlier Block refuses (V11); a use before an exclusion on one line refuses (V34)" begin
         # AFTER trace V09 `#~0 :++label6⏎⏎y = 1⏎#~0 :label6⏎x = 1`: 2 rows on Blocks #4 (Meta) and #5 (Code), both decided_by Block #4; the first metaBlock and the Code Block between carry none
         r = _lv_run("#~0 :++label6\n\ny = 1\n#~0 :label6\nx = 1\n"); @test r.status === GM.PROCESS_OK
         bs = _lv_blocks(r); @test length(bs) == 4 && _LV_BLS.kind(bs[1]) === :Meta && _LV_BLS.kind(bs[2]) === :Code
@@ -119,11 +118,11 @@ const _LV_V01 = "#~0 :++label6\n#~ :label6\nx = 1\n"
         @test !occursin(":label1", m35)
     end
 
-    @testset "[V-W7] the four malformed shapes refused at the read (R-LAB-22): a condition (V15), a signed member (V16), no name (V17; an EMPTY member — a stray comma — V42, V43, V44, the place still first V45), the prefixed sign with several arguments (V39)" begin
+    @testset "[V-W7] the malformed shapes refused at the read: a condition (V15), a signed member (V16), no name (V17; an EMPTY member — a stray comma — V42, V43, V44, the place still first V45), the prefixed sign with several arguments (V39)" begin
         @test _lv_msg("#~0 :++label6{ isCode }\nx = 1\n") == raw"""GoMeta absorb: a vocabulary statement takes no condition — `:++label6{ … }` (a declaration is a fact of the run, not of a Component); see docs/public-api.md §3.4"""
         @test _lv_msg("#~0 :(++, label6, --label7)\nx = 1\n") == raw"""GoMeta absorb: a label name in a vocabulary statement may not begin with `+` or `-` — got "--label7" in `:++`; see docs/public-api.md §3.4"""
         @test _lv_msg("#~0 :++\nx = 1\n") == raw"""GoMeta absorb: the vocabulary statement `:++` names no label — the forms are `:++x` and `:(++, x, y)`; see docs/public-api.md §3.4"""
-        # (iii) with an EMPTY member — a stray comma (V42 `:(++,) :(,)`, V43 `:(++, label6, )`, V44 `:(--,)`; the place still first, V45 `#~ :(++,)`): every literal below is a byte-exact copy of its probe's view's last line in the AFTER run the header names — the instrument's repin mode compared each direct assertion with its view (0 re-pinned) and its check mode found every raw literal of this file in that run's corpus (the build panel's R1-F1; its cures C01 / C02)
+        # (iii) with an EMPTY member — a stray comma (V42 `:(++,) :(,)`, V43 `:(++, label6, )`, V44 `:(--,)`; the place still first, V45 `#~ :(++,)`): every literal below is a byte-exact copy of its probe's view's last line in the measured run (each direct assertion compared with its view; every raw literal of this file found in that run's printouts)
         @test _lv_msg("#~0 :(++,) :(,)\nx = 1\n") == raw"""GoMeta absorb: the vocabulary statement `:++` names an empty label (a stray comma) — the forms are `:++x` and `:(++, x, y)`; see docs/public-api.md §3.4"""
         @test _lv_msg("#~0 :(++, label6, )\n#~ :zzz\nx = 1\n") == raw"""GoMeta absorb: the vocabulary statement `:++` names an empty label (a stray comma) — the forms are `:++x` and `:(++, x, y)`; see docs/public-api.md §3.4"""
         @test _lv_msg("#~0 :(--,)\nx = 1\n") == raw"""GoMeta absorb: the vocabulary statement `:--` names an empty label (a stray comma) — the forms are `:--x` and `:(--, x, y)`; see docs/public-api.md §3.4"""
@@ -143,7 +142,7 @@ const _LV_V01 = "#~0 :++label6\n#~ :label6\nx = 1\n"
         @test GM.evaluatedAltValue(r, bs[1], :Visib).source === :own && GM.evaluatedAltValue(r, bs[2], :Visib).source === :indirect
     end
 
-    @testset "[V-W9] one line: the use BEFORE the declaration applies (V19 — the order inside a metaBlock immaterial, R-LAB-21); the one-line bracket `:++label6 :label6 :--label6` refuses (V36)" begin
+    @testset "[V-W9] one line: the use BEFORE the declaration applies (V19 — the order inside a metaBlock immaterial); the one-line bracket `:++label6 :label6 :--label6` refuses (V36)" begin
         r = _lv_run("#~0 :label6 :++label6\nx = 1\n"); @test r.status === GM.PROCESS_OK; _lv_two_blocks(r, [:label6])
         m = _lv_msg("#~0 :++label6 :label6 :--label6\nx = 1\n")
         @test m == raw"""GoMeta apply: unknown label "label6" — not in the Labels Alterant's vocabulary (the accepted set = [:doc, :label1, :label2, :label3, :label4, :label5, :⌛, :⛓️, Symbol("⛓️\u200d💥"), :⛔, :🇨🇭, :🌍, :🌛, :🌞, :🌳, :🌷, :🌹, :🌼, :🍀, :🍒, :🍻, :🎨, :🎿, :🏔️, :🐣, :💕, :💡, :💣, :💫, :💯, :💸, :💾, :📝, :📸, :🔥, :😘, :🚀, :🧮, :🫕]); see docs/public-api.md §3.4"""
@@ -155,7 +154,7 @@ const _LV_V01 = "#~0 :++label6\n#~ :label6\nx = 1\n"
         @test m24 == raw"""GoMeta apply: unknown label "label6" — not in the Labels Alterant's vocabulary (the accepted set = [:doc, :label1, :label2, :label3, :label4, :label5, :⌛, :⛓️, Symbol("⛓️\u200d💥"), :⛔, :🇨🇭, :🌍, :🌛, :🌞, :🌳, :🌷, :🌹, :🌼, :🍀, :🍒, :🍻, :🎨, :🎿, :🏔️, :🐣, :💕, :💡, :💣, :💫, :💯, :💸, :💾, :📝, :📸, :🔥, :😘, :🚀, :🧮, :🫕]); see docs/public-api.md §3.4"""
         @test !occursin(":label6", m24)
         r25 = _lv_run("#~0 :++label6\n#~ :label6\nx = 1\n"; profile = ":--label6"); @test r25.status === GM.PROCESS_OK; _lv_two_blocks(r25, [:label6])
-        # V46 (MEASURED FIRST — the oracle's probe added at the build panel): the file's `++` re-admits a BASE name the profile removed — V25's removal is a no-op (label6 is no base name); the other direction of R-LAB-24
+        # V46 (MEASURED FIRST): the file's `++` re-admits a BASE name the profile removed — V25's removal is a no-op (label6 is no base name); the other direction of the user level's value priority
         r46 = _lv_run("#~0 :++label1\n#~ :label1\nx = 1\n"; profile = ":--label1"); @test r46.status === GM.PROCESS_OK; _lv_two_blocks(r46, [:label1])
         @test _lv_msg("#~ :label1\nx = 1\n#~0 :--label1\n#~ :label1\ny = 1\n") == raw"""GoMeta apply: unknown label "label1" — not in the Labels Alterant's vocabulary (the accepted set = [:doc, :label2, :label3, :label4, :label5, :⌛, :⛓️, Symbol("⛓️\u200d💥"), :⛔, :🇨🇭, :🌍, :🌛, :🌞, :🌳, :🌷, :🌹, :🌼, :🍀, :🍒, :🍻, :🎨, :🎿, :🏔️, :🐣, :💕, :💡, :💣, :💫, :💯, :💸, :💾, :📝, :📸, :🔥, :😘, :🚀, :🧮, :🫕]); see docs/public-api.md §3.4"""
         # AFTER trace V26b `#~ :label1⏎x = 1⏎#~0 :--label1⏎y = 1`: 2 rows on Blocks #2 / #3 (label1), the later metaBlock and its Code Block none

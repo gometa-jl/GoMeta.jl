@@ -179,7 +179,7 @@ struct Alterant
                                                    #   Visib declares `:show`; Labels `Symbol[]`, Heading `nothing`, Id the zero compound — the creator's decision, PROVISIONAL (the values may change once used on real examples)
     # --- the capture declaration (the seven other declared slots of an earlier design were removed) ---
     capture::Union{Nothing,CaptureDecl}            # slot (2): the capture declaration
-    onRead::Union{Nothing,Function}                # stage A of the Labels lane (R-LAB-20): THE READ-TIME HOOK — `nothing` for every Alterant
+    onRead::Union{Nothing,Function}                # THE READ-TIME HOOK — `nothing` for every Alterant
                                                    #   but one that declares it; called by `absorbMeta` for the Alterant's statements WITH
                                                    #   arguments, BEFORE the slot bound, as `onRead(run, mhIdx, actionName, args, hasCondition)`:
                                                    #   `nothing` = not the hook's (enqueued as stated); any other value = CONSUMED at the read and

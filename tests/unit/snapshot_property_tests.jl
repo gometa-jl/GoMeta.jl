@@ -712,7 +712,7 @@ end
         s.pT in (GM.Alterant, GM.ActionSpec) && s.path[end] isa Symbol &&
             push!(recfields, (s.pT, s.path[end]))
     end
-    @test length(recfields) == 13                                # every record field exercised (13 with the Alterant record's ninth field `onRead`, the read-time hook; 12 at 0.4.1, since the action record's settribute slot was removed; 13 before that, since the overload rows' ten fields and the action record's spelling, sugar_candidacy and keyed_slot were removed; 27 before: the Alterant's default slot joined, the action's was removed, the vocabulary slot and the record's eight slots were removed — MEASURED)
+    @test length(recfields) == 13                                # every record field exercised (13 since 0.4.2 — the Alterant record's ninth field `onRead`, the read-time hook; 12 at 0.4.1, since the action record's settribute slot was removed; 13 before that, since the overload rows' ten fields and the action record's spelling, sugar_candidacy and keyed_slot were removed; 27 before: the Alterant's default slot joined, the action's was removed, the vocabulary slot and the record's eight slots were removed — MEASURED)
     leafcats = Set(s.cat for s in sites if s.kind in (:leaf, :single, :dictkey))
     @test issubset(Set([:bool, :symbol, :int, :float, :string, :type, :function, :version,
                         :complex, :rational, :nothing_leaf]), leafcats)

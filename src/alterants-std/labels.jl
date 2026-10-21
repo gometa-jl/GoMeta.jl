@@ -6,14 +6,13 @@
 ## ELEGANT."). Under `alterants-std/` — the std-Alterants' territory
 ## (never a Core literal; vocabulary_tests [10] scans `src/` around this directory).
 ##
-## STAGE A OF THE LABELS LANE (`plan/2026-10-18-gometa-labels-add-remove/`; his decisions R-LAB-6 / R-LAB-9 / R-LAB-12 of 2026-10-18 and
-## R-LAB-20 … R-LAB-23 of 2026-10-20): THE VOCABULARY STATEMENTS — `:++x` / `:(++, x, y)` ADD names to the Labels Alterant's VOCABULARY,
-## `:--x` / `:(--, x)` REMOVE names from it (his terms, R-LAB-4) — legal at `#~0` (a metaBlock opened by `#~0`) and in the user level's
-## profile ONLY (R-LAB-9); RECORDED ONCE AT THE READ by the Engine's read-time hook (`onRead` on the registration record): consumed
-## there, never enqueued, no evals row (R-LAB-23); effective from the apply of their own metaBlock onward (R-LAB-21); the four malformed
-## shapes refused (R-LAB-22). THE VOCABULARY OF A RUN: the BASE behind ONE function `base_vocabulary()` — today the literal below, his
-## INTERIM source (his §21 of 2026-10-20: the vocabulary was never meant as part of the Engine; a data file outside it, loaded by this
-## Alterant, is stage C's) — and the run's ADDITIONS and REMOVALS kept APART (`LabelsVocabulary`; his §20: the delta a later copy-and-merge
+## THE VOCABULARY STATEMENTS (0.4.2): `:++x` / `:(++, x, y)` ADD names to the Labels Alterant's VOCABULARY,
+## `:--x` / `:(--, x)` REMOVE names from it (the creator's terms) — legal at `#~0` (a metaBlock opened by `#~0`) and in the user level's
+## profile ONLY; RECORDED ONCE AT THE READ by the Engine's read-time hook (`onRead` on the registration record): consumed
+## there, never enqueued, no evals row; effective from the apply of their own metaBlock onward; the malformed
+## shapes refused. THE VOCABULARY OF A RUN: the BASE behind ONE function `base_vocabulary()` — today the literal below, the
+## INTERIM source (the vocabulary was never meant as part of the Engine; a data file outside it, loaded by this
+## Alterant, is a later release's) — and the run's ADDITIONS and REMOVALS kept APART (`LabelsVocabulary`: the delta a later copy-and-merge
 ## write-out reads); the effective set = base ∪ added − removed, in that order.
 ##
 ## IS:   the Labels Alterant's code — THE HARD-CODED LIST `LABELS_VOCABULARY` (the 38 names the plain file `labels_vocabulary.txt`
@@ -74,13 +73,13 @@ const LABELS_VOCABULARY = Symbol[Symbol(n) for n in (
     "doc",
 )]
 
-"THE BASE VOCABULARY OF A RUN — ONE function (R-LAB-20's gearing): today the literal above, his interim source; stage C replaces this one body with the loaded data file or files"
+"THE BASE VOCABULARY OF A RUN — ONE function: today the literal above, the interim source; a later release replaces this one body with the loaded data file or files"
 base_vocabulary() = LABELS_VOCABULARY
 
 """
     LabelsVocabulary
 
-THE RUN STATE of the Labels Alterant (stage A; R-LAB-20): the BASE, the run's ADDITIONS and its REMOVALS kept APART — the delta a later
+THE RUN STATE of the Labels Alterant : the BASE, the run's ADDITIONS and its REMOVALS kept APART — the delta a later
 copy-and-merge write-out reads (his §20) — and the EFFECTIVE set = base ∪ added − removed, in that order, recomputed by the hook after
 every vocabulary statement. Minted by the hook's first consumed statement (`ProcessState.alt_run`); dies with the call.
 """
@@ -122,13 +121,13 @@ Base.eltype(::Type{LabelsInstance}) = Pair{Symbol,Bool}
 """
     declareLabels!(run, mhIdx, actionName, args, hasCondition) -> nothing | LabelsVocabulary
 
-THE READ-TIME HOOK of the Labels Alterant (the registration record's `onRead`; stage A, R-LAB-20 … R-LAB-23): called by `absorbMeta` for
+THE READ-TIME HOOK of the Labels Alterant (the registration record's `onRead`): called by `absorbMeta` for
 every `:` statement WITH arguments, before the slot bound. Returns `nothing` for a plain label statement (the Engine enqueues it as
 stated) and the run's vocabulary for a VOCABULARY statement — consumed at the read: the Engine stores it as this Alterant's run state and
-ends the statement's processing (no slot action, no row). THE CHECKS, in this order: the PLACE (R-LAB-9 — a metaBlock opened by `#~0`
-or the user level's profile; nothing else), then the four malformed shapes (R-LAB-22): (iv) the prefixed sign with several arguments,
+ends the statement's processing (no slot action, no row). THE CHECKS, in this order: the PLACE (a metaBlock opened by `#~0`
+or the user level's profile; nothing else), then the malformed shapes: (iv) the prefixed sign with several arguments,
 (iii) no name, (ii) a declared name beginning with a sign, (i) a condition. Every refusal carries the read-time prefix "GoMeta absorb:".
-THE FOLD (R-LAB-20; Q-E3 / Q-E4 of 2026-10-18): `++n` — `n` leaves `removed` and joins `added` unless it is in the base or already added;
+THE FOLD: `++n` — `n` leaves `removed` and joins `added` unless it is in the base or already added;
 `--n` — `n` leaves `added` and joins `removed` if it is in the base and not yet removed; `--` of a name never present is a no-op; the
 last statement in reading order wins. A quoted (String) token among the arguments is never a vocabulary statement: handed back, it meets
 the Engine's String-slot law at the enqueue as before.
@@ -140,7 +139,7 @@ function declareLabels!(run, mhIdx::Int, actionName::Symbol, args::Tuple, hasCon
     adding = startswith(s1, "++")
     (adding || startswith(s1, "--")) || return nothing
     sign = s1[1:2]
-    ## THE PLACE (R-LAB-9): the file slot — a metaBlock opened by `#~0` — or the user level's profile
+    ## THE PLACE: the file slot — a metaBlock opened by `#~0` — or the user level's profile
     (mhIdx == fileMHIdx || mhIdx == userMHIdx) ||
         error("GoMeta absorb: a vocabulary statement (`:", sign, "x`, `:(", sign, ", x, y)`) is legal at `#~0` and in the user level's profile only — here ",
             mhIdx == lineMHIdx ? "an inline metaSegment" : string("a metaBlock of depth ", mhIdx - 1), "; see docs/public-api.md §3.4")
@@ -153,8 +152,8 @@ function declareLabels!(run, mhIdx::Int, actionName::Symbol, args::Tuple, hasCon
     isempty(names) &&
         error("GoMeta absorb: the vocabulary statement `:", s1, "` names no label — the forms are `:", sign, "x` and `:(", sign, ", x, y)`; see docs/public-api.md §3.4")
     ## (iii) too — an EMPTY member, a stray comma (`:(++,)`, `:(++, x, )`, `:(--,)`): the splitter hands the empty piece on and the
-    ## Alterant decides (absorb_meta.jl `_split_args`, his §359 (1)); a member that names no label is refused like no name at all
-    ## (R-LAB-22 (iii); the stage-A build panel's finding R1-F1 — the oracle's V42 … V45)
+    ## Alterant decides (absorb_meta.jl `_split_args`); a member that names no label is refused like no name at all
+    ## (an empty member — a stray comma — refused like no name; measured V42 … V45)
     any(n -> isempty(String(n)), names) &&
         error("GoMeta absorb: the vocabulary statement `:", s1, "` names an empty label (a stray comma) — the forms are `:", sign, "x` and `:(", sign, ", x, y)`; see docs/public-api.md §3.4")
     ## (ii) a declared name beginning with a sign (stage B's `:+x` / `:-x` forms; a signed member of a PLAIN list stays an unknown label, as before)
