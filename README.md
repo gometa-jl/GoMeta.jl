@@ -126,7 +126,7 @@ GoMeta is **Fair Source**: the Functional Source License, Version 1.1, MIT Futur
 at university, in the public sector — including internal use and access, non-commercial education and
 research, and professional services provided to other licensees. Not licensed: offering GoMeta to others
 in a commercial product or service that competes with it or with the Licensor's own GoMeta-based
-offerings; for that, contact hello@gometa.dev. Each release becomes **MIT-licensed** on its second
+offerings that exist when the version is made available; for that, contact hello@gometa.dev. Each release becomes **MIT-licensed** on its second
 anniversary, irrevocably. The terms: [LICENSE](LICENSE).
 
 ## JuliaCon 2026
