@@ -506,8 +506,8 @@ build_default_registry() = publish(default_registry_builder())
 ## element-wise in declaration order, and BOUNDARY-UNAMBIGUOUS (no element boundary can be re-cut) — NOT globally
 ## injective. This family has ONE caller — the validate walk's canonical Dict-entry
 ## ORDER (`_walk_dict_entries` below; a deterministic first-failure): the registration digest it fed, with
-## the `seal` fingerprint that digest minted, were removed ("one key-text path
-## stays for the kept door"). Its residual collision classes — module-unqualified type names; the name-folded designated
+## the `seal` fingerprint that digest minted, were removed — one key-text path
+## stays for the kept door. Its residual collision classes — module-unqualified type names; the name-folded designated
 ## callables; function-valued type parameters; untagged parameter categories (`Val{M.T}` ≡ `Val{true}`); un-encoded
 ## container parameters (`Any[1]` ≡ `Int[1]`) — were FINGERPRINT-only, each caught at the door by the snapshot's `===`
 ## leaf compare; for a key ORDER a collision means two keys sort as equal texts — the sort is stable. The former (iv)/(v) hard-stop classes are

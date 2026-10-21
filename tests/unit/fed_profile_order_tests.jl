@@ -108,8 +108,8 @@ const _FO_CORPUS = joinpath(@__DIR__, "..", "golden", "corpus", "InFileFolder") 
     end
 
     @testset "[W5] two documents fed `:label3`: a label stated AFTER the heading or the `hide` is not seen — the fed label adds its row and leaves the heading and the Visib rows the no-feed run's" begin
-        # AFTER views P24_head_after_label_fed_label3 (4 rows: label_label2, label_label3 on both Blocks; NO head row) and
-        # P25_hide_before_label_fed_label3 (4 rows: label_label1, label_label3 on both; NO visib row); the no-feed twins P24n / P25n 2 rows each
+        # MEASURED: fed `:label3` — the heading document 4 rows (label_label2, label_label3 on both Blocks; NO head row) and
+        # the hide document 4 rows (label_label1, label_label3 on both; NO visib row); the no-feed twins 2 rows each
         p24 = "#~2 head(\"T\"){ :label2 } :label2\nx = 1\n"; p25 = "#~ hide{ :label1 } :label1\nx = 1\n"
         f24 = _fo_run(p24; profile = ":label3"); n24 = _fo_run(p24)
         @test !any(x -> startswith(String(x.attr), "head"), _fo_recs(f24)) && !any(x -> startswith(String(x.attr), "head"), _fo_recs(n24))

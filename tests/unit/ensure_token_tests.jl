@@ -8,7 +8,7 @@
 # the `render ∘ ingest ∘ render == render` fixed point).
 #
 # EVERY expected string below was PRE-DECLARED from measured pre-edit state
-# BEFORE the step-(b) edit existed and then measured
+# BEFORE the second disjunct existed and then measured
 # to hold — never fitted post-hoc.
 #
 # THE FIDELITY BOUND: an authored marker-headed
@@ -37,7 +37,7 @@ _et_rr(s::AbstractString; cfg = _et_jl) = _et_r(_et_r(s; cfg = cfg); cfg = cfg)
 @testset "ensure_token_tests (the second disjunct)" begin
 
     @testset "[1] engine-hidden re-ingestion: the fixed point, x3 flavors" begin
-        ## The §4 head-shape (i): engine-hidden `## #~ hide` / `//# //~ hide` /
+        ## The head-shape (i): engine-hidden `## #~ hide` / `//# //~ hide` /
         ## `%% %~ hide` — one render then the fixed point, per flavor.
         @test _et_r("#~ hide\nx = 1\n")  == "## #~ hide\n## x = 1\n"
         @test _et_rr("#~ hide\nx = 1\n") == "## #~ hide\n## x = 1\n"
@@ -48,7 +48,7 @@ _et_rr(s::AbstractString; cfg = _et_jl) = _et_r(_et_r(s; cfg = cfg); cfg = cfg)
     end
 
     @testset "[2] authored comment head under hide: the (a) disjunct unchanged" begin
-        ## The §4 head-shape (ii): comment-classified + fold-prefixed lines take
+        ## The head-shape (ii): comment-classified + fold-prefixed lines take
         ## no marker (today's R-2 fold — byte-identical to the behavior before the second disjunct).
         @test _et_r("#~ hide\n## note\nx = 1\n") == "## #~ hide\n## note\n## x = 1\n"
         @test _et_rr("#~ hide\n## note\nx = 1\n") == "## #~ hide\n## note\n## x = 1\n"
@@ -68,7 +68,7 @@ _et_rr(s::AbstractString; cfg = _et_jl) = _et_r(_et_r(s; cfg = cfg); cfg = cfg)
     end
 
     @testset "[3] authored marker-head non-comment under hide: the (b) bite, x3 flavors" begin
-        ## The §4 head-shape (iii): the authored marker-headed metaLine-carrying
+        ## The head-shape (iii): the authored marker-headed metaLine-carrying
         ## line (segmented; live self-hide) takes NO markers — render == source,
         ## the fixed point at n=0. THE FIDELITY BOUND witnessed: these authored
         ## forms are byte-indistinguishable from engine-hidden output.
@@ -100,7 +100,7 @@ _et_rr(s::AbstractString; cfg = _et_jl) = _et_r(_et_r(s; cfg = cfg); cfg = cfg)
 
     @testset "[6] the multi-segment fresh-hide: FIRST-render bytes must not move (the boundary)" begin
         ## Per-segment markers on a fresh inline hide — byte-identical to the
-        ## the first render before the second disjunct; the fixed point closes only on re-ingestion.
+        ## first render before the second disjunct; the fixed point closes only on re-ingestion.
         @test _et_r("x = 1 #~ hide\n")  == "## x = 1 ## #~ hide\n"
         @test _et_rr("x = 1 #~ hide\n") == "## x = 1 ## #~ hide\n"
         ## The trailing-comment multi-segment shape (fold at segment grain rides

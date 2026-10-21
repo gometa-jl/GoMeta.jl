@@ -95,7 +95,7 @@ _plugin_with_default(p, d) = GM.Alterant(; altName = p.altName, setMode = p.setM
         r1 = GM.goMeta(Vector{UInt8}(codeunits("x = 1\n#~ hide\n\ny = 2\n")); registry = R)
         @test r1.status === GM.PROCESS_ERROR
         @test _codes(r1.diagnostics) == [:POST_SEAL_MUTATION]
-        @test _errors(r1.diagnostics) == [:POST_SEAL_MUTATION]                 # [h2] …and the post-seal refusal's one row an :error (MEASURED)
+        @test _errors(r1.diagnostics) == [:POST_SEAL_MUTATION]                 # …and the post-seal refusal's one row an :error (MEASURED)
         @test isempty(Main.BasicRenderer.outputs(r1).render_bytes)
         @test isempty(GM.readAltValuesEvals(r1.altValues_evals))               # the delivered part carries no rows on the refusal path (measured: rows 0)
         @test !isempty(r1.diagnostics)                                         # non-OK ⇒ non-empty diagnostics (measured: 1, :POST_SEAL_MUTATION)

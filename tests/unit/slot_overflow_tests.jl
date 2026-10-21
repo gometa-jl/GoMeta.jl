@@ -10,7 +10,7 @@
 #       statements in one slot — where the tree before refused the fifth at its registered count — and refuses the ninth; an extended
 #       registry of 11 admits eight and refuses the ninth — where the tree before admitted up to its count (MEASURED before and after the change).
 # REASONING: the creator's word — the current slot limit is a hard-coded starting size, raised by hand if the examples need it; a dedicated error
-#       message is sufficient for now; the slower overflow buffer is a later design (V05-14).
+#       message is sufficient for now; the slower overflow buffer is a later version's design.
 # PURPOSE: the queue tensor's width, exercised at its edge and one past it.
 using Test
 import GoMeta as GM

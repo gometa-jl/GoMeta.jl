@@ -13,7 +13,7 @@
 # REASONING: the ≡ law is the DECISION itself, so the oracle — not hand-picked expectations —
 #       is the primary witness; hand-pins remain for the named outcomes, so a
 #       regression flips a NAMED test. The bang-first family is the REFUSAL class, excluded
-#       from the oracle by the decision (§4.1).
+#       from the oracle by the decision.
 # PURPOSE: the inert-marker law, the bang-first refusal and the Labels guards cannot drift silently.
 
 using Test
@@ -65,7 +65,7 @@ _liveempty(text) = join(
             @test GM.readAltValuesEvals(r_i.altValues_evals) == GM.readAltValuesEvals(r_l.altValues_evals)   # the WHOLE rows, handles included (REAL-1 R2 #7; measured equal on all 18 shapes, 2026-09-30) — an inert-path bug assigning right values to WRONG occurrences now reds
             @test _liveempty(String(copy(Main.BasicRenderer.outputs(r_i).render_bytes))) ==
                   _liveempty(String(copy(Main.BasicRenderer.outputs(r_l).render_bytes)))
-            # §4.4: the inert metaLine's OWN bytes travel VERBATIM in the render ('!' and
+            # the inert metaLine's OWN bytes travel VERBATIM in the render ('!' and
             # content included; a standing hide may `## `-prefix the line — substring holds).
             # Asserted RAW, before _liveempty, so the normalizer stays a comparison aid,
             # never a blind spot.

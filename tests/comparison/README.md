@@ -28,7 +28,7 @@ Two deliveries have the same content for an input when, after each is projected 
 
 ## 3. What is NOT compared
 
-Component ids and ordinals; cell handles and the rows' keys; the `range` struct field (written by neither parser); the `hide`/`show`/`discard` flags; Julia types and containers; the order of lines (sorted); the header line (each lane's producer).
+Component ids and ordinals; cell handles and the rows' keys; the `range` struct field (written by neither parser); the `hide`/`show`/`discard` flags; Julia types and containers; the order of lines (sorted); the header line (each producer).
 
 ## 4. The content questions and the open points (none blocks the freeze; the forms carry 0.4.0's behaviour)
 
@@ -61,10 +61,10 @@ A changed body is never edited by hand: it is re-made with `--at <the parent's s
 
 The yardstick is the FORM of §2; the twelve files beside this page are version 0.4's reference altValues in that form, FROZEN as the target by the creator's decision of 2026-10-03. A variant uses it so:
 
-1. **The same inputs.** The twelve corpus inputs are the seven `examples/InFileFolder/*.jl` and the five `tests/golden/constructed/InFileFolder/*.jl` of THIS code home at the commit each form's header names (`produced by GoMeta v0.4 at <sha>`). Run your line on the same bytes — read them in place or copy them unchanged; never edit them (they are the creator's examples, the law of the design).
+1. **The same inputs.** The twelve corpus inputs are the seven `examples/InFileFolder/*.jl` and the five `tests/golden/constructed/InFileFolder/*.jl` of THIS repository at the commit each form's header names (`produced by GoMeta v0.4 at <sha>`). Run your line on the same bytes — read them in place or copy them unchanged; never edit them (they are the creator's examples, the law of the design).
 2. **Your own adapter**: one function in your line's development tools that takes your delivery for one input and writes the form of §2 — the header line with your line's name in place of `GoMeta v0.4` and your producing commit, then every C and A line, sorted by code point (the order of `LC_ALL=C sort`), one newline at the end. The grammar is fixed here: copy it byte for byte — the separator ` | `, the key shapes, the span rules and the character unit, the flag qualification and sorting, the value grammar, the source words. A field your line cannot yet produce (the source as a Component key before your delivery records an origin, say) is written as `-`, and a header comment line (`#`-led, dropped by the comparator) says which field and why — so the comparison shows the gap at the body lines, honestly, instead of hiding it.
 3. **Your twelve** go into a folder of YOUR line (`tests/comparison/` there, the same stems, `.cmp.txt`); nothing is written into this folder but by this line's `regenerate.jl`.
-4. **Compare file by file:** `bash <this code home>/devtools/compare_forms.sh <this line's form> <your form>` — exit 0 = the same content; exit 1 = different, the differing lines printed (`<` this line's, `>` yours); exit 2 = usage. A difference in a `C` line is a difference in the parser's reading of the file (the tree's content); in an `A` line, in the Engine's evaluated value or in where it came from.
+4. **Compare file by file:** `bash <this repository>/devtools/compare_forms.sh <this line's form> <your form>` — exit 0 = the same content; exit 1 = different, the differing lines printed (`<` this line's, `>` yours); exit 2 = usage. A difference in a `C` line is a difference in the parser's reading of the file (the tree's content); in an `A` line, in the Engine's evaluated value or in where it came from.
 5. **Read a difference against §4 before changing code.** The points listed there are the creator's to decide; a variant does not settle them by matching version 0.4, and version 0.4 does not settle them by having landed first.
 6. **When this line's forms are re-made** (a later decision of the creator moves a value), the new headers name the re-making commit's parent and that commit's message names what moved and why; re-run step 4 against the new files.
 7. **Record the result as the comparator's output, unabridged**, in your line's record — never a retyped summary of it.

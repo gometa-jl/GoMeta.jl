@@ -320,13 +320,13 @@ end
         @test [a for (_, a, _, _) in GM.readAltValuesEvals(_run("#~ \"T\" ## a trailing comment\nx = 1\n").altValues_evals)] == [:head_1]
         r15 = GM.readAltValuesEvals(_run("#~ \"T\" hide\nx = 1\n").altValues_evals)
         @test length(r15) == 3 && count(t -> t[2] === :head_1, r15) == 1 && count(t -> t[2] === :visib && t[3] === :hide, r15) == 2
-        # THE RATIFIED VOCABULARY BOUNDARIES: `#~0` = the
+        # THE DECIDED VOCABULARY BOUNDARIES: `#~0` = the
         # file level records head_0; `#~8` = the deepest depth-digit records head_8
         r0 = _run("#~0 \"Root\"\nx = 1\n")
         @test (:head_0, "Root") in _heads(r0)
         r8 = _run("#~8 \"Deep\"\nx = 1\n")
         @test (:head_8, "Deep") in _heads(r8)
-        # THE RATIFIED REGISTRY ROW, pinned directly (not through the
+        # THE REGISTRY ROW AS DECIDED, pinned directly (not through the
         # behavioral guards alone) — the 4th plugin IS :heading in :localOnly mode (the set mode's name stays — the creator's decision)
         @test GM.DEFAULT_REGISTRY.plugins[4].altName === :heading
         @test GM.DEFAULT_REGISTRY.plugins[4].setMode === :localOnly

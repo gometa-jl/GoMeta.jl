@@ -19,7 +19,7 @@ const _FP_BLS = GM.BLS
 _fp_bytes(s::String) = Vector{UInt8}(codeunits(s))
 
 ## A legal non-julia flavor kwarg set for guard/INTERIM-law witnesses (passes every
-## construction value guard; LaTeX-shaped on purpose — the W5 data point's silhouette).
+## construction value guard; LaTeX-shaped on purpose — the LaTeX record's silhouette).
 _fp_latexish_kwargs(; directives, flavor_tag = :latexish) = (
     flavor_tag       = flavor_tag,
     lead             = "%",
@@ -116,7 +116,7 @@ _fp_julia_kwargs(; overrides...) = merge((
 
     @testset "[5] record guards + the INTERIM reserved-arms law" begin
         ## The INTERIM law: a NON-julia flavor claiming a reserved arm REFUSES at
-        ## construction (LaTeX-shaped witness — the W5 data point lands :absent).
+        ## construction (LaTeX-shaped witness — the LaTeX data point lands :absent).
         bad_claim = (
             (char = '-', status = :claimed, flags = (:startNewBlock,), ws_strict = false,
                 consume = :run),
@@ -182,7 +182,7 @@ _fp_julia_kwargs(; overrides...) = merge((
         @test_throws AssertionError _FP_BLS._mk_flavor(;
             _fp_julia_kwargs(bare_policy = :komment)...)
         ## The positional constructor CEASED TO EXIST (the inner keyword
-        ## constructor replaced it — the W1 CONSTRUCTION-LAW hazard closed
+        ## constructor replaced it — the construction-law hazard closed
         ## mechanically): positional construction throws MethodError.
         @test_throws MethodError _FP_BLS.FlavorProfile(:julia, "#", '#', "## ",
             "##", r"^x", _FP_BLS.FLAVOR_JULIA.directives, :content,
