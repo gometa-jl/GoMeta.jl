@@ -50,7 +50,7 @@ module Alterants
 import ..BLS as BLS
 using ..BLS.NamedElements
 using StaticArrays: SVector
-## stage A of the Labels lane: the Labels Alterant's read-time hook checks the PLACE of a vocabulary statement by the meta-hierarchy
+## the Labels Alterant's read-time hook checks the PLACE of a vocabulary statement by the meta-hierarchy
 ## index the Engine hands it (`#~0` = the file slot, the user level, an inline metaSegment) — the structural consts have their single
 ## source in state.jl, included before this file (the pattern of `module CnS` below).
 using ..GoMeta: fileMHIdx, userMHIdx, lineMHIdx
@@ -1008,7 +1008,7 @@ the four `ActionSpec` fields of 0.4.0, the settribute slot removed; the overload
 rows once walked within removed as well).
 
 DOES: calls `_domain_slot_probe!` once per (record, slot) — every `_WALK_PLUGIN_FIELDS` slot of every `Alterant`, the
-designated flag set for `setAltInstance` / `getAltInstance` / `onRead` (the ninth field, stage A of the Labels lane); every `_WALK_ACTION_FIELDS` slot of every `ActionSpec`,
+designated flag set for `setAltInstance` / `getAltInstance` / `onRead` (the ninth field, since 0.4.2); every `_WALK_ACTION_FIELDS` slot of every `ActionSpec`,
 designated for `validate`: predicate 1 = membership AT POSITION (leaves via `_domain_leaf`; the value-domain containers;
 the record structs only at their structural positions — inside a declared slot one is unencodable; a `Function` only
 in the designated callable fields and never inside declared data; `String`-only string values; no undefined container
@@ -1026,7 +1026,7 @@ function _encodability_collect!(diags::Vector{Diagnostic}, plugins::Vector{Alter
     for p in plugins
         for slot in _WALK_PLUGIN_FIELDS
             _domain_slot_probe!(diags, "alterant", p.altName, slot, getfield(p, slot),
-                                slot === :setAltInstance || slot === :getAltInstance || slot === :onRead)   # onRead designated (stage A)
+                                slot === :setAltInstance || slot === :getAltInstance || slot === :onRead)   # onRead designated
         end
     end
     for s in action_specs
@@ -1187,7 +1187,7 @@ function _domain_copy(x, memo::IdDict{Any,Any};
             if v isa Alterant
                 fr.kdes[4] = true            # setAltInstance
                 fr.kdes[5] = true            # getAltInstance
-                fr.kdes[9] = true            # onRead (stage A of the Labels lane — the ninth field, designated)
+                fr.kdes[9] = true            # onRead (the ninth field, designated)
             elseif v isa ActionSpec
                 fr.kdes[4] = true            # validate
             end
@@ -1377,7 +1377,7 @@ function _egal_cmp(t::_EgalTask, work, guards)
         flds = a isa Alterant ? _WALK_PLUGIN_FIELDS : _WALK_ACTION_FIELDS
         for i in length(flds):-1:1
             f = flds[i]
-            des = (a isa Alterant && (f === :setAltInstance || f === :getAltInstance || f === :onRead)) ||   # onRead designated (stage A)
+            des = (a isa Alterant && (f === :setAltInstance || f === :getAltInstance || f === :onRead)) ||   # onRead designated
                   (a isa ActionSpec && f === :validate)
             push!(work, _EgalTask(getfield(a, f), getfield(b, f), (t.path, f), t.pos, des, 0x00))
         end

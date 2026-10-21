@@ -469,7 +469,7 @@ function absorbMeta(
     local conditionExpr::Union{Nothing,Expr}   # Julia's Expr, or the `nothing` sentinel (an action without `{}`)
     local crntAltActionIdx::Int8
     local altActionOnRow::Int8
-    local argsTup::Union{Nothing,Tuple{Vararg{AlterantArgT}}}   # stage A: the coerced arguments, hoisted to the statement's read — read by the hook and by the enqueue
+    local argsTup::Union{Nothing,Tuple{Vararg{AlterantArgT}}}   # the coerced arguments, hoisted to the statement's read — read by the hook and by the enqueue
     firstTok::Bool = true   # the quoted-first recognizer fires only for the FIRST
                             # metaComponent of the meta region
     while (thisInd = nextind(metaSS, thisInd)) < ncodeunits(metaSS) + 1
@@ -481,7 +481,7 @@ function absorbMeta(
                 prevind(metaSS, thisInd),
                 firstTok)
             firstTok = false
-            ## the argument coercion (stage A) sits below — after the action lookup and the feed's one `localOnly` refusal, before the hook
+            ## the argument coercion sits below — after the action lookup and the feed's one `localOnly` refusal, before the hook
             # `st.registry` supplies the sorted action table, the action→index map, the
             # declaration-order `action_to_plugin` index, and the accumulate-set; the slot tensors
             # (`count_actions_per_slot`/`slot_has_accum`) and the queue tensor (`queued`) are the
@@ -566,7 +566,7 @@ function absorbMeta(
             if conditionExpr !== nothing            # the no-condition sentinel is `nothing` (since v0.2)
                 st.queue.conditions[altActionOnRow, crntSlot] = conditionExpr
             end
-            if argsTup !== nothing   # the tuple coerced at the statement's read (stage A — above)
+            if argsTup !== nothing   # the tuple coerced at the statement's read (above)
                 local spec = st.registry.action_specs[st.registry.spec_index[Symbol(altActionName)]]
                 ## THE ONE TEXT-ARGUMENT RULE: the declared record says which slot takes a quoted text.
                 _string_slot_check(spec, argsTup, metaSS)

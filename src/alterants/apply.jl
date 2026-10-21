@@ -133,7 +133,7 @@ function detAltValuesForSetOfSlots(
                 local _condOutcome = _cond === nothing ? nothing : Core.eval(GoMeta, _cond)   # Julia evaluates the stored Expr (as the original engine's :37/:95 did)
                 if _cond === nothing || _condOutcome
                     if crntAltIdx ∉ keys(st.working)
-                        st.working[crntAltIdx] = _freshInstance(st, crntAltIdx)   # stage A: the run state handed to the constructor where a hook minted one
+                        st.working[crntAltIdx] = _freshInstance(st, crntAltIdx)   # the run state handed to the constructor where a hook minted one
                     end
                     _record_origin!(st, crntAltIdx, row, crntSlot)   # the provenance
                     if st.queue.args[row, crntSlot] === nothing
@@ -221,7 +221,7 @@ function detAltValuesForSetOfSlots(
                     ## (a `:mutExclusive` one is stopped above; the Id compound's fields fill the same fresh instance).
                     if overridable && crntAltIdx ∈ view(previousSetAltIdxVec, 1:countPreviousSetAlts) &&
                        crntAltIdx ∉ view(previousSetAltIdxVec, (countPreviousSetAlts+1):(countPreviousSetAlts+countInCrntSlotSetAlts))
-                        st.working[crntAltIdx] = _freshInstance(st, crntAltIdx)   # stage A: the run state handed to the constructor where a hook minted one
+                        st.working[crntAltIdx] = _freshInstance(st, crntAltIdx)   # the run state handed to the constructor where a hook minted one
                         empty!(st.working_origin[crntAltIdx])
                     end
                     if crntAltIdx ∉ view(previousSetAltIdxVec,
@@ -237,7 +237,7 @@ function detAltValuesForSetOfSlots(
                     end
 
                     if crntAltIdx ∉ keys(st.working)
-                        st.working[crntAltIdx] = _freshInstance(st, crntAltIdx)   # stage A: the run state handed to the constructor where a hook minted one
+                        st.working[crntAltIdx] = _freshInstance(st, crntAltIdx)   # the run state handed to the constructor where a hook minted one
                     end
                     _record_origin!(st, crntAltIdx, idx, crntSlot)   # the provenance
                     if st.queue.args[idx, crntSlot] === nothing

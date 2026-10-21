@@ -187,7 +187,7 @@ struct Alterant
                                                    #   ends. A designated callable field (the registry's four loci), appended LAST (the copier
                                                    #   rebuilds the record positionally). The Labels Alterant's hook: labels.jl `declareLabels!`.
 end
-"The keyword form: the two declared slots addressable by name; an unnamed slot takes its nothing/undeclared default."
+"The keyword form: the two declared slots and the read-time hook addressable by name; an unnamed slot takes its nothing/undeclared default."
 Alterant(; altName::Symbol, setMode::Symbol, altConstructor::Type, setAltInstance::Function,
            getAltInstance::Union{Nothing,Function} = nothing,
            precedencesTuple::Union{Nothing,NTuple{NUM_MH_LEVELS,Symbol}} = nothing,
@@ -940,7 +940,7 @@ function init_state(parse_state::BLS.ParseState, config::GoMetaConfig, registry:
         fileMHIdx, fileMHIdx, fileMHIdx,   # crnt_depth_idx / first_parent_idx / crnt_idx
         nothing,                     # meta_context — published per component at the walk handover
         nothing,                     # user_context — set only inside the feed routine's bracket
-        Any[nothing for _ in 1:num_alterants(registry)],   # alt_run (stage A of the Labels lane): every cell `nothing` until a hook mints one
+        Any[nothing for _ in 1:num_alterants(registry)],   # alt_run: every cell `nothing` until a hook mints one
     )
 end
 

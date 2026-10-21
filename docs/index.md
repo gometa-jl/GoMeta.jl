@@ -56,7 +56,7 @@ error-mode catalogue ([Public API + error modes](public-api.md) §3).
 
 ## Status
 
-`0.4.1` (alpha maturity) — a working, tested engine for the **v0 subset** of the GoMeta language, with a
+`0.4.2` (alpha maturity) — a working, tested engine for the **v0 subset** of the GoMeta language, with a
 byte-exact oracle: the seven committed example pairs under `examples/` render byte-identically,
 pinned by the shipped test suite under a plain `Pkg.test()`. The language grows by design; the
 v0 subset forecloses none of it. `0.4.1` changes one behaviour under a fed profile (`GoMetaConfig.user_mh_profile`):

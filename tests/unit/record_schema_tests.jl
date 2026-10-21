@@ -1,7 +1,7 @@
 # record_schema_tests.jl — the registration-record schema EXTENSION witnesses (APPEND-ONLY).
 #
 # IS:   the unit witnesses of the schema extension — the declared slots ride the record (seven of the ten
-#       were removed within the 0.4 development; the record keeps eight fields)
+#       were removed within the 0.4 development; the record keeps eight fields — nine since 0.4.2, the read-time hook `onRead` the ninth)
 #       nothing/empty-defaulted; the v0.3.2 positional constructors were removed (the keyword form is the one form; the former additive-extension
 #       law); the generic `action_to_settribute` table and the per-action `settribute` slot it derived from were REMOVED
 #       (the Alterant-named `visib_to_settribute` field and the `===` alias

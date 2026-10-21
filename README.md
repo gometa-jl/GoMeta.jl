@@ -97,7 +97,7 @@ Julia file you `include`. One caveat: metaLine names intern as Julia `Symbol`s, 
 
 ## Status
 
-`0.4.1`, **alpha**: a working, tested engine for the **v0 subset** of the GoMeta language. The seven
+`0.4.2`, **alpha**: a working, tested engine for the **v0 subset** of the GoMeta language. The seven
 committed examples render byte for byte as their committed outputs, pinned by the shipped test suite
 (`Pkg.test()`) and checked by CI on Julia 1.12, Linux. The surface may still
 move: **no backward compatibility and no deprecation until at least v0.7**, by the creator's policy —

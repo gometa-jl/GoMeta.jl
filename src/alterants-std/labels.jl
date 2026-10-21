@@ -79,8 +79,8 @@ base_vocabulary() = LABELS_VOCABULARY
 """
     LabelsVocabulary
 
-THE RUN STATE of the Labels Alterant : the BASE, the run's ADDITIONS and its REMOVALS kept APART — the delta a later
-copy-and-merge write-out reads (his §20) — and the EFFECTIVE set = base ∪ added − removed, in that order, recomputed by the hook after
+THE RUN STATE of the Labels Alterant: the BASE, the run's ADDITIONS and its REMOVALS kept APART — the delta a later
+copy-and-merge write-out reads (the creator's design) — and the EFFECTIVE set = base ∪ added − removed, in that order, recomputed by the hook after
 every vocabulary statement. Minted by the hook's first consumed statement (`ProcessState.alt_run`); dies with the call.
 """
 mutable struct LabelsVocabulary
@@ -102,7 +102,7 @@ end
 """
     LabelsInstance
 
-THE PER-COMPONENT INSTANCE of the Labels Alterant (stage A): the applied labels (the former bare `Dict{Symbol,Bool}`) and the run's
+THE PER-COMPONENT INSTANCE of the Labels Alterant (since 0.4.2): the applied labels (the former bare `Dict{Symbol,Bool}`) and the run's
 vocabulary the setter checks against. Built by the Engine's instance constructor: the zero-argument call where the run minted no
 vocabulary (the base), the one-argument call with the run state where it did (`_freshInstance`, apply.jl). Iterates as the Dict did —
 the capture's one read of the instance (`for (kk, vv) in inst`, annotations.jl).
@@ -156,7 +156,7 @@ function declareLabels!(run, mhIdx::Int, actionName::Symbol, args::Tuple, hasCon
     ## (an empty member — a stray comma — refused like no name; measured V42 … V45)
     any(n -> isempty(String(n)), names) &&
         error("GoMeta absorb: the vocabulary statement `:", s1, "` names an empty label (a stray comma) — the forms are `:", sign, "x` and `:(", sign, ", x, y)`; see docs/public-api.md §3.4")
-    ## (ii) a declared name beginning with a sign (stage B's `:+x` / `:-x` forms; a signed member of a PLAIN list stays an unknown label, as before)
+    ## (ii) a declared name beginning with a sign (the names `+x` / `-x` kept free for a later release's forms; a signed member of a PLAIN list stays an unknown label, as before)
     for n in names
         ns = String(n)
         (startswith(ns, "+") || startswith(ns, "-")) &&
@@ -178,7 +178,7 @@ function declareLabels!(run, mhIdx::Int, actionName::Symbol, args::Tuple, hasCon
     return _recompute_effective!(v)
 end
 
-"the setter on the stage-A instance: the applied labels checked against the RUN's effective vocabulary"
+"the setter on the `LabelsInstance`: the applied labels checked against the RUN's effective vocabulary"
 function setLabels(
     crntLabels::LabelsInstance, # The Alterant here.
     actionName::Symbol,
@@ -187,7 +187,7 @@ function setLabels(
     _setLabels!(crntLabels.applied, crntLabels.vocab.effective, actionName, labels...)
 end
 
-"the setter on a bare `Dict{Symbol,Bool}` — KEPT (stage A): a custom registration pairing the shipped setter with `altConstructor = Dict{Symbol,Bool}` checks against the base list, as before"
+"the setter on a bare `Dict{Symbol,Bool}` — KEPT: a custom registration pairing the shipped setter with `altConstructor = Dict{Symbol,Bool}` checks against the base list, as before"
 function setLabels(
     crntLabels::Dict{Symbol,Bool}, # The Alterant here.
     actionName::Symbol,
@@ -231,7 +231,7 @@ function _setLabels!(
     end
 end
 
-"the checker on the stage-A instance: the applied labels alone (the legacy's checker; the vocabulary plays no part in a query)"
+"the checker on the `LabelsInstance`: the applied labels alone (the original engine's checker; the vocabulary plays no part in a query)"
 function checkLabels(
     crntLabels::LabelsInstance, # The Alterant here.
     actionName::Symbol,

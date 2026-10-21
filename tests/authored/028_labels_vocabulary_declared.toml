@@ -11,14 +11,14 @@ component = "block@1"
 alterant = "Labels"
 value = ["label6"]
 decided_by = ["block@1"]
-note = "the metaBlock opened by the line-1 metaLine (#~0 :++label6) and holding the line-2 metaLine (#~ :label6): its own label, applied by line 2; the line-1 vocabulary statement mints no row. Provenance: one Block-grain row (label_label6), decided_by this Block, in the AFTER printout V01 on the stage-A scratch (observed 2026-10-20)"
+note = "the metaBlock opened by the line-1 metaLine (#~0 :++label6) and holding the line-2 metaLine (#~ :label6): its own label, applied by line 2; the line-1 vocabulary statement mints no row. Provenance: one Block-grain row (label_label6), decided_by this Block, in the measured printout V01 (observed 2026-10-20)"
 
 [[expect]]
 component = "block@3"
 alterant = "Labels"
 value = ["label6"]
 decided_by = ["block@1"]
-note = "the Code Block holding line 3: attached to that meta and therefore inherits label6. Provenance: one Block-grain row (label_label6), decided_by block@1, in the AFTER printout V01 (observed 2026-10-20)"
+note = "the Code Block holding line 3: attached to that meta and therefore inherits label6. Provenance: one Block-grain row (label_label6), decided_by block@1, in the measured printout V01 (observed 2026-10-20)"
 
 [[expect]]
 component = "line@1"

@@ -181,7 +181,7 @@ end
         pT === GM.Alterant && pf === :getAltInstance && return GM.Alterants.checkLabels
         pT === GM.Alterant && pf === :precedencesTuple && return ntuple(i -> Symbol("p", i), GM.NUM_MH_LEVELS)
         pT === GM.Alterant && pf === :capture && return GM.CaptureDecl(:single)
-        pT === GM.Alterant && pf === :onRead && return _swap_fn_a   # stage A of the Labels lane: the ninth record field, a designated callable (a `nothing` leaf — a single-point site)
+        pT === GM.Alterant && pf === :onRead && return _swap_fn_a   # the ninth record field (since 0.4.2), a designated callable (a `nothing` leaf — a single-point site)
         pT === GM.ActionSpec && pf === :validate && return _swap_fn_a
         pT === GM.Alterant && pf === :default && return GM.Declared(1)   # the slot is the Alterant's
         pT === GM.CaptureDecl && pf === :attr_stem && return :zz   # (the raw error() fault otherwise)

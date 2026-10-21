@@ -10,7 +10,7 @@
 #       the `raw"""…"""` literals below — or from the custom-registration probe; every literal confirmed against the
 #       proofs' run. THE FORMS at `#~0` and at the user level ([V-W1], [V-W2]); THE PLACE refused elsewhere, the
 #       place checked first ([V-W3], [V-W15]); THE REFUSAL'S ACCEPTED SET the run's ([V-W4]); THE REACH — from the own metaBlock onward,
-#       a Block above untouched ([V-W5], [V-W10]); THE FOLD in reading order, the no-ops ([V-W6]); THE FOUR MALFORMED SHAPES ([V-W7]); a
+#       a Block above untouched ([V-W5], [V-W10]); THE FOLD in reading order, the no-ops ([V-W6]); THE MALFORMED SHAPES ([V-W7]); a
 #       declared name in a condition ([V-W8]); the one-line orders ([V-W9]); the user level against the file ([V-W10]); THE ENGINE'S DOOR —
 #       the record's `onRead` default and the shipped registration ([V-W11]), consumed at the read and not enqueued ([V-W12]), nothing
 #       persists between calls ([V-W13]), a CUSTOM Alterant's hook through the door ([V-W14]); the hook's delta called directly ([V-W16]).
@@ -19,7 +19,7 @@
 #       vocabulary statement is pinned already (fed_profile_order_tests.jl [W1]–[W13]; vocabulary_tests.jl [2] / [2b]) — no new testset for it.
 #       NOT witnessed here (the oracle's alone): V10, V18, V21, V23, V27 (026 with a declaration prepended: 28 rows unchanged), V38, the
 #       28-input fed sweep with `:++🪵 :🪵` and with `:++🪵` alone; the glued-digit gap is open.
-# PURPOSE: the vocabulary statements, measured — never inferred from the hook's docstring or the plan's prose.
+# PURPOSE: the vocabulary statements, measured — never inferred from the hook's docstring or from prose.
 
 using Test
 import GoMeta as GM
@@ -111,7 +111,7 @@ const _LV_V01 = "#~0 :++label6\n#~ :label6\nx = 1\n"
         @test m13 == raw"""GoMeta apply: unknown label "label6" — not in the Labels Alterant's vocabulary (the accepted set = [:doc, :label1, :label2, :label3, :label4, :label5, :⌛, :⛓️, Symbol("⛓️\u200d💥"), :⛔, :🇨🇭, :🌍, :🌛, :🌞, :🌳, :🌷, :🌹, :🌼, :🍀, :🍒, :🍻, :🎨, :🎿, :🏔️, :🐣, :💕, :💡, :💣, :💫, :💯, :💸, :💾, :📝, :📸, :🔥, :😘, :🚀, :🧮, :🫕]); see docs/public-api.md §3.4"""
         @test !occursin(":label6", m13)
         r14 = _lv_run("#~0 :++label1\n#~ :label1\nx = 1\n"); @test r14.status === GM.PROCESS_OK; _lv_two_blocks(r14, [:label1])
-        # AFTER trace V41 `#~0 :--label1 :++label1⏎#~ :label1⏎x = 1` (AFTER_final; BEFORE refused): a BASE name removed then added again is back — 2 rows label1
+        # AFTER trace V41 `#~0 :--label1 :++label1⏎#~ :label1⏎x = 1` (measured; refused before the vocabulary statements): a BASE name removed then added again is back — 2 rows label1
         r41 = _lv_run("#~0 :--label1 :++label1\n#~ :label1\nx = 1\n"); @test r41.status === GM.PROCESS_OK; _lv_two_blocks(r41, [:label1])
         m35 = _lv_msg("#~0 :++label1 :--label1\n#~ :label1\nx = 1\n")
         @test m35 ==raw"""GoMeta apply: unknown label "label1" — not in the Labels Alterant's vocabulary (the accepted set = [:doc, :label2, :label3, :label4, :label5, :⌛, :⛓️, Symbol("⛓️\u200d💥"), :⛔, :🇨🇭, :🌍, :🌛, :🌞, :🌳, :🌷, :🌹, :🌼, :🍀, :🍒, :🍻, :🎨, :🎿, :🏔️, :🐣, :💕, :💡, :💣, :💫, :💯, :💸, :💾, :📝, :📸, :🔥, :😘, :🚀, :🧮, :🫕]); see docs/public-api.md §3.4"""
@@ -235,12 +235,12 @@ const _LV_V01 = "#~0 :++label6\n#~ :label6\nx = 1\n"
         @test _lv_msg("#~ :label1\n#~0 :++label6\nx = 1\n") == raw"""GoMeta absorb: a vocabulary statement (`:++x`, `:(++, x, y)`) is legal at `#~0` and in the user level's profile only — here a metaBlock of depth 1; see docs/public-api.md §3.4"""
     end
 
-    @testset "[V-W16] the hook called directly (MEASURED: PROBE-custom-hook_r3 D1–D12; PROBE-custom-hook_r4 D17–D19 — the fold's three shapes V12 / V13 / V35): the delta kept apart — base, added, removed; a plain label and a quoted token handed back; the place and the four shapes refused with the same texts" begin
+    @testset "[V-W16] the hook called directly (MEASURED: PROBE-custom-hook_r3 D1–D12; PROBE-custom-hook_r4 D17–D19 — the fold's three shapes V12 / V13 / V35): the delta kept apart — base, added, removed; a plain label and a quoted token handed back; the place and the malformed shapes refused with the same texts" begin
         D = GM.Alterants.declareLabels!
         v = D(nothing, 1, :(:), (Symbol("++label6"),), false)
         @test v isa GM.Alterants.LabelsVocabulary && v.added == [:label6] && isempty(v.removed) && length(v.effective) == 40 && v.effective[end] === :label6 && v.base === GM.Alterants.LABELS_VOCABULARY
         @test D(v, 1, :(:), (Symbol("--"), :label1), false) === v && v.added == [:label6] && v.removed == [:label1] && length(v.effective) == 39 && :label1 ∉ v.effective
-        # the delta after the fold's three shapes (the plan v2 §8.1 item 5): V12 `:--label6 :++label6`, V13 `:++label6 :--label6`, V35 `:++label1 :--label1` — MEASURED: PROBE-custom-hook_r4 D17 … D19 (receipts/stageA/AFTER_scratch/PROBE-custom-hook_r4.txt — added / removed / |effective|: [:label6] / [] / 40; [] / [] / 39; [] / [:label1] / 38; the assertions below equal that printout)
+        # the delta after the fold's three shapes: V12 `:--label6 :++label6`, V13 `:++label6 :--label6`, V35 `:++label1 :--label1` — MEASURED: PROBE-custom-hook_r4 D17 … D19 (added / removed / |effective|: [:label6] / [] / 40; [] / [] / 39; [] / [:label1] / 38; the assertions below equal that printout)
         seq(a, b) = D(D(nothing, 1, :(:), (Symbol(a),), false), 1, :(:), (Symbol(b),), false)
         v12 = seq("--label6", "++label6"); @test v12.added == [:label6] && isempty(v12.removed) && length(v12.effective) == 40
         v13 = seq("++label6", "--label6"); @test isempty(v13.added) && isempty(v13.removed) && length(v13.effective) == 39

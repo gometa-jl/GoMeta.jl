@@ -186,7 +186,7 @@ EVALUATED after the Component's own slot — its accumulating rows collected fir
 rows decided with full sight of the Component's own labels and with the override — the one exception, UNMEASURED, as the code reads
 (`apply.jl` S1): a Component whose only eligible slot is the user level's has no own slot and runs the un-fed path, the profile's rows
 in written order, its labels not collected first; fed by no other call site) with the metaLine-body profile in
-`st.config.user_mh_profile`, BEFORE the absorb walk — a VOCABULARY statement in the profile (`:++x` / `:--x`, stage A of the Labels lane) is consumed at this
+`st.config.user_mh_profile`, BEFORE the absorb walk — a VOCABULARY statement in the profile (`:++x` / `:--x`, since 0.4.2) is consumed at this
 read by the Labels Alterant's hook and precedes every statement of the file. SCOPE: a minimal caller-supplied feed ONLY — not a general
 user-level configuration system; internal (NOT exported); called from `goMeta` iff `config.user_mh_profile` is a String
 holding at least one character of content — one the absorb's ONE white-space predicate `AbsorbMeta._isspace_valid` does not
