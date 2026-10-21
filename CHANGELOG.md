@@ -1,17 +1,19 @@
 # Changelog
 
-The version history of GoMeta.jl, newest first — what each release brought, in results. Every removal,
+The version history of GoMeta.jl, newest first — what each release brought. Every removal,
 rename or addition of a public name is written, with its ground, its replacement and what an older caller
 sees, in the breaking-change register of the API reference, [`docs/public-api.md`](docs/public-api.md) §6.
 **No backward compatibility and no deprecation until at least v0.7**: every change of the public surface is
-a clean cut. A date is the day of the version's tag (since 0.3.0) or of the version's commit on `main` (before).
+a clean cut. A date is the day of the version's tag (since 0.3.0) or, before 0.3.0, of the day the version reached `main` (those versions carry no tag).
 
 ## 0.4.1 — 2026-10-20
 
-- **One behaviour under a fed profile changed** (`GoMetaConfig.user_mh_profile`): the Component's own slot
-  applies in written order with or without a feed; the profile's labels are collected first, as the outermost
-  level, and its other statements are evaluated after the Component's own slot, with priority. The register's
-  row: "The user level's place in the apply loop".
+- **One behaviour under a fed user profile changed** (`GoMetaConfig(user_mh_profile = …)`, experimental): a
+  Component's own metadata applies in written order, as without a profile — a condition no longer sees a label
+  stated after it. The profile's labels are collected first, as the outermost level; its other statements are
+  evaluated after the Component's own, and an applicable profile value overrides the value the Component's own
+  metadata decided. Without a profile nothing changed. The register's row: "The user level's place in the apply
+  loop".
 
 ## 0.4.0 — 2026-10-18
 
@@ -25,29 +27,33 @@ a clean cut. A date is the day of the version's tag (since 0.3.0) or of the vers
   container. `EvalRecord.decided_by` added — the handles of the statements that produced a row, in application
   order. `EvalRecord.content`, `GoMeta.content_fingerprint` and the five-column
   `serialize_evals(::GoMetaDelivery)` removed; the four-column form's `attr` column encoded.
-- **The BLS door.** `GoMeta.BLS` is public: an Extension travels the BLS Component tree with `children`,
+- **The BLS module.** `GoMeta.BLS` is public: an Extension travels the BLS Component tree with `children`,
   `parent`, `root`, `kind`, `content`, `flavor`, `getElement`, `isHorizontalSpace`, `endsWithNewline`, and the
   Component types `File`, `Block`, `Line`, `Segment` (with `ComponentSettribute` and `CmpntNamedInt`).
-- **The answers.** `answerFor` / `answersFor` / `AltAnswer` renamed `evaluatedAltValue` / `evaluatedAltValues`
-  / `EvaluatedAltValue`; `scanAlterant` and `childDiffers` added (package-public). A Line decided by its own
-  trailing metaSegment answers `:own`, its Segments `:indirect` through the Line; an inline heading is keyed on
-  the Line; a metaLine split by a trailing `##` comment records its metaBlock as the deciding statement.
+- **The answers.** `evaluatedAltValue` / `EvaluatedAltValue`, `evaluatedAltValues`, `scanAlterant` and
+  `childDiffers` added (package-public): the Engine's answer for one Component and one Alterant — the value and
+  its source (`:own`, `:indirect` through a named Component, `:user`, `:default`, …) — and the views over it. A
+  Line decided by its own trailing metaSegment answers `:own`, its Segments `:indirect` through the Line; a
+  whole-line heading is keyed on its metaBlock and an inline heading on its Line (0.3.2: the metaLine's Line and
+  the Segment); a metaLine split by a trailing `##` comment records its metaBlock as the deciding statement.
 - **The basic renderer is a development tool.** `GoMeta.outputs` removed; the renderer is loaded through
   `devtools/load_basic_renderer.jl`. The Visib write-back into the BLS Components and the three Visib
   declarations removed.
-- **Alterants.** The Heading is an Alterant like any other and goes through the apply loop (its separate
-  delivery removed). `Alterant.default` added — the declared defaults of Labels, Heading and Id;
-  `ActionSpec.default` removed. The `PlugIn` alias, the registration validation chain, the registration
-  fingerprint, the Labels vocabulary machinery and the carried declaration slots of the registration record
-  removed. The Labels vocabulary — `:label1`..`:label5`, `:doc` and the pictographs — is hard-coded in the
-  Labels Alterant's own file, `src/alterants-std/labels.jl`; a queried unknown label answers false. The Id
-  Alterant's `ids(c, p, f)` action added; the slot capacity is a named constant, `SLOT_CAPACITY = 8` actions
-  per meta-hierarchy slot, decoupled from the registered action count.
+- **Alterants.** The registration surface is public: `RegistryBuilder`, `register!`, `validate`, `publish`,
+  `next_plugin_index` and `RegistrationRefused`, with the record types `Alterant` and `ActionSpec` (keyword
+  forms), `CaptureDecl` and `DefaultSlot` / `NoDefault` / `Declared`; `RegistryBuilder(DEFAULT_REGISTRY)`
+  extends the shipped inventory, and `goMeta` accepts a published registry only. Each Alterant declares one
+  default, `Alterant.default` — Visib `:show`, Labels the empty set, Heading `nothing`, Id the zero compound.
+  The Heading is an Alterant like any other and goes through the apply loop (its separate delivery removed).
+  The Labels vocabulary — `:label1`..`:label5`, the pictographs and, new, `:doc` — is hard-coded in the Labels
+  Alterant's own file, `src/alterants-std/labels.jl`; a queried unknown label answers false. The Id Alterant's
+  `ids(c, p, f)` action added; the slot capacity is a named constant, `SLOT_CAPACITY = 8` actions per
+  meta-hierarchy slot, decoupled from the registered action count.
 - **The grammar made explicit.** A metaStatement is a head — a name, a `:` label or the region's first quoted
   heading — then at most one `()`, then at most one `{}`, and ends at white space; any other character meets
   the one refusal `GoMeta absorb: unexpected character …`; a ninth action in a slot meets "more than 8 actions
-  in one meta-hierarchy slot". The four guarded refusals added to the parser at 0.2–0.3 were removed; the
-  `ERR_UNKNOWN_FLAVOR` refusal replaced by a stable error message; malformed action arguments are Julia's own
+  in one meta-hierarchy slot". The four guarded refusals added to the metaLine parser at 0.2–0.3 — the punctuation wall, the glued-token wall, the no-token guard and the slot-capacity guard — were removed (the refusals of 0.2.3 and 0.3.1 above stand); the
+  `ERR_UNKNOWN_FLAVOR` refusal replaced by a stable error message; `GoMetaConfig.profile` removed with the grammar profile, and a `parse_range` taken plain — its `last` the parse end line (the `ERR_RANGE_INVALID` refusal removed); malformed action arguments are Julia's own
   error out of the `goMeta` call.
 - **Generated editions.** The notebook's student, report and slides editions removed: one notebook plus its
   executed twin, and the two derived manual pages, from one marked source file.

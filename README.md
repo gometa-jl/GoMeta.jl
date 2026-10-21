@@ -30,7 +30,10 @@ x = 1                          # ...content...
 A `#~` line is a **metaLine**: an ordinary comment that carries machine-interpretable metadata —
 labels, visibility actions, conditions — right beside the content it describes. The host file stays
 an ordinary file of its format; the host language sees nothing but a comment. GoMeta **evaluates** the
-metadata; the Extensions **act** on the evaluations. *GoMeta evaluates — Extensions act.*
+metadata; the Extensions — the programs that receive what a run delivers — **act** on the evaluations. *GoMeta evaluates — Extensions act.*
+
+What for — the four use cases of [Why use GoMeta?](https://gometa.dev/concepts/why-use-gometa):
+**find it again** · **link and swap** · **one source, many outputs** · **share on your terms**.
 
 ## Learn more at [gometa.dev](https://gometa.dev/)
 
@@ -38,8 +41,9 @@ GoMeta's creator explains GoMeta by three questions. The website answers them, t
 one complete run:
 
 - [What is GoMeta?](https://gometa.dev/concepts/what-is-gometa) · [Why use GoMeta?](https://gometa.dev/concepts/why-use-gometa) · [How does GoMeta work?](https://gometa.dev/concepts/how-does-gometa-work)
+- [Extensions](https://gometa.dev/concepts/extensions) — what acts on the evaluations, and the Extensions this repository ships
 - [Getting started](https://gometa.dev/tutorials/getting-started) — the install and one run, from the file to what the Extensions receive
-- [Examples](https://gometa.dev/examples/) — the committed example files, each input beside its rendered output
+- [Examples](https://gometa.dev/examples/) — the seven committed example pairs, the notebook and the manual pages derived from one marked source, the "find it again" demo
 - [Syntax & semantics](https://gometa.dev/reference/syntax-and-semantics) · [Public API](https://gometa.dev/reference/public-api) · [Development tools](https://gometa.dev/reference/development-tools)
 - [The JuliaCon 2026 talk](https://gometa.dev/talk/) — the slides, web version
 
@@ -51,8 +55,15 @@ Pkg.add(url = "https://github.com/gometa-jl/GoMeta.jl")   # GitHub only; see Sta
 ```
 
 Requires Julia **1.12** (or newer 1.x). Install into a **fresh environment** (`] activate --temp`, or
-`Pkg.activate` a new directory): the one core dependency, StaticArrays, is exact-pinned. To run the
-committed examples, clone the repository — they are read by paths relative to its root.
+`Pkg.activate` a new directory): the one registered dependency, StaticArrays, is exact-pinned (SHA is a standard library). The Quickstart and the committed
+examples read their files by paths relative to the repository's root — run them from a clone:
+
+```sh
+git clone https://github.com/gometa-jl/GoMeta.jl
+cd GoMeta.jl
+julia --startup-file=no --project=. -e 'using Pkg; Pkg.instantiate()'   # once: resolves the environment
+julia --startup-file=no --project=.                                     # then the Quickstart below
+```
 
 ## Quickstart
 
@@ -60,33 +71,35 @@ committed examples, clone the repository — they are read by paths relative to 
 import GoMeta
 
 bytes    = read("examples/InFileFolder/file_for_Example_Proposal_JuliaCon.jl")
-delivery = GoMeta.goMeta(bytes)             # one run: BLS parses the file, the GoMeta Engine evaluates the metadata
+delivery = GoMeta.goMeta(bytes)             # one run: BLS, GoMeta's parser, reads the file; the GoMeta Engine evaluates the metadata
 delivery.status == GoMeta.PROCESS_OK || error("processing failed")
 
 tree  = delivery.blsComponentTree           # the BLS Component tree — the file as BLS parsed it: Blocks, Lines, Segments
-evals = GoMeta.readAltValuesEvals(delivery.altValues_evals)   # the evaluated Alterant values, one row per piece of the file
+evals = GoMeta.readAltValuesEvals(delivery.altValues_evals)   # the evaluated Alterant values, one row per evaluated value (a piece and an attribute)
 evals[1]                                    # (handle, attribute, value, polarity), e.g. (…, :visib, :discard, true)
 ```
 
 One call delivers one object carrying both main products: the BLS Component tree and the evaluated
-Alterant values, `altValues_evals`. Extensions read both and act. The walk through this run — the
+Alterant values, `altValues_evals` (an Alterant is a declared kind of metadata — for Julia users most similar to a Type; Visib, labels, id and heading are built in). Extensions read both and act. The walk through this run — the
 tree's traversal, the rows' meaning, a first look through the basic renderer — is the website's
 [Getting started](https://gometa.dev/tutorials/getting-started). From a checkout,
 `julia --startup-file=no --project=. devtools/run_examples.jl` renders the seven committed example
-pairs under `examples/` and verifies each byte for byte, and `extensions/find_by_label.jl` answers
-which pieces of the corpus carry a label.
+inputs under `examples/` and verifies each against its committed output, byte for byte, and
+`julia --startup-file=no --project=. extensions/find_by_label.jl label5` answers which pieces of the
+committed examples carry `:label5` (without a label: an overview of the five).
 
 ## SECURITY
 
 A `{…}` condition is **Julia**: GoMeta rewrites its own parts of the body to Julia text, Julia's parser
 reads it once, and Julia evaluates it when the statement is applied. **Processing a file you did not
 write therefore runs its conditions as Julia code.** Use GoMeta on input you trust, as you would any
-Julia file you `include`. The full statement and the documented limits: [`docs/public-api.md`](docs/public-api.md) §3.
+Julia file you `include`. One caveat: metaLine names intern as Julia `Symbol`s, which persist for the Julia session. The full statement: [`docs/public-api.md`](docs/public-api.md) §3.2; the documented limits: §3.4.
 
 ## Status
 
 `0.4.1`, **alpha**: a working, tested engine for the **v0 subset** of the GoMeta language. The seven
-committed example pairs render byte for byte, pinned by the shipped test suite. The surface may still
+committed examples render byte for byte as their committed outputs, pinned by the shipped test suite
+(`Pkg.test()`) and checked by CI on Julia 1.12, Linux. The surface may still
 move: **no backward compatibility and no deprecation until at least v0.7**, by the creator's policy —
 every change of the public surface is a clean cut, written into the breaking-change register,
 [`docs/public-api.md`](docs/public-api.md) §6. The version history: [CHANGELOG.md](CHANGELOG.md).
@@ -101,9 +114,10 @@ The website is the reading version. The references in this repository, in readin
 2. [`docs/public-api.md`](docs/public-api.md) — the API: the exported and the public names, the error-mode catalogue, the refusal strings, the breaking-change register.
 3. [`docs/CANONICAL-OUTPUT.md`](docs/CANONICAL-OUTPUT.md) — the canonical observable output, `altValues_evals`, and the development tool's (tree, render) pair with its six render rules.
 
-The derived manual pair under `docs/` and the notebook under [`notebooks/`](notebooks/README.md) are
-generated from ONE marked source file — the `#~` marks choose the content of each edition.
-`julia --startup-file=no --project=. notebooks_from_source.jl --check` verifies every generated file byte for byte.
+The Monte Carlo notebook under [`notebooks/`](notebooks/README.md) and its two manual pages under `docs/`
+are generated from one marked source file — the `#~` marks choose the content of each edition; the
+quickstart notebook beside it is generated from its own.
+`julia --startup-file=no --project=. notebooks_from_source.jl --check` verifies every generated file byte for byte; the executed notebook twin carries kernel outputs and is validated separately.
 
 ## License
 
