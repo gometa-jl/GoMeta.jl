@@ -23,7 +23,7 @@
 #   first-metaLine index, when one exists — absent when an inline metaSegment comes first: the segment arm sets the local only, the original engine's asymmetry; read by nothing since the delivery dropped it, src/GoMeta.jl :402). The tree print (`structural_serialization` over
 #   `writeBlsStructureToIO`; the file-writing twin `writeBlsStructureToFile`) LEFT this file on
 #   2026-09-12 for the development tool `devtools/basic_renderer.jl`, which reads the
-#   `ParseState` through BLS's door alone since stage 5's s5c8 (the exemption D-6(a) of 2026-08-20 lapsed 2026-09-16; its texts left; R-V04B-116 (3)).
+#   `ParseState` through BLS's door alone (a former exemption lapsed 2026-09-16; its texts were removed).
 # REASONING: the tree print (now the development tool's) is pinned byte-for-byte by tests/golden/golden_tests.jl, so the
 #   parse must be a pure, deterministic function of the input bytes — setup and parse touch
 #   no filesystem and no module globals; all state threads through the explicit `ParseState`.
@@ -393,7 +393,7 @@ const _re_meta = Regex("^" * _RE_META_BODY_STR)
 ## between the flavors is RECORD DATA: the policies (glued/bare), the run-arm
 ## strictness, the directive rows (status·flags·ws_strict·consume).
 ## The per-flavor witnesses guard the reader's behavior for every armed flavor (the flavor-equivalence
-## differential the earlier text cited, forkchecks/differential_flavor.jl, is not in the repository — the citation left at stage 5's P1, census row 58).
+## differential the earlier text cited, forkchecks/differential_flavor.jl, is not in the repository — the citation was removed).
 
 ## The unrecognized/glued fallthrough — the ONE policy resolution shared by the
 ## `~`-arm's glued no-match, the strict run arm's failure, the ws-strict glued
@@ -542,13 +542,13 @@ end
 ## profile makes sentinel-before-width observable); no ARMED flavor combines a
 ## sentinel-capable reader with a multi-unit lead, so only the width MAGNITUDE is
 ## differential-live for real flavors. The helper calls `parseLeadHeader!` directly (the record's loose `::Function`
-## header-strategy field left at stage 5's P1 of the v0.4 build — census row 63); that reader declares an `Int` return type.
+## header-strategy field was removed); that reader declares an `Int` return type.
 @inline function _lead_head!(profile::FlavorProfile, line::AbstractString,
         startSegment::Int,
         thisComponentSettribute::ComponentSettribute)::Tuple{Bool,Int}
     ## ASCII lead (mint-asserted) ⇒ byte arithmetic; ≡ nextind for lead_ncu == 1.
     sub = SubString(line, startSegment + profile.lead_ncu)
-    raw = parseLeadHeader!(profile, sub, thisComponentSettribute)   # the direct call (the record's header-strategy seam left at stage 5's P1 of the v0.4 build — census row 63)
+    raw = parseLeadHeader!(profile, sub, thisComponentSettribute)   # the direct call (the record's header-strategy seam was removed)
     bucketA = raw == 0
     return (bucketA, (profile.lead_ncu - 1) + (bucketA ? 1 : raw))
 end
@@ -561,7 +561,7 @@ end
     propagate_content_flags_up!(child, parent)
 
 IS: the one-level content-flag propagation of the parse — one of the helpers extracted from `parseBLS` (the file's own
-section head; not his legacy's — the March 2026 ladder, CC's work, his §70 item 3).
+section head; not the original engine's — a March 2026 addition at the creator's order).
 
 DOES: Copy `:containsMeta`, `:containsText`, `:containsCode` from child to parent if they are set on the child's
 `componentSettribute` (a `setElement(… => true)` per set flag; a flag is never cleared here). Its callers in
@@ -614,7 +614,7 @@ end
     determine_content_type!(settribute, fallbackContentType) -> Union{Type, Nothing}
 
 IS: the content-type resolution of the parse — one of the helpers extracted from `parseBLS` (the file's own section
-head; not his legacy's — the March 2026 ladder, CC's work, his §70 item 3): the flavor of a Line or a Segment from the
+head; not the original engine's — a March 2026 addition at the creator's order): the flavor of a Line or a Segment from the
 flags its head reader set.
 
 DOES: Given a `ComponentSettribute` with flags already set (e.g. by `parseLeadHeader!`, or by the loop's fence and
@@ -780,7 +780,7 @@ function parseBLS(
     reachedEndOfLine::Bool = false
     ## Fence store: a plain String — the fence grammar admits delimiters of ANY length ({3,}),
     ## so a fixed-width store is a capacity cliff (a 16-character delimiter crashed the convert).
-    ## (the fixed-width store's InlineStrings dependency left the package at stage 5's P3 of the v0.4 build — census row 73)
+    ## (the fixed-width store's InlineStrings dependency was removed from the package within the 0.4 development)
     fenceStr::String = ""
     fenceOpen::Bool = false
     fenceJustClosed::Bool = false   ## the fence-exit boundary's DEFERRED reset flag
@@ -843,9 +843,9 @@ function parseBLS(
         # https://fredrikekre.github.io/Literate.jl/v2/pipeline/#Custom-control-over-chunk-splits
         # "The difference between #+ and #- is that #+ enables Documenter's "continued"-blocks,
         # see the Documenter manual."
-        ## the HEAD of the line — the first non-space character by the strip class `_isspace_valid` (R-V04B-83 (1):
-        ## the parser's head, the renderer's referent); the one-call helper `findFirstNonSpace` and the dead legacy `findStartOf` left at stage 5's P2
-        ## of the v0.4 build (census row 59) — the class unchanged; `nothing` ⇒ an all-whitespace line (after the rstrip above: the empty line)
+        ## the HEAD of the line — the first non-space character by the strip class `_isspace_valid` (the one class:
+        ## the parser's head, the renderer's referent); a one-call helper `findFirstNonSpace` and the original engine's dead `findStartOf` were removed
+        ## — the class unchanged; `nothing` ⇒ an all-whitespace line (after the rstrip above: the empty line)
         headPos = findfirst(!_isspace_valid, line)
         (startSegment, reachedEndOfLine) = headPos === nothing ? (lastindex(line), true) : (headPos, false)
         #############################################################
