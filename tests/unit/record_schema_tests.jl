@@ -21,11 +21,11 @@ import GoMeta as GM
 
     # (the positional-shapes testset was CONSCIOUSLY RETIRED with its subject — the
     # v0.3.2 positional constructors of PlugIn and ActionSpec; a positional construction is
-    # Julia's own MethodError now, measured on both trees.)
+    # Julia's own MethodError now, measured before and after the change.)
 
     @testset "keyword shapes: CaptureDecl's one- and two-positional forms and its slot text, the Alterant's capture slot, ActionSpec without its settribute slot" begin
         cap = GM.CaptureDecl(:per_key)
-        # v0.4 T5 (T5-DESIGN §6, the +3 declared movements): the attr_stem default
+        # the attr_stem default
         # admits through the 1-positional outer method; the 2-positional round-trips (the row's 2 fields —
         # the `mode_gate` field was removed with the Heading's separate path);
         # two rows differing only in stem encode differently (the slot text — the seal fold it once joined was removed).

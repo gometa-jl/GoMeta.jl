@@ -23,7 +23,7 @@
 #      legend-driven tags (parameters · skip-execution · solution · deep-dive) — in
 #      deterministic nbformat 4.5 JSON (fixed key order; content-derived cell ids;
 #      a Julia kernelspec so standard executors pick the right kernel); the student,
-#      report and slides editions were removed within the 0.4 development);
+#      report and slides editions were removed within the 0.4 development;
 #   5. prints a content-free emission manifest per notebook (counts and label names,
 #      never removed content);
 #   6. `--check` regenerates every GENERATED artifact and byte-compares it against the
@@ -204,7 +204,7 @@ end
 # joins no cell — by design, not a failure. A CONTENT Component with labels that joins no cell fails
 # red (segmentation drift). Attribution is the tree's: a Block covering a prose run and a code run
 # labels both cells — the Block's labels are the Block's (the former content-keyed containment join,
-# with its registered limitation, went with the Engine's stored copy of the content bytes). The five
+# with its documented limitation, went with the Engine's stored copy of the content bytes). The five
 # generic labels this generator's legends bind are joined; the pictograph vocabulary carries no legend.
 function _component_span(ps, c)
     c isa GoMeta.BLS.Block && return GoMeta.BLS.getElement(c, :startMainStr):GoMeta.BLS.getElement(c, :stopMainStr)
@@ -541,7 +541,7 @@ function page_body(sections::Vector{Section}, legend, keep::Function, chain::Str
             # exactly: hidden EXECUTED lines of a RETAINED section
             # still ride the reader NATIVELY (' # hide' / @setup preserves
             # execution continuity); the committed reader selection has zero hidden lines
-            # today — if a future selection gains one, surface it to the creator first.
+            # today; a future selection that gains one is the creator's to decide.
             # Carrier cells (detached meta runs) are envelope-only cells on the full
             # page and vanish from the reader.
             if c.kind === :carrier || isempty(c.lines)
@@ -579,7 +579,7 @@ function page_body(sections::Vector{Section}, legend, keep::Function, chain::Str
                 # refused (unlike the @example branch below): no suffix is appended to
                 # @setup body lines, the whole cell is already display-hidden, and
                 # `hidden=` covers every body index — the marker is inert here and the
-                # decoder's suffix-strip stays exact (disclosed).
+                # decoder's suffix-strip stays exact.
                 carriage && _carriage_envelope(io, c, chain;
                     hidden_idx = [length(c.carried) + j - 1 for j in eachindex(c.lines)])
                 bodyl = [lf.text for lf in c.lines]
@@ -592,7 +592,7 @@ function page_body(sections::Vector{Section}, legend, keep::Function, chain::Str
                 # The authored-marker refusal: an AUTHORED shown line already
                 # ending in `# hide` would be display-hidden by Documenter AGAINST its
                 # GoMeta fate — refuse loudly; a HIDDEN line ending in `# hide` would
-                # double-suffix — refused outright too (stricter than edge (v)'s
+                # double-suffix — refused outright too (stricter than a
                 # hidden=-index answer: refusing keeps display fates byte-derivable).
                 for lf in c.lines
                     if match(r"#\s*hide\s*$", lf.text) !== nothing
@@ -623,7 +623,7 @@ function derive_pages(spec::SourceSpec, cells::Vector{Cell})
     stem = splitext(basename(spec.path))[1]
     sections = sectionize(cells)
     keep_all(s) = true
-    # the V4-guard invariant, relocated (see sectionize): line-less carrier cells are
+    # the carrier-cell guard's invariant, relocated (see sectionize): line-less carrier cells are
     # placement-only — the reader page's section selection must not see their labels
     drops(s) = any(m in (:solution, :deep_dive) for c in vcat(s.heading === nothing ? Cell[] : [s.heading], s.cells) if !isempty(c.lines) for m in meaning(c, spec.legend))
     keep_reader(s) = !drops(s)
@@ -691,7 +691,7 @@ function derive_from_bytes(bytes::Vector{UInt8}, spec::SourceSpec)
     cells = partition(fates)
     join_labels!(cells, r)                              # the labelled Components' spans through the door
     # the two counts over NON-BLANK source lines: a blank line inside a discarded or hidden Block carries the Block's verdict
-    # since the re-route, but it is no content line — it travels nowhere either way (the former content-keyed
+    # since the fates are the Engine's answer, but it is no content line — it travels nowhere either way (the former content-keyed
     # fates left such a line :show, so these counts always meant the content lines)
     n_discarded = count(lf -> lf.fate === :discard && !is_blank_line(lf.text), fates)
     n_hidden = count(lf -> lf.fate === :hide && !is_blank_line(lf.text), fates)

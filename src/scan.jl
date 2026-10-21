@@ -4,8 +4,7 @@
 # must be unambiguous, and informative").
 #
 # IS:   two thin reads over `evaluatedAltValue` — functions of their own (the alternative,
-#       methods of the reader, stands as an option; the creator's word of 2026-10-03 named the functions
-#       and took no alternative, which stays his to take).
+#       methods of the reader, stays open; the creator's word of 2026-10-03 named the functions).
 # DOES: `scanAlterant` lists every Component for which the Engine RECORDED a value of ONE Alterant (its own rows — a Segment-carried row
 #       counting as its Line's), each with its answer, in the tree's order; a rowless Component is not listed (it is covered as PART OF
 #       its Block — the creator's words: the children hidden as PART OF their Block, not individually — its answer is `evaluatedAltValue`'s).

@@ -9,7 +9,7 @@
 # HAND-EDITS of the 0.4 development: testset [7]'s membership probes read the plain
 # shipped list (`GM.Alterants.LABELS_VOCABULARY`; the former G-VOC surface removed); testset [2]
 # applies its unknown labels instead of querying them (a queried unknown label answers false).
-# Assert-count neutral. With the closed interpreter's removal, testsets
+# Assert-count neutral. Until the closed interpreter's removal, testsets
 # [1], [3] and [5] drove `parse_condition` and `print_condition` directly; they drive the whole run now (the same shapes END-TO-END,
 # 37 → 34 asserts: [1] 4 → 3, [3] 3 → 2, [5] 4 → 3). The CURE this file holds — a multibyte-final atom flush against the closing
 # brace takes its ordinary fate — is held by the rewrite's CHAR walk (never the original engine's byte-count end test); [1] and [4] carry the
@@ -17,7 +17,7 @@
 # each count MEASURED from the FULL delivery view). A later HAND-EDIT
 # (2026-10-09): the header's store clause above re-cut to the door's slice (the Engine stores no copy). The Labels Alterant's HAND-EDIT
 # (2026-10-16): [7]'s membership comment re-cut — the constant is the Labels Alterant's hard-coded list in `alterants-std/labels.jl` since
-# that stage, the plain file gone; assert-count neutral. A regeneration of this file must re-apply all six forms.
+# that date, the plain file gone; assert-count neutral. A regeneration of this file must re-apply all six forms.
 
 using Test
 import GoMeta as GM
@@ -29,7 +29,7 @@ _uc_err(s)     = try _uc_full(s); nothing catch e sprint(showerror, e) end
 
     @testset "[1] flush ≡ spaced: multibyte-final atoms take the ordinary vocabulary fate" begin
         # a label test flush against the closing brace, three multibyte finals (end-to-end — the query of an
-        # unknown label answers false, the run is PROCESS_OK; the former direct parse pins left with the interpreter)
+        # unknown label answers false, the run is PROCESS_OK; the former direct parse pins were removed with the interpreter)
         @test _uc_full("#~ hide{ :aß}\nx = 1\n").status == GM.PROCESS_OK     # the d2 twin, flush at end-of-text
         @test _uc_full("#~ hide{ :é}\nx = 1\n").status == GM.PROCESS_OK
         @test _uc_full("#~ hide{ :🔥}\nx = 1\n").status == GM.PROCESS_OK
@@ -65,7 +65,7 @@ _uc_err(s)     = try _uc_full(s); nothing catch e sprint(showerror, e) end
         g = _uc_full("#~ hide{ isCode , :zzz9 }\nx = 1\n")
         @test g.status == GM.PROCESS_OK           # ASCII control row
         @test length(GM.readAltValuesEvals(g.altValues_evals)) == 1
-        u = _uc_full("#~ hide{ isCode , :é}\nx = 1\n")   # U1-16: formerly ABORTED
+        u = _uc_full("#~ hide{ isCode , :é}\nx = 1\n")   # formerly ABORTED
         @test u.status == GM.PROCESS_OK           # now renders WITH hide applied —
         @test length(GM.readAltValuesEvals(u.altValues_evals)) == 1  # measured + pre-registered
     end
@@ -80,7 +80,7 @@ _uc_err(s)     = try _uc_full(s); nothing catch e sprint(showerror, e) end
 
     @testset "[6] U2: a multibyte FINAL character survives the content slice whole (the Segment through the door; every derived payload valid UTF-8)" begin
         # the metaSegment's content bytes through the door (`BLS.content` — the slice the cure widened; the Engine stores no copy
-        # since commit 9b) end with the COMPLETE final character (NBSP c2 a0), not a lone lead byte — the widened nextind slice.
+        # of them) end with the COMPLETE final character (NBSP c2 a0), not a lone lead byte — the widened nextind slice.
         # No row is keyed on a Segment — the inline heading's row keys on its LINE with the Segment
         # as the key's origin — so the TEST LAYER's derived five-column form shows the LINE's content for it (ending in `c`); the
         # Segment's slice is read here through the door (MEASURED 2026-10-03: Line 1's Segments [x = 1 ] [#~ "T" + NBSP] [## c]),

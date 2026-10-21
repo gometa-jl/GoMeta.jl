@@ -10,7 +10,7 @@
 # REASONING: the guarded "invalid arguments" refusal at the former setter seam `_invoke_set` was removed
 #       with its crash-leg and sole-exception-surface witnesses (the creator's words: the framework
 #       before hardening; the original engine called the setter directly): a malformed argument meets Julia's own dispatch
-#       or the setter's own error out of the `goMeta` call, measured on both trees.
+#       or the setter's own error out of the `goMeta` call, measured before and after the change.
 #       The QUERY-side condition-atom class
 #       (`#~ cell(7) :label1{ cell(7) }`) meets the usual unknown-condition-key refusal (Id answers
 #       no query — the registry's rule; witnessed in condition_tests.jl) — no witnesses here by design.
@@ -50,6 +50,6 @@ import GoMeta as GM
         @test _err("#~ ids(1, 2, 3, 4)\n# c\n") isa MethodError              # I15: four values — no method
         @test _err("#~ ids()\n# c\n") isa MethodError                         # I16: no value — no method (`()` is no argument; a bare `ids` reaches the same call — traced, not measured)
         e3 = _err("#~ cell(1, 2, 3)\n# c\n")                                  # I14: THREE values to a SINGLE action reach the three-value method's guard —
-        @test e3 isa ArgumentError && occursin("belong to the action `ids` alone", sprint(showerror, e3))   # the setter's ArgumentError where the base 63ffff7 met Julia's MethodError
+        @test e3 isa ArgumentError && occursin("belong to the action `ids` alone", sprint(showerror, e3))   # the setter's ArgumentError where the tree before the `ids` action met Julia's MethodError
     end
 end

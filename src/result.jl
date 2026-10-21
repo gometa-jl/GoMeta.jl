@@ -94,10 +94,10 @@ on its Line with the Segment as the KEY's origin — the entry is the Segment's 
 applied DIRECTLY to its Line — the creator's decision; the Line answers `:own`, the Segment its
 Line's answer marked `:indirect`), the contributing
 statements' entries for an accumulating one
-(Labels; which statement contributed which label stays Q4 (ii)), the applied fields' entries for the compound (Id);
+(Labels; which statement contributed which label stays open — tests/comparison/README.md, Q4), the applied fields' entries for the compound (Id);
 a heading row's the carrier of its own `head` statement (the i-th entry the i-th applied statement). MEASURED at the enqueue and the apply, never inferred from a row's presence. The
-name is the authored set's word (the creator's confirmed scenarios' `decided_by`)
-(the alternatives `origin`, `source`). Feeds
+name is the authored set's word (the creator's confirmed scenarios' `decided_by`; considered alternatives:
+`origin`, `source`). Feeds
 `readAltValuesEvals(result.altValues_evals)` (sorted `(cell_handle, attr, value)` — key-bytes order).
 
 REASONING: keyed by the row's handle — a Component's normalized structural occurrence handle — so that two distinct cells never share a slot; the row names its

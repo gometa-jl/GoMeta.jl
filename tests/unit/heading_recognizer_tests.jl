@@ -1,32 +1,31 @@
-# heading_recognizer_tests.jl — v0.2 CH-3: the heading lane's unit guards (APPEND-ONLY).
+# heading_recognizer_tests.jl — the heading lane's unit guards (APPEND-ONLY).
 #
-# IS:   step 8 (the STRING-LANE WIDENING — this file's first population) and, at step 9, the
-#       quoted-first recognizer + level law + Heading registration rows the testplan assigns
-#       here. At step 8 ONLY the mechanics landed: quote-aware parseArgs, the widened
+# IS:   the STRING-LANE WIDENING (this file's first population) and, after it, the
+#       quoted-first recognizer + level law + Heading registration rows assigned
+#       here. At the widening ONLY the mechanics landed: quote-aware parseArgs, the widened
 #       Symbol|String args wall (AlterantArgT), the kind-preserving coercion, and the quote
-#       NEGATIVE rows — while NO metaLine grammar accepts a string argument (the step-8 gate:
+#       NEGATIVE rows — while NO metaLine grammar accepts a string argument (the widening's gate:
 #       suite byte-identical before any grammar accepts strings). The law is held by a
 #       TRANSITIONAL guarded refusal at absorbMeta's ENQUEUE seam — dispatch CANNOT hold it,
 #       because the built-in toy setters keep an UNTYPED value slot (`setId` parses
 #       `string(idValue)`, so `cell("7")` would silently ACCEPT through dispatch;
-#       byte-probed — an earlier revision of this header claimed the dispatch seam held
-#       the law, the exact opposite of the delivered design; three review seats caught it).
-# DOES: [SL] String-lane mechanism rows (testplan names: test_quoted_arg_single_token ·
+#       byte-probed).
+# DOES: [SL] String-lane mechanism rows (test_quoted_arg_single_token ·
 #       test_comma_inert_inside_quotes · test_kind_preserving_coercion ·
 #       test_args_wall_widened) · [SLN] the quote negative rows (unterminated · escaped ·
 #       malformed/glued, on the parseArgs route; the former quote-blind one-word-label route is gone —
 #       a '"' after ':' meets the grammar's one refusal, the rows below) ·
 #       [SLE] end-to-end: a quoted argument at the metaLine surface meets the TRANSITIONAL
-#       guarded refusal at the enqueue seam (nothing accepted strings at step 8; step 9 carved
-#       the head text slot out — the step-9 sections below own that surface), and the
+#       guarded refusal at the enqueue seam (nothing accepted strings at the widening; the heading build carved
+#       the head text slot out — the heading sections below own that surface), and the
 #       pre-widening quote-free envelope is untouched (numeric args stay Symbol-kind — the integer
 #       space is RESERVED out of the literal floor, hd-5).
-# PURPOSE: the widened lane is proven present AND provably not yet accepting — the step-8 law.
+# PURPOSE: the widened lane is proven present AND provably not yet accepting — the widening's law.
 
 using Test
 import GoMeta as GM
 
-@testset "heading lane — step 8: the String-lane widening (mechanism only)" begin
+@testset "heading lane — the String-lane widening (mechanism only)" begin
 
     _pa(s) = GM.AbsorbMeta.parseArgs(SubString{String}(s), 1)   # s[1] == '('
     _run(s) = GM.goMeta(Vector{UInt8}(codeunits(s)))
@@ -64,7 +63,7 @@ import GoMeta as GM
         # NUMERIC text stays a Symbol — the integer space is RESERVED out of the floor
         # (hd-5): the coercion NEVER mints an Int, so numeric args keep their byte-exact
         # pre-widening fates at the setter (cell(7) accepted; cell(99999) is `parse`'s own OverflowError
-        # within the 0.4 development; the working form pinned in arg_guard_tests.jl)
+        # since 0.4.0; the working form pinned in arg_guard_tests.jl)
         @test GM.AbsorbMeta._coerce_arg_token(SubString{String}("7")) === Symbol("7")
         @test GM.AbsorbMeta._coerce_arg_token(SubString{String}("99999")) === Symbol("99999")
     end
@@ -98,13 +97,13 @@ import GoMeta as GM
         @test e4 isa ErrorException && occursin("malformed quoted argument", e4.msg)
     end
 
-    @testset "[SLE] no grammar accepts strings at step 8 — the transitional wall + untouched pre-widening envelope" begin
+    @testset "[SLE] no grammar accepts strings at the widening — the transitional wall + untouched pre-widening envelope" begin
         # a quoted argument at the metaLine surface flows the route as a String KIND and
         # meets the TRANSITIONAL guarded refusal at absorbMeta's enqueue seam. The wall must
         # sit THERE, not at dispatch: the built-in toy setters keep an UNTYPED value slot, so
         # `cell("7")` would otherwise silently ACCEPT (parse(Int16, string("7")) succeeds)
         # — the byte-probed reason this row exists. `cell("7")` is therefore the SHARPEST
-        # witness of the step-8 law: text that WOULD be accepted through dispatch refuses.
+        # witness of the widening's law: text that WOULD be accepted through dispatch refuses.
         for s in ["#~ cell(\"7\")\n# c\n", "#~ hide(\"x\")\n# c\n"]
             err = _err(s)
             @test err isa ErrorException
@@ -112,10 +111,10 @@ import GoMeta as GM
             @test occursin("GoMeta absorb:", err.msg)
         end
         # the unterminated-quote refusal reaches the surface as an absorb refusal naming the INNERMOST opener left open — the quote,
-        # before the enclosing '(' (the one scanner of the metaLine parser, as the creator approved it)
+        # before the enclosing '(' (the one scanner of the metaLine parser — the creator's decision)
         eu = _err("#~ cell(\"x\n# c\n")
         @test eu isa ErrorException && occursin("unterminated '\"'", eu.msg)
-        # THE LABEL ROUTE since the metaLine parser effort: the six structural characters end a name or a
+        # THE LABEL ROUTE since 0.4.0: the six structural characters end a name or a
         # label, so a '"' after ':' or inside a label meets the grammar's one refusal naming the character — the quote lane's former
         # coercion-side validation of a quote-blind label token is gone with the quote-blind route
         el1 = _err("#~ :\"x\"\n# c\n")
@@ -129,19 +128,19 @@ import GoMeta as GM
         @test ed isa ErrorException && occursin("unexpected character '\"' after the metaStatement \":a\"", ed.msg)
         # QUOTE × INVALID UTF-8 (the module's own doctrine class): a quoted span carrying
         # an invalid byte sequence stays a LOUD guarded refusal, never a raw decode crash —
-        # and the CLASS is pinned (delta-review: the span is well-formed, its content the
+        # and the CLASS is pinned (the span is well-formed, its content the
         # invalid byte, so the fate is the transitional wall, not some accidental refusal)
         ei = _err("#~ cell(\"\xff\")\n# c\n")
         @test ei isa ErrorException && occursin("string argument not accepted", ei.msg)
         # the quote-free pre-widening envelope is byte-untouched: the working numeric form still
         # works (its full fate battery lives in arg_guard_tests.jl — this row is the
-        # step-8 sentinel that the widening changed nothing for it)
+        # the widening's sentinel that the widening changed nothing for it)
         r = _run("#~ cell(7)\n# c\n")
         @test string(r.status) == "PROCESS_OK"
     end
 end
 
-@testset "heading lane: recognizer + level law + registration (the names the creator's)" begin
+@testset "heading lane: recognizer + level law + registration (creator-ratified names)" begin
 
     _run(s) = GM.goMeta(Vector{UInt8}(codeunits(s)))
     _err(s) = try
@@ -167,7 +166,7 @@ end
         # every action; the sugar changes nothing there). The settribute condition
         # evaluates ONCE, at the apply of the Component the heading is applied to — the metaBlock (the creator's decision; before it the metaLine's own snapshot at the absorb seam): a metaBlock is not Code, so
         # { isCode } is FALSE there — zero rows, no refusal (the ratified flip of the evals rows
-        # from the queued era's per-cell evaluation, pinned here — a review-found gap)
+        # from the queued era's per-cell evaluation, pinned here)
         @test string(_run("#~ \"T\" :label1\nx = 1\n").status) == "PROCESS_OK"
         ric = _run("#~ \"T\"{ isCode }\nx = 1\n")
         @test string(ric.status) == "PROCESS_OK"
@@ -211,20 +210,20 @@ end
     end
 
     @testset "test_empty_quote_lowers — BOTH halves: enters the recognizer, then the ratified refusal" begin
-        # (conscious pin flip: the refusal was TRANSITIONAL until the heading-design
-        # was ratified by the creator as the standing v0.2 semantic; the message says so)
+        # (conscious pin flip: the refusal was TRANSITIONAL until the creator ratified it
+        # as the standing v0.2 semantic; the message says so)
         e = _err("#~ \"\"\nx = 1\n")
         @test e isa ErrorException
         @test !occursin("unexpected punctuation", e.msg)          # half 1: NOT the old wall (the wall itself was removed)
         @test occursin("empty heading text", e.msg)               # half 2: Heading validation
-        @test occursin("ratified standing decision", e.msg)       # ratified, not transitional
+        @test occursin("a standing decision", e.msg)       # ratified, not transitional
     end
 
     @testset "heading-lane quote refusals (siblings of the argument-lane classes)" begin
         eu = _err("#~ \"abc\nx = 1\n")
         @test eu isa ErrorException && occursin("unterminated '\"'", eu.msg)
         # THE BACKSLASH RESERVATION (creator-broadened): ANY `\`
-        # inside the span refuses — not merely `\"`. The pre-cure grammar accepted `"a\b"`
+        # inside the span refuses — not merely `\"`. The earlier grammar accepted `"a\b"`
         # while refusing `"a\\"` (the trailing backslash read as `\"`) — that ragged
         # acceptance is exactly what the reservation closed; all four shapes now meet ONE
         # guarded refusal, and the future escape grammar mints on a clean slate.
@@ -265,7 +264,7 @@ end
         @test (:head_2, "T") in _heads(_run("#~ head(\"T\", 2)\nx = 1\n"))
         @test (:head_7, "T") in _heads(_run("#~ head(\"T\", 7)\nx = 1\n"))
         # (the three refusals at the former set-invocation seam were removed — a non-parseable
-        # level, the text missing, a bare-word text: Julia's own errors now, measured on both trees)
+        # level, the text missing, a bare-word text: Julia's own errors now, measured before and after the change)
     end
 
     @testset "the set mode `:localOnly` through the apply loop (witnesses)" begin
@@ -296,7 +295,7 @@ end
         rc1 = _run("#~ \"T\"{ isMeta }\nx = 1\ny = 2\n")
         @test string(rc1.status) == "PROCESS_OK"
         @test length(_heads(rc1)) == 1
-        # a WHOLE-LINE heading's condition reads the metaBlock's facts (the creator's decision; MEASURED on both trees) — the
+        # a WHOLE-LINE heading's condition reads the metaBlock's facts (the creator's decision; MEASURED before and after the change) — the
         # meta string is the metaLine's flag, not the metaBlock's: no row (the former separate path read the metaLine's and recorded head_1)
         @test isempty(_heads(_run("#~ \"T\"{ hasMetaStr }\nx = 1\n")))
         # THE PROFILE FEED (the creator's decision; the wording his): a heading fed on the userMH surface — the explicit form as the sugar — meets the ONE refusal at the read; no
@@ -321,14 +320,14 @@ end
         @test [a for (_, a, _, _) in GM.readAltValuesEvals(_run("#~ \"T\" ## a trailing comment\nx = 1\n").altValues_evals)] == [:head_1]
         r15 = GM.readAltValuesEvals(_run("#~ \"T\" hide\nx = 1\n").altValues_evals)
         @test length(r15) == 3 && count(t -> t[2] === :head_1, r15) == 1 && count(t -> t[2] === :visib && t[3] === :hide, r15) == 2
-        # THE RATIFIED VOCABULARY BOUNDARIES (a review-found coverage gap): `#~0` = the
+        # THE RATIFIED VOCABULARY BOUNDARIES: `#~0` = the
         # file level records head_0; `#~8` = the deepest depth-digit records head_8
         r0 = _run("#~0 \"Root\"\nx = 1\n")
         @test (:head_0, "Root") in _heads(r0)
         r8 = _run("#~8 \"Deep\"\nx = 1\n")
         @test (:head_8, "Deep") in _heads(r8)
-        # THE RATIFIED REGISTRY ROW, pinned directly (behavioral
-        # guards only) — the 4th plugin IS :heading in :localOnly mode (the set mode's name stays — the creator's decision)
+        # THE RATIFIED REGISTRY ROW, pinned directly (not through the
+        # behavioral guards alone) — the 4th plugin IS :heading in :localOnly mode (the set mode's name stays — the creator's decision)
         @test GM.DEFAULT_REGISTRY.plugins[4].altName === :heading
         @test GM.DEFAULT_REGISTRY.plugins[4].setMode === :localOnly
         # a quoted span after ':' is not a label: the grammar's one refusal names the quote (the metaLine parser's
@@ -337,8 +336,8 @@ end
         @test eb3 isa ErrorException && occursin("unexpected character '\"' after ':'", eb3.msg)
     end
 
-    @testset "delta-round pins — injectivity, the label test in a heading's condition, the fed heading, slot-scoped wall" begin
-        # SAME-CELL SAME-LEVEL headings stay DISTINCT rows (review-found MAJOR: the
+    @testset "the further pins — injectivity, the label test in a heading's condition, the fed heading, slot-scoped wall" begin
+        # SAME-CELL SAME-LEVEL headings stay DISTINCT rows (a former defect: the
         # (handle, attr) dedup collapsed them later-wins with a bogus collision warning;
         # the attr is injective per (Component, level) — the first keeps head_<level>,
         # repeats gain the source-order ordinal (the Heading store's `entries` keep the applied statements'
@@ -348,7 +347,7 @@ end
         hp = _heads(rp)
         @test (:head_2, "A") in hp && (:head_2_2, "B") in hp
         # TWO HEADING metaLines GLUED into one metaBlock at the same level (MEASURED
-        # on both trees): one row per heading occurrence (the creator's decision); the former separate path's per-metaLine flush kept
+        # before and after the change): one row per heading occurrence (the creator's decision); the former separate path's per-metaLine flush kept
         # only the later
         @test _heads(_run("#~ \"A\"\n#~ \"B\"\nx = 1\n")) == [(:head_1, "A"), (:head_1_2, "B")]
         # THE LABEL TEST IN A HEADING'S OWN CONDITION — LEGAL since 0.4.0 (the creator's decision:
@@ -356,7 +355,7 @@ end
         # heading condition" is gone. The loop's order: the labels of the levels ABOVE and those stated BEFORE the heading on
         # its metaLine are seen, those stated AFTER it are not (as for `hide`) — with or without a fed profile since 0.4.1 (the
         # creator's decisions of 2026-10-18 and 2026-10-19: the metaBlock's own written order holds under a feed too — pinned below;
-        # before it a fed profile made the user level the loop's first slot, superseded); the quoted-first sugar is always first on its
+        # before it a fed profile made the user level the loop's first slot); the quoted-first sugar is always first on its
         # line, so on a metaBlock's first metaLine its condition sees the levels above only (on a metaLine glued to an earlier one it
         # also sees the labels stated on the metaBlock's earlier metaLines). MEASURED after the move.
         rl1 = _run("#~ head(\"T\", 2){ :label2 }\nx = 1\n")             # no label2 anywhere: the condition false — no row, no refusal
@@ -367,7 +366,7 @@ end
         @test (:head_2, "T") in _heads(rl3)                                      #   `#~` metaLine forms ONE metaBlock with it and its heading takes the region's level, head_1 —
                                                                                   #   the shape with a Code Line between is the depth-2 region)
         @test _heads(_run("#~ :label1\n#~2 \"T\"{ :label1 }\ny = 2\n")) == [(:head_1, "T")]    # GLUED: ONE metaBlock, its level
-        @test _heads(_run("#~ :label1\n\n#~2 \"T\"{ :label1 }\ny = 2\n")) == [(:head_2, "T")]  # a BLANK Line between (the variants probe's rl3c): the depth-2 region
+        @test _heads(_run("#~ :label1\n\n#~2 \"T\"{ :label1 }\ny = 2\n")) == [(:head_2, "T")]  # a BLANK Line between: the depth-2 region
         rl4 = _run("#~2 :label2 head(\"T\"){ :label2 }\nx = 1\n")         # stated BEFORE the heading on its metaLine: seen
         @test (:head_2, "T") in _heads(rl4)
         rl5 = _run("#~2 head(\"T\"){ :label2 } :label2\nx = 1\n")         # stated AFTER it: not seen — no row
@@ -375,12 +374,12 @@ end
         rl6 = _run("#~ \"T\"{ :label9 }\nx = 1\n")                        # a label unknown to the vocabulary answers false (the creator's decision): no row
         @test string(rl6.status) == "PROCESS_OK" && isempty(_heads(rl6))
         # WITH a fed profile the metaBlock's own WRITTEN order holds as without one (0.4.1 — the creator's decision of
-        # 2026-10-18 and his order of 2026-10-19, superseding his acceptance of 2026-10-16, under which
+        # 2026-10-18 and 2026-10-19, superseding the placement of 2026-10-16, under which
         # the user level was the loop's first slot and the own labels were collected before the heading and the `hide` were decided): a
         # label stated AFTER the heading or the `hide` is not seen — the fed `:label3` adds its label row and leaves the heading and the Visib rows as in
         # the no-feed run (MEASURED after the cure — no head row, no Visib row, each 4 rows where its
         # no-feed twin has 2; the Labels rows' `decided_by` begin with the user context and their answer source reads `:user` where the no-feed twins read
-        # `own` / `indirect` — the traces)
+        # `own` / `indirect`)
         _fed(s, p) = GM.goMeta(Vector{UInt8}(codeunits(s)); config = GM.GoMetaConfig(user_mh_profile = p))
         _vis(r) = [v for (_, a, v, _) in GM.readAltValuesEvals(r.altValues_evals) if a === :visib]
         @test isempty(_heads(_fed("#~2 head(\"T\"){ :label2 } :label2\nx = 1\n", ":label3")))
@@ -399,7 +398,7 @@ end
             catch e; e end
             @test ef isa ErrorException && occursin("in the profile feed has no Component of the file levels to be local to", ef.msg)
         end
-        # the SLOT-SCOPED wall (review-found: the setter's untyped level slot would have
+        # the SLOT-SCOPED wall (the setter's untyped level slot would have
         # parsed a QUOTED level — the setId-class hazard): a String outside head's TEXT
         # slot refuses; the empty-heading validation never fires on a non-String slot
         eq = _err("#~ head(\"T\", \"2\")\nx = 1\n")
@@ -412,7 +411,7 @@ end
         @test ec isa ErrorException && occursin("empty heading text", ec.msg)
     end
 
-    # (The step-9 interim duplicate-action assert testset was CONSCIOUSLY RETIRED
+    # (The interim duplicate-action assert testset was CONSCIOUSLY RETIRED
     # at the registration build with its subject; its successor, the clash law, was removed —
     # a duplicate action name resolves first-wins in `_derive_tables`, witnessed in
     # tests/unit/registration_tests.jl.)

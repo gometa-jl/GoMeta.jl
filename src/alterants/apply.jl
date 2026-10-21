@@ -22,7 +22,7 @@
 #     Component's own slot, replaces the value the own slot decided. The queued args tuple is
 #     splatted once into the setter, bare, as the original engine called it (goMetaAddOns.jl); a malformed argument
 #     meets Julia's own dispatch or the setter's own error — a former guarded refusal of the seam was removed within
-#     the 0.4 development (the framework before hardening).
+#     the 0.4 development.
 # REASONING: conditions travel as Julia `Expr`s and arguments as opaque tuples, so there
 #     are two evaluation sites of one form (`Core.eval` in the two passes below) and direct setter calls
 #     (an auditable setter seam and its internal-invariant guards were removed within the 0.4
@@ -94,7 +94,7 @@ function detAltValuesForSetOfSlots(
     # `Expr` runs in module GoMeta, where `getState`/`getAltState` are bound by name and read this call's state through
     # the ScopedValue `STATE` (the original engine's goMetaAddOns.jl :37). MEASURED:
     # 65–155 µs per evaluation on the corpus shapes — the original engine's known cost; the lowered form would be a hundredfold
-    # cheaper, the creator's to choose.
+    # cheaper; the choice stays open.
     local st = ctx()
     ## 1.1 Compute / Determine the values of all alterants of `:setMode`-type
     ##      `:accumulate` in every slot BUT the Component's OWN slot (`ownPos` below) —

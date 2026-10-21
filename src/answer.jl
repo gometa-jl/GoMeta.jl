@@ -34,7 +34,7 @@ Labels the SET of label names, a sorted `Vector{Symbol}`; Id the compound, a `Na
 · `:none`) and `via` (the deciding Component for `:indirect`; `nothing` otherwise).
 DOES: carries the answer; `value` is `nothing` for `:none`.
 REASONING: ONE source tag per Component per Alterant — the deciding statement's for a single-valued mode, the
-SET's for an accumulating one (which Component contributed which label is Q4 (ii), open), the compound's for Id.
+SET's for an accumulating one (which Component contributed which label is open — tests/comparison/README.md, Q4), the compound's for Id.
 PURPOSE: the return of `evaluatedAltValue`. Package-public (docs/public-api.md §1.2); NOT exported. The NAME the creator's
 word of 2026-10-03; the TIER an open point.
 """
@@ -81,7 +81,7 @@ end
 
 ## the attribute family of an Alterant's rows, from its capture declaration: `:single` the stem itself (`:visib`); `:per_key`
 ## and `:per_field` the stem plus `_<member>` (`:label_<name>`, `:id_<field>`); `:per_entry` (the Heading's —
-## `:per_occurrence` before 0.4.0) the stem, leveled or not (`:head`, `:head_<level>`, `:head_<level>_<k>`).
+## `:per_occurrence` within the 0.4 development) the stem, leveled or not (`:head`, `:head_<level>`, `:head_<level>_<k>`).
 function _attr_matches(attr::Symbol, stem::Symbol, scheme::Symbol)
     scheme === :single && return attr === stem
     attr === stem && return scheme === :per_entry
@@ -113,8 +113,8 @@ end
 ## the Component a deciding handle names — read DIRECTLY from the handle's LAST path step (store byte · u32 ordinal: the handle's
 ## own layout, `key_bytes` — schema · u16 namespace length · namespace · grain · u16 step count · the steps · the origin steps; the
 ## grain byte selects the store family through `_DOC_GRAIN_CODES`); `nothing` for a non-document grain, a TRUNCATED marker step
-## (store 0x00), an unassigned or out-of-bounds slot (a degenerate key) — the totality arm, never a throw. Stage 3's commit 1b of the
-## v0.4 build: the former walk of the whole tree (one key computed per Component until the match, once per :indirect answer) was
+## (store 0x00), an unassigned or out-of-bounds slot (a degenerate key) — the totality arm, never a throw. The former
+## walk of the whole tree (one key computed per Component until the match, once per :indirect answer) was
 ## MEASURED as 98.5 % of this function's cost on a 2,520-line input (16.1 of 16.3 s over its Lines);
 ## the direct read names the same Component for every deciding handle
 ## of every measured input.

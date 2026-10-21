@@ -14,8 +14,7 @@
 #           `GoMeta.evaluatedAltValue(delivery, component, alterant)` (since 0.4.0): the Component's own rows, else its parent's up the tree (the creator's
 #           indirect-application principle, as the Engine applies it — README rule 2), else the
 #           Alterant's declared default (Visib `show`) or absence. The runner derives NOTHING of its
-#           own any more (until this commit it read the rows and applied the principle itself — "when the Engine
-#           delivers a resolved answer per Component, step (5) reads that answer instead", as this header said).
+#           own (it reads the Engine's answer; it never applies the principle to the rows itself).
 #       (6) compares: a SINGLE value (Visib, Heading) as a string; an ACCUMULATING value (Labels) as the
 #           SET of label names; `present = false` as absence. (7) `decided_by` IS ASSERTED (the Engine's
 #           provenance field): the deciding statements'
@@ -23,16 +22,16 @@
 #           Line — its Block's: the runner's OWN search, kept beside the answer because the answer carries ONE
 #           source tag where an accumulating Alterant's expectation names EVERY contributor — 4 of the 27 asserted
 #           sets, Labels; an open point), named by position — a Block `block@N`, a Line
-#           `line@N`, a Segment's statement by ITS LINE (`line@N` — the vocabulary of the confirmed files; the
-#           session's reading, put to the creator), the fed profile `user`, no statement `default` — must equal
+#           `line@N`, a Segment's statement by ITS LINE (`line@N` — the vocabulary of the confirmed files),
+#           the fed profile `user`, no statement `default` — must equal
 #           the expectation's set (a string or a list); the rows' `decided_by` handles are decoded like the
 #           cell handles (step 4) and mapped to the tree's Blocks and Lines.
 #       (8) EXPECTED FAILURES: a confirmed statement the Engine is KNOWN not to meet yet is listed in
 #           `EXPECTED_FAILURES` with its reason and runs as `@test_broken` — the suite stays green while
 #           the gap stays visible, and the day the Engine meets it the `@test_broken` UNEXPECTED PASS
 #           fails the suite so the entry is removed.
-# REASONING: the confirmed statements are the specification the Engine (and the parallel
-#       new-GoMeta effort) must meet; the layer must be implementation-neutral in what it reads from the
+# REASONING: the confirmed statements are the specification the Engine (and every other
+#       variant of GoMeta) must meet; the layer must be implementation-neutral in what it reads from the
 #       files (positions, values) and must not depend on the renderer (the creator's words: a test
 #       that re-derives the evaluations tests the wrong layer — the Engine's values are what is tested).
 # PURPOSE: the Engine does what the creator means. Run via tests/runtests.jl (layer: authored), or alone:

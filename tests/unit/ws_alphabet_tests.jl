@@ -87,7 +87,7 @@ _ws_err(s; kw...)    = try _ws_r(s; kw...); nothing catch e sprint(showerror, e)
         # THE ONE EXCEPTION the header's boundary law does not carry: U+180E (MONGOLIAN VOWEL SEPARATOR, a Cf FORMAT
         # character since Unicode 6.3) DELIMITS today — PCRE's frozen `[\h]` list keeps it — against the 2026-08-08
         # decision's recorded note "zero-width format chars … never delimit". The pin
-        # makes the interim EXPLICIT: it flips WITH the creator's BLS review's word,
+        # makes the interim EXPLICIT: it flips WITH the creator's decision on BLS,
         # consciously, never silently.
         @test GM.BLS._is_h_ws(Char(0x180E)) === true
         for cp in (0x0009, 0x0020, 0x00A0, 0x1680,                      # the other 18 codepoints of PCRE's `\h`

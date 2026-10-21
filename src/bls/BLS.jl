@@ -34,7 +34,7 @@ NamedElements.@namedElement ComponentSettribute Bool begin
     stopAttachmentToMeta
     detachedFromMeta
     ignoreThisMeta
-    ignoreMetaContent ## R-INERT-4 (v0.3.1): the AUTHOR's trailing-bang inert marker
+    ignoreMetaContent ## since v0.3.1: the AUTHOR's trailing-bang inert marker
                       ## ("#~N!"/"#~!") — the component IS structurally live (walks, closes,
                       ## supersedes, attaches exactly like the bare live marker) and ONLY its
                       ## content after the '!' is ignored (absorbed as EMPTY). Distinct from
@@ -166,7 +166,7 @@ extension-chain iterator (`eachchildid`: the step from a full Component to its e
 
 REASONING: the creator's words — this integer `N` determines the length of `childComponentsIdxVec`, so a Component
 can NOT have more children than `N`; the surplus children are stored in an extension Component (his note; the
-extension chain). The accessor is not the original engine's (a later addition at the creator's order; his review comes after v0.4).
+extension chain). The accessor is not the original engine's (a later addition at the creator's order).
 
 PURPOSE: the one bound the overflow logic of the parse and of the child walk consults.
 """
@@ -339,7 +339,7 @@ include("parseBLS.jl")
 ## THE DOOR — BLS's own public travel / access functions over the BLS Component tree.
 ## The BLS Component tree is provided by BLS itself and travelled with BLS's own public
 ## functions; the public surface of every part an absolute minimum;
-## a BLS object stated to be a BLS object (the creator's lean) — every name below is read
+## a BLS object stated to be a BLS object (the creator's design) — every name below is read
 ## QUALIFIED, `BLS.<name>`; nothing is exported. Each function is marked as an existing
 ## BLS function ADAPTED or as NEW.
 #########################################################################################
@@ -386,7 +386,7 @@ with a type ladder; v0.4's three per-grain methods `parseBLS.jl` :121–:129) un
 name, its read unchanged. The name `parent` also belongs to Julia's `Base` (over arrays and
 views): this function is read qualified, `BLS.parent`, and adds no method to `Base.parent`;
 inside module BLS an unqualified `parent(x)` now binds to this function — the alternative,
-publishing `getParentComponent` itself, is the creator's to choose.
+publishing `getParentComponent` itself, stays open.
 PURPOSE: the upward walk an Extension and the tools make today through `:idParent` reads.
 """
 parent(tree::ParseState, c::Union{Segment,Line,Block}) = getParentComponent(tree, c)
@@ -395,7 +395,7 @@ parent(::ParseState, ::File) = nothing
 """
     kind(c::Component) -> Union{Symbol,Nothing}
 
-IS: the Component's flavor in the canon's sense — `:Meta`, `:Code` or `:Text` (a metaLine is
+IS: the Component's flavor in the project's sense — `:Meta`, `:Code` or `:Text` (a metaLine is
 "a BLS Line Component of flavor Meta"); NOT its grain (the grain is the Component's type —
 File, Block, Line, Segment — reached by dispatch).
 DOES: reads the field `contentType` the parser set (the original engine's content types `Meta`, `Code`,
@@ -407,7 +407,7 @@ differ from the field — this function answers the field, not the flags.
 REASONING: NEW — a field read given a name, so that no Extension reads a field of a BLS
 object; a Symbol, not the type, so that no type of BLS becomes public for it.
 (The word "flavor" also names the comment-lead record `FlavorProfile` in this code — a
-second sense of the word, NOTED for the creator's decision.)
+second sense of the word, an open point.)
 PURPOSE: an Extension's routing by flavor (the creator's words: a metaComponent's content to the
 metadata parser; text or code otherwise).
 """
@@ -418,8 +418,8 @@ kind(::File) = nothing
     content(tree::ParseState, c::AbstractComponent) -> Vector{UInt8}
 
 IS: the VERBATIM content bytes of a Component at its own grain — BLS's public read of a
-piece's text ("it is read from the BLS Component tree through BLS's own
-access function").
+piece's text (it is read from the BLS Component tree through BLS's own
+access function).
 DOES: a Block — its line span joined by '\n'; a Line — its full source line; a Segment —
 its byte span of its own line (a multibyte final character kept whole); EMPTY for a
 Component that addresses no content (a zero or out-of-range span; a zero-length Line — a
@@ -431,7 +431,7 @@ REASONING: NEW in BLS within the 0.4 development — the body of the Engine's fo
 (`src/annotations.jl`) COPIED unchanged but for the argument names and the dropped `BLS.` qualifiers;
 the Engine's copy was REMOVED — this function alone serves a piece's text:
 the capture predicate, the test layer's derivation of the reference files' fifth column (byte-equal to the
-former producer's — the probe's check), the tools and the consumers. Its ancestor: the original engine's writer's `SubString(collectedLines[stringIdx],
+former producer's — measured), the tools and the consumers. Its ancestor: the original engine's writer's `SubString(collectedLines[stringIdx],
 start:stop)` (`WriteOutFile.jl` :129–:134).
 PURPOSE: a piece's text for an Extension (the notebook Extension's join, the demo) and for
 the renderer, from the tree and nothing else.
@@ -484,13 +484,13 @@ IS: the text of the whole document as BLS holds it — the collected source line
 content as BLS's public read (the creator's decision,
 2026-10-05). Not the input's bytes: the line split drops the terminal newline (`endsWithNewline(tree)`
 carries that fact) and a CRLF line end's CR.
-DOES: the collected source lines joined by '\n', as bytes — exactly the text the development tools joined
-outside the door before this commit.
+DOES: the collected source lines joined by '\n', as bytes — exactly the text the development tools formerly joined
+outside the door.
 REASONING: a ONE-ARGUMENT method, not a `(tree, ::File)` arm of the two-argument `content`: that form's
 empty return for a File is the Engine's capture predicate (`captureEvals!`, src/annotations.jl), so an arm
 there would change which Components are captured — the File's text is read here, the predicate untouched.
 PURPOSE: the development tools' whole-document read (the tree print's File row, the excerpts) and an
-Extension's, through the door and nothing else — one of the last two reads outside the door left with it.
+Extension's, through the door and nothing else; with it, one of the last two reads outside the door was removed.
 """
 content(tree::ParseState)::Vector{UInt8} = Vector{UInt8}(codeunits(join(tree.collectedLines, '\n')))
 
@@ -523,12 +523,12 @@ renderer stamps, the flavor tag (`FlavorProfile`, `flavor.jl`; the type stays in
 caller reads the record's fields). THE PROMISE: of the record's fields FIVE are the
 public contract — `lead`, `hide_marker`, `hide_fold_prefix`, `flavor_tag`, `re_meta_leaded` (the fields the
 renderer and the print tools read); every other field — `directives` first, the parser's table — is reachable but NOT
-part of the contract (a `parse_header!` pointer the earlier text named first was removed):
-the record's remaining shape is open to the creator's BLS review.
+part of the contract:
+the record's remaining shape is open.
 DOES: returns the field `tree.flavor`.
 REASONING: NEW — the field read given a name (the renderer's `outputs`; the tools'
-`flavor_tag`). The name is the field's; the canon's word "flavor" for Meta/Code/Text is
-`kind`'s sense — NOTED for the creator's decision.
+`flavor_tag`). The name is the field's; the project's word "flavor" for Meta/Code/Text is
+`kind`'s sense — an open point.
 PURPOSE: the render's markers and the tools' flavor tag from the tree, not from the
 configuration.
 """
@@ -566,7 +566,7 @@ DOES: returns `_is_h_ws(c)` (flavor.jl) — true for the space, the tab, the NBS
 tokens by; false for a newline and for content.
 REASONING: ADAPTED — the parser's predicate given a public name, so that the print tools' segment lexer tests whitespace exactly as the
 parser does (a copy in a tool could drift from the parser's classification); the name is
-provisional — declaring `_is_h_ws` public as it is is the alternative, the creator's to pick.
+provisional — declaring `_is_h_ws` public as it is is the alternative, which stays open.
 PURPOSE: the print tools' lexer (the one read beyond the tree the tools make of the parser) and
 the renderer's whitespace guard before the hide marker, through the door.
 """

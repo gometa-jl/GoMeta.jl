@@ -293,8 +293,7 @@ function flavor_for(tag::Symbol)
 end
 
 ## (The `_CFAM_LEAD_*` consts and the `_RE_META_LEADED_*` compatibility aliases were removed within the 0.4
-## development: their comments cited forkchecks/s2_battery.jl and forkchecks/differential_flavor.jl,
-## neither in the repository; the record carries the lead's width and bytes.)
+## development; the record carries the lead's width and bytes.)
 ## ## FUTURE-BLS(non-ascii-lead): a non-ASCII lead needs nextind-chained skipping
 ## and a stated codeunit-vs-character unit at every arithmetic site.
 

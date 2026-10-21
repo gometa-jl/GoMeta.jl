@@ -1,30 +1,18 @@
-# capture_tests.jl — v0.4 T5: the CAPTURE RE-HOME witnesses (T5-DESIGN v2 §6).
+# capture_tests.jl — the CAPTURE RE-HOME witnesses.
 #
-# IS:   the T5 acceptance rows — the registration-driven walk mints for a CONFORMING
-#       mock (the sadd2 anti-T1 cure), a second Alterant of the set mode `localOnly` through the apply loop beside the
+# IS:   the capture plane's acceptance rows — the registration-driven walk mints for a CONFORMING
+#       mock, a second Alterant of the set mode `localOnly` through the apply loop beside the
 #       Heading (the per-plugin flush of the former separate path, the mode-gate laws and the
 #       `:per_occurrence` presence arm were removed with that path — the creator's decision; the measured consequences pinned at [9] and [11]),
 #       the ctor pair, and the `:per_field` positive fixture the corpus never reaches.
 # DOES: registers mock Alterants through the sanctioned lifecycle (the PROBE-proven
 #       shapes: register! varargs; the record's four-field keyword form — the settribute key was removed),
 #       drives them through goMeta, and pins rows + diagnostics.
-# REASONING: PROBE-14's sadd2 measurement — on v0.3.2 a conforming mock registered,
+# REASONING: on v0.3.2 a conforming mock registered,
 #       absorbed, applied PROCESS_OK and minted NO evals row (the 3-name ladder). These
 #       witnesses are the only proof the declaration is now LOAD-BEARING at the capture
 #       plane and the silence classes are coded.
-# PURPOSE: the T5 acceptance rows (Σ = 29 in this file after the review cures:
-#       23 at the T5 commit + [11]'s 6 + the [1] end-to-end algebra drive + the [7]
-#       cross-stem pin − the [7] runtime pair made lifecycle-unreachable by the tier-1
-#       store law; + 4 in record_schema_tests (3 + the seal pin — the pin was removed with the seal) —
-#       4749 + 29 + 4 = 4782, every movement declared; after the validation chain's removal the 29 here
-#       stand — [9]'s identity and stem-clash arms and [11]'s A6 re-cut to the measured consequences,
-#       one assert each — and record_schema_tests' shape-law testset (6 asserts) left with its subject;
-#       after the capture laws' removal 20 stand: the floor, gate and algebra witnesses — [1]'s algebra drive, [2]'s floor assert, [3] whole,
-#       [8]'s field assert, [9]'s instance-type arm, [11]'s Float and keys-less mocks — 9 asserts, removed with their subjects).
-#       After the Heading's move 19 stand: [6] removed (−1), [9]'s coherence arm (−1) and [11]'s A5 and A4/C3 (−2) with the
-#       Heading's separate path; [7]'s locality pin (+1), [8]'s field-names pin (+1) and [12], the witness of a review cure
-#       (+1), added — every movement declared. After a further review's cures 20 stand: [7]'s key pin (+1).
-#       With the `ids` action 22 stand: [4b], its `:per_field` rows (+2).
+# PURPOSE: the capture plane's acceptance rows — 22 asserts stand in this file (the witnesses of the removed laws were removed with their subjects).
 
 using Test
 import GoMeta as GM
@@ -96,7 +84,7 @@ end
     end
 
     # ([6] — the ungated `:per_occurrence` presence arm — was RETIRED with the Heading's separate
-    # path, on the creator's selection of 2026-10-16: after the move no shipped Alterant used it; a future Alterant declares what it
+    # path (the creator's decision of 2026-10-16): after the move no shipped Alterant used it; a future Alterant declares what it
     # needs when it comes.)
 
     @testset "[7] a SECOND Alterant of the set mode `localOnly` beside the Heading — both through the apply loop, each under its own stem" begin
@@ -136,10 +124,10 @@ end
         @test fieldnames(GM.CaptureDecl) == (:attr_scheme, :attr_stem)
     end
 
-    @testset "[9] the stem-overlap collapse (the identity and stem-clash laws removed; the mode-gate coherence law with the Heading's separate path)" begin
+    @testset "[9] the stem-overlap collapse (the identity and stem-clash laws removed; the mode-gate coherence law removed with the Heading's separate path)" begin
         # a mock declaring the shipped :label stem PUBLISHES; on ONE cell the two plugins' same-attr
         # rows collapse to one `label_label1` row — the silent cross-plugin supersede the stem-clash law refused
-        # (measured: [b]; full structural namespacing is T11's row)
+        # (measured: [b]; full structural namespacing is a later design)
         bc = _mockb(; capture = GM.CaptureDecl(:per_key; attr_stem = :label))
         rc = GM.goMeta(_doc("x = 1\n#~ :label1 zmark(label1)\n\ny = 2\n"); registry = GM.publish(bc))
         @test rc.status === GM.PROCESS_OK &&
@@ -152,7 +140,7 @@ end
         @test any(t -> t[2] === :zmock_aa, GM.readAltValuesEvals(r.altValues_evals))   # lowercase(String(:zmock)) = "zmock"
     end
 
-    @testset "[11] the review cure witnesses (the floor warning, the scheme law and the store law removed with the Heading's separate path)" begin
+    @testset "[11] the capture-plane witnesses (the floor warning, the scheme law and the store law removed with the Heading's separate path)" begin
         # (A1) a `localOnly` Alterant with capture === nothing: through the loop it is queued and applied like every action and
         # MINTS NOTHING — no row, no diagnostic (the capture floor's coded warning was removed with the separate path; a record without a row
         # mints nothing, as for every Alterant)

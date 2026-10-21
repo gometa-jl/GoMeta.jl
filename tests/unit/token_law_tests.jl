@@ -22,7 +22,7 @@ _tl_tree(s; kw...)   = String(copy(Main.BasicRenderer.outputs(_tl_r(s; kw...)).b
 _tl_err(s; kw...)    = try _tl_r(s; kw...); nothing catch e sprint(showerror, e) end
 _tl_nblocks(s; kw...) = length(collect(eachmatch(r"\{:B-", _tl_tree(s; kw...))))
 
-@testset "token_law_tests (F-13 verification matrix)" begin
+@testset "token_law_tests (the token-delimiter law's verification matrix)" begin
 
     @testset "[1] the creator's POSSIBILITY-SHAPES: plain content, zero evals, byte-identical" begin
         for s in ("someCharacters##someMoreCharacters\nx = 1\n",
@@ -56,13 +56,13 @@ _tl_nblocks(s; kw...) = length(collect(eachmatch(r"\{:B-", _tl_tree(s; kw...))))
     end
 
     @testset "[4] Meta adjacency: bucket (A) joins INERTLY — no refusal, no DSL entry (§B)" begin
-        # line grain — directly after a metaLine (the stale-Meta-landing class a review
-        # proved fatal under a flagless design; β's :ignoreThisMeta is the shield)
+        # line grain — directly after a metaLine (the stale-Meta-landing class, fatal
+        # under a flagless design; :ignoreThisMeta is the shield)
         let s = "#~ hide\n###banner\nx = 1\n"
             @test _tl_err(s) === nothing
             @test _tl_r(s).status == GM.PROCESS_OK
         end
-        let s = "#~ :label1\n#nonsense ## note\nx = 1\n"                   # a review's witness
+        let s = "#~ :label1\n#nonsense ## note\nx = 1\n"                   # the glued-`##` witness after a label metaLine
             @test _tl_err(s) === nothing
         end
         # segment grain — glued shape after a real inline token on the SAME line
@@ -141,7 +141,7 @@ _tl_nblocks(s; kw...) = length(collect(eachmatch(r"\{:B-", _tl_tree(s; kw...))))
         @test GM.BLS._re_meta.pattern == "^" * GM.BLS._RE_META_BODY_STR
     end
 
-    @testset "[11] post-apply review additions (2026-08-08; all shapes probe-confirmed first)" begin
+    @testset "[11] the further shapes (2026-08-08; all shapes probe-confirmed first)" begin
         # fence row: bucket-(A) shapes INSIDE an open fence — one unsplit Code block,
         # the glued mid-line shape a plain same-type segment, byte-identical render
         let s = "s = \"\"\"\ntext #~glued\n##x\n\"\"\"\ny = 1\n"
@@ -187,26 +187,26 @@ _tl_nblocks(s; kw...) = length(collect(eachmatch(r"\{:B-", _tl_tree(s; kw...))))
     end
 
     @testset "[12] the delivered object on the edge inputs (every value measured first, 2026-09-30)" begin
-        let s = "x#~ hide\ny = 1\n", r = _tl_r(s)             # row 3: a missing BEFORE boundary — plain content by the token law
+        let s = "x#~ hide\ny = 1\n", r = _tl_r(s)             # a missing BEFORE boundary — plain content by the token law
             @test r.status == GM.PROCESS_OK
             @test isempty(GM.readAltValuesEvals(r.altValues_evals))
             @test _tl_render(s) == s                             # (the one-Block witness — a read of the old tree dump — awaits the reference style)
         end
-        let r = GM.goMeta(UInt8[])                               # row 17 + R2 #21: the EMPTY input
+        let r = GM.goMeta(UInt8[])                               # the EMPTY input
             @test r.status == GM.PROCESS_OK
             @test isempty(GM.readAltValuesEvals(r.altValues_evals))
             @test isempty(r.diagnostics)
             @test isempty(Main.BasicRenderer.outputs(r).render_bytes)   # (the terminal-newline fact of the empty input has no witness from the outside here — see `endsWithNewline` below)
         end
-        let r = GM.goMeta(Vector{UInt8}(codeunits("\n")))         # the LF-ONLY input beside the empty one — "with and without the terminal newline"; every value MEASURED 2026-10-03
-            @test r.status == GM.PROCESS_OK                                                   # [C14c1]
-            @test isempty(GM.readAltValuesEvals(r.altValues_evals))                           # [C14c2] no evals row
-            @test isempty(r.diagnostics)                                                      # [C14c3]
-            @test Main.BasicRenderer.outputs(r).render_bytes == UInt8[0x0a]                  # [C14c4] the render is the one line break back
-            @test length(GM.BLS.children(r.blsComponentTree)) == 1                            # [C14c5] ONE Block — the one empty line — read through the door (measured)
-            @test GM.BLS.endsWithNewline(r.blsComponentTree)                                  # [C14c6] the terminal-newline fact, through the door
-            @test isempty(GM.BLS.children(GM.goMeta(UInt8[]).blsComponentTree))               # [C14c7] the EMPTY input beside it: no Block…
-            @test !GM.BLS.endsWithNewline(GM.goMeta(UInt8[]).blsComponentTree)                # [C14c8] …and no terminal newline
+        let r = GM.goMeta(Vector{UInt8}(codeunits("\n")))         # the LF-ONLY input beside the empty one — with and without the terminal newline; every value MEASURED 2026-10-03
+            @test r.status == GM.PROCESS_OK                                                   # [c1]
+            @test isempty(GM.readAltValuesEvals(r.altValues_evals))                           # [c2] no evals row
+            @test isempty(r.diagnostics)                                                      # [c3]
+            @test Main.BasicRenderer.outputs(r).render_bytes == UInt8[0x0a]                  # [c4] the render is the one line break back
+            @test length(GM.BLS.children(r.blsComponentTree)) == 1                            # [c5] ONE Block — the one empty line — read through the door (measured)
+            @test GM.BLS.endsWithNewline(r.blsComponentTree)                                  # [c6] the terminal-newline fact, through the door
+            @test isempty(GM.BLS.children(GM.goMeta(UInt8[]).blsComponentTree))               # [c7] the EMPTY input beside it: no Block…
+            @test !GM.BLS.endsWithNewline(GM.goMeta(UInt8[]).blsComponentTree)                # [c8] …and no terminal newline
         end
         let s = "x = 1\n#~ hide\ny = 2", r = _tl_r(s)           # row 17: NO terminal newline
             @test r.status == GM.PROCESS_OK

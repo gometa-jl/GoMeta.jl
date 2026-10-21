@@ -23,7 +23,7 @@
 #       native surface); (7) guards the hand-synced TWIN test environments (`test/Project.toml`
 #       vs `tests/Project.toml`) for structural parity, so `Pkg.test()` and the direct
 #       `--project=tests` invocation always resolve the SAME environment; (8) the one-path assertions
-# the basic renderer is loaded once, as Main.BasicRenderer, from
+#       — the basic renderer is loaded once, as Main.BasicRenderer, from
 #       devtools/basic_renderer.jl, through devtools/load_basic_renderer.jl.
 # REASONING: without a machine-checked export set, the declared semver API (docs/public-api.md)
 #       drifts silently from the code; since Julia 1.11 `names(M)` returns the exported AND the
@@ -131,26 +131,26 @@ import TOML
             @test String(GM.serialize_evals(hand)) == "# annotations golden — sorted (cell_handle, attr, value); final-verdicts-only.\n# columns: <attr>\\t<value>\\t<polarity>\\t<cell_handle = occurrence-key bytes, hex>\nlabel_a\\tb\ttrue\ttrue\t00\nx\\ny\\\\z\\r\t:v\tfalse\t01\n"   # [8h] the attr column ENCODED: one row, one line, four columns
             @test count(==('\n'), String(GM.serialize_evals(hand))) == 4 && all(l -> count(==('\t'), l) == 3, split(String(GM.serialize_evals(hand)), '\n'; keepempty = false)[3:end])
         end
-        @test hasmethod(GM.readAltValuesEvals, Tuple{GM.EvalStore})          # [8e] the reader takes the delivered PART `altValues_evals` (the delivered part's record)
+        @test hasmethod(GM.readAltValuesEvals, Tuple{GM.EvalStore})          # [8e] the reader takes the delivered PART `altValues_evals`
         @test !hasmethod(GM.readAltValuesEvals, Tuple{GM.GoMetaDelivery})   # [8f] and no method over the whole delivered object remains — the clean cut
     end
 
-    @testset "the delivered object, its show, the reader: (a) (b) (e) (f); every value MEASURED 2026-10-03 on the creator's word" begin
+    @testset "the delivered object, its show, the reader: (a) (b) (e) (f); every value MEASURED 2026-10-03" begin
         # (a) the four parts by name, in the creator's order: the tree, the evals, the status, the diagnostics
-        @test fieldnames(GM.GoMetaDelivery) == (:blsComponentTree, :altValues_evals, :status, :diagnostics)   # [C14a]
+        @test fieldnames(GM.GoMetaDelivery) == (:blsComponentTree, :altValues_evals, :status, :diagnostics)   # [a]
         # (b) ONE `Base.show` method over the delivered object — one line of counts, never the tree or the rows (src/state.jl); the strings MEASURED
-        @test count(m -> (p = Base.unwrap_unionall(m.sig).parameters; length(p) == 3 && p[3] === GM.GoMetaDelivery), methods(Base.show, (IO, GM.GoMetaDelivery))) == 1   # [C14b1] exactly one method whose third parameter is the delivery itself
+        @test count(m -> (p = Base.unwrap_unionall(m.sig).parameters; length(p) == 3 && p[3] === GM.GoMetaDelivery), methods(Base.show, (IO, GM.GoMetaDelivery))) == 1   # [b1] exactly one method whose third parameter is the delivery itself
         let d = GM.goMeta(Vector{UInt8}(codeunits("x = 1\n#~ hide\n\ny = 2\n"))), s = sprint(show, d)
-            @test which(Base.show, Tuple{IO, GM.GoMetaDelivery}).module === GM                       # [C14b2] the method dispatched is GoMeta's own
-            @test count(==('\n'), s) == 0                                                             # [C14b3] one line
-            @test s == "GoMetaDelivery(blsComponentTree: BLS.ParseState over 4 source lines; altValues_evals: 1 evals rows; PROCESS_OK; diagnostics: 0)"   # [C14b4] the measured string — the counts, never the tree or the rows
-            @test sprint(show, GM.goMeta(UInt8[])) == "GoMetaDelivery(blsComponentTree: BLS.ParseState over 0 source lines; altValues_evals: 0 evals rows; PROCESS_OK; diagnostics: 0)"   # [C14b5] the empty input's
+            @test which(Base.show, Tuple{IO, GM.GoMetaDelivery}).module === GM                       # [b2] the method dispatched is GoMeta's own
+            @test count(==('\n'), s) == 0                                                             # [b3] one line
+            @test s == "GoMetaDelivery(blsComponentTree: BLS.ParseState over 4 source lines; altValues_evals: 1 evals rows; PROCESS_OK; diagnostics: 0)"   # [b4] the measured string — the counts, never the tree or the rows
+            @test sprint(show, GM.goMeta(UInt8[])) == "GoMetaDelivery(blsComponentTree: BLS.ParseState over 0 source lines; altValues_evals: 0 evals rows; PROCESS_OK; diagnostics: 0)"   # [b5] the empty input's
         end
         # (e) the reader's method COUNT — one, over the delivered PART ([8e]/[8f]). Its alternative — a convenience method over the whole
-        # delivered object — is the creator's to take, an open point: a later word of his re-cuts this pin
+        # delivered object — is an open point: the pin is re-cut
         # in the commit that adds the method. A test of the present state, not a decision.
-        @test length(methods(GM.readAltValuesEvals)) == 1                                               # [C14e]
-        # (f) the reader's PURITY and the copied handles — a hand-built store, two records pushed in reverse handle order (a review
+        @test length(methods(GM.readAltValuesEvals)) == 1                                               # [e]
+        # (f) the reader's PURITY and the copied handles — a hand-built store, two records pushed in reverse handle order (the
         # test of 2026-10-01, re-cut without the field `content`, since removed)
         let st = GM.EvalStore(), h2 = UInt8[0x02], h1 = UInt8[0x01]
             push!(st.records, GM.EvalRecord(h2, :visib, :hide, true, [copy(h2)]))
@@ -158,12 +158,12 @@ import TOML
             snap() = [(copy(e.cell_handle), e.attr, e.value, e.polarity, deepcopy(e.decided_by)) for e in st.records]
             s1 = snap()
             rows = GM.readAltValuesEvals(st)
-            @test rows == [(UInt8[0x01], :visib, :show, true), (UInt8[0x02], :visib, :hide, true)]      # [C14f1] sorted by handle, the store's reverse order notwithstanding
-            @test snap() == s1 && length(st.records) == 2 && st.records[1].cell_handle == h2             # [C14f2] the store unchanged by the read — records, order, bytes
-            @test all(rows[i][1] !== e.cell_handle for i in 1:2 for e in st.records)                    # [C14f3] every returned handle is a COPY, never a record's own vector
+            @test rows == [(UInt8[0x01], :visib, :show, true), (UInt8[0x02], :visib, :hide, true)]      # [f1] sorted by handle, the store's reverse order notwithstanding
+            @test snap() == s1 && length(st.records) == 2 && st.records[1].cell_handle == h2             # [f2] the store unchanged by the read — records, order, bytes
+            @test all(rows[i][1] !== e.cell_handle for i in 1:2 for e in st.records)                    # [f3] every returned handle is a COPY, never a record's own vector
             empty!(rows[1][1])
-            @test GM.readAltValuesEvals(st) == [(UInt8[0x01], :visib, :show, true), (UInt8[0x02], :visib, :hide, true)]   # [C14f4] a second read after emptying a returned handle: the same rows
-            @test snap() == s1                                                                            # [C14f5] …and the store still unchanged
+            @test GM.readAltValuesEvals(st) == [(UInt8[0x01], :visib, :show, true), (UInt8[0x02], :visib, :hide, true)]   # [f4] a second read after emptying a returned handle: the same rows
+            @test snap() == s1                                                                            # [f5] …and the store still unchanged
         end
     end
 

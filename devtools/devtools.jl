@@ -1,9 +1,9 @@
 # devtools.jl — the GoMeta developer print tools.
-#   This file lives in the GoMeta code home,
-#   GoMetaEcosystem/GoMeta/devtools/. Run under the project whose GoMeta you want
-#   to print: `--project=GoMetaEcosystem/GoMeta/tests` = this repository's test environment. A DEVELOPMENT TOOL:
+#   This file lives in this repository's devtools/.
+#   Run under the project whose GoMeta you want
+#   to print: `--project=$GM/tests` (GM = this repository's root) = its test environment. A DEVELOPMENT TOOL:
 #   not part of the GoMeta process — the package never references this file. Docs: README.md
-#   beside it; the canon AGENT-RULES_GoMeta.md §R4b.
+#   beside it.
 #
 # IS:   the two development printers for a `goMeta` result —
 #         `print_BLS_Component_Tree`  (the BLS Component tree with every component's
@@ -16,19 +16,19 @@
 #       (The `slide` output option and its three surface writers were removed within the 0.4 development.)
 # DOES: renders — from the BLS component data of ONE `goMeta(bytes)` result, and only
 #       as deep as the selected style/detail/filters ask —
-#       (canon R1 — never re-derived from raw text): the engine-true Block census (the door's
+#       (never re-derived from raw text): the engine-true Block census (the door's
 #       `children` of the File root — the original engine's `2:numChildren+1` census is extension-unsafe),
 #       per-component named-int + settribute dumps, and the cell_handle → Component resolution
 #       (the shared decoder; a plain walk through the door; a row's text through the
 #       door's `BLS.content`). A former defensive contract — the resolver's gates, the
 #       origin states, the unanchored reasons, the guarded context, the status-first law, the
 #       checked blocks= fetch — was removed within the 0.4 development.
-# REASONING: the released v0.3.0 package deliberately ships no debug printer (e1c
-#       strip) and the run's WORKING state is not delivered at all (0.3.x delivered it as a field) — so the dev tools live BESIDE THE PACKAGE, on a
+# REASONING: the released v0.3.0 package deliberately ships no debug printer
+#       and the run's WORKING state is not delivered at all (0.3.x delivered it as a field) — so the dev tools live BESIDE THE PACKAGE, on a
 #       surface of their own, honestly labeled (the development tools', not the Engine's), instead
 #       of re-entering the engine through the release pipeline. Package-proper
-#       restoration is a friction-ledger motion (F-LED-16..19), never code from here.
-# PURPOSE: let the creator SEE, at any moment of play, exactly what the engine built
+#       restoration would be a change of the package itself, never code from here.
+# PURPOSE: let the creator SEE, at any moment, exactly what the engine built
 #       (structure + settributes) and exactly which altValues_evals row landed on
 #       which Component — including the metaSegment that caused it — in the terminal
 #       (colored) or as .html / .txt files.
@@ -40,14 +40,14 @@
 # `flavor` (the record; five fields promised), `endsWithNewline`, `isHorizontalSpace` (the lexer's
 # delimiter), the Component types and `keys` of the two named-element types (docs/public-api.md §1.2) —
 # and no field of a BLS object; the File's text (its lines joined) through the one-argument `content(tree)`
-# — one of the last two reads outside the door, removed within the 0.4 development with the texts of the
+# — the read it replaced, one of the last two reads outside the door, was removed within the 0.4 development with the texts of the
 # former exemption. Consumer code — an Extension — reads the tree the same way, through the door
 # (docs/public-api.md §1.2).
 # The battery `devtools/probes/probe_devtools.jl` is the drift alarm (the tools' former self-check was removed within the 0.4
 # development): run it after every change under `src/` — a broken surface fails LOUDLY.
 #
 # ── Use ─────────────────────────────────────────────────────────────────────────────────
-#   julia> include("run_play.jl")           # or directly: include("devtools.jl")
+#   julia> include("devtools.jl")
 #   julia> result = goMeta(read("InFileFolder/some.jl"))
 #   julia> print_BLS_Component_Tree(result)
 #   julia> print_altValues_evals(result)
@@ -57,13 +57,13 @@
 #
 # ── Non-goals + recorded deviations ─────────────────────────────────────────────────────
 # - No benchmarks: interactive dev printers carry no performance contract (the
-#   documented decision — design §2 ¶No-benchmarks).
+#   documented decision).
 # - Excerpt quote-escaping is DEFERRED: the creator decided on the
 #   rendered look with raw embedded quotes; only control bytes / invalid UTF-8 are
 #   escaped (safety — by the excerpt's own loop; the `strip` before it decodes an overlong invalid sequence at a content's head or tail and throws: a recorded limit at v0.4, the BLS flag and the door's text read at v0.5). `""` still renders zero-length content.
 # - Non-ASCII typography in PLAIN sinks: Block spans use an en-dash (`L35–L49`) and
 #   the reserved polarity marker a typographic minus (`(−)`, dead at v0) — byte-pinned
-#   to the creator-approved mockups; grep with the literal characters (or `grep -P`).
+#   to the design mockups; grep with the literal characters (or `grep -P`).
 # - A row the tools cannot place — a handle that does not decode, a grain above the File grain
 #   (> 0xd2: the user-context plane, the plane law of src/occurrence.jl), a path step with no such
 #   child — renders in the `unanchored rows` section: its grain name (`?` for a handle that does not
@@ -84,8 +84,8 @@
 #   materialized input-side (bounded by one cell) — accepted for v1.
 # - The extension-chain presence marker detects Block-grain `idExtension` in `:mix`
 #   only (Line/File-capacity chains + the `:tree`/`:full` style stay unmarked);
-#   physical extension-node rendering is deferred — no chain is mintable at play sizes.
-# - Explicit per-Alterant DEFAULT values are the Engine's (an Alterant's declared default); the absence of a row renders as
+#   physical extension-node rendering is deferred — no chain is mintable at interactive input sizes.
+# - An Alterant's declared DEFAULT value is the answer function's (`GoMeta.evaluatedAltValue`), never a row; the absence of a row renders as
 #   "(no evals — defaults apply)" without asserting a value.
 # - The :mix/:tree dump rows carry parent→first-
 #   child RAILS (│ at the child connector column; evals ● view
@@ -112,10 +112,10 @@ const _DT_BLS = GoMeta.BLS
 ## REASONING: three hand-picked rounds each fixed one collision
 ##   and created another — base-16 theme remapping (bold :yellow → the creator's amber)
 ##   plus hue-family crowding made eyeballing unreliable; the assignment is COMPUTED
-##   (optimizer + evidence banked in the plan dir) and the render was LOOKED AT.
+##   (by an optimizer over the gates above) and the render was LOOKED AT.
 ## PURPOSE: every role nameable by color alone, for full-color AND red-green-deficient
 ##   vision, on any dark-background terminal/theme. Re-tint = one index, then re-run
-##   the banked scorer (plan dir: score_roles.mjs) + probe 7b.
+##   the gates above (their scorer is not part of this repository) + probe 7b.
 const _DT_C_CHROME = 245            # guides/spans/labels — fixed gray #8a8a8a
                                     #   (theme :light_black is Solarized-invisible)
 const _DT_C_BLOCK  = 205            # Block grain, bold — pink #ff5faf
@@ -171,14 +171,14 @@ end
 ## pictograph labels like `label_🍻` (probe-proven); this pads to WIDTH.
 _dt_tpad(s, w) = s * ' '^max(0, w - textwidth(s))
 
-## IS: the bounded excerpt maker. DOES: flattens in-cell newlines to '⏎' (the R4-CLI
+## IS: the bounded excerpt maker. DOES: flattens in-cell newlines to '⏎' (the command-line entry's
 ## convention), escapes every OTHER control byte as ⟨0xNN⟩ (the terminal-forging class:
 ## \r, ESC, backspace…), renders malformed UTF-8 chars as per-char byte-hex ⟨0x…⟩
 ## (BYTE IDENTITY kept — the `!isvalid(c)` arm intercepts them on Julia 1.12.5), and
 ## truncates the OUTPUT incrementally at display width `maxw`. The byte-hex `catch` is
 ## a RESIDUAL belt for invalid-UTF-8 throw classes a future Julia might reintroduce —
 ## on 1.12.5 the char loop is total, so the fallback is defensively dead. REASONING:
-## §6 excerpt-safety contract; the printer must survive every input the byte-faithful
+## the excerpt's safety: the printer must survive every input the byte-faithful
 ## engine accepts — with ONE recorded exception at v0.4: the `strip` the callers apply before this excerpt decodes an overlong invalid UTF-8 sequence at a content's head or tail and throws; cured at v0.5 by the BLS flag and the door's text read, not here.
 function _dt_excerpt(s::AbstractString, maxw::Int = 48)
     try
@@ -225,8 +225,8 @@ REASONING: the result and the tree are held untyped (`Any`): the tools name no J
     renderer's note at its own read: that type is an open point of the design — not named there either) and dispatch on the Component
     types through the door alone. One context per call keeps every printer on the same tree and the same Block census.
 PURPOSE: the context every printer opens first — `print_BLS_Component_Tree`, `print_altValues_evals`, `comparisonForm` and
-    the command-line verbs `evals` and `trace`; the tools work on the run's two MAIN PRODUCTS, the BLS Component tree and
-    `altValues_evals` (the creator's term).
+    the command-line verbs `evals` and `trace`; the tools work on the run's two MAIN PRODUCTS (the creator's term), the BLS Component tree and
+    `altValues_evals`.
 """
 struct DTDoc
     r::Any
@@ -288,7 +288,7 @@ _dt_plural(n, w) = "$n $w" * (n == 1 ? "" : "s")
 #########################################################################################
 ##  §C — the handle's decode and the path's resolution
 #########################################################################################
-## Layout (src/occurrence.jl docblock; probe-proven 27/27 — design §1): schema 0x01 ·
+## Layout (src/occurrence.jl docblock; probe-proven 27/27): schema 0x01 ·
 ## namespace (u16-BE length + UTF-8) · grain byte · path steps (store byte + u32-BE
 ## GLOBAL-store-index ordinal = abs(idComponent)) · origin steps (same shape).
 ## THE DECODER IS SHARED: `decode_handle` lives in
@@ -364,7 +364,7 @@ end
 _dt_akey(c) = (typeof(c), Int(_dt_ni(c, :idComponent)))
 ## (the tree attachment map — incl. the Segment→owning-Line remap and the File split —
 ## is built INLINE in _dt_t2_tree; keeping a second generic builder here proved a
-## dead-surface hazard and was removed at the impl reconfirm)
+## dead-surface hazard and was removed)
 _dt_unanchored(rows) = [r for r in rows if r.comp === nothing]
 
 ## visib values carry semantic colors; every other attr's value prints neutral-BOLD —
@@ -471,12 +471,12 @@ REASONING: the released package ships no debug printer and the run's WORKING sta
     field of a BLS object (the tools' last reads outside the door were removed within the 0.4
     development). The census is the door's `children` of the File root, never the original `2:numChildren+1`
     (extension-unsafe). The strict `detail` rule and the typed dump labels are the design's: no silent no-op, no lookalike
-    accept, the REAL element types shown. A full-content REFERENCE style — the same bytes every run, on
-    a finished run AND on a bare parse — is not in this
-    file at this commit: the four styles above take a delivery.
-PURPOSE: the canon's instrument (AGENT-RULES_GoMeta.md §R4b; the verb `bls-tree` = `style = :mix`): what the Engine built —
+    accept, the REAL element types shown. The full-content REFERENCE style — the same bytes every run, on
+    a finished run AND on a bare parse — is decided and still to come; it is not in this
+    file: the four styles above take a delivery.
+PURPOSE: the tools' instrument (the verb `bls-tree` = `style = :mix`): what the Engine built —
     the structure and the settribute state the conditions tested — is stated from this printout, never re-derived from
-    raw text (canon R1); the next step of `print_altValues_evals`' "why NOT" path (the settribute state the conditions
+    raw text; the next step of `print_altValues_evals`' "why NOT" path (the settribute state the conditions
     tested). The tools work on the run's MAIN PRODUCTS (the creator's term).
 """
 function print_BLS_Component_Tree(io::IO, result::GoMeta.GoMetaDelivery;
@@ -504,7 +504,7 @@ function print_BLS_Component_Tree(io::IO, result::GoMeta.GoMetaDelivery;
     io = color === :auto ? io : IOContext(io, :color => (color === :always))
     doc = _dt_doc(result; name = _name)
     sel = blocks === :all ? doc.blocks : Any[b for b in doc.blocks if _dt_id(b) in blocks]
-    if isempty(sel) && style !== :legacy   # legacy keeps its frozen chrome;
+    if isempty(sel) && style !== :legacy   # :legacy keeps its frozen chrome;
                                            # the other styles get the File summary + reason
         nb, nl, ns2 = _dt_census(doc)
         _dt_sty(io, "File  ", bold = true); _dt_sty(io, doc.name, bold = true)
@@ -647,7 +647,7 @@ end
 function _dt_t1_legacy(io, doc, sel, lines_r, grain)
     H(n) = repeat('#', n)
     _dt_sty(io, "\n$(H(90))\n$(H(90))\n###### printComponentStates(...):\n", bold = true)
-    isempty(sel) && _dt_sty(io, "\n(no Blocks)", color = _DT_C_CHROME)   # empty-file law (§3)
+    isempty(sel) && _dt_sty(io, "\n(no Blocks)", color = _DT_C_CHROME)   # the empty-file law
     dump_named(c, ::Type{T}, boolstore) where T = begin
         _dt_sty(io, "\n###### Type of NamedElement: $(nameof(T))", color = _DT_C_LEGACY_DUMP, bold = true)
         parts = String[]
@@ -731,7 +731,7 @@ const _DT_T2_LAYOUTS = (:tree, :rows, :cells)
 
 IS: the second of the two print tools — the
     `altValues_evals` rows of one `goMeta` result, each evals row placed AT its BLS Component (which label landed WHERE,
-    which metaSegment caused it), with the input-line spans the raw rows lack (the F-LED-7 gap). The FULL delivery view — every
+    which metaSegment caused it), with the input-line spans the raw rows lack. The FULL delivery view — every
     Component shown, absence labelled, every row with its decoded handle — is `layout = :tree, include_empty = true,
     show_handles = true` (the verb `evals-tree`); the compact tree (the default) is the compact delivery view — a reading form for
     a quick look. A development tool: nothing under `src/` reads it.
@@ -786,10 +786,10 @@ REASONING: what a run evaluated, for which Component, is stated from the Engine'
     from raw text. The row's Component is resolved by the plain walk (a former
     defensive contract was removed); `polarity` renders DIM because it is constant `true` at v0 — a polarity-driven color would
     be constant fake signal. An absence label never asserts a value the Engine did not record.
-PURPOSE: the canon's rule (AGENT-RULES_GoMeta.md §R4b): no claim about what a run evaluated, for which Component, without
-    one of these printouts — the FULL delivery view for any claim that leaves a session; inside a session any view naming the Component — and the printout goes,
+PURPOSE: the tools' rule (devtools/README.md): no claim about what a run evaluated, for which Component, without
+    one of these printouts — the FULL delivery view for any published claim, any view naming the Component for a quick look — and the printout goes,
     unabridged, into any page or record that carries the claim. The "why NOT" companion: when a label/action you expected
-    is ABSENT here, the next step is the canon-R4 command-line entry `devtools.jl trace <file>` (evals rows + decoded
+    is ABSENT here, the next step is the command-line entry `devtools.jl trace <file>` (evals rows + decoded
     handles) and `print_BLS_Component_Tree` (the settribute state the conditions tested).
 """
 function print_altValues_evals(io::IO, result::GoMeta.GoMetaDelivery;
@@ -833,10 +833,10 @@ end
 print_altValues_evals(result::GoMeta.GoMetaDelivery; kwargs...) =
     print_altValues_evals(stdout, result; kwargs...)
 
-## IS: the §4 filter contract. DOES: normalizes `attrs` (:all | Symbol | Vector),
+## IS: the filter contract. DOES: normalizes `attrs` (:all | Symbol | Vector),
 ## validates + filters BEFORE layout, keeps unanchored rows immune to `lines`, and
 ## returns `(filtered_rows, echo_lines, active)` — the echo lines carry the active filters, per-attr match counts and the EXPLICIT never-minted state;
-## `active` is true when an attrs or lines filter was supplied (the one flag the absence labels read, :939–:940).
+## `active` is true when an attrs or lines filter was supplied (the one flag the absence labels read — `nolabel` / `eliword` in `_dt_t2_tree`).
 function _dt_filter_rows(rows, attrs, lines_r)
     echo = Vector{Tuple{String,Union{Symbol,Nothing}}}()   # (text, color-key) pairs
     fr = rows
@@ -857,7 +857,7 @@ function _dt_filter_rows(rows, attrs, lines_r)
         push!(echo, ("filter lines=$(lines_r) (unanchored rows are never hidden by lines)", nothing))
     end
     active = attrs !== :all || lines_r !== nothing
-    active &&                                            # §4: filtered/total ALWAYS echoed
+    active &&                                            # filtered/total ALWAYS echoed
         push!(echo, ("showing $(length(fr)) of $(length(rows)) rows", nothing))
     (fr, echo, active)      # `active` is THE filter flag — single source for the labels
 end
@@ -945,7 +945,7 @@ function _dt_t2_tree(io, doc, frows, allrows, echo;
         show_handles && _dt_handle_note(io, row, "    ")
     end
     # with a filter active, an absence label must not assert "no evals" — rows may
-    # simply be filtered out (a review finding)
+    # simply be filtered out
     nolabel  = filtered ? "   (no matching evals)" : "   (no evals — defaults apply)"
     eliword  = filtered ? "(no matching evals)" : "(no evals)"
     node(c, guide, name) = begin
@@ -965,7 +965,7 @@ function _dt_t2_tree(io, doc, frows, allrows, echo;
     emit_rows(c, indent) = for row in get(am, _dt_akey(c), DTEvalRow[])
         tag = row.comp isa _DT_BLS.Segment ?
               "[Segment #$(_dt_ni(row.comp, :idComponent))]" : ""
-        _dt_eval_bullet(io, doc, row; indent, target_tag = tag)   # guide + "● " (T2-L2)
+        _dt_eval_bullet(io, doc, row; indent, target_tag = tag)   # guide + "● "
         show_handles && _dt_handle_note(io, row, indent * "    ")
     end
     empty_ok(c) = include_empty && _dt_intersects(c, lines_r)   # lines= is also the focus
@@ -1049,7 +1049,7 @@ end
 #########################################################################################
 
 ## The HTML page wrapper — byte-identical to the mockup generator's, so .html output
-## stays comparable to the approved mockups.
+## stays comparable to the design mockups.
 function _dt_write_html(path, renderfn, title)
     open(path, "w") do f
         print(f, "<!doctype html><meta charset=\"utf-8\"><title>", _dt_htmlesc(title),
@@ -1069,8 +1069,8 @@ end
     write_BLS_Component_Tree_to_file(path, result; format=:auto, color=:never,
                                      title="print_BLS_Component_Tree", kwargs...)
 
-IS: the file twin of [`print_BLS_Component_Tree`](@ref) (the February `print*`/`write*` pair convention; the file sinks
-    and the format inference) — the `.html` / `.txt` twin of the print tool
+IS: the file twin of [`print_BLS_Component_Tree`](@ref) (the February `print*`/`write*` pair convention, with its file sinks
+    and the format inferred from the extension) — the `.html` / `.txt` twin of the print tool
     (a development tool).
 DOES: `format` selects the sink: `:auto` (default) infers from the extension — `.html` (case-insensitive) ⇒ the
     self-contained styled HTML page, ANY other extension (or none) ⇒ text; an explicit `:html` / `:txt` OVERRIDES the
@@ -1081,8 +1081,8 @@ DOES: `format` selects the sink: `:auto` (default) infers from the extension —
     core method. Opens `path` for writing, renders, closes; returns `path`.
 REASONING: the HTML sink is the core method rendered into an `IOContext` carrying `:gm_html => true`, which the one
     styled-run emitter `_dt_sty` routes to `<span>` styles — one renderer, three sinks (terminal, plain text, HTML); the
-    page wrapper is byte-identical to the mockup generator's, so `.html` output stays comparable to the approved mockups.
-PURPOSE: a printout as a file — the site's capture of the authored tests (`agent-doc/site/capture-devtools.jl`) writes the
+    page wrapper is byte-identical to the mockup generator's, so `.html` output stays comparable to the design mockups.
+PURPOSE: a printout as a file — a page that shows what a run produced carries the
     `:mix` tree as `.html` through it; the `.txt` form is the grep-friendly record.
 """
 function write_BLS_Component_Tree_to_file(path::AbstractString, result::GoMeta.GoMetaDelivery;
@@ -1103,7 +1103,7 @@ end
     write_altValues_evals_to_file(path, result; format=:auto, color=:never,
                                   title=..., kwargs...)
 
-IS: the file twin of [`print_altValues_evals`](@ref) — the `.html` / `.txt` twin of the canon's print tool
+IS: the file twin of [`print_altValues_evals`](@ref) — the `.html` / `.txt` twin of the print tool
     (a development tool; the format inferred from the sink's extension).
 DOES: same format/color/title/_name rules as [`write_BLS_Component_Tree_to_file`](@ref): `format` `:auto` infers the sink
     from the extension (`.html`, case-insensitive ⇒ the styled HTML page; else text), `:html` / `:txt` override it, any
@@ -1113,8 +1113,8 @@ DOES: same format/color/title/_name rules as [`write_BLS_Component_Tree_to_file`
 REASONING: one renderer, three sinks — the HTML sink is the core method rendered into an `IOContext` carrying
     `:gm_html => true`, routed by the one styled-run emitter `_dt_sty`; the page wrapper is the mockup generator's,
     byte-identical.
-PURPOSE: the FULL delivery view as a file for the creator (`include_empty = true, show_handles = true`): the website's pages
-    carry it as `.html` through this twin; the JuliaCon deck's
+PURPOSE: the FULL delivery view as a file for the creator (`include_empty = true, show_handles = true`): a page that shows
+    what a run produced carries it as `.html` through this twin; the JuliaCon deck's
     dev-tool slides and the demo deck were produced from its output with the tools' former `slide` option (removed within the
     0.4 development).
 """
@@ -1148,7 +1148,7 @@ end
 ##  REASONING: the two variants may deliver different shapes and types; only a projection keyed by
 ##        content can be compared. A Segment's span is given in CHARACTERS of its line (the parser's byte offsets
 ##        converted on the line's own bytes — the definition's recommended unit, an open point).
-##  PURPOSE: the twelve forms under tests/comparison/ — v0.4's reference altValues, the creator's term (`regenerate.jl`) — and the first comparator
+##  PURPOSE: the twelve forms under tests/comparison/ (`regenerate.jl`) — v0.4's reference altValues, the creator's term — and the first comparator
 ##        `devtools/compare_forms.sh` (a sorted-text diff). A development tool: nothing under src/ reads it.
 #########################################################################################
 const _CF_VERSION = 1
@@ -1264,7 +1264,7 @@ DOES: one header line `# GoMeta comparison form v1 | <name> | produced by GoMeta
     from its first Block's start to its last Block's stop, `0-0` without a Block. Throws (the door's own throw) on a
     delivery whose tree cannot be walked.
 REASONING: the two variants may deliver different shapes and types; only a projection keyed by content can be
-    compared — ordinals, ids, handles and Julia types never appear — and the lines carry content keys only, so two lanes'
+    compared — ordinals, ids, handles and Julia types never appear — and the lines carry content keys only, so two variants'
     projections compare as text; sorting makes the order a non-fact.
 PURPOSE: `writeComparisonFormToFile`, the `comparison` verb, `tests/comparison/regenerate.jl` (which writes or checks the
     twelve), the battery's §18 and the first comparator `devtools/compare_forms.sh` (a sorted-text diff).
@@ -1327,7 +1327,7 @@ printComparisonForm(result::GoMeta.GoMetaDelivery; kwargs...) = printComparisonF
 ##      julia --startup-file=no --project=$GM/tests $GM/devtools/devtools.jl <verb> <file>
 ##      tree · segments · evals · render · trace · evals-tree · bls-tree · comparison (the comparison form, §I)
 ##  IS: the smallest complete consumer of the two containers — `altValues_evals` (the excerpts through the
-##  door: `BLS.content` of each row's resolved Component, since commit 9b) and the development tool's (tree, render) pair (`Main.BasicRenderer.outputs`,
+##  door: `BLS.content` of each row's resolved Component) and the development tool's (tree, render) pair (`Main.BasicRenderer.outputs`,
 ##  loaded through the ONE path at this file's top). DOES: runs goMeta on ONE file; status + diagnostics
 ##  to stderr, the surface to stdout; exit 0 = PROCESS_OK, 1 = a non-OK result, 2 = usage. The `trace`
 ##  verb decodes each row's cell_handle with the SHARED `decode_handle` (handle_decoder.jl, §C) — the former CLI's

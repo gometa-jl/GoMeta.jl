@@ -10,7 +10,7 @@
 #       [F2] a document `#~ show` WINS over the fallBack `hide` (the fallBack slot last); [F3] the user feed `discard` WINS over
 #       the fallBack `hide` (the user level precedes); in every case the metaBlock itself follows the same order.
 # REASONING: no feed occupies the fallBack slot in the Engine today (the `metaLevel` Alterant and its feeds come later —
-#       the creator's design); the order is nevertheless BUILT now (the room), so the test prepares the slot itself.
+#       the creator's design); the order is nevertheless BUILT now, with room for them, so the test prepares the slot itself.
 # PURPOSE: the consult order MEASURED, never inferred from the code's shape.
 
 using Test
@@ -103,10 +103,10 @@ import GoMeta as GM
         end
     end
 
-    @testset "[F4] the public path: a user profile with a QUEUED action runs (the defect of commit 2, found by F3, cured here)" begin
-        # since commit 2 the enqueue records the statement's origin; on the user feed that is the user-context handle — read through a type
-        # the absorb module did not import (`UserContext`): every earlier user-profile test fed a heading, which the separate path of the
-        # time diverted before the enqueue (a fed heading refuses at the read)
+    @testset "[F4] the public path: a user profile with a QUEUED action runs" begin
+        # the enqueue records the statement's origin; on the user feed that is the user-context handle — read through a type
+        # the absorb module did not then import (`UserContext`): the earlier user-profile tests fed headings, which the former separate path
+        # diverted before the enqueue (a fed heading refuses at the read)
         r = GM.goMeta(_bytes("#~ :label1\nx = 1\n"); config = GM.GoMetaConfig(; user_mh_profile = "discard"))
         @test r.status === GM.PROCESS_OK
         uc = GM.key_bytes(GM.user_context_key(:default, 1))

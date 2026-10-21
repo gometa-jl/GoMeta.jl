@@ -1,4 +1,4 @@
-# seam_envelope_tests.jl — v0.4 T3: the SEAMS witnesses (T3-DESIGN §8's fixture table).
+# seam_envelope_tests.jl — the SEAMS witnesses.
 #
 # IS:   the seams' acceptance witnesses — the query seam (the `getAltState` call is BARE —
 #       the closed interpreter's own query envelope, CB_QUERY_THROW / RES_RETURN_TYPE at its atom, was removed with
@@ -7,17 +7,17 @@
 #       the consumed handover validation (with the "GoMeta "-prefix pass-through) and the InterruptException
 #       pass-through; an absent zero-arg method publishes (the eager DEP_MISSING gate was removed).
 #       The three-site ctor-mint envelope (CB_CTOR_THROW) was removed, and
-#       the post-dispatch store-identity check (RES_FOREIGN_STORE) with it — the set-invocation seam
-#       (the state-seam ledger's witnesses — in-flight enforcement, the re-injection cells — left with the
+#       the post-dispatch store-identity check (RES_FOREIGN_STORE) with it, with the set-invocation seam
+#       (the state-seam ledger's witnesses — in-flight enforcement, the re-injection cells — were removed with the
 #       ledger and the callable driver seam).
 # DOES: publishes DEFECTIVE-callable registries through the sanctioned lifecycle, drives them
 #       through goMeta, and pins the catalogue-name tokens + codes.
 # REASONING: T3's refusals fire only on defective callables/records/states — no golden or
 #       corpus path reaches them; these witnesses are the only proof the envelopes fire.
-# PURPOSE: the seams' acceptance rows (Σ = 36 asserts at first — the closed arithmetic, its 34 amended to 36 at the realized count (the two fixture-soundness asserts); the ledger testset's 14 — ten of
+# PURPOSE: the seams' acceptance rows (Σ = 36 asserts at first, the two fixture-soundness asserts included; the ledger testset's 14 — ten of
 #       the seams' and four door pins — removed; 9 more — the mint-wrap assert, the ctor-mint 4,
 #       the store-identity 2, the two source greps — removed with the set-invocation seam; 2 more removed
-#       with the capture laws (measured per file)).
+#       with the query seam's envelope (measured per file)).
 
 using Test
 import GoMeta as GM
@@ -95,7 +95,7 @@ end
         # survives the envelope VERBATIM (the "GoMeta "-prefix law)
         ep = _drive(Vector{UInt8}(codeunits("x = 1\n#~ \"\"\n\ny = 2\n")), GM.DEFAULT_REGISTRY)
         @test ep isa ErrorException && occursin("empty heading text", ep.msg) &&
-              occursin("ratified standing decision", ep.msg) && !occursin("CB_VALIDATE_THROW", ep.msg)
+              occursin("a standing decision", ep.msg) && !occursin("CB_VALIDATE_THROW", ep.msg)
     end
 
     @testset "an absent zero-arg method publishes (the eager DEP_MISSING gate and the mint wrap removed)" begin
@@ -107,7 +107,7 @@ end
         @test isempty(GM.validate(b))
         @test GM.publish(b) isa GM.AlterantRegistry   # the title's verb exercised (publish on the clean validate — MEASURED)
         # (the mint wrap's CB_CTOR_THROW witness was removed with the set-invocation seam: the bare
-        # mint is Julia's own MethodError out of the goMeta call, measured on both trees)
+        # mint is Julia's own MethodError out of the goMeta call, measured before and after the change)
     end
 
     @testset "the InterruptException arm (the query site's pass-through)" begin

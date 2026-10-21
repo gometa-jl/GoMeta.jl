@@ -1,4 +1,4 @@
-# snapshot_property_tests.jl — v0.4 T2-bis: the PROPERTY proof of the snapshot door (T2BIS-DESIGN §9).
+# snapshot_property_tests.jl — the PROPERTY proof of the snapshot door.
 #
 # IS:   the property test — the proof that EVERY in-place or rebuild
 #       mutation of a published registry's walked fields FIRES the door at a prefix-comparable
@@ -11,10 +11,10 @@
 #       only replacement values), and checks ONE fire at a segment-prefix-comparable path — plus
 #       the 8 false-positive rebuild cases, the named cases (Σ = 42 asserts — the former VocabularyRef case's
 #       two and the overload-leaf case's two removed), and 5 aggregate
-#       coverage asserts. P = 1024×3 + 8 + 42 + 5 = 3127 (the closed arithmetic).
+#       coverage asserts. P = 1024×3 + 8 + 42 + 5 = 3127.
 # REASONING: the enumerated door witnesses cannot prove coverage over the whole walked domain;
 #       the site-cycling property can — full site coverage is guaranteed by |sites| ≤ N.
-# PURPOSE: the T2-bis acceptance row; the door's coverage proof.
+# PURPOSE: the door's coverage proof.
 
 using Test
 using Random
@@ -42,7 +42,7 @@ import GoMeta as GM
         (SETTER_REF[] += 1; store[name] = true; nothing)
 end
 
-@testset "snapshot_property (v0.4 T2-bis)" begin
+@testset "snapshot_property" begin
 
     _codesp(diags) = [d.code for d in diags]
     _K(k) = GM._Key(k)
@@ -58,7 +58,7 @@ end
 
     _nan64 = reinterpret(Float64, 0x7ff8000000000001)
 
-    # ——— the GENERATOR (§9): DEFAULT + fills on ONE plugin + lean per-spec payloads + the
+    # ——— the GENERATOR: DEFAULT + fills on ONE plugin + lean per-spec payloads + the
     # fresh single-overload plugin; NO shared mutable container; fill Dicts UNIQUE-KEYED ———
     function _mk_prop_builder()
         b = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
@@ -174,7 +174,7 @@ end
         error("no distinct value for category $c ($(typeof(v)))")
     end
 
-    # single-point substitutes, keyed by (parent struct type, field) — T2BIS-DESIGN §9's rule:
+    # single-point substitutes, keyed by (parent struct type, field) — the rule:
     # a distinct in-domain value ADMISSIBLE in that field, via the nearest mutable ancestor
     function _single_substitute(pT, pf, v)
         pT === GM.Alterant && pf === :getAltInstance && return GM.Alterants.checkLabels
@@ -186,7 +186,7 @@ end
         error("no single-point substitute for ($pT, $pf)")
     end
 
-    # ——— SITE ENUMERATION (§9): a pre-walk of the published value, §2 traversal order ———
+    # ——— SITE ENUMERATION: a pre-walk of the published value, the traversal order ———
     function _enumerate_sites(R)
         sites = Vector{NamedTuple}()
         function walk(v, path, pT, pf)
@@ -317,8 +317,8 @@ end
             # diagnostic copy at N = 1024 and N = 2048); the site's ordinal plus
             # the pass count rotates the op per pass at EVERY site for EVERY |sites| — all three ops at a site once it sees three passes, so at
             # every site while |sites| ≤ N ÷ 3 (341 at N = 1024; at 225 every site sees four or five passes); above that some sites see two
-            # passes or one, and §9's amend rule (|sites| > N) does not fire (the pass count added to `i` itself would freeze again whenever
-            # |sites| ≡ 2 mod 3; the Dict op below the same). T2BIS-DESIGN §9's budget and arithmetic unchanged (N = 1024, P = 3127).
+            # passes or one, and the amend rule (|sites| > N) does not fire (the pass count added to `i` itself would freeze again whenever
+            # |sites| ≡ 2 mod 3; the Dict op below the same). The budget and arithmetic unchanged (N = 1024, P = 3127).
             op = (:push, :pop, :set)[1 + ((i - 1) % length(sites) + (i - 1) ÷ length(sites)) % 3]
             if op === :pop && !isempty(v)
                 pop!(v)
@@ -384,11 +384,11 @@ end
         return all(_seg_eq(rep[j], mut[j]) for j in 1:n)
     end
 
-    # ═══ THE MAIN PROPERTY LOOP: N = 1024, seed banked, sites cycle — 3 asserts each ═══
+    # ═══ THE MAIN PROPERTY LOOP: N = 1024, seed fixed, sites cycle — 3 asserts each ═══
     N = 1024
     rng = Random.Xoshiro(0x5e2b15)
     sites = _enumerate_sites(R0)
-    @assert length(sites) <= N "|sites| = $(length(sites)) exceeds N = $N — the §9 amend rule applies"
+    @assert length(sites) <= N "|sites| = $(length(sites)) exceeds N = $N — the amend rule applies"
     @info "snapshot_property realized |sites|" length(sites)
     opseen = Set{Symbol}()
 
@@ -402,7 +402,7 @@ end
         @test rep !== nothing && _prefix_comparable(rep, mutpath)          # (3) prefix-comparable
     end
 
-    # ═══ the FALSE-POSITIVE half (§9): structurally identical rebuilds are SILENT — 8 ═══
+    # ═══ the FALSE-POSITIVE half: structurally identical rebuilds are SILENT — 8 ═══
     dagseen = Set{Symbol}()
     let R = GM.publish(_mk_prop_builder())                       # (1) Vector rebuilt fresh (the default's value vector — the former constraints removed)
         c = R.plugins[1].default.value
@@ -469,7 +469,7 @@ end
         push!(dagseen, :join)
     end
 
-    # ═══ the NAMED cases: Σ = 42 asserts (44 before the VocabularyRef case's two and the overload-leaf case's two were removed) ═══
+    # ═══ the NAMED cases: Σ = 42 asserts (46 before the VocabularyRef case's two and the overload-leaf case's two were removed) ═══
     _with_ctor(b, T) = (b.plugins[2] = GM.Alterant(; altName = :Visib, setMode = :mutExclusive,
         altConstructor = T, setAltInstance = GM.Alterants.setVisib); b)
     _swap_ctor!(R, T) = (R.plugins[2] = GM.Alterant(; altName = :Visib, setMode = :mutExclusive,
@@ -559,7 +559,7 @@ end
     let R = GM.publish(_mk_prop_builder())
         @test isempty(GM._registry_door_check(R))
         _PropTypes.SETTER_REF[] += 1                             # behavior moves, identity does not
-        @test isempty(GM._registry_door_check(R))                # the §11 residue, pinned as SILENCE
+        @test isempty(GM._registry_door_check(R))                # the residue, pinned as SILENCE
     end
     # the ALIAS case: a shared-container declaration publishes SILENT; a mutation through ONE
     # alias fires prefix-comparable to EITHER alias path (2)
@@ -582,7 +582,7 @@ end
         d = R.plugins[2].default.value
         ks = collect(keys(d))
         v1 = d[ks[1]]; d[ks[1]] = d[ks[2]]; d[ks[2]] = v1        # a pure VALUE SWAP — structurally equal
-        @test isempty(GM._registry_door_check(R))                # SILENT (a documented scope note)
+        @test isempty(GM._registry_door_check(R))                # SILENT (a pure value swap is structurally equal)
     end
     let b = _mk_prop_builder()                                   # GUARD-ISOLATION: candidates share nested containers
         inner = Any[Int8(1)]
@@ -602,7 +602,7 @@ end
     let b = _mk_prop_builder()
         b = _with_default(b, 4, b.action_specs[2])
         d = GM.validate(b)
-        @test any(x -> x.code === :REG_PROTOCOL && x.context === b.plugins[2].altName &&   # commit 3-ii: the context is the Alterant's name
+        @test any(x -> x.code === :REG_PROTOCOL && x.context === b.plugins[2].altName &&   # the context is the Alterant's name
                        occursin("slot default", x.message), d)
     end
     # the NESTED-NUMERIC case (1): `Declared(Complex(1//2, 1//2))` publishes; door SILENT
@@ -676,7 +676,7 @@ end
         @test any(x -> x.code === :REG_PROTOCOL && occursin("exceeds the type-encoder budget", x.message), d)
     end
     # the DEEP-KEY case (1): a deep tuple-shaped Dict key ⇒ `validate` RETURNS, never throws.
-    # Shape + depth amended at the code commit (§S2.9, probe-grounded): a PURE tuple nest is
+    # The key's shape and depth (probe-grounded): a PURE tuple nest is
     # untypeable at depth in Julia itself (nested Tuple TYPE construction/inference overflows
     # at the harness-side build — outside the door's code), so the key alternates tuple over
     # `Vector{Any}` (constant type depth); Base's OWN `hash` recursion at the harness-side
@@ -698,7 +698,7 @@ end
         @test _PropTypes.HASH_COUNT[] == c0                      # the door moved the counter by ZERO
     end
 
-    # ═══ the 5 STRATIFIED COVERAGE asserts (§9) ═══
+    # ═══ the 5 STRATIFIED COVERAGE asserts ═══
     recfields = Set{Tuple{DataType,Symbol}}()
     for s in sites
         objs = _objs_along(R0, s.path[1:end-1])

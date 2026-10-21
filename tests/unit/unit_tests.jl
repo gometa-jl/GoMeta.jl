@@ -18,7 +18,7 @@
 #   - error_message_tests.jl  — stable-message witnesses, e.g. "GoMeta apply: unknown label".
 #   - arg_guard_tests.jl      — the documented WORKING argument forms (the refusal witnesses were removed
 #                               with the set-invocation seam).
-#   - parser_quality_tests.jl — the metaLine parser effort's battery: every inventory shape with its
+#   - parser_quality_tests.jl — the parser-quality battery: every inventory shape with its
 #                               expected outcome — accepted with its evals row count, refused with its GoMeta head, or Julia's class.
 #   - condition_tests.jl      — the condition path (Julia's parser over the re-written body; the registry's
 #                               vocabulary rule; the parser-quality rows).
@@ -50,12 +50,12 @@ using Test
     include(joinpath(@__DIR__, "flavor_profile_tests.jl"))          # WP1-W1 (F-17): FlavorProfile record + threading witnesses (APPEND-ONLY)
     include(joinpath(@__DIR__, "latex_flavor_tests.jl"))            # WP1-W5 (F-22): the FLAVOR_LATEX pure-data acceptance battery (APPEND-ONLY)
     include(joinpath(@__DIR__, "ensure_token_tests.jl"))            # WP1-W6 step (b): the ensure-token witness battery (K1 second disjunct; APPEND-ONLY)
-    include(joinpath(@__DIR__, "inert_semantics_tests.jl"))         # v0.3.1: the R-INERT-4 differential oracle + §4.1 refusal + §4.8 Alterant guards (APPEND-ONLY)
+    include(joinpath(@__DIR__, "inert_semantics_tests.jl"))         # v0.3.1: the inert-marker differential oracle + the bang-first refusal + the Alterant guards (APPEND-ONLY)
     include(joinpath(@__DIR__, "record_schema_tests.jl"))           # v0.4 T1: the registration-record schema extension witnesses (APPEND-ONLY)
     include(joinpath(@__DIR__, "registry_lifecycle_tests.jl"))      # v0.4 T2: Builder → validate → publish, the one chain, the STRICT door, the seal gate, the exhaustion refusals (APPEND-ONLY)
     include(joinpath(@__DIR__, "snapshot_property_tests.jl"))       # the snapshot door's PROPERTY proof (N=1024 site mutations + FP rebuilds + named cases)
     include(joinpath(@__DIR__, "seam_envelope_tests.jl"))           # the seams — the bare getter call (its throw raw, a non-Bool Julia's TypeError; the former query envelope removed), the handover validation CONSUMED, the InterruptException pass-through (the ctor-mint envelope, the store-identity check, DEP_MISSING and the state-seam ledger removed)
-    include(joinpath(@__DIR__, "vocabulary_tests.jl"))              # the whitelist's relocation: the membership over the Labels Alterant's hard-coded list (the plain file's before), the zero-literal law, the review cure witnesses
+    include(joinpath(@__DIR__, "vocabulary_tests.jl"))              # the whitelist's relocation: the membership over the Labels Alterant's hard-coded list (the plain file's before), the zero-literal law, the validate-chain hardening witnesses
     include(joinpath(@__DIR__, "fallback_order_tests.jl"))          # the fallBack level consulted LAST — three witnesses over a prepared slot
     include(joinpath(@__DIR__, "userfeed_visib_tests.jl"))        # the fed Visib evals rows against authored ones — five witnesses at the public entry ([U5]: the empty and the whitespace-only profile inert)
     include(joinpath(@__DIR__, "fed_profile_order_tests.jl"))     # 0.4.1 (the creator's decisions of 2026-10-18 and 2026-10-19): THE USER LEVEL'S PLACE IN THE APPLY LOOP — the Component's own metaBlock in written order with or without a feed; the user level's labels the outermost level; its other statements evaluated after the own slot with full sight and the override — thirteen witnesses [W1]–[W13], every value MEASURED

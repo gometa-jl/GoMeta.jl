@@ -106,7 +106,7 @@ using StaticArrays  # stack-allocated fixed-size arrays; the slot tensors and th
 include("config.jl")    # GoMetaConfig (the public input options)
 include("result.jl")    # ProcessStatus / Diagnostic / EvalStore (the GoMetaDelivery support types)
 include("bls/BLS.jl")
-include("occurrence.jl")            # v0.2 CH-1 (step 1): the normalized occurrence handle — depends
+include("occurrence.jl")            # the normalized occurrence handle (since v0.2) — depends
                                     # on BLS ONLY; everything downstream may
                                     # reference OccurrenceKey/occurrence_key/key_bytes
 import .BLS
@@ -184,7 +184,7 @@ IS: the feed of the RESERVED user slot of the meta-hierarchy (`userMHIdx` in `st
 eligible-slot order by both `applyAltActionFns` walks (its PRIORITY) and, since 0.4.1,
 EVALUATED after the Component's own slot — its accumulating rows collected first as the outermost level, its other
 rows decided with full sight of the Component's own labels and with the override — the one exception, UNMEASURED, as the code reads
-(`apply.jl`): a Component whose only eligible slot is the user level's has no own slot and runs the no-feed path, the profile's rows
+(`apply.jl` S1): a Component whose only eligible slot is the user level's has no own slot and runs the un-fed path, the profile's rows
 in written order, its labels not collected first; fed by no other call site) with the metaLine-body profile in
 `st.config.user_mh_profile`, BEFORE the absorb walk. SCOPE: a minimal caller-supplied feed ONLY — not a general
 user-level configuration system; internal (NOT exported); called from `goMeta` iff `config.user_mh_profile` is a String
@@ -195,7 +195,7 @@ Experimental — see docs/public-api.md §2.
 
 DOES: reuses the standard machinery VERBATIM — no parallel intake — queued actions enqueue; a heading (an action of an
 Alterant of the set mode `localOnly`) REFUSES at the read with the creator's message (no Component of the file levels
-to be local to — since 0.4.0; before, within the 0.4 development, the Heading's separate path recorded one row against the minted
+to be local to — since 0.4.0; before 0.4.0, the Heading's separate path recorded one row against the minted
 user-context handle, grain 0xe0): saves the meta-hierarchy cursor `st.crnt_idx`;
 `updateMetaHierarchy(userMHIdx)` allocates + occupies the slot (its `10..12` branch; the depth-window wipes at `<10`
 never touch it, so the fed slot SURVIVES the whole file walk); NULLS `st.meta_context` (no document line stands behind
@@ -273,7 +273,7 @@ TOTAL over the ENTRY surface (the registry door's refusals are delivered coded; 
 `PROCESS_OK` (no error diagnostics) or `PROCESS_ERROR` (>=1 error `Diagnostic`; non-OK => non-empty diagnostics).
 Obtain the Engine's output via `readAltValuesEvals(result.altValues_evals)` (the evals map, keyed by (handle, attr); its byte form
 `serialize_evals`; a piece's text through `BLS.content`) — with the run itself, the Engine's delivered surface
-after the move ("the run and the evaluated values"). The (tree, render) pair is the development
+("the run and the evaluated values"). The (tree, render) pair is the development
 tool's: `Main.BasicRenderer.outputs`, applied to the result after `include(joinpath(pkgdir(GoMeta), "devtools", "load_basic_renderer.jl"))`
 at the caller's top level. The entry refusals (the registry door's `REG_UNPUBLISHED` / `POST_SEAL_MUTATION`) are coded and
 delivered; the condition path keeps THREE refusals of GoMeta's — the unknown condition key, the no-expression guard of an
@@ -332,8 +332,8 @@ function goMeta(
     ## -> GoMetaDelivery` (docs/public-api.md §2). The parse range is the typed `config.parse_range`: `nothing` ⇒
     ## the WHOLE file (mapped to `to = -1`); a `1:N` range ⇒ lines 1..N
     ## (`to = last(range)`). `parseBLS` ignores `fromLine` + breaks on `lineNum > toLine`
-    ## (parseBLS.jl: `fromLine` has no use but its signature; a non-positive `toLine` becomes the line count — the
-    ## former citation of docs/SYNTAX-AND-SEMANTICS.md named a page that holds no range contract), so a non-positive `to` parses the whole file. The range is taken
+    ## (parseBLS.jl: `fromLine` has no use but its signature; a non-positive `toLine` becomes the line count;
+    ## docs/SYNTAX-AND-SEMANTICS.md holds no range contract), so a non-positive `to` parses the whole file. The range is taken
     ## PLAIN, as the original engine took its arguments: `first` is never read (`5:10` parses lines 1..10; `3:2` lines
     ## 1..2; `1:0` the whole file) — the coded range refusal was removed within the 0.4 development.
     ## Sub-range note: for a `parse_range = 1:N` run the development tool's render is an exact PREFIX of its whole-file render
@@ -360,15 +360,15 @@ function goMeta(
     ## GoMetaRetro's src/GoMeta.jl :26–:113: the parse, then the File loop). Build the FRESH per-call `ProcessState`
     ## (`init_state` is reset-safe, so neither the slot tensors nor the cursors leak between calls) + open the per-call
     ## dynamic scope: `STATE => st` carries the per-call state so the eval'd bare-name `getState`/`getAltState` reach it
-    ## (`ctx() = STATE[]`). The whole absorb-walk + apply runs INSIDE this scope; the parse state is READ, never written
+    ## (`ctx() = STATE[]`). The whole absorb-walk + apply runs INSIDE this scope; the parse state is READ, never written;
     ## one parse state per call by construction — the seam ledger that enforced it
-    ## for injected states left with the seam.
+    ## for injected states was removed with the seam.
     st = init_state(parse_state, config, registry)
     with(STATE => st) do
         ## Seed the reserved user slot of the meta-hierarchy BEFORE the walk iff a profile is FED — `nothing` (the default) and,
         ## since 0.4.0, an EMPTY or whitespace-only String are the no-feed path (inert: the user slot is
-        ## neither allocated nor occupied, so the loop's order is the no-feed one — the creator's decision; an earlier
-        ## development state had an empty profile occupying the slot).
+        ## neither allocated nor occupied, so the loop's order is the no-feed one — the creator's decision; before 0.4.0
+        ## an empty profile occupied the slot).
         ## (white space as the absorb reads it — its ONE predicate `_isspace_valid`: Julia's bare `isspace` throws at decode
         ## on an overlong sequence, so an invalid edge byte is content here too — the profile is FED; the one-character overlong profile the
         ## absorb refuses (measured); an invalid sequence glued to the label sugar `:` it does not

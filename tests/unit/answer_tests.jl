@@ -95,9 +95,9 @@ _an_id(c) = _AN_BLS.getElement(c.cmpntNamedInt, :idComponent)
             a = GM.evaluatedAltValue(r, b, :Visib)
             @test a.value === :show && a.source === :user && a.via === nothing
         end
-        # a Line WITH Segments under the feed (a review finding): the fed value wins on the Line (:user) and its Segments answer AS
-        # the Line answers — :user, not :indirect through the Line. MEASURED (PROBES-rvc24-user-segment.txt [F1a]): :user on the base and on C2,
-        # :indirect through the Line on C24's first build, :user on the cured tree. ("x = 1" alone has NO Segments — a Segment needs the inline `#~`.)
+        # a Line WITH Segments under the feed: the fed value wins on the Line (:user) and its Segments answer AS
+        # the Line answers — :user, not :indirect through the Line (MEASURED).
+        # ("x = 1" alone has NO Segments — a Segment needs the inline `#~`.)
         r2 = GM.goMeta(_an_bytes("x = 1 #~ discard
 "); config = GM.GoMetaConfig(; user_mh_profile = "show")); ps2 = r2.blsComponentTree
         bs2 = _AN_BLS.children(ps2); @test length(bs2) == 1

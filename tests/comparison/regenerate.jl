@@ -7,14 +7,14 @@
 #                   at; the caller states it); --out <dir> writes elsewhere (never over a committed file without --at);
 #       --check     produces the twelve in memory and compares each BODY (the lines after the header) with the committed
 #                   file's body; prints one line per input; exit 0 = every body equal, 1 = a difference or a missing file.
-# REASONING: the forms are PROVISIONAL until the creator's typed word (no separate
-#       per-question word) — the check is a drift alarm on the tree, not a byte law (the byte law's three families are
+# REASONING: the forms are frozen as the reference set (the creator's decision of 2026-10-03; tests/comparison/README.md)
+#       — the check is a drift alarm on the tree, not a byte law (the byte law's three families are
 #       the golden layer's); a changed body is re-made with --at <the re-making commit's parent sha> on the commit that changes it, named in that
 #       commit's message.
-# PURPOSE: the twelve forms — v0.4's reference altValues (the creator's term of 2026-09-29, with his hedge) — versioned with the
+# PURPOSE: the twelve forms — v0.4's reference altValues (the creator's term of 2026-09-29, provisional) — versioned with the
 #       v0.4 commit that produced them.
 #
-#   GM=/home/fido/Dropbox/_01_Crypto_Dropbox/07_Claude/GoMetaEcosystem/GoMeta
+#   GM=<the repository root>
 #   julia --startup-file=no --project=$GM/tests $GM/tests/comparison/regenerate.jl --check
 #   julia --startup-file=no --project=$GM/tests $GM/tests/comparison/regenerate.jl --at <short sha> [--out <dir>]
 

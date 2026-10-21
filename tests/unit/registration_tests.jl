@@ -9,7 +9,7 @@
 #       commissioned capability consults; the operator-token tag's witness, the activated-grants register's and the
 #       dispatch-boundary return-type rows were removed with the overload rows;
 #       the full-arming guard's witnesses were removed with the set-invocation seam.
-# PURPOSE: the registration's gate — "registration + atomicity tests green".
+# PURPOSE: the registration record and its atomicity, mechanically held.
 
 using Test
 import GoMeta as GM
@@ -38,7 +38,7 @@ import GoMeta as GM
 
     @testset "the remaining checks precede construction; the record is total" begin
         # (re-scoped when the former validation chain was removed;
-        # the referents moved — recorded, not silently re-pinned) two source-order assertions:
+        # the referents moved — re-pinned consciously) two source-order assertions:
         # (i) the one remaining collector is wired inside `_validate_registration` (`_vocabulary_collect!` was removed, `_mode_gate_collect!`
         # with the Heading's separate path) and the retired
         # ones never return; (ii) `publish` calls `validate(` before `return AlterantRegistry(` and

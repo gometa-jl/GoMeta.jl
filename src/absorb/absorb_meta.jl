@@ -12,8 +12,8 @@
 #     then at most one `{…}`, and ENDS at white space or at the region's end; any other character meets the one refusal `_refuse_char`,
 #     which names the character, the token it begins and the region. The six structural characters `( ) { } , "` end a name or
 #     a label; every other non-white-space character is a name or label character — pictographs and emojis among them; a
-#     leading punctuation is part of the name and meets the registry's unknown-action refusal (the prefix sugar a later design,
-#     a later version's). absorbMeta reads the per-call ProcessState through the parent GoMeta.ctx(), hoisted once as `st`; each name is resolved
+#     leading punctuation is part of the name and meets the registry's unknown-action refusal (the prefix sugar is a later
+#     version's design). absorbMeta reads the per-call ProcessState through the parent GoMeta.ctx(), hoisted once as `st`; each name is resolved
 #     against st.registry.sorted_alt_actions; a slot already holding size(queued, 2) actions refuses with GoMeta's message BEFORE the
 #     write (the creator's decision — the limit a fixed size raised by hand); the plugin index and the action index are written into
 #     st.queue.queued at the current meta-hierarchy slot, st.mh.slot_has_accum set for the accumulate set, the condition (Julia's `Expr`,
@@ -30,7 +30,7 @@
 #     metaLine grammar is the original engine's with its two missing arms supplied: its `parseAlt` had arms for `(`, the label, `{` and white
 #     space and no "anything else" case (AbsorbMeta.jl :307–:340), and its outer `ispunct` gate (:304) skipped a leading punctuation — so
 #     a statement was never required to END and a leading punctuation was never read: every silent skip, drop and raw BoundsError of the
-#     inventory was one of those two arms, cured at their root rather than by a patch per shape
+#     original engine's reader was one of those two arms, cured at their root rather than by a patch per shape
 #     (the creator's decision). One of each where there were several — one white-space predicate (`_isspace_valid`, the original
 #     engine's `isspace` guarded), one scanner `_span` for EVERY span — the metaLine's and the condition body's (quote-aware: a `}` or `)` inside a quoted
 #     text closes nothing; the condition rewrite's own `(…)` finder was removed within the 0.4
@@ -60,9 +60,9 @@ import ..GoMeta: ctx
 # the registry's one vocabulary rule for a bare name in a condition: an action of an Alterant
 # that answers queries; the rewrite's test where the original engine tested `insorted(key, sortedAltActionsSVec)` (AbsorbMeta.jl :219)
 import ..GoMeta: queryable_action
-# v0.2 CH-3 step 8: the widened action-argument literal floor (Symbol|String; ints reserved).
+# the widened action-argument literal floor (Symbol|String; ints reserved).
 import ..GoMeta: AlterantArgT
-# v0.2 CH-3 step 9: the context record type (the enqueue's provenance columns and the deriving head form's level
+# the context record type (the enqueue's provenance columns and the deriving head form's level
 # read it) and the user-context record (the feed's identity).
 import ..GoMeta: MetaContext, UserContext   # UserContext — the enqueue's origin line reads it on the user feed
 export absorbMeta
@@ -78,11 +78,11 @@ export absorbMeta
 ## ONE white-space predicate (`_isspace_valid` — the original engine's `isspace`, guarded against invalid UTF-8), ONE scanner
 ## `_span` for EVERY span — the metaLine's `(…)` `{…}` `"…"` and the
 ## condition body's `(…)` lists and quoted texts (the rewrite's own finder was removed), ONE argument splitter `_split_args`, ONE refusal helper — where the original engine and the v0.2–v0.3 additions had
-## three white-space tests, four bracket loops, three backslash sites and two String walls. The quote-scan design of 2026-10-08
+## three white-space tests, four bracket loops, three backslash sites and two String walls. One routine finding a closing bracket or quote
 ## is the scanner's form.
 const _STRUCTURAL = ('(', ')', '{', '}', ',', '"')
 
-## The words of the refusals' hints (the creator's to re-word): the glue hint — a space before
+## The words of the refusals' hints (provisional): the glue hint — a space before
 ## '(' or '{' separates it from the preceding metaStatement; the labels hint and the quote hint follow the creator's decisions.
 const _HINT_GLUE = " — '()' and '{}' are written glued to the name, as in hide{isCode}: a white space before them separates them from the preceding metaStatement"
 const _HINT_ORDER = " — a metaStatement is a name or a label, then '()' at most once, then '{}' at most once, and ends at white space"
@@ -114,13 +114,13 @@ a purely additive widening; reserving only `\\"` refused unevenly — the reject
 true` — a condition body) it escapes the next character as Julia reads it, so the quoted text ends where Julia
 ends it. Reaching the end of `text` refuses ONCE, naming the innermost opener left open — the `"` when the text ends inside
 a quoted text. One character walk (`nextind`, never a byte count); no regex; no allocation on the accepting path; generic
-over `AbstractString` (the parser's `SubString{String}` today; the rewrite's `String` — "strings in
-conditions" are read too).
+over `AbstractString` (the parser's `SubString{String}` today; the rewrite's `String` — a condition's quoted
+texts are read too).
 
 REASONING: the original engine counted brackets in three loops and the v0.2 additions added quote arms and backslash checks at three
 more places; one walk with one quote state serves every span. Julia's other literal delimiters are not known — a Char
 literal (`'}'`; `'` is also Julia's adjoint `x'`), a backtick, an odd `"` inside a triple-quoted text, a string prefix's
-word: the shapes named — `'}'` and `` `}` `` (the span ends early), the odd `"` (the span left open), a prefix's word (`r"a}b"`, read as a condition key) — end in a loud refusal or Julia's own error (the register's PB-5 names the Char literal; its note of 2026-10-09 the others); a Char or backtick literal the walk reads nothing of (no word, no `{`, `}`, `"`, `,` or `:` — `'1' == '1'`) reaches Julia unchanged and evaluates. Two shapes are copied in pieces and re-read SILENTLY — a quoted text nested inside an interpolation `\$(…)` and an even number of bare `"` inside a triple-quoted text (the register's PB-15).
+word: the shapes named — `'}'` and `` `}` `` (the span ends early), the odd `"` (the span left open), a prefix's word (`r"a}b"`, read as a condition key) — end in a loud refusal or Julia's own error; a Char or backtick literal the walk reads nothing of (no word, no `{`, `}`, `"`, `,` or `:` — `'1' == '1'`) reaches Julia unchanged and evaluates. Two shapes are copied in pieces and re-read SILENTLY — a quoted text nested inside an interpolation `\$(…)` and an even number of bare `"` inside a triple-quoted text (a recorded limit).
 
 PURPOSE: where a span ends, for every reader: parseArgs (the argument list and the label list), parseConditions, the quoted
 heading, the splitter and the condition rewrite (a body's `(…)` lists and its quoted texts).
@@ -162,7 +162,7 @@ _refuse_backslash(text::AbstractString) =
     error("GoMeta absorb: backslash in a quoted span — reserved for the future escape grammar in the meta region ",
         repr(first(text, 40)), " (see docs/public-api.md §3.4)")
 
-"THE ONE REFUSAL of the metaLine grammar: the character at `i` cannot stand `where` (a position phrase); the message names it, the token it begins and the region — the usual GoMeta refusal form; the four hints' words are the creator's to set"
+"THE ONE REFUSAL of the metaLine grammar: the character at `i` cannot stand `where` (a position phrase); the message names it, the token it begins and the region — the usual GoMeta refusal form; the four hints' words are provisional"
 function _refuse_char(metaSS::SubString{String}, i::Int, where::String, hint::String = "")
     j = i
     while j <= lastindex(metaSS) && !_isspace_valid(metaSS[j])
@@ -233,14 +233,14 @@ end
 ##                       → `getAltState(Int8(p), Symbol("key"), args)`             (a QUERYABLE action — `queryable_action`: an Alterant
 ##                         that declares `getAltInstance`; Labels at v0 — the registry's rule)
 ##                       → the usual unknown-condition-key refusal                   (anything else — the original engine's :231–:234)
-##   `"…"`               → verbatim, WHOLE                                       (a quoted text is Julia's — never read by the rewrite, but for the two mis-paired shapes of PB-15; its end
+##   `"…"`               → verbatim, WHOLE                                       (a quoted text is Julia's — never read by the rewrite, but for the two mis-paired shapes, a recorded limit; its end
 ##                         found by the one scanner `_span(…; julia = true)`, its `\` Julia's escape)
-##   everything else — `&&`, `!`, `()`, `|`, `&`, `||`, decimal integers and plain decimal floats (a numeral with letters starts a key — PB-16), Julia operators but `:` (a label test — PB-17), whitespace — verbatim.
+##   everything else — `&&`, `!`, `()`, `|`, `&`, `||`, decimal integers and plain decimal floats (a numeral with letters starts a key), Julia operators but `:` (a label test), whitespace — verbatim.
 ## A bare WORD that is neither a settribute key nor a queryable action IS a condition key and meets the refusal — `true`, `false`,
-## `nothing` among them (the original engine's reading, :231–:234; the creator's to widen); a quoted text is not a word. A worded label
-## with a parenthesized list (`:abc(:xyz)` — the K6 corner) reads as the label test of the word followed by a Julia call on its
+## `nothing` among them (the original engine's reading, :231–:234; a widening stays open); a quoted text is not a word. A worded label
+## with a parenthesized list (`:abc(:xyz)`) reads as the label test of the word followed by a Julia call on its
 ## Bool — a MethodError at apply; the original engine dropped the word and queried the list (:187–:191, :215), the closed interpreter
-## refused the shape — the creator's to revert to either.
+## refused the shape — a return to either stays open.
 ## An argument text is spliced as Julia text: its shape is Julia's to judge at apply (`getAltState`'s `Vararg{Symbol}`; an undefined
 ## name its UndefVarError), as the action arguments are. The walk is a CHAR walk (`nextind`/`lastindex` — never
 ## the original engine's byte-count end test, whose BoundsError one index past a multibyte final character the 0.2.2 cure fixed;
@@ -282,7 +282,7 @@ balanced `(args)` spliced raw) → `_cond_target`: a settribute key (`keys(BLS.C
 registry's one rule: the three Visib names `hide` / `show` / `discard` are neither) becomes
 `getAltState(Int8(p), Symbol("key")[, args])` with `p` its plugin index, anything else — `true`, `false`, `nothing` among
 them — meets the refusal `error("GoMeta absorb: unknown condition key …")`, an `ErrorException` naming the key (bounded
-to 40 characters); a quoted text (`"…"`) is copied WHOLE, never read (but for the two mis-paired shapes of PB-15) — its end found by `_span(…; julia = true)`, its `\`
+to 40 characters); a quoted text (`"…"`) is copied WHOLE, never read (but for the two mis-paired shapes, a recorded limit) — its end found by `_span(…; julia = true)`, its `\`
 Julia's escape (the creator's design); every other character — operators but `:`, parentheses, decimal integers and plain decimal floats,
 whitespace, an invalid UTF-8 byte (never a key's start or character — a guard; Julia's parser refuses the text
 it reaches) — verbatim. Returns the re-written text as a `String`. Pure over its two arguments (no state read; a
@@ -335,7 +335,7 @@ function _rewrite_condition(text::String, r)::String
             end
             print(out, _cond_target(key, args, r)); i = k
         else
-            print(out, c); i = nextind(text, i)                       # operators, a bare grouping, plain numbers (a numeral with letters starts a key — PB-16), whitespace — Julia's, verbatim
+            print(out, c); i = nextind(text, i)                       # operators, a bare grouping, plain numbers (a numeral with letters starts a key), whitespace — Julia's, verbatim
         end
     end
     return String(take!(out))
@@ -347,7 +347,7 @@ end
 IS: the condition intake — the `{…}` block opening at `i` read into the `Expr` Julia evaluates at apply (the original engine's `parseConditions`,
 AbsorbMeta.jl :248–:282; the seam that remains: the GoMeta parts of the body re-written to Julia text, Julia's parser once).
 
-DOES: finds the block's end with the one scanner (quote-aware since the parser effort — a `}` inside a quoted text no longer closes
+DOES: finds the block's end with the one scanner (quote-aware since 0.4.0 — a `}` inside a quoted text no longer closes
 the block); `Meta.parse`s the re-written body ONCE; an EMPTY body or a bare literal (`{}`, `{ 1 }`, `{ | }`) carries
 no condition expression and is refused (an unconditional action is written without `{}`); an INCOMPLETE body
 (`isCode &&`) is thrown as Julia's own `Meta.ParseError` class HERE, at the statement, never stored for a later reader; a body
@@ -389,7 +389,7 @@ the index of the statement's last character (the original engine's :359 contract
 
 REASONING: the original engine's reader had arms for `(`, the label, `{` and white space and no "anything else" case (AbsorbMeta.jl
 :307–:340), and its outer `ispunct` gate (:304) skipped a leading punctuation — so a statement was never required to END and a
-leading punctuation was never read: every silent skip, drop and raw BoundsError of the inventory
+leading punctuation was never read: every silent skip, drop and raw BoundsError of the original engine's reader
 was one of those two arms, cured at their root rather than by a patch per shape; the grammar in one sequence replaces its `argsDone` / `conditionsDone`
 flags and the three "again" refusals. The negative character rule (white space and the six structural characters end a token;
 everything else is a token character) keeps the creator's pictograph and emoji labels and names and drops the Unicode-category
@@ -470,7 +470,7 @@ function absorbMeta(
     local crntAltActionIdx::Int8
     local altActionOnRow::Int8
     firstTok::Bool = true   # the quoted-first recognizer fires only for the FIRST
-                            # metaComponent of the meta region (hd-2/hd-3)
+                            # metaComponent of the meta region
     while (thisInd = nextind(metaSS, thisInd)) < ncodeunits(metaSS) + 1
 
         if !_isspace_valid(metaSS[thisInd])
@@ -510,7 +510,7 @@ function absorbMeta(
                 st.queue.queued[2,
                     altActionOnRow, crntSlot] = crntAltActionIdx
                 ## THE ORIGIN of the enqueued action — the handle of the
-                ## Component that STATES it (the carrying Component's, published at the walk handover —
+                ## Component that STATES it (the carrying Component's, published at the walk handover;
                 ## on the userMH feed the minted user-context handle), carried through the
                 ## apply into the stored row's `decided_by`.
                 st.queue.decided_by[altActionOnRow, crntSlot] =
@@ -539,7 +539,7 @@ function absorbMeta(
             end
             # The queue condition/args matrices are `Ref`-free: the `Expr` / arg-tuple VALUE is
             # stored directly and the read sites use no `[]` deref.
-            if conditionExpr !== nothing            # v0.2 FLIP: the no-condition sentinel is `nothing`
+            if conditionExpr !== nothing            # the no-condition sentinel is `nothing` (since v0.2)
                 st.queue.conditions[altActionOnRow, crntSlot] = conditionExpr
             end
             if !isempty(argsSSVec)
@@ -550,8 +550,8 @@ function absorbMeta(
                 ## THE ONE TEXT-ARGUMENT RULE: the declared record says which slot takes a quoted text.
                 _string_slot_check(spec, argsTup, metaSS)
                 ## THE DECLARED HANDOVER VALIDATION, at the read (one seam for every action, where
-                ## the Heading's separate path ran it before; the Heading's empty-text refusal thereby stays condition-independent,
-                ## R-REL-69 item 4): the spec's `validate` runs on the String text of the declared slot (`_declared_validation`).
+                ## the Heading's separate path ran it before; the Heading's empty-text refusal thereby stays condition-independent):
+                ## the spec's `validate` runs on the String text of the declared slot (`_declared_validation`).
                 if spec.validate !== nothing && spec.accepts_string_slot in 1:length(argsTup) && argsTup[spec.accepts_string_slot] isa String
                     _declared_validation(spec, argsTup[spec.accepts_string_slot], Symbol(altActionName), metaSS)
                 end
@@ -560,8 +560,8 @@ function absorbMeta(
                 ## a one-argument statement OF AN ALTERANT OF THE SET MODE `localOnly` whose only argument fills the declared String
                 ## slot takes the placement's level from the walk's record as its second argument — the scope the retired separate
                 ## path had — so the setter the apply calls is the explicit
-                ## two-argument form; the level rides from the queue, never read from the Component's depth (the investigation's
-                ## MAJOR 2 of 2026-10-03); every other action's tuple is handed over as stated.
+                ## two-argument form; the level rides from the queue, never read from the Component's depth;
+                ## every other action's tuple is handed over as stated.
                 if length(argsTup) == 1 && spec.accepts_string_slot == 1 && argsTup[1] isa String &&
                    st.registry.plugins[st.registry.action_to_plugin[crntAltActionIdx]].setMode === :localOnly
                     st.meta_context === nothing &&
@@ -575,7 +575,7 @@ function absorbMeta(
     end
 end
 
-"THE DECLARED HANDOVER VALIDATION of one String argument at the read (the spec's `validate` slot; the envelope moved from the Heading's separate path to the enqueue seam — one seam for every action): `true` accepts; `false` refuses (REG_VALIDATE_FALSE); a non-Bool refuses (RES_RETURN_TYPE — the `-> Bool` contract); a FOREIGN throw wraps (CB_VALIDATE_THROW); the Engine's own \"GoMeta \"-prefixed refusals pass through VERBATIM (the pass-through law — the Heading's ratified empty-text refusal among them); an InterruptException is rethrown"
+"THE DECLARED HANDOVER VALIDATION of one String argument at the read (the spec's `validate` slot; the envelope moved from the Heading's separate path to the enqueue seam — one seam for every action): `true` accepts; `false` refuses (REG_VALIDATE_FALSE); a non-Bool refuses (RES_RETURN_TYPE — the `-> Bool` contract); a FOREIGN throw wraps (CB_VALIDATE_THROW); the Engine's own \"GoMeta \"-prefixed refusals pass through VERBATIM (the pass-through law — the Heading's empty-text refusal among them); an InterruptException is rethrown"
 function _declared_validation(spec, text::String, actionName::Symbol, metaSS::SubString{String})
     ok = try
         spec.validate(text)

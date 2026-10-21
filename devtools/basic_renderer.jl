@@ -49,7 +49,7 @@ Core.eval(Main, :(const _BASIC_RENDERER_LOADED = true))
 #     DOOR: BLS's public functions and types — `BLS.root`,
 #     `BLS.children`, `BLS.getElement`, `BLS.content`, `BLS.kind`, `BLS.flavor`, `BLS.endsWithNewline`, the Component
 #     types (docs/public-api.md §1.2) — and no field of a BLS object; the whitespace guard before the hide marker reads
-#     `BLS.isHorizontalSpace` — one of the last two reads outside the door, removed within the 0.4
+#     `BLS.isHorizontalSpace` — the read it replaced, one of the last two reads outside the door, was removed within the 0.4
 #     development with the texts of the former interim exemption. The battery `devtools/probes/probe_devtools.jl` is the drift alarm.
 # THE LOAD-ORDER LAW: include `devtools/load_basic_renderer.jl` at the consumer's TOP LEVEL — never this
 #     file (the sentinel at the top refuses a second load) and never inside a function (Julia's world age:
@@ -166,9 +166,9 @@ function render_bytes(
                                 ## reach) — the `render ∘ ingest ∘ render == render` fixed point.
                                 ## Unreachable for the three armed flavors at THIS grain (every
                                 ## marker-headed unsegmented line is comment-classified, and
-                                ## fold is a byte-prefix of marker) — mandated by K1 at BOTH
+                                ## fold is a byte-prefix of marker) — required at BOTH
                                 ## grains regardless; load-bearing at the segment grain below.
-                                ## FIDELITY BOUND (the FOLDBACK #4 disclosure): an authored
+                                ## FIDELITY BOUND: an authored
                                 ## marker-headed line under hide is byte-indistinguishable from
                                 ## engine-hidden output; hide stays never byte-reversible
                                 ## (already true under the R-2 fold).
@@ -183,7 +183,7 @@ function render_bytes(
                                 ## measures it total over the overlong-and-kin sequences the parser
                                 ## classifies CONTENT — bare `isspace` throws at decode on them. The (a)
                                 ## disjunct's bare lstrip stays: its `:comment &&` guard guarantees a
-                                ## valid head region (R-2 unchanged, per the row).
+                                ## valid head region (R-2 unchanged).
                                 if !((BLS.getElement(crntLine, :comment) &&
                                       startswith(lstrip(s), hide_fold_prefix)) ||
                                      startswith(lstrip(BLS.isHorizontalSpace, s), hide_marker))   # through the door
@@ -284,7 +284,7 @@ end
 ## `structural_serialization`. They LEFT `src/bls/parseBLS.jl` (its lines 370–528 at code
 ## commit 86ec5d0) for this development tool on 2026-09-12 (they exist only so
 ## a committed reference can be bytes); every parser name is qualified `BLS.`. ONE destination
-## file (this one) is this tool's choice — the creator's lean named no
+## file (this one) is the implementation's choice — the decision that moved them named no
 ## destination file. The 7 `byte_identical` tree pins
 ## (tests/golden/MANIFEST.toml) pin `structural_serialization`. The creator's VERY STRONG LEAN
 ## is to re-mint the tree pins to the newer print and delete this dump — an open
@@ -294,7 +294,7 @@ function writeBlsStructureToFile(
     state,   # the delivered part `result.blsComponentTree`, read through the door (its Julia type is an open point of the design — not named here)
     pathString::String
 )
-    ## The file-writing sibling DELEGATES to the IO sibling below — one body (before, within the 0.4 development,
+    ## The file-writing sibling DELEGATES to the IO sibling below since 0.4.0 — one body (before 0.4.0, as in 0.3.2,
     ## two byte-identical copies kept in step by hand); the file is opened and closed here, as before.
     open(pathString, "w") do blsStructureOutFileIO
         writeBlsStructureToIO(state, blsStructureOutFileIO)
@@ -398,8 +398,8 @@ DOES: returns the NamedTuple `(blsStructure_bytes, render_bytes)` — that field
     a "tree-if-parse-succeeded" distinction would be a new contract row); on that entry-refusal path both
     are empty because the parse never ran — the delivered tree is built from EMPTY bytes.
 REASONING: the tree print is a PURE function of `result.blsComponentTree`; the render a PURE function of the delivery —
-    the tree walked through the door, every Visib verdict the Engine's answer (`GoMeta.evaluatedAltValue`
-    first commit) — so this accessor is correct OUTSIDE the per-call `STATE` scope. The entry refusal's empty-bytes tree
+    the tree walked through the door, every Visib verdict the Engine's answer (`GoMeta.evaluatedAltValue`)
+    — so this accessor is correct OUTSIDE the per-call `STATE` scope. The entry refusal's empty-bytes tree
     keeps the delivery total, so the pair needs no error arm beyond the status test.
 PURPOSE: the pair the golden layer pins byte-for-byte (tests/golden/golden_tests.jl; docs/CANONICAL-OUTPUT.md §5), the
     corpus driver `devtools/run_examples.jl` writes, the unit tests read, and the command-line verbs `tree`, `segments`

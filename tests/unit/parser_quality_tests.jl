@@ -1,6 +1,6 @@
 # parser_quality_tests.jl — THE PARSER-QUALITY BATTERY of the metaLine parser (the creator's words:
 # "I DO want tests which check the quality of the parsers"). GENERATED from the rows table by a generator outside the repository
-# (the rows table unchanged, one override file for the
+# (one override file for the
 # rows the Heading's move into the apply loop changed); the comments were edited after generation.
 #
 # IS:   every shape of the parser inventory (100 items, A01–I08), the 50 needs-a-run shapes
@@ -10,17 +10,17 @@
 #       arity or type fault is the Alterant's setter's; a malformed condition body is Julia's parse error).
 # DOES: one @testset per row; the comment on each row is the outcome MEASURED before the parser's rework — the CHANGE column:
 #       a row marked UNCHANGED pins today's behaviour against drift; a row marked CHANGED pins the effort's cure; a row marked
-#       CHANGED (strings in conditions) pins the lever's outcome, MEASURED
+#       CHANGED (strings in conditions) pins that change's outcome, MEASURED
 #       after the change: a quoted text inside a condition body is Julia's — copied whole, never read by
 #       the rewrite — and the body's `(…)` lists are found by the one scanner (an unclosed `(` meets "unterminated '('").
-#       A row marked WITNESS was added after the parser's rework from a review finding
+#       A row marked WITNESS was added after the parser's rework
 #       (the creator's word of 2026-10-09) with its outcome MEASURED from the FULL delivery
-#       view; its comment names the finding.
-#       A row marked GUARD pins the invalid-Char guard of the condition rewrite's two identifier tests (the creator's word of 2026-10-09;
-#       a review finding): an invalid UTF-8 byte at the rewrite's identifier tests inside a condition body meets Julia's
-#       parse error or the unknown-key refusal where the base tree threw a raw InvalidCharError; its document is built from BYTES (the
+#       view.
+#       A row marked GUARD pins the invalid-Char guard of the condition rewrite's two identifier tests (the creator's word of 2026-10-09):
+#       an invalid UTF-8 byte at the rewrite's identifier tests inside a condition body meets Julia's
+#       parse error or the unknown-key refusal where the tree before the guard threw a raw InvalidCharError; its document is built from BYTES (the
 #       extra row's `doc_hex`), its outcome
-#       MEASURED after the guard beside the base tree's before it.
+#       MEASURED before and after the guard.
 #       A row marked CHANGED (the Heading's move) pins the Heading's move into the apply loop (the creator's decision):
 #       a label test in a heading's own condition is legal (the creator's decision — the former wall was removed with the Heading's separate path),
 #       its outcome MEASURED after the move.
@@ -41,7 +41,7 @@ function _pq(doc)
     end
 end
 
-@testset "parser_quality — the battery of the metaLine parser effort" begin
+@testset "parser_quality — the battery of the metaLine parser" begin
     # A01 [valid] — UNCHANGED — BEFORE: OK PROCESS_OK, 2 evals rows
     @testset "A01" begin
         k, st, n, e = _pq("#~ hide\nx = 1\n")
@@ -1499,7 +1499,7 @@ end
         @test k === :throw && e isa ErrorException
         @test occursin("GoMeta absorb: unknown alterant action \"+:\"", e.msg)
     end
-    # jC1 [review-witness] — WITNESS (a review finding: 'j03u does not enforce copied whole, never read for the comma'; the creator's word; the outcome MEASURED from the FULL delivery view) — BEFORE: (the row is new — no measurement before) OK PROCESS_OK, 2 evals rows — the comma inside the quoted text is Julia's, copied whole, never split by the rewrite's `,` arm; the condition `"," == "\x2c"` is true and the hide applies (0 rows if the comma were rewritten to ` || `)
+    # jC1 [witness] — WITNESS (a quoted text is copied whole, never read for the comma; the outcome MEASURED from the FULL delivery view) — BEFORE: none (the row is new); MEASURED: OK PROCESS_OK, 2 evals rows — the comma inside the quoted text is Julia's, copied whole, never split by the rewrite's `,` arm; the condition `"," == "\x2c"` is true and the hide applies (0 rows if the comma were rewritten to ` || `)
     @testset "jC1" begin
         k, st, n, e = _pq("#~ hide{ \",\" == \"\\x2c\" }\nx = 1\n")
         @test k === :ok && st == GM.PROCESS_OK && n == 2

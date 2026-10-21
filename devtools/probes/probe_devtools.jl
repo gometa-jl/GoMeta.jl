@@ -1,24 +1,24 @@
-# probe_devtools.jl — the devtools.jl assertion battery (canon R3: probes over claims).
+# probe_devtools.jl — the devtools.jl assertion battery (probes over claims).
 #   (the creator's decision of 2026-09-12) The battery lives HERE,
-#   beside the tools it tests (devtools/probes/), since the play became a self-contained fork;
-#   the play keeps its own frozen copy of it. Its two fixture inputs: fixtures/ (the mini
-#   Documenter source, copied from the play) and examples/InFileFolder/file_for_Example_Extended.jl.
+#   beside the tools it tests (devtools/probes/).
+#   Its two fixture inputs: fixtures/ (the mini
+#   Documenter source) and examples/InFileFolder/file_for_Example_Extended.jl.
 #
 # IS:   the empirical check of every devtools surface the byte-parity sweep cannot
 #       cover — filters, dispatch validation, format inference, the
 #       drift alarm. (Byte parity
-#       vs the creator-approved mockups is the OTHER half of verification:
+#       vs the design mockups is the OTHER half of verification:
 #       34/34 at the tools' first build.)
 # DOES: runs goMeta on the two standing fixture inputs,
 #       drives both printers through the filter/error tiers into
 #       IOBuffers/tempfiles, and counts failed checks.
-# PURPOSE: re-runnable ANY session (esp. after a change under src/ or devtools/, together
-#       as THE drift alarm — the tools' own former self-check was removed); exit code 0 = all green.
+# PURPOSE: re-runnable at any time (esp. after a change under src/ or devtools/) as
+#       THE drift alarm — the tools' own former self-check was removed; exit code 0 = all green.
 #
-#   GM=/home/fido/Dropbox/_01_Crypto_Dropbox/07_Claude/GoMetaEcosystem/GoMeta
+#   GM=/path/to/GoMeta          # this repository's root
 #   julia --startup-file=no --project=$GM/tests $GM/devtools/probes/probe_devtools.jl
 
-const _PB_HOME = normpath(joinpath(@__DIR__, "..", ".."))   # the code home (the repository root)
+const _PB_HOME = normpath(joinpath(@__DIR__, "..", ".."))   # the repository root
 const _PB_FIX  = joinpath(@__DIR__, "fixtures")             # the battery's own fixture inputs
 import GoMeta
 include(joinpath(@__DIR__, "..", "load_basic_renderer.jl"))   # the ONE path to the basic renderer
@@ -148,7 +148,7 @@ check(!occursin("unanchored", out) && occursin("label_🍻", out),
 
 ## 12 — (the USER_CONTEXT totality probe over a fed heading's unanchored row was removed: no shipped path
 ##       produces an unanchored row since a `localOnly` statement in the profile refuses at the read — the creator's decision on the fed heading;
-##       the reach to every `localOnly` statement of every registry the condition's (src/absorb/absorb_meta.jl);
+##       the reach to every `localOnly` statement of every registry is the condition's (src/absorb/absorb_meta.jl);
 ##       the tools' unanchored arms stand as the totality guard for a row the tools cannot place) — a fed
 ##       QUEUED action anchors on the Components as every row does
 uctx2 = GoMeta.goMeta(read(joinpath(_PB_FIX, "mini-Documenter-Source-File.jl"));
@@ -186,9 +186,9 @@ end
 out = plain(io -> print_BLS_Component_Tree(io, mini; lines = 9999:9999))
 check(occursin("no Blocks matched the lines= range", out), "lines= no-match stayed silent")
 
-## 17 — the creator's fix-order of 2026-08-21 (#2B): rails (fix-order #1, the reference-true structure slide runs, was removed with the slide option)
+## 17 — rails (the reference-true structure slide runs were removed with the slide option)
 
-## §17b — rails, mechanical acceptance (order #2B): in the kitchen fixture, every
+## §17b — rails, mechanical acceptance: in the kitchen fixture, every
 ## attribute row between a parent and its FIRST printed child carries │ at the
 ## child's connector column; the leaf Segment's dump rows keep it blank
 kitchen = GoMeta.goMeta(Vector{UInt8}(codeunits("#~1 :label1\n# t\nx = 1 #~ head(\"h\", 2)\ny = 2\n")))
@@ -196,7 +196,7 @@ for style_kw in ((;), (; style = :tree, detail = :full))
     out17 = plain(io -> print_BLS_Component_Tree(io, kitchen; style_kw...))
     ls17 = split(out17, '\n')
     viol = 0
-    nwalked = 0        # FX1#1: the checker must PROVE it walked attribute rows
+    nwalked = 0        # the checker must PROVE it walked attribute rows
     for (i, l) in enumerate(ls17)
         m = match(r"^((?:│  |   )*)(├─|└─)", l)
         m === nothing && continue
@@ -215,9 +215,9 @@ for style_kw in ((;), (; style = :tree, detail = :full))
         end
     end
     check(viol == 0, "rails: $viol attribute row(s) missing │ at the first-child connector column (style=$(isempty(style_kw) ? ":mix" : ":tree full"))")
-    check(nwalked >= 4, "rails: the checker walked only $nwalked attribute row(s) — degenerate pass (FX1#1)")
+    check(nwalked >= 4, "rails: the checker walked only $nwalked attribute row(s) — degenerate pass")
 end
-## childless-blank clause (FX2#2): a leaf Segment's dump rows must carry NO │
+## childless-blank clause: a leaf Segment's dump rows must carry NO │
 ## beyond the leaf's own connector column (the would-be child rail stays blank)
 outls = split(plain(io -> print_BLS_Component_Tree(io, kitchen)), '\n')
 seg_rows = [i for (i, l) in enumerate(outls) if occursin("Segment #", l)]
@@ -237,12 +237,12 @@ for i in seg_rows
               "rails childless-blank: leaf Segment dump row carries │ beyond its connector column")
     end
 end
-check(ndump17 >= 2, "rails childless-blank: walked only $ndump17 leaf dump rows — degenerate (FX2#2)")
+check(ndump17 >= 2, "rails childless-blank: walked only $ndump17 leaf dump rows — degenerate")
 
 ## §18 — the comparison form: deterministic; one C line per Component (the census + the File)
 ## and four A lines per non-File Component (the four registered Alterants); every A line's source is a level word or a
 ## key among the C lines; the lines sorted by code point; the Segment spans in CHARACTERS (the emoji input); the file
-## writer writes the same bytes the producer returns (the CLI verb is exercised by the pre-check's run on a corpus input, not here)
+## writer writes the same bytes the producer returns (the CLI verb `comparison` is not exercised here)
 for (fx, fxname) in ((mini, "mini"), (ext, "ext"))
     cf18 = comparisonForm(fx; name = fxname, at = "-")
     check(cf18 == comparisonForm(fx; name = fxname, at = "-"), "§18 $fxname: the form is not deterministic")

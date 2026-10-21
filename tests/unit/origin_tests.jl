@@ -6,7 +6,7 @@
 #       delivered tree through the door (`occurrence_key` + `key_bytes`, the default namespace).
 # REASONING: the creator's design — "so that own or indirect is MEASURED, never inferred from a row's presence"; the authored
 #       runner's `decided_by` assertion builds on this field.
-# PURPOSE: the commit-2 witness (the same-commit triple's test leg).
+# PURPOSE: the provenance field's witness — the origin MEASURED at the public entry, never inferred.
 
 using Test
 import GoMeta as GM

@@ -51,16 +51,16 @@ function applyAbsorbFn(
     # (the `snapshot_settribute!` helper) — per-call state, no module globals.
     local st = ctx()
     snapshot_settribute!(st, crntComponent)
-    # v0.2 CH-3 step 9 — publish the MetaContext record at the walk→absorb HANDOVER:
+    # Publish the MetaContext record at the walk→absorb HANDOVER:
     # {grain, depth, application level, occurrence handle, applied key}, derived from the parse and
     # the configured namespace, stored in NO
-    # Component (hd-4). The MH cursor was set by the CALLER before this call (Block:
+    # Component. The MH cursor was set by the CALLER before this call (Block:
     # updateMetaHierarchy(getGivenDepthMH); Line and Segment: lineMHIdx — a
-    # Segment-attached metaLine therefore inherits the metaLine's level, the hd-2
+    # Segment-attached metaLine therefore inherits the metaLine's level, the
     # inheritance law, by construction), so `st.crnt_idx` IS the application level. The
     # userMH feed does NOT pass through here and NULLS the record instead — a heading fed there meets the one
     # refusal at the read (the creator's decision).
-    # (delta-review trued: applyAbsorbFn has Line/Segment-grain call sites only, so
+    # (applyAbsorbFn has Line/Segment-grain call sites only, so
     # the Block arm below is DEFENSIVE — depth is 0 on every live path at v0.2; the
     # field is the context record's designed shape, populated when a Block-grain
     # handover site exists.)
@@ -74,7 +74,7 @@ function applyAbsorbFn(
     ## deciding statement — the queue's `decided_by`) and the Component the statement is APPLIED TO (the record's `applied` — the
     ## queue's `applied_to`, the referent of the apply loop's rule for the set mode `localOnly`). A Line handover (a whole-line metaLine): both the metaBlock. A Segment handover of a META Line (a metaLine split by a
     ## trailing `##` comment — its statement Segment): both the metaBlock too, the re-key one level down (the Segment's own key there was a
-    ## defect, measured 2026-10-03). A Segment handover of a CODE Line (an inline metaSegment): the carrier is the Segment, the statement
+    ## measured defect). A Segment handover of a CODE Line (an inline metaSegment): the carrier is the Segment, the statement
     ## is applied to the LINE — keyed as the apply path keys an inline statement, the Line with the Segment as the key's origin (the
     ## `origin` of captureEvals! below); the Line then answers the heading as its OWN (the answer function reads a deciding handle that
     ## names one of a Line's own Segments as the Line's own), its Segments through the Line.
@@ -144,7 +144,7 @@ function applyAbsorbFn(
         )
     else
         ## Two roads here: a live marker with NOTHING after it (offsets[end] == 0), and —
-        ## R-INERT-4 (v0.3.1) — an :ignoreMetaContent component (the author's
+        ## since v0.3.1 — an :ignoreMetaContent component (the author's
         ## trailing-bang "#~N!"), whose content is deliberately absorbed as EMPTY: the specified
         ## law is "#~N! <content>" ≡ "#~N" (structure live, content ignored), so BOTH roads
         ## run the IDENTICAL live-empty intake — the ≡ holds by construction, not by a

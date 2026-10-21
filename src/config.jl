@@ -18,7 +18,7 @@ DOES: carries the four fields, read by the run as named:
 
 - (the `profile::Symbol` field — the selector of the closed condition grammar's profile and its two opt-in names — was removed
   within the 0.4 development with the grammar profile (the creator's decision);
-  the EXPORTED type re-shaped, a clean cut — `GoMetaConfig(profile = …)` is a MethodError since; the
+  the EXPORTED type re-shaped, a clean cut — `GoMetaConfig(profile = …)` is a MethodError since 0.4.0; the
   RENDER's share-profile `jl-share-v1` is the development tool's and was never this field.)
 - `flavor_tag::Symbol` — the content flavor, a CLOSED inventory: `:julia` (the default — the `#` lead
   alphabet, byte-untouched) or `:c` (the C-family `//` line-comment flavor: C, Rust & Co.) or `:latex`
@@ -37,8 +37,8 @@ DOES: carries the four fields, read by the run as named:
   predicate `_isspace_valid` reads it: an invalid byte sequence is content); any other `String` ⇒ the metaLine BODY
   seeded into the reserved user meta-hierarchy slot
   (`userMHIdx`, state.jl) BEFORE the walk, via the standard `absorbMeta` intake (queued actions
-  enqueue; a heading in any form REFUSES at the read with the creator's message — docs/public-api.md §2 and §3.4; within the 0.4
-  development an explicit `head` once recorded against the minted user-context handle; e.g. the profile
+  enqueue; a heading in any form REFUSES at the read with the creator's message — docs/public-api.md §2 and §3.4; before 0.4.0
+  an explicit `head` recorded against the minted user-context handle; e.g. the profile
   `"discard{ :label1 } show"`). Scope at v0 is deliberately MINIMAL: a single feed entry, NOT a general
   user-level configuration system (deliberately scope-limited at v0). Read by `goMeta` and `feed_user_mh!`.
 - `namespace::Symbol` — the occurrence-key namespace every `altValues_evals` cell handle is scoped
@@ -60,15 +60,15 @@ struct GoMetaConfig
     flavor_tag::Symbol
     parse_range::Union{Nothing,UnitRange{Int}}
     user_mh_profile::Union{Nothing,String}
-    namespace::Symbol   # v0.2 CH-1: the occurrence-key document namespace — an OPAQUE PURE input
-                        # (IDB constraint (5): supplied, never inferred; per-call store, so
+    namespace::Symbol   # the occurrence-key document namespace (since v0.2) — an OPAQUE PURE input
+                        # (supplied, never inferred; per-call store, so
                         # cross-document uniqueness is the caller/adapter's obligation)
 end
 function GoMetaConfig(; flavor_tag::Symbol = :julia,
                        parse_range::Union{Nothing,UnitRange{Int}} = nothing,
                        user_mh_profile::Union{Nothing,String} = nothing,
                        namespace::Symbol = :default)
-    # v0.2 CH-1 boundary guard: key_bytes length-prefixes the namespace with a UInt16 — a >65535-byte
+    # The boundary guard (since v0.2): key_bytes length-prefixes the namespace with a UInt16 — a >65535-byte
     # namespace would break the serialization framing (the injectivity-by-construction law). Bounded
     # HERE (the config boundary — occurrence_key itself stays total/never-throws on parsed cells).
     ncodeunits(String(namespace)) <= 65535 ||

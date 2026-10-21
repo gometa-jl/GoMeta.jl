@@ -4,15 +4,15 @@
 #
 # IS:   (1) the registry's ONE vocabulary rule for a bare name (`queryable_action`; the retired-keys testset
 #       of the former condition_cap_tests.jl — retired with the closed interpreter — RE-HOMED here verbatim in meaning: the rule that
-#       MUST survive the interpreter's removal); (2) the parser-quality rows of the Julia intake (the creator's words): what Julia's parser accepts that the
+#       survives the interpreter's removal); (2) the parser-quality rows of the Julia intake (the creator's words): what Julia's parser accepts that the
 #       closed interpreter refused (the 29-step cap's inversion, the glued grouping, a Julia Boolean expression), what it
 #       refuses and in which CLASS (Julia's own `Meta.ParseError` for a malformed or incomplete body; GoMeta's one refusal for an
 #       empty block or a bare literal; Julia's own error at apply for an argument it cannot dispatch), and the
 #       operators the creator's corpus writes (`,` as OR, `&&`, `!`, `()`).
 # DOES: drives each shape through goMeta on a one-line document and pins the status, the render (the development tool's pair) and
 #       the error class or message substring. Every pinned value was MEASURED on the tree that introduced the Julia intake (the Julia-intake
-#       rows, the re-homed rows and the two render pins); a row added or re-pinned since names its change in its comment — the
-#       unterminated-block head, the quoted-text rows and the timing witness below.
+#       rows, the re-homed rows and the two render pins); the rows added or re-pinned since — the unterminated-block head, the
+#       quoted-text rows and the timing witness below — were MEASURED on the tree that introduced them.
 # PURPOSE: the condition path's witnesses in one file — the vocabulary rule's and the Julia intake's.
 
 using Test
@@ -94,7 +94,7 @@ end
         e = _cn_err(Vector{UInt8}(codeunits("#~ hide" * body * "\nx = 1\n")))
         @test e isa ErrorException && occursin("carries no condition expression", e.msg)
     end
-    # a quoted text inside `{}` is Julia's (the creator's word of 2026-10-08 — "strings in conditions: now"):
+    # a quoted text inside `{}` is Julia's (the creator's decision of 2026-10-08):
     # copied whole by the rewrite, never read word by word — `{ isCode == "abc" }` is Julia's comparison, false at v0.4 (every value a
     # condition reads is a Bool), so the action is never applied; `{ "abc" }` is a bare literal — "carries no condition expression"
     # (the bare-literal guard); an unclosed `(` after a key meets the one scanner's unterminated refusal (the condition path's third GoMeta
@@ -111,12 +111,12 @@ end
     @test _cn_err(_cn_mk("isCode(ab)")) isa UndefVarError                 # `getState(:isCode, ab)` — the original engine dropped the argument silently
     # the unterminated block stays GoMeta's (the metaLine grammar's own)
     e = _cn_err(Vector{UInt8}(codeunits("#~ hide{ isCode\nx = 1\n")))
-    @test e isa ErrorException && occursin("unterminated '{'", e.msg)      # the one scanner's R2: the opener named
+    @test e isa ErrorException && occursin("unterminated '{'", e.msg)      # the one scanner's refusal: the opener named
 end
 
 @testset "the label test — every admitted name spelled the one way" begin
     # the ZWJ pictograph `⛓️‍💥` is no Julia identifier (U+200D is no identifier character): the closed scanner refused it QUERIED while
-    # the SET role accepted it (H17); the rewrite quotes every label name by `repr`, so the query is a label test like `:label1`
+    # the SET role accepted it; the rewrite quotes every label name by `repr`, so the query is a label test like `:label1`
     r = GM.goMeta(Vector{UInt8}(codeunits("#~ :\u26d3\ufe0f\u200d\U1f4a5 hide{ :\u26d3\ufe0f\u200d\U1f4a5 }\n# content\n")))
     @test r.status === GM.PROCESS_OK
     @test length(GM.readAltValuesEvals(r.altValues_evals)) == 4           # the label rows and the Visib rows — the set and the query agree

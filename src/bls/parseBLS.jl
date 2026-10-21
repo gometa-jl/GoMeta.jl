@@ -23,7 +23,7 @@
 #   first-metaLine index, when one exists — absent when an inline metaSegment comes first: the segment arm sets the local only, the original engine's asymmetry; read by nothing since the delivery dropped it, src/GoMeta.jl :402). The tree print (`structural_serialization` over
 #   `writeBlsStructureToIO`; the file-writing twin `writeBlsStructureToFile`) LEFT this file on
 #   2026-09-12 for the development tool `devtools/basic_renderer.jl`, which reads the
-#   `ParseState` through BLS's door alone (a former exemption lapsed 2026-09-16; its texts were removed).
+#   `ParseState` through BLS's door alone.
 # REASONING: the tree print (now the development tool's) is pinned byte-for-byte by tests/golden/golden_tests.jl, so the
 #   parse must be a pure, deterministic function of the input bytes — setup and parse touch
 #   no filesystem and no module globals; all state threads through the explicit `ParseState`.
@@ -370,10 +370,10 @@ end
 
 ####################################################################################
 ## The header dispatch: a character-dispatch reader (`parseHashHeader!`) served the
-## '#' flavor from the alpha builds through the parser collapse, and RETIRED once the
+## '#' flavor in earlier versions and was RETIRED once the
 ## table-driven reader proved equivalent (four-plane differentials at both regimes,
-## per-substring reader equivalence, a mutation probe set); its full history lives in
-## the development fork. The live reader for EVERY flavor is `parseLeadHeader!` below;
+## per-substring reader equivalence, a mutation probe set).
+## The live reader for EVERY flavor is `parseLeadHeader!` below;
 ## the flavor-generic `findLeadAfterSpace` serves all leads.
 ####################################################################################
 ## The token-delimiter law's head grammar, DERIVED from the single-source body in
@@ -392,8 +392,7 @@ const _re_meta = Regex("^" * _RE_META_BODY_STR)
 ## bucket-A sentinel** (produced only under `:content` policies). Every divergence
 ## between the flavors is RECORD DATA: the policies (glued/bare), the run-arm
 ## strictness, the directive rows (status·flags·ws_strict·consume).
-## The per-flavor witnesses guard the reader's behavior for every armed flavor (the flavor-equivalence
-## differential the earlier text cited, forkchecks/differential_flavor.jl, is not in the repository — the citation was removed).
+## The per-flavor witnesses guard the reader's behavior for every armed flavor.
 
 ## The unrecognized/glued fallthrough — the ONE policy resolution shared by the
 ## `~`-arm's glued no-match, the strict run arm's failure, the ws-strict glued
@@ -438,7 +437,7 @@ function parseLeadHeader!(
         ## glued no-match resolves by the glued policy.
         matchFound = match(_re_meta, subStr)
         if matchFound === nothing
-            ## §4.1 refusal (v0.3.1, R-INERT-1 family): the TRANSPOSED inert
+            ## The transposed-marker refusal (since v0.3.1): the TRANSPOSED inert
             ## marker — tildes, then '!', then digits (ws/EOL-terminated) — is the known
             ## "#~!N" mistake for the canonical trailing-bang "#~N!". It must NEVER silently
             ## become content of any flavor (it did: bucket-(A) made it Text at file start,
@@ -465,7 +464,7 @@ function parseLeadHeader!(
                 givenDepthMH = parse(Int, first(matchFound[:metaDef]))
             end
             if last(matchFound[:metaDef]) == '!'
-                ## R-INERT-4 (v0.3.1): the author's trailing-bang marker mints
+                ## Since v0.3.1 the author's trailing-bang marker mints
                 ## :ignoreMetaContent — NOT :ignoreThisMeta. The component stays structurally
                 ## LIVE (the absorb gates key on :ignoreThisMeta, which this line no longer
                 ## carries, so it walks/closes/supersedes exactly like the bare live marker);
@@ -675,7 +674,7 @@ end
 ##     comment text and never counted (covers hash-LEADING lines and TRAILING
 ##     comments alike); a `#` INSIDE the string state is content, so a
 ##     hash-leading line inside an open string CAN terminate it, matching Julia.
-## LONG-RUN PARITY (the convergence-delta MAJOR, cured): Julia's triple strings
+## LONG-RUN PARITY: Julia's triple strings
 ## terminate on the LAST three quotes of a run (`"""a""""` == `a"`), so an
 ## IN-STRING run of any length ≥3 closes exactly ONCE — a naive per-3 toggle
 ## re-opened a closed string on 6-quote runs (tail loss on input Julia parses
@@ -683,9 +682,8 @@ end
 ## consecutive run after an inside→close toggle — INCLUDING the close inside an
 ## OUTSIDE-state long run: `""""""` = open + close (the empty-string pair, two
 ## toggles), and a 9-run is open + close + LOCKED remainder (two toggles, the
-## last-3 reading — the lock, not per-3, carries runs ≥9; a prior revision of
-## this note said "outside runs keep per-3", true only up to 8 — micro-delta
-## trued).
+## last-3 reading — the lock, not per-3, carries runs ≥9; outside runs keep per-3
+## only up to 8).
 ## RECORDED BOUNDS (byte-approximate on purpose — a full lexer is the reserved
 ## escape grammar's territory): single-double-quote strings are NOT tracked, so a
 ## `#` inside one (`x = "a#b" * """`) reads as a comment start and the walk stops
@@ -884,13 +882,13 @@ function parseBLS(
                     ## subsequent line glued into the fence's block as mistyped
                     ## content, nothing after a fence was ever marked attachedToMeta,
                     ## and every later standalone metaLine ABSORBED but never APPLIED
-                    ## (silent row loss to end-of-file — probe-verified; in real
+                    ## (silent row loss to end-of-file — measured; in real
                     ## Julia files every docstring tripped it). The reset is DEFERRED
                     ## to the next line's iteration (the flag below): the closing
                     ## line itself must still join the fence's block — an eager reset
                     ## here re-blocked the closing line and churned every
-                    ## fence-carrying golden (caught by the byte-identical gate on
-                    ## the first cut of this fix; the oracle-parity fixtures close
+                    ## fence-carrying golden (the byte-identical gate catches it;
+                    ## the oracle-parity fixtures close
                     ## their fences at EOF and must stay byte-stable). A non-matching
                     ## closer (differing delimiter length) stays INSIDE the fence at
                     ## THIS branch — the flag arms on TRUE closure only, guarded by
@@ -935,7 +933,7 @@ function parseBLS(
         end
 
         ## THE MID-LINE TRIPLE-QUOTE TRACKER (class b of the creator-decided fence-exit
-        ## fix; discovered AT the cut — the first probe class was mis-attributed):
+        ## fix):
         ## an assignment-opened string (`s = """`) is INVISIBLE to the line-start
         ## fence regex above, so its TERMINATOR line used to phantom-OPEN a fence
         ## that swallowed the file tail (every subsequent metaLine absorbed, never
@@ -947,18 +945,18 @@ function parseBLS(
         ## boundary, same as a line-start close). A lone `\"\"\"` terminator line
         ## still routes through the fence regex's CLOSE branch (fenceStr matches),
         ## so no double-toggle is possible (`lineContenTypeDetermined` guards).
-        ## COMMENT TEXT IS NEVER COUNTED (two review rounds converged here): quote
+        ## COMMENT TEXT IS NEVER COUNTED: quote
         ## bytes after a real comment start — a hash-LEADING line OR a TRAILING
         ## `# …` tail — are comment text, never string delimiters (counting them
         ## phantom-toggled on healthy input: a `# old: s = \"\"\"` comment swallowed
         ## the tail; an odd-count metaLine even crashed the fenced-type check; a
-        ## TRAILING comment did the same one round later). The comment/escape/
+        ## TRAILING comment did the same). The comment/escape/
         ## string-interior discrimination lives in the WALKING COUNTER (see
         ## `_count_tracked_triple_quotes`): escapes are per-character (`\\\"\"\"`
         ## counts — the backslash escaped itself), and a `#` INSIDE an open string
         ## is content, so a hash-leading line there CAN terminate it (Julia
         ## semantics; the earlier unconditional first-char exclusion traded that
-        ## arm silently — delta-caught, cured).
+        ## arm silently).
         ## BOUNDED BY DESIGN, the honest width: `\"\"\"` only (mid-line backticks
         ## stay untracked); a lone mid-line `\"\"\"` in PROSE text of a Text block
         ## phantom-toggles (degrades to the pre-fix tail behavior — and inside an
@@ -972,7 +970,7 @@ function parseBLS(
         ## The toggle is FULLY DEFERRED (both halves): the tracker line itself keeps
         ## its own classification (the opener stays a plain code line in its current
         ## block; a mid-line terminator stays fence interior) — an eager toggle
-        ## re-classified the tracker line and churned structure (caught at the cut).
+        ## re-classified the tracker line and churned structure (measured).
         ## Gated on `fences_armed` like the Case-2 arm above (the same content-model
         ## slot; constant-true for :julia).
         if profile.fences_armed && !lineContenTypeDetermined &&

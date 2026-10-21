@@ -89,7 +89,7 @@ namespace = config.namespace))`; the row carries no copy of the piece's text).
 `cell` is the owning LINE, so two same-kind inline Segment evals on one Line stay distinct. The CAPTURE
 PREDICATE is the interim span-validity policy (the door's `BLS.content` empty-return arms — zero/
 out-of-range Block span · Segment idxString==0/invalid span · blank Line ⇒ no capture; population
-identical to the pre-swap engine, probe-proven). Called from the two apply sites immediately after
+identical to the former capture predicate's, measured). Called from the two apply sites immediately after
 `applyAltActionFns` finalizes `st.working` for the cell (the Visib write-back that followed it was removed), and BEFORE the next
 `detAltValuesForSetOfSlots` wipes `st.working` (apply.jl). The
 capture is UNCONDITIONAL on Visib (a label-only or Id-only cell is captured too), reading whichever
@@ -119,7 +119,7 @@ registry threads through.
 Each row's `decided_by` is the list the apply recorded for the Alterant in
 `st.working_origin`: the handles of the statements it APPLIED, in application order — ONE for a single-valued mode
 (the deciding statement), the contributing statements' for an accumulating one (which statement contributed which
-label stays Q4 (ii)), the applied fields' for the compound — and for a `:per_entry` row ONE element of it, the origin of the row's own applied statement (the Heading bullet above; under the scheme's contract of one entry per applied call — a surplus entry carries the whole list, the `:per_entry` arm below); own when it names the row's own Component (a Block's: the entry equals the
+the line with `label stays Q4 (ii))` replaced by `label stays open — tests/comparison/README.md, Q4)`
 row's handle; a Segment-carried row's: the entry is the Segment's own key — its row is keyed on the Line with the
 Segment as the key's origin — and the answer function reads that entry as the LINE's own statement, the Segment being its
 carrier: the Line answers `:own`, the Segment its Line's answer marked `:indirect` (the creator's
@@ -143,20 +143,20 @@ function captureEvals!(st::ProcessState, cell::BLS.AbstractComponent;
     # SPAN-VALIDITY POLICY (the interim capture predicate): the CAPTURE decision keys on the
     # content-addressability arms of the door's `BLS.content` (zero/out-of-range Block span · Segment
     # idxString==0/invalid span · blank Line ⇒ empty ⇒ NO capture) — the captured POPULATION is
-    # IDENTICAL to the pre-swap engine (probe-verified, decision-instrumented, re-asserted
-    # post-swap). The rows are keyed by the normalized structural occurrence handle; the piece's text is
+    # IDENTICAL to the former capture predicate's (measured).
+    # The rows are keyed by the normalized structural occurrence handle; the piece's text is
     # NOT stored — read here through the door for the predicate only.
     content = BLS.content(st.parse, cell)
     isempty(content) && return nothing
     k = occurrence_key(st.parse, cell; origin = origin, namespace = st.config.namespace)
     handle = key_bytes(k)
 
-    ## v0.4 T5 — THE REGISTRATION-DRIVEN WALK (T5-DESIGN §2): the rows re-derive from each plugin's declared capture row (its
+    ## THE REGISTRATION-DRIVEN WALK: the rows re-derive from each plugin's declared capture row (its
     ## scheme and stem), never from an alt-name ladder; the shipped Labels, Visib and Id mint byte-for-byte the rows the retired
     ## 3-name ladder minted (measured). The walk reads the stores BARE, as the original engine's Visib write did
     ## (`keys(Alterants.Visib)[…array][1]`): a former hardening — the instance-type check, the per-arm
     ## try/catch, the value algebra, the shape and length gates and the walk's two capture-floor calls — was removed within the 0.4
-    ## development (a basic framework BEFORE HARDENING). A store outside its declared scheme's shape errors as
+    ## development. A store outside its declared scheme's shape errors as
     ## Julia does; a plugin without a capture row mints nothing.
     for (i, p) in pairs(st.registry.plugins)
         idx8 = Int8(i)
@@ -199,7 +199,7 @@ function captureEvals!(st::ProcessState, cell::BLS.AbstractComponent;
             # one row per entry `(text, level)` of a Heading-shaped store (the separate
             # recorder `capture_heading!` folded into this one walk): THE ATTR-FOLD — the level rides the attr NAME, the FIRST
             # entry at a level `<stem>_<level>`, a repeat at the same level `<stem>_<level>_<k>` (k ≥ 2, source order; the store
-            # dedupes per (handle, attr), so the fold keeps same-level repeats distinct — the v0.2 build's injectivity law); an
+            # dedupes per (handle, attr), so the fold keeps same-level repeats distinct — the injectivity law since v0.2); an
             # entry without a level `<stem>`, its repeats `<stem>_u<k>` (dead on live paths — every path materialises a level at
             # the enqueue; kept defensive); the VALUE the text; each entry's deciding statement is its own applied row's origin
             # (the i-th entry ← the i-th applied statement: `_record_origin!` and the setter push in one order — the scheme's CONTRACT is a
@@ -245,8 +245,8 @@ also outside the per-call `STATE` scope (the part was fully populated by the in-
 stringifies `attr` and `value` for a total order over the heterogeneous `value::Any` within the CLOSED capture
 value set the shipped Alterants mint — Bool · Symbol · the machine ints · String (a capture-side algebra that gated them was removed);
 the shipped four use Bool for Labels, Symbol for Visib, Int16 for Id, String for heading text;
-`cell_handle::Vector{UInt8}` sorts lexicographically. The first element is the OCCURRENCE-KEY bytes (v0.2
-CH-1); a piece's text is read from the BLS Component tree through `BLS.content`, never from a row.
+`cell_handle::Vector{UInt8}` sorts lexicographically. The first element is the OCCURRENCE-KEY bytes (since
+v0.2); a piece's text is read from the BLS Component tree through `BLS.content`, never from a row.
 
 REASONING: the GoMeta Engine EVALUATES and records values as data (the boundary law, 2026-08-27); this reader
 is the one core-provided route from a run to those values. It is given the PART and not the delivered object
@@ -259,7 +259,7 @@ own operations under `DEFAULT_REGISTRY` (a condition body — Julia, evaluated b
 custom registry's own callables are the author's, outside the guarantee — `goMeta`'s docstring, the trust model): the
 Engine's determinism supplies equal rows, the sort their equal order. This surface is the Engine's; the
 development tool's `outputs` pair — the BLS Component tree's print and the render
-(`Main.BasicRenderer.outputs`) — is the tool's own, and nothing foresees the two joined.
+(`Main.BasicRenderer.outputs`) — is the tool's own; the two are not joined.
 
 PURPOSE: what an Extension, a test, a development tool or a DB-interface reads to learn the final Alterant
 values a run recorded and for which handle — a Component's rows from the apply, the Heading's among them
@@ -270,8 +270,8 @@ function readAltValuesEvals(altValues_evals::EvalStore)
     order  = sortperm(recs; by = r -> (r.cell_handle, string(r.attr), string(r.value)))
     ## Each returned cell_handle is a COPY — the accessor never aliases the store's byte vectors,
     ## so a caller mutating a returned handle cannot corrupt a later accessor/serialize call.
-    ## v0.2 CH-1: the first element is now the OCCURRENCE-KEY bytes (the id-5 INTERIM 4-tuple
-    ## arity stands — same shape, new key semantics); a piece's text through `BLS.content`.
+    ## Since v0.2 the first element is the OCCURRENCE-KEY bytes (the 4-tuple
+    ## arity unchanged — same shape, new key semantics); a piece's text through `BLS.content`.
     return Tuple{Vector{UInt8},Symbol,Any,Bool}[
         (copy(recs[i].cell_handle), recs[i].attr, recs[i].value, recs[i].polarity) for i in order
     ]
@@ -282,7 +282,7 @@ end
 ## none of them (the hardening is deferred) — is escaped as a doubled backslash, backslash-t, backslash-n and
 ## backslash-r, so one row stays one line and
 ## four columns; the shipped families (`visib`, `label_<name>`, `id_<name>`, `head_<level>`) carry none and serialize byte-identically.
-## The five-column golden form is the TEST layer's since commit 9b (`tests/support/derive_annotations.jl`); the twelve pins unmoved.
+## The five-column golden form is the TEST layer's (`tests/support/derive_annotations.jl`).
 _attr_encoded(attr::Symbol) = replace(String(attr), "\\" => "\\\\", "\t" => "\\t", "\n" => "\\n", "\r" => "\\r")
 
 """
@@ -317,7 +317,7 @@ function serialize_evals(ann)::Vector{UInt8}
         "# columns: <attr>\\t<value>\\t<polarity>\\t<cell_handle = occurrence-key bytes, hex>\n",
     ]
     for (h, attr, val, pol) in ann
-        push!(parts, string(_attr_encoded(attr), '\t', repr(val), '\t', pol, '\t', bytes2hex(h), '\n'))   # the attr column encoded (commit 7a; R1 #2)
+        push!(parts, string(_attr_encoded(attr), '\t', repr(val), '\t', pol, '\t', bytes2hex(h), '\n'))   # the attr column encoded
     end
     return Vector{UInt8}(codeunits(join(parts)))
 end

@@ -8,7 +8,7 @@
 #       same slot meets "GoMeta absorb: more than 8 actions in one meta-hierarchy slot" — the stable message, not Julia's BoundsError.
 #       (3) THE CAPACITY IS EIGHT FOR EVERY REGISTRY (the creator's decision of 2026-10-17): a custom registry of 4 actions admits five and eight
 #       statements in one slot — where the tree before refused the fifth at its registered count — and refuses the ninth; an extended
-#       registry of 11 admits eight and refuses the ninth — where the tree before admitted up to its count (MEASURED on both trees).
+#       registry of 11 admits eight and refuses the ninth — where the tree before admitted up to its count (MEASURED before and after the change).
 # REASONING: the creator's word — the current slot limit is a hard-coded starting size, raised by hand if the examples need it; a dedicated error
 #       message is sufficient for now; the slower overflow buffer is a later design (V05-14).
 # PURPOSE: the queue tensor's width, exercised at its edge and one past it.
@@ -20,7 +20,7 @@ import GoMeta as GM
     mk_input(n) = Vector{UInt8}(codeunits(
         join(["#~ hide{ :label1 }" for _ in 1:n], "\n") * "\n# content\n"))
 
-    @testset "eight actions: boundary green + deterministic — step-9 re-pin" begin
+    @testset "eight actions: boundary green + deterministic" begin
         r1 = GM.goMeta(mk_input(8))
         @test r1.status == GM.PROCESS_OK
         (tree1, render1) = Main.BasicRenderer.outputs(r1)
@@ -38,7 +38,7 @@ import GoMeta as GM
         @test occursin("GoMeta absorb:", e.msg)
     end
 
-    @testset "[C] the capacity is EIGHT for EVERY registry — a custom registry of 4 actions and an extended one of 11 (the creator's decision of 2026-10-17; MEASURED on both trees)" begin
+    @testset "[C] the capacity is EIGHT for EVERY registry — a custom registry of 4 actions and an extended one of 11 (the creator's decision of 2026-10-17; MEASURED before and after the change)" begin
         R = GM.DEFAULT_REGISTRY
         bK = GM.RegistryBuilder()                                  # K: the shipped Labels and Visib alone — 4 actions
         GM.register!(bK, R.plugins[1], GM.ActionSpec(; name = Symbol(":"), plugin = Int8(1)))
@@ -51,12 +51,12 @@ import GoMeta as GM
         RX = GM.publish(bX)
         @test GM.num_alt_actions(RX) == 11
         doc(s) = Vector{UInt8}(codeunits("#~ " * s * "\nx = 1\n"))
-        # K: five and eight statements in one slot ADMITTED (the base, sized by the count 4, refused the fifth: PROBE K5); the ninth refused
+        # K: five and eight statements in one slot ADMITTED (the tree before, sized by the count 4, refused the fifth); the ninth refused
         @test GM.goMeta(doc("hide show discard :label1 :label2"); registry = RK).status == GM.PROCESS_OK
         @test GM.goMeta(doc("hide show discard :label1 :label2 hide show discard"); registry = RK).status == GM.PROCESS_OK
         eK = try GM.goMeta(doc("hide show discard :label1 :label2 hide show discard :doc"); registry = RK); nothing catch err; err end
         @test eK isa ErrorException && occursin("more than 8 actions in one meta-hierarchy slot", eK.msg)
-        # X: eight admitted, the ninth REFUSED (the base, sized by its count — 10 before `ids` — admitted the ninth: PROBE X9)
+        # X: eight admitted, the ninth REFUSED (the tree before, sized by its count — 10 before `ids` — admitted the ninth)
         @test GM.goMeta(doc("hide show discard cell(1) parent(2) file(3) :label1 :label2"); registry = RX).status == GM.PROCESS_OK
         eX = try GM.goMeta(doc("hide show discard cell(1) parent(2) file(3) :label1 :label2 :doc"); registry = RX); nothing catch err; err end
         @test eX isa ErrorException && occursin("more than 8 actions in one meta-hierarchy slot", eX.msg)
