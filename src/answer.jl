@@ -154,8 +154,8 @@ Segments is the Line's own statement (the trailing metaSegment applies DIRECTLY 
 without rows of its own answers as the Component whose rows it inherits answers (its Line, or its Block when the Line is rowless too),
 that Component's `:own` becoming `:indirect` through it — its statement was applied to the Line, not to the Segment — and every other
 source (`:indirect` through the same decider, `:user`, `:file`) unchanged, as a rowless Line's relates to its Block's; rows without any recorded origin answer `:own` on the Component itself and
-`:indirect` through the carrier Component otherwise. The File answers `(nothing, :none)` — NOTHING built for it (card 6
-"next"; the File's case carried past the branch (the review's C23)). An Alterant name outside the registry throws an `ArgumentError` naming the registered
+`:indirect` through the carrier Component otherwise. The File answers `(nothing, :none)` — NOTHING built for it (an open
+point). An Alterant name outside the registry throws an `ArgumentError` naming the registered
 names; an Alterant without a capture DECLARATION mints no rows and answers its declared default (`:default`) or `:none`; an
 undeclared capture stem is derived as the walk derives it (`lowercase(altName)`). Pure: no state, no cache, no mutation of the delivery.
 REASONING: one function, uniform across Alterants (the value in each Alterant's own shape, the source ONE tag), so an
@@ -177,7 +177,7 @@ function evaluatedAltValue(delivery::GoMetaDelivery, component::BLS.AbstractComp
         d = p.default
         return d isa Declared ? EvaluatedAltValue(d.value, :default, nothing) : EvaluatedAltValue(nothing, :none, nothing)
     end
-    stem = _capture_stem(p)   # the walk's own derivation (annotations.jl's capture; registry.jl's effective stem) — the seat wf-s10-s2c4-check F-1
+    stem = _capture_stem(p)   # the walk's own derivation (annotations.jl's capture; registry.jl's effective stem)
     scheme = cap.attr_scheme
     ps = delivery.blsComponentTree
     store = delivery.altValues_evals
@@ -201,7 +201,7 @@ function evaluatedAltValue(delivery::GoMetaDelivery, component::BLS.AbstractComp
         ## that Component's OWN statement (the Line's trailing metaSegment's — even when the deciding handle is this Segment's own
         ## key, the carrier's: the statement was applied DIRECTLY to the Line, not to itself) reaches the Segment INDIRECTLY through
         ## it; every other source stays as that Component answers it — :indirect through the same decider, the fed profile's :user,
-        ## the File's :file — exactly as a rowless Line relates to its Block (the decisions seat's F-1: the user case unchanged).
+        ## the File's :file — exactly as a rowless Line relates to its Block.
         a = evaluatedAltValue(delivery, c, alterant; registry = registry)
         return a.source === :own ? EvaluatedAltValue(a.value, :indirect, c) : a
     end

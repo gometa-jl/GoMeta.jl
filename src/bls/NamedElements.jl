@@ -48,7 +48,7 @@ it), a tuple expression `(a, b, …)` one dimension of its elements; `sizesVec[d
 another shape, or an element that is not a `Symbol` throw `ArgumentError`.
 
 REASONING: the macro's one body split into argument parsing and four code-generation helpers (the file's own section
-heads) — the legacy's parsing otherwise, kept.
+heads) — the original engine's parsing otherwise, kept.
 
 PURPOSE: the shape data the code-generation helpers of `@namedElement` build the `NamedElement` type from.
 """

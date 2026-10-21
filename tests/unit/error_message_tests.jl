@@ -45,6 +45,6 @@ import GoMeta as GM
         # hide{ … } did not fire — the query of the unknown label answered false
         rows = GM.readAltValuesEvals(r.altValues_evals)
         @test [a for (h, a, v, p) in rows] == [:label_label1, :label_label1] && all(v === true for (h, a, v, p) in rows) &&
-              all(x -> x.attr !== :visib, r.altValues_evals.records)   # the values pinned too (the seat's F-10)
+              all(x -> x.attr !== :visib, r.altValues_evals.records)   # the values pinned too
     end
 end

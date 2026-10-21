@@ -78,8 +78,8 @@ export absorbMeta
 ## ONE white-space predicate (`_isspace_valid` — the original engine's `isspace`, guarded against invalid UTF-8), ONE scanner
 ## `_span` for EVERY span — the metaLine's `(…)` `{…}` `"…"` and the
 ## condition body's `(…)` lists and quoted texts (the rewrite's own finder was removed), ONE argument splitter `_split_args`, ONE refusal helper — where the original engine and the v0.2–v0.3 additions had
-## three white-space tests, four bracket loops, three backslash sites and two String walls. The quote-scan panel of 2026-10-08
-## (wf-s10-quote-scan-design; its judge's specification B.2) is the scanner's form.
+## three white-space tests, four bracket loops, three backslash sites and two String walls. The quote-scan design of 2026-10-08
+## is the scanner's form.
 const _STRUCTURAL = ('(', ')', '{', '}', ',', '"')
 
 ## The words of the refusals' hints (the creator's to re-word): the glue hint — a space before
@@ -120,7 +120,7 @@ conditions" are read too).
 REASONING: the original engine counted brackets in three loops and the v0.2 additions added quote arms and backslash checks at three
 more places; one walk with one quote state serves every span. Julia's other literal delimiters are not known — a Char
 literal (`'}'`; `'` is also Julia's adjoint `x'`), a backtick, an odd `"` inside a triple-quoted text, a string prefix's
-word: the shapes the register names — `'}'` and `` `}` `` (the span ends early), the odd `"` (the span left open), a prefix's word (`r"a}b"`, read as a condition key) — end in a loud refusal or Julia's own error (the register's PB-5 names the Char literal; its note of 2026-10-09 the others); a Char or backtick literal the walk reads nothing of (no word, no `{`, `}`, `"`, `,` or `:` — `'1' == '1'`) reaches Julia unchanged and evaluates. Two shapes are copied in pieces and re-read SILENTLY — a quoted text nested inside an interpolation `\$(…)` and an even number of bare `"` inside a triple-quoted text (the register's PB-15).
+word: the shapes named — `'}'` and `` `}` `` (the span ends early), the odd `"` (the span left open), a prefix's word (`r"a}b"`, read as a condition key) — end in a loud refusal or Julia's own error (the register's PB-5 names the Char literal; its note of 2026-10-09 the others); a Char or backtick literal the walk reads nothing of (no word, no `{`, `}`, `"`, `,` or `:` — `'1' == '1'`) reaches Julia unchanged and evaluates. Two shapes are copied in pieces and re-read SILENTLY — a quoted text nested inside an interpolation `\$(…)` and an even number of bare `"` inside a triple-quoted text (the register's PB-15).
 
 PURPOSE: where a span ends, for every reader: parseArgs (the argument list and the label list), parseConditions, the quoted
 heading, the splitter and the condition rewrite (a body's `(…)` lists and its quoted texts).

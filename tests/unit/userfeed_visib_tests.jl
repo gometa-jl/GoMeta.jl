@@ -1,7 +1,6 @@
 # userfeed_visib_tests.jl — THE FED VISIB VERDICT AGAINST AN AUTHORED ONE (a review finding:
 # "All five user_mh_profile tests feed headings; none opposes a fed Visib action against an authored one. Add fed 'show' against
-# authored '#~ hide', asserting the fed verdict wins and the rows carry the user-context handle"; the plan v8.1 :62 — the R2 test proposals that
-# witness stage-2 code; the brief v2 §1 row 7a–c).
+# authored '#~ hide', asserting the fed verdict wins and the rows carry the user-context handle").
 #
 # IS:   five witnesses over the public entry, every value MEASURED first but one — [U5]'s "  " on its document, the testset's own
 #       run, disclosed there — (the fed verdict's handle = the user-context key of ordinal 1): [U1] fed `show` against authored `#~ hide` — the fed
@@ -69,8 +68,8 @@ _uf_bytes(s::String) = Vector{UInt8}(codeunits(s))
         # applied — since 0.4.1 it does not (fed_profile_order_tests.jl [W5]), so these assertions no longer tell an inert profile from a fed one (a
         # user slot without rows equals no feed under the cured order — the stage-0 plan §3): they check the delivered rows alone; that "" and "  " occupy no
         # slot rests on the driver's non-blank test (src/GoMeta.jl, the `feed_user_mh!` call site); "" and "  " must behave as no profile
-        # ("" on this document MEASURED by the oracle's L05; "  " on this document is this testset's own run on the scratch, green — the
-        # oracle's L06 measured "  " on the P24 document below)
+        # ("" on this document MEASURED first; "  " on this document is this testset's own run, green — the
+        # measurement of "  " was on the second document below)
         for p in ("", "  ")
             r = GM.goMeta(_uf_bytes("#~ hide{ :label1 } :label1\nx = 1\n"); config = GM.GoMetaConfig(; user_mh_profile = p))
             @test r.status === GM.PROCESS_OK && isempty(_visib_rows(r))

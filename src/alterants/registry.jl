@@ -144,8 +144,8 @@ end
 ## at the apply like every condition — a label test in it is legal since 0.4.0 (the
 ## loop's order: the labels of the levels above — the user level's among them — and those stated before the heading on its
 ## metaLine are seen, those after it are not, WITH OR WITHOUT a fed profile since 0.4.1 (before, in 0.4.0, a fed profile made the user
-## level the loop's first slot and a metaBlock's own labels were collected before its heading was decided — the Labels
-## lane's oracle P24 before and after)).
+## level the loop's first slot and a metaBlock's own labels were collected before its heading was decided — MEASURED
+## before and after)).
 mutable struct Heading
     entries::Vector{Tuple{String,Union{Nothing,Int}}}   # (text, explicit level | nothing ⇒ derived)
 end
@@ -415,7 +415,7 @@ function default_registry_builder()
     plugins = Alterant[
         ## v0.4 T5: every DEFAULT record DECLARES its capture row (the registration-driven
         ## capture plane; the stems are DECLARED — byte-compatibility never rides the
-        ## derived fallback) — the three former legacy positional declarations migrated
+        ## derived fallback) — the three former positional declarations of the original engine migrated
         ## to the keyword form to carry `capture =`.
         Alterant(; altName = :labels, setMode = :accumulate, altConstructor = Dict{Symbol,Bool},
                    setAltInstance = Alterants.setLabels, getAltInstance = Alterants.checkLabels,
@@ -788,7 +788,7 @@ function _key_order_budget(k)::Bool
             end
         elseif x isa Vector
             for i in 1:length(x)
-                isassigned(x, i) || return false                  # crx-t2bis cure A3: no undef read
+                isassigned(x, i) || return false                  # the undefined-element guard: no undef read
                 push!(stack, x[i])
             end
         elseif x isa Tuple || x isa NamedTuple
@@ -852,7 +852,7 @@ function _emit_cyclic!(diags, label, ctx, slot)
     return nothing
 end
 function _emit_unencodable!(diags, label, ctx, slot, T)
-    # (the t3t4r2 family cure, seat A row 6) the offending TYPE renders through the
+    # the offending TYPE renders through the
     # structural zero-dispatch helper — interpolating `T` ran `show`, and a throwing
     # user `show(::IO, ::Type{Theirs})` broke the never-throws chain at the very row
     # refusing their value (probe P54).
@@ -908,7 +908,7 @@ function _domain_slot_probe!(diags::Vector{Diagnostic}, label::String, ctx, slot
             push!(visiting, v)
             push!(work, _PopVisit(v))
             if v isa Vector
-                for i in 1:length(v)                              # crx-t2bis cure A3
+                for i in 1:length(v)                              # the undefined-element guard
                     isassigned(v, i) || return _emit_undef!(diags, label, ctx, slot)
                 end
                 for i in length(v):-1:1
@@ -1046,13 +1046,13 @@ the coded refusal, never escape a public constructor."
 struct _CyclicValue <: Exception
     path::Vector{Any}
 end
-"internal (crx-t2bis cure A2): a USER method (`hash`/`isequal`/`convert`) thrown while a
+"internal: a USER method (`hash`/`isequal`/`convert`) thrown while a
 rebuilt `Dict` was being filled — the one rebuild step that dispatches user-extensible
 code. Converted to a coded refusal at both public copy boundaries, never leaked raw."
 struct _RebuildFailed <: Exception
     T::Type
 end
-"internal (crx-t2bis cure A3): an UNDEFINED container element met by a walk — a
+"internal: an UNDEFINED container element met by a walk — a
 `resize!`-widened published Vector, or an undef-slot declared vector. Refused coded at
 validate and the contained route; a divergence at the door."
 struct _UndefSlot <: Exception end
@@ -1095,7 +1095,7 @@ function _copy_rebuild(fr::_CopyFrame)
         for j in 1:n
             k = fr.out[2j - 1]
             # the fill dispatches hash/isequal (copy-side only, never the door); a USER
-            # method throwing here is contained coded (crx-t2bis cure A2), never leaked raw
+            # method throwing here is contained coded, never leaked raw
             try
                 out[k] = fr.out[2j]
             catch e
@@ -1204,7 +1204,7 @@ function _domain_copy(x, memo::IdDict{Any,Any};
                                 fill(false, n), fill(kidrk, n), Vector{Any}(undef, n),
                                 Vector{Any}(undef, n), 1)
                 for i in 1:n
-                    isassigned(v, i) || throw(_UndefSlot())   # crx-t2bis cure A3
+                    isassigned(v, i) || throw(_UndefSlot())   # the undefined-element guard
                     fr.kids[i] = v[i]
                     fr.ksegs[i] = i
                 end
@@ -1297,7 +1297,7 @@ end
 ## active probe; a probe's guard view = the EFFECTIVE guard (the spine ∪ every enclosing
 ## overlay); a pair anywhere in it returns equal (coinductive — termination on tandem
 ## cycles at any depth); an overlay is DISCARDED on rejection and on acceptance MERGES
-## into the ENCLOSING segment. There is NO outcome memo (the round-5 SIMPLIFY cure —
+## into the ENCLOSING segment. There is NO outcome memo (a simplification —
 ## degenerate nested duplicate-equal-key rejected-twin towers are exponential-in-depth by
 ## disclosure, T2BIS-DESIGN §11). The door dispatches NO user-extensible method anywhere —
 ## no `hash`, no `isequal`, no `==`, no user `show` (rendering included): Dicts are
@@ -1386,7 +1386,7 @@ function _egal_cmp(t::_EgalTask, work, guards)
             length(a) == length(b) || return (t.path, :size)
             kidrk = t.rk === 0x02 ? 0x01 : 0x00
             for i in length(a):-1:1
-                # (crx-t2bis cure A3) an UNDEFINED element (a resize!-widened live vector)
+                # an UNDEFINED element (a resize!-widened live vector)
                 # never reads: assignment-state divergence FIRES at the element path; a
                 # conforming snapshot has no undef slot, so both-undef only means equal
                 la = isassigned(a, i)
@@ -1593,7 +1593,7 @@ function _assert_snapshot_disjoint(live::NamedTuple, snap::NamedTuple)
                 push!(out, v)
                 if v isa Vector
                     for i in 1:length(v)
-                        isassigned(v, i) && push!(stack, v[i])    # crx-t2bis cure A3
+                        isassigned(v, i) && push!(stack, v[i])    # the undefined-element guard
                     end
                 else
                     for (k, v2) in v
@@ -1627,7 +1627,7 @@ end
 _domain_type_name(T::Type)::String = String(nameof(T))
 
 function _route2_refuse(r::AlterantRegistry, e, field::Symbol)
-    # (crx-t2bis cures A2/A3) the two path-less internal classes convert coded too
+    # the two path-less internal classes convert coded too
     if e isa _RebuildFailed || e isa _UndefSlot
         throw(RegistrationRefused([Diagnostic(:REG_PROTOCOL, :error, string(
             "GoMeta registry: RegistryBuilder(published) could not copy field ", field, " (",
@@ -1708,7 +1708,7 @@ function _type_text(t)::String
         isempty(getfield(t, :parameters)) && return String(nm)
         return string(nm, "{", join((_type_param_text(p) for p in getfield(t, :parameters)), ","), "}")
     end
-    # (T2-bis crx cure A1) the Bottom, UnionAll and Union nodes encode STRUCTURALLY (a bare TypeVar has no arm — the throw below) — `string()` on a
+    # the Bottom, UnionAll and Union nodes encode STRUCTURALLY (a bare TypeVar has no arm — the throw below) — `string()` on a
     # UnionAll/Union/TypeVar dispatches `show`, and a user's own display method on its own
     # admitted type (legitimate specialization, not piracy) could throw out of the mint. The
     # structural text dispatches nothing (`nameof`/`Symbol` reads only) and stays
@@ -1769,7 +1769,7 @@ function _derive_tables(plugins::Vector{Alterant}, action_specs::Vector{ActionSp
     sorted_alt_actions = sort!(collect(keys(owner_of_action)))
     spec_index = Dict{Symbol,Int}()
     for (i, s) in enumerate(action_specs)
-        haskey(spec_index, s.name) || (spec_index[s.name] = i)   # first-wins, as owner_of_action above (the legacy's Dict assignment was last-wins)
+        haskey(spec_index, s.name) || (spec_index[s.name] = i)   # first-wins, as owner_of_action above (the original engine's Dict assignment was last-wins)
     end
     return (
         sorted_alt_actions   = sorted_alt_actions,
@@ -1828,13 +1828,13 @@ REASONING: validate first, then copy, so the copy is type-based over in-domain, 
 snapshot share no mutable container — the door's comparison then has a baseline nothing conforming code can reach
 through the live fields.
 
-PURPOSE: the one route to a published value — what `goMeta`'s door accepts (R-V04-34) and what `DEFAULT_REGISTRY` is.
+PURPOSE: the one route to a published value — what `goMeta`'s door accepts and what `DEFAULT_REGISTRY` is.
 """
 function publish(b::RegistryBuilder)
     diags = validate(b)
     any(d -> d.severity === :error, diags) && throw(RegistrationRefused(diags))
     # (cure batch 1) warnings are NEVER swallowed by the sanctioned route: every warning
-    # diagnostic is emitted at publication (the legacy load-time @warn behavior kept); a caller
+    # diagnostic is emitted at publication (the original engine's load-time @warn behavior kept); a caller
     # wanting them as data calls `validate` first.
     for d in diags
         d.severity === :warning && @warn d.message
@@ -1843,7 +1843,7 @@ function publish(b::RegistryBuilder)
     # has run, so every value is in-domain and acyclic (predicate ground per field: validate
     # reaches `plugins`/`action_specs`; the derived tables are grounded in their concrete
     # declared types + their construction from the already-copied record) — ONE stage-1 memo.
-    # (crx-t2bis cures A2/A3) the ONE remaining escape class — a USER `hash`/`isequal`
+    # the ONE remaining escape class — a USER `hash`/`isequal`
     # thrown at a Dict rebuild fill, or an undefined element racing in after validate —
     # converts to the coded refusal here, never a raw exception out of `publish`.
     copyc = (x, m) -> try

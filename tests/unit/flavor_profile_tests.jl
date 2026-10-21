@@ -146,7 +146,7 @@ _fp_julia_kwargs(; overrides...) = merge((
             _fp_latexish_kwargs(directives = (bad_absent, _FP_ABSENT4[2:4]...,
                 _FP_CLOSE_ROW))...)
         ## The status-vocabulary guard: an out-of-domain status refuses (cure round —
-        ## the round-1 ceremony seat found this guard witness-free). UNIQUE TARGETING:
+        ## a review found this guard witness-free). UNIQUE TARGETING:
         ## julia-tagged so the INTERIM law short-circuits, flags empty so the
         ## absent-guard passes — deleting the status-domain assert would construct
         ## GREEN and flip exactly this row red.
@@ -163,7 +163,7 @@ _fp_julia_kwargs(; overrides...) = merge((
             _FP_BLS.FLAVOR_JULIA.directives[2:5]...)
         @test_throws AssertionError _FP_BLS._mk_flavor(;
             _fp_julia_kwargs(directives = bad_consume_rows)...)
-        ## The run-char collision guard (delta-panel cure): a lead whose run char
+        ## The run-char collision guard (a review cure): a lead whose run char
         ## lands in the reader's other arm triggers refuses at mint — '~' here;
         ## every EARLIER guard passes (ASCII lead; hide marker "~x " has a
         ## comment-class second char; run char == last(lead)), so only the
@@ -174,7 +174,7 @@ _fp_julia_kwargs(; overrides...) = merge((
             directives = (_FP_ABSENT4..., _FP_CLOSE_ROW),
             glued_policy = :comment, bare_policy = :comment,
             fences_armed = false, comment_run_strict = false)
-        ## The policy-vocabulary guards (W4-close panel cure): an out-of-domain
+        ## The policy-vocabulary guards (a review cure): an out-of-domain
         ## policy Symbol refuses at mint (the reader's === compares would silently
         ## comment-ize a typo).
         @test_throws AssertionError _FP_BLS._mk_flavor(;

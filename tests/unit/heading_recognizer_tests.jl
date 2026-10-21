@@ -167,7 +167,7 @@ end
         # every action; the sugar changes nothing there). The settribute condition
         # evaluates ONCE, at the apply of the Component the heading is applied to — the metaBlock (the creator's decision; before it the metaLine's own snapshot at the absorb seam): a metaBlock is not Code, so
         # { isCode } is FALSE there — zero rows, no refusal (the ratified flip of the evals rows
-        # from the queued era's per-cell evaluation, pinned here — panel-found gap)
+        # from the queued era's per-cell evaluation, pinned here — a review-found gap)
         @test string(_run("#~ \"T\" :label1\nx = 1\n").status) == "PROCESS_OK"
         ric = _run("#~ \"T\"{ isCode }\nx = 1\n")
         @test string(ric.status) == "PROCESS_OK"
@@ -321,7 +321,7 @@ end
         @test [a for (_, a, _, _) in GM.readAltValuesEvals(_run("#~ \"T\" ## a trailing comment\nx = 1\n").altValues_evals)] == [:head_1]
         r15 = GM.readAltValuesEvals(_run("#~ \"T\" hide\nx = 1\n").altValues_evals)
         @test length(r15) == 3 && count(t -> t[2] === :head_1, r15) == 1 && count(t -> t[2] === :visib && t[3] === :hide, r15) == 2
-        # THE RATIFIED VOCABULARY BOUNDARIES (panel-found coverage gap): `#~0` = the
+        # THE RATIFIED VOCABULARY BOUNDARIES (a review-found coverage gap): `#~0` = the
         # file level records head_0; `#~8` = the deepest depth-digit records head_8
         r0 = _run("#~0 \"Root\"\nx = 1\n")
         @test (:head_0, "Root") in _heads(r0)
@@ -378,7 +378,7 @@ end
         # 2026-10-18 and his order of 2026-10-19, superseding his acceptance of 2026-10-16, under which
         # the user level was the loop's first slot and the own labels were collected before the heading and the `hide` were decided): a
         # label stated AFTER the heading or the `hide` is not seen — the fed `:label3` adds its label row and leaves the heading and the Visib rows as in
-        # the no-feed run (MEASURED: the Labels lane's AFTER oracle on the scratch — P24 no head row as P07, P25 no Visib row as P26, each 4 rows where its
+        # the no-feed run (MEASURED after the cure — no head row, no Visib row, each 4 rows where its
         # no-feed twin has 2; the Labels rows' `decided_by` begin with the user context and their answer source reads `:user` where the no-feed twins read
         # `own` / `indirect` — the traces)
         _fed(s, p) = GM.goMeta(Vector{UInt8}(codeunits(s)); config = GM.GoMetaConfig(user_mh_profile = p))

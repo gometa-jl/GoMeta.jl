@@ -145,9 +145,9 @@ public serialize_evals, EvalRecord, EvalStore, ProcessStatus, PROCESS_OK, PROCES
        RegistryBuilder, register!, next_plugin_index, validate, publish, RegistrationRefused,   # the registration lifecycle (docs/public-api.md §1.2)
        Alterant, ActionSpec, CaptureDecl, DefaultSlot, NoDefault, Declared   # the record vocabulary a third-party author constructs (docs/public-api.md §1.2)
 public BLS   # the parser module public by name — its door of travel / access functions declared INSIDE it (src/bls/BLS.jl; docs/public-api.md §1.2 + §6)
-public evaluatedAltValue, EvaluatedAltValue   # THE ONE ANSWER FUNCTION and its record — package-public, NOT exported (docs/public-api.md §1.2; the register row §6)
-public scanAlterant, evaluatedAltValues   # THE SCAN BY ALTERANT and THE ACCESS BY COMPONENT — package-public, NOT exported (docs/public-api.md §1.2; the register row §6); functions of their own, not methods of the reader
-public childDiffers   # THE CHILD-DIFFERS SIGNAL computed from the answer — the per-child primitive; a Boolean beside a PARENT's entry is `any` of it over the children — package-public, NOT exported (docs/public-api.md §1.2; the register row §6)
+public evaluatedAltValue, EvaluatedAltValue   # THE ONE ANSWER FUNCTION and its record — package-public, NOT exported (docs/public-api.md §1.2; its row in §6)
+public scanAlterant, evaluatedAltValues   # THE SCAN BY ALTERANT and THE ACCESS BY COMPONENT — package-public, NOT exported (docs/public-api.md §1.2; its row in §6); functions of their own, not methods of the reader
+public childDiffers   # THE CHILD-DIFFERS SIGNAL computed from the answer — the per-child primitive; a Boolean beside a PARENT's entry is `any` of it over the children — package-public, NOT exported (docs/public-api.md §1.2; its row in §6)
 
 """
     _entryErrorDelivery(parse_state, config, registry, diags) -> GoMetaDelivery
@@ -332,7 +332,7 @@ function goMeta(
     ## -> GoMetaDelivery` (docs/public-api.md §2). The parse range is the typed `config.parse_range`: `nothing` ⇒
     ## the WHOLE file (mapped to `to = -1`); a `1:N` range ⇒ lines 1..N
     ## (`to = last(range)`). `parseBLS` ignores `fromLine` + breaks on `lineNum > toLine`
-    ## (parseBLS.jl: `fromLine` has no use but its signature; a non-positive `toLine` becomes the line count — the seat's F2: the
+    ## (parseBLS.jl: `fromLine` has no use but its signature; a non-positive `toLine` becomes the line count — the
     ## former citation of docs/SYNTAX-AND-SEMANTICS.md named a page that holds no range contract), so a non-positive `to` parses the whole file. The range is taken
     ## PLAIN, as the original engine took its arguments: `first` is never read (`5:10` parses lines 1..10; `3:2` lines
     ## 1..2; `1:0` the whole file) — the coded range refusal was removed within the 0.4 development.

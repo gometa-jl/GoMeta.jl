@@ -54,7 +54,7 @@ with the `ids` action) — the slot limit is the matrix size he chose to start w
 increased by hand (hard coded) if 8 proves too small — the size raised by hand when an example asks.
 Before, the size was the registered action
 count (`num_alt_actions(registry)`, as the original engine's `numAltActions` sized its queue tensor — GoMetaRetro src/CnS.jl :135–:136): a sizing
-of the code, not a sentence of his. A further action in a slot meets the absorb's refusal (absorb_meta.jl: \"more than 8
+of the code, not the creator's sentence. A further action in a slot meets the absorb's refusal (absorb_meta.jl: \"more than 8
 actions in one meta-hierarchy slot\"); the slower overflow buffer is a later design."
 const SLOT_CAPACITY = 8
 
@@ -144,7 +144,7 @@ IS: the registration record of ONE Alterant — the inventory unit the registry 
     any Alterant an Extension registers through the lifecycle (docs/public-api.md §1.2). The original engine's `struct PlugIn`
     (GoMetaRetro `src/Alterants.jl`) carries the name `Alterant` since v0.4 — the creator prefers NOT to
     call the record 'PlugIn' anymore, the name clashing with another kind of PlugIn he has in mind; the public alias
-    `PlugIn` was REMOVED before 0.4.0 (a clean cut; the register row in docs/public-api.md
+    `PlugIn` was REMOVED before 0.4.0 (a clean cut; its row in docs/public-api.md
     §6). The FIELD NAMES are the original engine's and stay.
 DOES: carries the Alterant's name (`altName`); its set-mode (`setMode` — `:accumulate`: the inheritance backtrack COLLECTS every
     applicable value · `:mutExclusive`: the backtrack stops at the FIRST applicable value · `:mutExclusivePerField`: the `Id`
@@ -381,7 +381,7 @@ co-occurs with an error diagnostic, thrown first; were that ever false, the rout
 `REG_DERIVED_TABLES` row rather than reaching the token form (T2-bis §15 (8)). A conforming construction yields an
 UNPUBLISHED registry (`_snapshot === nothing`) whose tables are the DERIVED objects (`==`-equal to the caller's,
 distinct identity — recorded, not silent; no pin reads their identity) — the `goMeta` door refuses it coded, naming
-the sanctioned path (`RegistryBuilder → validate → publish`); route U therefore dies at the entry too (R-V04-34's
+the sanctioned path (`RegistryBuilder → validate → publish`); route U therefore dies at the entry too (the
 STRICT door). No positional form accepts a snapshot: for conforming callers, published values come from `publish`
 (the honest bound: the token form is reachable by any loaded module — accident-grade, B-2).
 
@@ -833,11 +833,9 @@ REASONING: the creator's design — `altValues_evals` and the BLS Component tree
 IMPORTANT DATA CONTAINERS produced during the GoMeta process" (the creator's words, 2026-09-11); it is "NOW VERY
 IMPORTANT to RESTRICT THAT INTERFACE TO A MINIMUM in order to MAXIMIZE OUR FLEXIBILITY IN IMPROVING GoMeta"
 (his words, 2026-09-11); the content: his decision — "altValues_evals, the BLS
-Component tree, the status and the diagnostics; nothing else" — anchored by
-his own "I meant four parts" (2026-09-15); the shape: his decision (2026-09-16) on
-the form — "One named object, the four parts public by name, no hand-over function" (its wording
-not his); the name `GoMetaDelivery` his pick (2026-09-16) and his own typing (2026-09-17),
-"object's names such as 'result' are NOT DESCRIPTIVE" (his words, 2026-09-15). The working state is the
+Component tree, the status and the diagnostics; nothing else"; the shape his decision —
+"One named object, the four parts public by name, no hand-over function"; the name `GoMetaDelivery` his pick
+("object's names such as 'result' are NOT DESCRIPTIVE" — his words). The working state is the
 Engine's own and its shape is not part of the delivered surface, so it is not delivered at all rather than
 delivered and declared unstable (the creator's decision of 2026-09-15).
 

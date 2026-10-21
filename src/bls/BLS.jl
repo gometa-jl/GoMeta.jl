@@ -354,8 +354,8 @@ DOES: returns the child Components of `c` in source order (a File's Blocks, a Bl
 a Line's Segments; an empty vector for a Segment); without a Component, the Blocks of the
 tree's one File. Follows the extension chain through `eachchildid`; resolves a positive id in
 the original store and a negative id in the insert store, so a caller never reads the stores.
-REASONING: the legacy's child walk (the March writer's loop over `childComponentsIdxVec`,
-`WriteOutFile.jl` :105) as v0.4's `eachchildid` carries it, over the legacy's own map
+REASONING: the original engine's child walk (the March writer's loop over `childComponentsIdxVec`,
+`WriteOutFile.jl` :105) as v0.4's `eachchildid` carries it, over the original engine's own map
 `parentChildComponentPDict` — ADAPTED, so that an Extension and the development tools walk
 down with one function and no store is read outside BLS (the creator's design).
 PURPOSE: the tree provided by BLS itself, travelled with BLS's own function.
@@ -398,7 +398,7 @@ parent(::ParseState, ::File) = nothing
 IS: the Component's flavor in the canon's sense — `:Meta`, `:Code` or `:Text` (a metaLine is
 "a BLS Line Component of flavor Meta"); NOT its grain (the grain is the Component's type —
 File, Block, Line, Segment — reached by dispatch).
-DOES: reads the field `contentType` the parser set (the legacy's content types `Meta`, `Code`,
+DOES: reads the field `contentType` the parser set (the original engine's content types `Meta`, `Code`,
 `Text`) and answers its name; `nothing` for the File, whose field carries the store's
 constructor default, never a parsed flavor. Inside an open fence a content Line's
 `contentType` is the Block's (`parseBLS.jl` :998–:1002); a lead-led line there is classified
@@ -431,7 +431,7 @@ REASONING: NEW in BLS within the 0.4 development — the body of the Engine's fo
 (`src/annotations.jl`) COPIED unchanged but for the argument names and the dropped `BLS.` qualifiers;
 the Engine's copy was REMOVED — this function alone serves a piece's text:
 the capture predicate, the test layer's derivation of the reference files' fifth column (byte-equal to the
-former producer's — the probe's check and commit 8's standing proof), the tools and the consumers. Its ancestor: the legacy writer's `SubString(collectedLines[stringIdx],
+former producer's — the probe's check), the tools and the consumers. Its ancestor: the original engine's writer's `SubString(collectedLines[stringIdx],
 start:stop)` (`WriteOutFile.jl` :129–:134).
 PURPOSE: a piece's text for an Extension (the notebook Extension's join, the demo) and for
 the renderer, from the tree and nothing else.

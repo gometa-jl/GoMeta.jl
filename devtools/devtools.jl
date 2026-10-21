@@ -17,7 +17,7 @@
 # DOES: renders — from the BLS component data of ONE `goMeta(bytes)` result, and only
 #       as deep as the selected style/detail/filters ask —
 #       (canon R1 — never re-derived from raw text): the engine-true Block census (the door's
-#       `children` of the File root — the legacy `2:numChildren+1` census is extension-unsafe),
+#       `children` of the File root — the original engine's `2:numChildren+1` census is extension-unsafe),
 #       per-component named-int + settribute dumps, and the cell_handle → Component resolution
 #       (the shared decoder; a plain walk through the door; a row's text through the
 #       door's `BLS.content`). A former defensive contract — the resolver's gates, the
@@ -219,7 +219,7 @@ _dt_id(c) = Int(_dt_ni(c, :idComponent))
 IS: the per-call render context — one `goMeta` result opened for printing; built by `_dt_doc(result; name)`.
 DOES: carries the result (`r`), its delivered tree (`ps` — the part `blsComponentTree`), the Block Components the door's
     walk yields (`blocks` — `BLS.children` of the tree, materialised once: the basic renderer's form,
-    devtools/basic_renderer.jl — the legacy `2:numChildren+1` census breaks on extension chains), and the display name
+    devtools/basic_renderer.jl — the original engine's `2:numChildren+1` census breaks on extension chains), and the display name
     (`name`, printed in the `File` header line).
 REASONING: the result and the tree are held untyped (`Any`): the tools name no Julia type of the delivered part (the basic
     renderer's note at its own read: that type is an open point of the design — not named there either) and dispatch on the Component
@@ -450,7 +450,7 @@ DOES: prints the tree of `result.blsComponentTree`, read through the door alone 
       `:banner` ⇒ inherent (its co-located dumps) · `:tree` ⇒ `:auto`→`:compact`; explicit `:compact`/`:full` valid —
       `:full` keeps the `:tree` rows (inline flags + every content string) and APPENDS the typed dump pair under each
       component.
-    - `blocks = :all` — or a Vector of Integer Block ids (any `AbstractVector` of non-`Bool` `Integer`s; the legacy
+    - `blocks = :all` — or a Vector of Integer Block ids (any `AbstractVector` of non-`Bool` `Integer`s; the original engine's
       Block-subset precedent): the named Blocks in census order; an id that names no Block selects nothing.
     - `lines = nothing` — an input-line range (e.g. `5:12`): a component renders iff its input-line span INTERSECTS the
       range; a partially-overlapping Block keeps its full span label while its children clip to the range.
@@ -945,7 +945,7 @@ function _dt_t2_tree(io, doc, frows, allrows, echo;
         show_handles && _dt_handle_note(io, row, "    ")
     end
     # with a filter active, an absence label must not assert "no evals" — rows may
-    # simply be filtered out (impl-panel adversary finding)
+    # simply be filtered out (a review finding)
     nolabel  = filtered ? "   (no matching evals)" : "   (no evals — defaults apply)"
     eliword  = filtered ? "(no matching evals)" : "(no evals)"
     node(c, guide, name) = begin
@@ -1136,7 +1136,7 @@ end
 ##  §I — THE COMPARISON FORM (the reference set's comparison form, so that
 ##  GoMetaRetro is compared with v0.4 by CONTENT, never by bytes or Julia types; the
 ##  definition: tests/comparison/README.md — written ONCE, the grammar fixed by what this section emits).
-##  IS:   the v0.4 lane's adapter: ONE content-keyed TEXT form per input — one line per Component
+##  IS:   the v0.4 engine's adapter: ONE content-keyed TEXT form per input — one line per Component
 ##        (kind, span, the parent's key, the position among the parent's children, the children's keys, the content
 ##        type, the flags of the creator's approved table) and one line per Component per Alterant (the resolved value and its
 ##        SOURCE as the deciding Component's own key, or its level: user / file / default); ordinals, ids, handles and
@@ -1333,7 +1333,7 @@ printComparisonForm(result::GoMeta.GoMetaDelivery; kwargs...) = printComparisonF
 ##  verb decodes each row's cell_handle with the SHARED `decode_handle` (handle_decoder.jl, §C) — the former CLI's
 ##  duplicate decoders (its rd_u16/rd_u32/rd_steps/decode_handle) are gone: ONE copy. REASONING: the
 ##  block runs ONLY when this file is the program (`abspath(PROGRAM_FILE) == @__FILE__`), never when it
-##  is `include`d (the Play's frozen copy, the battery, the site's capture script include this file and
+##  is `include`d (the battery and other consumers include this file and
 ##  see definitions only). Evaluates, never executes.
 #########################################################################################
 const _DT_VERBS = ("tree", "segments", "evals", "render", "trace", "evals-tree", "bls-tree", "comparison")

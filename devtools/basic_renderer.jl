@@ -269,7 +269,7 @@ function render_bytes(
     ## COMPLETED by parseBLS for a prefix range, whose last line is terminated by
     ## construction): the render ends 0x0a IFF the parsed content did (one recorded edge: a whitespace-only TAIL line normalizes to a bare empty line, so its unterminated form still renders ending 0x0a
     ## unless that line is the only one emitted — then the trim leaves the render EMPTY; the terminal-newline witnesses are tests/unit/token_law_tests.jl testset [12] — the empty input,
-    ## card C14 (c)'s LF-only input, row 17 without a terminal newline — and the JuliaCon fixture's repin note tests/golden/MANIFEST.toml :135; this tail edge is unpinned). The
+    ## the LF-only input, and one without a terminal newline — and the JuliaCon fixture's repin note tests/golden/MANIFEST.toml :135; this tail edge is unpinned). The
     ## `!isempty(out)` guard keeps empty renders untouched.
     out = take!(io)
     if !BLS.endsWithNewline(parse_state) && !isempty(out) && @inbounds(out[end]) == 0x0a

@@ -73,7 +73,7 @@ end
         @test isempty(GM.readAltValuesEvals(r.altValues_evals))
     end
 
-    @testset "[5b] `% `-led is the TEXT arm (N-4's second clause — the W5-panel cure)" begin
+    @testset "[5b] `% `-led is the TEXT arm (the second clause of the creator's decision)" begin
         r, t, x = _lx_run("% plain text\nx 1\n")
         @test r.status === GM.PROCESS_OK
         @test t == "{:B-Text:L-Text [% plain text]}\n{:B-Code:L-Code [x 1]}\n"
@@ -153,7 +153,7 @@ end
         ## The :julia tag is REUSED deliberately: the INTERIM reserved-arms law
         ## admits claimed directive rows for :julia only, and this synthetic
         ## borrows julia's claimed rows — a future tag↔record coupling guard
-        ## must re-point this witness consciously (W5-panel note, recorded).
+        ## must re-point this witness consciously (a recorded note).
         syn = _LX_BLS._mk_flavor(; flavor_tag = :julia, lead = "!!",
             comment_run_char = '!', hide_marker = "!!x ", hide_fold_prefix = "!!",
             directives = _LX_BLS.FLAVOR_JULIA.directives,

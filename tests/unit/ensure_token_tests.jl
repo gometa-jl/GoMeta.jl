@@ -54,7 +54,7 @@ _et_rr(s::AbstractString; cfg = _et_jl) = _et_r(_et_r(s; cfg = cfg); cfg = cfg)
         ## no marker (today's R-2 fold — byte-identical to pre-W6 behavior).
         @test _et_r("#~ hide\n## note\nx = 1\n") == "## #~ hide\n## note\n## x = 1\n"
         @test _et_rr("#~ hide\n## note\nx = 1\n") == "## #~ hide\n## note\n## x = 1\n"
-        ## Per-flavor EXACT-byte pins (panel cure: a fold-classification drift
+        ## Per-flavor EXACT-byte pins (a review cure: a fold-classification drift
         ## must surface as byte drift here, not hide behind the (b) disjunct).
         ## MEASURED 2026-08-10 (cure round): in :c the `// note` line is
         ## TEXT-class (takes a marker — unlike julia's `## note`); in :latex the
@@ -83,7 +83,7 @@ _et_rr(s::AbstractString; cfg = _et_jl) = _et_r(_et_r(s; cfg = cfg); cfg = cfg)
     end
 
     @testset "[4] the INDENTED authored marker-head: the K1 post-indent discriminator" begin
-        ## The brief-mandated indented variant: a column-0 implementation misses
+        ## The indented variant: a column-0 implementation misses
         ## the post-indent marker head and writes `    ## ## #~ hide` — this row
         ## REDS on exactly that divergence (K1's post-indent qualifier is
         ## load-bearing; the check runs on lstrip of the source line).
@@ -113,7 +113,7 @@ _et_rr(s::AbstractString; cfg = _et_jl) = _et_r(_et_r(s; cfg = cfg); cfg = cfg)
 
     @testset "[7] the banked growth witnesses re-landed as fixed points (bases stated)" begin
         ## Fixture A (`"x = 1\n## #~ hide\ny = 2\n"`, `## ` count basis): the
-        ## banked 3→7→15 was the PRE-fold shipped-twin lane; on the current
+        ## banked 3→7→15 was the PRE-fold shipped-twin path; on the current
         ## engine the authored line is a segmented self-hide (measured, plan
         ## probes/w6_probe_prestepb.OUT.md) and W6 closes it at n=0 — count
         ## STABLE across renders. State the basis when quoting (the
@@ -137,7 +137,7 @@ _et_rr(s::AbstractString; cfg = _et_jl) = _et_r(_et_r(s; cfg = cfg); cfg = cfg)
     end
 
     @testset "[8] the alphabet law: invalid bytes are CONTENT, the (b) head-read never throws" begin
-        ## The step-(b) panel MAJOR-1 regression witness (cured 2026-08-10): a
+        ## The regression witness of 2026-08-10: a
         ## hidden line HEADING with an overlong sequence (0xE0 0x80 0x80 — the
         ## class bare `isspace` throws on at decode) must RENDER — the (b)
         ## disjunct rides the door's `BLS.isHorizontalSpace`; the parser

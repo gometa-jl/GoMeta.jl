@@ -374,7 +374,7 @@ _plugin_with_default(p, d) = GM.Alterant(; altName = p.altName, setMode = p.setM
         # (W8 — the atom-nested-in-data witness — was removed with `ConditionAtom`; W7 above carries the Function-in-data refusal.)
     end
 
-    @testset "T2-bis crx-t2bis cure witnesses (A1/A2/A3; APPENDED)" begin
+    @testset "the snapshot door's review cure witnesses (A1/A2/A3; APPENDED)" begin
         # CW1 (A1) — an admitted user UnionAll carrying its OWN `Base.show` (legitimate
         # specialization): the structural type text dispatches nothing, so the record
         # publishes and the door is silent (before the cure, `string()` dispatched the user
@@ -382,7 +382,7 @@ _plugin_with_default(p, d) = GM.Alterant(; altName = p.altName, setMode = p.setM
         @eval module _CrxPoison
             struct Poison{T} end
             Base.show(io::IO, ::Type{Poison}) = error("A1-BOOM")
-            # (v0.4 T3, the round's T3P-C3 cure — an append-only line, disclosed §S2.15):
+            # (a review cure — an append-only line):
             # the UnionAll `Poison` had no zero-argument method and would have tripped T3's eager
             # DEP_MISSING gate (since removed); this ctor keeps `altConstructor = Poison` — and with it the
             # only UnionAll-at-altConstructor fold coverage — while the witness itself

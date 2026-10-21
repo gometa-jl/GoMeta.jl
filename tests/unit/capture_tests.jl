@@ -12,7 +12,7 @@
 #       absorbed, applied PROCESS_OK and minted NO evals row (the 3-name ladder). These
 #       witnesses are the only proof the declaration is now LOAD-BEARING at the capture
 #       plane and the silence classes are coded.
-# PURPOSE: the T5 acceptance rows (Σ = 29 in this file after the crx-t5 cure round:
+# PURPOSE: the T5 acceptance rows (Σ = 29 in this file after the review cures:
 #       23 at the T5 commit + [11]'s 6 + the [1] end-to-end algebra drive + the [7]
 #       cross-stem pin − the [7] runtime pair made lifecycle-unreachable by the tier-1
 #       store law; + 4 in record_schema_tests (3 + the seal pin — the pin was removed with the seal) —
@@ -52,7 +52,7 @@ end
         R = GM.publish(_mockb())
         r = GM.goMeta(_doc("x = 1\n#~ zmark(aa)\n\ny = 2\n"); registry = R)
         rows = GM.readAltValuesEvals(r.altValues_evals)
-        # (the crx-t5 B6 strengthening) the three witnesses are INDEPENDENT: existence+
+        # the three witnesses are INDEPENDENT: existence+
         # uniqueness selects by the stem PREFIX (not the expected attr), the attr is
         # then pinned, then the payload
         zrows = [t for t in rows if startswith(String(t[2]), "zm")]

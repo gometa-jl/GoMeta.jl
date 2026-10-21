@@ -22,7 +22,7 @@ IS: THE SCAN BY ALTERANT (the creator's design) — every Component of the deliv
 Alterant (the Component's own rows; a Segment-carried row is its Line's), paired with its answer (`evaluatedAltValue`), in the tree's order
 (each Block, its Lines, their Segments).
 DOES: walks the tree through the door (`BLS.children`); a Component without own rows of the Alterant is NOT listed
-— its answer is still `evaluatedAltValue`'s (inherited or the default); the File is never listed (NOTHING built for it, card 6 "next").
+— its answer is still `evaluatedAltValue`'s (inherited or the default); the File is never listed (NOTHING built for it — an open point).
 An unknown Alterant name throws `ArgumentError` naming the registered names (the scan's own refusal, before any `evaluatedAltValue` call —
 the same refusal `evaluatedAltValue` gives). Pure.
 REASONING: the recorded Components are the ones an Extension must find efficiently; the inherited ones are implied by their
@@ -40,7 +40,7 @@ function scanAlterant(delivery::GoMetaDelivery, alterant::Symbol;
     out = Pair{BLS.AbstractComponent,EvaluatedAltValue}[]
     cap = p.capture
     cap === nothing && return out                # no capture declaration: the walk mints NO rows — nothing recorded, nothing to list
-    stem = _capture_stem(p)   # the walk's own derivation, as evaluatedAltValue derives it (the seat of commit 4, F-1)
+    stem = _capture_stem(p)   # the walk's own derivation, as evaluatedAltValue derives it
     scheme = cap.attr_scheme
     ps = delivery.blsComponentTree
     store = delivery.altValues_evals

@@ -10,7 +10,7 @@
 ##       carried before, in that file's order, plus `:doc`; a later name is one line here — the creator's decision; none of the
 ##       original engine's other names; `public` / `private` out for now); `setLabels` — the closed check, the
 ##       original engine's (GoMetaRetro Alterants.jl :73–:78 at 47f0521: an applied name outside the list refuses with a message naming the
-##       accepted set, sorted for display); `checkLabels` — the legacy's checker (:87–:99): an unset or unknown name answers false.
+##       accepted set, sorted for display); `checkLabels` — the original engine's checker (:87–:99): an unset or unknown name answers false.
 ## DOES: moved here byte for byte from `src/alterants/registry.jl` (the two functions) — their module stays `Alterants`, their
 ##       behaviour the original engine's; nothing of the August design (`++` / `--` / import / declared sets) — later; the
 ##       original engine's TODO stands (GoMetaRetro Alterants.jl :61–:62 at 47f0521, carried here from the removed loader):
@@ -79,7 +79,7 @@ function setLabels(
         isempty(labels) && error("GoMeta apply: empty label list — the labels action ':' ",
             "names no label; v0 requires at least one label (e.g. ':label1'); ",
             "see docs/public-api.md §3.4")
-        ## the closed check (the legacy's): the ∈-scan over the file's order (never `insorted` over declaration
+        ## the closed check (the original engine's): the ∈-scan over the file's order (never `insorted` over declaration
         ## order — the C4E-4 law); the refusal renders a SORTED display copy of the accepted set
         for label ∈ labels
             if label ∈ LABELS_VOCABULARY

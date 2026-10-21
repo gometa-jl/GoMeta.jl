@@ -63,7 +63,7 @@ _an_id(c) = _AN_BLS.getElement(c.cmpntNamedInt, :idComponent)
         l = GM.evaluatedAltValue(r, _AN_BLS.children(ps, bs[1])[1], :Visib)
         @test l.value === :show && l.source === :default                          # a rowless Line under a rowless Block: the default too
         f = GM.evaluatedAltValue(r, _AN_BLS.root(ps), :Visib)
-        @test f.value === nothing && f.source === :none && f.via === nothing      # the File: NOTHING built (card 6 "next")
+        @test f.value === nothing && f.source === :none && f.via === nothing      # the File: NOTHING built (an open point)
     end
 
     @testset "[A4] a Segment's statement and a heading: the Line OWN (the trailing metaSegment applies directly to it), the Segment its Line's answer marked indirect; the metaBlock's heading own; its Line inherits" begin
@@ -95,7 +95,7 @@ _an_id(c) = _AN_BLS.getElement(c.cmpntNamedInt, :idComponent)
             a = GM.evaluatedAltValue(r, b, :Visib)
             @test a.value === :show && a.source === :user && a.via === nothing
         end
-        # a Line WITH Segments under the feed (card C24; the decisions seat's F-1): the fed value wins on the Line (:user) and its Segments answer AS
+        # a Line WITH Segments under the feed (a review finding): the fed value wins on the Line (:user) and its Segments answer AS
         # the Line answers — :user, not :indirect through the Line. MEASURED (PROBES-rvc24-user-segment.txt [F1a]): :user on the base and on C2,
         # :indirect through the Line on C24's first build, :user on the cured tree. ("x = 1" alone has NO Segments — a Segment needs the inline `#~`.)
         r2 = GM.goMeta(_an_bytes("x = 1 #~ discard
@@ -119,7 +119,7 @@ _an_id(c) = _AN_BLS.getElement(c.cmpntNamedInt, :idComponent)
     end
 
     @testset "[A8] a custom registry: an undeclared capture stem derives as the walk derives it; a capture-less Alterant answers its declared default" begin
-        # the seat wf-s10-s2c4-check F-1: the Engine mints a stem-less Alterant's rows under lowercase(altName) and a capture-less Alterant's none
+        # the Engine mints a stem-less Alterant's rows under lowercase(altName) and a capture-less Alterant's none
         _with_capture(p, cap) = GM.Alterant(; altName = p.altName, setMode = p.setMode, altConstructor = p.altConstructor,
             setAltInstance = p.setAltInstance, getAltInstance = p.getAltInstance, precedencesTuple = p.precedencesTuple,
             default = p.default, capture = cap)

@@ -83,13 +83,13 @@ end
     # a body Julia cannot parse — Julia's own ParseError out of the goMeta call (the former coded "unparsable condition")
     @test _cn_err(_cn_mk("isCode !")) isa Base.Meta.ParseError
     @test _cn_err(Vector{UInt8}(codeunits("#~ hide{ :(:x)) }\nx = 1\n"))) isa Base.Meta.ParseError   # the unbalanced ')'
-    # an INCOMPLETE body is thrown as the same class AT ABSORB — never stored for a later reader (the legacy stored it and threw at apply)
+    # an INCOMPLETE body is thrown as the same class AT ABSORB — never stored for a later reader (the original engine stored it and threw at apply)
     @test _cn_err(_cn_mk("isCode &&")) isa Base.Meta.ParseError
     # the TIMING witness — one metaLine, two statements: the incomplete body first, an unknown action second. absorbMeta reads every
     # statement of the region before any apply, so an incomplete Expr STORED instead of refused would let `zzznotanaction` meet the
     # unknown-action refusal (an ErrorException); the ParseError thrown at parseConditions comes first (MEASURED)
     @test _cn_err(Vector{UInt8}(codeunits("#~ hide{ isCode && } zzznotanaction\nx = 1\n"))) isa Base.Meta.ParseError
-    # an EMPTY block or a bare literal carries no condition expression — GoMeta's refusal (the legacy applied unconditionally, silently)
+    # an EMPTY block or a bare literal carries no condition expression — GoMeta's refusal (the original engine applied unconditionally, silently)
     for body in ("{}", "{ }", "{ 1 }", "{ | }")
         e = _cn_err(Vector{UInt8}(codeunits("#~ hide" * body * "\nx = 1\n")))
         @test e isa ErrorException && occursin("carries no condition expression", e.msg)
@@ -108,7 +108,7 @@ end
     # an argument text is spliced as Julia text — Julia judges it at APPLY: an undefined name, a non-Symbol label argument
     @test _cn_err(_cn_mk(":(x)")) isa UndefVarError                       # `getAltState(Int8(1), Symbol(":"), x)` — x unbound
     @test _cn_err(_cn_mk(":(7)")) isa MethodError                         # `getAltState`'s `Vararg{Symbol}`
-    @test _cn_err(_cn_mk("isCode(ab)")) isa UndefVarError                 # `getState(:isCode, ab)` — the legacy dropped the argument silently (K3)
+    @test _cn_err(_cn_mk("isCode(ab)")) isa UndefVarError                 # `getState(:isCode, ab)` — the original engine dropped the argument silently
     # the unterminated block stays GoMeta's (the metaLine grammar's own)
     e = _cn_err(Vector{UInt8}(codeunits("#~ hide{ isCode\nx = 1\n")))
     @test e isa ErrorException && occursin("unterminated '{'", e.msg)      # the one scanner's R2: the opener named

@@ -43,7 +43,7 @@ import GoMeta as GM
         # with the Heading's separate path) and the retired
         # ones never return; (ii) `publish` calls `validate(` before `return AlterantRegistry(` and
         # derives its tables through `_derive_tables`, whose spec index is FIRST-wins (the clash law
-        # that refused a duplicate left; the legacy's Dict assignment was last-wins).
+        # that refused a duplicate was removed; the original engine's Dict assignment was last-wins).
         src = read(joinpath(dirname(dirname(@__DIR__)), "src", "alterants",
             "registry.jl"), String)
         chain = src[findfirst("function _validate_registration", src)[1]:end]

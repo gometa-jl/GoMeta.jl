@@ -62,7 +62,7 @@ _tl_nblocks(s; kw...) = length(collect(eachmatch(r"\{:B-", _tl_tree(s; kw...))))
             @test _tl_err(s) === nothing
             @test _tl_r(s).status == GM.PROCESS_OK
         end
-        let s = "#~ :label1\n#nonsense ## note\nx = 1\n"                   # seat-3 F-4 witness
+        let s = "#~ :label1\n#nonsense ## note\nx = 1\n"                   # a review's witness
             @test _tl_err(s) === nothing
         end
         # segment grain — glued shape after a real inline token on the SAME line
@@ -141,7 +141,7 @@ _tl_nblocks(s; kw...) = length(collect(eachmatch(r"\{:B-", _tl_tree(s; kw...))))
         @test GM.BLS._re_meta.pattern == "^" * GM.BLS._RE_META_BODY_STR
     end
 
-    @testset "[11] post-apply panel additions (2026-08-08; all shapes probe-confirmed first)" begin
+    @testset "[11] post-apply review additions (2026-08-08; all shapes probe-confirmed first)" begin
         # fence row: bucket-(A) shapes INSIDE an open fence — one unsplit Code block,
         # the glued mid-line shape a plain same-type segment, byte-identical render
         let s = "s = \"\"\"\ntext #~glued\n##x\n\"\"\"\ny = 1\n"

@@ -7,7 +7,7 @@
 # IS:   the membership witnesses over the Labels Alterant's hard-coded list ([2] the set role refuses an unknown name; [2b] `:doc`
 #       applied and queried, and in the accepted set an unknown name's refusal names; [3] the late-order name — the ∈-scan
 #       in the set role, the applied hide in the query role), the zero-literal law in its DECIDABLE form ([10]: no Core literal of the
-#       names re-enters src outside alterants-std/), and the crx-t3t4 cure witnesses that live here by history ([11]'s A3,
+#       names re-enters src outside alterants-std/), and the review cure witnesses that live here by history ([11]'s A3,
 #       [12]–[18]: the zero-dispatch validate chain, the DomainRef read-once law ([14] — retired with `DomainRef`), the identity/getfield hardening, the
 #       structural callable name, the String-only encoder, the getfield numeric leaf).
 # DOES: drives the shipped vocabulary through goMeta and the direct setter, publishes hostile builders through validate,
@@ -20,7 +20,7 @@ import GoMeta as GM
 
 # the [12]/[13] fixtures: types whose `show(::IO, ::Type)` / `nameof(::Type)` /
 # `hasmethod(::Type, ...)` specializations THROW — the zero-dispatch validate chain must
-# never invoke any of them (t3t4r seat A's hostile-show class; t3t4r2's pirated-nameof /
+# never invoke any of them (the hostile-show class; the pirated-nameof /
 # pirated-hasmethod / hostile-payload / hostile-sig classes)
 @eval module _VocHostile
     struct Hostile end
@@ -187,9 +187,9 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
                          # measured on both trees: apply.jl 1 → 0, every other file equal)
                          "alterants/registry.jl" => 1)        # the header note alone: the TWO kept
                                                               # empty-list messages moved with `setLabels` / `checkLabels` into
-                                                              # `alterants-std/labels.jl`, which this scan skips (MEASURED on the scratch:
+                                                              # `alterants-std/labels.jl`, which this scan skips (MEASURED:
                                                               # registry.jl 1, config.jl 1, GoMeta.jl 1 by `grep -c`)
-        # DISCLOSED LIMIT (the crx-t3t4 C3 row): this is a SOURCE-TEXT tripwire, not a
+        # DISCLOSED LIMIT: this is a SOURCE-TEXT tripwire, not a
         # semantic guarantee — a computed enumeration (names built from strings or
         # codepoints, or a literal subset avoiding both sentinel patterns) passes both
         # prongs. Its real coverage: the two retired identifiers can never return, and
@@ -197,7 +197,7 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
         @test isempty(id_offenders) && census == survivors
     end
 
-    @testset "[11] the crx-t3t4 milestone-set cure witnesses" begin
+    @testset "[11] the review cure witnesses" begin
         # (A4/B4/C2 — the artifact grammar's three refusal classes; C1 — the call-grain two-pass law of the valve; B2 — the
         # G-VOC predicates' fail-closed law) were CONSCIOUSLY RETIRED with their
         # subjects: the artifact grammar, the write-only valve and the G-VOC read surface.
@@ -209,7 +209,7 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
         @test GM.validate(bu) isa Vector{GM.Diagnostic}
     end
 
-    @testset "[12] the crx-t3t4r reconfirm cure — the NON-DISPATCHING ctor renderer" begin
+    @testset "[12] the reconfirm cure — the NON-DISPATCHING ctor renderer" begin
         # (the three DEP_MISSING render arms were CONSCIOUSLY RETIRED with their subject, the
         # eager dependency closure; the structural renderer stays for the domain probe's unencodable-value row
         # (`_emit_unencodable!`, registry.jl; the localOnly store law it also served was removed with the Heading's separate
@@ -241,7 +241,7 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
         # with their subjects, the reflection cross-check and the value-algebra refusal.)
     end
 
-    @testset "[15] the crx-t3t4r3 cures — the identity/getfield hardening of the chain" begin
+    @testset "[15] the third-round cures — the identity/getfield hardening of the chain" begin
         _vset(setter) = begin
             b = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
             b.plugins[2] = GM.Alterant(; altName = :Visib, setMode = :mutExclusive,
@@ -298,7 +298,7 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
         @test !occursin(r"\bunwrap_unionall\b", srcreg)
     end
 
-    @testset "[16] the crx-t3t4r4 cures — the structural callable name" begin
+    @testset "[16] the fourth-round cures — the structural callable name" begin
         # (r4-A1, probe P70) a Function is a LEGITIMATE isbits type parameter of a
         # declared signature (`Store{tag}`): reflection's param render reached
         # `_slot_text(::Function)` whose nameof dispatched a pirated specialization
@@ -320,7 +320,7 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
         @test GM._callable_text(sin) == String(nameof(sin))
     end
 
-    @testset "[17] the crx-t3t4r5 cures — the String-only encoder" begin
+    @testset "[17] the fifth-round cures — the String-only encoder" begin
         # (probe P80) a caller-owned non-String AbstractString
         # as a declared Dict KEY: the encoder is now String-only (matching
         # _domain_leaf's own law), so validate REFUSES coded with ZERO validate-time
@@ -339,7 +339,7 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
         # with its subject, the reflection cross-check.)
     end
 
-    @testset "[18] the crx-t3t4r6 cures — the getfield numeric leaf" begin
+    @testset "[18] the sixth-round cures — the getfield numeric leaf" begin
         # (r6-A1, probe P90) the domain predicate reads Complex/Rational PARTS via
         # getfield — a caller's `Base.real(::Complex{MyReal})` specialization never
         # dispatches (pre-cure it executed and threw from `_domain_leaf` itself).

@@ -568,7 +568,7 @@ DOES: Copy `:containsMeta`, `:containsText`, `:containsCode` from child to paren
 `parseBLS`: a Line into its Block before the next Line is added (when the Block has children), a Segment into its Line
 after each new Segment, and the last content Line into its Block before the trailing-empty flush.
 
-REASONING: the legacy's form, kept — the flags propagate child → parent → file (the file header).
+REASONING: the original engine's form, kept — the flags propagate child → parent → file (the file header).
 
 PURPOSE: the Block- and Line-level content flags the absorb walk gates on (`:containsMeta` with `:ignoreThisMeta`, in
 `goMeta`'s File loop and the walk's Block loop).
@@ -594,7 +594,7 @@ on the grandparent; a flag is never cleared. Its callers in `parseBLS` pass `(cr
 Block's close: before a NEW Block is opened, at the trailing-empty flush that opens a fresh Block, and at the FINAL
 Block's close.
 
-REASONING: the legacy's form, kept — the flags propagate child → parent → file (the file header).
+REASONING: the original engine's form, kept — the flags propagate child → parent → file (the file header).
 
 PURPOSE: the File- and Block-level content flags at a Block's close.
 """
@@ -629,7 +629,7 @@ structural-directive form directly after Meta (the reserved-adjacency guard, in 
 the loop's `segmentContentType` as it stands. Its callers: the Line grain (the fallback the preceding Line's
 `contentType`) and the Segment grain (the fallback the Line's own).
 
-REASONING: the legacy's form, kept; the invariant the file states — `Meta` without a `:depthN` MUST set
+REASONING: the original engine's form, kept; the invariant the file states — `Meta` without a `:depthN` MUST set
 `:ignoreThisMeta` — is why the comment arm marks a Meta-inherited comment inert.
 
 PURPOSE: the resolved type a new Segment is created with and, through the Block type it opens or continues, a new
