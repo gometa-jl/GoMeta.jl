@@ -20,7 +20,7 @@ function _lx_run(s::String)
     return r, String(copy(t)), String(copy(x))
 end
 
-@testset "latex_flavor_tests (WP1-W5 pure-data flavor)" begin
+@testset "latex_flavor_tests (the pure-data flavor)" begin
 
     @testset "[1] the record: pure data (the shared reader is the loop's direct call)" begin
         lx = _LX_BLS.FLAVOR_LATEX
@@ -63,7 +63,7 @@ end
         @test x == "%% x 1 %% %~ hide\ny 2\n"
     end
 
-    @testset "[5] glued %~hide is an ordinary comment — NEVER meta (F-13 under :comment policy)" begin
+    @testset "[5] glued %~hide is an ordinary comment — NEVER meta (the token-delimiter law under the :comment policy)" begin
         r, t, x = _lx_run("%~hide\nx 1\n")
         @test r.status === GM.PROCESS_OK
         @test t == "{:B-Text:L-Text [%~hide]}\n{:B-Code:L-Code [x 1]}\n"
@@ -86,7 +86,7 @@ end
         @test r.status === GM.PROCESS_OK
         @test t == "{:B-Text:L-Text [%% note]}\n{       :L-Text [%%% more]}\n{:B-Code:L-Code [x 1]}\n"
         @test x == "%% note\n%%% more\nx 1\n"
-        ## The F-12 fold: a %%-led COMMENT line inside a hidden span takes NO
+        ## The fold: a %%-led COMMENT line inside a hidden span takes NO
         ## additional marker (fold-eligible); non-comment lines take "%% ".
         rf, tf, xf = _lx_run("%~ hide\n%% already\nx 1\n")
         @test xf == "%% %~ hide\n%% already\n%% x 1\n"

@@ -1,10 +1,10 @@
 # tests/unit/public_surface_tests.jl — the public-surface introspection guard.
 #
 # IS:   the standing guard that GoMeta's PUBLIC surface is EXACTLY the declared one
-#       (docs/public-api.md §1), and the three clauses of the creator's decision of 2026-09-12 — in its own words:
-#       (i) "the package's canonical observable output = `altValues_evals` (+ `serialize_evals`,
-#       `content_fingerprint`)" and "the Engine's delivered surface after the move = the run and the
-#       evaluated values"; (ii) the (tree, render) pair is the development tool's and is obtained ONLY
+#       (docs/public-api.md §1), and the three clauses of the creator's decision of 2026-09-12:
+#       (i) the package's canonical observable output is `altValues_evals` (+ `serialize_evals`;
+#       `content_fingerprint` was removed within the 0.4 development) and the Engine's delivered surface is the run and the
+#       evaluated values; (ii) the (tree, render) pair is the development tool's and is obtained ONLY
 #       through `Main.BasicRenderer.outputs` loaded by the one loader (checked mechanically below);
 #       (iii) the test layer pins that pair byte-exact against the corpus golden.
 # DOES: (1) introspects the surface — `names(GoMeta)` (minus the module name) returns the

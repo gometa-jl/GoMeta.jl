@@ -1,7 +1,7 @@
-# fed_profile_order_tests.jl — 0.4.1: THE USER LEVEL'S PLACE IN THE APPLY LOOP — the creator's decision of 2026-10-18 (the
-# and of 2026-10-19 (the former place of the user level — the loop's first slot — was not intended), superseding
-# the placement of 2026-10-16 (
-# the cure: src/alterants/apply.jl `detAltValuesForSetOfSlots`).
+# fed_profile_order_tests.jl — 0.4.1: THE USER LEVEL'S PLACE IN THE APPLY LOOP — the creator's decisions of 2026-10-18
+# and 2026-10-19 (the former place of the user level — the loop's first slot — was not intended), replacing
+# the placement of 2026-10-16; the cure:
+# src/alterants/apply.jl `detAltValuesForSetOfSlots`.
 #
 # IS:   thirteen witnesses [W1]–[W13] over the public entry, EVERY expected value MEASURED on the cured tree
 #       (the FULL delivery views and the `decided_by` traces) and

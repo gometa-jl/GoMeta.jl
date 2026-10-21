@@ -21,7 +21,7 @@ _ws_render(s; kw...) = String(copy(Main.BasicRenderer.outputs(_ws_r(s; kw...)).r
 _ws_tree(s; kw...)   = String(copy(Main.BasicRenderer.outputs(_ws_r(s; kw...)).blsStructure_bytes))
 _ws_err(s; kw...)    = try _ws_r(s; kw...); nothing catch e sprint(showerror, e) end
 
-@testset "ws_alphabet_tests (F-14 matrix)" begin
+@testset "ws_alphabet_tests (the whitespace-alphabet matrix)" begin
 
     @testset "[1] NBSP postDef: live token end-to-end (the dead crash class's witness)" begin
         # formerly a StringIndexError in the walk body extraction (byte+1 arithmetic on a

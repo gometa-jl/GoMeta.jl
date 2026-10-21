@@ -119,7 +119,7 @@ registry threads through.
 Each row's `decided_by` is the list the apply recorded for the Alterant in
 `st.working_origin`: the handles of the statements it APPLIED, in application order — ONE for a single-valued mode
 (the deciding statement), the contributing statements' for an accumulating one (which statement contributed which
-the line with `label stays Q4 (ii))` replaced by `label stays open — tests/comparison/README.md, Q4)`
+label stays open — tests/comparison/README.md, Q4), the applied fields' for the compound — and for a `:per_entry` row ONE element of it, the origin of the row's own applied statement (the Heading bullet above; under the scheme's contract of one entry per applied call — a surplus entry carries the whole list, the `:per_entry` arm below); own when it names the row's own Component (a Block's: the entry equals the
 row's handle; a Segment-carried row's: the entry is the Segment's own key — its row is keyed on the Line with the
 Segment as the key's origin — and the answer function reads that entry as the LINE's own statement, the Segment being its
 carrier: the Line answers `:own`, the Segment its Line's answer marked `:indirect` (the creator's

@@ -57,7 +57,7 @@ Base.nameof(::typeof(_VocR3.hkey)) = (_VocR3.KCALLS[] += 1;
 # BOTH operands typed — `(::Type{X}, ::Any)` was AMBIGUOUS
 # with Base's `==(::Type, ::Type)` on the exact comparison (an ambiguity MethodError,
 # not a selection); `(::Type{X}, ::Type)` is strictly more specific and WOULD be
-# selected pre-cure — the counter proves the cured `===` never selects it.
+# selected before the fix — the counter proves the `===` never selects it.
 Base.:(==)(::Type{Tuple{typeof(_VocR3.heq), Dict{Symbol,Bool}, Symbol}}, ::Type) =
     (_VocR3.EQCALLS[] += 1; error("sig-eq-pirated (must never dispatch)"))
 
@@ -113,7 +113,7 @@ Base.real(::Complex{_VocR6.MyReal}) = (_VocR6.RCALLS[] += 1;
 Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
     error("numerator-pirated (must never dispatch)"))
 
-@testset "vocabulary (v0.4 T4)" begin
+@testset "vocabulary" begin
 
     _doc(s) = Vector{UInt8}(codeunits(s))
     _plugin_with_default(p, d) = GM.Alterant(; altName = p.altName, setMode = p.setMode, altConstructor = p.altConstructor,
@@ -228,7 +228,7 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
         b5 = GM.RegistryBuilder(GM.DEFAULT_REGISTRY); b5.plugins[2] = _vis(bigU)
         @test any(x -> x.code === :REG_PROTOCOL, GM.validate(b5))
         # a declared VALUE outside the encodable domain renders its type
-        # STRUCTURALLY — pre-cure the REG_PROTOCOL row's own interpolation ran the
+        # STRUCTURALLY — before the fix the REG_PROTOCOL row's own interpolation ran the
         # hostile `show` and validate threw "hostileP-show".
         b6 = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
         s6 = b6.action_specs[4]
@@ -265,7 +265,7 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
         dq = GM.validate(bq)
         @test dq isa Vector && _VocR3.EQCALLS[] == 0     # the pirated == never dispatched from validate (the exact-signature === match it once guarded was removed)
         # the budget walkers read the type graph via getfield only: a
-        # type whose getproperty throws walks clean (pre-cure the walk itself threw).
+        # type whose getproperty throws walks clean (before the fix the walk itself threw).
         @test GM._type_budget_check(_VocR3.HG)[1] === :ok &&
               GM._key_order_budget(_VocR3.HG)
         # a to-be-refused Function KEY inside a declared Dict: the
@@ -324,7 +324,7 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
         # a caller-owned non-String AbstractString
         # as a declared Dict KEY: the encoder is now String-only (matching
         # _domain_leaf's own law), so validate REFUSES coded with ZERO validate-time
-        # String() conversions (pre-cure: one call, its stateful throw escaping raw).
+        # String() conversions (before the fix: one call, its stateful throw escaping raw).
         bs5 = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
         ss = bs5.action_specs[4]
         bs5.action_specs[4] = GM.ActionSpec(; name = ss.name, plugin = ss.plugin, accepts_string_slot = ss.accepts_string_slot,
@@ -342,7 +342,7 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
     @testset "[18] the getfield numeric leaf" begin
         # the domain predicate reads Complex/Rational PARTS via
         # getfield — a caller's `Base.real(::Complex{MyReal})` specialization never
-        # dispatches (pre-cure it executed and threw from `_domain_leaf` itself).
+        # dispatches (before the fix it executed and threw from `_domain_leaf` itself).
         z = Complex(_VocR6.MyReal(1), _VocR6.MyReal(2))
         r0 = _VocR6.RCALLS[]
         @test GM._domain_leaf(z) === false &&

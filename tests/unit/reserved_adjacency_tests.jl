@@ -13,10 +13,9 @@
 #       message distinction. The message pins derive from the live-measured refusal
 #       bytes of THIS line and include per-grain clauses EXCLUSIVE to its widened
 #       wording (a regression to the narrower pre-widening message text reds here,
-#       not just a loss of the refusal); the measurement record lives in the
-#       development fork's provenance ledger, never here.
-# REASONING: the deep matrix (the reserved-syntax r6–r10 family: boundary corners,
-#       CRLF twins) runs on the development line (the ship posture keeps it there);
+#       not just a loss of the refusal).
+# REASONING: a deeper matrix (boundary corners,
+#       CRLF twins) is not part of the shipped suite;
 #       THIS file is the shipped regression tripwire — the formerly-blind published
 #       gate reds on a regression of the cure, the 0.2.2 unicode_cure_tests.jl pattern.
 # PURPOSE: the published suite itself proves the 0.2.3 headline cure and its escapes.
@@ -49,7 +48,7 @@ end
 
     @testset "w2 :: line grain — a directive LINE directly after a metaLine/meta block refuses guarded" begin
         for s in ("#~ hide{ :label1 }\n#----\nx = 2\n",  # annotation + ordinary divider line
-                  "#~ :label1\n#> y\nx = 2\n",           # the #> twin (died at the re-match pre-cure)
+                  "#~ :label1\n#> y\nx = 2\n",           # the #> twin (died at the re-match before the fix)
                   "#~ hide{ :label1 }\n\n#----\nx = 2\n") # a blank line between does NOT defuse
             @test_throws ErrorException _ra(s)
             m = _ra_msg(s)

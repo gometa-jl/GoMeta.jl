@@ -108,7 +108,7 @@ _tl_nblocks(s; kw...) = length(collect(eachmatch(r"\{:B-", _tl_tree(s; kw...))))
     end
 
     @testset "[8] hidden bucket (A) takes the hide marker — R-2 exclusion is the law (§B)" begin
-        # `###banner` is NOT a comment under F-13 ⇒ NOT fold-eligible ⇒ hidden it is MARKED
+        # `###banner` is NOT a comment under the token-delimiter law ⇒ NOT fold-eligible ⇒ hidden it is MARKED
         # (formerly comment-classified + `##`-initial ⇒ folded bare). Render delta, intended.
         let s = "#~ hide\n###banner\ny = 1\n"       # attached (no blank line between)
             r = _tl_render(s)

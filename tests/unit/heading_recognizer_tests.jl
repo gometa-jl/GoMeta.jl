@@ -19,7 +19,7 @@
 #       guarded refusal at the enqueue seam (nothing accepted strings at the widening; the heading build carved
 #       the head text slot out — the heading sections below own that surface), and the
 #       pre-widening quote-free envelope is untouched (numeric args stay Symbol-kind — the integer
-#       space is RESERVED out of the literal floor, hd-5).
+#       space is RESERVED out of the literal floor).
 # PURPOSE: the widened lane is proven present AND provably not yet accepting — the widening's law.
 
 using Test
@@ -61,7 +61,7 @@ import GoMeta as GM
         # the empty quoted token is the empty String (delimiters stripped), not a Symbol
         @test GM.AbsorbMeta._coerce_arg_token(SubString{String}("\"\"")) === ""
         # NUMERIC text stays a Symbol — the integer space is RESERVED out of the floor
-        # (hd-5): the coercion NEVER mints an Int, so numeric args keep their byte-exact
+        # the coercion NEVER mints an Int, so numeric args keep their byte-exact
         # pre-widening fates at the setter (cell(7) accepted; cell(99999) is `parse`'s own OverflowError
         # since 0.4.0; the working form pinned in arg_guard_tests.jl)
         @test GM.AbsorbMeta._coerce_arg_token(SubString{String}("7")) === Symbol("7")
@@ -76,7 +76,7 @@ import GoMeta as GM
         @test !((:a, 1) isa Tuple{Vararg{GM.AlterantArgT}})
         @test fieldtype(GM.AlterantQueue, :args) ==
               Matrix{Union{Nothing,Tuple{Vararg{GM.AlterantArgT}}}}
-        @test GM.AlterantArgT == Union{Symbol,String}             # the floor, EXACTLY (hd-5)
+        @test GM.AlterantArgT == Union{Symbol,String}             # the floor, EXACTLY
     end
 
     @testset "[SLN] quote negative rows — loud refusals, never a silent mangle" begin
@@ -134,13 +134,13 @@ import GoMeta as GM
         @test ei isa ErrorException && occursin("string argument not accepted", ei.msg)
         # the quote-free pre-widening envelope is byte-untouched: the working numeric form still
         # works (its full fate battery lives in arg_guard_tests.jl — this row is the
-        # the widening's sentinel that the widening changed nothing for it)
+        # widening's sentinel that the widening changed nothing for it)
         r = _run("#~ cell(7)\n# c\n")
         @test string(r.status) == "PROCESS_OK"
     end
 end
 
-@testset "heading lane: recognizer + level law + registration (creator-ratified names)" begin
+@testset "heading lane: recognizer + level law + registration (the creator's names)" begin
 
     _run(s) = GM.goMeta(Vector{UInt8}(codeunits(s)))
     _err(s) = try
@@ -154,7 +154,7 @@ end
     @testset "test_quoted_first_lowering — the sugar lowers to the deriving head call" begin
         # the fenced first-position String becomes the head action's argument; the level
         # derives from the attachment (the MetaContext record) and rides the row's attr.
-        # LEVEL VOCABULARY (the ratified unification decision): the derived
+        # LEVEL VOCABULARY (the unification decision): the derived
         # recording is the AUTHOR's own `#~`-digit vocabulary (ladder−1, normalized
         # at the enqueue seam) — plain `#~` ⇒ head_1; it COINCIDES with the explicit
         # sibling's as-given vocabulary (`#~2 "T"` ≡ `head("T", 2)` ⇒ head_2).
@@ -165,7 +165,7 @@ end
         # existing envelope's condition-attachment law — spaced '{' refuses today for
         # every action; the sugar changes nothing there). The settribute condition
         # evaluates ONCE, at the apply of the Component the heading is applied to — the metaBlock (the creator's decision; before it the metaLine's own snapshot at the absorb seam): a metaBlock is not Code, so
-        # { isCode } is FALSE there — zero rows, no refusal (the ratified flip of the evals rows
+        # { isCode } is FALSE there — zero rows, no refusal (the decided flip of the evals rows
         # from the queued era's per-cell evaluation, pinned here)
         @test string(_run("#~ \"T\" :label1\nx = 1\n").status) == "PROCESS_OK"
         ric = _run("#~ \"T\"{ isCode }\nx = 1\n")
@@ -195,7 +195,7 @@ end
     @testset "test_depth_existing_rows_only — the level rides EXISTING head rows, none fabricated" begin
         # the level fact appears ONLY in head-row attrs (`:head_<level>`); a heading input
         # mints NO extra non-head rows vs its heading-free twin (row-set equality on the
-        # non-head attrs) — no fabricated rows (hd-4)
+        # non-head attrs) — no fabricated rows
         rh = _run("#~ \"Title\"\nx = 1\n")
         rn = _run("# plain\nx = 1\n")
         nonhead(r) = sort([String(a) for (_, a, _, _) in GM.readAltValuesEvals(r.altValues_evals) if !startswith(String(a), "head")])
@@ -203,20 +203,20 @@ end
         @test !isempty(_heads(rh))
     end
 
-    @testset "test_non_first_quote_refusal — the hd-3 reservation stands: the grammar's one refusal names the quote" begin
+    @testset "test_non_first_quote_refusal — the non-first-quote reservation stands: the grammar's one refusal names the quote" begin
         e = _err("#~ hide \"T\"\nx = 1\n")
         @test e isa ErrorException && occursin("unexpected character '\"' at the start of a metaStatement", e.msg)
         @test occursin("heading sugar at the region's first metaStatement only", e.msg)
     end
 
-    @testset "test_empty_quote_lowers — BOTH halves: enters the recognizer, then the ratified refusal" begin
-        # (conscious pin flip: the refusal was TRANSITIONAL until the creator ratified it
+    @testset "test_empty_quote_lowers — BOTH halves: enters the recognizer, then the standing refusal" begin
+        # (conscious pin flip: the refusal was TRANSITIONAL until the creator decided it
         # as the standing v0.2 semantic; the message says so)
         e = _err("#~ \"\"\nx = 1\n")
         @test e isa ErrorException
         @test !occursin("unexpected punctuation", e.msg)          # half 1: NOT the old wall (the wall itself was removed)
         @test occursin("empty heading text", e.msg)               # half 2: Heading validation
-        @test occursin("a standing decision", e.msg)       # ratified, not transitional
+        @test occursin("a standing decision", e.msg)       # standing, not transitional
     end
 
     @testset "heading-lane quote refusals (siblings of the argument-lane classes)" begin
@@ -260,7 +260,7 @@ end
         @test (:head_1, "T") in _heads(_run("#~ head(\"T\")\nx = 1\n"))
         @test (:head_1, "T") in _heads(_run("#~ :label1 head(\"T\")\nx = 1\n"))
         # the explicit sibling stores its level AS GIVEN (user vocabulary; Symbol text
-        # through the hd-5 floor, parsed setId-style at the store)
+        # through the literal floor, parsed setId-style at the store)
         @test (:head_2, "T") in _heads(_run("#~ head(\"T\", 2)\nx = 1\n"))
         @test (:head_7, "T") in _heads(_run("#~ head(\"T\", 7)\nx = 1\n"))
         # (the three refusals at the former set-invocation seam were removed — a non-parseable
@@ -405,7 +405,7 @@ end
         @test eq isa ErrorException && occursin("string argument not accepted", eq.msg)
         em = _err("#~ head(, \"T\")\nx = 1\n")
         @test em isa ErrorException && !occursin("empty heading text", em.msg)
-        # the empty-"" refusal (ratified standing) is CONDITION-INDEPENDENT (the declared validation runs at the READ —
+        # the empty-"" refusal (standing) is CONDITION-INDEPENDENT (the declared validation runs at the READ —
         # the enqueue seam, for every action with a String slot — before any condition is evaluated at the apply)
         ec = _err("#~ \"\"{ isCode }\nx = 1\n")
         @test ec isa ErrorException && occursin("empty heading text", ec.msg)

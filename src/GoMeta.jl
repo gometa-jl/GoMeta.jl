@@ -298,7 +298,7 @@ guarantee: a condition body (Julia, evaluated by Julia) and a custom registry's 
 author's, outside it.
 
 PURPOSE: the one route from a document's bytes to the delivered object — the run and the evaluated values
- — for an Extension, a test, a development tool or a DB-interface.
+— for an Extension, a test, a development tool or a DB-interface.
 """
 function goMeta(
     bytes::Vector{UInt8};

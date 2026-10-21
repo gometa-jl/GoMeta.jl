@@ -61,20 +61,20 @@ _uc_err(s)     = try _uc_full(s); nothing catch e sprint(showerror, e) end
         @test r.status == GM.PROCESS_OK && length(GM.readAltValuesEvals(r.altValues_evals)) == 4
     end
 
-    @testset "[4] CAL-14 + the honest worst case (comma-OR, unknown silently false)" begin
+    @testset "[4] the honest worst case (comma-OR, unknown silently false)" begin
         g = _uc_full("#~ hide{ isCode , :zzz9 }\nx = 1\n")
         @test g.status == GM.PROCESS_OK           # ASCII control row
         @test length(GM.readAltValuesEvals(g.altValues_evals)) == 1
         u = _uc_full("#~ hide{ isCode , :é}\nx = 1\n")   # formerly ABORTED
         @test u.status == GM.PROCESS_OK           # now renders WITH hide applied —
-        @test length(GM.readAltValuesEvals(u.altValues_evals)) == 1  # measured + pre-registered
+        @test length(GM.readAltValuesEvals(u.altValues_evals)) == 1  # measured
     end
 
-    @testset "[5] parity and the quirk (the atom wall KP-1 removed with the interpreter — a 40-character label is a label test)" begin
-        # KP-3b: cross-width parity — 28 two-byte chars ≡ 28 one-byte chars, both PROCESS_OK (unknown labels, false)
+    @testset "[5] parity and the quirk (the former atom wall removed with the interpreter — a 40-character label is a label test)" begin
+        # cross-width parity — 28 two-byte chars ≡ 28 one-byte chars, both PROCESS_OK (unknown labels, false)
         @test _uc_full("#~ hide{ :" * repeat("é", 28) * " }\nx = 1\n").status == GM.PROCESS_OK
         @test _uc_full("#~ hide{ :" * repeat("a", 28) * " }\nx = 1\n").status == GM.PROCESS_OK
-        # QK-1: the glued-')' quirk is Julia's own ParseError (the former coded ERR_CONDITION_PARSE)
+        # the glued-')' quirk is Julia's own ParseError (the former coded ERR_CONDITION_PARSE)
         @test (try _uc_full("#~ hide{ :(:x)) }\nx = 1\n"); nothing catch e; e end) isa Base.Meta.ParseError
     end
 

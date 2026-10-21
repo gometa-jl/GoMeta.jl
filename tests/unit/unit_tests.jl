@@ -25,7 +25,7 @@
 #   … and every further member in the include list below (the list IS the index: token law · ws alphabet ·
 #   unicode cures · reserved adjacency · heading recognizer · registration ·
 #   flavor profile · latex flavor · ensure token · inert semantics ·
-#   record schema (v0.4 T1) · registry lifecycle (v0.4 T2)); each include line carries its one-liner.
+#   record schema · registry lifecycle); each include line carries its one-liner.
 # REASONING: the byte-exact golden layer cannot see these concerns — the introspected public surface and
 #       the stable refusal messages — so each lives in its own self-contained file.
 # PURPOSE: one stable index for the unit layer.
@@ -45,14 +45,14 @@ using Test
     include(joinpath(@__DIR__, "ws_alphabet_tests.jl"))             # the ws-alphabet matrix (the creator's decision of 2026-08-08: Unicode \h unified; GENERATED file, real codepoints; [8] = the live `\h` pin relocated from the former text-law kernel's tests)
     include(joinpath(@__DIR__, "unicode_cure_tests.jl"))            # the Unicode cure witnesses (GENERATED, real codepoints)
     include(joinpath(@__DIR__, "reserved_adjacency_tests.jl"))      # directive-adjacency SHIP-CLASS tripwire (the 0.2.3 cure; ships)
-    include(joinpath(@__DIR__, "heading_recognizer_tests.jl"))      # v0.2 CH-3 step 8: String-lane widening + quote negative rows (APPEND-ONLY)
-    include(joinpath(@__DIR__, "registration_tests.jl"))            # v0.2 registration build: the record (the arming guard's witnesses, the clash law and the atomic refusals removed; APPEND-ONLY)
-    include(joinpath(@__DIR__, "flavor_profile_tests.jl"))          # WP1-W1 (F-17): FlavorProfile record + threading witnesses (APPEND-ONLY)
-    include(joinpath(@__DIR__, "latex_flavor_tests.jl"))            # WP1-W5 (F-22): the FLAVOR_LATEX pure-data acceptance battery (APPEND-ONLY)
-    include(joinpath(@__DIR__, "ensure_token_tests.jl"))            # WP1-W6 step (b): the ensure-token witness battery (K1 second disjunct; APPEND-ONLY)
+    include(joinpath(@__DIR__, "heading_recognizer_tests.jl"))      # the String-lane widening + quote negative rows (APPEND-ONLY)
+    include(joinpath(@__DIR__, "registration_tests.jl"))            # the registration record (the arming guard's witnesses, the clash law and the atomic refusals removed; APPEND-ONLY)
+    include(joinpath(@__DIR__, "flavor_profile_tests.jl"))          # the FlavorProfile record + threading witnesses (APPEND-ONLY)
+    include(joinpath(@__DIR__, "latex_flavor_tests.jl"))            # the FLAVOR_LATEX pure-data acceptance battery (APPEND-ONLY)
+    include(joinpath(@__DIR__, "ensure_token_tests.jl"))            # the ensure-token witness battery (the second disjunct; APPEND-ONLY)
     include(joinpath(@__DIR__, "inert_semantics_tests.jl"))         # v0.3.1: the inert-marker differential oracle + the bang-first refusal + the Alterant guards (APPEND-ONLY)
-    include(joinpath(@__DIR__, "record_schema_tests.jl"))           # v0.4 T1: the registration-record schema extension witnesses (APPEND-ONLY)
-    include(joinpath(@__DIR__, "registry_lifecycle_tests.jl"))      # v0.4 T2: Builder → validate → publish, the one chain, the STRICT door, the seal gate, the exhaustion refusals (APPEND-ONLY)
+    include(joinpath(@__DIR__, "record_schema_tests.jl"))           # the registration-record schema extension witnesses (APPEND-ONLY)
+    include(joinpath(@__DIR__, "registry_lifecycle_tests.jl"))      # Builder → validate → publish, the one chain, the STRICT door, the seal gate, the exhaustion refusals (APPEND-ONLY)
     include(joinpath(@__DIR__, "snapshot_property_tests.jl"))       # the snapshot door's PROPERTY proof (N=1024 site mutations + FP rebuilds + named cases)
     include(joinpath(@__DIR__, "seam_envelope_tests.jl"))           # the seams — the bare getter call (its throw raw, a non-Bool Julia's TypeError; the former query envelope removed), the handover validation CONSUMED, the InterruptException pass-through (the ctor-mint envelope, the store-identity check, DEP_MISSING and the state-seam ledger removed)
     include(joinpath(@__DIR__, "vocabulary_tests.jl"))              # the whitelist's relocation: the membership over the Labels Alterant's hard-coded list (the plain file's before), the zero-literal law, the validate-chain hardening witnesses

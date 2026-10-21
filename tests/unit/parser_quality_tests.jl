@@ -9,7 +9,7 @@
 #       with the stable GoMeta head(s) the message carries, or JULIA's own exception class where the creator's decisions keep it (an argument's
 #       arity or type fault is the Alterant's setter's; a malformed condition body is Julia's parse error).
 # DOES: one @testset per row; the comment on each row is the outcome MEASURED before the parser's rework — the CHANGE column:
-#       a row marked UNCHANGED pins today's behaviour against drift; a row marked CHANGED pins the effort's cure; a row marked
+#       a row marked UNCHANGED pins today's behaviour against drift; a row marked CHANGED pins the rework's outcome; a row marked
 #       CHANGED (strings in conditions) pins that change's outcome, MEASURED
 #       after the change: a quoted text inside a condition body is Julia's — copied whole, never read by
 #       the rewrite — and the body's `(…)` lists are found by the one scanner (an unclosed `(` meets "unterminated '('").

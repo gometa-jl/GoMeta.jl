@@ -2,7 +2,7 @@
 # battery. The hide
 # write is skipped iff (a) comment-classified + fold-prefixed (the R-2 fold,
 # unchanged) OR (b) the source line's POST-INDENT head already begins with the
-# flavor's `hide_marker` — the second disjunct, landed at W6; suppression applies
+# flavor's `hide_marker` — the second disjunct; suppression applies
 # at BOTH grains via the LINE-head predicate (probe-proven: the growing meta
 # segment's slice never carries the marker, so only the line-head reading closes
 # the `render ∘ ingest ∘ render == render` fixed point).
@@ -34,7 +34,7 @@ end
 """render ∘ ingest ∘ render — the second render of the first render."""
 _et_rr(s::AbstractString; cfg = _et_jl) = _et_r(_et_r(s; cfg = cfg); cfg = cfg)
 
-@testset "ensure_token_tests (WP1-W6 step (b))" begin
+@testset "ensure_token_tests (the second disjunct)" begin
 
     @testset "[1] engine-hidden re-ingestion: the fixed point, x3 flavors" begin
         ## The §4 head-shape (i): engine-hidden `## #~ hide` / `//# //~ hide` /
@@ -49,14 +49,14 @@ _et_rr(s::AbstractString; cfg = _et_jl) = _et_r(_et_r(s; cfg = cfg); cfg = cfg)
 
     @testset "[2] authored comment head under hide: the (a) disjunct unchanged" begin
         ## The §4 head-shape (ii): comment-classified + fold-prefixed lines take
-        ## no marker (today's R-2 fold — byte-identical to pre-W6 behavior).
+        ## no marker (today's R-2 fold — byte-identical to the behavior before the second disjunct).
         @test _et_r("#~ hide\n## note\nx = 1\n") == "## #~ hide\n## note\n## x = 1\n"
         @test _et_rr("#~ hide\n## note\nx = 1\n") == "## #~ hide\n## note\n## x = 1\n"
         ## Per-flavor EXACT-byte pins (a fold-classification drift
         ## must surface as byte drift here, not hide behind the (b) disjunct).
         ## MEASURED 2026-08-10: in :c the `// note` line is
         ## TEXT-class (takes a marker — unlike julia's `## note`); in :latex the
-        ## `%% note` line is comment-classified (fold-suppressed, F-12 family).
+        ## `%% note` line is comment-classified (fold-suppressed).
         @test _et_r("//~ hide\n// note\nint f;\n"; cfg = _et_c) ==
               "//# //~ hide\n//# // note\n//# int f;\n"
         @test _et_rr("//~ hide\n// note\nint f;\n"; cfg = _et_c) ==
@@ -80,15 +80,15 @@ _et_rr(s::AbstractString; cfg = _et_jl) = _et_r(_et_r(s; cfg = cfg); cfg = cfg)
         @test _et_rr("%% %~ hide\nalpha\n"; cfg = _et_lx) == "%% %~ hide\nalpha\n"
     end
 
-    @testset "[4] the INDENTED authored marker-head: the K1 post-indent discriminator" begin
+    @testset "[4] the INDENTED authored marker-head: the post-indent discriminator" begin
         ## The indented variant: a column-0 implementation misses
         ## the post-indent marker head and writes `    ## ## #~ hide` — this row
-        ## REDS on exactly that divergence (K1's post-indent qualifier is
+        ## REDS on exactly that divergence (the post-indent qualifier is
         ## load-bearing; the check runs on lstrip of the source line).
         @test _et_r("    ## #~ hide\nx = 1\n")  == "    ## #~ hide\nx = 1\n"
         @test _et_rr("    ## #~ hide\nx = 1\n") == "    ## #~ hide\nx = 1\n"
         ## The indented PLAIN metaLine (no marker head): first render UNCHANGED
-        ## (the marker precedes the preserved indent — pre-W6 bytes), then fixed.
+        ## (the marker precedes the preserved indent — the bytes before the second disjunct), then fixed.
         @test _et_r("    #~ hide\nx = 1\n")  == "##     #~ hide\n## x = 1\n"
         @test _et_rr("    #~ hide\nx = 1\n") == "##     #~ hide\n## x = 1\n"
     end
@@ -98,9 +98,9 @@ _et_rr(s::AbstractString; cfg = _et_jl) = _et_r(_et_r(s; cfg = cfg); cfg = cfg)
         @test _et_rr("#~ hide\nx = ## y\n") == "## #~ hide\n## x = ## y\n"
     end
 
-    @testset "[6] the multi-segment fresh-hide: FIRST-render bytes must not move (K1 boundary)" begin
+    @testset "[6] the multi-segment fresh-hide: FIRST-render bytes must not move (the boundary)" begin
         ## Per-segment markers on a fresh inline hide — byte-identical to the
-        ## pre-W6 first render; the fixed point closes only on re-ingestion.
+        ## the first render before the second disjunct; the fixed point closes only on re-ingestion.
         @test _et_r("x = 1 #~ hide\n")  == "## x = 1 ## #~ hide\n"
         @test _et_rr("x = 1 #~ hide\n") == "## x = 1 ## #~ hide\n"
         ## The trailing-comment multi-segment shape (fold at segment grain rides

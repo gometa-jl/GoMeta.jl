@@ -4,9 +4,9 @@
 # and the [3] identity pins to the live regime).
 #
 # Covers: construction green for both armed records; the five prototype fields (six before the extensions pin was removed)
-# VERBATIM-pinned; the directive TABLE rows (now with the F-18 consume verbs); the
+# VERBATIM-pinned; the directive TABLE rows (now with the consume verbs); the
 # glued/bare policies + the run-arm strictness; the lead codeunit generalization; the
-# record guards (incl. the F-18 collision/consume vocabularies + the positional-constructor
+# record guards (incl. the collision/consume vocabularies + the positional-constructor
 # removal); ParseState threading (setup default · kwarg · goMeta resolve-once for
 # BOTH armed tags + the guarded invalid-tag path). (The parse_header! seam identity was removed
 # with the header_strategy pins, the digest PROPERTIES testset, the
@@ -58,7 +58,7 @@ _fp_julia_kwargs(; overrides...) = merge((
     comment_run_strict = true,
 ), NamedTuple(overrides))
 
-@testset "flavor_profile_tests (WP1-W1 record + threading)" begin
+@testset "flavor_profile_tests (record + threading)" begin
 
     @testset "[1] construction + the five prototype fields, verbatim (the extensions pin removed)" begin
         @test _FP_BLS.FLAVOR_JULIA isa _FP_BLS.FlavorProfile
@@ -77,8 +77,8 @@ _fp_julia_kwargs(; overrides...) = merge((
         @test map(r -> r.char, jl.directives) == ('-', '+', '>', '[', ']')
         @test map(r -> r.char, cf.directives) == ('-', '+', '>', '[', ']')
         @test all(r -> r.status === :claimed, jl.directives)
-        ## Julia rows carry the dispatch flags (byte-derived at F-17 from the
-        ## then-live parseHashHeader! — retired F-21; the table is the sole
+        ## Julia rows carry the dispatch flags (byte-derived from the
+        ## then-live parseHashHeader! — since retired; the table is the sole
         ## encoding now and these pins ARE its witnesses).
         @test jl.directives[1].flags == (:startNewBlock,)
         @test jl.directives[2].flags == (:continued,)
@@ -87,7 +87,7 @@ _fp_julia_kwargs(; overrides...) = merge((
         @test jl.directives[5].flags == (:startNewBlock, :ignoreThisMeta,
             :containsMeta, :stopAttachmentToMeta)
         @test jl.directives[5].ws_strict && !jl.directives[1].ws_strict
-        ## WP1-W3 (F-18): the consume verbs — the offset convention as table data
+        ## the consume verbs — the offset convention as table data
         ## (`-` run-consumes; every other arm single-unit).
         @test map(r -> r.consume, jl.directives) == (:run, :single, :single, :single, :single)
         @test all(r -> r.consume === :single, cf.directives)
@@ -99,7 +99,7 @@ _fp_julia_kwargs(; overrides...) = merge((
         @test jl.glued_policy === :content && jl.bare_policy === :content
         @test cf.glued_policy === :comment && cf.bare_policy === :comment
         @test jl.fences_armed && !cf.fences_armed
-        ## WP1-W3 (F-18): the run-arm strictness — julia exact-`##` (F-13), cfam any-run.
+        ## the run-arm strictness — julia exact-`##`, cfam any-run.
         @test jl.comment_run_strict && !cf.comment_run_strict
     end
 
@@ -155,7 +155,7 @@ _fp_julia_kwargs(; overrides...) = merge((
             _FP_BLS.FLAVOR_JULIA.directives[2:5]...)
         @test_throws AssertionError _FP_BLS._mk_flavor(;
             _fp_julia_kwargs(directives = bad_status_rows)...)
-        ## ── WP1-W3 (F-18) guard witnesses ──
+        ## ── guard witnesses ──
         ## The consume-vocabulary guard: an out-of-domain verb refuses (unique targeting as the status witness's: julia-tagged so the INTERIM law short-circuits; the row otherwise the julia table's own `-` row
         ## — status :claimed, flags (:startNewBlock,) — so the order, status and absent guards pass and only the consume assert can fire).
         bad_consume_rows = ((char = '-', status = :claimed, flags = (:startNewBlock,),
@@ -181,7 +181,7 @@ _fp_julia_kwargs(; overrides...) = merge((
             _fp_julia_kwargs(glued_policy = :contnet)...)
         @test_throws AssertionError _FP_BLS._mk_flavor(;
             _fp_julia_kwargs(bare_policy = :komment)...)
-        ## The positional constructor CEASED TO EXIST at F-18 (the inner keyword
+        ## The positional constructor CEASED TO EXIST (the inner keyword
         ## constructor replaced it — the W1 CONSTRUCTION-LAW hazard closed
         ## mechanically): positional construction throws MethodError.
         @test_throws MethodError _FP_BLS.FlavorProfile(:julia, "#", '#', "## ",

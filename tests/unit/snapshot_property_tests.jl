@@ -474,7 +474,7 @@ end
         altConstructor = T, setAltInstance = GM.Alterants.setVisib); b)
     _swap_ctor!(R, T) = (R.plugins[2] = GM.Alterant(; altName = :Visib, setMode = :mutExclusive,
         altConstructor = T, setAltInstance = GM.Alterants.setVisib); R)
-    # (v0.4 T3 — the case-(iv) migration; RE-HOMED at T5: `SubString{String}` and its
+    # (the case-(iv) migration, re-homed here: `SubString{String}` and its
     # swap target `String` are the ONLY named-case types without a zero-argument method,
     # so under the eager DEP_MISSING gate of the time (since removed) case (iv)'s TYPE half could not ride the ctor
     # slot. It was parked on the capture row's former `instance_type` field (since removed) while that slot was CARRIED; the capture re-home
@@ -502,7 +502,7 @@ end
         @test _codesp(GM._registry_door_check(R)) == [:POST_SEAL_MUTATION]
     end
     # (iv) SPLIT — the TYPE case SubString{String} → String fires by Type identity (2;
-    # riding a DECLARED default value since T5 — see the migration comment above) + the
+    # riding a DECLARED default value since the capture re-home — see the migration comment above) + the
     # VALUE form refuses at validate (1)
     let R = GM.publish(_with_default(_mk_prop_builder(), 4, SubString{String}))
         @test isempty(GM._registry_door_check(R))
@@ -618,7 +618,7 @@ end
         R = GM.publish(_with_default(b, 4, cur))
         @test isempty(GM._registry_door_check(R))
     end
-    # the TANDEM-CYCLE case (1): `d[k] = d` written on BOTH sides (a test-side B-2 act) — SILENT
+    # the TANDEM-CYCLE case (1): `d[k] = d` written on BOTH sides (a test-side act outside the trust model) — SILENT
     let R = GM.publish(_with_default(_mk_prop_builder(), 4, Dict{Any,Any}(:k => 1)))
         dl = R.plugins[2].default.value
         ds = R._snapshot.plugins[2].default.value

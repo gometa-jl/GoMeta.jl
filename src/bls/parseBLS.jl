@@ -659,7 +659,7 @@ end
 
 ## The mid-line triple-quote tracker's counter (the fence-exit fix, class b): a
 ## single character walk that counts TRACKED `"""` runs — replacing two weaker
-## predecessors each caught by a review round (a lookbehind that miscounted
+## predecessors (a lookbehind that miscounted
 ## even-backslash shapes and skip-jumped overlapping runs; a first-character
 ## comment exclusion that missed TRAILING comments and wrongly excluded
 ## hash-leading lines INSIDE an open string). The walk:

@@ -1,6 +1,6 @@
-# record_schema_tests.jl — v0.4 T1: the registration-record schema EXTENSION witnesses (APPEND-ONLY).
+# record_schema_tests.jl — the registration-record schema EXTENSION witnesses (APPEND-ONLY).
 #
-# IS:   the unit witnesses of the T1 schema extension — the declared slots ride the record (seven of the ten
+# IS:   the unit witnesses of the schema extension — the declared slots ride the record (seven of the ten
 #       were removed within the 0.4 development; the record keeps eight fields)
 #       nothing/empty-defaulted; the v0.3.2 positional constructors were removed (the keyword form is the one form; the former additive-extension
 #       law); the generic `action_to_settribute` table and the per-action `settribute` slot it derived from were REMOVED
@@ -10,14 +10,14 @@
 #       the registration digest's coverage witness and the seal-participation pin were removed with the
 #       digest and the seal field (the slot TEXT's distinctness stays — the encoder serves the validate walk).
 # DOES: constructs records by keyword (the positional forms were removed) and inspects DEFAULT_REGISTRY.
-# REASONING: the golden layer proves T1 is BEHAVIOR-NEUTRAL (byte-identical renders); only unit
+# REASONING: the golden layer proves the extension is BEHAVIOR-NEUTRAL (byte-identical renders); only unit
 #       introspection can prove the schema carries what the later cures consume.
 # PURPOSE: the record schema's acceptance row (the slot substrate).
 
 using Test
 import GoMeta as GM
 
-@testset "record_schema (v0.4 T1)" begin
+@testset "record_schema" begin
 
     # (the positional-shapes testset was CONSCIOUSLY RETIRED with its subject — the
     # v0.3.2 positional constructors of PlugIn and ActionSpec; a positional construction is

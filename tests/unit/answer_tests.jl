@@ -157,7 +157,7 @@ _an_id(c) = _AN_BLS.getElement(c.cmpntNamedInt, :idComponent)
         r = GM.goMeta(_an_bytes("#~ ids(1, 2, 3)\nx = 1\n")); bs = _AN_BLS.children(r.blsComponentTree)
         a = GM.evaluatedAltValue(r, bs[1], :id); @test a.value == (cell = 1, file = 3, parent = 2) && a.source === :own   # the answer's compound names its fields alphabetically (MEASURED)
         b = GM.evaluatedAltValue(r, bs[2], :id); @test b.value == (cell = 1, file = 3, parent = 2) && b.source === :indirect && _an_id(b.via) == _an_id(bs[1])
-        z = GM.goMeta(_an_bytes("#~ ids(0, 5, 2)\nx = 1\n"))                 # I02: the stated zero is not recorded (zero-versus-unset, OQ-15 untouched)
+        z = GM.goMeta(_an_bytes("#~ ids(0, 5, 2)\nx = 1\n"))                 # I02: the stated zero is not recorded (zero-versus-unset — an open point)
         za = GM.evaluatedAltValue(z, _AN_BLS.children(z.blsComponentTree)[1], :id); @test za.value == (file = 2, parent = 5) && za.source === :own
         o = GM.goMeta(_an_bytes("#~ ids(1, 2, 3) cell(7)\nx = 1\n"))           # I03: the later statement overwrites the field, as `cell(1) cell(7)` does
         oa = GM.evaluatedAltValue(o, _AN_BLS.children(o.blsComponentTree)[1], :id); @test oa.value == (cell = 7, file = 3, parent = 2) && oa.source === :own

@@ -213,7 +213,7 @@ source = "captured"   # CONSTRUCTED negated-membership acceptance fixture (two r
                       #   discard): the marked region is RETAINED (negation over a set label evaluates false),
                       #   the unmarked region is DISCARDED (empty label set: membership false, negation true —
                       #   fail-closed); the discarded region's verdict stays recorded in the evals surface
-                      #   (the ratified divergence pin rides tests/integration/divergence_tests.jl).
+                      #   (the divergence pin rides tests/integration/divergence_tests.jl).
 input_path = "tests/golden/constructed/InFileFolder/negation_discard_tworegion.jl"
 input_sha256 = "97db435549dfdabef0c0d4f4c55cb362471ad0d2ebbf59bfce0ff31c8b669512"
 annotations_golden_path = "tests/golden/corpus/annotations/negation_discard_tworegion.jl.ann.txt"

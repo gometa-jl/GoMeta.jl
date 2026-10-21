@@ -3,7 +3,7 @@
 #   examples/InFileFolder/ and the five under tests/golden/constructed/InFileFolder/ — as tests/comparison/<stem>.cmp.txt.
 #
 # IS:   the one way the committed reference forms are produced; the check that they still equal what the tree produces.
-# DOES: --at <sha>  writes the twelve (the header names the producing commit — the code home's HEAD the forms were made
+# DOES: --at <sha>  writes the twelve (the header names the producing commit — the repository's HEAD the forms were made
 #                   at; the caller states it); --out <dir> writes elsewhere (never over a committed file without --at);
 #       --check     produces the twelve in memory and compares each BODY (the lines after the header) with the committed
 #                   file's body; prints one line per input; exit 0 = every body equal, 1 = a difference or a missing file.

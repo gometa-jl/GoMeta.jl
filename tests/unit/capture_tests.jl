@@ -22,7 +22,7 @@ import GoMeta as GM
     nset(d::Dict{Symbol,Bool}, a::Symbol, r...) = (d[Symbol("n", length(r))] = true; nothing)   # [12]: records how many arguments the apply handed over
 end
 
-@testset "capture (v0.4 T5)" begin
+@testset "capture" begin
 
     _doc(s) = Vector{UInt8}(codeunits(s))
     function _mockb(; capture = GM.CaptureDecl(:per_key; attr_stem = :zm),
@@ -36,7 +36,7 @@ end
         b
     end
 
-    @testset "[1] sadd2 — the conforming mock MINTS (the anti-T1 cure; three witnesses)" begin
+    @testset "[1] sadd2 — the conforming mock MINTS (three witnesses)" begin
         R = GM.publish(_mockb())
         r = GM.goMeta(_doc("x = 1\n#~ zmark(aa)\n\ny = 2\n"); registry = R)
         rows = GM.readAltValuesEvals(r.altValues_evals)
@@ -58,7 +58,7 @@ end
     end
 
     @testset "[4] the :per_field POSITIVE fixture (the corpus-inert Id arm)" begin
-        # the pre-T5 ladder bytes for a populated Id, checked-in as a literal:
+        # the earlier ladder bytes for a populated Id, checked-in as a literal:
         # `cell(7)` ⇒ the one row (:id_cell, 7); parent/file (0) ABSENT
         R = GM.publish(GM.default_registry_builder())
         r = GM.goMeta(_doc("x = 1\n#~ cell(7)\n\ny = 2\n"); registry = R)

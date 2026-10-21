@@ -541,7 +541,7 @@ function page_body(sections::Vector{Section}, legend, keep::Function, chain::Str
             # exactly: hidden EXECUTED lines of a RETAINED section
             # still ride the reader NATIVELY (' # hide' / @setup preserves
             # execution continuity); the committed reader selection has zero hidden lines
-            # today; a future selection that gains one is the creator's to decide.
+            # today; a future selection that gains one is an open point.
             # Carrier cells (detached meta runs) are envelope-only cells on the full
             # page and vanish from the reader.
             if c.kind === :carrier || isempty(c.lines)

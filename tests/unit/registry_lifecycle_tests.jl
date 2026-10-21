@@ -1,4 +1,4 @@
-# registry_lifecycle_tests.jl — v0.4 T2: the registry LIFECYCLE witnesses (APPEND-ONLY).
+# registry_lifecycle_tests.jl — the registry LIFECYCLE witnesses (APPEND-ONLY).
 #
 # IS:   the unit witnesses of Builder → validate → PUBLISH, the remaining checks on every public
 #       construction route (the route-U cure; no generated/public positional form accepts a publish-time snapshot —
@@ -32,7 +32,7 @@ _plugin_with_default(p, d) = GM.Alterant(; altName = p.altName, setMode = p.setM
         setAltInstance = p.setAltInstance, getAltInstance = p.getAltInstance, precedencesTuple = p.precedencesTuple,
         default = d, capture = p.capture)   # the declared default is the ALTERANT's — the record `p` with the slot `d`, every other field copied
 
-@testset "registry_lifecycle (v0.4 T2)" begin
+@testset "registry_lifecycle" begin
 
     _codes(diags) = [d.code for d in diags]
     _errors(diags) = [d.code for d in diags if d.severity === :error]
@@ -95,7 +95,7 @@ _plugin_with_default(p, d) = GM.Alterant(; altName = p.altName, setMode = p.setM
         r1 = GM.goMeta(Vector{UInt8}(codeunits("x = 1\n#~ hide\n\ny = 2\n")); registry = R)
         @test r1.status === GM.PROCESS_ERROR
         @test _codes(r1.diagnostics) == [:POST_SEAL_MUTATION]
-        @test _errors(r1.diagnostics) == [:POST_SEAL_MUTATION]                 # [C14h2] …and the post-seal refusal's one row an :error (MEASURED)
+        @test _errors(r1.diagnostics) == [:POST_SEAL_MUTATION]                 # [h2] …and the post-seal refusal's one row an :error (MEASURED)
         @test isempty(Main.BasicRenderer.outputs(r1).render_bytes)
         @test isempty(GM.readAltValuesEvals(r1.altValues_evals))               # the delivered part carries no rows on the refusal path (measured: rows 0)
         @test !isempty(r1.diagnostics)                                         # non-OK ⇒ non-empty diagnostics (measured: 1, :POST_SEAL_MUTATION)
@@ -110,7 +110,7 @@ _plugin_with_default(p, d) = GM.Alterant(; altName = p.altName, setMode = p.setM
         reverse!(R4.action_specs)
         @test _codes(GM._registry_door_check(R4)) == [:POST_SEAL_MUTATION]
         # a plugin swapped for one with a SAME-NAMED evil setter (the retired fingerprint folded it
-        # identically) is refused by the snapshot's `===` leaf compare on the setter field (T2-bis)
+        # identically) is refused by the snapshot's `===` leaf compare on the setter field
         R5 = GM.publish(GM.default_registry_builder())
         # a GENUINELY same-named function from another module (same `nameof` text, different identity)
         @eval module _EvilVisib; setVisib(args...) = nothing; end
@@ -378,7 +378,7 @@ _plugin_with_default(p, d) = GM.Alterant(; altName = p.altName, setMode = p.setM
         # CW1 (A1) — an admitted user UnionAll carrying its OWN `Base.show` (legitimate
         # specialization): the structural type text dispatches nothing, so the record
         # publishes and the door is silent (before the cure, `string()` dispatched the user
-        # show and `publish` leaked the raw error — probe P6-A1)
+        # show and `publish` leaked the raw error — measured)
         @eval module _CrxPoison
             struct Poison{T} end
             Base.show(io::IO, ::Type{Poison}) = error("A1-BOOM")
@@ -397,7 +397,7 @@ _plugin_with_default(p, d) = GM.Alterant(; altName = p.altName, setMode = p.setM
         @test isempty(GM._registry_door_check(Rc1))
         # CW2 (A2) — a flag-armed THROWING user `hash` on an own Type key: validation and the
         # fold never hash, but the copier's Dict-rebuild fill does — the throw converts to a
-        # coded refusal, never a raw exception out of `publish` (probe P6-A2)
+        # coded refusal, never a raw exception out of `publish` (measured)
         @eval module _CrxHashBomb
             struct K end
             const ARMED = Base.RefValue(false)
@@ -412,7 +412,7 @@ _plugin_with_default(p, d) = GM.Alterant(; altName = p.altName, setMode = p.setM
         @test ec2 isa GM.RegistrationRefused
         @test _errors(ec2.diagnostics) == [:REG_PROTOCOL]
         # CW3 (A3) — UNDEFINED container elements never read raw: a resize!-widened published
-        # vector FIRES at the door (was an UndefRefError leak — probe P6-A3); an undef-slot
+        # vector FIRES at the door (was an UndefRefError leak — measured); an undef-slot
         # declared vector refuses slot-named at validate (never a throw); the contained
         # preload route refuses coded
         bc3 = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)

@@ -12,7 +12,7 @@
 #       ledger and the callable driver seam).
 # DOES: publishes DEFECTIVE-callable registries through the sanctioned lifecycle, drives them
 #       through goMeta, and pins the catalogue-name tokens + codes.
-# REASONING: T3's refusals fire only on defective callables/records/states — no golden or
+# REASONING: the seams' refusals fire only on defective callables/records/states — no golden or
 #       corpus path reaches them; these witnesses are the only proof the envelopes fire.
 # PURPOSE: the seams' acceptance rows (Σ = 36 asserts at first, the two fixture-soundness asserts included; the ledger testset's 14 — ten of
 #       the seams' and four door pins — removed; 9 more — the mint-wrap assert, the ctor-mint 4,
@@ -29,7 +29,7 @@ import GoMeta as GM
     boom_set(store::Dict{Symbol,Bool}, a::Symbol, rest::Symbol...) = error("boom-set")
 end
 
-@testset "seam_envelope (v0.4 T3)" begin
+@testset "seam_envelope" begin
 
     _codes(diags) = [d.code for d in diags]
     _QDOC = Vector{UInt8}(codeunits("x = 1\n#~1 :label1 hide{ :label1 }\n\ny = 2\n"))
@@ -79,7 +79,7 @@ end
         @test occursin("String", sprint(showerror, e))     # the class named by Julia
     end
 
-    @testset "the handover validation CONSUMED (false · throw · non-Bool · the ratified pass-through)" begin
+    @testset "the handover validation CONSUMED (false · throw · non-Bool · the pass-through)" begin
         Rf = GM.publish(_head_builder(t -> false))
         ef = _drive(_HDOC, Rf)
         @test ef isa ErrorException && occursin("REG_VALIDATE_FALSE", ef.msg)
@@ -91,7 +91,7 @@ end
         Rn = GM.publish(_head_builder(t -> 1))
         en = _drive(_HDOC, Rn)
         @test en isa ErrorException && occursin("RES_RETURN_TYPE", en.msg)
-        # the PASS-THROUGH: the DEFAULT registry's own ratified empty-heading refusal
+        # the PASS-THROUGH: the DEFAULT registry's own empty-heading refusal
         # survives the envelope VERBATIM (the "GoMeta "-prefix law)
         ep = _drive(Vector{UInt8}(codeunits("x = 1\n#~ \"\"\n\ny = 2\n")), GM.DEFAULT_REGISTRY)
         @test ep isa ErrorException && occursin("empty heading text", ep.msg) &&
