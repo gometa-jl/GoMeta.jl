@@ -1,7 +1,7 @@
 # parser_quality_tests.jl — THE PARSER-QUALITY BATTERY of the metaLine parser (the creator's words:
 # "I DO want tests which check the quality of the parsers"). GENERATED from the rows table by a generator outside the repository
 # (the rows table unchanged, one override file for the
-# rows the Heading's move into the apply loop changed) — do not edit by hand.
+# rows the Heading's move into the apply loop changed); the comments were edited after generation.
 #
 # IS:   every shape of the parser inventory (100 items, A01–I08), the 50 needs-a-run shapes
 #       (r01–r49, r19b) and the quote-scan shapes, each driven through goMeta on its one-line document (or its DOC), with the
