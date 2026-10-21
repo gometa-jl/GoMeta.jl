@@ -1,4 +1,4 @@
-# load_basic_renderer.jl — THE ONE PATH by which the basic renderer (a development tool; R-V04B-13/-24)
+# load_basic_renderer.jl — THE ONE PATH by which the basic renderer (a development tool)
 # is loaded. Include this file at the consumer's TOP LEVEL — never inside a function — before any code
 # that calls Main.BasicRenderer.outputs is compiled (Julia's world age: a method defined while a function
 # is already running is invisible to that function). `Base.include(Main, …)` — never a bare `include` —

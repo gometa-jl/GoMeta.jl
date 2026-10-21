@@ -1,5 +1,5 @@
 # probe_devtools.jl — the devtools.jl assertion battery (canon R3: probes over claims).
-#   (2026-09-12, owner ruling — the v0.4 build record's OWNER-WORDS §26) The battery lives HERE,
+#   (the creator's decision of 2026-09-12) The battery lives HERE,
 #   beside the tools it tests (devtools/probes/), since the play became a self-contained fork;
 #   the play keeps its own frozen copy of it. Its two fixture inputs: fixtures/ (the mini
 #   Documenter source, copied from the play) and examples/InFileFolder/file_for_Example_Extended.jl.
@@ -8,12 +8,12 @@
 #       cover — filters, dispatch validation, format inference, the
 #       drift alarm. (Byte parity
 #       vs the creator-approved mockups is the OTHER half of verification:
-#       plan/2026-08-19-gometa-dev-print-tools/, 34/34 at build.)
+#       34/34 at the tools' first build.)
 # DOES: runs goMeta on the two standing fixture inputs,
 #       drives both printers through the filter/error tiers into
 #       IOBuffers/tempfiles, and counts failed checks.
 # PURPOSE: re-runnable ANY session (esp. after a change under src/ or devtools/, together
-#       as THE drift alarm — the tools' own self-check left at stage 5's T1, R-V04B-111); exit code 0 = all green.
+#       as THE drift alarm — the tools' own former self-check was removed); exit code 0 = all green.
 #
 #   GM=/home/fido/Dropbox/_01_Crypto_Dropbox/07_Claude/GoMetaEcosystem/GoMeta
 #   julia --startup-file=no --project=$GM/tests $GM/devtools/probes/probe_devtools.jl
@@ -31,7 +31,7 @@ plain(f) = (b = IOBuffer(); f(b); String(take!(b)))
 mini = GoMeta.goMeta(read(joinpath(_PB_FIX, "mini-Documenter-Source-File.jl")))
 ext  = GoMeta.goMeta(read(joinpath(_PB_HOME, "examples", "InFileFolder", "file_for_Example_Extended.jl")))
 
-## 1 — the drift alarm is this battery itself (the tools' self-check `devtools_selfcheck()` left at stage 5's T1 — R-V04B-111, census row 18)
+## 1 — the drift alarm is this battery itself (the tools' former self-check `devtools_selfcheck()` was removed)
 
 ## 2 — attrs filter: count agreement with the raw surface + explicit never-minted state
 raw_visib = count(r -> r[2] === :visib, GoMeta.readAltValuesEvals(ext.altValues_evals))
@@ -43,17 +43,17 @@ check(!occursin("label_", out), "attrs=:visib leaked label rows")
 out = plain(io -> print_altValues_evals(io, ext; layout = :rows, attrs = [:label_nope]))
 check(occursin("0 matches — :label_nope never minted", out), "never-minted state not explicit")
 
-## 3 — lines filter restricts anchored rows (the unanchored-row half of this probe — a heading fed through the user profile — left at
-##     stage 1 of the Alterants build: a heading in the profile refuses at the read, §D242; no shipped path produces an unanchored row)
+## 3 — lines filter restricts anchored rows (the unanchored-row half of this probe — a heading fed through the user profile — was removed:
+##     a heading in the profile refuses at the read; no shipped path produces an unanchored row)
 out = plain(io -> print_altValues_evals(io, mini; layout = :rows, lines = 1:1))
 check(!occursin("label_🍻", out), "lines=1:1 leaked a row outside the range")
 check(occursin("filter lines=", out), "the lines filter echo missing")
 uhd = try GoMeta.goMeta(read(joinpath(_PB_FIX, "mini-Documenter-Source-File.jl"));
                          config = GoMeta.GoMetaConfig(user_mh_profile = "head(\"Fed head\", 1)")); nothing catch e; e end
 check(uhd isa ErrorException && occursin("in the profile feed has no Component of the file levels to be local to", uhd.msg),
-      "a heading fed through the user profile must meet the one refusal (stage 1 of the Alterants build)")
+      "a heading fed through the user profile must meet the one refusal")
 
-## 4 — blocks= selects the named Blocks; an id that names no Block selects nothing (the checked fetch left at stage 5's T3)
+## 4 — blocks= selects the named Blocks; an id that names no Block selects nothing (a former checked fetch was removed)
 out = plain(io -> print_BLS_Component_Tree(io, mini; blocks = [999, 2]))
 check(occursin("Block #2", out) && !occursin("999", out), "blocks= did not select the named Block alone")
 
@@ -82,7 +82,7 @@ out = plain(io -> print_BLS_Component_Tree(io, mini; grain = :line))
 check(occursin("\"# Manual: the area of a circle", out) || occursin("# Manual", out),
       ":mix grain=:line suppressed multi-segment Line strings (print-once at deepest DISPLAYED owner)")
 
-## 6b — the inline head row (keyed on its Line since R-V04B-98, the Segment its origin) shows under the Line in :tree; totality holds
+## 6b — the inline head row (keyed on its Line, the Segment its origin) shows under the Line in :tree; totality holds
 seg = GoMeta.goMeta(Vector{UInt8}(codeunits("x = 1 #~ head(\"Inline head\", 2)\n# a Text line\n")))
 out = plain(io -> print_altValues_evals(io, seg; include_empty = true))
 check(occursin("← Segment #", out) && occursin("head_2", out),
@@ -109,7 +109,7 @@ check(!occursin('\e', read(p, String)), ".txt default carried ANSI escapes")
 p = write_altValues_evals_to_file(joinpath(tmp, "t2.txt"), mini; color = :always)
 check(occursin('\e', read(p, String)), "color=:always wrote no ANSI escapes")
 
-## 7b — R-DEV-9: the flavor triple (256-color) renders in BOTH tools' colored output
+## 7b — the flavor triple (256-color) renders in BOTH tools' colored output
 ansi(f) = (b = IOBuffer(); f(IOContext(b, :color => true)); String(take!(b)))
 out = ansi(io -> print_BLS_Component_Tree(io, ext))
 for (code, name) in ((172, "Meta"), (149, "Code"), (134, "Text"))
@@ -118,7 +118,7 @@ end
 out = ansi(io -> print_altValues_evals(io, ext; include_empty = true))
 check(occursin("38;5;172", out) && occursin("38;5;134", out),
       "flavor triple missing from tool-2 :tree output")
-check(occursin("38;5;75m", out), "attr azure (R-DEV-10) missing from tool-2 output")
+check(occursin("38;5;75m", out), "attr azure missing from tool-2 output")
 
 ## 8 — color=:auto passthrough honors a deliberate IOContext(:color=>true)
 b = IOBuffer()
@@ -139,18 +139,17 @@ badr = GoMeta.goMeta(raw)
 out = plain(io -> print_BLS_Component_Tree(io, badr))
 check(!isempty(out), "invalid-UTF-8 input rendered empty")
 
-## 11 — a namespace=:other run's rows anchor (no namespace check since stage 5's T3)
+## 11 — a namespace=:other run's rows anchor (no namespace check)
 nsr = GoMeta.goMeta(read(joinpath(_PB_FIX, "mini-Documenter-Source-File.jl"));
                     config = GoMeta.GoMetaConfig(namespace = :other))
 out = plain(io -> print_altValues_evals(io, nsr; layout = :rows))
 check(!occursin("unanchored", out) && occursin("label_🍻", out),
       "namespace=:other rows failed to anchor against their own result")
 
-## 12 — (the USER_CONTEXT totality probe over a fed heading's unanchored row left at stage 1 of the Alterants build: no shipped path
-##       produces an unanchored row since a `localOnly` statement in the profile refuses at the read — his §D242 on the fed heading;
-##       the reach to every `localOnly` statement of every registry the condition's (src/absorb/absorb_meta.jl), R-ALT-15 (ii)(1);
-##       landed d904689, 2026-10-16; the tools' unanchored arms stand as the totality guard for a row the tools cannot place, their
-##       texts re-cut to the dated fact at the clean-up of 2026-10-17 on his word — the Alterants build lane's R-ALT-41) — a fed
+## 12 — (the USER_CONTEXT totality probe over a fed heading's unanchored row was removed: no shipped path
+##       produces an unanchored row since a `localOnly` statement in the profile refuses at the read — the creator's decision on the fed heading;
+##       the reach to every `localOnly` statement of every registry the condition's (src/absorb/absorb_meta.jl);
+##       the tools' unanchored arms stand as the totality guard for a row the tools cannot place) — a fed
 ##       QUEUED action anchors on the Components as every row does
 uctx2 = GoMeta.goMeta(read(joinpath(_PB_FIX, "mini-Documenter-Source-File.jl"));
                       config = GoMeta.GoMetaConfig(user_mh_profile = "show"))
@@ -160,17 +159,16 @@ nrend = count(l -> occursin("=>", l), split(out, '\n'))
 check(nrend == nraw, ":rows rendered $nrend rows for $nraw raw rows — totality broken")
 check(count(l -> occursin("=> :show", l), split(out, '\n')) >
       count(l -> occursin("=> :show", l), split(plain(io -> print_altValues_evals(io, mini; layout = :rows)), '\n')),
-      "the fed show minted no anchored row")   # the review's C12: the fixture's own `#~1 show{ :🍻 && !isMeta }` mints one
+      "the fed show minted no anchored row")   # the fixture's own `#~1 show{ :🍻 && !isMeta }` mints one
                                                # `=> :show` row WITHOUT a feed (Block #6), so the fed run must render MORE of them
-                                               # (MEASURED: 4 with the feed, the lane's PROBE-c12-fed-show_scratch.txt; 1 without, the
-                                               # lane's receipts/measure-labels/views/A at da86f4c2)
+                                               # (MEASURED: 4 with the feed; 1 without)
 check(!occursin("unanchored", out) && !occursin("USER_CONTEXT", out), "a fed queued action produced an unanchored row")
 
-## 13 — an error delivery prints as the empty document its tree is (the status-first banner left at stage 5's T3 — the
+## 13 — an error delivery prints as the empty document its tree is (a former status-first banner was removed — the
 ## command-line entry prints the status to stderr); empty docs show the File summary in EVERY style
 _pbD = GoMeta.DEFAULT_REGISTRY   # a conforming UNPUBLISHED registry (route U) — the door refuses it coded (REG_UNPUBLISHED);
 _pbU = GoMeta.AlterantRegistry(_pbD.plugins, _pbD.sorted_alt_actions, _pbD.action_to_plugin, _pbD.action_index,   # the unknown-
-                               _pbD.alt_index, _pbD.accum_alt_idxs, _pbD.mutex_alt_idxs, _pbD.action_specs, _pbD.spec_index)   # profile route left at stage 5's E13
+                               _pbD.alt_index, _pbD.accum_alt_idxs, _pbD.mutex_alt_idxs, _pbD.action_specs, _pbD.spec_index)   # profile route was removed
 err = GoMeta.goMeta(read(joinpath(_PB_FIX, "mini-Documenter-Source-File.jl")); registry = _pbU)
 out = plain(io -> print_BLS_Component_Tree(io, err))
 check(err.status == GoMeta.PROCESS_ERROR && occursin("0 Blocks", out) && !occursin("status", out),
@@ -180,7 +178,7 @@ for st in (:mix, :tree, :legacy, :banner)
     o = plain(io -> print_BLS_Component_Tree(io, emptyr; style = st))
     check(occursin("(no Blocks", o), "empty document lacks the (no Blocks) marker in style=$st")
     if st === :legacy
-        check(occursin("printComponentStates(...)", o), "empty :legacy lost its frozen chrome (D-14)")
+        check(occursin("printComponentStates(...)", o), "empty :legacy lost its frozen chrome")
     else
         check(occursin("0 Blocks", o), "empty document lacks the File summary in style=$st")
     end
@@ -188,7 +186,7 @@ end
 out = plain(io -> print_BLS_Component_Tree(io, mini; lines = 9999:9999))
 check(occursin("no Blocks matched the lines= range", out), "lines= no-match stayed silent")
 
-## 17 — owner fix-order 2026-08-21 (#2B): rails (fix-order #1, the reference-true structure slide runs, left with the slide option at stage 5's T2 — census rows 2 and 9, his §317)
+## 17 — the creator's fix-order of 2026-08-21 (#2B): rails (fix-order #1, the reference-true structure slide runs, was removed with the slide option)
 
 ## §17b — rails, mechanical acceptance (order #2B): in the kitchen fixture, every
 ## attribute row between a parent and its FIRST printed child carries │ at the
@@ -241,7 +239,7 @@ for i in seg_rows
 end
 check(ndump17 >= 2, "rails childless-blank: walked only $ndump17 leaf dump rows — degenerate (FX2#2)")
 
-## §18 — the comparison form (stage 4; R-V04B-36; §I): deterministic; one C line per Component (the census + the File)
+## §18 — the comparison form: deterministic; one C line per Component (the census + the File)
 ## and four A lines per non-File Component (the four registered Alterants); every A line's source is a level word or a
 ## key among the C lines; the lines sorted by code point; the Segment spans in CHARACTERS (the emoji input); the file
 ## writer writes the same bytes the producer returns (the CLI verb is exercised by the pre-check's run on a corpus input, not here)
@@ -264,7 +262,7 @@ for (fx, fxname) in ((mini, "mini"), (ext, "ext"))
         check(length(fl) == 6, "§18 $fxname: an A line with $(length(fl)) fields: $l")
         src18 = fl[6]
         check(src18 in ("user", "file", "default") || src18 in keys18, "§18 $fxname: an A line's source is neither a level nor a Component key: $l")
-        check(fl[2] != "File", "§18 $fxname: the File carries an answer line (the narrowing of R-V04B-36 (a) until his word): $l")
+        check(fl[2] != "File", "§18 $fxname: the File carries an answer line (the narrowing stands until the creator's word): $l")
     end
     for l in ls18
         startswith(l, "C | ") || continue

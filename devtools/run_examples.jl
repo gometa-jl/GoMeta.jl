@@ -1,5 +1,5 @@
 # run_examples.jl — the runnable driver for the GoMeta example corpus (in devtools/ since 2026-09-12,
-#   R-V04B-24 A1: a development tool beside the basic renderer whose render it compares).
+#   a development tool beside the basic renderer whose render it compares).
 #
 # IS:   the corpus driver: it processes every input in examples/InFileFolder/ through GoMeta and
 #       verifies the rendered output against the committed examples/OutFileFolder/ reference files.
