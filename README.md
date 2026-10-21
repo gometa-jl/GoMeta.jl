@@ -9,6 +9,7 @@
 
 **Embed formalized meaning into comments.**
 
+[![Status: alpha](https://img.shields.io/badge/status-alpha-orange)](#status)
 [![Docs](https://img.shields.io/badge/docs-gometa.dev-1f6feb)](https://gometa.dev/)
 [![CI](https://github.com/gometa-jl/GoMeta.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/gometa-jl/GoMeta.jl/actions/workflows/CI.yml)
 [![License: FSL-1.1-MIT](https://img.shields.io/badge/license-FSL--1.1--MIT-blue)](LICENSE)
@@ -91,9 +92,6 @@ every change of the public surface is a clean cut, written into the breaking-cha
 [`docs/public-api.md`](docs/public-api.md) §6. The version history: [CHANGELOG.md](CHANGELOG.md).
 GoMeta is distributed through GitHub only: its license is not OSI-approved, which the General registry
 requires. The language grows by design; the v0 subset forecloses none of it.
-
-> [!NOTE]
-> A first, **heavily Claude assisted** draft of the package and its documents, updated gradually.
 
 ## Documentation
 
