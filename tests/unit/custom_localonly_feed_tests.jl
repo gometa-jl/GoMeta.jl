@@ -17,7 +17,7 @@
 #       plan/2026-10-15-gometa-alterants-build/receipts/residues/PROBE-custom-localonly-feed_611a0bcd.txt (the FULL delivery views).
 # REASONING: the condition's shape covers every registry, but until this file no pin exercised a custom registry's `localOnly` Alterant
 #       (the devtools clean-up's first put, 2026-10-17, §2 (c); the follow-up list's row 11) — the code-home trap: a cross-module read gets a
-#       witness on EVERY path that reaches it. Tests never change the Engine (R-V04B-15): the custom Alterants live here.
+#       witness on EVERY path that reaches it. Tests never change the Engine: the custom Alterants live here.
 # PURPOSE: the refusal's reach, measured and pinned — never inferred from the condition's text.
 using Test
 import GoMeta as GM

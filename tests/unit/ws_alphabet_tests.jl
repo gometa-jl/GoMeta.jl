@@ -82,7 +82,7 @@ _ws_err(s; kw...)    = try _ws_r(s; kw...); nothing catch e sprint(showerror, e)
 
     @testset "[8] the ruling-conditional LIVE pin: today's engine class is PCRE \\h (19 cp)" begin
         # RELOCATED whole from the text-law kernel's tests ([4], :49–:52) when the kernel left at stage 5's E1' of the
-        # v0.4 build (census row 35): its mechanism, the engine's own predicate, survives; the kernel's 18-codepoint tuple
+        # v0.4 build: its mechanism, the engine's own predicate, survives; the kernel's 18-codepoint tuple
         # is spelled as literals here. The successor site of the citation in R-V04B-83 (3)(ii) (":49" of those tests).
         # THE ONE EXCEPTION the header's boundary law does not carry: U+180E (MONGOLIAN VOWEL SEPARATOR, a Cf FORMAT
         # character since Unicode 6.3) DELIMITS today — PCRE's frozen `[\h]` list keeps it — against the 2026-08-08

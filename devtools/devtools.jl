@@ -29,12 +29,12 @@
 #       session-writable surface, honestly labeled (the development tools', not the Engine's), instead
 #       of re-entering the engine through the release pipeline. Package-proper
 #       restoration is a friction-ledger motion (F-LED-16..19), never code from here.
-# PURPOSE: let the owner SEE, at any moment of play, exactly what the engine built
+# PURPOSE: let the creator SEE, at any moment of play, exactly what the engine built
 #       (structure + settributes) and exactly which altValues_evals row landed on
 #       which Component — including the metaSegment that caused it — in the terminal
 #       (colored) or as .html / .txt files.
 #
-# ── The tree through THE DOOR (stage 2's commit 0; R-V04B-58, R-V04B-80) ─────────────────────
+# ── The tree through THE DOOR ─────────────────────
 # These tools read `result.blsComponentTree` through BLS's public functions and types ONLY —
 # `GoMeta.BLS.root` / `children` (the walk), `getElement` (every flag and position, by key, over a
 # Component), `content` (the verbatim bytes at a Component's grain), `kind` (the flavor word),
@@ -64,7 +64,7 @@
 #   escaped (safety — by the excerpt's own loop; the `strip` before it decodes an overlong invalid sequence at a content's head or tail and throws: R-V04B-128 (6), recorded at v0.4, the BLS flag and the door's text read at v0.5). `""` still renders zero-length content.
 # - Non-ASCII typography in PLAIN sinks: Block spans use an en-dash (`L35–L49`) and
 #   the reserved polarity marker a typographic minus (`(−)`, dead at v0) — byte-pinned
-#   to the owner-approved mockups; grep with the literal characters (or `grep -P`).
+#   to the creator-approved mockups; grep with the literal characters (or `grep -P`).
 # - A row the tools cannot place — a handle that does not decode, a grain above the File grain
 #   (> 0xd2: the user-context plane, the plane law of src/occurrence.jl), a path step with no such
 #   child — renders in the `unanchored rows` section: its grain name (`?` for a handle that does not
@@ -102,7 +102,7 @@
 # Canon: GoMetaEcosystem/agent-doc/AGENT-RULES_GoMeta.md.
 
 import GoMeta
-include(joinpath(@__DIR__, "load_basic_renderer.jl"))   # the ONE path to the basic renderer (R-V04B-24 obligation 7)
+include(joinpath(@__DIR__, "load_basic_renderer.jl"))   # the ONE path to the basic renderer
 const _DT_BLS = GoMeta.BLS
 
 #########################################################################################
@@ -118,7 +118,7 @@ const _DT_BLS = GoMeta.BLS
 ##   15), min CVD ΔE 9.9 (target 8); every color ≥3:1 on #1e2127 and ≥ΔE15 from chrome
 ##   AND default fg. Verified by eye on rendered output (normal + deutan-simulated).
 ## REASONING: three hand-picked rounds (R-DEV-7/8/9/9b/9c) each fixed one collision
-##   and created another — base-16 theme remapping (bold :yellow → the owner's amber)
+##   and created another — base-16 theme remapping (bold :yellow → the creator's amber)
 ##   plus hue-family crowding made eyeballing unreliable; the assignment is COMPUTED
 ##   (optimizer + evidence banked in the plan dir) and the render was LOOKED AT.
 ## PURPOSE: every role nameable by color alone, for full-color AND red-green-deficient
@@ -187,7 +187,7 @@ _dt_tpad(s, w) = s * ' '^max(0, w - textwidth(s))
 ## a RESIDUAL belt for invalid-UTF-8 throw classes a future Julia might reintroduce —
 ## on 1.12.5 the char loop is total, so the fallback is defensively dead. REASONING:
 ## §6 excerpt-safety contract; the printer must survive every input the byte-faithful
-## engine accepts — with ONE recorded exception at v0.4 (R-V04B-128 (6)): the `strip` the callers apply before this excerpt decodes an overlong invalid UTF-8 sequence at a content's head or tail and throws; cured at v0.5 by the BLS flag and the door's text read, not here.
+## engine accepts — with ONE recorded exception at v0.4: the `strip` the callers apply before this excerpt decodes an overlong invalid UTF-8 sequence at a content's head or tail and throws; cured at v0.5 by the BLS flag and the door's text read, not here.
 function _dt_excerpt(s::AbstractString, maxw::Int = 48)
     try
         out = IOBuffer(); w = 0
@@ -299,7 +299,7 @@ _dt_plural(n, w) = "$n $w" * (n == 1 ? "" : "s")
 ## Layout (src/occurrence.jl docblock; probe-proven 27/27 — design §1): schema 0x01 ·
 ## namespace (u16-BE length + UTF-8) · grain byte · path steps (store byte + u32-BE
 ## GLOBAL-store-index ordinal = abs(idComponent)) · origin steps (same shape).
-## THE DECODER IS SHARED (his word of 2026-10-03, OWNER-WORDS §313; R-V04B-102): `decode_handle` lives in
+## THE DECODER IS SHARED: `decode_handle` lives in
 ## handle_decoder.jl beside this file and serves the authored test runner too — ONE copy; the tools' former
 ## private `_dt_decode` family (`_dt_u16`, `_dt_u32`, `_dt_steps`, `_dt_decode`) retired with it. A handle that
 ## does not decode cleanly returns `nothing` and renders as unanchored here.
@@ -470,12 +470,12 @@ DOES: prints the tree of `result.blsComponentTree`, read through the door alone 
       default it to `basename(path)`; REPL calls may set it for a labeled header).
     An unknown `style`, `grain`, `color`, `detail`, `blocks` or `lines` value ERRORS with a message naming the accepted
     forms. With no Block selected (an empty document, or a `blocks=` request matching none) the styles other than
-    `:legacy` print the `File` summary line and the reason; `:legacy` keeps its frozen chrome (D-14). In `:mix` a shown
+    `:legacy` print the `File` summary line and the reason; `:legacy` keeps its frozen chrome. In `:mix` a shown
     Block whose `idExtension` is not 0 prints a one-line extension-chain notice (the logical walk flattens the chain).
     The two `print_BLS_Component_Tree` methods return `nothing`; `write_BLS_Component_Tree_to_file` returns `path`. The
     delivery's status is not printed here (the command-line entry prints it to stderr): an error delivery carries the
     tree of empty bytes and prints as the empty document.
-REASONING: the released package ships no debug printer and the run's WORKING state is not delivered (R-V04B-28), so the
+REASONING: the released package ships no debug printer and the run's WORKING state is not delivered, so the
     printer lives beside the package as a development tool and reads only the delivered part — through the door, never a
     field of a BLS object (R-V04B-58, R-V04B-80; the tools' last reads outside the door left at stage 5's s5c8,
     R-V04B-116 (3)). The census is the door's `children` of the File root, never the legacy `2:numChildren+1`
@@ -513,7 +513,7 @@ function print_BLS_Component_Tree(io::IO, result::GoMeta.GoMetaDelivery;
     io = color === :auto ? io : IOContext(io, :color => (color === :always))
     doc = _dt_doc(result; name = _name)
     sel = blocks === :all ? doc.blocks : Any[b for b in doc.blocks if _dt_id(b) in blocks]
-    if isempty(sel) && style !== :legacy   # :legacy keeps its frozen chrome (D-14);
+    if isempty(sel) && style !== :legacy   # legacy keeps its frozen chrome;
                                            # the other styles get the File summary + reason
         nb, nl, ns2 = _dt_census(doc)
         _dt_sty(io, "File  ", bold = true); _dt_sty(io, doc.name, bold = true)
@@ -1122,7 +1122,7 @@ DOES: same format/color/title/_name rules as [`write_BLS_Component_Tree_to_file`
 REASONING: one renderer, three sinks — the HTML sink is the core method rendered into an `IOContext` carrying
     `:gm_html => true`, routed by the one styled-run emitter `_dt_sty`; the page wrapper is the mockup generator's,
     byte-identical.
-PURPOSE: the FULL delivery view as a file for the owner (`include_empty = true, show_handles = true`): the site's capture of the
+PURPOSE: the FULL delivery view as a file for the creator (`include_empty = true, show_handles = true`): the site's capture of the
     authored tests (`agent-doc/site/capture-devtools.jl`) writes it as `.html` through this twin; the JuliaCon deck's
     dev-tool slides and the demo deck were produced from its output with the tools' former `slide` option (left at
     stage 5's T2).
@@ -1145,7 +1145,7 @@ end
 ##  §I — THE COMPARISON FORM (stage 4 of the v0.4 build; R-V04B-36 — the reference set's comparison form, so that
 ##  GoMetaRetro is compared with v0.4 by CONTENT, never by bytes or Julia types; his §68–§71 of 2026-09-17; the
 ##  definition: tests/comparison/README.md — written ONCE, the grammar fixed by what this section emits).
-##  IS:   the v0.4 lane's adapter (R-V04B-36 (c)): ONE content-keyed TEXT form per input — one line per Component
+##  IS:   the v0.4 lane's adapter: ONE content-keyed TEXT form per input — one line per Component
 ##        (kind, span, the parent's key, the position among the parent's children, the children's keys, the content
 ##        type, the flags of his approved table) and one line per Component per Alterant (the resolved value and its
 ##        SOURCE as the deciding Component's own key, or its level: user / file / default); ordinals, ids, handles and

@@ -71,7 +71,7 @@ end
                                  ((a...) -> throw(_SeamT.QEx()), _SeamT.QEx))
             R = GM.publish(_labels_builder(; getter = thrower))
             e = _drive(_QDOC, R)
-            @test e isa class                              # the getter's own exception, unwrapped (his legacy's bare call)
+            @test e isa class                              # the getter's own exception, unwrapped (the original engine's bare call)
         end
         R = GM.publish(_labels_builder(; getter = (a...) -> "yes"))
         e = _drive(_QDOC, R)

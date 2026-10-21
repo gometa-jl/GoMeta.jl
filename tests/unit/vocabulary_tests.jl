@@ -139,7 +139,7 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
         @test rq isa GM.GoMetaDelivery && rq.status === GM.PROCESS_OK && count(t -> t[2] === :visib && t[3] === :hide, GM.readAltValuesEvals(rq.altValues_evals)) == 2
         ez = _drive("#~ :zzz\nx = 1\n")                                  # L03: an unknown name REFUSED, the accepted set named — `:doc` in it (its place in the sorted display not pinned: R-ALT-24's one re-pin)
         @test ez isa ErrorException && occursin("unknown label", ez.msg) && occursin("the accepted set = [", ez.msg) && occursin(":doc,", ez.msg)
-        @test :doc ∈ GM.Alterants.LABELS_VOCABULARY && length(GM.Alterants.LABELS_VOCABULARY) == 39   # the 38 shipped + `:doc`, none beyond (R-ALT-21)
+        @test :doc ∈ GM.Alterants.LABELS_VOCABULARY && length(GM.Alterants.LABELS_VOCABULARY) == 39   # the 38 shipped + `:doc`, none beyond
     end
 
     @testset "[3] the LATE-order name :💫 (the C4E-4 order-independence pin)" begin

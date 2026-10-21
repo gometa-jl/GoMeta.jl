@@ -43,7 +43,7 @@ using Base.ScopedValues
 ## R-V04B-106 (2); his §D174): the absorb seam re-writes the GoMeta-specific parts of the body to Julia text, `Meta.parse` reads it
 ## once (src/absorb/absorb_meta.jl, `parseConditions`), and Julia evaluates the stored `Expr` at apply (src/alterants/apply.jl) —
 ## as his legacy did (GoMetaRetro AbsorbMeta.jl :270, goMetaAddOns.jl :37). At E13 the closed interpreter's `ConditionAST`, the
-## opt-in marker `FullEvalCondition` with its handler seam and the alias `ConditionT` left with the interpreter (E13).
+## opt-in marker `FullEvalCondition` with its handler seam and the alias `ConditionT` left with the interpreter.
 
 "The unified meta-hierarchy level count (`= maxDepthMH + 3 = fallBackMHIdx`): the file level, the
 authorable depth window, and the user / line / fallBack levels — 12 at v0. The level formerly named 'default'
@@ -69,7 +69,7 @@ the apply (R-V04B-55 (3); his §196 (iv)); today no feed occupies it (the `metaL
 const fileMHIdx    = 1
 const userMHIdx    = maxDepthMH + 1   # 10
 const lineMHIdx    = maxDepthMH + 2   # 11
-const fallBackMHIdx = maxDepthMH + 3   # 12 == NUM_MH_LEVELS — the fallBack level (R-V04B-55 (3)), consulted LAST by the apply
+const fallBackMHIdx = maxDepthMH + 3   # 12 == NUM_MH_LEVELS — the fallBack level, consulted LAST by the apply
 
 # --- the v0.4 registration-record SLOTS (the Stage-A T1 schema extension) ---------------------------
 # IS: the DECLARED data slots the v0.4 record carries (the architecture chapter's sec 2.a, slots
@@ -89,7 +89,7 @@ const fallBackMHIdx = maxDepthMH + 3   # 12 == NUM_MH_LEVELS — the fallBack le
 #     registry-DATA-driven; the dirty planes (capture, defaults, render, diagnostics) were
 #     hard-coded per Alterant. Moving what those planes need INTO the record as data is the cure's
 #     substrate: Core keeps schema knowledge, never a particular Alterant's content. Both slots are consumed:
-#     the capture declaration by the capture walk (T5), the default by the answer function (stage 2's commit 3).
+#     the capture declaration by the capture walk, the default by the answer function.
 # PURPOSE: one record, extended never replaced, that a registration can declare completely.
 
 ## Slot (2): the capture declaration — HOW an Alterant's applied value becomes evals rows.
@@ -146,9 +146,9 @@ end
 IS: the registration record of ONE Alterant — the inventory unit the registry holds for `Labels` / `Visib` / `Id` / `Heading` and for
     any Alterant an Extension registers through the lifecycle (docs/public-api.md §1.2). His legacy's `struct PlugIn` (R-V04B-5;
     GoMetaRetro `src/Alterants.jl`) carries the name `Alterant` since v0.4 — his words of 2026-07-28 (U5 OQ-149): he prefers NOT to
-    call the record 'PlugIn' anymore, the name clashing with another kind of PlugIn he has in mind (R-V04B-5); the public alias
+    call the record 'PlugIn' anymore, the name clashing with another kind of PlugIn he has in mind; the public alias
     `PlugIn` LEFT at stage 5's E14 of the v0.4 build (R-V04B-62 — a clean cut under R-V04B-61; the register row in docs/public-api.md
-    §6). The FIELD NAMES are his legacy's and stay.
+    §6). The FIELD NAMES are the original engine's and stay.
 DOES: carries the Alterant's name (`altName`); its set-mode (`setMode` — `:accumulate`: the inheritance backtrack COLLECTS every
     applicable value · `:mutExclusive`: the backtrack stops at the FIRST applicable value · `:mutExclusivePerField`: the `Id`
     compound — the per-FIELD first-wins semantics its name promises are DEFERRED (the registry's note: the mode sits in neither
@@ -177,7 +177,7 @@ struct Alterant
     precedencesTuple::Union{Nothing,NTuple{NUM_MH_LEVELS,Symbol}}
     default::DefaultSlot                           # slot (3) at the ALTERANT: its ONE declared default value (R-V04B-51 (1)–(2);
                                                    #   R-V04B-55 (1)) — `NoDefault()` undeclared | `Declared(v)`; stage 2's commit 3;
-                                                   #   delivered by the answer function with the source "default" (R-V04B-55 (2)) —
+                                                   #   delivered by the answer function with the source "default" —
                                                    #   Visib declares `:show` (R-V04B-51 (2)); Labels `Symbol[]`, Heading `nothing`, Id the zero compound — his word of 2026-10-02, R-V04B-92, PROVISIONAL (the values may change once used on real examples)
     # --- the capture declaration (v0.4 T5; the seven other declared slots of T1 left at stage 5's E10 of the v0.4 build) ---
     capture::Union{Nothing,CaptureDecl}            # slot (2): the capture declaration
@@ -589,7 +589,7 @@ nine — eight before the `ids` action of stage 3 of the Alterants build). The c
 
 REASONING: the rule is the registry's, not a condition reader's: it outlived the closed interpreter (left at stage
 5's E13, census row 1) and is the vocabulary test of the rewrite that replaced it (`_rewrite_condition`,
-src/absorb/absorb_meta.jl — where his legacy's reader tested `insorted(key, sortedAltActionsSVec)`).
+src/absorb/absorb_meta.jl — where the original engine's reader tested `insorted(key, sortedAltActionsSVec)`).
 
 PURPOSE: what a bare name in a condition may be, decided from the registration record alone.
 """
@@ -713,7 +713,7 @@ author's own `#~`-digit vocabulary — at the enqueue materialization seam (the 
 level vocabulary; the record itself stays as derived — from the parse and the configured
 namespace, mutated by nothing). `handle` is the carrier's
 serialized occurrence key (`key_bytes`) — every row's DECIDING STATEMENT; `applied` is the key of the
-Component the statement is APPLIED TO (R-V04B-98; stage 5's E1) — the referent of the apply loop's rule for the set mode
+Component the statement is APPLIED TO — the referent of the apply loop's rule for the set mode
 `localOnly` (stage 1 of the Alterants build).
 
 REASONING: derived from the parse and the configured namespace, stored in no Component (the evaluation-free-tree
@@ -834,7 +834,7 @@ before any parse of that call — a registry refused at the entry door, `REG_UNP
 built from EMPTY bytes and the store is empty.
 
 REASONING: his words and his selections — `altValues_evals` and the BLS Component tree are "BY FAR the two MOST
-IMPORTANT DATA CONTAINERS produced during the GoMeta process" (the owner's words, 2026-09-11); it is "NOW VERY
+IMPORTANT DATA CONTAINERS produced during the GoMeta process" (the creator's words, 2026-09-11); it is "NOW VERY
 IMPORTANT to RESTRICT THAT INTERFACE TO A MINIMUM in order to MAXIMIZE OUR FLEXIBILITY IN IMPROVING GoMeta"
 (his words, 2026-09-11); the content: his selection of the label F1 put to him — "altValues_evals, the BLS
 Component tree, the status and the diagnostics; nothing else" (the label's wording the session's) — anchored by
@@ -920,13 +920,13 @@ function init_state(parse_state::BLS.ParseState, config::GoMetaConfig, registry:
         zeros(Int8, 2, n_act, n_slot),                                                     # queued
         fill!(Matrix{Union{Nothing,Expr}}(undef, n_act, n_slot), nothing),                 # conditions
         fill!(Matrix{Union{Nothing,Tuple{Vararg{AlterantArgT}}}}(undef, n_act, n_slot), nothing),# args
-        fill!(Matrix{Union{Nothing,Vector{UInt8}}}(undef, n_act, n_slot), nothing),               # decided_by (R-V04B-35 (d))
+        fill!(Matrix{Union{Nothing,Vector{UInt8}}}(undef, n_act, n_slot), nothing),               # decided_by
         fill!(Matrix{Union{Nothing,Vector{UInt8}}}(undef, n_act, n_slot), nothing),               # applied_to (stage 1 of the Alterants build)
     )
     return ProcessState(
         parse_state, config, registry, mh, queue,
         Dict{Int8,Any}(),            # working
-        Dict{Int8,Vector{Vector{UInt8}}}(),   # working_origin (R-V04B-35 (d))
+        Dict{Int8,Vector{Vector{UInt8}}}(),   # working_origin
         EvalStore(),              # evals
         BLS.ComponentSettribute(),   # snapshot — FRESH (array copied-into, not aliased)
         Diagnostic[],                # diagnostics

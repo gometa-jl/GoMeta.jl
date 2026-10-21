@@ -4,7 +4,7 @@
 # THE LAW: every GoMeta marker token requires whitespace-or-line-boundary BEFORE and AFTER
 # its head; a shape failing the after-side is bucket (A) — PLAIN CONTENT of its
 # neighbourhood (inherited contentType, no `:comment`, no meta semantics, never refused).
-# The owner's reason, verbatim anchor: `someCharacters##someMoreCharacters` and
+# The creator's reason, verbatim anchor: `someCharacters##someMoreCharacters` and
 # `someCharacters#~someMoreCharacters` MUST be writable as plain content.
 #
 # Rows carry their amendment referent. Value-vs-delimitation: ws-delimited malformed

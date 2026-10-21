@@ -43,7 +43,7 @@ import GoMeta as GM
                 st.user_context = prior
             end
             st.crnt_idx = prev
-            # the File loop — goMeta's own body, copied verbatim (stage 5's E2): per child Block the absorb walk, the apply and the capture
+            # the File loop — goMeta's own body, copied verbatim: per child Block the absorb walk, the apply and the capture
             crntFileComponent::GM.BLS.File = ps.componentsPDict[GM.BLS.File][1][1]
             local metaEnvInt::Int = GM.BLS.orderedComponentTypesNamedT[:noMetaEnvYet]
             local childComponent::GM.BLS.Block

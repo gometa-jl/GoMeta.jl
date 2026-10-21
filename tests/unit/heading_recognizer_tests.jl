@@ -115,7 +115,7 @@ import GoMeta as GM
         # before the enclosing '(' (the one scanner of the metaLine parser effort, stage 5's s5c29; the E seat's R2 as he approved it)
         eu = _err("#~ cell(\"x\n# c\n")
         @test eu isa ErrorException && occursin("unterminated '\"'", eu.msg)
-        # THE LABEL ROUTE since the metaLine parser effort (stage 5's s5c29; his §362): the six structural characters end a name or a
+        # THE LABEL ROUTE since the metaLine parser effort: the six structural characters end a name or a
         # label, so a '"' after ':' or inside a label meets the grammar's one refusal naming the character — the quote lane's former
         # coercion-side validation of a quote-blind label token is gone with the quote-blind route
         el1 = _err("#~ :\"x\"\n# c\n")
@@ -235,7 +235,7 @@ end
         et = _err("#~ \"a\\\\\"\nx = 1\n")                         # trailing double backslash
         @test et isa ErrorException && occursin("backslash in a quoted span", et.msg)
         # the ARGUMENT-lane twin holds the same law (sugar ≡ canonical): a backslash
-        # inside a quoted canonical-call argument refuses in the one scanner _span (stage 5's s5c29)
+        # inside a quoted canonical-call argument refuses in the one scanner _span
         ea = _err("#~ head(\"a\\b\")\nx = 1\n")
         @test ea isa ErrorException && occursin("backslash in a quoted span", ea.msg)
     end
@@ -279,7 +279,7 @@ end
         rl = _run("#~ \"Title\"\nx = 1\ny = 2\nz = 3\n")
         @test string(rl.status) == "PROCESS_OK"
         @test length(_heads(rl)) == 1 && (:head_1, "Title") in _heads(rl)
-        # the row's handle is the occurrence handle of the metaBLOCK the metaLine forms (R-V04B-50), computed
+        # the row's handle is the occurrence handle of the metaBLOCK the metaLine forms, computed
         # from the delivered tree (`blsComponentTree`; the Engine's `occurrence_key` + `key_bytes`, the default namespace)
         hrow = only([h for (h, a, _, _) in GM.readAltValuesEvals(rl.altValues_evals) if startswith(String(a), "head")])
         ml = only(l for b in GM.BLS.children(rl.blsComponentTree) for l in GM.BLS.children(rl.blsComponentTree, b)
@@ -333,7 +333,7 @@ end
         # guards only) — the 4th plugin IS :heading in :localOnly mode (the set mode's name stays — his §D249)
         @test GM.DEFAULT_REGISTRY.plugins[4].altName === :heading
         @test GM.DEFAULT_REGISTRY.plugins[4].setMode === :localOnly
-        # a quoted span after ':' is not a label: the grammar's one refusal names the quote (the metaLine parser effort, stage 5's
+        # a quoted span after ':' is not a label: the grammar's one refusal names the quote (the metaLine parser effort
         # s5c29; his §362) — the former third quoted-span producer, the quote-blind label route, is gone
         eb3 = _err("#~ :\"a\\b\"\nx = 1\n")
         @test eb3 isa ErrorException && occursin("unexpected character '\"' after ':'", eb3.msg)

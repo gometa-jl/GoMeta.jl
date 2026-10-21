@@ -25,7 +25,7 @@
 # EDGES (honest): the label whitelist is closed and fixed — the corpus-documented labels
 #     :label1..:label5 plus (since 0.3.0) a fixed pictograph vocabulary (byte-exact names, no
 #     normalization) plus `:doc` (stage 2 of the Alterants build, his §D202 / §D252) — hard-coded in the Labels Alterant's own file
-#     `alterants-std/labels.jl` (R-ALT-20); an unknown label APPLIED meets the stable refusal that
+#     `alterants-std/labels.jl`; an unknown label APPLIED meets the stable refusal that
 #     names the accepted set; a label QUERIED answers false when unknown or unset — the legacy's checker, since stage 5's E9
 #     (the T4 membership refusal and the R-V04-36 write-only valve left, census row 55). `setId` parses values into the Int16 domain; the value/arity walls
 #     around these setters are Julia's own since stage 5's E6 of the v0.4 build (the apply seam's guarded
@@ -112,7 +112,7 @@ end
 
 ## `ids(c, p, f)` — the three fields at once, each set as the single action sets it (his §D218 (3): "#~ ids( c, p, f)"; stage 3 of the
 ## Alterants build, R-ALT-30): the same `Int16` parse of each written value, in the order cell, parent, file. A wrong arity or a
-## non-parsable value meets Julia's own error out of `goMeta`, as the three single actions' do (R-ALT-32): `ids(1, 2)` finds no
+## non-parsable value meets Julia's own error out of `goMeta`, as the three single actions' do: `ids(1, 2)` finds no
 ## method; the ONE-VALUE form reaches the single-value method above with `idName == :ids` — MEASURED by the lane's probe I11.
 function setId(
     crntId::Id,
@@ -333,7 +333,7 @@ function getState(stateKey::Symbol)
     # Reads the per-call settribute snapshot via `ctx()`: `get_state(ctx().snapshot, key)` is the pure
     # reader form of `BLS.getElement(ctx().snapshot, key)`. THE condition's settribute read: a re-written
     # condition calls `getState(:key)` by BARE name (`using .CnS: getState, getAltState` in module GoMeta,
-    # where `Core.eval` runs it — his legacy's form, CnS.jl :252–:256) and reaches the per-call state through
+    # where `Core.eval` runs it — the original engine's form, CnS.jl :252–:256) and reaches the per-call state through
     # the module-level ScopedValue. Writing goes the other way: the parent helper
     # `snapshot_settribute!(ctx(), component)` refreshes the snapshot, so this accessor is read-only.
     return get_state(ctx().snapshot, stateKey)
@@ -448,7 +448,7 @@ function default_registry_builder()
     # order (the parallel derived tables below stay the hot-path lookups). The per-overload rows left at stage 5's E11
     # of the v0.4 build with the spelling tag, the sugar-candidacy register and the reserved keyed slot (census row 16 —
     # his §317 mark; his legacy registered an action by its name and let Julia dispatch
-    # do the rest): the setters' methods are the actions' forms; the keyword form is the one form (census row 65).
+    # do the rest): the setters' methods are the actions' forms; the keyword form is the one form.
     action_specs = ActionSpec[
         # Labels `:(:)` — the operator-token action (ad-4); the colon sugar is one of the two activated
         # sugars (x-8, closed at two); queryable via checkLabels.
@@ -476,7 +476,7 @@ function default_registry_builder()
     ]
 
     # The registration (stage 5's E4 — his §317, census rows 3 and 51: the validation chain of v0.4 T2–T4
-    # and the clash law with its disposition switch left; his legacy registered unchecked): the declarations
+    # and the clash law with its disposition switch left; the original engine registered unchecked): the declarations
     # above are the DEFAULT BUILDER; `publish` runs the remaining check (`_validate_registration`: the domain
     # probe — the vocabulary check left at stage 5's E9, the mode-gate laws with the Heading's lane at stage 1 of the Alterants build), then `_derive_tables` derives the hot-path
     # tables (the sorted action table, the parallel action→plugin index, the name→index Dicts, the SORTED
@@ -507,7 +507,7 @@ build_default_registry() = publish(default_registry_builder())
 ## v0.4 T2 — the canonical TEXT of a declared slot: deterministic, module-unqualified, callables by NAME, containers
 ## element-wise in declaration order, and BOUNDARY-UNAMBIGUOUS (no element boundary can be re-cut) — NOT globally
 ## injective. Since stage 5's E13 of the v0.4 build this family has ONE caller — the validate walk's canonical Dict-entry
-## ORDER (`_walk_dict_entries` below; T2BIS-DESIGN §2's deterministic first-failure): the registration digest it fed (E13), with
+## ORDER (`_walk_dict_entries` below; T2BIS-DESIGN §2's deterministic first-failure): the registration digest it fed, with
 ## the `seal` fingerprint that digest minted, left at E13 (census row 6 — the row's own carve-out, "one key-text path
 ## stays for the kept door"). Its residual collision classes — module-unqualified type names; the name-folded designated
 ## callables; function-valued type parameters; untagged parameter categories (`Val{M.T}` ≡ `Val{true}`); un-encoded
@@ -1743,7 +1743,7 @@ _type_param_text(p)::String =
     _validate_registration(plugins, action_specs) -> Vector{Diagnostic}
 
 IS: the registration's remaining checks at `validate` (stage 5's E4, census rows 3 and 51 — his §317; the validation
-chain of v0.4 T2–T4 left: his legacy registered unchecked and failed at dispatch).
+chain of v0.4 T2–T4 left: the original engine registered unchecked and failed at dispatch).
 
 DOES: runs the domain probe over every declared field (`_encodability_collect!`, R-V04B-4 (iii); the vocabulary
 check left at stage 5's E9, the capture mode-gate laws with the Heading's separate lane at stage 1 of the Alterants build)
@@ -1758,7 +1758,7 @@ PURPOSE: the one definition of what a registration must satisfy before it is pub
 """
 function _validate_registration(plugins::Vector{Alterant}, action_specs::Vector{ActionSpec})
     diags = Diagnostic[]
-    _encodability_collect!(diags, plugins, action_specs)   # the domain probe (R-V04B-4 (iii))
+    _encodability_collect!(diags, plugins, action_specs)   # the domain probe
     return diags
 end
 

@@ -2,7 +2,7 @@
 # his §6 item 9.A), over the inputs whose rows and deciding handles were MEASURED for commit 4 (receipts/S8-branch/precheck-s2c4/PROBES-*).
 #
 # IS:   six witnesses: [S1] the scan lists the recorded Components only, in tree order, each with its answer; [S2] the scan of a Labels
-#       set; [S3] a meta-free input scans empty; [S4] the Segment-carried row lists its Line with the Line's OWN answer (R-V04B-93); [S5] the access by Component in the
+#       set; [S3] a meta-free input scans empty; [S4] the Segment-carried row lists its Line with the Line's OWN answer; [S5] the access by Component in the
 #       registry's Alterant order; the refusal; the surface; [S6] two custom registries — a stem-less Visib (the derived stem `:visib`)
 #       lists its two Blocks, a capture-less Visib lists nothing while `evaluatedAltValues` still answers the declared default.
 # PURPOSE: the two views never disagree with `evaluatedAltValue` (they are built on it) — measured, not assumed.

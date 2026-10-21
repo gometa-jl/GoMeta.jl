@@ -107,7 +107,7 @@ alterant instances the apply left in `st.working`:
 - **Heading** (`:localOnly`, `Heading.entries`; `:per_entry`): one row PER ENTRY `(text, level)` of the store —
   `(handle, :head_<level>, text::String, true)`, a same-level repeat `:head_<level>_<k>` (k ≥ 2, source order); the apply loop's
   one rule for the set mode `localOnly` applies the statement only at the Component it is applied to, so the row is keyed on the
-  metaBlock, or on the Line with the Segment as the key's origin (R-V04B-98); each row's `decided_by` the carrier of its own
+  metaBlock, or on the Line with the Segment as the key's origin; each row's `decided_by` the carrier of its own
   `head` statement (the i-th entry the i-th applied statement).
 
 `polarity` is `true` for every applied evals row at v0 (all captured evals rows are "set/on"); the field is in
@@ -116,7 +116,7 @@ the pinned tuple to distinguish on/off and is reserved for a future negated-row 
 `CaptureDecl` (its scheme and stem; the store's shape the record's own `altConstructor` — NOT the global `DEFAULT_REGISTRY`), so a custom
 registry threads through.
 
-Each row's `decided_by` (R-V04B-35 (d); stage 2's commit 2) is the list the apply recorded for the Alterant in
+Each row's `decided_by` is the list the apply recorded for the Alterant in
 `st.working_origin`: the handles of the statements it APPLIED, in application order — ONE for a single-valued mode
 (the deciding statement), the contributing statements' for an accumulating one (which statement contributed which
 label stays Q4 (ii)), the applied fields' for the compound — and for a `:per_entry` row ONE element of it, the origin of the row's own applied statement (the Heading bullet above; under the scheme's contract of one entry per applied call — a surplus entry carries the whole list, the `:per_entry` arm below); own when it names the row's own Component (a Block's: the entry equals the
@@ -153,7 +153,7 @@ function captureEvals!(st::ProcessState, cell::BLS.AbstractComponent;
 
     ## v0.4 T5 — THE REGISTRATION-DRIVEN WALK (T5-DESIGN §2): the rows re-derive from each plugin's declared capture row (its
     ## scheme and stem), never from an alt-name ladder; the shipped Labels, Visib and Id mint byte-for-byte the rows the retired
-    ## 3-name ladder minted (probe P100). The walk reads the stores BARE, as his legacy's Visib write did
+    ## 3-name ladder minted (probe P100). The walk reads the stores BARE, as the original engine's Visib write did
     ## (`keys(Alterants.Visib)[…array][1]`): the hardening of stage 5's census row 33 — the instance-type check, the per-arm
     ## try/catch, the value algebra, the shape and length gates and the walk's two capture-floor calls — left at E5 of the v0.4
     ## build (his §317 mark; his §120: a basic framework BEFORE HARDENING). A store outside its declared scheme's shape errors as
@@ -246,7 +246,7 @@ stringifies `attr` and `value` for a total order over the heterogeneous `value::
 value set the shipped Alterants mint — Bool · Symbol · the machine ints · String (the capture-side algebra that gated them left at stage 5's E5);
 the shipped four use Bool for Labels, Symbol for Visib, Int16 for Id, String for heading text;
 `cell_handle::Vector{UInt8}` sorts lexicographically. The first element is the OCCURRENCE-KEY bytes (v0.2
-CH-1); a piece's text is read from the BLS Component tree through `BLS.content`, never from a row (R-V04B-43 (1)).
+CH-1); a piece's text is read from the BLS Component tree through `BLS.content`, never from a row.
 
 REASONING: the GoMeta Engine EVALUATES and records values as data (the boundary law, 2026-08-27); this reader
 is the one core-provided route from a run to those values. It is given the PART and not the delivered object

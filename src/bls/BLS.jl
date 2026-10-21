@@ -256,7 +256,7 @@ end
 const depthLevelsMH =
     (:depth0, :depth1, :depth2, :depth3, :depth4, :depth5, :depth6, :depth7, :depth8)
 ## The depth window :depth0..:depth8 is ARCHITECTURAL (state.jl's slot map: slots 1-9 carry
-## depth 0-8, slot 10 is the user level, 11 the line level, 12 the fallBack level (R-V04B-55 (3)) — a depth-9 slot
+## depth 0-8, slot 10 is the user level, 11 the line level, 12 the fallBack level — a depth-9 slot
 ## would collide with the user level). This lookup is TOTAL by construction: a slot index or
 ## the stable refusal — `nothing` can never escape into the Int conversion.
 function getGivenDepthMH(crntComponent::Component)::Int
@@ -338,10 +338,10 @@ include("parseBLS.jl")
 #########################################################################################
 ## THE DOOR — BLS's own public travel / access functions over the BLS Component tree.
 ## The BLS Component tree is provided by BLS itself and travelled with BLS's own public
-## functions (R-V04B-45); the public surface of every part an absolute minimum (his §18);
+## functions; the public surface of every part an absolute minimum;
 ## a BLS object stated to be a BLS object (his §48 lean) — every name below is read
 ## QUALIFIED, `BLS.<name>`; nothing is exported. Each function is marked as an existing
-## BLS function ADAPTED or as NEW (R-V04B-48 (2)(c)).
+## BLS function ADAPTED or as NEW.
 #########################################################################################
 public children, parent, kind, content
 
@@ -358,7 +358,7 @@ REASONING: the legacy's child walk (the March writer's loop over `childComponent
 `WriteOutFile.jl` :105) as v0.4's `eachchildid` carries it, over the legacy's own map
 `parentChildComponentPDict` — ADAPTED, so that an Extension and the development tools walk
 down with one function (his §42 3 (ii)) and no store is read outside BLS (his §19).
-PURPOSE: the tree provided by BLS itself (R-V04B-45), travelled with BLS's own function.
+PURPOSE: the tree provided by BLS itself, travelled with BLS's own function.
 BOUND: for a tree with no Block (the empty input; an error delivery) `children(tree)` is
 empty; `root(tree)` still returns the tree's File Component (the slot setup always writes it).
 """
@@ -405,7 +405,7 @@ constructor default, never a parsed flavor. Inside an open fence a content Line'
 by its lead (:985), and the settribute flags `:isMeta` / `:isCode` / `:isText` may then
 differ from the field — this function answers the field, not the flags.
 REASONING: NEW — a field read given a name, so that no Extension reads a field of a BLS
-object; a Symbol, not the type, so that no type of BLS becomes public for it (his §18).
+object; a Symbol, not the type, so that no type of BLS becomes public for it.
 (The word "flavor" also names the comment-lead record `FlavorProfile` in this code — a
 second sense of the word, NOTED for his word.)
 PURPOSE: an Extension's routing by flavor (his July words: a metaComponent's content to the
@@ -454,7 +454,7 @@ function content(tree::ParseState, c::AbstractComponent)
         # :inputLineNum (robust for multi-segment lines where idxString == 0, where idxString cannot locate it).
         idxString = getElement(cni, :idxString)
         if idxString < 0
-            (-length(tree.addedStrings) <= idxString < 0) || return UInt8[]   # the lower bound closes typemin(Int): -typemin(Int) wraps (R-V04B-80 (2)(iv))
+            (-length(tree.addedStrings) <= idxString < 0) || return UInt8[]   # the lower bound closes typemin(Int): -typemin(Int) wraps
             return Vector{UInt8}(codeunits(tree.addedStrings[-idxString]))
         end
         iln = getElement(cni, :inputLineNum)
@@ -466,7 +466,7 @@ function content(tree::ParseState, c::AbstractComponent)
     (idxString != 0 && 1 <= startMain && startMain <= stopMain) || return UInt8[]
     # bounds-guard the store lookup so a malformed idxString returns UInt8[] (the docstring's total-return
     # contract), never a BoundsError.
-    inbounds = idxString > 0 ? idxString <= length(tree.collectedLines) : -length(tree.addedStrings) <= idxString < 0   # the lower bound closes typemin(Int) (R-V04B-80 (2)(iv))
+    inbounds = idxString > 0 ? idxString <= length(tree.collectedLines) : -length(tree.addedStrings) <= idxString < 0   # the lower bound closes typemin(Int)
     inbounds || return UInt8[]
     src = idxString > 0 ? tree.collectedLines[idxString] : tree.addedStrings[-idxString]
     cu  = codeunits(src)
@@ -520,7 +520,7 @@ root(tree::ParseState)::File = tree.componentsPDict[File][1][1]
 
 IS: the document's flavor record — the comment lead, the hide marker and its fold prefix the
 renderer stamps, the flavor tag (`FlavorProfile`, `flavor.jl`; the type stays internal — a
-caller reads the record's fields). THE PROMISE (R-V04B-80 (2)(ii)): of the record's fields FIVE are the
+caller reads the record's fields). THE PROMISE: of the record's fields FIVE are the
 public contract — `lead`, `hide_marker`, `hide_fold_prefix`, `flavor_tag`, `re_meta_leaded` (the fields the
 renderer and the print tools read); every other field — `directives` first, the parser's table — is reachable but NOT
 part of the contract (the `parse_header!` pointer the earlier text named first left at stage 5's P1 of the v0.4 build — census
@@ -553,7 +553,7 @@ DOES: dispatches on the key to the Component's container: a key of `CmpntNamedIn
 `c.componentSettribute` (the two key sets are disjoint; an unknown key fails loud in the container's own lookup).
 REASONING: ADAPTED — a dispatch over the existing container reads (the methods the macro of `NamedElements.jl` generates take the
 container), so that a caller through the door never reads a FIELD of a BLS object (`c.cmpntNamedInt`, `c.componentSettribute` stay
-internal) — R-V04B-80 (2)(i).
+internal).
 PURPOSE: every flag and position read of the renderer, the print tools and the tests, through the door alone.
 """
 getElement(c::AbstractComponent, key::Symbol) = key in keys(CmpntNamedInt) ? getElement(c.cmpntNamedInt, key) : getElement(c.componentSettribute, key)
@@ -568,7 +568,7 @@ REASONING: ADAPTED — the parser's predicate given a public name, so that the p
 parser does (a copy in a tool could drift from the parser's classification; R-V04B-80 (2)(iii)); the name is the
 session's default — declaring `_is_h_ws` public as it is is the alternative, his to pick.
 PURPOSE: the print tools' lexer (the one read beyond the tree the tools make of the parser) and, since stage 5's s5c8,
-the renderer's whitespace guard before the hide marker (R-V04B-116 (3)(a)), through the door.
+the renderer's whitespace guard before the hide marker, through the door.
 """
 isHorizontalSpace(c::Char)::Bool = _is_h_ws(c)
 

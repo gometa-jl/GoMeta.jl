@@ -3,7 +3,7 @@
 #
 # IS:   for ONE Component and ONE Alterant, the Engine's resolved value and its SOURCE — computed ON DEMAND from the delivered
 #       rows (`altValues_evals`) and their provenance (`decided_by`, stage 2's commit 2), never stored; ONE answer shape across
-#       Alterants, so no consumer meets a set mode (R-V04B-35 (c)).
+#       Alterants, so no consumer meets a set mode.
 # DOES: finds the Component's own rows — the rows keyed on it; a Segment-carried row (keyed on a Line with the Segment as the
 #       key's origin) counts as the Line's, and its statement as the Line's OWN (the trailing metaSegment's statement is applied
 #       DIRECTLY to its Line — his §286/§288, R-V04B-93); a rowless child inherits its parent's rows (a Segment its Line's, a Line its Block's
@@ -15,7 +15,7 @@
 #       statements' handles: `:own` when every deciding handle is the asked Component's own, else by the first foreign handle's
 #       class — the user context `:user`, the File `:file` (the File level's room, R-V04B-53; no feed today), a document
 #       Component `:indirect` THROUGH that Component (named in `via`); `:fallBack` RESERVED for the fallBack level's carrier
-#       once the metaLevel Alterant feeds it (R-V04B-55 (4)); the File's own answer `:none` — NOTHING built (card 6 "next").
+#       once the metaLevel Alterant feeds it; the File's own answer `:none` — NOTHING built (card 6 "next").
 # REASONING: his §67/§68 and R-V04B-35 (a): the rows stay as today and ONE provenance field rides them; the answer is DERIVED
 #       from the rows at the call, so the delivered rows remain the one truth and no second store can drift from them.
 # PURPOSE: the Extension-facing question "what applies to this Component for this Alterant, and through whom" (R-V04B-35 (c);
@@ -34,10 +34,10 @@ Labels the SET of label names, a sorted `Vector{Symbol}`; Id the compound, a `Na
 `String` of the Component's first heading row), `source` (`:own` · `:indirect` · `:user` · `:file` · `:fallBack` · `:default`
 · `:none`) and `via` (the deciding Component for `:indirect`; `nothing` otherwise).
 DOES: carries the answer; `value` is `nothing` for `:none`.
-REASONING: ONE source tag per Component per Alterant (R-V04B-35 (c)) — the deciding statement's for a single-valued mode, the
+REASONING: ONE source tag per Component per Alterant — the deciding statement's for a single-valued mode, the
 SET's for an accumulating one (which Component contributed which label is Q4 (ii), open), the compound's for Id.
 PURPOSE: the return of `evaluatedAltValue`. Package-public (docs/public-api.md §1.2); NOT exported. Stage 2's commit 4; the NAME his
-word of 2026-10-03 (OWNER-WORDS §305; R-V04B-95); the TIER carried past the branch (the review's C23).
+word of 2026-10-03; the TIER carried past the branch (the review's C23).
 """
 struct EvaluatedAltValue
     value::Any
@@ -144,7 +144,7 @@ end
 
 IS: THE ONE ANSWER FUNCTION — for ONE Component of the delivered tree and ONE Alterant (its registered name: `:Visib`,
 `:labels`, `:id`, `:heading` in the default registry) the Engine's resolved value and its SOURCE, derived at the call from
-the delivered rows and their provenance (R-V04B-35 (c)).
+the delivered rows and their provenance.
 DOES: (1) the Component's own rows — the rows keyed on it, a Segment-carried row counting as its Line's; (2) a rowless child
 inherits its parent's rows up the tree (Segment → Line → Block; never the File); (3) no rows anywhere → the Alterant's
 declared default as `(value, :default)` or `(nothing, :none)` when it declares none; (4) the source: `:own` when every
@@ -160,10 +160,10 @@ source (`:indirect` through the same decider, `:user`, `:file`) unchanged, as a 
 names; an Alterant without a capture DECLARATION mints no rows and answers its declared default (`:default`) or `:none`; an
 undeclared capture stem is derived as the walk derives it (`lowercase(altName)`). Pure: no state, no cache, no mutation of the delivery.
 REASONING: one function, uniform across Alterants (the value in each Alterant's own shape, the source ONE tag), so an
-Extension asks one question (R-V04B-35 (c); R-V04B-55 (2)); the rows stay the one truth (R-V04B-35 (a)).
+Extension asks one question; the rows stay the one truth.
 PURPOSE: the Extension-facing read of "what applies here and through whom". Package-public (docs/public-api.md §1.2), NOT
 exported. The name is his word of 2026-10-03 (OWNER-WORDS §305; R-V04B-95); the per-call row scan (card C8) is DEFERRED to the
-benchmark phase (§307; R-V04B-97); the tier, the File's case and the equal-child rows (OQ-148) are carried past the branch (the review's C23);
+benchmark phase; the tier, the File's case and the equal-child rows are carried past the branch (the review's C23);
 nothing here is promised before v0.7 (§6).
 """
 function evaluatedAltValue(delivery::GoMetaDelivery, component::BLS.AbstractComponent, alterant::Symbol;

@@ -48,7 +48,7 @@ DOES: carries the four fields, read by the run as named:
   stage 5's E13 — the entry refusals are the registry door's). Read wherever a key is minted: the capture
   (`captureEvals!`), the walk's context record, the user-context mint (`st.config.namespace`).
 
-The whole value rides the run as `ProcessState.config` (`init_state`); nothing of it is delivered (R-V04B-28).
+The whole value rides the run as `ProcessState.config` (`init_state`); nothing of it is delivered.
 
 REASONING: this is part of the declared public API (docs/public-api.md §2; its versioning policy §6 — clean cuts
 until at least v0.7, R-V04B-61): the options are selected by the caller, never inferred by the Engine, and the one

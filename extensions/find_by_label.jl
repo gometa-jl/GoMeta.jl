@@ -30,7 +30,7 @@
 
 import GoMeta
 
-const EXAMPLES = joinpath(@__DIR__, "..", "examples", "InFileFolder")   # the file lives under extensions/ (R-V04B-27)
+const EXAMPLES = joinpath(@__DIR__, "..", "examples", "InFileFolder")   # the file lives under extensions/
 const LABELS   = [:label1, :label2, :label3, :label4, :label5]
 
 # one indexed occurrence: the file it came from, the piece's verbatim CONTENT bytes (read

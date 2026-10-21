@@ -1,4 +1,4 @@
-# derive_annotations.jl — THE TEST-LAYER DERIVER of the reference files' fifth column (stage 2's commit 8; R-V04B-43 (3)).
+# derive_annotations.jl — THE TEST-LAYER DERIVER of the reference files' fifth column.
 #
 # IS:   `derive_annotations_golden(delivery) -> Vector{UInt8}` — the five-column byte form of a delivery's evals rows
 #       (the twelve annotation pins' form), its fifth column DERIVED through the BLS Component tree and the door's
@@ -60,7 +60,7 @@ _hasprefix(h::Vector{UInt8}, p::Vector{UInt8}) = length(h) >= length(p) && all(i
 
 The five-column annotations form of a delivery — the reader's four columns and, fifth, the hex of the row's Component's
 verbatim content through the door (`BLS.content`); a handle no Component carries yields an empty fifth column; a handle
-more than one Component's prefix matches is an error. The twelve reference files' producer in the test layer (R-V04B-43 (3)).
+more than one Component's prefix matches is an error. The twelve reference files' producer in the test layer.
 """
 function derive_annotations_golden(delivery)
     ps = delivery.blsComponentTree

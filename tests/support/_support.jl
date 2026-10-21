@@ -63,7 +63,7 @@ function quiet_io(f)
     end
 end
 
-# THE TEST-LAYER DERIVER of the reference files' fifth column (stage 2's commit 8; R-V04B-43 (3)): `derive_annotations_golden(delivery)` —
+# THE TEST-LAYER DERIVER of the reference files' fifth column: `derive_annotations_golden(delivery)` —
 # the five-column annotations form, its fifth column through the BLS Component tree and the door's `BLS.content`, never the Engine's copy.
 include(joinpath(@__DIR__, "derive_annotations.jl"))
 

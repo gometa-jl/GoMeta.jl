@@ -13,7 +13,7 @@
 #       not) is the File's case, carried past the branch (the review's C23). His (ii) Boolean sits beside a PARENT's entry and asks whether ANY of its children differ —
 #       `any` of this function over the parent's children; this function is the per-child primitive (his §37 item 4.2's question for ONE
 #       child); the aggregate's own form — a function of its own, or the stored flag beside the parent's row — is the benchmark phase's.
-# PURPOSE: the Extension's and the benchmark phase's "does this child need its own record" (R-V04B-35 (e)). Package-public; NOT exported;
+# PURPOSE: the Extension's and the benchmark phase's "does this child need its own record". Package-public; NOT exported;
 #       the name kept by his word of 2026-10-03 (R-V04B-95); the Block-against-File reading carried past the branch (the review's C23).
 
 """

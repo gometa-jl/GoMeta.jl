@@ -18,7 +18,7 @@
 #   julia --startup-file=no --project=. devtools/run_examples.jl [--out <dir>]
 
 import GoMeta as GM
-include(joinpath(@__DIR__, "load_basic_renderer.jl"))   # the ONE path to the basic renderer (R-V04B-24 obligation 7)
+include(joinpath(@__DIR__, "load_basic_renderer.jl"))   # the ONE path to the basic renderer
 
 const HERE   = normpath(joinpath(@__DIR__, ".."))   # the repository root (this file lives in devtools/)
 const INDIR  = joinpath(HERE, "examples", "InFileFolder")

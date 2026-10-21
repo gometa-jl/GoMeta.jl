@@ -2,7 +2,7 @@ isdefined(Main, :_BASIC_RENDERER_LOADED) && error("basic_renderer.jl: loaded a S
 Core.eval(Main, :(const _BASIC_RENDERER_LOADED = true))
 # basic_renderer.jl — the basic renderer, a DEVELOPMENT TOOL: `render_bytes` produces the jl-share-v1
 # share render; `outputs` (below) the (tree, render) pair. Formerly `src/emit/emit.jl`, module
-# `WriteOutFile`, the emit stage of the Engine — moved out on 2026-09-12 (R-V04B-13 / R-V04B-24).
+# `WriteOutFile`, the emit stage of the Engine — moved out on 2026-09-12.
 #
 # IS: module `BasicRenderer` — the basic renderer, a development tool OUTSIDE the Engine. Its entry point
 #     `render_bytes(delivery)::Vector{UInt8}` walks the delivered
@@ -24,7 +24,7 @@ Core.eval(Main, :(const _BASIC_RENDERER_LOADED = true))
 #     hide stays one-way, never byte-reversible); a hidden EMPTY line renders as a BARE empty line
 #     (the hide write sits in the non-empty branch — docs/CANONICAL-OUTPUT.md §3). On a
 #     segmented line the FIRST segment, when it is emitted, is preceded by one SPACE per leading byte of its source line —
-#     his legacy's one test (WriteOutFile.jl :124–:128; a tab or a multibyte leading space renders as spaces; nothing is
+#     the original engine's one test (WriteOutFile.jl :124–:128; a tab or a multibyte leading space renders as spaces; nothing is
 #     restored when the first segment is discarded; the four-local indent restore of v0.4 left at stage 5's R1 of the
 #     v0.4 build, census row 60); a line that is neither included verbatim nor segmented
 #     contributes zero bytes. The render ends 0x0a exactly when the PARSED source content did, but for two edges the trim's note below records — an input whose every line is discarded renders EMPTY, and an unterminated whitespace-only TAIL line renders as a bare empty line, so a render that emitted a line before it still ends 0x0a (when that bare line is the ONLY emitted line — a whitespace-only one-line input, or a tail after all-discarded lines — the trim below leaves the render EMPTY):
@@ -32,7 +32,7 @@ Core.eval(Main, :(const _BASIC_RENDERER_LOADED = true))
 #     `BLS.endsWithNewline(parse_state)` is false — for a whole-file parse that is the input's terminal
 #     byte; for a prefix `parse_range` the parser completes the fact (a range stopping before the
 #     last source line ends at a line boundary, so its newline is kept). The insert store's negative
-#     child ids are resolved by `BLS.children` itself (stage 2's commit 0); this file's former id-sign
+#     child ids are resolved by `BLS.children` itself; this file's former id-sign
 #     dispatch, with its kept latent `[2]`-store defect, is gone.
 # REASONING: the golden layer pins this render byte-for-byte over the committed example corpus
 #     (docs/CANONICAL-OUTPUT.md §5), which forces the emit to be pure and side-channel-free: no
@@ -49,7 +49,7 @@ Core.eval(Main, :(const _BASIC_RENDERER_LOADED = true))
 #     DOOR since stage 2's commit 0 (R-V04B-58, R-V04B-80): BLS's public functions and types — `BLS.root`,
 #     `BLS.children`, `BLS.getElement`, `BLS.content`, `BLS.kind`, `BLS.flavor`, `BLS.endsWithNewline`, the Component
 #     types (docs/public-api.md §1.2) — and no field of a BLS object; the whitespace guard before the hide marker reads
-#     `BLS.isHorizontalSpace` (his word of 2026-10-05, R-V04B-116 (3)(a)) — one of the last two reads outside the door left at
+#     `BLS.isHorizontalSpace` — one of the last two reads outside the door left at
 #     stage 5's s5c8, and the texts of the former interim D-6(a) with it. The battery `devtools/probes/probe_devtools.jl` is the drift alarm.
 # THE LOAD-ORDER LAW: include `devtools/load_basic_renderer.jl` at the consumer's TOP LEVEL — never this
 #     file (the sentinel at the top refuses a second load) and never inside a function (Julia's world age:
@@ -65,7 +65,7 @@ import GoMeta.BLS
 ## `GoMeta.evaluatedAltValue(delivery, component, :Visib).value`, one of `:show` / `:hide` / `:discard` (the three Visib
 ## actions of the default registry): the Component's own rows, else its parent's up the tree (a Line its Block's, a
 ## Segment its Line's — R-V04B-52 (2)), else the declared default `show` (R-V04B-51). The renderer resolves nothing
-## itself (R-V04B-16 (1)): the former flag read (`checkVisib` on the settribute keys the Apply wrote back), the
+## itself: the former flag read (`checkVisib` on the settribute keys the Apply wrote back), the
 ## nearest-wins precedence and the sticky per-line Segment cascade left at stage 3's first commit — MEASURED equal
 ## to the answer on every Block, Line and Segment of the corpus and the authored scenarios before the change
 ## (plan `receipts/S8-branch/precheck-s3c1/PROBES-s3-consumer-equivalence.txt`); the renderer's own multi-Visib
@@ -81,7 +81,7 @@ import GoMeta.BLS
 ## (`BLS.flavor(result.blsComponentTree)`). Hide is VISIBILITY-only — the marker is a plain comment
 ## form in its flavor and hidden metadata remains live on re-ingestion, by design.
 
-## visib_of — the Engine's resolved Visib verdict for ONE Component of the delivered tree (R-V04B-16 (1)): the value of
+## visib_of — the Engine's resolved Visib verdict for ONE Component of the delivered tree: the value of
 ## the one answer function; the SOURCE (own / indirect / user / default) is not the renderer's business.
 visib_of(delivery::GoMeta.GoMetaDelivery, c::Union{BLS.Block,BLS.Line,BLS.Segment})::Symbol =
     GoMeta.evaluatedAltValue(delivery, c, :Visib).value
@@ -175,7 +175,7 @@ function render_bytes(
                                 ## THE ALPHABET LAW: the ensure-token disjunct is an
                                 ## INPUT-FACING whitespace test over raw source bytes, so it rides the
                                 ## door's `BLS.isHorizontalSpace` — the parser's own horizontal-whitespace
-                                ## class (his word of 2026-10-05, R-V04B-116 (3)(a)). Over a Char the two
+                                ## class. Over a Char the two
                                 ## predicates differ at \v, \f, \r and U+0085 — stripped by the internal
                                 ## guard (isvalid && isspace) alone — and at U+180E — by the public class
                                 ## (PCRE's \h) alone; no corpus input carries any of the five (measured:
@@ -186,7 +186,7 @@ function render_bytes(
                                 ## valid head region (R-2 unchanged, per the row).
                                 if !((BLS.getElement(crntLine, :comment) &&
                                       startswith(lstrip(s), hide_fold_prefix)) ||
-                                     startswith(lstrip(BLS.isHorizontalSpace, s), hide_marker))   # through the door (R-V04B-116 (3)(a))
+                                     startswith(lstrip(BLS.isHorizontalSpace, s), hide_marker))   # through the door
                                     write(io, hide_marker)
                                 end
                             end
@@ -225,7 +225,7 @@ function render_bytes(
                                     ## line takes NO per-segment markers; mid-line marker bytes
                                     ## stay untouched (the check anchors at the head).
                                     ## THE ALPHABET LAW: the line-head read rides the door's
-                                    ## `BLS.isHorizontalSpace` — see the line-grain site's note (R-V04B-116 (3)(a)).
+                                    ## `BLS.isHorizontalSpace` — see the line-grain site's note.
                                     if !((BLS.getElement(crntSegment, :comment) &&
                                           startswith(sl, hide_fold_prefix)) ||
                                          startswith(lstrip(BLS.isHorizontalSpace, lineText), hide_marker))   # through the door (see the line-grain site)
@@ -234,7 +234,7 @@ function render_bytes(
                                 end
                             end
                             if segIdx == 1
-                                ## His legacy's one test (WriteOutFile.jl :104–:108, :124–:128): the FIRST segment of the
+                                ## The original engine's one test (WriteOutFile.jl :104–:108, :124–:128): the FIRST segment of the
                                 ## line, when emitted, is preceded by one space per leading byte of its source line
                                 ## (`startMainStr - 1`) — a tab or a multibyte leading space renders as spaces; a discarded
                                 ## first segment restores nothing (the four-local indent restore left at stage 5's R1 of the
@@ -286,8 +286,8 @@ end
 ## a committed reference can be bytes); every parser name is qualified `BLS.`. ONE destination
 ## file (this one) is the session's reading under the owner's §18 lean — R-V04B-24 names no
 ## destination file (recorded in R-V04B-25). The 7 `byte_identical` tree pins
-## (tests/golden/MANIFEST.toml) pin `structural_serialization`. The owner's VERY STRONG LEAN
-## (OWNER-WORDS §18): re-mint the tree pins to the newer print and delete this dump — a row of
+## (tests/golden/MANIFEST.toml) pin `structural_serialization`. The creator's VERY STRONG LEAN
+## re-mint the tree pins to the newer print and delete this dump — a row of
 ## the keep/cut ledger (R-V04B-24's tidy-up list).
 #########################################################################################
 function writeBlsStructureToFile(
@@ -386,7 +386,7 @@ end
 IS: the development tool's (tree, render) pair over ONE `goMeta` delivery — `Main.BasicRenderer.outputs`, the Engine's
     former `GoMeta.outputs`, moved here on 2026-09-12 unchanged in behaviour (R-V04B-24 B1: a hard removal from the
     Engine, no stub) and reached only through `devtools/load_basic_renderer.jl`. The Engine's canonical output is
-    `altValues_evals` (docs/public-api.md §1.3); the pair is the tool's own, and no Extension takes it (R-V04B-56).
+    `altValues_evals` (docs/public-api.md §1.3); the pair is the tool's own, and no Extension takes it.
 DOES: returns the NamedTuple `(blsStructure_bytes, render_bytes)` — that field order. `blsStructure_bytes` is the
     verdict-free `structural_serialization` (this module's own function since R-V04B-24) of the final parse tree,
     `result.blsComponentTree`; `render_bytes` is the jl-share-v1 emit (docs/CANONICAL-OUTPUT.md) of this module's
@@ -398,7 +398,7 @@ DOES: returns the NamedTuple `(blsStructure_bytes, render_bytes)` — that field
     stage 5's E13; a "tree-if-parse-succeeded" distinction would be a new contract row); on that entry-refusal path both
     are empty because the parse never ran — the delivered tree is built from EMPTY bytes.
 REASONING: the tree print is a PURE function of `result.blsComponentTree`; the render a PURE function of the delivery —
-    the tree walked through the door, every Visib verdict the Engine's answer (`GoMeta.evaluatedAltValue`; stage 3's
+    the tree walked through the door, every Visib verdict the Engine's answer (`GoMeta.evaluatedAltValue`
     first commit) — so this accessor is correct OUTSIDE the per-call `STATE` scope. The entry refusal's empty-bytes tree
     keeps the delivery total, so the pair needs no error arm beyond the status test.
 PURPOSE: the pair the golden layer pins byte-for-byte (tests/golden/golden_tests.jl; docs/CANONICAL-OUTPUT.md §5), the

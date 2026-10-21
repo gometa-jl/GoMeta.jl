@@ -12,7 +12,7 @@
 #       grain · path steps · origin steps; the last path step's ordinal is the cell's store position) and
 #       matching the grain and that ordinal. (5) the value that APPLIES to a Component is THE ENGINE's ANSWER —
 #           `GoMeta.evaluatedAltValue(delivery, component, alterant)` (stage 3's commit 3 of the v0.4 build; R-V04B-41's
-#           stage-3 content): the Component's own rows, else its parent's up the tree (the owner's
+#           stage-3 content): the Component's own rows, else its parent's up the tree (the creator's
 #           indirect-application principle, OWNER-WORDS §8, as the Engine applies it — README rule 2), else the
 #           Alterant's declared default (Visib `show`, R-V04B-51 (2)) or absence. The runner derives NOTHING of its
 #           own any more (until this commit it read the rows and applied the principle itself — "when the Engine
@@ -25,7 +25,7 @@
 #           source tag where an accumulating Alterant's expectation names EVERY contributor — 4 of the 27 asserted
 #           sets, Labels; R-V04B-35 (c), Q4 (ii) open; stage 3's commit 3), named by position — a Block `block@N`, a Line
 #           `line@N`, a Segment's statement by ITS LINE (`line@N` — the vocabulary of the confirmed files; the
-#           session's reading, put to the owner), the fed profile `user`, no statement `default` — must equal
+#           session's reading, put to the creator), the fed profile `user`, no statement `default` — must equal
 #           the expectation's set (a string or a list); the rows' `decided_by` handles are decoded like the
 #           cell handles (step 4) and mapped to the tree's Blocks and Lines.
 #       (8) EXPECTED FAILURES: a confirmed statement the Engine is KNOWN not to meet yet is listed in
@@ -36,7 +36,7 @@
 #       new-GoMeta effort) must meet; the layer must be implementation-neutral in what it reads from the
 #       files (positions, values) and must not depend on the renderer (the owner, OWNER-WORDS §18: a test
 #       that re-derives the evaluations tests the wrong layer — the Engine's values are what is tested).
-# PURPOSE: the Engine does what the owner means. Run via tests/runtests.jl (layer: authored), or alone:
+# PURPOSE: the Engine does what the creator means. Run via tests/runtests.jl (layer: authored), or alone:
 #       JULIA_LOAD_PATH="@:@stdlib" julia --project=tests tests/runtests.jl authored
 #
 # Honest edges: Segment positions (`segment@N.k`) and the File (`file`) are not yet mapped (no confirmed
@@ -56,8 +56,8 @@ const AUTHORED_DIR = @__DIR__
 
 ## --- expected failures: (stem, component, alterant) => the reason and the ruling that scopes the fix ---
 ## (none since stage 2's commit 1: scenario 005's entry — the heading recorded on the metaLine's own Line — left when the
-## heading re-key (R-V04B-50) keyed the row to the metaBlock; the scenario is green against the expectations the owner confirmed on
-## 2026-09-10 (R-V04B-23))
+## heading re-key keyed the row to the metaBlock; the scenario is green against the expectations the creator confirmed on
+## 2026-09-10)
 const EXPECTED_FAILURES = Dict{Tuple{String,String,String},String}()
 
 ## --- the occurrence handle, decoded — THE ONE SHARED DECODER of the development tools (his word of 2026-10-03, OWNER-WORDS §313;
@@ -73,7 +73,7 @@ end
 const GRAIN_LINE  = 0x0a
 const GRAIN_BLOCK = 0x46
 
-## --- the tree: positions → Components; Components → (grain, ordinal) — through the door (stage 2's commit 0) ---
+## --- the tree: positions → Components; Components → (grain, ordinal) — through the door ---
 _ni(c, k) = GB.getElement(c, k)
 ## The tree's Blocks and Lines as the door's walk yields them (`BLS.children`: source order, the stores never
 ## read here — the former walk over the raw store vectors with their UNASSIGNED slots is gone).
@@ -128,7 +128,7 @@ function _rows_on(rows, c)
     return out
 end
 
-## --- the value that APPLIES (step 5 of the header): THE ENGINE's ANSWER (stage 3's commit 3) ---
+## --- the value that APPLIES (step 5 of the header): THE ENGINE's ANSWER ---
 ## returns (value, source, used) — value: the answer's value in the runner's comparison form — a String (Visib/Heading), a
 ## Set{String} (Labels), or `nothing` (absent); source: the answer's source tag (:own | :indirect | :user | :file | :default |
 ## :none); used: the rows the PROVENANCE assertion (step 7; stage 2's commit 4a) reads — the Component's own rows for the

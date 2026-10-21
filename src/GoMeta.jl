@@ -23,7 +23,7 @@
 #     among them; nothing is written into the Components since stage 3's commit 4, R-V04B-42 (1)) for
 #     `readAltValuesEvals(result.altValues_evals)`. The tool's `outputs` pair — the BLS Component tree's print and the render — is the
 #     development tool's — `devtools/basic_renderer.jl`, loaded through `devtools/load_basic_renderer.jl`,
-#     never by the Engine (R-V04B-24, 2026-09-12). The optional
+#     never by the Engine. The optional
 #     `config.user_mh_profile` seeds the reserved user slot of the meta-hierarchy before the walk
 #     (`feed_user_mh!`; a heading in the profile meets the one refusal at the read — his §D242, stage 1 of the Alterants
 #     build; docs/public-api.md §2; experimental).
@@ -40,7 +40,7 @@
 #     The full honest-edges catalogue: docs/public-api.md §3.
 # PURPOSE: the single auditable entry point — bytes in, a typed `GoMetaDelivery` out, with the package's
 #     canonical observable output = `altValues_evals` (+ `serialize_evals`); the Engine's
-#     delivered surface = the run and the evaluated values (R-V04B-24); the (tree, render) pair is the
+#     delivered surface = the run and the evaluated values; the (tree, render) pair is the
 #     development tool's.
 module GoMeta
 
@@ -162,7 +162,7 @@ DOES: builds a per-call `ProcessState` by `init_state` (container SIZING only �
 `parseBLS` / absorb-walk runs), appends the coded `diags`, and hands back the delivery's four parts taken
 from that state: the EMPTY store `st.evals` as `altValues_evals`; the unparsed `parse_state` — the caller passes
 one built from EMPTY bytes, since the validation pre-empts touching the input — as `blsComponentTree`; `PROCESS_ERROR`;
-the diagnostics. The working state itself is not delivered (R-V04B-28).
+the diagnostics. The working state itself is not delivered.
 
 REASONING: `@noinline` + cold, so its `init_state` and the construction never perturb the byte-exact,
 low-allocation main `goMeta` path; the empty-bytes tree keeps the delivery total (the development tool's `outputs`,
@@ -189,7 +189,7 @@ in written order, its labels not collected first; fed by no other call site) wit
 `st.config.user_mh_profile`, BEFORE the absorb walk. SCOPE: a minimal caller-supplied feed ONLY — not a general
 user-level configuration system; internal (NOT exported); called from `goMeta` iff `config.user_mh_profile` is a String
 holding at least one character of content — one the absorb's ONE white-space predicate `AbsorbMeta._isspace_valid` does not
-read as white space, an invalid byte sequence among them (R-ALT-25); an empty or whitespace-only profile is inert like
+read as white space, an invalid byte sequence among them; an empty or whitespace-only profile is inert like
 `nothing` — stage 2 of the Alterants build, R-ALT-18 / R-ALT-22.
 Experimental — see docs/public-api.md §2.
 
@@ -277,7 +277,7 @@ after the move (R-V04B-24: "the run and the evaluated values"). The (tree, rende
 tool's: `Main.BasicRenderer.outputs`, applied to the result after `include(joinpath(pkgdir(GoMeta), "devtools", "load_basic_renderer.jl"))`
 at the caller's top level. The entry refusals (the registry door's `REG_UNPUBLISHED` / `POST_SEAL_MUTATION`) are coded and
 delivered; the condition path keeps THREE refusals of GoMeta's — the unknown condition key, the no-expression guard of an
-empty block or a bare literal and the one scanner's unterminated `(` inside a body (s5c31, his §366), `ErrorException`s at the
+empty block or a bare literal and the one scanner's unterminated `(` inside a body, `ErrorException`s at the
 absorb seam — a body Julia cannot parse is Julia's own `Meta.ParseError`,
 a condition that fails at evaluation Julia's own error
 (the condition codes and E-07's pending mint left with the closed interpreter at stage 5's E13); the E-06 absorb-path
@@ -298,7 +298,7 @@ guarantee: a condition body (Julia, evaluated by Julia — his §120) and a cust
 author's, outside it.
 
 PURPOSE: the one route from a document's bytes to the delivered object — the run and the evaluated values
-(R-V04B-24) — for an Extension, a test, a development tool or a DB-interface.
+ — for an Extension, a test, a development tool or a DB-interface.
 """
 function goMeta(
     bytes::Vector{UInt8};
@@ -315,7 +315,7 @@ function goMeta(
     ## `GoMetaDelivery` construction stay OUT of this hot path); the input bytes are never touched — the error-path delivery
     ## carries a parse state built from EMPTY bytes (container sizing only). The E-06 (absorb) guarded refusal remains without a code
     ## at v0 (the E-04 apply crash origin left with the write-back, stage 3's commit 4); the condition path's three refusals of
-    ## GoMeta's — the unknown condition key, the no-expression guard, the unterminated `(` inside a body (s5c31) — abort the statement at the absorb seam (`absorb_meta.jl`).
+    ## GoMeta's — the unknown condition key, the no-expression guard, the unterminated `(` inside a body — abort the statement at the absorb seam (`absorb_meta.jl`).
     door_diags = _registry_door_check(registry)
     isempty(door_diags) ||
         return _entryErrorDelivery(BLS.setUpToProcessFromBytes(UInt8[]), config, registry, door_diags)
@@ -334,7 +334,7 @@ function goMeta(
     ## (`to = last(range)`). `parseBLS` ignores `fromLine` + breaks on `lineNum > toLine`
     ## (parseBLS.jl: `fromLine` has no use but its signature; a non-positive `toLine` becomes the line count — the seat's F2: the
     ## former citation of docs/SYNTAX-AND-SEMANTICS.md named a page that holds no range contract), so a non-positive `to` parses the whole file. The range is taken
-    ## PLAIN, as his legacy took its arguments: `first` is never read (`5:10` parses lines 1..10; `3:2` lines
+    ## PLAIN, as the original engine took its arguments: `first` is never read (`5:10` parses lines 1..10; `3:2` lines
     ## 1..2; `1:0` the whole file) — the coded range refusal left at stage 5's E8 of the v0.4 build, census row 30.
     ## Sub-range note: for a `parse_range = 1:N` run the development tool's render is an exact PREFIX of its whole-file render
     ## for the same input — the divergence is purely the parse range, not the caps. The parse store is read
@@ -356,12 +356,12 @@ function goMeta(
 
     ## The absorb/apply driver — ONE function again since stage 5's E2 of the v0.4 build (census rows 21, 42, 44 and 23,
     ## his §317 mark, R-V04B-105; his verbatim of R-V04-31 on the callable driver seam of v0.3.2/T3: a seam serving the
-    ## .fodt adapter alone "will eventually have to be removed from the GoMeta engine" — his legacy was one function,
+    ## .fodt adapter alone "will eventually have to be removed from the GoMeta engine" — the original engine was one function,
     ## GoMetaRetro's src/GoMeta.jl :26–:113: the parse, then the File loop). Build the FRESH per-call `ProcessState`
     ## (`init_state` is reset-safe, so neither the slot tensors nor the cursors leak between calls) + open the per-call
     ## dynamic scope: `STATE => st` carries the per-call state so the eval'd bare-name `getState`/`getAltState` reach it
     ## (`ctx() = STATE[]`). The whole absorb-walk + apply runs INSIDE this scope; the parse state is READ, never written
-    ## (stage 3's commit 4, R-V04B-42 (1)); one parse state per call by construction — the seam ledger that enforced it
+    ## one parse state per call by construction — the seam ledger that enforced it
     ## for injected states left with the seam.
     st = init_state(parse_state, config, registry)
     with(STATE => st) do
@@ -402,7 +402,7 @@ function goMeta(
             if BLS.getElement(childComponent.componentSettribute, :attachedToMeta)
                 applyAltActionFns(childComponent::BLS.Block)
                 ## The Block-grain Visib write-back LEFT here (stage 3's commit 4 of the v0.4 build, R-V04B-42 (1)): the Engine writes NOTHING into the caller's BLS
-                ## Components — the Block's Visib is CAPTURED (below) and read through the one answer function (R-V04B-16 (1)).
+                ## Components — the Block's Visib is CAPTURED (below) and read through the one answer function.
                 # Capture this Block's FINAL evals rows (Labels + Visib + Id + Heading) into st.evals BEFORE the
                 #   next apply wipes st.working — the cell is this Block. Render-neutral: it reads
                 #   st.working and puts or supersedes rows in st.evals (no parse-tree or render mutation; no diagnostic).

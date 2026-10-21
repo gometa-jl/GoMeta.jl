@@ -20,7 +20,7 @@
 
 import GoMeta
 const _RG_HOME = normpath(joinpath(@__DIR__, "..", ".."))
-include(joinpath(_RG_HOME, "devtools", "load_basic_renderer.jl"))   # the ONE path to the basic renderer (R-V04B-24 obligation 7)
+include(joinpath(_RG_HOME, "devtools", "load_basic_renderer.jl"))   # the ONE path to the basic renderer
 include(joinpath(_RG_HOME, "devtools", "devtools.jl"))               # the tools — comparisonForm lives there (§I)
 
 const _RG_INPUT_DIRS = (joinpath(_RG_HOME, "examples", "InFileFolder"),

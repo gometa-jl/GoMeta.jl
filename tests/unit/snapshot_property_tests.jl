@@ -14,7 +14,7 @@
 #       coverage asserts. P = 1024×3 + 8 + 42 + 5 = 3127 (T2BIS-DESIGN §9's closed arithmetic, re-counted at stage 5).
 # REASONING: the enumerated door witnesses cannot prove coverage over the whole walked domain;
 #       the site-cycling property can — full site coverage is guaranteed by |sites| ≤ N.
-# PURPOSE: the T2-bis acceptance row (R-V04B-4 (iv)); the door's coverage proof.
+# PURPOSE: the T2-bis acceptance row; the door's coverage proof.
 
 using Test
 using Random
@@ -642,7 +642,7 @@ end
         @test isempty(GM._registry_door_check(R))
     end
     # the CROSSWISE-EQUAL twin tower, depth 10 (1): two-entry equal-key Dicts over EQUAL leaves, x and y crossed in REVERSED entry order —
-    # every candidate matches, so no probe is rejected; the compares are LINEAR in depth as measured 2026-10-14 (R-V04B-129) — completes SILENT
+    # every candidate matches, so no probe is rejected; the compares are LINEAR in depth as measured 2026-10-14 — completes SILENT
     let
         mk(depth, rev) = begin
             x = Any[Int8(1)]

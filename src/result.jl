@@ -59,7 +59,7 @@ a rendered path text, a field name, or `nothing` when absent (the three-argument
 REASONING: catalogued failures surface as rows with stable codes where they are delivered, so a consumer reads
 a code, never a message, and the status invariant (non-OK ⇒ non-empty diagnostics) holds by construction.
 
-PURPOSE: the element of the delivered object's `diagnostics` part (R-V04B-28) and of `RegistrationRefused`.
+PURPOSE: the element of the delivered object's `diagnostics` part and of `RegistrationRefused`.
 """
 struct Diagnostic
     code::Symbol
@@ -101,7 +101,7 @@ his at stage 2's review (the alternatives `origin`, `source`). Feeds
 `readAltValuesEvals(result.altValues_evals)` (sorted `(cell_handle, attr, value)` — key-bytes order).
 
 REASONING: keyed by the row's handle — a Component's normalized structural occurrence handle — so that two distinct cells never share a slot; the row names its
-Component by the handle and carries no copy of its text (R-V04B-43 (1)).
+Component by the handle and carries no copy of its text.
 
 PURPOSE: the record `readAltValuesEvals` delivers as `(cell_handle, attr, value, polarity)`.
 """

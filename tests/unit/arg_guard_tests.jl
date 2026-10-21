@@ -9,7 +9,7 @@
 # DOES: drives the working twins through goMeta and pins status, determinism and the render bytes.
 # REASONING: the guarded "invalid arguments" refusal at the setter seam `_invoke_set` left at stage 5's E6 of the
 #       v0.4 build with its crash-leg and sole-exception-surface witnesses (census row 14 — his §120, the framework
-#       before hardening; his legacy called the setter directly): a malformed argument meets Julia's own dispatch
+#       before hardening; the original engine called the setter directly): a malformed argument meets Julia's own dispatch
 #       or the setter's own error out of the `goMeta` call, measured on both trees by the build's probe
 #       (the build record's receipts/S8-branch/PROBES-e6-edges-*). The QUERY-side condition-atom class
 #       (`#~ cell(7) :label1{ cell(7) }`) meets the usual unknown-condition-key refusal since stage 5's E12 (Id answers

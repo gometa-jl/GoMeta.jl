@@ -23,7 +23,7 @@
 #       native surface); (7) guards the hand-synced TWIN test environments (`test/Project.toml`
 #       vs `tests/Project.toml`) for structural parity, so `Pkg.test()` and the direct
 #       `--project=tests` invocation always resolve the SAME environment; (8) the one-path assertions
-#       (R-V04B-24 obligation 7): the basic renderer is loaded once, as Main.BasicRenderer, from
+# the basic renderer is loaded once, as Main.BasicRenderer, from
 #       devtools/basic_renderer.jl, through devtools/load_basic_renderer.jl.
 # REASONING: without a machine-checked export set, the declared semver API (docs/public-api.md)
 #       drifts silently from the code; since Julia 1.11 `names(M)` returns the exported AND the
@@ -50,8 +50,8 @@ import TOML
                          # third-party author constructs — the sanctioned Extension-facing seam
                          :RegistryBuilder, :register!, :next_plugin_index, :validate, :publish, :RegistrationRefused,
                          :Alterant, :ActionSpec, :CaptureDecl, :DefaultSlot, :NoDefault, :Declared,
-                         :BLS,   # the parser module, public by name — its door inside it (R-V04B-58)
-                         :evaluatedAltValue, :EvaluatedAltValue,   # THE ONE ANSWER FUNCTION and its record (R-V04B-35 (c), R-V04B-95)
+                         :BLS,   # the parser module, public by name — its door inside it
+                         :evaluatedAltValue, :EvaluatedAltValue,   # THE ONE ANSWER FUNCTION and its record
                          :scanAlterant, :evaluatedAltValues,   # the scan by Alterant and the access by Component (his §6 9.A)
                          :childDiffers]   # mirrors docs/public-api.md §1.2 EXACTLY — 27 names since stage 5's E14 of the v0.4 build; every change of the set is a row of §6
 
@@ -85,7 +85,7 @@ import TOML
         @test all(n -> isdefined(GM.BLS, n), DOOR)                # [B4] every door name is a real binding
         @test Base.ispublic(GM, :BLS) && !Base.isexported(GM, :BLS)   # [B5] the module itself: public, not exported
         ps = GM.BLS.setUpToProcessFromBytes(Vector{UInt8}(codeunits("x = 1\n#~ hide\n\ny = 2\n")))
-        @test String(GM.BLS.content(ps)) == join(ps.collectedLines, '\n')   # [B6] the File's whole text — the one-argument form (stage 5's s5c8; R-V04B-116 (3)(b))
+        @test String(GM.BLS.content(ps)) == join(ps.collectedLines, '\n')   # [B6] the File's whole text — the one-argument form
         @test isempty(GM.BLS.content(ps, GM.BLS.root(ps)))                # [B7] the two-argument form stays EMPTY for the File — the Engine's capture predicate untouched
     end
 
@@ -95,7 +95,7 @@ import TOML
         # accidental extra method) fails LOUD instead of silently widening dispatch.
         @test length(methods(GM.goMeta)) == 1                    # [T1] exactly the pipeline entry
         @test Main.BasicRenderer.outputs isa Function && length(methods(Main.BasicRenderer.outputs)) >= 1  # [T3] the development tool's pair is live (re-pointed at R-V04B-24; never deleted)
-        # the one-path assertions (R-V04B-24 obligation 7) — the SENTINEL is the gate against a second
+        # the one-path assertions — the SENTINEL is the gate against a second
         # copy of the module in another namespace; the method check alone is not.
         @test isdefined(Main, :BasicRenderer)                    # [T4] the module lives in Main
         @test isdefined(Main, :_BASIC_RENDERER_LOADED)           # [T5] the load sentinel: a second load through ANY path throws
@@ -132,7 +132,7 @@ import TOML
             @test count(==('\n'), String(GM.serialize_evals(hand))) == 4 && all(l -> count(==('\t'), l) == 3, split(String(GM.serialize_evals(hand)), '\n'; keepempty = false)[3:end])
         end
         @test hasmethod(GM.readAltValuesEvals, Tuple{GM.EvalStore})          # [8e] the reader takes the delivered PART `altValues_evals` (stage 1 commit 3; R-V04B-29's record; R-V04B-40 (2))
-        @test !hasmethod(GM.readAltValuesEvals, Tuple{GM.GoMetaDelivery})   # [8f] and no method over the whole delivered object remains — the clean cut (R-V04B-61)
+        @test !hasmethod(GM.readAltValuesEvals, Tuple{GM.GoMetaDelivery})   # [8f] and no method over the whole delivered object remains — the clean cut
     end
 
     @testset "card C14 (R-V04B-96; his word §306 of 2026-10-03) — the delivered object, its show, the reader: (a) (b) (e) (f); every value MEASURED 2026-10-03 (receipts/S8-branch/PROBES-c14-pins_cd3ee9d3.txt)" begin

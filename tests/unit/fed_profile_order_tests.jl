@@ -85,7 +85,7 @@ const _FO_CORPUS = joinpath(@__DIR__, "..", "golden", "corpus", "InFileFolder") 
         # AFTER trace G01: 2 rows on the Line — label_label1 (decided_by the Segment), visib :discard (decided_by [uc]); source :user
         rf = _fo_run("x = 1 #~ :label1\n"; profile = "discard{ :label1 }")
         recs = _fo_recs(rf); @test length(recs) == 2
-        @test length(unique(x.cell_handle for x in recs)) == 1           # ONE cell — the Line; a Segment-carried row's handle carries the Segment as its origin (R-V04B-50), so it is not the Line's plain occurrence key
+        @test length(unique(x.cell_handle for x in recs)) == 1           # ONE cell — the Line; a Segment-carried row's handle carries the Segment as its origin, so it is not the Line's plain occurrence key
         lab = [x for x in recs if x.attr === :label_label1]; vis = [x for x in recs if x.attr === :visib]
         @test length(lab) == 1 && length(lab[1].decided_by) == 1 && lab[1].decided_by[1] != _FO_UC
         @test length(vis) == 1 && vis[1].value === :discard && vis[1].decided_by == [_FO_UC]

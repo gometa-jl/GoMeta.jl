@@ -15,13 +15,13 @@
 #     The setters are called directly (the record-armed invocation seam `_invoke_set` left at stage 5's E6 of the v0.4 build — census row 14).
 # DOES: evaluates each queued action's stored condition — `nothing` means set unconditionally,
 #     otherwise the stored `Expr` (Julia's reading of the re-written `{…}` body, absorb_meta.jl) is evaluated by
-#     Julia at apply time — `Core.eval(GoMeta, ex)`, as his legacy's `eval` (goMetaAddOns.jl :37, :95) — against the
+#     Julia at apply time — `Core.eval(GoMeta, ex)`, as the original engine's `eval` (goMetaAddOns.jl :37, :95) — against the
 #     per-call settribute snapshot and working stores reached by `getState`/`getAltState` through the ScopedValue
 #     (stage 5's E13 of the v0.4 build, census row 1; R-V04B-106; his §120, §D174).
 #     An alterant already set in an earlier-processed slot is never re-set — save the user level's OVERRIDE (stage 0 of the Labels
 #     lane, 0.4.1): under a fed profile an applicable non-accumulate row of the user level's slot, evaluated right after the
 #     Component's own slot, replaces the value the own slot decided. The queued args tuple is
-#     splatted once into the setter, bare, as his legacy called it (goMetaAddOns.jl); a malformed argument
+#     splatted once into the setter, bare, as the original engine called it (goMetaAddOns.jl); a malformed argument
 #     meets Julia's own dispatch or the setter's own error — the seam's guarded refusal left at stage 5's E6 of
 #     the v0.4 build (census row 14; his §120, the framework before hardening).
 # REASONING: conditions travel as Julia `Expr`s and arguments as opaque tuples, so there
@@ -269,7 +269,7 @@ function applyAltActionFns(
     local st = ctx()
     snapshot_settribute!(st, BLS.getParentComponent(st.parse, aSegment))
     ## the applying Component's own key (stage 1 of the Alterants build): the LINE with this Segment as the key's origin — as
-    ## `captureEvals!` keys this grain's rows (R-V04B-98) — the referent of the localOnly rule
+    ## `captureEvals!` keys this grain's rows — the referent of the localOnly rule
     local appliedKey::Vector{UInt8} = key_bytes(occurrence_key(st.parse, BLS.getParentComponent(st.parse, aSegment);
         origin = aSegment, namespace = st.config.namespace))
     attachedToMeta::Bool = BLS.getElement(

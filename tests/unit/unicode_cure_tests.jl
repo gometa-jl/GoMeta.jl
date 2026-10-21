@@ -10,14 +10,14 @@
 # shipped list (`GM.Alterants.LABELS_VOCABULARY`; the G-VOC surface left at E9 — census row 28); testset [2]
 # applies its unknown labels instead of querying them (a queried unknown label answers false since E9 —
 # census row 55). Assert-count neutral. Stage 5's E13 HAND-EDIT: the closed interpreter left (census row 1; R-V04B-106) — testsets
-# [1], [3] and [5] drove `parse_condition` and `print_condition` directly (E13); they drive the whole run now (the same shapes END-TO-END,
+# [1], [3] and [5] drove `parse_condition` and `print_condition` directly; they drive the whole run now (the same shapes END-TO-END,
 # 37 → 34 asserts: [1] 4 → 3, [3] 3 → 2, [5] 4 → 3). The CURE this file holds — a multibyte-final atom flush against the closing
 # brace takes its ordinary fate — is held by the rewrite's CHAR walk (never the legacy's byte-count end test); [1] and [4] carry the
 # flush shapes; the known-label asserts of [3] and [7] fix where a name ends (the s5c37 HAND-EDIT of 2026-10-09 — the closing set's row
 # L4 r2, his word §383; each count MEASURED on the s5c37 scratch from the FULL delivery view, PROBES-s5c37-witness-values_on-0cf389d4.txt). The s5close HAND-EDIT
 # (2026-10-09): the header's store clause above re-cut to the door's slice (the Engine stores no copy). The stage-2 HAND-EDIT of the Alterants build
 # (2026-10-16): [7]'s membership comment re-cut — the constant is the Labels Alterant's hard-coded list in `alterants-std/labels.jl` since
-# that stage (R-ALT-20), the plain file gone; assert-count neutral. A regeneration of this file must re-apply all six forms.
+# that stage, the plain file gone; assert-count neutral. A regeneration of this file must re-apply all six forms.
 
 using Test
 import GoMeta as GM

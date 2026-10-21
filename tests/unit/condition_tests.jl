@@ -1,6 +1,6 @@
 # condition_tests.jl — the condition path since stage 5's E13 of the v0.4 build (census row 1; the owner's order §319, R-V04B-106 (2)–(3);
 # his §120, §123, §342 and §D174): a `{…}` body's GoMeta-specific parts re-written to Julia text, Julia's parser reading it once at
-# absorb, Julia evaluating the stored Expr at apply — his legacy's reading (GoMetaRetro AbsorbMeta.jl :116–:282) from the ground up.
+# absorb, Julia evaluating the stored Expr at apply — the original engine's reading (GoMetaRetro AbsorbMeta.jl :116–:282) from the ground up.
 #
 # IS:   (1) the registry's ONE vocabulary rule for a bare name (`queryable_action`, stage 5's E12 — R-V04B-99; the retired-keys testset
 #       of the former condition_cap_tests.jl — retired at E13 — RE-HOMED here verbatim in meaning: the rule the kick-off of 2026-10-07
@@ -36,7 +36,7 @@ end
     # sufficient: with the names out of BLS alone `#~ hide{ show }` was STILL PROCESS_OK (PROBES-e12-edges-AFTER_59d7558.txt — the intake
     # read `show` as a registered ACTION); the registry's `queryable_action` rule (src/state.jl) refuses a getter-less Alterant's action,
     # so the unknown-condition-key refusal names them — since E13 from the rewrite's `_cond_target` (src/absorb/absorb_meta.jl), where
-    # his legacy's reader tested `insorted`. The control: a live settribute key applies.
+    # the original engine's reader tested `insorted`. The control: a live settribute key applies.
     for k in ("show", "hide", "discard")
         e = _cn_err(_cn_mk(k))
         @test e isa ErrorException
@@ -62,7 +62,7 @@ end
 end
 
 @testset "the closed interpreter's walls are gone — Julia's parser has none (register E13-7)" begin
-    # 13 comma-joined atoms = far over the former 29-step scan cap (E13), which refused "condition too complex" with the deciding
+    # 13 comma-joined atoms = far over the former 29-step scan cap, which refused "condition too complex" with the deciding
     # atom unscanned; Julia reads the whole body — the deciding `isCode` hides the code line
     r13 = GM.goMeta(_cn_mk(join(fill("isText", 12), ", ") * ", isCode"))
     @test r13.status === GM.PROCESS_OK
@@ -114,7 +114,7 @@ end
     @test _cn_err(_cn_mk("isCode(ab)")) isa UndefVarError                 # `getState(:isCode, ab)` — the legacy dropped the argument silently (K3)
     # the unterminated block stays GoMeta's (the metaLine grammar's own)
     e = _cn_err(Vector{UInt8}(codeunits("#~ hide{ isCode\nx = 1\n")))
-    @test e isa ErrorException && occursin("unterminated '{'", e.msg)      # the one scanner's R2 (stage 5's s5c29): the opener named
+    @test e isa ErrorException && occursin("unterminated '{'", e.msg)      # the one scanner's R2: the opener named
 end
 
 @testset "the label test — every admitted name spelled the one way (register E13-8; the inventory's D-11 query half cured)" begin
@@ -123,7 +123,7 @@ end
     r = GM.goMeta(Vector{UInt8}(codeunits("#~ :\u26d3\ufe0f\u200d\U1f4a5 hide{ :\u26d3\ufe0f\u200d\U1f4a5 }\n# content\n")))
     @test r.status === GM.PROCESS_OK
     @test length(GM.readAltValuesEvals(r.altValues_evals)) == 4           # the label rows and the Visib rows — the set and the query agree
-    # the parenthesized label form of his legacy (`:(args)`), raw
+    # the parenthesized label form of the original engine (`:(args)`), raw
     @test GM.goMeta(Vector{UInt8}(codeunits("#~ :label1 hide{ :(:label1) }\nx = 1\n"))).status === GM.PROCESS_OK
     # a label name ending at a multibyte whitespace (the ws-alphabet law — Julia's parser reads the space; the former [3] of unicode_cure)
     r3 = GM.goMeta(Vector{UInt8}(codeunits("#~ hide{ :x\u00a0}\nx = 1\n")))

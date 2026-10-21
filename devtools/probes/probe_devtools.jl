@@ -7,7 +7,7 @@
 # IS:   the empirical check of every devtools surface the byte-parity sweep cannot
 #       cover — filters, dispatch validation, format inference, the
 #       drift alarm. (Byte parity
-#       vs the owner-approved mockups is the OTHER half of verification:
+#       vs the creator-approved mockups is the OTHER half of verification:
 #       plan/2026-08-19-gometa-dev-print-tools/, 34/34 at build.)
 # DOES: runs goMeta on the two standing fixture inputs,
 #       drives both printers through the filter/error tiers into
@@ -21,7 +21,7 @@
 const _PB_HOME = normpath(joinpath(@__DIR__, "..", ".."))   # the code home (the repository root)
 const _PB_FIX  = joinpath(@__DIR__, "fixtures")             # the battery's own fixture inputs
 import GoMeta
-include(joinpath(@__DIR__, "..", "load_basic_renderer.jl"))   # the ONE path to the basic renderer (R-V04B-24 obligation 7)
+include(joinpath(@__DIR__, "..", "load_basic_renderer.jl"))   # the ONE path to the basic renderer
 include(joinpath(@__DIR__, "..", "devtools.jl"))   # the tools, one level up
 
 fails = 0

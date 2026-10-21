@@ -9,7 +9,7 @@
 #   - public_surface_tests.jl — the export set equals the declared semver surface (docs/public-api.md §1);
 #                               the Engine's output surface (`altValues_evals`) and the development tool's
 #                               pair (`Main.BasicRenderer.outputs`, the one-path assertions; R-V04B-24).
-#   - slot_overflow_tests.jl  — the per-slot capacity boundary and the ninth action's message (stage 5's s5c29).
+#   - slot_overflow_tests.jl  — the per-slot capacity boundary and the ninth action's message.
 #   - custom_localonly_feed_tests.jl — the profile feed's refusal at the read is not the shipped Heading's alone: a custom registry's
 #                               Alterant declared as the Heading is (set mode `localOnly`) meets it when fed, a custom Alterant of another
 #                               set mode does not (the Alterants build's residues round, 2026-10-17; MEASURED by the lane's oracle on ONE
@@ -18,7 +18,7 @@
 #   - error_message_tests.jl  — stable-message witnesses, e.g. "GoMeta apply: unknown label".
 #   - arg_guard_tests.jl      — the documented WORKING argument forms (the refusal witnesses left at
 #                               stage 5's E6 of the v0.4 build — census row 14, the set-invocation seam).
-#   - parser_quality_tests.jl — the metaLine parser effort's battery (stage 5's s5c29): every inventory shape with its
+#   - parser_quality_tests.jl — the metaLine parser effort's battery: every inventory shape with its
 #                               expected outcome — accepted with its evals row count, refused with its GoMeta head, or Julia's class.
 #   - condition_tests.jl      — the condition path since stage 5's E13 (Julia's parser over the re-written body; the registry's
 #                               vocabulary rule; the parser-quality rows).

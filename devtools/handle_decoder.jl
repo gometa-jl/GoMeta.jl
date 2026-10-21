@@ -2,7 +2,7 @@
 # test runner (tests/authored/authored_tests.jl) — the owner's word of 2026-10-03 (OWNER-WORDS §313; R-V04B-102: "I approve B3: one shared
 # decoder."), replacing the two private copies the two consumers held (the tools' `_dt_decode` family; the runner's `decode_handle` family).
 # The Engine offers no reader of a handle's parts BY DESIGN: the answer function `evaluatedAltValue` spares consumers the handle
-# (R-V04B-35 (c)); this file is a development-tool and test-layer aid, never a consumer surface. Included by `devtools/devtools.jl` and by
+# this file is a development-tool and test-layer aid, never a consumer surface. Included by `devtools/devtools.jl` and by
 # the runner, each guarded against a double include (`isdefined(@__MODULE__, :decode_handle)`).
 #
 # IS:   `decode_handle(b::Vector{UInt8}) -> NamedTuple | nothing` over the documented layout of src/occurrence.jl (schema 0x01): the schema

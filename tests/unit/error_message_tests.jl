@@ -4,7 +4,7 @@
 # DOES: proves those messages carry their stable substrings on real triggers. The deep-state
 #       loci (duplicate-conditions; the condition-key family — witnessed in condition_tests.jl since stage 5's E13) and the
 #       internal-invariant messages ship unwitnessed here, as does the unknown-action message.
-# REASONING: the spaced `#~ : x` form reads as TWO metaStatements since the metaLine parser effort (stage 5's s5c29): the lone `:`
+# REASONING: the spaced `#~ : x` form reads as TWO metaStatements since the metaLine parser effort: the lone `:`
 #       with zero arguments is the Labels Alterant's (his §359 (7); the register's PB-2) and `x` meets the registry's unknown-action
 #       refusal at absorb (the battery's r13; the former "misplaced one-word label" refusal left at s5c29 — the set-invocation seam the
 #       first draft of this line named left at E6), so the unspaced form is the true label path exercised below.

@@ -1,6 +1,6 @@
 # absorb_meta.jl — the metaLine parser and meta-hierarchy enqueuer (module AbsorbMeta)
 #
-# IS: the Absorb-phase metaLine parser and condition intake — his legacy's reader (GoMetaRetro AbsorbMeta.jl) with its grammar made
+# IS: the Absorb-phase metaLine parser and condition intake — the original engine's reader (GoMetaRetro AbsorbMeta.jl) with its grammar made
 #     explicit (the metaLine parser effort of stage 5, R-V04B-118 (3); his Decision 1 of 2026-10-08, OWNER-WORDS §356: Design E — his
 #     code fixed from the ground up, §342). It splits a metaLine's meta region into metaStatements (absorbMeta's loop + parseAlt), reads
 #     one-word labels (parseOneWordLabel) and `()` argument lists (parseArgs) with ONE scanner (_span) and ONE splitter (_split_args),
@@ -10,8 +10,8 @@
 #     other Alterant; R-V04B-101 (1)) — applying the queued actions is apply.jl's job; a heading in the profile feed meets the one refusal of his §D242.
 # DOES: a metaStatement is a HEAD — a name, a `:` label, or (the region's first statement only) a `"…"` heading — then at most one `(…)`,
 #     then at most one `{…}`, and ENDS at white space or at the region's end; any other character meets the one refusal `_refuse_char`,
-#     which names the character, the token it begins and the region (his §341). The six structural characters `( ) { } , "` end a name or
-#     a label (§362); every other non-white-space character is a name or label character — pictographs and emojis among them (§360); a
+#     which names the character, the token it begins and the region. The six structural characters `( ) { } , "` end a name or
+#     a label; every other non-white-space character is a name or label character — pictographs and emojis among them; a
 #     leading punctuation is part of the name and meets the registry's unknown-action refusal (§361; the prefix sugar a later design,
 #     V05-15). absorbMeta reads the per-call ProcessState through the parent GoMeta.ctx(), hoisted once as `st`; each name is resolved
 #     against st.registry.sorted_alt_actions; a slot already holding size(queued, 2) actions refuses with GoMeta's message BEFORE the
@@ -19,7 +19,7 @@
 #     st.queue.queued at the current meta-hierarchy slot, st.mh.slot_has_accum set for the accumulate set, the condition (Julia's `Expr`,
 #     or `nothing` for an action written without `{}`) and the argument tuple stored by value; ONE text-argument rule (`_string_slot_check`,
 #     his §359 (8)) admits a quoted (String) argument in the slot the action's declared record names and refuses it elsewhere; an empty
-#     argument piece (`cell(7,)`) is handed on as the empty token — the Alterant decides (§359 (1)). A condition body is READ HERE: a
+#     argument piece (`cell(7,)`) is handed on as the empty token — the Alterant decides. A condition body is READ HERE: a
 #     settribute key becomes its state read `getState(:key)`, an action of an Alterant that answers queries becomes its query
 #     `getAltState(Int8(p), Symbol("…"), …)` (the registry's one rule `queryable_action`, stage 5's E12 — R-V04B-99), a label test `:name`
 #     the Labels query of that name, his `,` becomes `||`, everything else — `&&`, `!`, `()`, `|`, `&`, decimal integers and plain decimal floats (a numeral with a letter or an underscore — `1e3`, `0xff`, `1_000` — starts a key at its letter and refuses, the register's PB-16), Julia operators but `:` (every `:` outside a quoted text is a label test — PB-17; this rule and the numerals' hold where the walk reads: the interior of a `:(…)` or `key(…)` argument list is spliced to Julia unread — `{ :(:a) }`),
@@ -39,10 +39,10 @@
 #     Julia's escape (his §D174; his word of 2026-10-08, §366). The scanner's form is the quote-scan
 #     panel's judge's specification (wf-s10-quote-scan-design, B.2).
 #     Honest edges: each refusal is an ErrorException without a code, raised via error() ("the usual error / refusal message", U8 :1473); two string shapes are copied in pieces and re-read SILENTLY — a quoted text nested inside an interpolation `$(…)` and an even number of bare `"` inside a triple-quoted text (the register's PB-15); the operator `:` and a numeral with letters are read as a label test and a key (PB-17, PB-16); a body
-#     Julia cannot parse is Julia's own `Meta.ParseError` (his §319); an argument's arity or type fault is the Alterant's own setter
+#     Julia cannot parse is Julia's own `Meta.ParseError`; an argument's arity or type fault is the Alterant's own setter
 #     error (§359 (9)); the Labels Alterant's character law and whitelist judge the label names handed over (U8 :1252).
 # PURPOSE: turn each metaLine of a BLS input into queued alterant work the apply phase consumes, refusing every malformed metaStatement
-#     with a stable GoMeta message that names the character at fault, and reading every well-formed one exactly as his legacy read it
+#     with a stable GoMeta message that names the character at fault, and reading every well-formed one exactly as the original engine read it
 #     (his two example files and the twelve frozen forms byte-equal, his §78).
 
 ## AbsorbMeta.jl
@@ -57,8 +57,8 @@ import ..BLS
 # The enqueue (`absorbMeta`) and the condition intake (`parseConditions` — the rewrite reads the registry's
 # vocabulary) read the per-call `ProcessState` (registry + slot tensors + queue + cursor) via the parent `GoMeta.ctx()`.
 import ..GoMeta: ctx
-# the registry's one vocabulary rule for a bare name in a condition (stage 5's E12 — R-V04B-99): an action of an Alterant
-# that answers queries; the rewrite's test where his legacy tested `insorted(key, sortedAltActionsSVec)` (AbsorbMeta.jl :219)
+# the registry's one vocabulary rule for a bare name in a condition: an action of an Alterant
+# that answers queries; the rewrite's test where the original engine tested `insorted(key, sortedAltActionsSVec)` (AbsorbMeta.jl :219)
 import ..GoMeta: queryable_action
 # v0.2 CH-3 step 8: the widened action-argument literal floor (Symbol|String; ints reserved).
 import ..GoMeta: AlterantArgT
@@ -73,11 +73,11 @@ export absorbMeta
 ## or, as the region's FIRST statement only, a `"…"` heading (his U8 :1292 sugar) — then at most one `(…)`, then at most one `{…}`
 ## (his order, U8 :1390), and it ENDS at white space or at the region's end; any other character meets THE ONE refusal
 ## `_refuse_char`, which names it (his §341: such situations cause an error). The six structural characters `( ) { } , "` end a
-## name or a one-word label (his §362); every other non-white-space character is a name or label character — a pictograph or an
+## name or a one-word label; every other non-white-space character is a name or label character — a pictograph or an
 ## emoji among them (his §360; a leading punctuation is part of the name, §361 — the prefix sugar is a later design, V05-15).
 ## ONE white-space predicate (`_isspace_valid` — his legacy's `isspace`, guarded against invalid UTF-8; his §359 (10)), ONE scanner
 ## `_span` for EVERY span — the metaLine's `(…)` `{…}` `"…"` and, since s5c31 on his word "strings in conditions: now" (§366), the
-## condition body's `(…)` lists and quoted texts (the rewrite's own finder left), ONE argument splitter `_split_args`, ONE refusal helper — where his legacy and the v0.2–v0.3 additions had
+## condition body's `(…)` lists and quoted texts (the rewrite's own finder left), ONE argument splitter `_split_args`, ONE refusal helper — where the original engine and the v0.2–v0.3 additions had
 ## three white-space tests, four bracket loops, three backslash sites and two String walls. The quote-scan panel of 2026-10-08
 ## (wf-s10-quote-scan-design; its judge's specification B.2) is the scanner's form.
 const _STRUCTURAL = ('(', ')', '{', '}', ',', '"')
@@ -117,7 +117,7 @@ a quoted text. One character walk (`nextind`, never a byte count); no regex; no 
 over `AbstractString` (the parser's `SubString{String}` today; the rewrite's `String` since s5c31 — his word "strings in
 conditions: now", §366).
 
-REASONING: his legacy counted brackets in three loops and the v0.2 additions added quote arms and backslash checks at three
+REASONING: the original engine counted brackets in three loops and the v0.2 additions added quote arms and backslash checks at three
 more places; one walk with one quote state serves every span. Julia's other literal delimiters are not known — a Char
 literal (`'}'`; `'` is also Julia's adjoint `x'`), a backtick, an odd `"` inside a triple-quoted text, a string prefix's
 word: the shapes the register names — `'}'` and `` `}` `` (the span ends early), the odd `"` (the span left open), a prefix's word (`r"a}b"`, read as a condition key) — end in a loud refusal or Julia's own error (the register's PB-5 names the Char literal; its note of 2026-10-09 the others); a Char or backtick literal the walk reads nothing of (no word, no `{`, `}`, `"`, `,` or `:` — `'1' == '1'`) reaches Julia unchanged and evaluates. Two shapes are copied in pieces and re-read SILENTLY — a quoted text nested inside an interpolation `\$(…)` and an even number of bare `"` inside a triple-quoted text (the register's PB-15).
@@ -220,8 +220,8 @@ end
 
 ## THE CONDITION REWRITE — stage 5's E13 of the v0.4 build (census row 1; his order §319, R-V04B-106 (2)–(3)); his §D174 (2026-10-06):
 ## the parser "must simply be able to recognize the GoMeta specific parts of the conditions in order to slightly re-write it when
-## storing the condition as a Julia Expression which gets then evaluated on demand by Julia". His legacy's produceConditionStr
-## (GoMetaRetro AbsorbMeta.jl :116–:245) read from the ground up (his §342): the GoMeta-specific parts of a `{…}` body become Julia
+## storing the condition as a Julia Expression which gets then evaluated on demand by Julia". The original engine's produceConditionStr
+## (GoMetaRetro AbsorbMeta.jl :116–:245) read from the ground up: the GoMeta-specific parts of a `{…}` body become Julia
 ## text, the rest is copied verbatim, and Julia's parser reads the result ONCE here; the stored `Expr` is evaluated by Julia at apply
 ## (apply.jl):
 ##   `,`                 → ` || `                                              (his OR — the legacy's :139–:145)
@@ -239,7 +239,7 @@ end
 ## A bare WORD that is neither a settribute key nor a queryable action IS a condition key and meets the refusal — `true`, `false`,
 ## `nothing` among them (his legacy's reading, :231–:234; register E13-14, his to widen); a quoted text is not a word (s5c31). A worded label
 ## with a parenthesized list (`:abc(:xyz)` — the K6 corner) reads as the label test of the word followed by a Julia call on its
-## Bool — a MethodError at apply; his legacy dropped the word and queried the list (:187–:191, :215), the closed interpreter (E13)
+## Bool — a MethodError at apply; the original engine dropped the word and queried the list (:187–:191, :215), the closed interpreter
 ## refused the shape — register E13-13, his to revert to either.
 ## An argument text is spliced as Julia text: its shape is Julia's to judge at apply (`getAltState`'s `Vararg{Symbol}`; an undefined
 ## name its UndefVarError), as the action arguments are since stage 5's E6. The walk is a CHAR walk (`nextind`/`lastindex` — never
@@ -269,7 +269,7 @@ end
 
 IS: the condition REWRITE of stage 5's E13 (census row 1; his order §319, R-V04B-106 (2)–(3); his §D174): the `{…}` body
 with its GoMeta-specific parts re-written to Julia text (the table in the comment above); the registry supplies the
-vocabulary — the settribute keys and the queryable actions. His legacy's `produceConditionStr` read from the ground up.
+vocabulary — the settribute keys and the queryable actions. The original engine's `produceConditionStr` read from the ground up.
 
 DOES: one CHAR walk over `text` (`nextind`/`lastindex`, never a byte-count end test), printing into a buffer: `,` →
 ` || ` (his OR); `:` followed by `(` → the balanced span (the one scanner `_span`, quote-aware) becomes the Labels query
@@ -382,18 +382,18 @@ String-lane kind marker `_coerce_arg_token` reads; a non-first quoted text is re
 character (refused: no metaStatement starts with one — `#~ ,` and `#~3 (` no longer reach an empty name and Julia's BoundsError),
 or a NAME (the run to white space or a structural character — never empty). The TAIL is at most one `(…)` (unless the head took
 its arguments) then at most one `{…}`, his order (U8 :1390). The END: the next character is white space or the region's end —
-anything else is refused by name: a token glued to a closing bracket (`hide()junk`, `hide{isCode}show` — his legacy dropped it),
+anything else is refused by name: a token glued to a closing bracket (`hide()junk`, `hide{isCode}show` — the original engine dropped it),
 a second `(` or `{`, a `(` after `{…}`, a `,` after a one-word label (the right form named), a stray `)` `}` `"`. Returns the
 name (`head` for the sugar), the argument tokens, the condition (`nothing` for an action without `{}` — minted ONLY here) and
 the index of the statement's last character (his :359 contract; the caller's loop resumes after it).
 
-REASONING: his legacy's reader had arms for `(`, the label, `{` and white space and no "anything else" case (AbsorbMeta.jl
+REASONING: the original engine's reader had arms for `(`, the label, `{` and white space and no "anything else" case (AbsorbMeta.jl
 :307–:340), and its outer `ispunct` gate (:304) skipped a leading punctuation — so a statement was never required to END and a
 leading punctuation was never read: every silent skip, drop and raw BoundsError of the inventory (the register's D-1, D-2, D-3,
 D-8, D-10) was one of those two arms, cured at their root rather than by a patch per shape; the grammar in one sequence replaces his `argsDone` / `conditionsDone`
 flags and the three "again" refusals. The negative character rule (white space and the six structural characters end a token;
 everything else is a token character) keeps his pictograph and emoji labels and names (his §360) and drops the Unicode-category
-dependence that made `-hide` apply and `+hide` refuse (§361).
+dependence that made `-hide` apply and `+hide` refuse.
 
 PURPOSE: one metaStatement, read as his grammar states it, or one refusal naming the character at fault.
 """

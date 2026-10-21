@@ -57,7 +57,7 @@ _liveempty(text) = join(
             "#~ discard{ isText }\n\n#~2! x\n# B\n",     # a standing discard shield holds through an inert head
             "#~ hide{ isText }\n\n#~2! x\n# B\n",        # the shallow depth-1 rule survives a depth-2 inert head
             "#~2 hide{ isText }\n# A\n#~2! x\n# B\n",    # the glued sandwich (no blanks)
-            "#~ hide{ isText }\n\n#~2! x\n# B\n\n#~2 :label1\n# C\n",  # the owner's own 3-block example
+            "#~ hide{ isText }\n\n#~2! x\n# B\n\n#~2 :label1\n# C\n",  # the creator's own 3-block example
         )
             twin = _liveempty(src)
             r_i, r_l = _is(src), _is(twin)

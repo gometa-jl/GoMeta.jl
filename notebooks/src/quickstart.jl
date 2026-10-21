@@ -47,7 +47,7 @@ evals = GoMeta.readAltValuesEvals(result.altValues_evals)
 first(evals, 5)
 
 # ## The render — a development tool
-# The basic renderer is a development tool, not part of the Engine's output (R-V04B-24):
+# The basic renderer is a development tool, not part of the Engine's output:
 # the share-view of the file, to inspect a run by eye. Hidden lines come back
 # `## `-commented; discarded lines are gone.
 
@@ -57,7 +57,7 @@ print(String(copy(out.render_bytes)))
 
 # ## Find it again
 # The shipped query demo indexes the Components that carry a label — `GoMeta.scanAlterant(result, :labels)` through the tree, each piece's
-# text through `GoMeta.BLS.content`, its visibility the Engine's answer `GoMeta.evaluatedAltValue` — across the whole committed corpus; the evals rows read here are counted there, not joined (R-V04B-43 (2)). Run it yourself:
+# text through `GoMeta.BLS.content`, its visibility the Engine's answer `GoMeta.evaluatedAltValue` — across the whole committed corpus; the evals rows read here are counted there, not joined. Run it yourself:
 # `julia --startup-file=no --project=. extensions/find_by_label.jl label5`
 
 count(e -> e[2] === :label_label5 && e[3] === true, evals)

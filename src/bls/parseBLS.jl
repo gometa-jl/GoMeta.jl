@@ -20,9 +20,9 @@
 #   extension chains (`createExtensionFor`, `getLastInExtensionChain`); store growth is
 #   normal. Content flags propagate
 #   child→parent→file; the return is the component-store dict plus a config dict (the
-#   first-metaLine index, when one exists — absent when an inline metaSegment comes first: the segment arm sets the local only, his legacy's asymmetry; read by nothing since the delivery dropped it, src/GoMeta.jl :402). The tree print (`structural_serialization` over
+#   first-metaLine index, when one exists — absent when an inline metaSegment comes first: the segment arm sets the local only, the original engine's asymmetry; read by nothing since the delivery dropped it, src/GoMeta.jl :402). The tree print (`structural_serialization` over
 #   `writeBlsStructureToIO`; the file-writing twin `writeBlsStructureToFile`) LEFT this file on
-#   2026-09-12 (R-V04B-24) for the development tool `devtools/basic_renderer.jl`, which reads the
+#   2026-09-12 for the development tool `devtools/basic_renderer.jl`, which reads the
 #   `ParseState` through BLS's door alone since stage 5's s5c8 (the exemption D-6(a) of 2026-08-20 lapsed 2026-09-16; its texts left; R-V04B-116 (3)).
 # REASONING: the tree print (now the development tool's) is pinned byte-for-byte by tests/golden/golden_tests.jl, so the
 #   parse must be a pure, deterministic function of the input bytes — setup and parse touch
@@ -877,7 +877,7 @@ function parseBLS(
                     fenceOpen = false ## Closure of open fence.
                     segmentContentType = blockContentType
                     lineContenTypeDetermined = true
-                    ## THE FENCE-EXIT BLOCK BOUNDARY (the owner-decided v0.2 fix of the
+                    ## THE FENCE-EXIT BLOCK BOUNDARY (the creator-decided v0.2 fix of the
                     ## meta-after-fence drop): the OPEN branch ends the current block
                     ## ("Starts NEW Block" below) but this CLOSE branch never did — so
                     ## no block boundary existed after a closing fence, every
@@ -934,7 +934,7 @@ function parseBLS(
             end
         end
 
-        ## THE MID-LINE TRIPLE-QUOTE TRACKER (class b of the owner-decided fence-exit
+        ## THE MID-LINE TRIPLE-QUOTE TRACKER (class b of the creator-decided fence-exit
         ## fix; discovered AT the cut — the first probe class was mis-attributed):
         ## an assignment-opened string (`s = """`) is INVISIBLE to the line-start
         ## fence regex above, so its TERMINATOR line used to phantom-OPEN a fence

@@ -159,7 +159,7 @@ end
         # headers would MATCH ⇒ this guard is what keeps that case from silently false-greening.
         @test res.status == G.PROCESS_OK
         ann = G.readAltValuesEvals(res.altValues_evals)
-        ser = TestSupport.derive_annotations_golden(res)         # THE TEST-LAYER DERIVER (stage 2's commit 8; R-V04B-43 (3)): the 5-column form, its fifth column through the BLS Component tree and the door's `BLS.content`
+        ser = TestSupport.derive_annotations_golden(res)         # THE TEST-LAYER DERIVER: the 5-column form, its fifth column through the BLS Component tree and the door's `BLS.content`
         @test _sha(ser) == fx["annotations_golden_sha256"]             # golden sha pre-check
         @test ser == read(joinpath(REPO, fx["annotations_golden_path"]))   # full byte-compare on the golden file
         # deterministic across a 2nd fresh in-process run; sorted; polarity; totality.

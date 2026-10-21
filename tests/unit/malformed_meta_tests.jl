@@ -5,7 +5,7 @@
 # DOES: proves (1) a valid metaLine twin stays PROCESS_OK and byte-deterministic; (2) the INERT `#~!` corpus shape passes through
 #       byte-exact; (3) the documented spacing form after a closing bracket stays green; (4) the glued form `hide{isCode}show` is
 #       refused by the grammar's one refusal naming the character (his legacy dropped the `show` silently — the register's D-2).
-# REASONING: a metaStatement ENDS at white space or the region's end; any other character is named in the refusal (his §341).
+# REASONING: a metaStatement ENDS at white space or the region's end; any other character is named in the refusal.
 #       The full battery of shapes is tests/unit/parser_quality_tests.jl (generated); these are the valid paths' pins.
 # PURPOSE: the parser's valid shapes, byte-exact; the glued form, refused by name.
 using Test

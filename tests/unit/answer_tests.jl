@@ -6,7 +6,7 @@
 #       naming its own receipt where it differs; [A10] by the Alterants build lane's stage-3 oracle I01–I03 and its
 #       instruments/probe-ids-compound.jl — plan/2026-10-15-gometa-alterants-build/receipts/stage3/).
 # DOES: [A1] Visib — the metaBlock's own statement, the attached Block indirect through it, a rowless Line inherits; [A2] Labels —
-#       the SET with one source; [A3] no rows anywhere — the declared default of each built-in Alterant (R-V04B-92), the File `:none`; [A4] a
+#       the SET with one source; [A3] no rows anywhere — the declared default of each built-in Alterant, the File `:none`; [A4] a
 #       Segment's statement — its Line OWN (the trailing metaSegment applies directly to it, R-V04B-93), its Segments the Line's
 #       answer marked indirect, the heading metaBlock own, its rowless Line inherits the heading; [A5] the user feed — `:user` on
 #       the Blocks, the Line and its Segments alike (a Segment answers as its Line answers); [A6] the refusals and the registry keyword; [A7] the
@@ -55,13 +55,13 @@ _an_id(c) = _AN_BLS.getElement(c.cmpntNamedInt, :idComponent)
         @test r.status === GM.PROCESS_OK && isempty(r.altValues_evals.records)
         bs = _AN_BLS.children(ps); @test length(bs) == 1
         a = GM.evaluatedAltValue(r, bs[1], :Visib)
-        @test a.value === :show && a.source === :default && a.via === nothing     # Visib's ONE declared default (R-V04B-51 (2))
+        @test a.value === :show && a.source === :default && a.via === nothing     # Visib's ONE declared default
         b = GM.evaluatedAltValue(r, bs[1], :labels)
         @test b.value == Symbol[] && b.source === :default && b.via === nothing    # Labels' declared default: the EMPTY SET (R-V04B-92, card C2) — MEASURED, PROBES-rvc2-digest.txt
         hd = GM.evaluatedAltValue(r, bs[1], :heading)
-        @test hd.value === nothing && hd.source === :default && hd.via === nothing  # Heading's declared default: NONE (R-V04B-92)
+        @test hd.value === nothing && hd.source === :default && hd.via === nothing  # Heading's declared default: NONE
         id = GM.evaluatedAltValue(r, bs[1], :id)
-        @test id.value == (cell = Int16(0), parent = Int16(0), file = Int16(0)) && id.source === :default   # Id's declared default: the ZERO compound (R-V04B-92)
+        @test id.value == (cell = Int16(0), parent = Int16(0), file = Int16(0)) && id.source === :default   # Id's declared default: the ZERO compound
         l = GM.evaluatedAltValue(r, _AN_BLS.children(ps, bs[1])[1], :Visib)
         @test l.value === :show && l.source === :default                          # a rowless Line under a rowless Block: the default too
         f = GM.evaluatedAltValue(r, _AN_BLS.root(ps), :Visib)
@@ -140,7 +140,7 @@ _an_id(c) = _AN_BLS.getElement(c.cmpntNamedInt, :idComponent)
         r2 = GM.goMeta(_an_bytes("#~ hide\nx = 1\n"); registry = R2); @test r2.status === GM.PROCESS_OK
         @test !any(x -> x.attr === :visib, r2.altValues_evals.records)                 # no capture declaration: no Visib rows
         a2 = GM.evaluatedAltValue(r2, _AN_BLS.children(r2.blsComponentTree)[2], :Visib; registry = R2)
-        @test a2.value === :show && a2.source === :default && a2.via === nothing       # the declared default (R-V04B-55 (2))
+        @test a2.value === :show && a2.source === :default && a2.via === nothing       # the declared default
     end
 
     @testset "[A9] the Id compound: a NamedTuple of the recorded fields; the nearest statement's compound as a WHOLE" begin
