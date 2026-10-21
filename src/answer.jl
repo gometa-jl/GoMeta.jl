@@ -1,30 +1,29 @@
-# answer.jl — THE ONE ANSWER FUNCTION (stage 2's commit 4 of the v0.4 build; R-V04B-35 (c); R-V04B-52 (2); R-V04B-53;
-# R-V04B-55 (2); the plan v8.1 :56).
+# answer.jl — THE ONE ANSWER FUNCTION.
 #
 # IS:   for ONE Component and ONE Alterant, the Engine's resolved value and its SOURCE — computed ON DEMAND from the delivered
-#       rows (`altValues_evals`) and their provenance (`decided_by`, stage 2's commit 2), never stored; ONE answer shape across
-#       Alterants, so no consumer meets a set mode (R-V04B-35 (c)).
+#       rows (`altValues_evals`) and their provenance (`decided_by`), never stored; ONE answer shape across
+#       Alterants, so no consumer meets a set mode.
 # DOES: finds the Component's own rows — the rows keyed on it; a Segment-carried row (keyed on a Line with the Segment as the
 #       key's origin) counts as the Line's, and its statement as the Line's OWN (the trailing metaSegment's statement is applied
-#       DIRECTLY to its Line — his §286/§288, R-V04B-93); a rowless child inherits its parent's rows (a Segment its Line's, a Line its Block's
+#       DIRECTLY to its Line — the creator's decision); a rowless child inherits its parent's rows (a Segment its Line's, a Line its Block's
 #       — a rowless child has no statement of its own; whether a child's own row equal to its parent's is recorded is
-#       OQ-148 — today it is: every captured cell's rows are kept; R-V04B-52 (2)); no rows anywhere → the Alterant's declared
-#       default with the source `:default` (R-V04B-55 (2)) — every built-in Alterant declares one since card C2's word (R-V04B-92:
+#       an open point — today it is: every captured cell's rows are kept); no rows anywhere → the Alterant's declared
+#       default with the source `:default` — every built-in Alterant declares one (the creator's decision:
 #       Visib `show`, Labels the empty set, Heading none, Id the zero compound); `:none` only for an Alterant without a declared
 #       default in a custom registry, and for the File; the source from the deciding
 #       statements' handles: `:own` when every deciding handle is the asked Component's own, else by the first foreign handle's
-#       class — the user context `:user`, the File `:file` (the File level's room, R-V04B-53; no feed today), a document
+#       class — the user context `:user`, the File `:file` (the File level's room; no feed today), a document
 #       Component `:indirect` THROUGH that Component (named in `via`); `:fallBack` RESERVED for the fallBack level's carrier
-#       once the metaLevel Alterant feeds it (R-V04B-55 (4)); the File's own answer `:none` — NOTHING built (card 6 "next").
-# REASONING: his §67/§68 and R-V04B-35 (a): the rows stay as today and ONE provenance field rides them; the answer is DERIVED
+#       once the metaLevel Alterant feeds it; the File's own answer `:none` — NOTHING built (an open point).
+# REASONING: the creator's design: the rows stay as they are and ONE provenance field rides them; the answer is DERIVED
 #       from the rows at the call, so the delivered rows remain the one truth and no second store can drift from them.
-# PURPOSE: the Extension-facing question "what applies to this Component for this Alterant, and through whom" (R-V04B-35 (c);
-#       R-V04B-55 (2) (v): an Extension that needs a value where GoMeta provided none may use the Alterant's default).
-# NOT FINAL (put at stage 2's review, R-V04B-40 (2)): its TIER (package-public — the session's default), the File's case and the
-#       equal-child rows (OQ-148) are carried past the branch (the review's C23); the per-call row scan (the cached index, Q6 — card C8;
-#       the former per-call tree walk behind `via` left at stage 3's commit 1b — `_component_of` below) is DEFERRED to the benchmark
-#       phase (his word of 2026-10-03, OWNER-WORDS §307; R-V04B-97). The NAME is DECIDED: `evaluatedAltValue`, his word of 2026-10-03 (OWNER-WORDS
-#       §305; R-V04B-95), replacing the branch's working name `answerFor` (the casing rule R-V04B-31).
+# PURPOSE: the Extension-facing question "what applies to this Component for this Alterant, and through whom" (an
+#       Extension that needs a value where GoMeta provided none may use the Alterant's default).
+# NOT FINAL: its TIER (package-public), the File's case and the
+#       equal-child rows are open points; the per-call row scan (a cached index;
+#       the former per-call tree walk behind `via` was removed — `_component_of` below) is DEFERRED to a later benchmark
+#       phase (the creator's decision). The NAME is DECIDED: `evaluatedAltValue`, the creator's word of 2026-10-03,
+#       replacing a working name `answerFor`.
 
 """
     EvaluatedAltValue
@@ -34,10 +33,10 @@ Labels the SET of label names, a sorted `Vector{Symbol}`; Id the compound, a `Na
 `String` of the Component's first heading row), `source` (`:own` · `:indirect` · `:user` · `:file` · `:fallBack` · `:default`
 · `:none`) and `via` (the deciding Component for `:indirect`; `nothing` otherwise).
 DOES: carries the answer; `value` is `nothing` for `:none`.
-REASONING: ONE source tag per Component per Alterant (R-V04B-35 (c)) — the deciding statement's for a single-valued mode, the
-SET's for an accumulating one (which Component contributed which label is Q4 (ii), open), the compound's for Id.
-PURPOSE: the return of `evaluatedAltValue`. Package-public (docs/public-api.md §1.2); NOT exported. Stage 2's commit 4; the NAME his
-word of 2026-10-03 (OWNER-WORDS §305; R-V04B-95); the TIER carried past the branch (the review's C23).
+REASONING: ONE source tag per Component per Alterant — the deciding statement's for a single-valued mode, the
+SET's for an accumulating one (which Component contributed which label is open — tests/comparison/README.md, Q4), the compound's for Id.
+PURPOSE: the return of `evaluatedAltValue`. Package-public (docs/public-api.md §1.2); NOT exported. The NAME the creator's
+word of 2026-10-03; the TIER an open point.
 """
 struct EvaluatedAltValue
     value::Any
@@ -81,8 +80,8 @@ function _starts_with(h::Vector{UInt8}, p::Vector{UInt8})
 end
 
 ## the attribute family of an Alterant's rows, from its capture declaration: `:single` the stem itself (`:visib`); `:per_key`
-## and `:per_field` the stem plus `_<member>` (`:label_<name>`, `:id_<field>`); `:per_entry` (the Heading's — stage 1 of the Alterants
-## build; `:per_occurrence` before it) the stem, leveled or not (`:head`, `:head_<level>`, `:head_<level>_<k>`).
+## and `:per_field` the stem plus `_<member>` (`:label_<name>`, `:id_<field>`); `:per_entry` (the Heading's —
+## `:per_occurrence` within the 0.4 development) the stem, leveled or not (`:head`, `:head_<level>`, `:head_<level>_<k>`).
 function _attr_matches(attr::Symbol, stem::Symbol, scheme::Symbol)
     scheme === :single && return attr === stem
     attr === stem && return scheme === :per_entry
@@ -114,11 +113,11 @@ end
 ## the Component a deciding handle names — read DIRECTLY from the handle's LAST path step (store byte · u32 ordinal: the handle's
 ## own layout, `key_bytes` — schema · u16 namespace length · namespace · grain · u16 step count · the steps · the origin steps; the
 ## grain byte selects the store family through `_DOC_GRAIN_CODES`); `nothing` for a non-document grain, a TRUNCATED marker step
-## (store 0x00), an unassigned or out-of-bounds slot (a degenerate key) — the totality arm, never a throw. Stage 3's commit 1b of the
-## v0.4 build: the former walk of the whole tree (one key computed per Component until the match, once per :indirect answer) was
-## MEASURED as 98.5 % of this function's cost on a 2,520-line input (16.1 of 16.3 s over its Lines — plan
-## `receipts/S8-branch/precheck-s3c1/PROBES-s3-answer-cost.txt`); the direct read names the same Component for every deciding handle
-## of every measured input (`PROBES-s3-via-direct.txt`).
+## (store 0x00), an unassigned or out-of-bounds slot (a degenerate key) — the totality arm, never a throw. The former
+## walk of the whole tree (one key computed per Component until the match, once per :indirect answer) was
+## MEASURED as 98.5 % of this function's cost on a 2,520-line input (16.1 of 16.3 s over its Lines);
+## the direct read names the same Component for every deciding handle
+## of every measured input.
 function _component_of(ps::BLS.ParseState, h::Vector{UInt8})
     length(h) >= 3 || return nothing
     n = (Int(h[2]) << 8) | Int(h[3]); i = 4 + n                        # i = the grain byte's index
@@ -144,26 +143,26 @@ end
 
 IS: THE ONE ANSWER FUNCTION — for ONE Component of the delivered tree and ONE Alterant (its registered name: `:Visib`,
 `:labels`, `:id`, `:heading` in the default registry) the Engine's resolved value and its SOURCE, derived at the call from
-the delivered rows and their provenance (R-V04B-35 (c)).
+the delivered rows and their provenance.
 DOES: (1) the Component's own rows — the rows keyed on it, a Segment-carried row counting as its Line's; (2) a rowless child
 inherits its parent's rows up the tree (Segment → Line → Block; never the File); (3) no rows anywhere → the Alterant's
 declared default as `(value, :default)` or `(nothing, :none)` when it declares none; (4) the source: `:own` when every
 deciding handle of the rows is the asked Component's own key; otherwise the first foreign deciding handle's class —
 `USER_CONTEXT_GRAIN` ⇒ `:user`, the File grain ⇒ `:file`, a document grain ⇒ `:indirect` through the Component the handle
 names (`via`, read from the handle's own path; `nothing` for a degenerate key) — a handle naming one of the asked LINE's own
-Segments is the Line's own statement (the trailing metaSegment applies DIRECTLY to its Line — R-V04B-93, his §286/§288); a SEGMENT
+Segments is the Line's own statement (the trailing metaSegment applies DIRECTLY to its Line — the creator's decision); a SEGMENT
 without rows of its own answers as the Component whose rows it inherits answers (its Line, or its Block when the Line is rowless too),
 that Component's `:own` becoming `:indirect` through it — its statement was applied to the Line, not to the Segment — and every other
 source (`:indirect` through the same decider, `:user`, `:file`) unchanged, as a rowless Line's relates to its Block's; rows without any recorded origin answer `:own` on the Component itself and
-`:indirect` through the carrier Component otherwise. The File answers `(nothing, :none)` — NOTHING built for it (card 6
-"next"; the File's case carried past the branch (the review's C23)). An Alterant name outside the registry throws an `ArgumentError` naming the registered
+`:indirect` through the carrier Component otherwise. The File answers `(nothing, :none)` — NOTHING built for it (an open
+point). An Alterant name outside the registry throws an `ArgumentError` naming the registered
 names; an Alterant without a capture DECLARATION mints no rows and answers its declared default (`:default`) or `:none`; an
 undeclared capture stem is derived as the walk derives it (`lowercase(altName)`). Pure: no state, no cache, no mutation of the delivery.
 REASONING: one function, uniform across Alterants (the value in each Alterant's own shape, the source ONE tag), so an
-Extension asks one question (R-V04B-35 (c); R-V04B-55 (2)); the rows stay the one truth (R-V04B-35 (a)).
+Extension asks one question; the rows stay the one truth.
 PURPOSE: the Extension-facing read of "what applies here and through whom". Package-public (docs/public-api.md §1.2), NOT
-exported. The name is his word of 2026-10-03 (OWNER-WORDS §305; R-V04B-95); the per-call row scan (card C8) is DEFERRED to the
-benchmark phase (§307; R-V04B-97); the tier, the File's case and the equal-child rows (OQ-148) are carried past the branch (the review's C23);
+exported. The name is the creator's word of 2026-10-03; the per-call row scan is DEFERRED to a later
+benchmark phase; the tier, the File's case and the equal-child rows are open points;
 nothing here is promised before v0.7 (§6).
 """
 function evaluatedAltValue(delivery::GoMetaDelivery, component::BLS.AbstractComponent, alterant::Symbol;
@@ -174,11 +173,11 @@ function evaluatedAltValue(delivery::GoMetaDelivery, component::BLS.AbstractComp
     p = registry.plugins[idx]
     component isa BLS.File && return EvaluatedAltValue(nothing, :none, nothing)
     cap = p.capture
-    if cap === nothing                  # no capture declaration: the walk mints NO rows — R-V04B-55 (2): the declared default
+    if cap === nothing                  # no capture declaration: the walk mints NO rows — the declared default
         d = p.default
         return d isa Declared ? EvaluatedAltValue(d.value, :default, nothing) : EvaluatedAltValue(nothing, :none, nothing)
     end
-    stem = _capture_stem(p)   # the walk's own derivation (annotations.jl's capture; registry.jl's effective stem) — the seat wf-s10-s2c4-check F-1
+    stem = _capture_stem(p)   # the walk's own derivation (annotations.jl's capture; registry.jl's effective stem)
     scheme = cap.attr_scheme
     ps = delivery.blsComponentTree
     store = delivery.altValues_evals
@@ -197,12 +196,12 @@ function evaluatedAltValue(delivery::GoMetaDelivery, component::BLS.AbstractComp
     end
     value = _answer_value(rows, stem, scheme)
     if component isa BLS.Segment && c !== component
-        ## R-V04B-52 (2) in his words (his words of 2026-10-02 — OWNER-WORDS §286 (i)–(iii) and §288 (1)–(2); R-V04B-93): today a metaStatement reaches a Segment INDIRECTLY only — a Segment without rows of
+        ## The creator's rule: today a metaStatement reaches a Segment INDIRECTLY only — a Segment without rows of
         ## its own answers the ANSWER of the Component whose rows it inherits (its Line; its Block when the Line is rowless too):
         ## that Component's OWN statement (the Line's trailing metaSegment's — even when the deciding handle is this Segment's own
         ## key, the carrier's: the statement was applied DIRECTLY to the Line, not to itself) reaches the Segment INDIRECTLY through
         ## it; every other source stays as that Component answers it — :indirect through the same decider, the fed profile's :user,
-        ## the File's :file — exactly as a rowless Line relates to its Block (the decisions seat's F-1: the user case unchanged).
+        ## the File's :file — exactly as a rowless Line relates to its Block.
         a = evaluatedAltValue(delivery, c, alterant; registry = registry)
         return a.source === :own ? EvaluatedAltValue(a.value, :indirect, c) : a
     end
@@ -213,7 +212,7 @@ function evaluatedAltValue(delivery::GoMetaDelivery, component::BLS.AbstractComp
         any_origin = true
         h == ownkey && continue
         if component isa BLS.Line
-            ## the trailing metaSegment's statement is applied DIRECTLY to its Line (his words of 2026-10-02 — OWNER-WORDS §286 (i)–(iii) and §288 (1)–(2); R-V04B-93): a deciding handle that names one of
+            ## the trailing metaSegment's statement is applied DIRECTLY to its Line (the creator's rule): a deciding handle that names one of
             ## the Line's OWN Segments is the Line's own statement — the Segment is its carrier, not a foreign decider
             hc = _component_of(ps, h)
             hc isa BLS.Segment && BLS.parent(ps, hc) === component && continue

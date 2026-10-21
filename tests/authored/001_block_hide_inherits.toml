@@ -1,42 +1,42 @@
 schema = 1
 stem = "001_block_hide_inherits"
 status = "confirmed"
-drafted_by = "session S3B, 2026-08-28 (corrected 21:50 after running the input at 85576bf); restated by session S4, 2026-09-10, as positions and values in the owner's terms"
-confirmed_by = "owner, 2026-09-10"
+drafted_by = "a draft of 2026-08-28, restated 2026-09-10 as positions and values in the creator's terms"
+confirmed_by = "the creator, 2026-09-10"
 scenario = "A metaLine on line 1 says hide. Line 2 (a = 1) carries no meta of its own. Line 3 (b = 2) carries an inline metaSegment saying show. Block 1 (the metaBlock): hide, by its own metaLine. Block 2 (the Code Block holding lines 2 and 3) is attached to that meta and therefore inherits hide. Hide applies to those Blocks and indirectly to their children: line 1 as Block 1's child, line 2 as Block 2's child; the Lines are not explicitly issued hide and did not explicitly inherit it. Line 3: show, since the closest metaStatement wins, in this case the metaSegment at the end of line 3."
-history = ["2026-09-10: confirmed by the owner on these exact bytes (transaction S4-CONFIRM-001). The truth: his words of 2026-09-10 — OWNER-WORDS §7 item 1 (Block 1, Block 2, Line 3) and §8 (the indirect-application principle, general to every Alterant); the line 1 and line 2 statements are the session's application of that principle, confirmed by his word on these bytes. How the Engine delivers an entry for a child Component is OPEN (§7 item 2: the interface is a first crude draft — his lean, given with a question back, not a ruling)."]
+history = ["2026-09-10: confirmed by the creator on these exact bytes. The truth: his words of 2026-09-10 on Block 1, Block 2 and Line 3, and his indirect-application principle (general to every Alterant); the line 1 and line 2 statements are the application of that principle, confirmed by his word on these bytes. How the Engine delivers an entry for a child Component is OPEN (the interface is a first crude draft — his lean, not a decision)."]
 
 [[expect]]
 component = "block@1"
 alterant = "Visib"
 value = "hide"
 decided_by = "block@1"
-note = "the metaBlock opened by the line-1 metaLine; its own value (the owner, 2026-09-10, OWNER-WORDS §7 item 1). Provenance: a Block-grain row at 8c3a83d (observed 2026-09-04)"
+note = "the metaBlock opened by the line-1 metaLine; its own value (the creator, 2026-09-10). Provenance: a Block-grain row at 8c3a83d (observed 2026-09-04)"
 
 [[expect]]
 component = "block@2"
 alterant = "Visib"
 value = "hide"
 decided_by = "block@1"
-note = "the Code Block holding lines 2-3: attached to that meta (the line-1 metaLine, Block 1's) and therefore inherits hide (the owner, 2026-09-10, OWNER-WORDS §7 item 1). Provenance: a Block-grain row at 8c3a83d (observed 2026-09-04)"
+note = "the Code Block holding lines 2-3: attached to that meta (the line-1 metaLine, Block 1's) and therefore inherits hide (the creator, 2026-09-10). Provenance: a Block-grain row at 8c3a83d (observed 2026-09-04)"
 
 [[expect]]
 component = "line@1"
 alterant = "Visib"
 value = "hide"
 decided_by = "block@1"
-note = "the metaLine's own Line: a child of block@1; hide applies to it indirectly — it did not explicitly inherit hide and is not explicitly issued it (the owner's principle, OWNER-WORDS §8 item 3). This statement is new since the 2026-08-28 draft and is the session's application of the principle; Line 1 is not named in §7 item 1. Provenance: no per-Line row at 8c3a83d (observed 2026-09-04); whether the Engine delivers an entry for a child Component is open"
+note = "the metaLine's own Line: a child of block@1; hide applies to it indirectly — it did not explicitly inherit hide and is not explicitly issued it (the creator's principle). This statement is the application of the principle. Provenance: no per-Line row at 8c3a83d (observed 2026-09-04); whether the Engine delivers an entry for a child Component is open"
 
 [[expect]]
 component = "line@2"
 alterant = "Visib"
 value = "hide"
 decided_by = "block@1"
-note = "a plain Line: a child of block@2, which is attached to block@1's meta; hide applies to it indirectly — it did not explicitly inherit hide and is not explicitly issued it (the owner's principle, OWNER-WORDS §8 item 3). This statement is the session's application of the principle; Line 2 is not named in §7 item 1. Provenance: no per-Line row at 8c3a83d (observed 2026-09-04); whether the Engine delivers an entry for a child Component is open"
+note = "a plain Line: a child of block@2, which is attached to block@1's meta; hide applies to it indirectly — it did not explicitly inherit hide and is not explicitly issued it (the creator's principle). This statement is the application of the principle. Provenance: no per-Line row at 8c3a83d (observed 2026-09-04); whether the Engine delivers an entry for a child Component is open"
 
 [[expect]]
 component = "line@3"
 alterant = "Visib"
 value = "show"
 decided_by = "line@3"
-note = "its own: the closest metaStatement wins, in this case the metaSegment at the end of line 3 (segment@3.2) (the owner, 2026-09-10, OWNER-WORDS §7 item 1). Provenance: a Line-grain row at 8c3a83d (observed 2026-09-04)"
+note = "its own: the closest metaStatement wins, in this case the metaSegment at the end of line 3 (segment@3.2) (the creator, 2026-09-10). Provenance: a Line-grain row at 8c3a83d (observed 2026-09-04)"

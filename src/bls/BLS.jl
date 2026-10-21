@@ -34,14 +34,14 @@ NamedElements.@namedElement ComponentSettribute Bool begin
     stopAttachmentToMeta
     detachedFromMeta
     ignoreThisMeta
-    ignoreMetaContent ## R-INERT-4 (v0.3.1): the AUTHOR's trailing-bang inert marker
+    ignoreMetaContent ## since v0.3.1: the AUTHOR's trailing-bang inert marker
                       ## ("#~N!"/"#~!") — the component IS structurally live (walks, closes,
                       ## supersedes, attaches exactly like the bare live marker) and ONLY its
                       ## content after the '!' is ignored (absorbed as EMPTY). Distinct from
                       ## :ignoreThisMeta, which stays the absorb-walk SKIP flag of the other mint
                       ## classes (the "#]" close-marker rows, comment-in-Meta, glued bucket-A).
-                      ## (the three Visib flags hide / show / discard left this record at stage 5's E12 of the
-                      ## v0.4 build — census row 45; R-V04B-99: a condition naming one meets the unknown-key refusal)
+                      ## (the three Visib flags hide / show / discard were removed from this record within the 0.4
+                      ## development: a condition naming one meets the unknown-key refusal)
     firstInLine
     firstInBlock
     isSet
@@ -164,9 +164,9 @@ component's childComponentsIdxVec before an extension is needed. Compile-time co
 (`addChildComponentTo`, `insertChildComponentAt`: the overflow test before an extension is used or created) and by the
 extension-chain iterator (`eachchildid`: the step from a full Component to its extension).
 
-REASONING: his words of 2026-03-28 — this integer `N` determines the length of `childComponentsIdxVec`, so a Component
-can NOT have more children than `N`; the surplus children are stored in an extension Component (his note (1); the
-chain of rung 2). The accessor is not his legacy's (rungs 1–4 are CC's work at his order; his review comes after v0.4).
+REASONING: the creator's words — this integer `N` determines the length of `childComponentsIdxVec`, so a Component
+can NOT have more children than `N`; the surplus children are stored in an extension Component (his note; the
+extension chain). The accessor is not the original engine's (a later addition at the creator's order).
 
 PURPOSE: the one bound the overflow logic of the parse and of the child walk consults.
 """
@@ -256,7 +256,7 @@ end
 const depthLevelsMH =
     (:depth0, :depth1, :depth2, :depth3, :depth4, :depth5, :depth6, :depth7, :depth8)
 ## The depth window :depth0..:depth8 is ARCHITECTURAL (state.jl's slot map: slots 1-9 carry
-## depth 0-8, slot 10 is the user level, 11 the line level, 12 the fallBack level (R-V04B-55 (3)) — a depth-9 slot
+## depth 0-8, slot 10 is the user level, 11 the line level, 12 the fallBack level — a depth-9 slot
 ## would collide with the user level). This lookup is TOTAL by construction: a slot index or
 ## the stable refusal — `nothing` can never escape into the Int conversion.
 function getGivenDepthMH(crntComponent::Component)::Int
@@ -285,7 +285,7 @@ end
     eachchildid(component, componentsVec) -> EachChildId{T}
 
 IS: the extension-chain child iterator of a BLS Component — the one downward step over `childComponentsIdxVec` and the
-chain of extension Components (the chain the March 2026 ladder's rung 2 built — the ladder CC's work, his §70 item 3);
+chain of extension Components (the chain a March 2026 addition built at the creator's order);
 the file's own words: it replaces the duplicated traversal loops.
 
 DOES: Iterate over all child IDs across a component's extension chain. `componentsVec` is the vector used to follow
@@ -297,9 +297,9 @@ insert store (`insertChildComponentAt` writes `-childId`) — the callers resolv
 `SizeUnknown`, `eltype` is `Int`. Its callers: BLS's door `children`, the parse's `getAllChildIds`, the driver's File
 loop (`goMeta`) and the absorb walk's Block and Line loops.
 
-REASONING: the legacy's child walk — the loop over `childComponentsIdxVec` — carried as one iterator since the
-extension chain (his note of 2026-03-28: the surplus children stored elsewhere), so every walker takes the same step;
-the legacy's form otherwise, kept.
+REASONING: the original engine's child walk — the loop over `childComponentsIdxVec` — carried as one iterator since the
+extension chain (the creator's note: the surplus children stored elsewhere), so every walker takes the same step;
+the original engine's form otherwise, kept.
 
 PURPOSE: the one child walk under the door's `children`, the driver and the absorb walk.
 """
@@ -338,10 +338,10 @@ include("parseBLS.jl")
 #########################################################################################
 ## THE DOOR — BLS's own public travel / access functions over the BLS Component tree.
 ## The BLS Component tree is provided by BLS itself and travelled with BLS's own public
-## functions (R-V04B-45); the public surface of every part an absolute minimum (his §18);
-## a BLS object stated to be a BLS object (his §48 lean) — every name below is read
+## functions; the public surface of every part an absolute minimum;
+## a BLS object stated to be a BLS object (the creator's design) — every name below is read
 ## QUALIFIED, `BLS.<name>`; nothing is exported. Each function is marked as an existing
-## BLS function ADAPTED or as NEW (R-V04B-48 (2)(c)).
+## BLS function ADAPTED or as NEW.
 #########################################################################################
 public children, parent, kind, content
 
@@ -354,11 +354,11 @@ DOES: returns the child Components of `c` in source order (a File's Blocks, a Bl
 a Line's Segments; an empty vector for a Segment); without a Component, the Blocks of the
 tree's one File. Follows the extension chain through `eachchildid`; resolves a positive id in
 the original store and a negative id in the insert store, so a caller never reads the stores.
-REASONING: the legacy's child walk (the March writer's loop over `childComponentsIdxVec`,
-`WriteOutFile.jl` :105) as v0.4's `eachchildid` carries it, over the legacy's own map
+REASONING: the original engine's child walk (the March writer's loop over `childComponentsIdxVec`,
+`WriteOutFile.jl` :105) as v0.4's `eachchildid` carries it, over the original engine's own map
 `parentChildComponentPDict` — ADAPTED, so that an Extension and the development tools walk
-down with one function (his §42 3 (ii)) and no store is read outside BLS (his §19).
-PURPOSE: the tree provided by BLS itself (R-V04B-45), travelled with BLS's own function.
+down with one function and no store is read outside BLS (the creator's design).
+PURPOSE: the tree provided by BLS itself, travelled with BLS's own function.
 BOUND: for a tree with no Block (the empty input; an error delivery) `children(tree)` is
 empty; `root(tree)` still returns the tree's File Component (the slot setup always writes it).
 """
@@ -380,13 +380,13 @@ children(tree::ParseState) = children(tree, tree.componentsPDict[File][1][1])
 IS: BLS's public upward step — the door's walk to the parent.
 DOES: returns a Segment's Line, a Line's Block, a Block's File; `nothing` for the File. Reads
 `:idParent` in the ORIGINAL store, as `getParentComponent` does (the insert store's parents
-are the clutter census's question, R-V04B-49).
-REASONING: ADAPTED — the legacy `getParentComponent` (the March `parseBLS.jl` :55, one method
+are an open question).
+REASONING: ADAPTED — the original engine's `getParentComponent` (the March `parseBLS.jl` :55, one method
 with a type ladder; v0.4's three per-grain methods `parseBLS.jl` :121–:129) under the door's
 name, its read unchanged. The name `parent` also belongs to Julia's `Base` (over arrays and
 views): this function is read qualified, `BLS.parent`, and adds no method to `Base.parent`;
 inside module BLS an unqualified `parent(x)` now binds to this function — the alternative,
-publishing `getParentComponent` itself, is his to choose.
+publishing `getParentComponent` itself, stays open.
 PURPOSE: the upward walk an Extension and the tools make today through `:idParent` reads.
 """
 parent(tree::ParseState, c::Union{Segment,Line,Block}) = getParentComponent(tree, c)
@@ -395,20 +395,20 @@ parent(::ParseState, ::File) = nothing
 """
     kind(c::Component) -> Union{Symbol,Nothing}
 
-IS: the Component's flavor in the canon's sense — `:Meta`, `:Code` or `:Text` (a metaLine is
+IS: the Component's flavor in the project's sense — `:Meta`, `:Code` or `:Text` (a metaLine is
 "a BLS Line Component of flavor Meta"); NOT its grain (the grain is the Component's type —
 File, Block, Line, Segment — reached by dispatch).
-DOES: reads the field `contentType` the parser set (the legacy's content types `Meta`, `Code`,
+DOES: reads the field `contentType` the parser set (the original engine's content types `Meta`, `Code`,
 `Text`) and answers its name; `nothing` for the File, whose field carries the store's
 constructor default, never a parsed flavor. Inside an open fence a content Line's
 `contentType` is the Block's (`parseBLS.jl` :998–:1002); a lead-led line there is classified
 by its lead (:985), and the settribute flags `:isMeta` / `:isCode` / `:isText` may then
 differ from the field — this function answers the field, not the flags.
 REASONING: NEW — a field read given a name, so that no Extension reads a field of a BLS
-object; a Symbol, not the type, so that no type of BLS becomes public for it (his §18).
+object; a Symbol, not the type, so that no type of BLS becomes public for it.
 (The word "flavor" also names the comment-lead record `FlavorProfile` in this code — a
-second sense of the word, NOTED for his word.)
-PURPOSE: an Extension's routing by flavor (his July words: a metaComponent's content to the
+second sense of the word, an open point.)
+PURPOSE: an Extension's routing by flavor (the creator's words: a metaComponent's content to the
 metadata parser; text or code otherwise).
 """
 kind(c::Union{Segment,Line,Block})::Symbol = nameof(c.contentType)
@@ -418,20 +418,20 @@ kind(::File) = nothing
     content(tree::ParseState, c::AbstractComponent) -> Vector{UInt8}
 
 IS: the VERBATIM content bytes of a Component at its own grain — BLS's public read of a
-piece's text (R-V04B-43 (1): "it is read from the BLS Component tree through BLS's own
-access function").
+piece's text (it is read from the BLS Component tree through BLS's own
+access function).
 DOES: a Block — its line span joined by '\n'; a Line — its full source line; a Segment —
 its byte span of its own line (a multibyte final character kept whole); EMPTY for a
 Component that addresses no content (a zero or out-of-range span; a zero-length Line — a
 whitespace-only Line returns its whitespace bytes; the File — whose whole text is the ONE-ARGUMENT
-`content(tree)` below, his word of 2026-10-05, R-V04B-116 (3)(b)). The empty return is also the
+`content(tree)` below, the creator's decision). The empty return is also the
 Engine's capture predicate (`captureEvals!` skips an empty return), which is why the File's text is
 a method this two-argument form does not reach: the captured population is unchanged.
-REASONING: NEW in BLS at stage 2's commit 0 — the body of the Engine's former `cell_content_bytes`
+REASONING: NEW in BLS within the 0.4 development — the body of the Engine's former `cell_content_bytes`
 (`src/annotations.jl`) COPIED unchanged but for the argument names and the dropped `BLS.` qualifiers;
-the Engine's copy LEFT at stage 2's commit 9b (R-V04B-43 (5)) — this function alone serves a piece's text:
+the Engine's copy was REMOVED — this function alone serves a piece's text:
 the capture predicate, the test layer's derivation of the reference files' fifth column (byte-equal to the
-former producer's — the probe's check and commit 8's standing proof), the tools and the consumers. Its ancestor: the legacy writer's `SubString(collectedLines[stringIdx],
+former producer's — measured), the tools and the consumers. Its ancestor: the original engine's writer's `SubString(collectedLines[stringIdx],
 start:stop)` (`WriteOutFile.jl` :129–:134).
 PURPOSE: a piece's text for an Extension (the notebook Extension's join, the demo) and for
 the renderer, from the tree and nothing else.
@@ -454,7 +454,7 @@ function content(tree::ParseState, c::AbstractComponent)
         # :inputLineNum (robust for multi-segment lines where idxString == 0, where idxString cannot locate it).
         idxString = getElement(cni, :idxString)
         if idxString < 0
-            (-length(tree.addedStrings) <= idxString < 0) || return UInt8[]   # the lower bound closes typemin(Int): -typemin(Int) wraps (R-V04B-80 (2)(iv))
+            (-length(tree.addedStrings) <= idxString < 0) || return UInt8[]   # the lower bound closes typemin(Int): -typemin(Int) wraps
             return Vector{UInt8}(codeunits(tree.addedStrings[-idxString]))
         end
         iln = getElement(cni, :inputLineNum)
@@ -466,7 +466,7 @@ function content(tree::ParseState, c::AbstractComponent)
     (idxString != 0 && 1 <= startMain && startMain <= stopMain) || return UInt8[]
     # bounds-guard the store lookup so a malformed idxString returns UInt8[] (the docstring's total-return
     # contract), never a BoundsError.
-    inbounds = idxString > 0 ? idxString <= length(tree.collectedLines) : -length(tree.addedStrings) <= idxString < 0   # the lower bound closes typemin(Int) (R-V04B-80 (2)(iv))
+    inbounds = idxString > 0 ? idxString <= length(tree.collectedLines) : -length(tree.addedStrings) <= idxString < 0   # the lower bound closes typemin(Int)
     inbounds || return UInt8[]
     src = idxString > 0 ? tree.collectedLines[idxString] : tree.addedStrings[-idxString]
     cu  = codeunits(src)
@@ -481,22 +481,22 @@ end
     content(tree::ParseState) -> Vector{UInt8}
 
 IS: the text of the whole document as BLS holds it — the collected source lines joined by '\n' — the File's
-content as BLS's public read (his word of 2026-10-05, OWNER-WORDS §333; R-V04B-116 (3)(b); stage 5's s5c8 of
-the v0.4 build). Not the input's bytes: the line split drops the terminal newline (`endsWithNewline(tree)`
+content as BLS's public read (the creator's decision,
+2026-10-05). Not the input's bytes: the line split drops the terminal newline (`endsWithNewline(tree)`
 carries that fact) and a CRLF line end's CR.
-DOES: the collected source lines joined by '\n', as bytes — exactly the text the development tools joined
-outside the door before this commit.
+DOES: the collected source lines joined by '\n', as bytes — exactly the text the development tools formerly joined
+outside the door.
 REASONING: a ONE-ARGUMENT method, not a `(tree, ::File)` arm of the two-argument `content`: that form's
 empty return for a File is the Engine's capture predicate (`captureEvals!`, src/annotations.jl), so an arm
 there would change which Components are captured — the File's text is read here, the predicate untouched.
 PURPOSE: the development tools' whole-document read (the tree print's File row, the excerpts) and an
-Extension's, through the door and nothing else — one of the last two reads outside the door left with it.
+Extension's, through the door and nothing else; with it, one of the last two reads outside the door was removed.
 """
 content(tree::ParseState)::Vector{UInt8} = Vector{UInt8}(codeunits(join(tree.collectedLines, '\n')))
 
 #########################################################################################
 ## THE DOOR, continued — what the development tools read beyond the four functions above
-## (his §42 3 (ii): the same few functions and data containers ALSO used by the development
+## (the creator's design: the same few functions and data containers ALSO used by the development
 ## tools): three reads given a name (NEW) and seven existing names DECLARED public as they
 ## are (ADAPTED: a declaration, no code).
 #########################################################################################
@@ -520,15 +520,15 @@ root(tree::ParseState)::File = tree.componentsPDict[File][1][1]
 
 IS: the document's flavor record — the comment lead, the hide marker and its fold prefix the
 renderer stamps, the flavor tag (`FlavorProfile`, `flavor.jl`; the type stays internal — a
-caller reads the record's fields). THE PROMISE (R-V04B-80 (2)(ii)): of the record's fields FIVE are the
+caller reads the record's fields). THE PROMISE: of the record's fields FIVE are the
 public contract — `lead`, `hide_marker`, `hide_fold_prefix`, `flavor_tag`, `re_meta_leaded` (the fields the
 renderer and the print tools read); every other field — `directives` first, the parser's table — is reachable but NOT
-part of the contract (the `parse_header!` pointer the earlier text named first left at stage 5's P1 of the v0.4 build — census
-row 63): the record's remaining shape is open to his BLS review.
+part of the contract:
+the record's remaining shape is open.
 DOES: returns the field `tree.flavor`.
 REASONING: NEW — the field read given a name (the renderer's `outputs`; the tools'
-`flavor_tag`). The name is the field's; the canon's word "flavor" for Meta/Code/Text is
-`kind`'s sense — NOTED for his word.
+`flavor_tag`). The name is the field's; the project's word "flavor" for Meta/Code/Text is
+`kind`'s sense — an open point.
 PURPOSE: the render's markers and the tools' flavor tag from the tree, not from the
 configuration.
 """
@@ -553,7 +553,7 @@ DOES: dispatches on the key to the Component's container: a key of `CmpntNamedIn
 `c.componentSettribute` (the two key sets are disjoint; an unknown key fails loud in the container's own lookup).
 REASONING: ADAPTED — a dispatch over the existing container reads (the methods the macro of `NamedElements.jl` generates take the
 container), so that a caller through the door never reads a FIELD of a BLS object (`c.cmpntNamedInt`, `c.componentSettribute` stay
-internal) — R-V04B-80 (2)(i).
+internal).
 PURPOSE: every flag and position read of the renderer, the print tools and the tests, through the door alone.
 """
 getElement(c::AbstractComponent, key::Symbol) = key in keys(CmpntNamedInt) ? getElement(c.cmpntNamedInt, key) : getElement(c.componentSettribute, key)
@@ -565,10 +565,10 @@ IS: the parser's own horizontal-whitespace classification of one character — t
 DOES: returns `_is_h_ws(c)` (flavor.jl) — true for the space, the tab, the NBSP and the other horizontal spaces the parser delimits
 tokens by; false for a newline and for content.
 REASONING: ADAPTED — the parser's predicate given a public name, so that the print tools' segment lexer tests whitespace exactly as the
-parser does (a copy in a tool could drift from the parser's classification; R-V04B-80 (2)(iii)); the name is the
-session's default — declaring `_is_h_ws` public as it is is the alternative, his to pick.
-PURPOSE: the print tools' lexer (the one read beyond the tree the tools make of the parser) and, since stage 5's s5c8,
-the renderer's whitespace guard before the hide marker (R-V04B-116 (3)(a)), through the door.
+parser does (a copy in a tool could drift from the parser's classification); the name is
+provisional — declaring `_is_h_ws` public as it is is the alternative, which stays open.
+PURPOSE: the print tools' lexer (the one read beyond the tree the tools make of the parser) and
+the renderer's whitespace guard before the hide marker, through the door.
 """
 isHorizontalSpace(c::Char)::Bool = _is_h_ws(c)
 

@@ -2,14 +2,14 @@
 # armed flavor's divergence lives on (tables · policies · strictness · lead bytes ·
 # the content-model Bool), read by the ONE parse loop.
 #
-# The record is pinned DATA (its injective digest fold left at stage 5's P1 of the v0.4 build — census row 39: a
+# The record is pinned DATA (a former injective digest fold was removed: a
 # cache-key component no code read; the condition grammar's own profile record, whose pattern this one followed and
-# whose cache key was to join it, left at stage 5's E13 — census row 1).
+# whose cache key was to join it, was removed as well).
 # The mainline threads ONE record through the ParseState `flavor` field populated
 # at setup (zero call-site churn — the kwarg default): ONE loop (`parseBLS`) + ONE
 # table reader (`parseLeadHeader!`) serve EVERY armed flavor over this record — the loop calls the reader
-# directly (the record's header-strategy seam, a Function pointer for a fallback that no longer existed, left
-# at stage 5's P1 of the v0.4 build — census row 63). The directive TABLE rows and the `fences_armed` gate Bool
+# directly (the record's header-strategy seam, a Function pointer for a fallback that no longer existed, was removed
+# within the 0.4 development). The directive TABLE rows and the `fences_armed` gate Bool
 # are record fields (the content-model slot is consciously kept at its inline-Bool form — the priced retreat
 # position).
 
@@ -42,15 +42,15 @@ const _RE_H_WS_ONE = r"\A[\h]\z"
     (!isascii(c) && occursin(_RE_H_WS_ONE, string(c)))
 
 ## ─── The FlavorProfile record ─────────────────────────────────────────────────────
-## (The forward declaration of `parseLeadHeader!` left with the record's header-strategy seam at stage 5's P1 of
-## the v0.4 build — census row 63: the records no longer reference the reader; the loop calls it directly,
+## (The forward declaration of `parseLeadHeader!` was removed with the record's header-strategy seam:
+## the records no longer reference the reader; the loop calls it directly,
 ## parseBLS.jl.)
 
 ## The versioned per-flavor record. `directives` IS the data the table-driven `parseLeadHeader!` reads (the loop
-## calls the reader directly — the header-strategy seam and its flip-back axis left at stage 5's P1 of the v0.4
-## build, census row 63). Field notes:
+## calls the reader directly — the header-strategy seam and its flip-back axis were removed within the 0.4
+## development). Field notes:
 ##   - the six prototype fields carry their NamedTuple-era values VERBATIM (the `extensions` field, read by no
-##     code, left at stage 5's P1 — census row 72);
+##     code, was removed);
 ##   - `directives`: the per-flavor directive TABLE (an `absent` verb is part of
 ##     the design): five rows `(char, status ∈ (:claimed, :absent), flags = today's
 ##     settribute flags, ws_strict, consume ∈ (:run, :single))` in the canonical
@@ -63,7 +63,7 @@ const _RE_H_WS_ONE = r"\A[\h]\z"
 ##     per-flavor gate Bool): :julia arms the ```-fence cluster; :c consciously declines (its docblock
 ##     scope fence). The slot may later be widened per the recorded content-model fallback.
 ##   - `lead_ncu` / `lead_cus`: the lead's codeunit width + bytes, record-carried for the lead compares (the
-##     `_CFAM_LEAD_*` consts they generalized left at stage 5's P1 — census row 58).
+##     `_CFAM_LEAD_*` consts they generalized were removed).
 ##   CONSTRUCTION LAW: records are minted ONLY via the INNER keyword constructor
 ##   below (reachable directly or through the `_mk_flavor` alias) — the guard
 ##   surface + every derived field live there, and defining it REMOVES the default
@@ -72,8 +72,8 @@ const _RE_H_WS_ONE = r"\A[\h]\z"
 ##   `comment_run_strict` (the run arm's exact-token strictness — julia `##`-only
 ##   vs the cfam any-run comment; explicit data, NOT coupled to the glued policy)
 ##   · per-row `consume ∈ (:run, :single)` (the arm's offset/consumption
-##   convention as table data) (the `header_strategy` identifier left with the seam at stage 5's P1 — census
-##   row 63) · the struct is PARAMETRIC over the two tuple
+##   convention as table data) (the `header_strategy` identifier was removed with the seam)
+##   · the struct is PARAMETRIC over the two tuple
 ##   fields, so every INSTANCE is fully concrete (the parse-state field stays
 ##   `::FlavorProfile`, the UnionAll — the loop hoists once; the declared
 ##   benchmark retreat is a one-line function barrier).
@@ -156,7 +156,7 @@ struct FlavorProfile{D<:Tuple,C<:Tuple{Vararg{UInt8}}}
         @assert flavor_tag === :julia ||
             all(r -> r.char == ']' || r.status === :absent, directives)
         ## ASCII lead (asserted above) ⇒ byte width == char count; the tuple form
-        ## is the record-carried byte tuple (the `_CFAM_LEAD_CU` const it generalized left at stage 5's P1 — census row 58).
+        ## is the record-carried byte tuple (the `_CFAM_LEAD_CU` const it generalized was removed).
         lead_cus = Tuple(codeunits(lead))
         return new{typeof(directives), typeof(lead_cus)}(flavor_tag, lead,
             comment_run_char, hide_marker, hide_fold_prefix,
@@ -275,7 +275,7 @@ IS: the closed flavor inventory — the one place a `flavor_tag` resolves to its
 DOES: total-or-throw, NO fallback: returns the record of a known tag; an unknown tag throws the stable message below
 (`error("flavor_for: unknown flavor_tag …")`, naming the closed inventory `(:julia, :c, :latex)`) at `goMeta`'s flavor
 resolve, after the registry door and before any parse — raw out of the `goMeta` call (docs/public-api.md §3.4; the
-coded config-time refusal left at stage 5's E8 of the v0.4 build — census row 30). The resolved record is threaded into
+coded config-time refusal was removed within the 0.4 development). The resolved record is threaded into
 the `ParseState` at `setUpToProcessFromBytes` and read from there by every downstream flavor consumer.
 
 REASONING: a silently-Julia fallback would produce a plausible render with wrong tree bytes and zero diagnostics the
@@ -292,9 +292,8 @@ function flavor_for(tag::Symbol)
         " — the closed inventory is (:julia, :c, :latex) and there is NO fallback")
 end
 
-## (The `_CFAM_LEAD_*` consts and the `_RE_META_LEADED_*` compatibility aliases left at stage 5's P1 of the v0.4
-## build — census row 58, his §223: their comments cited forkchecks/s2_battery.jl and forkchecks/differential_flavor.jl,
-## neither in the repository; the record carries the lead's width and bytes.)
+## (The `_CFAM_LEAD_*` consts and the `_RE_META_LEADED_*` compatibility aliases were removed within the 0.4
+## development; the record carries the lead's width and bytes.)
 ## ## FUTURE-BLS(non-ascii-lead): a non-ASCII lead needs nextind-chained skipping
 ## and a stated codeunit-vs-character unit at every arithmetic site.
 

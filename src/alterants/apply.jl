@@ -3,39 +3,38 @@
 # IS: the Apply phase of the GoMeta engine. `detAltValuesForSetOfSlots` walks the eligible
 #     meta-hierarchy slots and decides every queued alterant action in two passes — the
 #     `:accumulate`-mode alterants over every slot except the Component's OWN one (the first eligible slot that is not the
-#     user level's — stage 0 of the Labels lane, 0.4.1, R-LAB-8 / R-LAB-15), then all queued actions slot by slot in the order
+#     user level's — since 0.4.1), then all queued actions slot by slot in the order
 #     of EVALUATION [own, user, outer…] — building alterant instances into the per-call working dict
 #     (`st.working` off `ctx()`, rebuilt fresh on every call) and returning the set-alterant
 #     index vector with its count. `applyAltActionFns(::BLS.Segment)` and
 #     `applyAltActionFns(::BLS.Block)` snapshot the settribute, gather the occupied eligible
 #     slots for their grain (the Segment overload scans the `userMHIdx`/`lineMHIdx` levels
 #     plus, when the enclosing Block is `:attachedToMeta`, the depth window; the Block overload
-#     scans `userMHIdx` plus the depth window down to `fileMHIdx`; both append the `fallBack` level LAST —
-#     R-V04B-55 (3), stage 2's commit 3), and delegate.
-#     The setters are called directly (the record-armed invocation seam `_invoke_set` left at stage 5's E6 of the v0.4 build — census row 14).
+#     scans `userMHIdx` plus the depth window down to `fileMHIdx`; both append the `fallBack` level LAST), and delegate.
+#     The setters are called directly (a record-armed invocation seam `_invoke_set` was removed within the 0.4 development).
 # DOES: evaluates each queued action's stored condition — `nothing` means set unconditionally,
 #     otherwise the stored `Expr` (Julia's reading of the re-written `{…}` body, absorb_meta.jl) is evaluated by
-#     Julia at apply time — `Core.eval(GoMeta, ex)`, as his legacy's `eval` (goMetaAddOns.jl :37, :95) — against the
+#     Julia at apply time — `Core.eval(GoMeta, ex)`, as the original engine's `eval` (goMetaAddOns.jl :37, :95) — against the
 #     per-call settribute snapshot and working stores reached by `getState`/`getAltState` through the ScopedValue
-#     (stage 5's E13 of the v0.4 build, census row 1; R-V04B-106; his §120, §D174).
-#     An alterant already set in an earlier-processed slot is never re-set — save the user level's OVERRIDE (stage 0 of the Labels
-#     lane, 0.4.1): under a fed profile an applicable non-accumulate row of the user level's slot, evaluated right after the
+#     (since 0.4.0, the creator's design).
+#     An alterant already set in an earlier-processed slot is never re-set — save the user level's OVERRIDE (since
+#     0.4.1): under a fed profile an applicable non-accumulate row of the user level's slot, evaluated right after the
 #     Component's own slot, replaces the value the own slot decided. The queued args tuple is
-#     splatted once into the setter, bare, as his legacy called it (goMetaAddOns.jl); a malformed argument
-#     meets Julia's own dispatch or the setter's own error — the seam's guarded refusal left at stage 5's E6 of
-#     the v0.4 build (census row 14; his §120, the framework before hardening).
+#     splatted once into the setter, bare, as the original engine called it (goMetaAddOns.jl); a malformed argument
+#     meets Julia's own dispatch or the setter's own error — a former guarded refusal of the seam was removed within
+#     the 0.4 development.
 # REASONING: conditions travel as Julia `Expr`s and arguments as opaque tuples, so there
 #     are two evaluation sites of one form (`Core.eval` in the two passes below) and direct setter calls
-#     (the auditable setter seam and its internal-invariant guards left at stage 5's E6 of the v0.4 build —
-#     census row 14). Honest edges: the E-06 absorb-path guarded refusal keeps
-#     its coded conversion deferred (the E-04 apply-path crash origin left with the Visib write-back, stage 3's commit 4)
+#     (an auditable setter seam and its internal-invariant guards were removed within the 0.4
+#     development). Honest edges: the E-06 absorb-path guarded refusal keeps
+#     its coded conversion deferred (the E-04 apply-path crash origin was removed with the Visib write-back)
 #     (docs/public-api.md §3.1); a condition that fails at evaluation — a non-Bool value where a Bool is needed, an
-#     argument Julia cannot dispatch — is Julia's own error out of the goMeta call (the E-07 row retired at E13 with the
-#     interpreter: a getter-less action is no condition key since E12).
-# PURPOSE: a runnable, observable Apply phase whose evaluation is Julia's (the setter seam left at stage 5's E6 of the
-#     v0.4 build — census row 14).
+#     argument Julia cannot dispatch — is Julia's own error out of the goMeta call (the E-07 row was retired with the
+#     closed interpreter: a getter-less action is no condition key).
+# PURPOSE: a runnable, observable Apply phase whose evaluation is Julia's (a former setter seam was removed within the
+#     0.4 development).
 
-## stage 2's commit 2 (R-V04B-35 (d)): the provenance of an APPLIED action — the stating Component's handle
+## The provenance of an APPLIED action — the stating Component's handle
 ## (recorded at the enqueue, `st.queue.decided_by`), kept per Alterant in APPLICATION ORDER: one entry for a
 ## single-valued mode (the deciding statement — the first applicable wins), the contributing statements'
 ## entries for an accumulating one, the applied fields' for the compound. Rebuilt with `st.working`; the
@@ -53,7 +52,7 @@ _freshInstance(st, idx) = (run = st.alt_run[idx]; run === nothing ? st.registry.
 
 function detAltValuesForSetOfSlots(
     checkTheseSlotsInOrderVec::AbstractVector{Int8},
-    appliedKey::Vector{UInt8}   # the applying Component's own key (stage 1 of the Alterants build) — the referent of the localOnly rule
+    appliedKey::Vector{UInt8}   # the applying Component's own key — the referent of the localOnly rule
 )
     # ── THE EVALUATION MECHANICS (the algorithm this function implements) ─────────────────────────
     # For ONE entity, resolve every alterant's value from the meta-hierarchy lineage. The slots to
@@ -62,15 +61,15 @@ function detAltValuesForSetOfSlots(
     # `conditions`/`args` matrices holding each row's condition expression and argument tuple.
     # A row is APPLICABLE when its condition evaluates true (no condition = implicit true).
     #   THE COMPONENT'S OWN SLOT = the first eligible slot that is NOT the user level's: position 1 without a fed profile,
-    #   position 2 with one (the overloads place the user level's slot first when it is occupied — its PRIORITY). Stage 0 of
-    #   the Labels lane (0.4.1; his R-LAB-8 / R-LAB-15): before it the loop called the FIRST slot the Component's own, which
+    #   position 2 with one (the overloads place the user level's slot first when it is occupied — its PRIORITY). Before
+    #   0.4.1 the loop called the FIRST slot the Component's own, which
     #   under a feed was the user level's — a Component's own labels then went into pass 1 before its own conditions ran.
     #   Pass 1 (below): `:accumulate` alterants collect through every slot BUT the own one — the user level's slot FIRST
     #   when fed (the outermost level), then the outer slots from the vector's end inward.
     #   Pass 2 (step 2): the slot walk in the order of EVALUATION [own, user, outer…] — ALL own-slot alterants in WRITTEN
     #   order (incl. its accumulate rows, which apply there) + the other slots' non-accumulate alterants; the user level's
     #   NON-accumulate rows are evaluated AFTER the own slot (a fed non-accumulate condition sees the Component's own labels —
-    #   the lane's oracle G01 / G02 / B12; a fed CONDITIONAL label does not: collected in pass 1, before the file's labels — G12;
+    #   measured; a fed CONDITIONAL label does not: collected in pass 1, before the file's labels — measured;
     #   the sight is `getAltState` over `st.working`, so a custom queryable non-accumulate Alterant's own value is seen too, the
     #   row's own target's included, the override's reset below coming after the condition — the code's reading, unmeasured: no
     #   shipped Alterant but Labels answers a query) and with PRIORITY: an
@@ -82,8 +81,8 @@ function detAltValuesForSetOfSlots(
     #     skips the remaining rows of that alterant WITHOUT evaluating their conditions.
     #   `:mutExclusivePerField` alterants (the `id` compound — fields fill independently) take
     #   neither the accumulate pass nor the within-slot stop; see the registry's set derivations.
-    #   `:localOnly` alterants (the Heading — his set mode of 2026-08-02) take ONE RULE inside pass 2 (stage 1 of the Alterants
-    #   build; his §D241 point 2, R-V04B-101 (1)): a row of this mode applies ONLY at the Component the statement is applied to —
+    #   `:localOnly` alterants (the Heading — the creator's set mode) take ONE RULE inside pass 2
+    #   (the creator's decision): a row of this mode applies ONLY at the Component the statement is applied to —
     #   `applied_to[row, slot]` equals `appliedKey`, the applying Component's own key — and every other Component that meets it
     #   on a shared level PASSES OVER it: its condition unevaluated, nothing marked set, nothing blocked. In NEITHER index set,
     #   so pass 1 never collects it and the within-slot mutex stop never applies; two heads in one slot both apply (the capture's
@@ -96,9 +95,9 @@ function detAltValuesForSetOfSlots(
     # (`st.queue.queued`/`.conditions`/`.args`) all read off `ctx()`, so one call's Apply state is
     # never visible to another. The evaluation sites below — `Core.eval(GoMeta, _cond)` — are Julia's: the stored
     # `Expr` runs in module GoMeta, where `getState`/`getAltState` are bound by name and read this call's state through
-    # the ScopedValue `STATE` (stage 5's E13; his legacy's goMetaAddOns.jl :37). MEASURED at the build (register E13-9):
-    # 65–155 µs per evaluation on the corpus shapes — the legacy's known cost; the lowered form would be a hundredfold
-    # cheaper, his to choose.
+    # the ScopedValue `STATE` (the original engine's goMetaAddOns.jl :37). MEASURED:
+    # 65–155 µs per evaluation on the corpus shapes — the original engine's known cost; the lowered form would be a hundredfold
+    # cheaper; the choice stays open.
     local st = ctx()
     ## 1.1 Compute / Determine the values of all alterants of `:setMode`-type
     ##      `:accumulate` in every slot BUT the Component's OWN slot (`ownPos` below) —
@@ -106,11 +105,11 @@ function detAltValuesForSetOfSlots(
     # The working dict is rebuilt fresh on every call: the Apply phase keeps no cross-call
     # accumulation store and returns only the set-alterant index vector plus its count.
     st.working = Dict{Int8,Any}()
-    st.working_origin = Dict{Int8,Vector{Vector{UInt8}}}()   # stage 2's commit 2 (R-V04B-35 (d)): rebuilt with `working`
+    st.working_origin = Dict{Int8,Vector{Vector{UInt8}}}()   # the provenance store, rebuilt with `working`
     local crntSlot::Int8
     local crntAltIdx::Int8
     local crntAltActionIdx::Int8
-    ## S1 (stage 0 of the Labels lane): THE OWN SLOT by what it is — the first eligible slot that is not the user level's. The
+    ## S1: THE OWN SLOT by what it is — the first eligible slot that is not the user level's. The
     ## user level's slot index is 0 without a feed (`init_state` zeroes `slots`; `updateMetaHierarchy(userMHIdx)` is called by
     ## `feed_user_mh!` alone, for a non-blank profile); detected by SLOT INDEX, never by a handle's grain. A vector holding the
     ## user level's slot alone (length 1) runs the un-fed path: that slot is then the only one and its rows apply in written order.
@@ -131,12 +130,12 @@ function detAltValuesForSetOfSlots(
             if insorted(crntAltIdx, st.registry.accum_alt_idxs)
 
                 local _cond = st.queue.conditions[row, crntSlot]
-                local _condOutcome = _cond === nothing ? nothing : Core.eval(GoMeta, _cond)   # Julia evaluates the stored Expr (stage 5's E13; the legacy's :37/:95)
+                local _condOutcome = _cond === nothing ? nothing : Core.eval(GoMeta, _cond)   # Julia evaluates the stored Expr (as the original engine's :37/:95 did)
                 if _cond === nothing || _condOutcome
                     if crntAltIdx ∉ keys(st.working)
                         st.working[crntAltIdx] = _freshInstance(st, crntAltIdx)   # stage A: the run state handed to the constructor where a hook minted one
                     end
-                    _record_origin!(st, crntAltIdx, row, crntSlot)   # R-V04B-35 (d)
+                    _record_origin!(st, crntAltIdx, row, crntSlot)   # the provenance
                     if st.queue.args[row, crntSlot] === nothing
                         st.registry.plugins[crntAltIdx].setAltInstance(st.working[crntAltIdx],
                             st.registry.sorted_alt_actions[crntAltActionIdx])
@@ -184,7 +183,7 @@ function detAltValuesForSetOfSlots(
             crntAltIdx       = st.queue.queued[1, idx, crntSlot]
             crntAltActionIdx = st.queue.queued[2, idx, crntSlot]
             ## S4: THE USER LEVEL'S OVERRIDE — a non-accumulate row of the user level's slot (evaluated after the own slot) may
-            ## replace the value the own slot decided (his typed exception of 2026-07-24 to the closer-wins rule: the user level
+            ## replace the value the own slot decided (the creator's exception to the closer-wins rule: the user level
             ## over-rules). The accumulate Alterants are EXCLUDED (their user-level rows applied in pass 1 — never twice); a
             ## `localOnly` row never arrives from a feed (refused at the read).
             overridable = uFirst && crntSlot == userSlot && !insorted(crntAltIdx, st.registry.accum_alt_idxs)
@@ -201,17 +200,17 @@ function detAltValuesForSetOfSlots(
                     ## WITHOUT evaluating its condition, mirroring the prior-slot guard above.
                     continue
                 end
-                ## THE ONE RULE of the set mode `localOnly` (his §D241 point 2; R-V04B-101 (1); stage 1 of the Alterants build): a row of
+                ## THE ONE RULE of the set mode `localOnly` (the creator's decision): a row of
                 ## this mode applies ONLY at the Component the statement is applied to — the metaBlock for a metaLine's statement, the
-                ## Line for a Code Line's trailing metaSegment (his §286 (i)/(ii); R-V04B-98) — and every other Component that meets it
-                ## on a shared level passes over it: the condition unevaluated, nothing marked set, nothing blocked (his §12: "applied
-                ## to the first Block only, that is it"). A fed heading never reaches here (the feed refuses it at the read, §D242).
+                ## Line for a Code Line's trailing metaSegment — and every other Component that meets it
+                ## on a shared level passes over it: the condition unevaluated, nothing marked set, nothing blocked (the creator's words: "applied
+                ## to the first Block only, that is it"). A fed heading never reaches here (the feed refuses it at the read).
                 if st.registry.plugins[crntAltIdx].setMode === :localOnly &&
                    st.queue.applied_to[idx, crntSlot] != appliedKey
                     continue
                 end
                 local _cond = st.queue.conditions[idx, crntSlot]
-                local _condOutcome = _cond === nothing ? nothing : Core.eval(GoMeta, _cond)   # Julia evaluates the stored Expr (stage 5's E13; the legacy's :37/:95)
+                local _condOutcome = _cond === nothing ? nothing : Core.eval(GoMeta, _cond)   # Julia evaluates the stored Expr (as the original engine's :37/:95 did)
                 if _cond === nothing || _condOutcome
 
 
@@ -240,7 +239,7 @@ function detAltValuesForSetOfSlots(
                     if crntAltIdx ∉ keys(st.working)
                         st.working[crntAltIdx] = _freshInstance(st, crntAltIdx)   # stage A: the run state handed to the constructor where a hook minted one
                     end
-                    _record_origin!(st, crntAltIdx, idx, crntSlot)   # R-V04B-35 (d)
+                    _record_origin!(st, crntAltIdx, idx, crntSlot)   # the provenance
                     if st.queue.args[idx, crntSlot] === nothing
                         st.registry.plugins[crntAltIdx].setAltInstance(st.working[crntAltIdx],
                             st.registry.sorted_alt_actions[crntAltActionIdx])
@@ -271,8 +270,8 @@ function applyAltActionFns(
     # (`NUM_MH_LEVELS`/`userMHIdx`/`lineMHIdx`) live in state.jl.
     local st = ctx()
     snapshot_settribute!(st, BLS.getParentComponent(st.parse, aSegment))
-    ## the applying Component's own key (stage 1 of the Alterants build): the LINE with this Segment as the key's origin — as
-    ## `captureEvals!` keys this grain's rows (R-V04B-98) — the referent of the localOnly rule
+    ## the applying Component's own key: the LINE with this Segment as the key's origin — as
+    ## `captureEvals!` keys this grain's rows — the referent of the localOnly rule
     local appliedKey::Vector{UInt8} = key_bytes(occurrence_key(st.parse, BLS.getParentComponent(st.parse, aSegment);
         origin = aSegment, namespace = st.config.namespace))
     attachedToMeta::Bool = BLS.getElement(
@@ -304,9 +303,9 @@ function applyAltActionFns(
             mhIdx -= 1
         end
     end
-    ## 3.: the fallBack level LAST (stage 2's commit 3 — R-V04B-55 (3); his §196 (iv): "it only gets applied
+    ## 3.: the fallBack level LAST (the creator's words: "it only gets applied
     ##      if no altValue … has been set / evaluated for any of the preceeding meta level"); today never
-    ##      occupied (the metaLevel Alterant and its feeds come after the branch — R-V04B-55 (4)).
+    ##      occupied (the metaLevel Alterant and its feeds are a later version's).
     crntSlot = st.mh.slots[fallBackMHIdx]
     if 0 != crntSlot && st.mh.slot_occupied[crntSlot]
         countEligibleSlots += 1
@@ -326,7 +325,7 @@ function applyAltActionFns(
     # read `st.mh`/`st.crnt_depth_idx`, and the structural index constants live in state.jl.
     local st = ctx()
     snapshot_settribute!(st, thisBlock)
-    ## the applying Component's own key (stage 1 of the Alterants build) — as `captureEvals!` keys this grain's rows
+    ## the applying Component's own key — as `captureEvals!` keys this grain's rows
     local appliedKey::Vector{UInt8} = key_bytes(occurrence_key(st.parse, thisBlock; namespace = st.config.namespace))
     local crntSlot::Int8
 
@@ -348,9 +347,9 @@ function applyAltActionFns(
         end
         mhIdx -= 1
     end
-    ## 3.: the fallBack level LAST (stage 2's commit 3 — R-V04B-55 (3); his §196 (iv): "it only gets applied
+    ## 3.: the fallBack level LAST (the creator's words: "it only gets applied
     ##      if no altValue … has been set / evaluated for any of the preceeding meta level"); today never
-    ##      occupied (the metaLevel Alterant and its feeds come after the branch — R-V04B-55 (4)).
+    ##      occupied (the metaLevel Alterant and its feeds are a later version's).
     crntSlot = st.mh.slots[fallBackMHIdx]
     if 0 != crntSlot && st.mh.slot_occupied[crntSlot]
         countEligibleSlots += 1

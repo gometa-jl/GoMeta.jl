@@ -1,8 +1,8 @@
 # handle_decoder.jl — THE ONE decoder of an occurrence handle's bytes, shared by the development tools (devtools.jl) and the authored
-# test runner (tests/authored/authored_tests.jl) — the owner's word of 2026-10-03 (OWNER-WORDS §313; R-V04B-102: "I approve B3: one shared
-# decoder."), replacing the two private copies the two consumers held (the tools' `_dt_decode` family; the runner's `decode_handle` family).
-# The Engine offers no reader of a handle's parts BY DESIGN: the answer function `evaluatedAltValue` spares consumers the handle
-# (R-V04B-35 (c)); this file is a development-tool and test-layer aid, never a consumer surface. Included by `devtools/devtools.jl` and by
+# test runner (tests/authored/authored_tests.jl) — the creator's decision of 2026-10-03: one shared decoder,
+# replacing the two private copies the two consumers held (the tools' `_dt_decode` family; the runner's `decode_handle` family).
+# The Engine offers no reader of a handle's parts BY DESIGN: the answer function `evaluatedAltValue` spares consumers the handle;
+# this file is a development-tool and test-layer aid, never a consumer surface. Included by `devtools/devtools.jl` and by
 # the runner, each guarded against a double include (`isdefined(@__MODULE__, :decode_handle)`).
 #
 # IS:   `decode_handle(b::Vector{UInt8}) -> NamedTuple | nothing` over the documented layout of src/occurrence.jl (schema 0x01): the schema

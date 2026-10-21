@@ -1,11 +1,11 @@
 # malformed_meta_tests.jl — the valid-twin witnesses of the metaLine parser, and the glued form's refusal
 #
 # IS:   the witness set of the parser's valid shapes — they parse green and byte-deterministically — and of the one refusal a glued
-#       token meets since the metaLine parser effort (stage 5's s5c29; his Decision 1 of 2026-10-08, OWNER-WORDS §356: Design E).
+#       token meets (the creator's decision of 2026-10-08).
 # DOES: proves (1) a valid metaLine twin stays PROCESS_OK and byte-deterministic; (2) the INERT `#~!` corpus shape passes through
 #       byte-exact; (3) the documented spacing form after a closing bracket stays green; (4) the glued form `hide{isCode}show` is
-#       refused by the grammar's one refusal naming the character (his legacy dropped the `show` silently — the register's D-2).
-# REASONING: a metaStatement ENDS at white space or the region's end; any other character is named in the refusal (his §341).
+#       refused by the grammar's one refusal naming the character (the original engine dropped the `show` silently).
+# REASONING: a metaStatement ENDS at white space or the region's end; any other character is named in the refusal.
 #       The full battery of shapes is tests/unit/parser_quality_tests.jl (generated); these are the valid paths' pins.
 # PURPOSE: the parser's valid shapes, byte-exact; the glued form, refused by name.
 using Test
@@ -30,7 +30,7 @@ import GoMeta as GM
         @test String(copy(Main.BasicRenderer.outputs(r)[2])) == "#~! discard{ isMeta }\n# content\n"   # the inert line passes through byte-exact
     end
 
-    @testset "the spaced form stays green; the glued form is refused by name (the metaLine parser effort, stage 5's s5c29)" begin
+    @testset "the spaced form stays green; the glued form is refused by name" begin
         spaced = GM.goMeta(Vector{UInt8}(codeunits("#~ hide{isCode} show\n# content\n")))
         @test spaced.status == GM.PROCESS_OK
         e = try GM.goMeta(Vector{UInt8}(codeunits("#~ hide{isCode}show\n# content\n"))); nothing catch err; err end

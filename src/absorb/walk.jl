@@ -21,7 +21,7 @@
 #     sits at Segment level, `applyAltActionFns` (apply.jl) runs immediately; a resolved Visib value
 #     is CAPTURED on the ENCLOSING Line (inline meta applies to its line — docs/SYNTAX-AND-SEMANTICS.md §9)
 #     by `captureEvals!` (annotations.jl), which records that Line as the cell; the former write into the
-#     Line's settribute left at stage 3's commit 4 (R-V04B-42 (1)).
+#     Line's settribute was removed within the 0.4 development.
 # REASONING: this file holds no evaluation — conditions enqueued here are evaluated later by Julia at the
 #     apply sites (src/alterants/apply.jl; docs/public-api.md §3.2). Malformed, unknown, and
 #     over-capacity meta refuse inside `absorbMeta` (docs/public-api.md §3.4).
@@ -51,30 +51,30 @@ function applyAbsorbFn(
     # (the `snapshot_settribute!` helper) — per-call state, no module globals.
     local st = ctx()
     snapshot_settribute!(st, crntComponent)
-    # v0.2 CH-3 step 9 — publish the MetaContext record at the walk→absorb HANDOVER:
+    # Publish the MetaContext record at the walk→absorb HANDOVER:
     # {grain, depth, application level, occurrence handle, applied key}, derived from the parse and
     # the configured namespace, stored in NO
-    # Component (hd-4). The MH cursor was set by the CALLER before this call (Block:
+    # Component. The MH cursor was set by the CALLER before this call (Block:
     # updateMetaHierarchy(getGivenDepthMH); Line and Segment: lineMHIdx — a
-    # Segment-attached metaLine therefore inherits the metaLine's level, the hd-2
+    # Segment-attached metaLine therefore inherits the metaLine's level, the
     # inheritance law, by construction), so `st.crnt_idx` IS the application level. The
     # userMH feed does NOT pass through here and NULLS the record instead — a heading fed there meets the one
-    # refusal at the read (his §D242; stage 1 of the Alterants build).
-    # (delta-review trued: applyAbsorbFn has Line/Segment-grain call sites only, so
+    # refusal at the read (the creator's decision).
+    # (applyAbsorbFn has Line/Segment-grain call sites only, so
     # the Block arm below is DEFENSIVE — depth is 0 on every live path at v0.2; the
     # field is the context record's designed shape, populated when a Block-grain
     # handover site exists.)
-    # R-V04B-50 (stage 2's commit 1 — THE HEADING RE-KEY): a WHOLE-LINE metaLine's heading is carried by the
-    # metaBlock it forms (his §12: "applied to the first Block only"; his §8 item 3: it applies to the Block's
+    # THE HEADING RE-KEY: a WHOLE-LINE metaLine's heading is carried by the
+    # metaBlock it forms (the creator's words: "applied to the first Block only"; his principle: it applies to the Block's
     # children INDIRECTLY through the Block), so the context record's HANDLE and the published CONTENT are the
     # Block's — the parent of the metaLine (a Line-grain handover is always a whole-line metaLine: the one Line
-    # call site is guarded by `:hasMetaStr`); a Segment-grain handover: R-V04B-98 below.
+    # call site is guarded by `:hasMetaStr`); a Segment-grain handover: the rule below.
     # The record's grain, depth and level stay the metaLine's (the deriving head form's level is read from it at the enqueue).
-    ## R-V04B-98 (stage 5's E1; his §309 with his §286 (ii)) on top of R-V04B-50: the CARRIER (the record's `handle`, every row's
+    ## On top of the re-key: the CARRIER (the record's `handle`, every row's
     ## deciding statement — the queue's `decided_by`) and the Component the statement is APPLIED TO (the record's `applied` — the
-    ## queue's `applied_to`, the referent of the apply loop's rule for the set mode `localOnly` since stage 1 of the Alterants build). A Line handover (a whole-line metaLine): both the metaBlock. A Segment handover of a META Line (a metaLine split by a
-    ## trailing `##` comment — its statement Segment): both the metaBlock too, R-V04B-50 one level down (the Segment's own key there was a
-    ## defect, measured 2026-10-03). A Segment handover of a CODE Line (an inline metaSegment): the carrier is the Segment, the statement
+    ## queue's `applied_to`, the referent of the apply loop's rule for the set mode `localOnly`). A Line handover (a whole-line metaLine): both the metaBlock. A Segment handover of a META Line (a metaLine split by a
+    ## trailing `##` comment — its statement Segment): both the metaBlock too, the re-key one level down (the Segment's own key there was a
+    ## measured defect). A Segment handover of a CODE Line (an inline metaSegment): the carrier is the Segment, the statement
     ## is applied to the LINE — keyed as the apply path keys an inline statement, the Line with the Segment as the key's origin (the
     ## `origin` of captureEvals! below); the Line then answers the heading as its OWN (the answer function reads a deciding handle that
     ## names one of a Line's own Segments as the Line's own), its Segments through the Line.
@@ -91,7 +91,7 @@ function applyAbsorbFn(
         crntComponent isa BLS.Block ? Int(BLS.getGivenDepthMH(crntComponent)) : 0,
         st.crnt_idx,
         key_bytes(_mc_key),
-        key_bytes(_mc_applied))   # R-V04B-98: the applied Component's key — the queue's `applied_to` (stage 1 of the Alterants build)
+        key_bytes(_mc_applied))   # the applied Component's key — the queue's `applied_to`
     stringIdx::Int = BLS.getElement(crntComponent.cmpntNamedInt, :idxString)
     local metaSS::SubString
     if stringIdx > 0
@@ -144,7 +144,7 @@ function applyAbsorbFn(
         )
     else
         ## Two roads here: a live marker with NOTHING after it (offsets[end] == 0), and —
-        ## R-INERT-4 (v0.3.1) — an :ignoreMetaContent component (the author's
+        ## since v0.3.1 — an :ignoreMetaContent component (the author's
         ## trailing-bang "#~N!"), whose content is deliberately absorbed as EMPTY: the specified
         ## law is "#~N! <content>" ≡ "#~N" (structure live, content ignored), so BOTH roads
         ## run the IDENTICAL live-empty intake — the ≡ holds by construction, not by a
@@ -269,15 +269,15 @@ function absorbWalk(
                 ## `applyAltActionFns(::Segment)` only at this point,
                 ## IF `metaEnvInt` ("metaEnvironment") is on `:Segment`-level:
                 applyAltActionFns(childComponent) ## `childComponent` is :Segment.
-                ## The Segment-grain Visib write-back onto the Line LEFT here (stage 3's commit 4 of the v0.4 build, R-V04B-42 (1)): the Engine writes NOTHING into the
+                ## The Segment-grain Visib write-back onto the Line was REMOVED here: the Engine writes NOTHING into the
                 ## caller's BLS Components — a Segment-carried Visib value is CAPTURED on its Line (below) and read through
-                ## the one answer function (R-V04B-16 (1)); the registry's `settribute` declarations and the derived table left at stage 5's E12
-                ## of the v0.4 build (census row 45 — the word R-V04B-42 (2) waited for). The E-04 flagless read (`keys(Visib)[array][1]`) went with the write.
+                ## the one answer function; the registry's `settribute` declarations and the derived table were removed within the 0.4
+                ## development. The E-04 flagless read (`keys(Visib)[array][1]`) went with the write.
                 # Capture the Segment-grain FINAL evals rows before the next apply wipes `st.working`;
                 # the cell is the LINE (`crntComponent`) the Segment's meta applies to, NOT the Segment.
                 # Reads `st.working`, puts or supersedes rows in `st.evals` (it appends no diagnostic: the capture-floor
-                # warnings left with the Heading's separate lane at stage 1 of the Alterants build, as src/GoMeta.jl's twin call says) — never alters render bytes.
-                # v0.2 CH-1 (step 3): the ORIGIN rides the key — `childComponent` (the Segment) mints
+                # warnings were removed with the Heading's separate path, as src/GoMeta.jl's twin call says) — never alters render bytes.
+                # Since v0.2 the ORIGIN rides the key — `childComponent` (the Segment) mints
                 #   the target/origin split, so two same-kind inline Segment evals on one Line stay
                 #   DISTINCT through the segment-carried remap.
                 captureEvals!(st, crntComponent; origin = childComponent)

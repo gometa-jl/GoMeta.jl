@@ -1,46 +1,46 @@
 # registry.jl — the alterant inventory: the vocabulary-gated setters, state accessors, the default registry
 #
 # IS: the register file of the alterant layer — two nested sub-modules plus a top-level tail. `module
-#     Alterants`: the Labels Alterant's own file's include (`alterants-std/labels.jl` since stage 2 of the Alterants build: the
-#     hard-coded list of 39 names — the 38 shipped + `:doc` — with `setLabels`/`checkLabels`; the plain file and its loader left with
-#     that stage, its digest pin, capture cache and scope law at stage 5's E9 of the v0.4 build) + the toy
+#     Alterants`: the Labels Alterant's own file's include (`alterants-std/labels.jl`: the
+#     hard-coded list of 39 names — the 38 shipped + `:doc` — with `setLabels`/`checkLabels`; the plain file and its loader were removed,
+#     its digest pin, capture cache and scope law as well) + the toy
 #     setters `setVisib`/`setId` over the `@namedElement` types `Visib` (Bool: hide/show/discard)
 #     and `Id` (Int16: cell/parent/file). `module CnS`: the per-call state accessors `wipeAltActionSlots`/
 #     `updateMetaHierarchy`/`getState`/`getAltState`. The tail builds the immutable `AlterantRegistry`
-#     (type: src/state.jl) — `build_default_registry()` → `const DEFAULT_REGISTRY` (v0.4 T1: the former
-#     `VISIB_TO_SETTRIBUTE` alias is retired; the generic `action_to_settribute` table left at stage 5's E12 — census row 45).
-# DOES: declares the closed default inventory (4 alterants / 9 actions — the `ids` action since stage 3 of the Alterants build; 8 from the heading registration until then) in
+#     (type: src/state.jl) — `build_default_registry()` → `const DEFAULT_REGISTRY` (the former
+#     `VISIB_TO_SETTRIBUTE` alias is retired; the generic `action_to_settribute` table was removed as well).
+# DOES: declares the closed default inventory (4 alterants / 9 actions — the `ids` action since 0.4.0) in
 #     DECLARATION order (labels=1, Visib=2, id=3, heading=4 — the live keys are :id / :heading) and PUBLISHES
 #     it through the v0.4 lifecycle (Builder → validate → publish): the sorted action table, the parallel action→plugin index, the name→index Dicts,
 #     the SORTED `accum_alt_idxs` (the apply-phase `insorted` consumer in apply.jl depends on the sort),
-#     (the identity Visib-action→settribute-key map left at stage 5's E12 — census row 45). `setLabels` (the `:` labels action) checks every
-#     label against the Labels Alterant's vocabulary (the run's since stage A of the Labels lane, 0.4.1 — the base plus the run's own vocabulary statements, labels.jl `declareLabels!`); an unknown label raises the stable "GoMeta apply: unknown label"
+#     (the identity Visib-action→settribute-key map was removed). `setLabels` (the `:` labels action) checks every
+#     label against the Labels Alterant's vocabulary (the run's — the base plus the run's own vocabulary statements, labels.jl `declareLabels!`); an unknown label raises the stable "GoMeta apply: unknown label"
 #     refusal, which names the accepted set (docs/public-api.md §3.4). `getState`/`getAltState` read the
 #     per-call `ProcessState` via `ctx()` (a ScopedValue — no module-global state). `updateMetaHierarchy`/`wipeAltActionSlots` maintain the meta-hierarchy cursor + the slot
 #     tensors on `ctx()` under the single-source `maxDepthMH`/`NUM_MH_LEVELS` consts (src/state.jl).
 # REASONING: the inventory is deterministic BY CONSTRUCTION (declaration order, built once, read-only)
 #     rather than hanging on any iteration order. A `{…}` condition is read by Julia's parser and evaluated by Julia
-#     since stage 5's E13 of the v0.4 build (census row 1; R-V04B-106; his §D174) — this registry supplies its VOCABULARY:
+#     since 0.4.0 (the creator's design) — this registry supplies its VOCABULARY:
 #     the settribute keys and the queryable actions (`queryable_action`, src/state.jl), read by the rewrite at absorb.
 # EDGES (honest): the Labels Alterant's BASE vocabulary is fixed, and since stage A of the Labels lane (0.4.1) a run's vocabulary statements at `#~0` or in the profile add names to it and remove names from it (labels.jl `declareLabels!`, the record's `onRead`) — the base: the corpus-documented labels
 #     :label1..:label5 plus (since 0.3.0) a fixed pictograph vocabulary (byte-exact names, no
-#     normalization) plus `:doc` (stage 2 of the Alterants build, his §D202 / §D252) — hard-coded in the Labels Alterant's own file
-#     `alterants-std/labels.jl` (R-ALT-20); an unknown label APPLIED meets the stable refusal that
-#     names the accepted set; a label QUERIED answers false when unknown or unset — the legacy's checker, since stage 5's E9
-#     (the T4 membership refusal and the R-V04-36 write-only valve left, census row 55). `setId` parses values into the Int16 domain; the value/arity walls
-#     around these setters are Julia's own since stage 5's E6 of the v0.4 build (the apply seam's guarded
-#     refusal left — census row 14; docs/public-api.md §3.4). Only the labels
+#     normalization) plus `:doc` (since 0.4.0, the creator's decision) — hard-coded in the Labels Alterant's own file
+#     `alterants-std/labels.jl`; an unknown label APPLIED meets the stable refusal that
+#     names the accepted set; a label QUERIED answers false when unknown or unset — the original engine's checker, since 0.4.0
+#     (the membership refusal of 0.3.2 and a write-only valve of the 0.4 development were removed). `setId` parses values into the Int16 domain; the value/arity walls
+#     around these setters are Julia's own since 0.4.0 (the apply seam's guarded
+#     refusal was removed; docs/public-api.md §3.4). Only the labels
 #     row has a query getter (`checkLabels`); Visib/Id carry none — `cell`/`parent`/`file` as a
-#     condition atom meets the usual unknown-condition-key refusal (the registry's rule since stage 5's E12; the
-#     E-07 row retired at E13). `DEFAULT_REGISTRY` is a PUBLISHED value (v0.4
-#     T2; the T2-bis SNAPSHOT door): its Dict/Vector fields stay mutable containers, but a mutation
+#     condition atom meets the usual unknown-condition-key refusal (the registry's rule; the
+#     E-07 row was retired with the closed interpreter). `DEFAULT_REGISTRY` is a PUBLISHED value (the
+#     SNAPSHOT door): its Dict/Vector fields stay mutable containers, but a mutation
 #     by CONFORMING code through any of them is DETECTED at the entry door (`POST_SEAL_MUTATION`)
 #     by the ONE structural deep-egal comparison against the publish-time snapshot (`===`-only
-#     leaves — the fingerprint `seal` left at stage 5's E13 of the v0.4 build, census row 6), never silently effective
+#     leaves — a former fingerprint `seal` was removed), never silently effective
 #     (accident-grade: a callable's BEHAVIOR is not pinned by its identity, the snapshot's own
 #     members are mutable — the disclosed mixed residue, docs §1.2 — and the door is an entry
-#     check, not a lock over the run — B-2); the former `===` alias onto its write-back Dict is
-#     retired (v0.4 T1).
+#     check, not a lock over the run); the former `===` alias onto its write-back Dict is
+#     retired.
 # PURPOSE: the closed, deterministic alterant inventory + the state accessors the absorb/apply phases consume.
 
 ## Alterants — the label / Visib / Id inventory sub-module
@@ -59,12 +59,12 @@ using ..GoMeta: fileMHIdx, userMHIdx, lineMHIdx
 #########################################################################################
 ## Labels.jl for `alterant` `Labels`:
 
-## The Labels Alterant has its OWN file since stage 2 of the Alterants build (his R-V04-20 — the whitelist belongs in the Labels
-## Alterant, "fixing a bug"; his §D202 — "writing it into the code of the Labels Alterant (i.e.: hard coded)"; R-ALT-20): the
-## hard-coded list `LABELS_VOCABULARY` (the 38 shipped names + `:doc`, R-ALT-21), `setLabels` (the closed check — the legacy's,
-## GoMetaRetro Alterants.jl :73–:78) and `checkLabels` (false for an unset or unknown name — the legacy's :87–:99) live in
-## `alterants-std/labels.jl` (R-V04B-6 (a): std-Alterant territory, never a Core literal — vocabulary_tests [10] scans around it).
-## The plain file `labels_vocabulary.txt` and its loader left with that stage.
+## The Labels Alterant has its OWN file since 0.4.0 (the creator's decision — the whitelist belongs in the Labels
+## Alterant, "fixing a bug"; "writing it into the code of the Labels Alterant (i.e.: hard coded)"): the
+## hard-coded list `LABELS_VOCABULARY` (the 38 shipped names + `:doc`), `setLabels` (the closed check — the original engine's,
+## GoMetaRetro Alterants.jl :73–:78) and `checkLabels` (false for an unset or unknown name — the original engine's :87–:99) live in
+## `alterants-std/labels.jl` (std-Alterant territory, never a Core literal — vocabulary_tests [10] scans around it).
+## The plain file `labels_vocabulary.txt` and its loader were removed within the 0.4 development.
 include(joinpath(@__DIR__, "..", "alterants-std", "labels.jl"))
 
 #########################################################################################
@@ -114,18 +114,17 @@ function setId(
     setElement(crntId, Symbol(idName) => parse((eltype(Id)), idValue))
 end
 
-## `ids(c, p, f)` — the three fields at once, each set as the single action sets it (his §D218 (3): "#~ ids( c, p, f)"; stage 3 of the
-## Alterants build, R-ALT-30): the same `Int16` parse of each written value, in the order cell, parent, file. A wrong arity or a
-## non-parsable value meets Julia's own error out of `goMeta`, as the three single actions' do (R-ALT-32): `ids(1, 2)` finds no
-## method; the ONE-VALUE form reaches the single-value method above with `idName == :ids` — MEASURED by the lane's probe I11.
+## `ids(c, p, f)` — the three fields at once, each set as the single action sets it (the creator's "#~ ids( c, p, f)"): the same `Int16` parse of each written value, in the order cell, parent, file. A wrong arity or a
+## non-parsable value meets Julia's own error out of `goMeta`, as the three single actions' do: `ids(1, 2)` finds no
+## method; the ONE-VALUE form reaches the single-value method above with `idName == :ids` — MEASURED.
 function setId(
     crntId::Id,
     idName::Symbol,
     c, p, f
 )
-    ## the guard (the stage's plan §2 item 2): a THREE-value SINGLE action — `cell(1, 2, 3)`, `parent` and `file` alike — reaches this
-    ## method too and would otherwise set all three fields silently; its ArgumentError (the Alterant's own setter error, R-ALT-32's standing
-    ## class; the wording the session's, his to re-word) is where the base 63ffff7 — no five-argument `setId` there — met Julia's MethodError (MEASURED: the lane's probe I14 on both trees)
+    ## the guard: a THREE-value SINGLE action — `cell(1, 2, 3)`, `parent` and `file` alike — reaches this
+    ## method too and would otherwise set all three fields silently; its ArgumentError (the Alterant's own setter
+    ## error; the wording provisional) is where an earlier state — no five-argument `setId` there — met Julia's MethodError (MEASURED)
     idName === :ids || throw(ArgumentError("setId: three values belong to the action `ids` alone (got `$(idName)`)"))
     setElement(crntId, :cell => parse((eltype(Id)), string(c)), :parent => parse((eltype(Id)), string(p)), :file => parse((eltype(Id)), string(f)))
 end
@@ -145,13 +144,12 @@ end
 ## via its validation seam: empty heading text meets the guarded refusal — a STANDING
 ## v0.2 semantic, not a transitional default (docs/public-api.md §3.4).
 ## NON-QUERYABLE (getAltInstance = nothing): a condition naming `head` meets the usual
-## unknown-condition-key refusal (the registry's rule, stage 5's E12). A heading's own condition is Julia's, evaluated
-## at the apply like every condition — a label test in it is legal since stage 1 of the Alterants build (his §D243; the
+## unknown-condition-key refusal (the registry's rule). A heading's own condition is Julia's, evaluated
+## at the apply like every condition — a label test in it is legal since 0.4.0 (the
 ## loop's order: the labels of the levels above — the user level's among them — and those stated before the heading on its
-## metaLine are seen, those after it are not, WITH OR WITHOUT a fed profile since stage 0 of the Labels lane (0.4.1; his
-## R-LAB-8 / R-LAB-15 of 2026-10-18/19 superseding R-ALT-15 (ii)(3) of 2026-10-16, under which a fed profile made the user
-## level the loop's first slot and a metaBlock's own labels were collected before its heading was decided — the Labels
-## lane's oracle P24 before and after)).
+## metaLine are seen, those after it are not, WITH OR WITHOUT a fed profile since 0.4.1 (before, in 0.4.0, a fed profile made the user
+## level the loop's first slot and a metaBlock's own labels were collected before its heading was decided — MEASURED
+## before and after)).
 mutable struct Heading
     entries::Vector{Tuple{String,Union{Nothing,Int}}}   # (text, explicit level | nothing ⇒ derived)
 end
@@ -165,15 +163,15 @@ Heading() = Heading(Tuple{String,Union{Nothing,Int}}[])
 ## validation-owned: an EXPLICIT level must land in the level vocabulary
 ## (`_heading_validate_level` below); DERIVED levels are in-vocabulary by
 ## construction.
-## v0.4 T3 (T3-DESIGN §3's companion cure): the validator now honors the documented
+## The validator honors the documented
 ## handover contract `(text) -> Bool` — `return true` on acceptance (the former `&&`
 ## one-liner RETURNED `false` on every non-empty text, the short-circuit value, harmless
-## only while the result was discarded); the ratified empty-text refusal keeps its
-## byte-exact engine-prefixed message and passes through the T3 validate envelope
+## only while the result was discarded); the empty-text refusal keeps its
+## byte-exact engine-prefixed message and passes through the validate envelope
 ## verbatim (the pass-through law). `setHead`'s own calls ignore the return.
 function _heading_validate_text(t)
     isempty(String(t)) && error("GoMeta absorb: empty heading text — an empty ",
-        "heading is refused at v0.2 (a ratified standing decision; ",
+        "heading is refused at v0.2 (a standing decision; ",
         "see docs/public-api.md §3.4)")
     return true
 end
@@ -195,7 +193,7 @@ _heading_validate_level(lvl::Int) =
 ## per call. The explicit level arrives as Symbol text (`Symbol("2")`: the literal
 ## floor keeps the integer space RESERVED out of the args wall) and is parsed
 ## here — the setId precedent; a non-parseable level is `parse`'s own ArgumentError (the seam's
-## guarded refusal left at stage 5's E6 of the v0.4 build — census row 14).
+## guarded refusal was removed within the 0.4 development).
 function setHead(crntHeading::Heading, actionName::Symbol, headingText::AbstractString)
     _heading_validate_text(headingText)
     push!(crntHeading.entries, (String(headingText), nothing))
@@ -272,8 +270,8 @@ function wipeAltActionSlots(fromIdx::Int, toIdx::Int)
                     ## holds plain values, so `nothing` is stored directly:
                     st.queue.conditions[actionIdx, crntSlot] = nothing
                     st.queue.args[actionIdx, crntSlot] = nothing
-                    st.queue.decided_by[actionIdx, crntSlot] = nothing   # R-V04B-35 (d): the origin references, like the single-index wipe
-                    st.queue.applied_to[actionIdx, crntSlot] = nothing   # stage 1 of the Alterants build: the applied Component's key, wiped with its slot
+                    st.queue.decided_by[actionIdx, crntSlot] = nothing   # the origin references, like the single-index wipe
+                    st.queue.applied_to[actionIdx, crntSlot] = nothing   # the applied Component's key, wiped with its slot
                 end
                 st.mh.count_actions_per_slot[crntSlot] = 0
             end
@@ -325,7 +323,7 @@ function updateMetaHierarchy(newMHIdx::Int)
     end
     st.crnt_idx = newMHIdx
     ## the slot pool is finite (`NUM_MH_LEVELS` slots); the walk allocates at most one slot per live level, so no input
-    ## exhausts it — the guarded refusal of v0.4 T2 left at stage 5's E5 of the v0.4 build (census row 71; his legacy's
+    ## exhausts it — a former guarded refusal was removed (the original engine's
     ## bare `findfirst`): an exhausted pool is Julia's own error at the Int8 store below
     free = findfirst(isequal(false), st.mh.slot_occupied)
     st.mh.slots[st.crnt_idx] = free
@@ -337,7 +335,7 @@ function getState(stateKey::Symbol)
     # Reads the per-call settribute snapshot via `ctx()`: `get_state(ctx().snapshot, key)` is the pure
     # reader form of `BLS.getElement(ctx().snapshot, key)`. THE condition's settribute read: a re-written
     # condition calls `getState(:key)` by BARE name (`using .CnS: getState, getAltState` in module GoMeta,
-    # where `Core.eval` runs it — his legacy's form, CnS.jl :252–:256) and reaches the per-call state through
+    # where `Core.eval` runs it — the original engine's form, CnS.jl :252–:256) and reaches the per-call state through
     # the module-level ScopedValue. Writing goes the other way: the parent helper
     # `snapshot_settribute!(ctx(), component)` refreshes the snapshot, so this accessor is read-only.
     return get_state(ctx().snapshot, stateKey)
@@ -356,9 +354,9 @@ function getAltState(
     # the apply phase constructed under that SAME index, so the lookup is internally consistent.
     local st = ctx()
     if altInd ∈ keys(st.working)
-        ## the bare call, as his legacy's (CnS.jl :267–:275): the query-seam envelope of v0.4 T3 left at stage 5's E5 of the
-        ## v0.4 build (census row 56; his §120), the closed interpreter's own envelope (CB_QUERY_THROW / RES_RETURN_TYPE — E13)
-        ## with the interpreter at stage 5's E13 — THE one query site since: a getter's throw propagates raw out of
+        ## the bare call, as the original engine's (CnS.jl :267–:275): a former query-seam envelope was removed, as was
+        ## the closed interpreter's own envelope (CB_QUERY_THROW / RES_RETURN_TYPE)
+        ## with the interpreter — THE one query site since: a getter's throw propagates raw out of
         ## the goMeta call, a non-Bool return reaches the condition as it is (Julia's own TypeError where a Bool is needed)
         return st.registry.plugins[altInd].getAltInstance(st.working[altInd], altActionName, args...)
     else
@@ -378,9 +376,9 @@ end # module CnS
 # DOES: `build_default_registry()` constructs FRESH top-level `Alterant` instances in DECLARATION order
 #     (labels=1, Visib=2, id=3, heading=4 — the live keys are :id / :heading), derives the sorted action
 #     table + the parallel `action_to_plugin` index
-#     + the `Dict` lookups + the SORTED `accum_alt_idxs` (the `action_to_settribute` table left at stage 5's E12 — census
-#     row 45 of the v0.4 build's census) through the CHECKED owner
-#     fill (a duplicate action name resolves FIRST-wins since stage 5's E4 — the clash law that refused it left), and returns
+#     + the `Dict` lookups + the SORTED `accum_alt_idxs` (the `action_to_settribute` table was removed)
+#     through the CHECKED owner
+#     fill (a duplicate action name resolves FIRST-wins — the clash law that refused it was removed), and returns
 #     `const DEFAULT_REGISTRY`.
 # REASONING: alterant/action indices are fixed by declaration order, never by `Dict` iteration order —
 #     those indices are baked into the eval'd condition strings.
@@ -391,25 +389,25 @@ end # module CnS
 
 IS: the v0 alterant inventory's DECLARATIONS in DECLARATION order — the DEFAULT BUILDER: fresh top-level `Alterant`
 instances (the `state.jl` record type) for `labels` / `Visib` / `Id` / `Heading` (the live keys `:labels`, `:Visib`, `:id`,
-`:heading`; the heading alterant — its names are RATIFIED: alterant `Heading`, action `head`) + the per-action records,
+`:heading`; the heading alterant — its names: alterant `Heading`, action `head`) + the per-action records,
 returned as an UNVALIDATED `RegistryBuilder`.
 
 DOES: builds the four records in the keyword form, each with its declared default and its capture row — `labels`
-(`:accumulate`; `Alterants.LabelsInstance` since 0.4.1 — the applied labels and the run's vocabulary, iterating as the former bare `Dict{Symbol,Bool}` did (labels.jl); setter `setLabels`, getter `checkLabels`; the read-time hook `onRead = Alterants.declareLabels!` — the vocabulary statements consumed at the read; the setter's and the checker's kept `Dict{Symbol,Bool}` methods serve a custom registration with `altConstructor = Dict{Symbol,Bool}` and NO hook — with a hook, a minted run state reaches `Dict{Symbol,Bool}(run)` and is Julia's own error (apply.jl `_freshInstance`; labels.jl); default the EMPTY SET, R-V04B-92; capture
-`:per_key`, stem `:label`), `Visib` (`:mutExclusive`; default `:show`, R-V04B-51 (2); `:single`, stem `:visib`), `id`
-(`:mutExclusivePerField`; default the ZERO compound, R-V04B-92; `:per_field`, stem `:id`) and `heading` (`:localOnly` —
+(`:accumulate`; `Alterants.LabelsInstance` — the applied labels and the run's vocabulary, iterating as the former bare `Dict{Symbol,Bool}` did (labels.jl); setter `setLabels`, getter `checkLabels`; the read-time hook `onRead = Alterants.declareLabels!` — the vocabulary statements consumed at the read; the setter's and the checker's kept `Dict{Symbol,Bool}` methods serve a custom registration with `altConstructor = Dict{Symbol,Bool}` and NO hook — with a hook, a minted run state reaches `Dict{Symbol,Bool}(run)` and is Julia's own error (apply.jl `_freshInstance`; labels.jl); default the EMPTY SET; capture
+`:per_key`, stem `:label`), `Visib` (`:mutExclusive`; default `:show`; `:single`, stem `:visib`), `id`
+(`:mutExclusivePerField`; default the ZERO compound; `:per_field`, stem `:id`) and `heading` (`:localOnly` —
 queued like every action, applied by the apply loop's one rule for this mode ONLY at the Component the statement is applied
-to (R-V04B-101 (1); R-V04B-50 the metaBlock for a metaLine's statement, R-V04B-98 the Line for a trailing metaSegment);
+to (the metaBlock for a metaLine's statement, the Line for a trailing metaSegment);
 default `nothing`; `:per_entry`, stem `:head`) — and the nine `ActionSpec` records: `:` (plugin 1), `hide` / `show` / `discard` (2),
-`cell` / `parent` / `file` / `ids` (3; `ids` since stage 3 of the Alterants build) and `head` (4; `accepts_string_slot = 1`, `validate = Alterants._heading_validate_text`).
-The plugin index IS the position here. `publish` runs the remaining check (the domain probe — R-V04B-4 (iii); the
-vocabulary check left at stage 5's E9, the validation chain of v0.4 T2–T4 at E4, census row 3, the Heading lane's mode-gate
-laws with that lane at stage 1 of the Alterants build), derives the tables (a duplicate action name resolving first-wins), and takes the publish-time snapshot;
+`cell` / `parent` / `file` / `ids` (3) and `head` (4; `accepts_string_slot = 1`, `validate = Alterants._heading_validate_text`).
+The plugin index IS the position here. `publish` runs the remaining check (the domain probe; a former
+vocabulary check, a validation chain and the Heading's mode-gate
+laws were removed within the 0.4 development), derives the tables (a duplicate action name resolving first-wins), and takes the publish-time snapshot;
 `DEFAULT_REGISTRY` is that published value, consumed READ-ONLY. Pure — no module-load side-effects.
 
 REASONING: the inventory is deterministic BY CONSTRUCTION — declaration order fixes every index, never a `Dict`
 iteration order; the declarations are DATA, the hot-path tables derived from them by `publish`, never hand-supplied
-(the clash law with its disposition switch left at stage 5's E4, the per-overload rows at E11; his legacy registered an
+(a clash law with its disposition switch and the per-overload rows were removed; the original engine registered an
 action by its name).
 
 PURPOSE: the one declaration site of the shipped inventory — the base `build_default_registry` publishes and
@@ -419,56 +417,56 @@ function default_registry_builder()
     # The closed v0 inventory, in DECLARATION order (deterministic, unlike Dict-iteration
     # order). Plugin index = position here.
     plugins = Alterant[
-        ## v0.4 T5: every DEFAULT record DECLARES its capture row (the registration-driven
+        ## Every DEFAULT record DECLARES its capture row (the registration-driven
         ## capture plane; the stems are DECLARED — byte-compatibility never rides the
-        ## derived fallback) — the three former legacy positional declarations migrated
+        ## derived fallback) — the three former positional declarations (0.3.2's) migrated
         ## to the keyword form to carry `capture =`.
         Alterant(; altName = :labels, setMode = :accumulate, altConstructor = Alterants.LabelsInstance,   # stage A: the instance carries the run's vocabulary (labels.jl)
                    setAltInstance = Alterants.setLabels, getAltInstance = Alterants.checkLabels,
-                   default = Declared(Symbol[]),   # R-V04B-92 (card C2, his word of 2026-10-02 (OWNER-WORDS §287; R-V04B-92: 'I do approve your recommendation: declare.' — provisional, his (ii))): Labels' declared default is the EMPTY SET — the answer's shape, a sorted Vector{Symbol}
+                   default = Declared(Symbol[]),   # Labels' declared default is the EMPTY SET (the creator's decision, provisional) — the answer's shape, a sorted Vector{Symbol}
                    capture = CaptureDecl(:per_key; attr_stem = :label),
-                   onRead = Alterants.declareLabels!),   # stage A of the Labels lane (R-LAB-20): the vocabulary statements `:++x` / `:--x` consumed at the read
+                   onRead = Alterants.declareLabels!),   # the vocabulary statements `:++x` / `:--x` consumed at the read
         Alterant(; altName = :Visib, setMode = :mutExclusive, altConstructor = Alterants.Visib,
                    setAltInstance = Alterants.setVisib,
-                   default = Declared(:show),   # R-V04B-51 (2): Visib's ONE declared default is 'show' (his lean §11; his word §180)
+                   default = Declared(:show),   # Visib's ONE declared default is 'show' (the creator's decision)
                    capture = CaptureDecl(:single; attr_stem = :visib)),
         Alterant(; altName = :id, setMode = :mutExclusivePerField, altConstructor = Alterants.Id,
                    setAltInstance = Alterants.setId,
-                   default = Declared((cell = Int16(0), parent = Int16(0), file = Int16(0))),   # R-V04B-92 (card C2): Id's declared default is the ZERO compound — every recorded field zero, in the answer's NamedTuple shape
+                   default = Declared((cell = Int16(0), parent = Int16(0), file = Int16(0))),   # Id's declared default is the ZERO compound — every recorded field zero, in the answer's NamedTuple shape
                    capture = CaptureDecl(:per_field; attr_stem = :id)),
-        # The Heading. setMode `:localOnly` — his set mode of 2026-08-02 (U8 §8.4): the value applies ONLY at the
+        # The Heading. setMode `:localOnly` — the creator's set mode: the value applies ONLY at the
         # Component the statement is applied to — the metaBlock for a metaLine's statement, the Line for a Code Line's
-        # trailing metaSegment (his §286 (i)/(ii); R-V04B-98) — and every other Component that meets it on a shared level
-        # passes over it. Since stage 1 of the Alterants build the Heading goes through EXACTLY the same process as any
-        # other Alterant (his §D241 point 2; R-V04B-101 (1)): queued like every action, decided by the apply loop's one
+        # trailing metaSegment — and every other Component that meets it on a shared level
+        # passes over it. The Heading goes through EXACTLY the same process as any
+        # other Alterant (the creator's decision): queued like every action, decided by the apply loop's one
         # rule for this mode (apply.jl), recorded by the one capture walk (`:per_entry`: one row per heading occurrence,
         # the level in the attr name — the outline model). Deliberately in NEITHER derived set below.
         Alterant(; altName = :heading, setMode = :localOnly, altConstructor = Alterants.Heading,
                    setAltInstance = Alterants.setHead,
-                   default = Declared(nothing),   # R-V04B-92 (card C2): Heading's declared default is NONE — no heading, delivered as `nothing` with the source `:default`
+                   default = Declared(nothing),   # Heading's declared default is NONE — no heading, delivered as `nothing` with the source `:default`
                    capture = CaptureDecl(:per_entry; attr_stem = :head)),
     ]
 
-    # v0.2 registration build: THE DECLARED REGISTRATION RECORD — one ActionSpec per action, declaration
-    # order (the parallel derived tables below stay the hot-path lookups). The per-overload rows left at stage 5's E11
-    # of the v0.4 build with the spelling tag, the sugar-candidacy register and the reserved keyed slot (census row 16 —
-    # his §317 mark; his legacy registered an action by its name and let Julia dispatch
-    # do the rest): the setters' methods are the actions' forms; the keyword form is the one form (census row 65).
+    # THE DECLARED REGISTRATION RECORD (since v0.2) — one ActionSpec per action, declaration
+    # order (the parallel derived tables below stay the hot-path lookups). The per-overload rows were removed within the 0.4
+    # development with the spelling tag, the sugar-candidacy register and the reserved keyed slot (
+    # the original engine registered an action by its name and let Julia dispatch
+    # do the rest): the setters' methods are the actions' forms; the keyword form is the one form.
     action_specs = ActionSpec[
-        # Labels `:(:)` — the operator-token action (ad-4); the colon sugar is one of the two activated
-        # sugars (x-8, closed at two); queryable via checkLabels.
+        # Labels `:(:)` — the operator-token action; the colon sugar is one of the two activated
+        # sugars (closed at two); queryable via checkLabels.
         ActionSpec(; name = Symbol(":"), plugin = Int8(1)),
         # Visib hide/show/discard — zero literal slots (the action name selects); NON-queryable at v0.2
-        # (getAltInstance=nothing; the I20 class). The declared write-back settribute key of v0.4 T1 left at stage 5's E12
-        # of the v0.4 build (census row 45; the word R-V04B-42 (2) waited for — his §317 mark and his §319 order):
+        # (getAltInstance=nothing). A declared write-back settribute key was removed within the 0.4
+        # development:
         # the Engine's answer is `evaluatedAltValue`; nothing writes a flag into the BLS Components.
         ActionSpec(; name = :hide, plugin = Int8(2)),
         ActionSpec(; name = :show, plugin = Int8(2)),
         ActionSpec(; name = :discard, plugin = Int8(2)),
         # Id cell/parent/file — ONE literal slot each (the setter parses the Symbol text); NON-queryable
-        # (experimental, I21). `ids` — THREE literal slots: the three fields cell, parent, file at once, each set as the single
-        # action sets it (his §D218 (3): "#~ ids( c, p, f)"; stage 3 of the Alterants build, R-ALT-30; its faults the standing
-        # class, R-ALT-32). A meta-hierarchy slot's capacity is SLOT_CAPACITY (state.jl), DECOUPLED from this count (R-ALT-31).
+        # (experimental). `ids` — THREE literal slots: the three fields cell, parent, file at once, each set as the single
+        # action sets it (the creator's "#~ ids( c, p, f)"; its faults Julia's own errors, as the single actions'
+        # are). A meta-hierarchy slot's capacity is SLOT_CAPACITY (state.jl), DECOUPLED from this count.
         ActionSpec(; name = :cell, plugin = Int8(3)),
         ActionSpec(; name = :parent, plugin = Int8(3)),
         ActionSpec(; name = :file, plugin = Int8(3)),
@@ -480,13 +478,13 @@ function default_registry_builder()
         ActionSpec(; name = :head, plugin = Int8(4), accepts_string_slot = 1, validate = Alterants._heading_validate_text),
     ]
 
-    # The registration (stage 5's E4 — his §317, census rows 3 and 51: the validation chain of v0.4 T2–T4
-    # and the clash law with its disposition switch left; his legacy registered unchecked): the declarations
+    # The registration (a former validation chain
+    # and the clash law with its disposition switch were removed; the original engine registered unchecked): the declarations
     # above are the DEFAULT BUILDER; `publish` runs the remaining check (`_validate_registration`: the domain
-    # probe — the vocabulary check left at stage 5's E9, the mode-gate laws with the Heading's lane at stage 1 of the Alterants build), then `_derive_tables` derives the hot-path
+    # probe — a former vocabulary check and the Heading's mode-gate laws were removed), then `_derive_tables` derives the hot-path
     # tables (the sorted action table, the parallel action→plugin index, the name→index Dicts, the SORTED
     # accumulate/mutExclusive index sets the apply-phase `insorted` consumers depend on — a duplicate action
-    # name resolving first-wins; the `action_to_settribute` table left at stage 5's E12, census row 45) from the
+    # name resolving first-wins; the `action_to_settribute` table was removed) from the
     # declarations only, never hand-supplied; `:mutExclusivePerField` (the `id` compound) sits in NEITHER
     # mode set by design (its per-field semantics are deferred).
     return RegistryBuilder(plugins, action_specs)
@@ -498,7 +496,7 @@ end
 IS: the v0 alterant inventory, PUBLISHED — the one-line composition `publish(default_registry_builder())`.
 
 DOES: returns a published `AlterantRegistry` carrying its publish-time snapshot: the remaining check (the domain probe —
-the vocabulary check left at stage 5's E9, the mode-gate laws at stage 1 of the Alterants build —, inside `publish`) run before the object exists, the
+a former vocabulary check and the mode-gate laws were removed —, inside `publish`) run before the object exists, the
 derived tables come from the declarations, and the publish-time snapshot is taken. Every call builds a FRESH value (the
 tests publish their own). Pure — no module-load side-effects beyond the const it feeds.
 
@@ -509,35 +507,35 @@ PURPOSE: the builder of `const DEFAULT_REGISTRY` (the tail of this file).
 """
 build_default_registry() = publish(default_registry_builder())
 
-## v0.4 T2 — the canonical TEXT of a declared slot: deterministic, module-unqualified, callables by NAME, containers
+## The canonical TEXT of a declared slot: deterministic, module-unqualified, callables by NAME, containers
 ## element-wise in declaration order, and BOUNDARY-UNAMBIGUOUS (no element boundary can be re-cut) — NOT globally
-## injective. Since stage 5's E13 of the v0.4 build this family has ONE caller — the validate walk's canonical Dict-entry
-## ORDER (`_walk_dict_entries` below; T2BIS-DESIGN §2's deterministic first-failure): the registration digest it fed (E13), with
-## the `seal` fingerprint that digest minted, left at E13 (census row 6 — the row's own carve-out, "one key-text path
-## stays for the kept door"). Its residual collision classes — module-unqualified type names; the name-folded designated
+## injective. This family has ONE caller — the validate walk's canonical Dict-entry
+## ORDER (`_walk_dict_entries` below; a deterministic first-failure): the registration digest it fed, with
+## the `seal` fingerprint that digest minted, were removed — one key-text path
+## stays for the kept door. Its residual collision classes — module-unqualified type names; the name-folded designated
 ## callables; function-valued type parameters; untagged parameter categories (`Val{M.T}` ≡ `Val{true}`); un-encoded
 ## container parameters (`Any[1]` ≡ `Int[1]`) — were FINGERPRINT-only, each caught at the door by the snapshot's `===`
 ## leaf compare; for a key ORDER a collision means two keys sort as equal texts — the sort is stable. The former (iv)/(v) hard-stop classes are
 ## CLOSED (`String`-only values; every type-bearing field probed at validate under the node
-## budget); non-DataType type nodes encode STRUCTURALLY (crx-t2bis cure A1 — never `string`) — a TypeVar only as a DataType parameter or a UnionAll's variable: met as another TypeVar's bound, a Union member or a Vararg element type it throws `_UnencodableSlot` and `_walk_dict_entries` takes that Dict's live iteration order (register E13-2's note)
-## (cure batch 1: the first encoding joined elements with delimiters, so `[Symbol("a,b")]` and
+## budget); non-DataType type nodes encode STRUCTURALLY (never `string`) — a TypeVar only as a DataType parameter or a UnionAll's variable: met as another TypeVar's bound, a Union member or a Vararg element type it throws `_UnencodableSlot` and `_walk_dict_entries` takes that Dict's live iteration order
+## (the first encoding joined elements with delimiters, so `[Symbol("a,b")]` and
 ## `[:a, :b]` folded identically — every element, every string leaf and every component is now
 ## LENGTH-PREFIXED, netstring-style `<bytes>:<text>`, so no boundary can be re-cut).
 _ns(s::String)::String = string(sizeof(s), ":", s)
 _nsv(parts)::String = join((_ns(String(p)) for p in parts), ",")
 _slot_text(x::Nothing)::String = "-"
 _slot_text(x::Symbol)::String = string("y", _ns(String(x)))
-# (the t3t4r5 cure — three seats convergent) CONCRETE `String` ONLY, matching
+# CONCRETE `String` ONLY, matching
 # `_domain_leaf`'s own String-only law: the former `::AbstractString` arm ran the
-# EXTENSIBLE `String(x)` on a caller-owned string subtype (probe P80: a stateful
+# EXTENSIBLE `String(x)` on a caller-owned string subtype (measured: a stateful
 # specialization threw at validate, raw, through the ordering prepass). A non-String
 # AbstractString value now falls to the `_UnencodableSlot` fallback — the coded
 # refusal, zero caller code run — exactly where the domain law always placed it.
 _slot_text(x::String)::String = string("s", _ns(x))
 _slot_text(x::Bool)::String = x ? "T" : "F"
-# (cure batch 2) the CONCRETE numeric type is part of the value (`Int8(1)` ≠ `Int64(1)`), and a
+# The CONCRETE numeric type is part of the value (`Int8(1)` ≠ `Int64(1)`), and a
 # vector is not a tuple — distinct tags, so a same-display substitution changes the text.
-# (cure batch 4) THE ENCODABLE DOMAIN IS CLOSED. Numbers: the machine integers by decimal text,
+# THE ENCODABLE DOMAIN IS CLOSED. Numbers: the machine integers by decimal text,
 # the machine floats BIT-EXACTLY (display text collapses distinct NaN payloads), Complex and
 # Rational STRUCTURALLY over their parts; any other Number — and any value of a type without an
 # encoder below — is UNENCODABLE and REFUSED at validation (`REG_PROTOCOL`), never folded by a
@@ -548,30 +546,30 @@ _slot_text(x::Union{Int8,Int16,Int32,Int64,Int128,UInt8,UInt16,UInt32,UInt64,UIn
 _slot_text(x::Float64)::String = string("n", _nsv((_type_text(typeof(x)), string(reinterpret(UInt64, x); base = 16))))
 _slot_text(x::Float32)::String = string("n", _nsv((_type_text(typeof(x)), string(reinterpret(UInt32, x); base = 16))))
 _slot_text(x::Float16)::String = string("n", _nsv((_type_text(typeof(x)), string(reinterpret(UInt16, x); base = 16))))
-# (the t3t4r6-A1 cure) getfield parts here too — the encoder repeated the extensible
+# getfield parts here too — the encoder repeated the extensible
 # real/imag/numerator/denominator dispatches; output byte-identical for legal values
 _slot_text(x::Complex)::String = string("c", _nsv((_type_text(typeof(x)), _slot_text(getfield(x, :re)), _slot_text(getfield(x, :im)))))
 _slot_text(x::Rational)::String = string("r", _nsv((_type_text(typeof(x)), _slot_text(getfield(x, :num)), _slot_text(getfield(x, :den)))))
 _slot_text(x::Number)::String = throw(_UnencodableSlot(typeof(x)))
 _slot_text(x::VersionNumber)::String = string("v", _ns(string(x)))
 _slot_text(x::Type)::String = string("t", _ns(_type_text(x)))
-# (cure batch 5) DATA SLOTS HOLD DATA: a `Function` encodes by NAME only in the DESIGNATED callable
+# DATA SLOTS HOLD DATA: a `Function` encodes by NAME only in the DESIGNATED callable
 # fields (setter/getter/validate — each a snapshot leaf the door compares by `===`);
 # inside a declared DATA value (`Declared.value`, any container in it) a
-# same-named function from another module would be invisible to the key text (as to the fingerprint it fed — E13) AND, were it not
+# same-named function from another module would be invisible to the key text (as to the former fingerprint it fed) AND, were it not
 # refused, indistinguishable in the text, so a function there is UNENCODABLE (refused at
 # validation; the snapshot door would separately fire on the identity move).
 const _IN_DATA = Base.ScopedValues.ScopedValue{Bool}(false)
-# (the t3t4r4 A1=B1 cure) the STRUCTURAL callable name — `nameof` is extensible, and a
+# The STRUCTURAL callable name — `nameof` is extensible, and a
 # Function can legitimately appear as an isbits TYPE PARAMETER of a declared signature
-# (`Store{tag}` — probe P70: reflection's param render dispatched a pirated `nameof`
+# (`Store{tag}` — measured: reflection's param render dispatched a pirated `nameof`
 # raw out of validate). `_callable_text` reads TypeName fields only; for an ordinary
-# named function the text is IDENTICAL to the old `nameof` render (the P50 ladder — suite-asserted);
+# named function the text is IDENTICAL to the old `nameof` render (suite-asserted);
 # a closure's text differs — the same benign exotic-registrant text class already
-# disclosed at the r3-C4 scoping.
+# disclosed.
 _slot_text(f::Function)::String =
     _IN_DATA[] ? throw(_UnencodableSlot(typeof(f))) : string("f", _ns(_callable_text(f)))
-# (cure batch 3) CYCLE-aware container encoding: a published mutable container mutated into a
+# CYCLE-aware container encoding: a published mutable container mutated into a
 # cycle (`push!(v, v)`) must be REFUSED at the door as a mutation, never recursed into a
 # StackOverflowError. The visiting set is task-local per top-level encode.
 const _SLOT_VISITING = Base.ScopedValues.ScopedValue{Union{Nothing,Base.IdSet{Any}}}(nothing)
@@ -591,14 +589,14 @@ function _slot_container(open::String, close::String, v)
         delete!(vis, v)
     end
 end
-# (cure batch 5) CONCRETE containers only: a range, a view or a user AbstractVector/AbstractDict
+# CONCRETE containers only: a range, a view or a user AbstractVector/AbstractDict
 # would fold content-only (`1:3` ≡ `[1,2,3]` — an undisclosed collision) and sits outside the
-# domain copier's closed rebuild classes (T2-bis: `deepcopy` is never dispatched anywhere) —
+# domain copier's closed rebuild classes (`deepcopy` is never dispatched anywhere) —
 # outside the closed domain, refused.
 _slot_text(v::Vector)::String = _slot_container("[", "]", v)
 _slot_text(v::Tuple)::String = string("<", _nsv(_slot_text(e) for e in v), ">")
 _slot_text(p::Pair)::String = string("(", _nsv((_slot_text(p.first), _slot_text(p.second))), ")")
-# (cure batch 4) dicts are cycle-guarded like vectors and CANONICAL: entries sorted by their
+# Dicts are cycle-guarded like vectors and CANONICAL: entries sorted by their
 # ENCODED text (a `string`-keyed sort left `:x` vs `"x"` in iteration order — non-deterministic).
 function _slot_text(d::Dict)::String
     vis = _SLOT_VISITING[]
@@ -621,14 +619,14 @@ _slot_text(nt::NamedTuple)::String =
 _slot_text(x::NoDefault)::String = "NoDefault"
 _slot_text(x::Declared)::String =
     Base.ScopedValues.with(_IN_DATA => true) do; string("Declared", _ns(_slot_text(x.value))) end
-_slot_text(x::CaptureDecl)::String =   # v0.4 T5: the stem joined the seal's fold (the SEVENTH re-mint's locus — the fold left at stage 5's E13); the instance type and the multiplicity left the row at stage 5's E5; the mode gate at stage 1 of the Alterants build
+_slot_text(x::CaptureDecl)::String =   # the stem joined a former seal's fold (the fold was removed); the instance type, the multiplicity and the mode gate were removed from the row within the 0.4 development
     string("Capture", _nsv((String(x.attr_scheme), _slot_text(x.attr_stem))))
-# (cure batch 4) NO opaque fallback: a value of a type without an encoder is UNENCODABLE — refused
-# at validation as `REG_PROTOCOL`; a value type a later cure admits gets its own encoder then.
+# NO opaque fallback: a value of a type without an encoder is UNENCODABLE — refused
+# at validation as `REG_PROTOCOL`; a value type admitted later gets its own encoder then.
 _slot_text(x)::String = throw(_UnencodableSlot(typeof(x)))
 
 ## ————————————————————————————————————————————————————————————————————————————————————————
-## v0.4 T2-bis — THE ONE DOMAIN + the three walks (T2BIS-DESIGN, R-V04B-4 (c+)): ONE leaf
+## THE ONE DOMAIN + the three walks: ONE leaf
 ## predicate (`_domain_leaf`) is the law for `validate` (the domain walk), the domain COPIER
 ## `_domain_copy` (publish stages 1+2 and the contained `RegistryBuilder(published)` route)
 ## and the deep-egal COMPARATOR `_deep_egal` (the one-check door). Leaves are carried BY
@@ -637,22 +635,22 @@ _slot_text(x)::String = throw(_UnencodableSlot(typeof(x)))
 ## walks are ITERATIVE — explicit work stacks, no native recursion anywhere, probe frames
 ## included.
 
-"The enumerated machine-scalar run of the closed value domain (R-V04B-8; **Bool IS in** —
-`Bool <: Integer`, the Bool arm of the ratified encoder)."
+"The enumerated machine-scalar run of the closed value domain (**Bool IS in** —
+`Bool <: Integer`, the Bool arm of the encoder)."
 const _MACHINE_REAL = Union{Bool, Int8, Int16, Int32, Int64, Int128,
                             UInt8, UInt16, UInt32, UInt64, UInt128,
                             Float16, Float32, Float64}
 const _MACHINE_INT = Union{Bool, Int8, Int16, Int32, Int64, Int128,
                            UInt8, UInt16, UInt32, UInt64, UInt128}
 
-# the parts-recursive numeric arm, matching the RATIFIED encoder exactly (T2BIS-DESIGN §1):
+# the parts-recursive numeric arm, matching the encoder exactly:
 # `Complex`/`Rational` OF the machine run, parts-recursively — `Complex{Rational{Int64}}`,
 # `Complex{Bool}` and `Rational{Bool}` admit; `BigInt` parts fall to the else-arm exactly
 # as today. Bounded: Complex parts are `<:Real`, so the recursion depth is ≤ 2.
-# (the t3t4r6-A1 cure) the Complex/Rational PARTS read via `getfield` — `real`/`imag`/
+# The Complex/Rational PARTS read via `getfield` — `real`/`imag`/
 # `numerator` are EXTENSIBLE generics, and a legitimate specialization on
 # `Complex{TheirReal}` executed (and threw) from the domain predicate BEFORE any guard
-# (probe P90). Field reads are byte-identical for every legal value (`real(z)` IS
+# (measured). Field reads are byte-identical for every legal value (`real(z)` IS
 # `z.re`), so nothing legal moves.
 _numeric_leaf(x)::Bool = x isa _MACHINE_REAL ||
     (x isa Rational && getfield(x, :num) isa _MACHINE_INT) ||
@@ -661,8 +659,8 @@ _numeric_leaf(x)::Bool = x isa _MACHINE_REAL ||
 """
     _domain_leaf(x) -> Bool
 
-IS: THE ONE leaf predicate of the closed value domain (T2BIS-DESIGN §1; R-V04B-4 (iii)) — enumerated, never `isbits`
-(which would admit `Char`, enums and opaque isbits structs R-V04B-8 refuses).
+IS: THE ONE leaf predicate of the closed value domain — enumerated, never `isbits`
+(which would admit `Char`, enums and opaque isbits structs the domain refuses).
 
 DOES: answers true for `Function` · `Type` · `Symbol` · `Nothing` · `String` (VALUES are `String`-only — a non-`String`
 `AbstractString` value is OUTSIDE the domain; `AbstractString` stays a legal `Type` leaf) · `VersionNumber` · the
@@ -683,19 +681,19 @@ _domain_leaf(x)::Bool =
     x isa Function || x isa Type || x isa Symbol || x === nothing || x isa String ||
     x isa VersionNumber || _numeric_leaf(x)
 
-## the per-record explicit field lists — 9/4 (nine since stage A of the Labels lane — the read-time hook `onRead`, a designated callable field; four action fields since stage 5's E12 — the settribute slot left, census row 45; the Alterant's default slot since stage 2's commit 3; the action's gone since 3-ii; eight since stage 5's E10; five since stage 5's E11 — the overload rows left, census row 16), each asserted against the compiler at
-## load (T2BIS-DESIGN §15 (7)); the two record structs are POSITION-RESTRICTED walker
-## containers (elements of `plugins`/`action_specs`; the third, `ActionOverload` inside the overloads slot, left at stage 5's E11
-## of the v0.4 build — census row 16) and are REFUSED anywhere else, declared data included.
+## the per-record explicit field lists — 9/4 (the read-time hook `onRead`, a designated callable field, the ninth Alterant-record field; the four action fields of 0.4.0: the settribute slot, the action's default slot and the overload rows were removed within the 0.4 development, the Alterant's default slot added), each asserted against the compiler at
+## load; the two record structs are POSITION-RESTRICTED walker
+## containers (elements of `plugins`/`action_specs`; a third, `ActionOverload` inside the overloads slot, was removed within the 0.4
+## development) and are REFUSED anywhere else, declared data included.
 const _WALK_PLUGIN_FIELDS = (:altName, :setMode, :altConstructor, :setAltInstance,
     :getAltInstance, :precedencesTuple, :default, :capture, :onRead)
 @assert _WALK_PLUGIN_FIELDS == fieldnames(Alterant)
-const _WALK_ACTION_FIELDS = (:name, :plugin, :accepts_string_slot, :validate)   # the settribute slot left at stage 5's E12 (census row 45)
+const _WALK_ACTION_FIELDS = (:name, :plugin, :accepts_string_slot, :validate)   # the former settribute slot was removed
 @assert _WALK_ACTION_FIELDS == fieldnames(ActionSpec)
 
 "The 3 record-reachable slot-struct types (walked field-wise GENERICALLY; rebuilt
-positionally at `typeof(x)`; the two vocabulary slot types left at stage 5's E9, the nine of the
-carried declarations and the security frame at stage 5's E10)."
+positionally at `typeof(x)`; two vocabulary slot types, nine carried declarations and a security frame of the 0.4 development
+were removed)."
 const _SLOT_STRUCTS = (CaptureDecl, NoDefault, Declared)
 const _SLOT_STRUCT_UNION = Union{CaptureDecl, NoDefault, Declared}
 const _RECORD_STRUCT_UNION = Union{Alterant, ActionSpec}
@@ -706,24 +704,24 @@ const _RECORD_STRUCT_UNION = Union{Alterant, ActionSpec}
 _value_container(x)::Bool = x isa Vector || x isa Dict || x isa Tuple || x isa Pair ||
                             x isa NamedTuple || x isa _SLOT_STRUCT_UNION
 
-"Predicate 2's totality bound (T2BIS-DESIGN §2, THE BUDGET LAW): the node budget of the
+"Predicate 2's totality bound (THE BUDGET LAW): the node budget of the
 iterative type-parameter walk. A budget-PASSING type has a whole parameter TREE of ≤ this
 many nodes, so every text-encoder recursion over it is depth-bounded, with NO catch (catching
-`StackOverflowError` is shape-dependent at the Julia semantics — probes P1/P4, log §S2.6/§S2.9 — and
-is never a design premise). The MINT it bounded — the seal's digest — left at stage 5's E13 of the v0.4 build
-(census row 6); the bound stays as the domain's declared closure (register E13-3), bounding the key-order text."
+`StackOverflowError` is shape-dependent at the Julia semantics (measured) — and
+is never a design premise). The MINT it bounded — a former seal's digest — was removed;
+the bound stays as the domain's declared closure, bounding the key-order text."
 const _TYPE_BUDGET = 256
 
 # the ITERATIVE budgeted type walk: EVERY child type node is descended — `DataType`
-# parameters, `UnionAll` var/body, `Union` a/b, `TypeVar` lb/ub, `Vararg` T/N (probe P4,
-# §S2.9: a UnionAll wrapping a deep body would count as ONE node under a counted-not-
+# parameters, `UnionAll` var/body, `Union` a/b, `TypeVar` lb/ub, `Vararg` T/N (measured:
+# a UnionAll wrapping a deep body would count as ONE node under a counted-not-
 # descended reading, yet `string()` on it recurses to a StackOverflowError at the mint —
 # so the walk descends everything). A NON-type value parameter is leaf-checked (the
-# `Val{'c'}` refusal — KNOWN OPEN (v) closes, witnessed by W5).
-# (the t3t4r3 A2 cure) EVERY type-graph read below is `getfield` — property syntax
+# `Val{'c'}` refusal).
+# EVERY type-graph read below is `getfield` — property syntax
 # lowers through the EXTENSIBLE `getproperty`, and a registered
 # `Base.getproperty(::Type{Theirs}, ::Symbol)` specialization threw out of the budget
-# walk BEFORE any gate it feeds (probe P62). `getfield`/`isa`/`isdefined` are builtins.
+# walk BEFORE any gate it feeds (measured). `getfield`/`isa`/`isdefined` are builtins.
 function _type_budget_check(t)
     stack = Any[t]
     seen = 0
@@ -754,8 +752,8 @@ function _type_budget_check(t)
     return (:ok, Nothing)
 end
 
-# the Dict-ORDER budget (T2BIS-DESIGN §2's determinism clause, AMENDED at the code commit,
-# §S2.9: a deep VALUE key with a shallow type — a `Vector{Any}` nest — evades the TYPE
+# the Dict-ORDER budget (the determinism clause:
+# a deep VALUE key with a shallow type — a `Vector{Any}` nest — evades the TYPE
 # budget alone, and the ordering's `_slot_text` call would recurse unboundedly; so the
 # ordering qualification counts the key's VALUE nodes and, at type nodes, their parameter
 # trees, ALL against the same `_TYPE_BUDGET`): a budget-passing key bounds `_slot_text`'s
@@ -769,13 +767,13 @@ function _key_order_budget(k)::Bool
         seen += 1
         seen > _TYPE_BUDGET && return false
         if x isa Function
-            # (the t3t4r4 B1 cure) a Function ANYWHERE in a key graph fails the order
+            # A Function ANYWHERE in a key graph fails the order
             # budget outright — the prepass then never encodes the key (live iteration
             # order; the WALK refuses it coded), so no user method executes even
-            # contained (probe P71: the pirated nameof ran TWICE under the old catch)
+            # contained (measured: the pirated nameof ran TWICE under the old catch)
             return false
         elseif x isa Type || x isa TypeVar || x isa Core.TypeofVararg
-            # (the t3t4r3 A2 cure) getfield-only type-graph reads — see _type_budget_check
+            # getfield-only type-graph reads — see _type_budget_check
             if x isa DataType
                 for p in getfield(x, :parameters)
                     push!(stack, p)
@@ -795,7 +793,7 @@ function _key_order_budget(k)::Bool
             end
         elseif x isa Vector
             for i in 1:length(x)
-                isassigned(x, i) || return false                  # crx-t2bis cure A3: no undef read
+                isassigned(x, i) || return false                  # the undefined-element guard: no undef read
                 push!(stack, x[i])
             end
         elseif x isa Tuple || x isa NamedTuple
@@ -819,10 +817,10 @@ function _key_order_budget(k)::Bool
     return true
 end
 
-# canonical Dict entry order for the VALIDATE walk (deterministic first-failure,
-# T2BIS-DESIGN §2): entries sorted by the encoded key text where EVERY key passes the
+# canonical Dict entry order for the VALIDATE walk (deterministic first-failure):
+# entries sorted by the encoded key text where EVERY key passes the
 # order budget and encodes; ANY over-budget or unencodable key sends the whole Dict to the
-# live iteration order (within-run stable — the A/A pin's property). Entries are collected
+# live iteration order (within-run stable). Entries are collected
 # by ITERATION — no Dict lookup, so no user `hash`/`isequal` can throw out of `validate`.
 function _walk_dict_entries(d::Dict)
     entries = Any[kv for kv in d]
@@ -833,11 +831,10 @@ function _walk_dict_entries(d::Dict)
             texts[i] = try
                 _slot_text(k)
             catch e
-                # (t3t4r3 C1, RE-NARROWED at t3t4r4) with Function keys blocked at the
+                # With Function keys blocked at the
                 # ORDER BUDGET (no user method can execute) and the encoder family
                 # structural, the only expected throw classes here are the encoder's
-                # own — anything else is an ENGINE defect and rethrows loudly (the
-                # r4-C1 residue concern dissolves with the narrow catch).
+                # own — anything else is an ENGINE defect and rethrows loudly.
                 (e isa _UnencodableSlot || e isa _CyclicSlot) || rethrow()
                 nothing
             end
@@ -859,10 +856,10 @@ function _emit_cyclic!(diags, label, ctx, slot)
     return nothing
 end
 function _emit_unencodable!(diags, label, ctx, slot, T)
-    # (the t3t4r2 family cure, seat A row 6) the offending TYPE renders through the
+    # the offending TYPE renders through the
     # structural zero-dispatch helper — interpolating `T` ran `show`, and a throwing
     # user `show(::IO, ::Type{Theirs})` broke the never-throws chain at the very row
-    # refusing their value (probe P54).
+    # refusing their value (measured).
     push!(diags, Diagnostic(:REG_PROTOCOL, :error, string(
         "GoMeta registry: ", label, " ", repr(ctx), " slot ", slot, " declares a value of type ",
         _ctor_type_name(T),
@@ -883,15 +880,15 @@ function _emit_undef!(diags, label, ctx, slot)
     return nothing
 end
 
-# ONE (record, slot) probe of the validate walk (T2BIS-DESIGN §2): the iterative
+# ONE (record, slot) probe of the validate walk: the iterative
 # two-predicate walk, emitting AT MOST ONE slot-named row — the FIRST failure on the
 # deterministic traversal (fields in listed order · Vector/Tuple by index · Pair
 # first/second · NamedTuple by name order · Dict per `_walk_dict_entries`). Work items are
 # `(value, pos, des)`: `pos` ∈ (:structural, :data) — flipped at the ONE DATA locus
 # `Declared.value` and never flipped back (DATA WINS — a Function nested in data is refused);
 # `des` = the value sits in a designated callable field (`setAltInstance`/`getAltInstance`/`onRead`/
-# `validate`). (The `rk` rank that admitted `ActionOverload` rows inside the overloads slot left with them at stage 5's E11
-# of the v0.4 build — census row 16: a record struct inside a declared slot is unencodable.)
+# `validate`). (The `rk` rank that admitted `ActionOverload` rows inside the overloads slot was removed with them
+# — a record struct inside a declared slot is unencodable.)
 # Cycle-guarded (visiting `IdSet`, push!/delete! bracketed) with a per-slot DONE-cache on
 # the mutable containers; `validate` NEVER throws.
 function _domain_slot_probe!(diags::Vector{Diagnostic}, label::String, ctx, slot::Symbol,
@@ -908,14 +905,14 @@ function _domain_slot_probe!(diags::Vector{Diagnostic}, label::String, ctx, slot
         end
         (v, pos, des) = item
         if v isa _RECORD_STRUCT_UNION
-            return _emit_unencodable!(diags, label, ctx, slot, typeof(v))   # a record struct inside a declared slot (the admitted overload rows left at stage 5's E11 — census row 16)
+            return _emit_unencodable!(diags, label, ctx, slot, typeof(v))   # a record struct inside a declared slot (the formerly admitted overload rows were removed)
         elseif v isa Vector || v isa Dict
             v in visiting && return _emit_cyclic!(diags, label, ctx, slot)
             v in done && continue
             push!(visiting, v)
             push!(work, _PopVisit(v))
             if v isa Vector
-                for i in 1:length(v)                              # crx-t2bis cure A3
+                for i in 1:length(v)                              # the undefined-element guard
                     isassigned(v, i) || return _emit_undef!(diags, label, ctx, slot)
                 end
                 for i in length(v):-1:1
@@ -959,17 +956,16 @@ function _domain_slot_probe!(diags::Vector{Diagnostic}, label::String, ctx, slot
     return nothing
 end
 
-# (the T4-milestone-set A3 cure; hardened at t3t4r; STRUCTURAL-TOTAL at the t3t4r2
-# closure set — seats B + C) the TOTAL, ZERO-DISPATCH ctor-type renderer. The onion,
-# each layer probe-confirmed: `nameof` covers only DataType/UnionAll (the raw
+# The TOTAL, ZERO-DISPATCH ctor-type renderer. The onion,
+# each layer measured: `nameof` covers only DataType/UnionAll (the raw
 # MethodError); `string(::Type)` dispatches `show` over Union members (the hostile-show
-# class); `nameof` is ITSELF an extensible generic (`Base.nameof(::Type{T})` piracy —
-# t3t4r2-B) and throws on a UnionAll whose body is a Union (t3t4r2-C). This form uses
+# class); `nameof` is ITSELF an extensible generic (`Base.nameof(::Type{T})` piracy)
+# and throws on a UnionAll whose body is a Union. This form uses
 # ONLY builtins — `===`/`isa`/`getfield` — plus Base string ops on concrete Base types:
 # the Union walk over `.a`/`.b`, the UnionAll unwrap over `.body`, TypeVar leaves by
 # their `.name`, DataType leaves via `.name.name` (TypeName field reads). NO generic a
-# registrant can extend runs (the T2-bis door's own no-dispatch law). `@nospecialize` +
-# the untyped signature: a Union member can BE a TypeVar (the t3t4r2-C example), which
+# registrant can extend runs (the snapshot door's own no-dispatch law). `@nospecialize` +
+# the untyped signature: a Union member can BE a TypeVar, which
 # is not a `Type`.
 function _ctor_type_name(@nospecialize T)
     T === Union{} && return "Union{}"
@@ -993,7 +989,7 @@ function _ctor_type_name(@nospecialize T)
     return String(getfield(getfield(U, :name), :name))   # DataType: TypeName reads
 end
 
-# (the t3t4r2 family cure) the zero-dispatch CALLABLE display: interpolating a
+# The zero-dispatch CALLABLE display: interpolating a
 # caller-supplied function value runs `show` on its own singleton type, and `nameof` is
 # extensible (a legitimate specialization can throw through a diagnostic). TypeName
 # field reads only; the leading `#` of a function's singleton-type name is stripped so
@@ -1006,10 +1002,10 @@ end
 """
     _encodability_collect!(diags, plugins, action_specs) -> nothing
 
-IS: the DOMAIN probe (R-V04B-4 (iii); the record shape law's one remaining row since stage 5's E4) — T2-bis, replacing
-the cure-batch-4/5 `_slot_text` probe: the ONE walk with TWO predicates over EVERY record field (plugin × 9 — the ninth `onRead` since stage A of the Labels lane; spec × 4 —
-the four `ActionSpec` fields since stage 5's E12, the settribute slot left, census row 45; T2BIS-DESIGN §2; the overload
-rows walked within left at stage 5's E11 of the v0.4 build, census row 16).
+IS: the DOMAIN probe (the record shape law's one remaining row) — replacing
+an earlier `_slot_text` probe: the ONE walk with TWO predicates over EVERY record field (plugin × 9 — the ninth `onRead`, the read-time hook; spec × 4 —
+the four `ActionSpec` fields of 0.4.0, the settribute slot removed; the overload
+rows once walked within removed as well).
 
 DOES: calls `_domain_slot_probe!` once per (record, slot) — every `_WALK_PLUGIN_FIELDS` slot of every `Alterant`, the
 designated flag set for `setAltInstance` / `getAltInstance` / `onRead` (the ninth field, stage A of the Labels lane); every `_WALK_ACTION_FIELDS` slot of every `ActionSpec`,
@@ -1017,7 +1013,7 @@ designated for `validate`: predicate 1 = membership AT POSITION (leaves via `_do
 the record structs only at their structural positions — inside a declared slot one is unencodable; a `Function` only
 in the designated callable fields and never inside declared data; `String`-only string values; no undefined container
 element; no cycle); predicate 2 = the type-encoder BUDGET (`_TYPE_BUDGET`) over every admitted `Type` leaf's parameter
-tree (the seal's mint it kept safe left at stage 5's E13 — census row 6; the bound stays as the domain's declared
+tree (a former seal's mint it kept safe was removed; the bound stays as the domain's declared
 closure). At most ONE slot-named `REG_PROTOCOL` row per (record, slot), in deterministic order; full collection across
 slots and records; `validate` never throws. Returns `nothing`; one caller, `_validate_registration`.
 
@@ -1048,18 +1044,18 @@ struct _OutsideDomain <: Exception
     path::Vector{Any}
 end
 "internal: a cycle met by `_domain_copy` on the contained route (path to the revisited
-container). Named beside `_OutsideDomain` per T2BIS-DESIGN §3 route 2 — both convert to
+container). Named beside `_OutsideDomain` — both convert to
 the coded refusal, never escape a public constructor."
 struct _CyclicValue <: Exception
     path::Vector{Any}
 end
-"internal (crx-t2bis cure A2): a USER method (`hash`/`isequal`/`convert`) thrown while a
+"internal: a USER method (`hash`/`isequal`/`convert`) thrown while a
 rebuilt `Dict` was being filled — the one rebuild step that dispatches user-extensible
 code. Converted to a coded refusal at both public copy boundaries, never leaked raw."
 struct _RebuildFailed <: Exception
     T::Type
 end
-"internal (crx-t2bis cure A3): an UNDEFINED container element met by a walk — a
+"internal: an UNDEFINED container element met by a walk — a
 `resize!`-widened published Vector, or an undef-slot declared vector. Refused coded at
 validate and the contained route; a divergence at the door."
 struct _UndefSlot <: Exception end
@@ -1102,7 +1098,7 @@ function _copy_rebuild(fr::_CopyFrame)
         for j in 1:n
             k = fr.out[2j - 1]
             # the fill dispatches hash/isequal (copy-side only, never the door); a USER
-            # method throwing here is contained coded (crx-t2bis cure A2), never leaked raw
+            # method throwing here is contained coded, never leaked raw
             try
                 out[k] = fr.out[2j]
             catch e
@@ -1125,7 +1121,7 @@ end
 """
     _domain_copy(x, memo::IdDict{Any,Any}; visiting = nothing, pos = :structural, rk = 0x02)
 
-IS: THE DOMAIN COPIER (T2BIS-DESIGN §3; NOT `Base.deepcopy` — `deepcopy_internal` is never dispatched, a capturing
+IS: THE DOMAIN COPIER (NOT `Base.deepcopy` — `deepcopy_internal` is never dispatched, a capturing
 closure/callable struct keeps its identity) — the one copy every published value and every preloaded builder goes
 through.
 
@@ -1150,7 +1146,7 @@ REASONING: a later mutation of the builder cannot reach a published registry and
 specialize the copy — the type law and the by-reference leaves keep the copy exact without dispatching anything a
 registrant can extend.
 
-PURPOSE: the copy behind publication (T2-bis) and behind the preload of a builder from a published value.
+PURPOSE: the copy behind publication and behind the preload of a builder from a published value.
 """
 function _domain_copy(x, memo::IdDict{Any,Any};
                       visiting::Union{Nothing,Base.IdSet{Any}} = nothing,
@@ -1212,7 +1208,7 @@ function _domain_copy(x, memo::IdDict{Any,Any};
                                 fill(false, n), fill(kidrk, n), Vector{Any}(undef, n),
                                 Vector{Any}(undef, n), 1)
                 for i in 1:n
-                    isassigned(v, i) || throw(_UndefSlot())   # crx-t2bis cure A3
+                    isassigned(v, i) || throw(_UndefSlot())   # the undefined-element guard
                     fr.kids[i] = v[i]
                     fr.ksegs[i] = i
                 end
@@ -1298,21 +1294,21 @@ function _domain_copy(x, memo::IdDict{Any,Any};
     end
 end
 
-## ————— the deep-egal COMPARATOR (T2BIS-DESIGN §4): ONE explicit machine — work-stack
+## ————— the deep-egal COMPARATOR: ONE explicit machine — work-stack
 ## frames; a Dict entry-probe is a PROBE FRAME on the same stack carrying its overlay
 ## guard segment + backtracking state; NO native probe recursion. GUARD: a
 ## `Base.IdSet{Any}` of `(live, snap)` tuples per segment — the spine plus one overlay per
 ## active probe; a probe's guard view = the EFFECTIVE guard (the spine ∪ every enclosing
 ## overlay); a pair anywhere in it returns equal (coinductive — termination on tandem
 ## cycles at any depth); an overlay is DISCARDED on rejection and on acceptance MERGES
-## into the ENCLOSING segment. There is NO outcome memo (the round-5 SIMPLIFY cure —
+## into the ENCLOSING segment. There is NO outcome memo (a simplification —
 ## degenerate nested duplicate-equal-key rejected-twin towers are exponential-in-depth by
-## disclosure, T2BIS-DESIGN §11). The door dispatches NO user-extensible method anywhere —
+## disclosure). The door dispatches NO user-extensible method anywhere —
 ## no `hash`, no `isequal`, no `==`, no user `show` (rendering included): Dicts are
 ## compared by the ONE-PATH structural ENTRY-MATCHING law — every snapshot entry must
 ## match a not-yet-consumed live entry with `_deep_egal`-equal stored KEY AND VALUE
 ## (greedy over entries is maximum: entry-equality is a product of two partial
-## equivalences — the banked R1 proof).
+## equivalences).
 
 "the first divergence of the deep-egal walk: the typed segment path (`Symbol` field ·
 `Int` index · `_Key`) + the reason (:typeof | :size | :leaf | :outside_domain | :key_set
@@ -1394,7 +1390,7 @@ function _egal_cmp(t::_EgalTask, work, guards)
             length(a) == length(b) || return (t.path, :size)
             kidrk = t.rk === 0x02 ? 0x01 : 0x00
             for i in length(a):-1:1
-                # (crx-t2bis cure A3) an UNDEFINED element (a resize!-widened live vector)
+                # an UNDEFINED element (a resize!-widened live vector)
                 # never reads: assignment-state divergence FIRES at the element path; a
                 # conforming snapshot has no undef slot, so both-undef only means equal
                 la = isassigned(a, i)
@@ -1436,7 +1432,7 @@ function _egal_cmp(t::_EgalTask, work, guards)
             for i in length(flds):-1:1
                 f = flds[i]
                 pos2 = (a isa Declared && f === :value) ? :data : t.pos
-                des2 = false                               # no slot struct carries a designated callable since stage 5's E10
+                des2 = false                               # no slot struct carries a designated callable
                 push!(work, _EgalTask(getfield(a, f), getfield(b, f), (t.path, f), pos2, des2, 0x00))
             end
         end
@@ -1519,7 +1515,7 @@ end
 """
     _deep_egal(live, snap) -> Union{Nothing, _Divergence}
 
-IS: the deep-egal COMPARATOR of the T2-bis snapshot door (T2BIS-DESIGN §4) — ONE explicit machine over a work stack,
+IS: the deep-egal COMPARATOR of the snapshot door — ONE explicit machine over a work stack,
 no native recursion.
 
 DOES: returns the first divergent typed-segment path with its reason (`_Divergence`: `:typeof` | `:size` | `:leaf` |
@@ -1551,14 +1547,14 @@ function _deep_egal(live, snap)
         pr = pop!(probes)                        # the innermost probe FAILS: candidate rejected
         resize!(work, pr.ws_base)                # its frame is back on top
         pop!(guards)                             # overlay DISCARDED — with every pair merged
-        pr.frame.probe_state = Int8(-1)          # into it by nested accepted probes (B2-5)
+        pr.frame.probe_state = Int8(-1)          # into it by nested accepted probes
     end
     return nothing
 end
 
-## non-dispatching diagnostic rendering (T2BIS-DESIGN §4; probes P2a/P2b, §S2.8): a
+## non-dispatching diagnostic rendering (measured): a
 ## Base-owned leaf key renders by `repr` (its `show` is Base-owned; a user method on a
-## Base-owned type is piracy, outside conforming code — the disclosed B-2-class boundary);
+## Base-owned type is piracy, outside conforming code — the disclosed boundary);
 ## `Type`/`Function` keys render as fixed category text; container/struct keys via
 ## `nameof(typeof(k))`. The door dispatches NO user-extensible method — rendering included.
 _render_key(k)::String =
@@ -1601,7 +1597,7 @@ function _assert_snapshot_disjoint(live::NamedTuple, snap::NamedTuple)
                 push!(out, v)
                 if v isa Vector
                     for i in 1:length(v)
-                        isassigned(v, i) && push!(stack, v[i])    # crx-t2bis cure A3
+                        isassigned(v, i) && push!(stack, v[i])    # the undefined-element guard
                     end
                 else
                     for (k, v2) in v
@@ -1635,7 +1631,7 @@ end
 _domain_type_name(T::Type)::String = String(nameof(T))
 
 function _route2_refuse(r::AlterantRegistry, e, field::Symbol)
-    # (crx-t2bis cures A2/A3) the two path-less internal classes convert coded too
+    # the two path-less internal classes convert coded too
     if e isa _RebuildFailed || e isa _UndefSlot
         throw(RegistrationRefused([Diagnostic(:REG_PROTOCOL, :error, string(
             "GoMeta registry: RegistryBuilder(published) could not copy field ", field, " (",
@@ -1675,7 +1671,7 @@ function _route2_refuse(r::AlterantRegistry, e, field::Symbol)
     throw(RegistrationRefused([Diagnostic(:REG_PROTOCOL, :error, msg, ptext)]))
 end
 
-"the CONTAINED preload copy behind `RegistryBuilder(published)` (T2BIS-DESIGN §3 route 2):
+"the CONTAINED preload copy behind `RegistryBuilder(published)`:
 ONE route memo across both per-field calls; no internal exception and no unbounded
 recursion leaves the public constructor."
 function _copy_published_records(r::AlterantRegistry)
@@ -1694,42 +1690,42 @@ function _copy_published_records(r::AlterantRegistry)
     return (plugins, specs)
 end
 
-# The slot text's type serialization (the digest it served left at stage 5's E13): module-UNQUALIFIED (stable across load contexts) but
+# The slot text's type serialization (the digest it served was removed): module-UNQUALIFIED (stable across load contexts) but
 # parameter-FAITHFUL (`Dict{Symbol,Bool}` ≠ `Dict{Symbol,Int}` — a real drift class a bare
-# `nameof` would collapse). (cure batch 5) a NON-type parameter is a VALUE and folds type-tagged
+# `nameof` would collapse). A NON-type parameter is a VALUE and folds type-tagged
 # through `_slot_text` (`Val{Int8(1)}` ≠ `Val{Int64(1)}`, `Val{:x}` ≠ `Val{1}`; a parameter value
 # outside the closed domain is unencodable); TypeVar / Vararg parameters keep their text. NOTE
-# (recorded limits): UnionAll / Union nodes encode STRUCTURALLY below (crx-t2bis cure A1 — never
-# `string`), a TypeVar only as a DataType parameter or a UnionAll's variable (as another TypeVar's bound, a Union member or a Vararg element type it throws `_UnencodableSlot` at the end of `_type_text` — the Dict's live-order fallback, E13-2's note); two SAME-NAMED types from DIFFERENT modules collide as one identity (the
+# (recorded limits): UnionAll / Union nodes encode STRUCTURALLY below (never
+# `string`), a TypeVar only as a DataType parameter or a UnionAll's variable (as another TypeVar's bound, a Union member or a Vararg element type it throws `_UnencodableSlot` at the end of `_type_text` — the Dict's live-order fallback); two SAME-NAMED types from DIFFERENT modules collide as one identity (the
 # unqualified choice's deliberate trade — dispatch treats them as distinct; a second
 # type-contributing module is the revisit trigger). No shipped record row reaches these — extend
 # consciously.
 function _type_text(t)::String
     t === Any && return "Any"
     if t isa DataType
-        # (the t3t4r2 family cure) `nameof` is an EXTENSIBLE generic — a legitimate
+        # `nameof` is an EXTENSIBLE generic — a legitimate
         # `Base.nameof(::Type{Theirs})` specialization could throw through the
         # encoder. The getfield form is OUTPUT-IDENTICAL (`nameof(t::DataType)` IS
-        # `t.name.name` — probe P50 across the type ladder, incl. function types), so no
-        # text moved when it landed; `getfield` is a builtin — no user method can run.
+        # `t.name.name` — measured across the type ladder, incl. function types), so no
+        # text moved; `getfield` is a builtin — no user method can run.
         nm = getfield(getfield(t, :name), :name)
         isempty(getfield(t, :parameters)) && return String(nm)
         return string(nm, "{", join((_type_param_text(p) for p in getfield(t, :parameters)), ","), "}")
     end
-    # (T2-bis crx cure A1) the Bottom, UnionAll and Union nodes encode STRUCTURALLY (a bare TypeVar has no arm — the throw below) — `string()` on a
+    # the Bottom, UnionAll and Union nodes encode STRUCTURALLY (a bare TypeVar has no arm — the throw below) — `string()` on a
     # UnionAll/Union/TypeVar dispatches `show`, and a user's own display method on its own
     # admitted type (legitimate specialization, not piracy) could throw out of the mint. The
     # structural text dispatches nothing (`nameof`/`Symbol` reads only) and stays
     # module-unqualified. Recursion is bounded: every minted type passed predicate 2's
     # descending node budget, so the tree has ≤ `_TYPE_BUDGET` nodes.
     t === Union{} && return "Bottom"
-    # (the t3t4r3 A2 cure) getfield-only reads here too — property syntax on a
+    # getfield-only reads here too — property syntax on a
     # caller-owned type object dispatches the extensible `getproperty`
     t isa UnionAll && return string("where(", _typevar_text(getfield(t, :var)), ",",
                                     _type_text(getfield(t, :body)), ")")
     t isa Union && return string("union(", _type_text(getfield(t, :a)), ",",
                                  _type_text(getfield(t, :b)), ")")
-    throw(_UnencodableSlot(typeof(t)))   # reached by an admitted `Type` leaf through a TypeVar in a bound / Union-member / Vararg position — caught at `_walk_dict_entries` (E13-2's note)
+    throw(_UnencodableSlot(typeof(t)))   # reached by an admitted `Type` leaf through a TypeVar in a bound / Union-member / Vararg position — caught at `_walk_dict_entries`
 end
 _typevar_text(v::TypeVar)::String =
     string("tv(", String(getfield(v, :name)), ",", _type_text(getfield(v, :lb)), ",",
@@ -1740,19 +1736,19 @@ _type_param_text(p)::String =
                                      isdefined(p, :N) ? _type_param_text(getfield(p, :N)) : "-", ")") :
     p isa Type ? _type_text(p) : _slot_text(p)
 
-## The registration's remaining checks at `validate` (stage 5's E4, census rows 3 and 51 — his §317; the validation chain of v0.4
-## T2–T4 left: his legacy registered unchecked and failed at dispatch): the DOMAIN PROBE (R-V04B-4 (iii) — the one domain definition
-## shared by `validate`, `publish`'s copier and the door's walker; `publish` relies on it); the vocabulary check left at stage 5's E9, census row 10, the Heading lane's four mode-gate laws
-## with that lane at stage 1 of the Alterants build. Then the derived
-## tables + the publish-time snapshot + the lifecycle (the seal's mint left at stage 5's E13 — census row 6).
+## The registration's remaining checks at `validate` (a former validation chain
+## was removed: the original engine registered unchecked and failed at dispatch): the DOMAIN PROBE (the one domain definition
+## shared by `validate`, `publish`'s copier and the door's walker; `publish` relies on it); a former vocabulary check and the Heading's four mode-gate laws
+## were removed within the 0.4 development. Then the derived
+## tables + the publish-time snapshot + the lifecycle (a former seal's mint was removed).
 """
     _validate_registration(plugins, action_specs) -> Vector{Diagnostic}
 
-IS: the registration's remaining checks at `validate` (stage 5's E4, census rows 3 and 51 — his §317; the validation
-chain of v0.4 T2–T4 left: his legacy registered unchecked and failed at dispatch).
+IS: the registration's remaining checks at `validate` (a former validation
+chain was removed: the original engine registered unchecked and failed at dispatch).
 
-DOES: runs the domain probe over every declared field (`_encodability_collect!`, R-V04B-4 (iii); the vocabulary
-check left at stage 5's E9, the capture mode-gate laws with the Heading's separate lane at stage 1 of the Alterants build)
+DOES: runs the domain probe over every declared field (`_encodability_collect!`; a former vocabulary
+check and the capture mode-gate laws of the Heading's separate path were removed)
 into one fresh `Diagnostic` vector and returns it. FULL collection: every defect is
 reported; the caller decides the terminal outcome (error present ⇒ refuse). Two callers: `validate(builder)` and the
 gated positional `AlterantRegistry` constructor (route U, src/state.jl).
@@ -1764,7 +1760,7 @@ PURPOSE: the one definition of what a registration must satisfy before it is pub
 """
 function _validate_registration(plugins::Vector{Alterant}, action_specs::Vector{ActionSpec})
     diags = Diagnostic[]
-    _encodability_collect!(diags, plugins, action_specs)   # the domain probe (R-V04B-4 (iii))
+    _encodability_collect!(diags, plugins, action_specs)   # the domain probe
     return diags
 end
 
@@ -1777,7 +1773,7 @@ function _derive_tables(plugins::Vector{Alterant}, action_specs::Vector{ActionSp
     sorted_alt_actions = sort!(collect(keys(owner_of_action)))
     spec_index = Dict{Symbol,Int}()
     for (i, s) in enumerate(action_specs)
-        haskey(spec_index, s.name) || (spec_index[s.name] = i)   # first-wins, as owner_of_action above (the legacy's Dict assignment was last-wins)
+        haskey(spec_index, s.name) || (spec_index[s.name] = i)   # first-wins, as owner_of_action above (the original engine's Dict assignment was last-wins)
     end
     return (
         sorted_alt_actions   = sorted_alt_actions,
@@ -1796,10 +1792,10 @@ end
 IS: the lifecycle's VALIDATE step (Builder → validate → publish; package-public, docs/public-api.md §1.2) over a
 builder's declarations.
 
-DOES: Run the remaining check (the domain probe — the vocabulary check left at stage 5's E9, the mode-gate laws with the
-Heading's separate lane at stage 1 of the Alterants build) over
+DOES: Run the remaining check (the domain probe — a former vocabulary check and the mode-gate laws of the
+Heading's separate path were removed) over
 the builder's declarations (`plugins` and `action_specs`, through `_validate_registration`) and return EVERY
-diagnostic (deterministic order; no remaining check warns since stage 5's E4) — never throws. Empty ⇒ publishable.
+diagnostic (deterministic order; no remaining check warns) — never throws. Empty ⇒ publishable.
 `publish` calls it first; a caller wanting the diagnostics as data calls it itself.
 
 REASONING: full collection before the one terminal outcome — the defects as data, the refusal `publish`'s.
@@ -1816,15 +1812,15 @@ callers (not the only possible one in-process: the construction token and this f
 loaded module, the accident-grade bound recorded at `_SealToken`).
 
 DOES: refuses (throws `RegistrationRefused` carrying every diagnostic) if `validate` reports any error; proceeds on
-warnings, each emitted by `@warn` at publication (never swallowed; none is minted since stage 5's E4). Atomic
-COPY-publication (T2-bis), two stages, each by the domain copier `_domain_copy` — callables/Types/Symbols/Strings/
+warnings, each emitted by `@warn` at publication (never swallowed; none is minted today). Atomic
+COPY-publication, two stages, each by the domain copier `_domain_copy` — callables/Types/Symbols/Strings/
 VersionNumbers/numbers carried BY REFERENCE, containers and slot structs REBUILT at their exact concrete types,
 sharing preserved within each copy stage; `deepcopy_internal` is never dispatched, so no user type can specialize the
 copy (a later mutation of the builder cannot reach a published registry, and vice versa). STAGE 1: the builder's
 `plugins` and `action_specs` copied under ONE memo; the derived tables (`_derive_tables`) computed from those copies —
 the derived tables come from the declarations alone. STAGE 2: the `_snapshot` baseline — a SECOND, disjoint domain
-copy of all nine `_SNAPSHOT_FIELDS` (ten before stage 5's E13 — the `seal` fingerprint field left with the registration
-digest, census row 6; eleven before stage 5's E12 — census row 45) under a SEPARATE memo, built mechanically over the
+copy of all nine `_SNAPSHOT_FIELDS` (eleven at one point of the 0.4 development — a `seal` fingerprint field and the
+settribute table were removed before 0.4.0) under a SEPARATE memo, built mechanically over the
 field-name tuple; the disjointness asserted (`_assert_snapshot_disjoint`); the value constructed through the
 token-gated constructor `AlterantRegistry(_SealToken(), …)`. A copy that cannot complete — a user `hash`/`isequal`
 thrown at a `Dict` rebuild, an undefined container element — converts to a coded `RegistrationRefused`
@@ -1836,22 +1832,22 @@ REASONING: validate first, then copy, so the copy is type-based over in-domain, 
 snapshot share no mutable container — the door's comparison then has a baseline nothing conforming code can reach
 through the live fields.
 
-PURPOSE: the one route to a published value — what `goMeta`'s door accepts (R-V04-34) and what `DEFAULT_REGISTRY` is.
+PURPOSE: the one route to a published value — what `goMeta`'s door accepts and what `DEFAULT_REGISTRY` is.
 """
 function publish(b::RegistryBuilder)
     diags = validate(b)
     any(d -> d.severity === :error, diags) && throw(RegistrationRefused(diags))
-    # (cure batch 1) warnings are NEVER swallowed by the sanctioned route: every warning
-    # diagnostic is emitted at publication (the legacy load-time @warn behavior kept); a caller
+    # Warnings are NEVER swallowed by the sanctioned route: every warning
+    # diagnostic is emitted at publication (0.3.2's load-time @warn behavior kept); a caller
     # wanting them as data calls `validate` first.
     for d in diags
         d.severity === :warning && @warn d.message
     end
-    # T2-bis STAGE 1 (T2BIS-DESIGN §5): the LIVE field values by the domain copier — validate
+    # The publication's STAGE 1: the LIVE field values by the domain copier — validate
     # has run, so every value is in-domain and acyclic (predicate ground per field: validate
     # reaches `plugins`/`action_specs`; the derived tables are grounded in their concrete
     # declared types + their construction from the already-copied record) — ONE stage-1 memo.
-    # (crx-t2bis cures A2/A3) the ONE remaining escape class — a USER `hash`/`isequal`
+    # the ONE remaining escape class — a USER `hash`/`isequal`
     # thrown at a Dict rebuild fill, or an undefined element racing in after validate —
     # converts to the coded refusal here, never a raw exception out of `publish`.
     copyc = (x, m) -> try
@@ -1867,10 +1863,10 @@ function publish(b::RegistryBuilder)
     plugins = copyc(b.plugins, m1)
     specs   = copyc(b.action_specs, m1)
     t = _derive_tables(plugins, specs)
-    # T2-bis STAGE 2: the SNAPSHOT — built MECHANICALLY over the field-name tuple (no per-table
-    # keyword binding anywhere); ONE stage-2 memo, SEPARATE from stage 1's, so live and snapshot
-    # share no mutable container (the disjointness assert below). (The seal's mint and its catch left
-    # at stage 5's E13 of the v0.4 build — census row 6: the fingerprint's one consumer, the grammar profile, left with it.)
+    # The publication's STAGE 2: the SNAPSHOT — built MECHANICALLY over the field-name tuple (no per-table
+    # keyword binding anywhere); ONE second-stage memo, SEPARATE from the first stage's, so live and snapshot
+    # share no mutable container (the disjointness assert below). (A former seal's mint and its catch were removed
+    # with the fingerprint's one consumer, the grammar profile.)
     base = (; plugins = plugins, action_specs = specs, t...)
     snapshot = let m2 = IdDict{Any,Any}()
         NamedTuple{_SNAPSHOT_FIELDS}(map(k -> copyc(base[k], m2), _SNAPSHOT_FIELDS))
@@ -1882,24 +1878,24 @@ end
 """
     _registry_door_check(registry) -> Vector{Diagnostic}
 
-IS: the R-V04-34 STRICT door of `goMeta` — the published-only entry — in its T2-bis ONE-CHECK form (T2BIS-DESIGN §6):
-the ONE entry refusal since stage 5's E13.
+IS: the STRICT door of `goMeta` — the published-only entry — in its ONE-CHECK form:
+the ONE entry refusal since 0.4.0.
 
 DOES: returns the door's diagnostics, empty when the registry passes. An UNPUBLISHED registry (`_snapshot === nothing`)
 refuses coded — one `REG_UNPUBLISHED` error row naming the sanctioned path (RegistryBuilder → validate → publish); else
-the nine (ten before stage 5's E13, eleven before E12) `_SNAPSHOT_FIELDS` are compared field-by-field against the
+the nine `_SNAPSHOT_FIELDS` are compared field-by-field against the
 publish-time snapshot by the ONE structural deep-egal walk (`_deep_egal`: `===`-only leaves; no
 `hash`/`isequal`/`==`/user `show` dispatched anywhere, rendering included) and the FIRST divergent path fires exactly
 one `POST_SEAL_MUTATION` row (the loop breaks at the first; the path rendered by `_render_path` as the row's message
-and context) — the real freeze gate (M-AC-9), accident-grade: coded refusal of post-seal mutation by conforming code.
+and context) — the real freeze gate, accident-grade: coded refusal of post-seal mutation by conforming code.
 Its one Engine caller is `goMeta`, before the parse: a non-empty return becomes the fail-closed `PROCESS_ERROR`
 delivery (`_entryErrorDelivery`). The retired seal re-mint, derived-table re-derivation and callable-identity compare
 lose no detection for conforming code (the field lists being COMPLETE): re-derivation is deterministic, so it never
-catches what the snapshot cannot; the same-typed table swap is excluded by §5's by-name construction; every callable
+catches what the snapshot cannot; the same-typed table swap is excluded by the by-name construction; every callable
 identity — altConstructor, the setters/getters, `spec.validate` — is a snapshot leaf compared by `===`.
 
 REASONING: one check at the entry, against a baseline the publication took, dispatching nothing a registrant can
-extend — the honest bound: an entry check, not a lock over the run; the snapshot's own members are mutable (B-2).
+extend — the honest bound: an entry check, not a lock over the run; the snapshot's own members are mutable.
 
 PURPOSE: that a run reads only a registry whose declarations are the ones that were validated and published.
 """
@@ -1942,18 +1938,18 @@ threaded into `ProcessState` via `init_state(parse_state, config, DEFAULT_REGIST
 it from there (`ctx().registry`) rather than from a module global.
 
 REASONING: one deterministic inventory, published through the same lifecycle every registration goes through, held as
-a const and read per call through the state — no module-global mutable inventory (v0.4 T1: the `===` alias onto its
+a const and read per call through the state — no module-global mutable inventory (the `===` alias onto its
 write-back Dict retired).
 
-PURPOSE: the Alterant inventory of a run that names none — the four shipped Alterants and their nine actions (the `ids` action since stage 3 of the Alterants build).
+PURPOSE: the Alterant inventory of a run that names none — the four shipped Alterants and their nine actions.
 """
 const DEFAULT_REGISTRY = build_default_registry()
 
-## v0.4 T1 — the `VISIB_TO_SETTRIBUTE` convenience alias is RETIRED (a registered breaking change,
+## The `VISIB_TO_SETTRIBUTE` convenience alias is RETIRED (a registered breaking change,
 ## no forwarding window): it was the SAME `Dict` object as the registry's map (`===`, not a copy),
 ## i.e. a mutable alias onto the "immutable" inventory — the measured post-publication-mutation
-## class the freeze/publication seal (T2) closes. The former write-back at both grains read the
-## PER-CALL `action_to_settribute` table (derived from the declared per-action settribute slots; left at stage 5's E12)
-## until stage 3's commit 4; the table, read by nothing since, left at stage 5's E12 of the v0.4 build (census row 45 —
-## the word R-V04B-42 (2) waited for: his §317 mark and his §319 order). Neither the alias nor the table was ever
+## class the freeze/publication seal closes. The former write-back at both grains read the
+## PER-CALL `action_to_settribute` table (derived from the declared per-action settribute slots)
+## until the write-back's removal; the table, read by nothing since, was removed as well within the 0.4 development.
+## Neither the alias nor the table was ever
 ## in the `export`/`public` surface (docs/public-api.md §1), so no consumer contract moves.

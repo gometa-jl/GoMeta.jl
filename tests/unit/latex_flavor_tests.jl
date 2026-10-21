@@ -1,14 +1,12 @@
-# tests/unit/latex_flavor_tests.jl — WP1-W5 (F-22): the FLAVOR_LATEX data point —
-# THE ACCEPTANCE PROOF's witness battery (SYNTHESIS-JUDGE §3 row WP1-W5; the .tex
-# classification vocabulary per the owner's N-4 ruling = the cfam-parallel
+# tests/unit/latex_flavor_tests.jl — the FLAVOR_LATEX data point —
+# the witness battery (the .tex
+# classification vocabulary per the creator's decision = the cfam-parallel
 # default). Every tree/render pin below was MEASURED AT BIRTH (the probe run
 # preceding this file — empirical-first; goldens-additive-only honored: the pins
 # live HERE, the golden layer's files untouched).
 #
-# THE WAVE'S MECHANICAL FALSIFIER (checked at the close, not here): the W5 diff
-# names NO parser file and the parseBLS.jl pin is UNCHANGED — the reader below is
-# the SAME parseLeadHeader! both prior flavors ride; this file witnesses that the
-# RECORD alone carries the third flavor.
+# THE RECORD ALONE CARRIES THE THIRD FLAVOR: adding it changed no parser file — the reader below is
+# the SAME parseLeadHeader! both prior flavors ride.
 
 using Test
 import GoMeta as GM
@@ -22,9 +20,9 @@ function _lx_run(s::String)
     return r, String(copy(t)), String(copy(x))
 end
 
-@testset "latex_flavor_tests (WP1-W5 pure-data flavor)" begin
+@testset "latex_flavor_tests (the pure-data flavor)" begin
 
-    @testset "[1] the record: pure data (the shared reader is the loop's direct call since stage 5's P1 — census row 63)" begin
+    @testset "[1] the record: pure data (the shared reader is the loop's direct call)" begin
         lx = _LX_BLS.FLAVOR_LATEX
         @test lx isa _LX_BLS.FlavorProfile
         @test lx.flavor_tag === :latex
@@ -39,10 +37,10 @@ end
         ## The deletion-note shape: four :absent + the claimed ws-strict close.
         @test all(r -> r.status === :absent, lx.directives[1:4])
         @test lx.directives[5].status === :claimed && lx.directives[5].ws_strict
-        ## (the extensions pin, the seam pins and the digest distinctness left at stage 5's P1 of the v0.4 build — census rows 72, 63, 39)
+        ## (the extensions pin, the seam pins and the digest distinctness were removed)
     end
 
-    @testset "[2] the inventory rows: flavor_for (the coded config-time refusal left at stage 5's E8 — census row 30)" begin
+    @testset "[2] the inventory rows: flavor_for (the former coded config-time refusal removed)" begin
         @test _LX_BLS.flavor_for(:latex) === _LX_BLS.FLAVOR_LATEX
         r_ok = GM.goMeta(_lx_bytes("x 1\n"); config = _lx_cfg)
         @test r_ok.status === GM.PROCESS_OK
@@ -65,7 +63,7 @@ end
         @test x == "%% x 1 %% %~ hide\ny 2\n"
     end
 
-    @testset "[5] glued %~hide is an ordinary comment — NEVER meta (F-13 under :comment policy)" begin
+    @testset "[5] glued %~hide is an ordinary comment — NEVER meta (the token-delimiter law under the :comment policy)" begin
         r, t, x = _lx_run("%~hide\nx 1\n")
         @test r.status === GM.PROCESS_OK
         @test t == "{:B-Text:L-Text [%~hide]}\n{:B-Code:L-Code [x 1]}\n"
@@ -73,7 +71,7 @@ end
         @test isempty(GM.readAltValuesEvals(r.altValues_evals))
     end
 
-    @testset "[5b] `% `-led is the TEXT arm (N-4's second clause — the W5-panel cure)" begin
+    @testset "[5b] `% `-led is the TEXT arm (the second clause of the creator's decision)" begin
         r, t, x = _lx_run("% plain text\nx 1\n")
         @test r.status === GM.PROCESS_OK
         @test t == "{:B-Text:L-Text [% plain text]}\n{:B-Code:L-Code [x 1]}\n"
@@ -88,7 +86,7 @@ end
         @test r.status === GM.PROCESS_OK
         @test t == "{:B-Text:L-Text [%% note]}\n{       :L-Text [%%% more]}\n{:B-Code:L-Code [x 1]}\n"
         @test x == "%% note\n%%% more\nx 1\n"
-        ## The F-12 fold: a %%-led COMMENT line inside a hidden span takes NO
+        ## The fold: a %%-led COMMENT line inside a hidden span takes NO
         ## additional marker (fold-eligible); non-comment lines take "%% ".
         rf, tf, xf = _lx_run("%~ hide\n%% already\nx 1\n")
         @test xf == "%% %~ hide\n%% already\n%% x 1\n"
@@ -99,7 +97,7 @@ end
         @test r.status === GM.PROCESS_OK
         @test t == "{:B-Meta:L-Meta [%~ :label1]}\n{:B-Code:L-Code [x 1]}\n{:B-Meta:L-Meta [%] tail]}\n{:B-Code:L-Code [y 2]}\n"
         ## The label reaches the closer line but NOT past it (:stopAttachmentToMeta).
-        ev = String(TestSupport.derive_annotations_golden(r))   # the test layer's five-column form (the Engine's producer left at commit 9b)
+        ev = String(TestSupport.derive_annotations_golden(r))   # the test layer's five-column form (the Engine's former producer was removed)
         @test count("label_label1", ev) == 3
         ## Glued %]x = an ordinary comment, never a close event.
         rg, tg, xg = _lx_run("%]x\nx 1\n")
@@ -141,19 +139,18 @@ end
         @test occursin("meta depth out of range", m)
     end
 
-    @testset "[12] the synthetic composition witness (the CRX design-set adoption): sentinel-before-width is TESTABLE" begin
+    @testset "[12] the synthetic composition witness: sentinel-before-width is TESTABLE" begin
         ## No ARMED flavor combines a sentinel-capable policy with a multi-unit
         ## lead — a SYNTHETIC profile does, making the _lead_head! composition
         ## ORDER mechanically observable: the REAL reader returns the bucket-A
         ## sentinel 0 on the glued `!!~x` (the `~` arm's glued no-match falls through
-        ## to `_lead_fallthrough!` under the :content policy — measured on the base
-        ## tree before this re-cut at stage 5's P1: probe-p1-latex12.jl; the pointer seam
-        ## that carried a sentinel reader left, census row 63): raw 0 ⇒ (true, lead_ncu-1+1);
+        ## to `_lead_fallthrough!` under the :content policy — measured; the former pointer seam
+        ## that carried a sentinel reader was removed): raw 0 ⇒ (true, lead_ncu-1+1);
         ## with the width added first (the defect class), the sentinel test could never see the 0.
         ## The :julia tag is REUSED deliberately: the INTERIM reserved-arms law
         ## admits claimed directive rows for :julia only, and this synthetic
         ## borrows julia's claimed rows — a future tag↔record coupling guard
-        ## must re-point this witness consciously (W5-panel note, recorded).
+        ## must re-point this witness consciously.
         syn = _LX_BLS._mk_flavor(; flavor_tag = :julia, lead = "!!",
             comment_run_char = '!', hide_marker = "!!x ", hide_fold_prefix = "!!",
             directives = _LX_BLS.FLAVOR_JULIA.directives,

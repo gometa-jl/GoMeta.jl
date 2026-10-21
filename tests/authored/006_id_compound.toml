@@ -1,48 +1,48 @@
 schema = 1
 stem = "006_id_compound"
 status = "draft"
-drafted_by = "session 2026-09-29_GoMeta_v04_S10, 2026-10-01 (stage 2's commit 7 of the v0.4 build; the plan v8.1 :59 — the first authored Id scenario; every value MEASURED by the evals-tree printouts receipts/S8-branch/precheck-s2c7/PROBES-F_id_two_levels.evals-tree.txt and PROBES-G_id_zero_and_twice.evals-tree.txt)"
-scenario = "The Id compound at v0.4 — THREE measured behaviours put to the owner (SCENARIOS.md row 16; card 8 'next'; the CrossReview set REAL-1 R1 #1): (1) a metaLine on line 1 sets two fields, cell(7) and parent(3): the metaBlock and the Code Block attached to it carry BOTH fields. (2) A depth-2 metaLine on line 3 sets cell(9) only: its metaBlock and the Code Block attached to it carry cell = 9 and NO parent field — the compound is taken as a WHOLE from the nearest statement; an unset field is NOT inherited from the depth-1 statement (the per-field first-wins semantics the set-mode's name promises are DEFERRED; the registry records them so). (3) A metaLine on line 5 sets cell(0) and parent(5): only parent = 5 is recorded — a ZERO value is indistinguishable from an unset field in the rows (the capture records non-zero fields only). The expectation vocabulary for a compound — an inline table of the recorded fields — is the session's proposal; README rule 2 leaves Id's per-field form undefined until his word."
-history = ["2026-10-01: drafted by the session from the measured printouts; NOT confirmed — a draft has no authority (README rule 3); the three behaviours and the vocabulary are put to the owner at stage 2's review (the brief row 7)."]
+drafted_by = "a draft of 2026-10-01 — the first authored Id scenario; every value MEASURED by the evals-tree printouts"
+scenario = "The Id compound at v0.4 — THREE measured behaviours awaiting the creator's decision (SCENARIOS.md row 16): (1) a metaLine on line 1 sets two fields, cell(7) and parent(3): the metaBlock and the Code Block attached to it carry BOTH fields. (2) A depth-2 metaLine on line 3 sets cell(9) only: its metaBlock and the Code Block attached to it carry cell = 9 and NO parent field — the compound is taken as a WHOLE from the nearest statement; an unset field is NOT inherited from the depth-1 statement (the per-field first-wins semantics the set-mode's name promises are DEFERRED; the registry records them so). (3) A metaLine on line 5 sets cell(0) and parent(5): only parent = 5 is recorded — a ZERO value is indistinguishable from an unset field in the rows (the capture records non-zero fields only). The expectation vocabulary for a compound — an inline table of the recorded fields — is a proposal; README rule 2 leaves Id's per-field form undefined until his word."
+history = ["2026-10-01: drafted from the measured printouts; NOT confirmed — a draft has no authority (README rule 3); the three behaviours and the vocabulary await the creator's decision."]
 
 [[expect]]
 component = "block@1"
 alterant = "Id"
 value = { cell = 7, parent = 3 }
 decided_by = "block@1"
-note = "the depth-1 metaBlock: both fields its own (PROBES-F: id_cell 7, id_parent 3 on Block #2)."
+note = "the depth-1 metaBlock: both fields its own (the two-level input's evals-tree printout: id_cell 7, id_parent 3 on Block #2)."
 
 [[expect]]
 component = "block@2"
 alterant = "Id"
 value = { cell = 7, parent = 3 }
 decided_by = "block@1"
-note = "the Code Block 'x = 1', attached to the depth-1 meta: both fields inherited (PROBES-F: Block #3)."
+note = "the Code Block 'x = 1', attached to the depth-1 meta: both fields inherited (the two-level input's printout, Block #3)."
 
 [[expect]]
 component = "block@3"
 alterant = "Id"
 value = { cell = 9 }
 decided_by = "block@3"
-note = "the depth-2 metaBlock: cell = 9 only — parent(3) from depth 1 is NOT inherited (PROBES-F: Block #4 carries id_cell 9 and no id_parent row). THE QUESTION FOR THE OWNER: is this the intended reading of ':mutExclusivePerField' (first-wins per FIELD would have carried parent = 3 down)?"
+note = "the depth-2 metaBlock: cell = 9 only — parent(3) from depth 1 is NOT inherited (the two-level input's evals-tree printout: Block #4 carries id_cell 9 and no id_parent row). THE QUESTION FOR THE CREATOR: is this the intended reading of ':mutExclusivePerField' (first-wins per FIELD would have carried parent = 3 down)?"
 
 [[expect]]
 component = "block@4"
 alterant = "Id"
 value = { cell = 9 }
 decided_by = "block@3"
-note = "the Code Block 'y = 2', attached to the depth-2 meta (PROBES-F: Block #5)."
+note = "the Code Block 'y = 2', attached to the depth-2 meta (the two-level input's printout, Block #5)."
 
 [[expect]]
 component = "block@5"
 alterant = "Id"
 value = { parent = 5 }
 decided_by = "block@5"
-note = "the line-5 metaBlock: cell(0) leaves NO row — zero and unset are indistinguishable in the rows (PROBES-G: Block #2 carries id_parent 5 only). THE QUESTION FOR THE OWNER: should a stated zero be recorded?"
+note = "the line-5 metaBlock: cell(0) leaves NO row — zero and unset are indistinguishable in the rows (measured: this Block carries id_parent 5 only). THE QUESTION FOR THE CREATOR: should a stated zero be recorded?"
 
 [[expect]]
 component = "block@6"
 alterant = "Id"
 value = { parent = 5 }
 decided_by = "block@5"
-note = "the Code Block 'z = 3', attached to the line-5 meta (PROBES-G: Block #3)."
+note = "the Code Block 'z = 3', attached to the line-5 meta (measured: the same row on this Block)."

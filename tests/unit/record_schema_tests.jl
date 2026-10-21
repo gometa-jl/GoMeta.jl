@@ -1,62 +1,62 @@
-# record_schema_tests.jl — v0.4 T1: the registration-record schema EXTENSION witnesses (APPEND-ONLY).
+# record_schema_tests.jl — the registration-record schema EXTENSION witnesses (APPEND-ONLY).
 #
-# IS:   the unit witnesses of the T1 schema extension — the declared slots ride the record (seven of the ten
-#       left at stage 5's E10 of the v0.4 build — census rows 24 and 29, OWNER-WORDS §317; the record keeps eight fields)
-#       nothing/empty-defaulted; the v0.3.2 positional constructors left at stage 5's E11 of the v0.4 build (census row 65 — the keyword form is the one form; the former additive-extension
-#       law); the generic `action_to_settribute` table and the per-action `settribute` slot it derived from LEFT at stage 5's E12
-#       of the v0.4 build (census row 45 — his §317 mark; the Alterant-named `visib_to_settribute` field and the `===` alias
-#       `VISIB_TO_SETTRIBUTE` were already GONE); the closed enums of the two slots that remain (their record-shape refusals left at
-#       stage 5's E4 of the v0.4 build; the enums of the seven other slots went with those slots at E10);
-#       the registration digest's coverage witness and the seal-participation pin left at stage 5's E13 of the v0.4 build with the
-#       digest and the seal field (census row 6; the slot TEXT's distinctness, :33, stays — the encoder serves the validate walk).
-# DOES: constructs records by keyword (the positional forms left at stage 5's E11 — census row 65) and inspects DEFAULT_REGISTRY.
-# REASONING: the golden layer proves T1 is BEHAVIOR-NEUTRAL (byte-identical renders); only unit
+# IS:   the unit witnesses of the schema extension — the declared slots ride the record (seven of the ten
+#       were removed within the 0.4 development; the record keeps eight fields)
+#       nothing/empty-defaulted; the v0.3.2 positional constructors were removed (the keyword form is the one form; the former additive-extension
+#       law); the generic `action_to_settribute` table and the per-action `settribute` slot it derived from were REMOVED
+#       (the Alterant-named `visib_to_settribute` field and the `===` alias
+#       `VISIB_TO_SETTRIBUTE` were already GONE); the closed enums of the two slots that remain (their record-shape refusals
+#       removed; the enums of the seven other slots went with those slots);
+#       the registration digest's coverage witness and the seal-participation pin were removed with the
+#       digest and the seal field (the slot TEXT's distinctness stays — the encoder serves the validate walk).
+# DOES: constructs records by keyword (the positional forms were removed) and inspects DEFAULT_REGISTRY.
+# REASONING: the golden layer proves the extension is BEHAVIOR-NEUTRAL (byte-identical renders); only unit
 #       introspection can prove the schema carries what the later cures consume.
-# PURPOSE: the T1 acceptance row of the v0.4 build (the cure inventory's slot substrate).
+# PURPOSE: the record schema's acceptance row (the slot substrate).
 
 using Test
 import GoMeta as GM
 
-@testset "record_schema (v0.4 T1)" begin
+@testset "record_schema" begin
 
-    # (the positional-shapes testset was CONSCIOUSLY RETIRED at stage 5's E11 of the v0.4 build with its subject — the
-    # v0.3.2 positional constructors of PlugIn and ActionSpec, census row 65, R-V04B-61; a positional construction is
-    # Julia's own MethodError now, measured on both trees by the build's probe.)
+    # (the positional-shapes testset was CONSCIOUSLY RETIRED with its subject — the
+    # v0.3.2 positional constructors of PlugIn and ActionSpec; a positional construction is
+    # Julia's own MethodError now, measured before and after the change.)
 
-    @testset "keyword shapes: CaptureDecl's one- and two-positional forms and its slot text, the Alterant's capture slot, ActionSpec without its settribute slot (stage 5's E12)" begin
+    @testset "keyword shapes: CaptureDecl's one- and two-positional forms and its slot text, the Alterant's capture slot, ActionSpec without its settribute slot" begin
         cap = GM.CaptureDecl(:per_key)
-        # v0.4 T5 (T5-DESIGN §6, the +3 declared movements): the attr_stem default
-        # admits through the 1-positional outer method; the 2-positional round-trips (the row's 2 fields since stage 1 of the
-        # Alterants build — the `mode_gate` field left with the Heading's separate lane, R-ALT-12);
-        # two rows differing only in stem encode differently (the slot text — the seal fold it joined left at stage 5's E13).
+        # the attr_stem default
+        # admits through the 1-positional outer method; the 2-positional round-trips (the row's 2 fields —
+        # the `mode_gate` field was removed with the Heading's separate path);
+        # two rows differing only in stem encode differently (the slot text — the seal fold it once joined was removed).
         @test cap.attr_stem === nothing
         @test GM.CaptureDecl(:per_key, :st5).attr_stem === :st5
-        @test !hasfield(GM.CaptureDecl, :mode_gate)   # stage 1 of the Alterants build
+        @test !hasfield(GM.CaptureDecl, :mode_gate)   # the field was removed with the Heading's separate path
         @test GM._slot_text(cap) !=
               GM._slot_text(GM.CaptureDecl(:per_key, :st5))
         p = GM.Alterant(; altName = :zz, setMode = :accumulate, altConstructor = Dict{Symbol,Bool},
                         setAltInstance = identity, capture = cap)
         @test p.capture === cap
         s = GM.ActionSpec(; name = :zzh, plugin = Int8(1))
-        @test !hasfield(GM.ActionSpec, :settribute)   # stage 5's E12 of the v0.4 build (census row 45): the write-back key left the record
+        @test !hasfield(GM.ActionSpec, :settribute)   # the write-back key was removed from the record
     end
 
-    @testset "the write-back declarations LEFT the record, the registry and BLS (stage 5's E12, census row 45; R-V04B-99)" begin
+    @testset "the write-back declarations LEFT the record, the registry and BLS" begin
         R = GM.DEFAULT_REGISTRY
-        @test !hasfield(GM.AlterantRegistry, :action_to_settribute)   # the derived table left at stage 5's E12 — nothing had read it since stage 3's commit 4
+        @test !hasfield(GM.AlterantRegistry, :action_to_settribute)   # the derived table was removed — nothing had read it since the answer function
         @test !hasfield(GM.AlterantRegistry, :visib_to_settribute)
         @test !isdefined(GM, :VISIB_TO_SETTRIBUTE)
-        @test !hasfield(GM.ActionSpec, :default)   # stage 2's commit 3-ii: the per-action slot of T1 GAVE WAY to the Alterant's (R-V04B-51)
-        @test all(k -> k ∉ keys(GM.BLS.ComponentSettribute), (:hide, :show, :discard))   # the three names left BLS's record — necessary, not sufficient: R-V04B-99 rides on this TOGETHER WITH the registry's queryable_action rule (the names out alone left `{show}` accepted — PROBES-e12-edges-AFTER_59d7558.txt)
-        # stage 2's commit 3 (R-V04B-51 (1)–(2); R-V04B-55 (1)): the default is the ALTERANT's — Visib declares 'show'; the
-        # others declared on his word at stage 2's review (card C2, R-V04B-92, 2026-10-02): Labels the empty set, Heading none, Id the zero compound
+        @test !hasfield(GM.ActionSpec, :default)   # the per-action slot GAVE WAY to the Alterant's
+        @test all(k -> k ∉ keys(GM.BLS.ComponentSettribute), (:hide, :show, :discard))   # the three names were removed from BLS's record — necessary, not sufficient: the refusal rides on this TOGETHER WITH the registry's queryable_action rule (the names out alone left `{show}` accepted)
+        # the default is the ALTERANT's — Visib declares 'show'; the
+        # others declared on the creator's word of 2026-10-02: Labels the empty set, Heading none, Id the zero compound
         @test R.plugins[R.alt_index[:Visib]].default === GM.Declared(:show)
         @test R.plugins[R.alt_index[:labels]].default isa GM.Declared && R.plugins[R.alt_index[:labels]].default.value == Symbol[]   # a Declared{Vector} compares by its value (the struct's == is identity)
         @test R.plugins[R.alt_index[:heading]].default === GM.Declared(nothing)
         @test R.plugins[R.alt_index[:id]].default == GM.Declared((cell = Int16(0), parent = Int16(0), file = Int16(0)))
     end
 
-    # (the record shape law testset was CONSCIOUSLY RETIRED at stage 5's E4 of the v0.4 build with its
-    # subject — census row 3, OWNER-WORDS §317: a mis-tagged enum slot registers unchecked, as the legacy did.)
+    # (the record shape law testset was CONSCIOUSLY RETIRED with its
+    # subject: a mis-tagged enum slot registers unchecked, as the original engine did.)
 
 end

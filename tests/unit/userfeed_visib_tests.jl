@@ -1,26 +1,23 @@
-# userfeed_visib_tests.jl — stage 2's commit 7b of the v0.4 build: THE FED VISIB VERDICT AGAINST AN AUTHORED ONE (the CrossReview set REAL-1
-# R2 #13 — "All five user_mh_profile tests feed headings; none opposes a fed Visib action against an authored one. Add fed 'show' against
-# authored '#~ hide', asserting the fed verdict wins and the rows carry the user-context handle"; the plan v8.1 :62 — the R2 test proposals that
-# witness stage-2 code; the brief v2 §1 row 7a–c).
+# userfeed_visib_tests.jl — THE FED VISIB VERDICT AGAINST AN AUTHORED ONE: a fed `show` against an authored `#~ hide` (and the
+# other way) — the fed verdict wins and the rows carry the user-context handle.
 #
-# IS:   five witnesses over the public entry, every value MEASURED first but one — [U5]'s "  " on the P25 document, the testset's own
-#       run, disclosed there — (R4b; receipts/S8-branch/precheck-s2c4/PROBES-origins_decided_by.txt
-#       cases E and F; the fed verdict's handle = the user-context key of ordinal 1): [U1] fed `show` against authored `#~ hide` — the fed
+# IS:   five witnesses over the public entry, every value MEASURED first but one — [U5]'s "  " on its document, the testset's own
+#       run, stated there — (the fed verdict's handle = the user-context key of ordinal 1): [U1] fed `show` against authored `#~ hide` — the fed
 #       verdict wins on the metaBlock and the attached Block, the rows carry the user-context handle; [U2] fed `hide` against authored `#~ show`
 #       — the same, the other way; [U3] fed `discard` over a meta-free input — PROCESS_OK and ZERO rows (no Block is attached to meta, the
-#       apply runs for none); [U4] the fed verdict read through the answer function: `:user`; [U5] (stage 2 of the Alterants build,
-#       his word of 2026-10-16 — R-ALT-18 / R-ALT-22) an EMPTY or whitespace-only profile is INERT like no profile: it feeds nothing and
+#       apply runs for none); [U4] the fed verdict read through the answer function: `:user`; [U5] (the creator's
+#       word of 2026-10-16) an EMPTY or whitespace-only profile is INERT like no profile: it feeds nothing and
 #       occupies no slot, so the loop's order is the un-fed one — the slot's inertness rests on the driver's non-blank test at the `feed_user_mh!` call
-#       site (src/GoMeta.jl); since 0.4.1 the two documents below give the same heading and Visib rows fed the former pins' `:label3` or not — a fed label no condition of theirs tests adds its own label rows alone (the traces P24 / P25 against P24n / P25n: 4 rows where the no-feed twin has 2; a fed label a condition does test IS seen — fed_profile_order_tests.jl [W7], [W10] G16) — so [U5]'s assertions on those rows cannot tell an inert profile from a fed one and check the delivered rows alone (MEASURED at
-#       stage 2 of the Alterants build, when the fed order still differed: the lane's oracle L04, L05, L06 against P07 and P26 — before
-#       the stage an empty profile occupied the user slot, the CrossReview set alt-stage1's E2); a profile whose edge character is an INVALID
-#       byte sequence is content, never white space — FED; the one-character overlong profile refused by the absorb as at the stage-2 base
-#       9bde47d (MEASURED: the lane's oracle L08), an invalid sequence glued to the label sugar `:` fed and NOT refused (MEASURED: L09 —
+#       site (src/GoMeta.jl); since 0.4.1 the two documents below give the same heading and Visib rows fed `:label3` or not — a fed label no condition of theirs tests adds its own label rows alone (4 rows where the no-feed twin has 2; a fed label a condition does test IS seen — fed_profile_order_tests.jl [W7], [W10]) — so [U5]'s assertions on those rows cannot tell an inert profile from a fed one and check the delivered rows alone (MEASURED
+#       when the fed order still differed — before
+#       the change an empty profile occupied the user slot); a profile whose edge character is an INVALID
+#       byte sequence is content, never white space — FED; the one-character overlong profile refused by the absorb as
+#       before (MEASURED), an invalid sequence glued to the label sugar `:` fed and NOT refused (MEASURED —
 #       PROCESS_OK, no row).
-# REASONING: the user slot is placed FIRST in both apply walks' slot order and, since stage 0 of the Labels lane (0.4.1), evaluated after
+# REASONING: the user slot is placed FIRST in both apply walks' slot order and, since 0.4.1, evaluated after
 #       the Component's own slot with the override (feed_user_mh!'s docstring: "the fed profile OVERRIDES authored Visib");
-#       a queued fed action reaches the enqueue's origin line (commit 2) that no heading-only profile reaches — the path commit 3a's witness F3
-#       found broken (the UserContext import) is witnessed here at the public entry for its own sake.
+#       a queued fed action reaches the enqueue's origin line that no heading-only profile reaches — the path that once failed on
+#       the UserContext import (fallback_order_tests.jl [F4]) is witnessed here at the public entry for its own sake.
 # PURPOSE: the fed verdict's precedence and provenance, measured — never inferred from the feed's docstring.
 
 using Test
@@ -29,7 +26,7 @@ const _UF_BLS = GM.BLS
 
 _uf_bytes(s::String) = Vector{UInt8}(codeunits(s))
 
-@testset "the fed Visib verdict against an authored one (stage 2 commit 7b; REAL-1 R2 #13)" begin
+@testset "the fed Visib verdict against an authored one" begin
     uc = GM.key_bytes(GM.user_context_key(:default, 1))
     _visib_rows(r) = [x for x in r.altValues_evals.records if x.attr === :visib]
 
@@ -64,26 +61,24 @@ _uf_bytes(s::String) = Vector{UInt8}(codeunits(s))
         @test all(l -> GM.evaluatedAltValue(r, l, :Visib).source === :user, ls)        # the rowless Lines inherit the fed verdict
     end
 
-    @testset "[U5] an EMPTY or whitespace-only profile is INERT like no profile; an invalid edge byte is no white space (R-ALT-18 / R-ALT-22; his §359 (10); MEASURED: the lane's oracle L04–L06, L08)" begin
-        # the P25 document: `hide{ :label1 }` stated BEFORE `:label1` on one metaLine — un-fed, the hide's condition does not see the label
-        # (no visib row); before stage 0 of the Labels lane a FED profile (P25's `:label3`) made the user slot the loop's first and the hide
-        # applied (P25 BEFORE) — since 0.4.1 it does not (fed_profile_order_tests.jl [W5]), so these assertions no longer tell an inert profile from a fed one (a
-        # user slot without rows equals no feed under the cured order — the stage-0 plan §3): they check the delivered rows alone; that "" and "  " occupy no
+    @testset "[U5] an EMPTY or whitespace-only profile is INERT like no profile; an invalid edge byte is no white space (the creator's decision; MEASURED)" begin
+        # the document: `hide{ :label1 }` stated BEFORE `:label1` on one metaLine — un-fed, the hide's condition does not see the label
+        # (no visib row); before 0.4.1 a FED profile (`:label3`) made the user slot the loop's first and the hide
+        # applied — since 0.4.1 it does not (fed_profile_order_tests.jl [W5]), so these assertions no longer tell an inert profile from a fed one (a
+        # user slot without rows equals no feed under the cured order): they check the delivered rows alone; that "" and "  " occupy no
         # slot rests on the driver's non-blank test (src/GoMeta.jl, the `feed_user_mh!` call site); "" and "  " must behave as no profile
-        # ("" on this document MEASURED by the oracle's L05; "  " on this document is this testset's own run on the scratch, green — the
-        # oracle's L06 measured "  " on the P24 document below)
+        # ("" on this document MEASURED first; "  " on this document is this testset's own run, green — the
+        # measurement of "  " was on the second document below)
         for p in ("", "  ")
             r = GM.goMeta(_uf_bytes("#~ hide{ :label1 } :label1\nx = 1\n"); config = GM.GoMetaConfig(; user_mh_profile = p))
             @test r.status === GM.PROCESS_OK && isempty(_visib_rows(r))
         end
-        # the P24 document: a heading whose condition tests a label stated after it — no head row un-fed (P07); none with "" either (L04)
+        # the second document: a heading whose condition tests a label stated after it — no head row un-fed; none with "" either
         r24 = GM.goMeta(_uf_bytes("#~2 head(\"T\"){ :label2 } :label2\nx = 1\n"); config = GM.GoMetaConfig(; user_mh_profile = ""))
         @test r24.status === GM.PROCESS_OK && !any(x -> startswith(String(x.attr), "head"), r24.altValues_evals.records)
-        # an INVALID edge byte is content, never white space (the absorb's one predicate, his §359 (10)): a profile whose only character is
-        # an overlong sequence is FED and meets the absorb's unknown-action refusal, as at the stage-2 base 9bde47d — never Julia's raw
-        # InvalidCharError out of the driver's feed test (MEASURED: the lane's oracle L08 on the stage-2 base 9bde47d and on the stage-2
-        # scratch after the review's cures — receipts/stage2/oracle-run_AFTER_scratch-cured.log, its diff 31ca0fa7…; the scratch landed as
-        # 18cf332 after the judge-only check's six text folds)
+        # an INVALID edge byte is content, never white space (the absorb's one predicate): a profile whose only character is
+        # an overlong sequence is FED and meets the absorb's unknown-action refusal, as before — never Julia's raw
+        # InvalidCharError out of the driver's feed test (MEASURED before and after the change)
         e8 = try GM.goMeta(_uf_bytes("x = 1\n"); config = GM.GoMetaConfig(; user_mh_profile = "\xe0\x80\x80")); nothing catch err; err end
         @test e8 isa ErrorException && occursin("GoMeta absorb: unknown alterant action", e8.msg)
     end

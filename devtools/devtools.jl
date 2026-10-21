@@ -1,54 +1,53 @@
 # devtools.jl — the GoMeta developer print tools.
-#   (2026-08-29, owner ruling R-V04B-17) This file lives in the GoMeta code home,
-#   GoMetaEcosystem/GoMeta/devtools/; the Play keeps its own FROZEN COPY since 2026-09-12
-#   (OWNER-WORDS §26 — a self-contained fork). Run under the project whose GoMeta you want
-#   to print: `--project=GoMetaEcosystem/GoMeta/tests` = the v0.4 build. A DEVELOPMENT TOOL:
+#   This file lives in this repository's devtools/.
+#   Run under the project whose GoMeta you want
+#   to print: `--project=$GM/tests` (GM = this repository's root) = its test environment. A DEVELOPMENT TOOL:
 #   not part of the GoMeta process — the package never references this file. Docs: README.md
-#   beside it; the canon AGENT-RULES_GoMeta.md §R4b.
+#   beside it.
 #
-# IS:   the two owner-ruled development printers for a `goMeta` result —
+# IS:   the two development printers for a `goMeta` result —
 #         `print_BLS_Component_Tree`  (the BLS Component tree with every component's
 #                                      settribute state; restores the February
 #                                      `printComponentStates` capability, superseding it)
 #         `print_altValues_evals`     (the evals rows placed IN the component tree /
 #                                      as the evals-rows-by-Component view / as the per-cell view)
 #       plus their file twins (`write_*_to_file`) and
-#       the comparison form's producer and writer `comparisonForm` / `writeComparisonFormToFile` (§I — stage 4, R-V04B-36).
-#       (The `slide` output option and the three surface writers left at stage 5's T2 — census rows 2 and 9, his §317.)
+#       the comparison form's producer and writer `comparisonForm` / `writeComparisonFormToFile` (§I).
+#       (The `slide` output option and its three surface writers were removed within the 0.4 development.)
 # DOES: renders — from the BLS component data of ONE `goMeta(bytes)` result, and only
 #       as deep as the selected style/detail/filters ask —
-#       (canon R1 — never re-derived from raw text): the engine-true Block census (the door's
-#       `children` of the File root — the legacy `2:numChildren+1` census is extension-unsafe),
+#       (never re-derived from raw text): the engine-true Block census (the door's
+#       `children` of the File root — the original engine's `2:numChildren+1` census is extension-unsafe),
 #       per-component named-int + settribute dumps, and the cell_handle → Component resolution
-#       (the shared decoder, R-V04B-102; a plain walk through the door; a row's text through the
-#       door's `BLS.content`). The design note's §6 defensive contract — the resolver's gates, the
+#       (the shared decoder; a plain walk through the door; a row's text through the
+#       door's `BLS.content`). A former defensive contract — the resolver's gates, the
 #       origin states, the unanchored reasons, the guarded context, the status-first law, the
-#       checked blocks= fetch — left at stage 5's T3 of the v0.4 build (census rows 8 and 19, his §317 mark).
-# REASONING: the released v0.3.0 package deliberately ships no debug printer (e1c
-#       strip) and the run's WORKING state is not delivered at all (R-V04B-28; 0.3.x delivered it as a field) — so the dev tools live PLAY-SIDE, on a
-#       session-writable surface, honestly labeled (the development tools', not the Engine's), instead
+#       checked blocks= fetch — was removed within the 0.4 development.
+# REASONING: the released v0.3.0 package deliberately ships no debug printer
+#       and the run's WORKING state is not delivered at all (0.3.x delivered it as a field) — so the dev tools live BESIDE THE PACKAGE, on a
+#       surface of their own, honestly labeled (the development tools', not the Engine's), instead
 #       of re-entering the engine through the release pipeline. Package-proper
-#       restoration is a friction-ledger motion (F-LED-16..19), never code from here.
-# PURPOSE: let the owner SEE, at any moment of play, exactly what the engine built
+#       restoration would be a change of the package itself, never code from here.
+# PURPOSE: let the creator SEE, at any moment, exactly what the engine built
 #       (structure + settributes) and exactly which altValues_evals row landed on
 #       which Component — including the metaSegment that caused it — in the terminal
 #       (colored) or as .html / .txt files.
 #
-# ── The tree through THE DOOR (stage 2's commit 0; R-V04B-58, R-V04B-80) ─────────────────────
+# ── The tree through THE DOOR ─────────────────────
 # These tools read `result.blsComponentTree` through BLS's public functions and types ONLY —
 # `GoMeta.BLS.root` / `children` (the walk), `getElement` (every flag and position, by key, over a
 # Component), `content` (the verbatim bytes at a Component's grain), `kind` (the flavor word),
 # `flavor` (the record; five fields promised), `endsWithNewline`, `isHorizontalSpace` (the lexer's
 # delimiter), the Component types and `keys` of the two named-element types (docs/public-api.md §1.2) —
-# and no field of a BLS object; the File's text (its lines joined) through the one-argument `content(tree)` (his word
-# of 2026-10-05, R-V04B-116 (3)(b)) — one of the last two reads outside the door left at stage 5's s5c8, and the texts of the
-# former exemption D-6(a) with it. Consumer code — an Extension — reads the tree the same way, through the door
-# (docs/public-api.md §1.2; R-V04B-45).
-# The battery `devtools/probes/probe_devtools.jl` is the drift alarm (his §26; the tools' own self-check left at stage 5's T1,
-# R-V04B-111): run it after every change under `src/` — a broken surface fails LOUDLY.
+# and no field of a BLS object; the File's text (its lines joined) through the one-argument `content(tree)`
+# — the read it replaced, one of the last two reads outside the door, was removed within the 0.4 development with the texts of the
+# former exemption. Consumer code — an Extension — reads the tree the same way, through the door
+# (docs/public-api.md §1.2).
+# The battery `devtools/probes/probe_devtools.jl` is the drift alarm (the tools' former self-check was removed within the 0.4
+# development): run it after every change under `src/` — a broken surface fails LOUDLY.
 #
 # ── Use ─────────────────────────────────────────────────────────────────────────────────
-#   julia> include("run_play.jl")           # or directly: include("devtools.jl")
+#   julia> include("devtools.jl")
 #   julia> result = goMeta(read("InFileFolder/some.jl"))
 #   julia> print_BLS_Component_Tree(result)
 #   julia> print_altValues_evals(result)
@@ -58,27 +57,25 @@
 #
 # ── Non-goals + recorded deviations ─────────────────────────────────────────────────────
 # - No benchmarks: interactive dev printers carry no performance contract (the
-#   documented decision — design §2 ¶No-benchmarks).
-# - Excerpt quote-escaping (CrossReview T1-L2 #3) is DEFERRED: the owner ruled on the
+#   documented decision).
+# - Excerpt quote-escaping is DEFERRED: the creator decided on the
 #   rendered look with raw embedded quotes; only control bytes / invalid UTF-8 are
-#   escaped (safety — by the excerpt's own loop; the `strip` before it decodes an overlong invalid sequence at a content's head or tail and throws: R-V04B-128 (6), recorded at v0.4, the BLS flag and the door's text read at v0.5). `""` still renders zero-length content.
+#   escaped (safety — by the excerpt's own loop; the `strip` before it decodes an overlong invalid sequence at a content's head or tail and throws: a recorded limit at v0.4, the BLS flag and the door's text read at v0.5). `""` still renders zero-length content.
 # - Non-ASCII typography in PLAIN sinks: Block spans use an en-dash (`L35–L49`) and
 #   the reserved polarity marker a typographic minus (`(−)`, dead at v0) — byte-pinned
-#   to the owner-approved mockups; grep with the literal characters (or `grep -P`).
+#   to the design mockups; grep with the literal characters (or `grep -P`).
 # - A row the tools cannot place — a handle that does not decode, a grain above the File grain
 #   (> 0xd2: the user-context plane, the plane law of src/occurrence.jl), a path step with no such
 #   child — renders in the `unanchored rows` section: its grain name (`?` for a handle that does not
 #   decode) and, for a grain above the File grain, its first path ordinal; `show_handles` adds the
 #   handle note (the decoded handle, or the raw bytes marked UNDECODED). No shipped path keys an evals
-#   row on the user-context plane since stage 1 of the Alterants build (da86f4c2..d904689, 2026-10-16)
-#   on his decision on point (1) of the eight, §D242 of the documentation lane's record (2026-10-14):
+#   row on the user-context plane since 0.4.0 (the creator's decision):
 #   a statement of a `localOnly` Alterant fed through the profile is refused at the read
 #   (src/absorb/absorb_meta.jl — the condition keys on the set mode with a user context present, so
-#   every registry's; the reach beyond the Heading R-ALT-15 (ii)(1)), and the user-context handle is
+#   every registry's — the reach beyond the Heading by the creator's decision), and the user-context handle is
 #   read once, into the fed rows' `decided_by` — no writer of a row's key reads it. The section is the
 #   tools' totality guard: WITNESSED at b70d5b7 over eleven inputs — ten runs with zero unanchored rows,
-#   the fed heading refused (PROBE-plane-rows_b70d5b7.txt, the Alterants build lane's
-#   receipts/devtools-cleanup/; the clean-up of 2026-10-17, R-ALT-41) — a witness beside the structural
+#   the fed heading refused (measured 2026-10-17) — a witness beside the structural
 #   basis above, not a proof over every shipped path.
 # - `detail` validation is STRICTER than a pure conflict rule: any explicit value for
 #   a non-:tree style errors, even one naming the style's inherent detail — inherent
@@ -87,29 +84,24 @@
 #   materialized input-side (bounded by one cell) — accepted for v1.
 # - The extension-chain presence marker detects Block-grain `idExtension` in `:mix`
 #   only (Line/File-capacity chains + the `:tree`/`:full` style stay unmarked);
-#   physical extension-node rendering is deferred — no chain is mintable at play sizes.
-# - Explicit per-Alterant DEFAULT values do not exist in the engine (R-DEV-6 →
-#   friction-ledger row F-LED-20, GoMeta v0.4); absence renders as
+#   physical extension-node rendering is deferred — no chain is mintable at interactive input sizes.
+# - An Alterant's declared DEFAULT value is the answer function's (`GoMeta.evaluatedAltValue`), never a row; the absence of a row renders as
 #   "(no evals — defaults apply)" without asserting a value.
-# - Owner fix-order 2026-08-21 (#2B): the :mix/:tree dump rows carry parent→first-
-#   child RAILS (│ at the child connector column; §5-bis.16 of
-#   plan/2026-08-20-devtools-slide-output/DESIGN_slide-option.md; evals ● view
-#   deliberately NOT extended — the ● occupies that column). (Fix-order #1, the
-#   reference-true structure slide runs, left with the slide option at stage 5's T2.)
+# - The :mix/:tree dump rows carry parent→first-
+#   child RAILS (│ at the child connector column; evals ● view
+#   deliberately NOT extended — the ● occupies that column). (The
+#   reference-true structure slide runs were removed with the slide option.)
 #
-# Design + review record: plan/2026-08-19-gometa-dev-print-tools/DESIGN_dev-print-tools.md
-# (§0 owner rulings R-DEV-1..10; §6 the former binding contract, left at stage 5's T3; §8 the full review chain).
-# Canon: GoMetaEcosystem/agent-doc/AGENT-RULES_GoMeta.md.
 
 import GoMeta
-include(joinpath(@__DIR__, "load_basic_renderer.jl"))   # the ONE path to the basic renderer (R-V04B-24 obligation 7)
+include(joinpath(@__DIR__, "load_basic_renderer.jl"))   # the ONE path to the basic renderer
 const _DT_BLS = GoMeta.BLS
 
 #########################################################################################
 ##  §A — palette + styled emission
 #########################################################################################
 
-## THE COMPUTED PALETTE (R-DEV-10, owner-directed research round 2026-08-20).
+## THE COMPUTED PALETTE (2026-08-20).
 ## IS: every identity-bearing color as a FIXED xterm-256 index (never theme-remapped,
 ##   never bold-as-bright-promoted — both mechanisms touch only base-16; probe-proven).
 ## DOES: passes the computed gates of the dataviz color method (Machado-2009 CVD
@@ -117,13 +109,13 @@ const _DT_BLS = GoMeta.BLS
 ##   flavor↔attr, attr↔value, grain↔grain, flavor↔flavor): min NORMAL ΔE 16.1 (floor
 ##   15), min CVD ΔE 9.9 (target 8); every color ≥3:1 on #1e2127 and ≥ΔE15 from chrome
 ##   AND default fg. Verified by eye on rendered output (normal + deutan-simulated).
-## REASONING: three hand-picked rounds (R-DEV-7/8/9/9b/9c) each fixed one collision
-##   and created another — base-16 theme remapping (bold :yellow → the owner's amber)
+## REASONING: three hand-picked rounds each fixed one collision
+##   and created another — base-16 theme remapping (bold :yellow → the creator's amber)
 ##   plus hue-family crowding made eyeballing unreliable; the assignment is COMPUTED
-##   (optimizer + evidence banked in the plan dir) and the render was LOOKED AT.
+##   (by an optimizer over the gates above) and the render was LOOKED AT.
 ## PURPOSE: every role nameable by color alone, for full-color AND red-green-deficient
 ##   vision, on any dark-background terminal/theme. Re-tint = one index, then re-run
-##   the banked scorer (plan dir: score_roles.mjs) + probe 7b.
+##   the gates above (their scorer is not part of this repository) + probe 7b.
 const _DT_C_CHROME = 245            # guides/spans/labels — fixed gray #8a8a8a
                                     #   (theme :light_black is Solarized-invisible)
 const _DT_C_BLOCK  = 205            # Block grain, bold — pink #ff5faf
@@ -150,7 +142,7 @@ const _DT_HTML_COLORS = Dict{Any,String}(
     :green => "#98c379", :red => "#e06c75", :light_black => "#7f848e", :normal => "#d7dae0",
     205 => "#ff5faf", 51 => "#00ffff", 111 => "#87afff", 172 => "#d78700",
     149 => "#afd75f", 134 => "#af5fd7", 75 => "#5fafff", 41 => "#00d75f",
-    220 => "#ffd700", 203 => "#ff5f5f", 245 => "#8a8a8a")   # R-DEV-10 computed palette
+    220 => "#ffd700", 203 => "#ff5f5f", 245 => "#8a8a8a")   # the computed palette
 
 _dt_htmlesc(s) = replace(s, '&' => "&amp;", '<' => "&lt;", '>' => "&gt;")
 
@@ -179,15 +171,15 @@ end
 ## pictograph labels like `label_🍻` (probe-proven); this pads to WIDTH.
 _dt_tpad(s, w) = s * ' '^max(0, w - textwidth(s))
 
-## IS: the bounded excerpt maker. DOES: flattens in-cell newlines to '⏎' (the R4-CLI
+## IS: the bounded excerpt maker. DOES: flattens in-cell newlines to '⏎' (the command-line entry's
 ## convention), escapes every OTHER control byte as ⟨0xNN⟩ (the terminal-forging class:
 ## \r, ESC, backspace…), renders malformed UTF-8 chars as per-char byte-hex ⟨0x…⟩
 ## (BYTE IDENTITY kept — the `!isvalid(c)` arm intercepts them on Julia 1.12.5), and
 ## truncates the OUTPUT incrementally at display width `maxw`. The byte-hex `catch` is
 ## a RESIDUAL belt for invalid-UTF-8 throw classes a future Julia might reintroduce —
 ## on 1.12.5 the char loop is total, so the fallback is defensively dead. REASONING:
-## §6 excerpt-safety contract; the printer must survive every input the byte-faithful
-## engine accepts — with ONE recorded exception at v0.4 (R-V04B-128 (6)): the `strip` the callers apply before this excerpt decodes an overlong invalid UTF-8 sequence at a content's head or tail and throws; cured at v0.5 by the BLS flag and the door's text read, not here.
+## the excerpt's safety: the printer must survive every input the byte-faithful
+## engine accepts — with ONE recorded exception at v0.4: the `strip` the callers apply before this excerpt decodes an overlong invalid UTF-8 sequence at a content's head or tail and throws; cured at v0.5 by the BLS flag and the door's text read, not here.
 function _dt_excerpt(s::AbstractString, maxw::Int = 48)
     try
         out = IOBuffer(); w = 0
@@ -215,8 +207,8 @@ end
 ##  §B — the tree through the door
 #########################################################################################
 
-## The door's walk (`BLS.children`) resolves the insert store's negative ids itself (owner ruling D-15's
-## concern — the legacy printer's sign-blind mis-indexing — cannot recur: no id is indexed here).
+## The door's walk (`BLS.children`) resolves the insert store's negative ids itself (an earlier
+## concern — the original printer's sign-blind mis-indexing — cannot recur: no id is indexed here).
 ## The Components of one grain in source order; `_dt_id` the Component's own id (the printed `#N`).
 _dt_children(doc, c) = _DT_BLS.children(doc.ps, c)
 _dt_id(c) = Int(_dt_ni(c, :idComponent))
@@ -227,14 +219,14 @@ _dt_id(c) = Int(_dt_ni(c, :idComponent))
 IS: the per-call render context — one `goMeta` result opened for printing; built by `_dt_doc(result; name)`.
 DOES: carries the result (`r`), its delivered tree (`ps` — the part `blsComponentTree`), the Block Components the door's
     walk yields (`blocks` — `BLS.children` of the tree, materialised once: the basic renderer's form,
-    devtools/basic_renderer.jl — the legacy `2:numChildren+1` census breaks on extension chains), and the display name
+    devtools/basic_renderer.jl — the original engine's `2:numChildren+1` census breaks on extension chains), and the display name
     (`name`, printed in the `File` header line).
 REASONING: the result and the tree are held untyped (`Any`): the tools name no Julia type of the delivered part (the basic
-    renderer's note at its own read: that type is his open item 5 — not named there either) and dispatch on the Component
+    renderer's note at its own read: that type is an open point of the design — not named there either) and dispatch on the Component
     types through the door alone. One context per call keeps every printer on the same tree and the same Block census.
 PURPOSE: the context every printer opens first — `print_BLS_Component_Tree`, `print_altValues_evals`, `comparisonForm` and
-    the command-line verbs `evals` and `trace`; the tools work on the run's two MAIN PRODUCTS, the BLS Component tree and
-    `altValues_evals` (his words of 2026-09-30, OWNER-WORDS §242 item 3).
+    the command-line verbs `evals` and `trace`; the tools work on the run's two MAIN PRODUCTS (the creator's term), the BLS Component tree and
+    `altValues_evals`.
 """
 struct DTDoc
     r::Any
@@ -256,7 +248,7 @@ _dt_gcolor(c)   = c isa _DT_BLS.Block ? _DT_C_BLOCK : c isa _DT_BLS.Line ? _DT_C
 _dt_flavor(c)   = (k = _DT_BLS.kind(c); k === nothing ? "File" : string(k))
 _dt_fcolor(f)   = f == "Meta" ? _DT_C_META_F : f == "Code" ? _DT_C_CODE_F : _DT_C_TEXT_F
 _dt_trueflags(c) = [k for k in keys(_DT_BLS.ComponentSettribute) if _DT_BLS.getElement(c, k)]
-## The File's text (its lines joined) through the door's one-argument `content(tree)` (R-V04B-116 (3)(b); the §6 layout-totality
+## The File's text (its lines joined) through the door's one-argument `content(tree)` (the layout-totality
 ## clause); the other grains through `BLS.content(tree, c)` (the former Engine call `cell_content_bytes`, byte-equal by
 ## construction of the copy).
 _dt_content(doc, c) = c isa _DT_BLS.File ? String(_DT_BLS.content(doc.ps)) :
@@ -296,10 +288,10 @@ _dt_plural(n, w) = "$n $w" * (n == 1 ? "" : "s")
 #########################################################################################
 ##  §C — the handle's decode and the path's resolution
 #########################################################################################
-## Layout (src/occurrence.jl docblock; probe-proven 27/27 — design §1): schema 0x01 ·
+## Layout (src/occurrence.jl docblock; probe-proven 27/27): schema 0x01 ·
 ## namespace (u16-BE length + UTF-8) · grain byte · path steps (store byte + u32-BE
 ## GLOBAL-store-index ordinal = abs(idComponent)) · origin steps (same shape).
-## THE DECODER IS SHARED (his word of 2026-10-03, OWNER-WORDS §313; R-V04B-102): `decode_handle` lives in
+## THE DECODER IS SHARED: `decode_handle` lives in
 ## handle_decoder.jl beside this file and serves the authored test runner too — ONE copy; the tools' former
 ## private `_dt_decode` family (`_dt_u16`, `_dt_u32`, `_dt_steps`, `_dt_decode`) retired with it. A handle that
 ## does not decode cleanly returns `nothing` and renders as unanchored here.
@@ -331,16 +323,16 @@ IS: one evals row of `altValues_evals`, resolved for rendering; built by `_dt_ev
 DOES: carries the evals row (`attr`, `value`, `polarity` — polarity is constant `true` at v0, a reserved field, so it
     renders DIM), the resolved target Component (`comp`; `nothing` = unanchored — a row the tools cannot place: a handle
     that does not decode, a grain above the File grain 0xd2 (the user-context plane — no shipped path keys a row on it
-    since stage 1 of the Alterants build, d904689, 2026-10-16, his §D242 of 2026-10-14), a path step with no such child),
+    since 0.4.0), a path step with no such child),
     the origin metaSegment (`origin`; `nothing` when the key carries no origin steps), the raw
     occurrence-handle bytes (`handle` — row identity, cell grouping) and the decoded key (`key` — the shared decoder's
     named tuple `(; namespace, grain, path, origin)`; `nothing` when the bytes do not decode). A row's text is the door's
     `BLS.content` of its resolved Component.
-REASONING: a row is decoded (the shared `decode_handle`, R-V04B-102) and resolved ONCE — the plain path walk `_dt_resolve`
+REASONING: a row is decoded (the shared `decode_handle`) and resolved ONCE — the plain path walk `_dt_resolve`
     from the File root through the door's `children`, a step with no such child giving `nothing` — and every layout reads
-    the resolved fields. The seven fields are what stage 5's T3 left of the former twelve-field row: the decoded key's
-    named tuple in place of grain, namespace, path and origin steps; the resolver's gates and the origin states left with
-    the design note's §6 defensive contract.
+    the resolved fields. The seven fields are what remains of a former twelve-field row: the decoded key's
+    named tuple in place of grain, namespace, path and origin steps; the resolver's gates and the origin states were removed with
+    a former defensive contract.
 PURPOSE: the unit the three layouts of `print_altValues_evals` (`:tree`, `:rows`, `:cells`), the `unanchored rows`
     section, the bullet `_dt_eval_bullet` and the handle note render.
 """
@@ -356,9 +348,8 @@ end
 
 ## The row builder: every `altValues_evals` row decoded (the shared decoder) and resolved through the door. A grain
 ## above the File grain (> 0xd2 — the user-context plane, the plane law of src/occurrence.jl) has no document tree
-## position, and the user-context key's one path step would walk to the File root — so the branch stays as the guard (the
-## v0.4 build record §S8.330 (i)); no shipped path produces such a row since stage 1 of the Alterants build (d904689,
-## 2026-10-16; his §D242 of 2026-10-14) — the clean-up of 2026-10-17, R-ALT-41.
+## position, and the user-context key's one path step would walk to the File root — so the branch stays as the guard;
+## no shipped path produces such a row since 0.4.0.
 function _dt_eval_rows(doc)
     rows = DTEvalRow[]
     for (h, attr, v, pol) in GoMeta.readAltValuesEvals(doc.r.altValues_evals)
@@ -373,12 +364,12 @@ end
 _dt_akey(c) = (typeof(c), Int(_dt_ni(c, :idComponent)))
 ## (the tree attachment map — incl. the Segment→owning-Line remap and the File split —
 ## is built INLINE in _dt_t2_tree; keeping a second generic builder here proved a
-## dead-surface hazard and was removed at the impl reconfirm)
+## dead-surface hazard and was removed)
 _dt_unanchored(rows) = [r for r in rows if r.comp === nothing]
 
 ## visib values carry semantic colors; every other attr's value prints neutral-BOLD —
 ## polarity is constant true at v0, so a polarity-driven color would be constant fake
-## signal (CrossReview-verified against annotations.jl:188).
+## signal (verified against annotations.jl:188).
 _dt_vcolor(row) = row.attr === :visib ?
     (row.value === :show ? _DT_C_GOOD : row.value === :discard ? _DT_C_BAD : _DT_C_WARN) : :normal
 
@@ -401,7 +392,7 @@ function _dt_print_unanchored(io, doc, rows; show_handles::Bool = false)
     isempty(rows) && return
     _dt_sty(io, "\nunanchored rows (no document tree position):\n", color = _DT_C_BAD, bold = true)
     for row in rows
-        d = row.key   # a row of a grain above the File grain would carry its first path ordinal (e.g. USER_CONTEXT #1); none is produced by a shipped path since stage 1 of the Alterants build (d904689; his §D242) — the tag stays with the guard
+        d = row.key   # a row of a grain above the File grain would carry its first path ordinal (e.g. USER_CONTEXT #1); none is produced by a shipped path since 0.4.0 — the tag stays with the guard
         tag = d === nothing ? "?" : _dt_grainname(d.grain) * (d.grain > 0xd2 && !isempty(d.path) ? " #$(Int(d.path[1][2]))" : "")
         _dt_sty(io, "  [" * tag * "]  ", color = _DT_C_BAD)
         _dt_sty(io, _dt_tpad(string(row.attr), 12), color = _DT_C_ATTR, bold = true)
@@ -424,10 +415,10 @@ const _DT_T1_STYLES = (:mix, :legacy, :tree, :banner)
     print_BLS_Component_Tree(result::GoMetaDelivery; kwargs...)           # → stdout
     write_BLS_Component_Tree_to_file(path, result; format=:auto, kwargs...)
 
-IS: the first of the two owner-ruled print tools (R-DEV-1..9, 2026-08-20; the canon AGENT-RULES_GoMeta.md §R4b) — the BLS
+IS: the first of the two print tools — the BLS
     Component tree of one `goMeta` result, every Block/Line/Segment with its named-int record and TRUE settribute flags,
-    hierarchically. The restored-and-superseding successor of the February `GoMeta.BLS.printComponentStates()` (owner
-    ruling R-DEV-2; existing script call sites need a one-line edit to this form). A development tool: nothing under
+    hierarchically. The restored-and-superseding successor of the February `GoMeta.BLS.printComponentStates()`
+    (existing script call sites need a one-line edit to this form). A development tool: nothing under
     `src/` reads it.
 DOES: prints the tree of `result.blsComponentTree`, read through the door alone (`BLS.children`, `getElement`, `kind`,
     `content`), as deep as the selected style, detail and filters ask.
@@ -444,12 +435,12 @@ DOES: prints the tree of `result.blsComponentTree`, read through the door alone 
       `IOContext(io, :color=>true)` is honored; `stdout` resolves from the tty and `--color=yes`/`FORCE_COLOR`/`NO_COLOR`);
       `:always`/`:never` WRAP the io via `IOContext(io, :color => true/false)`.
     - `style::Symbol = :mix` — selects the renderer (the four of `_DT_T1_STYLES`):
-      `:mix`    (owner-ruled default, R-DEV-1): guide-line tree; under EACH component two dump lines labeled by the REAL
-                element types (`Int64` named-int pairs, `Bool` TRUE-flag names; values in default fg — R-DEV-7); a blank
+      `:mix`    (the default): guide-line tree; under EACH component two dump lines labeled by the REAL
+                element types (`Int64` named-int pairs, `Bool` TRUE-flag names; values in default fg); a blank
                 line between Blocks; every string printed ONLY at the component that CONTAINS it (a Line with Segments
                 shows no excerpt — its Segments do; Blocks never).
       `:legacy` — the February look (banners, `key=>1` yellow dumps, frozen header without the old `@L/@F`
-                self-location — D-14) on the sound census.
+                self-location) on the sound census.
       `:tree`   — the compact baseline: one line per component, TRUE flags inline; `detail=:full` appends the typed dump
                 pair per component.
       `:banner` — `##`-chromed banners + source text + one-line `ints`/`flags` dumps.
@@ -459,34 +450,34 @@ DOES: prints the tree of `result.blsComponentTree`, read through the door alone 
       `:banner` ⇒ inherent (its co-located dumps) · `:tree` ⇒ `:auto`→`:compact`; explicit `:compact`/`:full` valid —
       `:full` keeps the `:tree` rows (inline flags + every content string) and APPENDS the typed dump pair under each
       component.
-    - `blocks = :all` — or a Vector of Integer Block ids (any `AbstractVector` of non-`Bool` `Integer`s; the legacy
+    - `blocks = :all` — or a Vector of Integer Block ids (any `AbstractVector` of non-`Bool` `Integer`s; the original engine's
       Block-subset precedent): the named Blocks in census order; an id that names no Block selects nothing.
     - `lines = nothing` — an input-line range (e.g. `5:12`): a component renders iff its input-line span INTERSECTS the
       range; a partially-overlapping Block keeps its full span label while its children clip to the range.
     - `grain::Symbol = :segment` — the deepest grain printed: `:block` | `:line` | `:segment`. In `:mix`, a string prints
       at the deepest DISPLAYED owner — with `grain = :line` the Line shows its string even when Segments exist (they are
-      not displayed; the print-once law R-DEV-1(iii) binds displayed components).
+      not displayed; the print-once law binds displayed components).
     - `_name::AbstractString = ""` — the display name in the `File` header line (an internal-ish kwarg: the write twins
       default it to `basename(path)`; REPL calls may set it for a labeled header).
     An unknown `style`, `grain`, `color`, `detail`, `blocks` or `lines` value ERRORS with a message naming the accepted
     forms. With no Block selected (an empty document, or a `blocks=` request matching none) the styles other than
-    `:legacy` print the `File` summary line and the reason; `:legacy` keeps its frozen chrome (D-14). In `:mix` a shown
+    `:legacy` print the `File` summary line and the reason; `:legacy` keeps its frozen chrome. In `:mix` a shown
     Block whose `idExtension` is not 0 prints a one-line extension-chain notice (the logical walk flattens the chain).
     The two `print_BLS_Component_Tree` methods return `nothing`; `write_BLS_Component_Tree_to_file` returns `path`. The
     delivery's status is not printed here (the command-line entry prints it to stderr): an error delivery carries the
     tree of empty bytes and prints as the empty document.
-REASONING: the released package ships no debug printer and the run's WORKING state is not delivered (R-V04B-28), so the
+REASONING: the released package ships no debug printer and the run's WORKING state is not delivered, so the
     printer lives beside the package as a development tool and reads only the delivered part — through the door, never a
-    field of a BLS object (R-V04B-58, R-V04B-80; the tools' last reads outside the door left at stage 5's s5c8,
-    R-V04B-116 (3)). The census is the door's `children` of the File root, never the legacy `2:numChildren+1`
+    field of a BLS object (the tools' last reads outside the door were removed within the 0.4
+    development). The census is the door's `children` of the File root, never the original `2:numChildren+1`
     (extension-unsafe). The strict `detail` rule and the typed dump labels are the design's: no silent no-op, no lookalike
-    accept, the REAL element types shown. The full-content REFERENCE style of R-V04B-44 (2) — the same bytes every run, on
-    a finished run AND on a bare parse, ahead of the old tree dump's removal at the branch's last stage — is not in this
-    file at this commit: the four styles above take a delivery.
-PURPOSE: the canon's instrument (AGENT-RULES_GoMeta.md §R4b; the verb `bls-tree` = `style = :mix`): what the Engine built —
+    accept, the REAL element types shown. The full-content REFERENCE style — the same bytes every run, on
+    a finished run AND on a bare parse — is decided and still to come; it is not in this
+    file: the four styles above take a delivery.
+PURPOSE: the tools' instrument (the verb `bls-tree` = `style = :mix`): what the Engine built —
     the structure and the settribute state the conditions tested — is stated from this printout, never re-derived from
-    raw text (canon R1); the next step of `print_altValues_evals`' "why NOT" path (the settribute state the conditions
-    tested). The tools work on the run's MAIN PRODUCTS (his words of 2026-09-30, OWNER-WORDS §242 item 3).
+    raw text; the next step of `print_altValues_evals`' "why NOT" path (the settribute state the conditions
+    tested). The tools work on the run's MAIN PRODUCTS (the creator's term).
 """
 function print_BLS_Component_Tree(io::IO, result::GoMeta.GoMetaDelivery;
         color::Symbol = :auto, style::Symbol = :mix, detail::Symbol = :auto,
@@ -513,7 +504,7 @@ function print_BLS_Component_Tree(io::IO, result::GoMeta.GoMetaDelivery;
     io = color === :auto ? io : IOContext(io, :color => (color === :always))
     doc = _dt_doc(result; name = _name)
     sel = blocks === :all ? doc.blocks : Any[b for b in doc.blocks if _dt_id(b) in blocks]
-    if isempty(sel) && style !== :legacy   # :legacy keeps its frozen chrome (D-14);
+    if isempty(sel) && style !== :legacy   # :legacy keeps its frozen chrome;
                                            # the other styles get the File summary + reason
         nb, nl, ns2 = _dt_census(doc)
         _dt_sty(io, "File  ", bold = true); _dt_sty(io, doc.name, bold = true)
@@ -534,7 +525,7 @@ function print_BLS_Component_Tree(io::IO, result::GoMeta.GoMetaDelivery;
     nothing
 end
 
-## The typed dump pair (R-DEV-1/7): one line per element store, labeled by the REAL
+## The typed dump pair: one line per element store, labeled by the REAL
 ## Julia element type; VALUES in the default foreground (distinguishable from the
 ## yellow Meta flavor word), type labels dim. Shared by :mix and :tree detail=:full.
 function _dt_dumplines(io, c, indent)
@@ -552,7 +543,7 @@ end
 print_BLS_Component_Tree(result::GoMeta.GoMetaDelivery; kwargs...) =
     print_BLS_Component_Tree(stdout, result; kwargs...)
 
-## ── :mix (R-DEV-1) — the owner-ruled default ──────────────────────────────────────────
+## ── :mix — the default ──────────────────────────────────────────────────────────────
 function _dt_t1_mix(io, doc, sel, lines_r, grain)
     nb, nl, ns = _dt_census(doc)
     _dt_sty(io, "File  ", bold = true); _dt_sty(io, doc.name, bold = true)
@@ -575,13 +566,13 @@ function _dt_t1_mix(io, doc, sel, lines_r, grain)
                 "flattened by the logical walk (see the Int64 idExtension/idExtended values)\n",
                 color = _DT_C_WARN, bold = true)
     for (bi, b) in enumerate(shown)
-        bi > 1 && println(io)                        # R-DEV-1 (ii): blank line between Blocks
+        bi > 1 && println(io)                        # a blank line between Blocks
         lastb = bi == length(shown)
         row(b, lastb ? "└─ " : "├─ ", _DT_C_BLOCK, "Block")
         gB = lastb ? "   " : "│  "
         lines = grain === :block ? Any[] :
                 [l for l in _dt_children(doc, b) if _dt_intersects(l, lines_r)]
-        ## RAILS (owner fix-order #2 Part B, 2026-08-21): an attribute row of a
+        ## RAILS: an attribute row of a
         ## component with a printed child carries │ at the first child's connector
         ## column — the parent→first-child rail is unbroken; childless stays blank
         dumplines(b, gB * (isempty(lines) ? "   " : "│  "))
@@ -589,7 +580,7 @@ function _dt_t1_mix(io, doc, sel, lines_r, grain)
         for (li, l) in enumerate(lines)
             lastl = li == length(lines)
             segs = grain === :line ? Any[] : _dt_children(doc, l)
-            # R-DEV-1 (iii): print the string once, at the DEEPEST DISPLAYED owner — the
+            # the print-once law: print the string once, at the DEEPEST DISPLAYED owner — the
             # Line shows it whenever its Segments are not displayed (incl. grain=:line)
             row(l, gB * (lastl ? "└─ " : "├─ "), _DT_C_LINE, "Line";
                 content = isempty(segs) ? _dt_content(doc, l) : nothing)
@@ -605,7 +596,7 @@ function _dt_t1_mix(io, doc, sel, lines_r, grain)
     end
 end
 
-## ── :tree (plain compact — the pre-rulings B style, kept as an option; `dumps=true` =
+## ── :tree (plain compact — kept as an option; `dumps=true` =
 ##    detail=:full: the SAME tree rows with the typed dump pair appended per component) ──
 function _dt_t1_tree(io, doc, sel, lines_r, grain; dumps::Bool = false)
     nb, nl, ns = _dt_census(doc)
@@ -629,7 +620,7 @@ function _dt_t1_tree(io, doc, sel, lines_r, grain; dumps::Bool = false)
         row(b, lastb ? "└─ " : "├─ ", _DT_C_BLOCK, "Block")
         lines = grain === :block ? Any[] :
                 [l for l in _dt_children(doc, b) if _dt_intersects(l, lines_r)]
-        ## rails (owner fix-order #2 Part B): │ at the first child's connector column
+        ## rails: │ at the first child's connector column
         dumps && _dt_dumplines(io, b, (lastb ? "   " : "│  ") *
                                       (isempty(lines) ? "   " : "│  "))
         grain === :block && continue
@@ -652,11 +643,11 @@ function _dt_t1_tree(io, doc, sel, lines_r, grain; dumps::Bool = false)
     end
 end
 
-## ── :legacy — the February look on the sound census (frozen header, D-14) ─────────────
+## ── :legacy — the February look on the sound census (frozen header) ───────────────────
 function _dt_t1_legacy(io, doc, sel, lines_r, grain)
     H(n) = repeat('#', n)
     _dt_sty(io, "\n$(H(90))\n$(H(90))\n###### printComponentStates(...):\n", bold = true)
-    isempty(sel) && _dt_sty(io, "\n(no Blocks)", color = _DT_C_CHROME)   # empty-file law (§3)
+    isempty(sel) && _dt_sty(io, "\n(no Blocks)", color = _DT_C_CHROME)   # the empty-file law
     dump_named(c, ::Type{T}, boolstore) where T = begin
         _dt_sty(io, "\n###### Type of NamedElement: $(nameof(T))", color = _DT_C_LEGACY_DUMP, bold = true)
         parts = String[]
@@ -738,18 +729,18 @@ const _DT_T2_LAYOUTS = (:tree, :rows, :cells)
     print_altValues_evals(result::GoMetaDelivery; kwargs...)              # → stdout
     write_altValues_evals_to_file(path, result; format=:auto, kwargs...)
 
-IS: the second of the two owner-ruled print tools (R-DEV-1..9; the canon AGENT-RULES_GoMeta.md §R4b) — the
+IS: the second of the two print tools — the
     `altValues_evals` rows of one `goMeta` result, each evals row placed AT its BLS Component (which label landed WHERE,
-    which metaSegment caused it), with the input-line spans the raw rows lack (the F-LED-7 gap). The FULL delivery view — every
+    which metaSegment caused it), with the input-line spans the raw rows lack. The FULL delivery view — every
     Component shown, absence labelled, every row with its decoded handle — is `layout = :tree, include_empty = true,
-    show_handles = true` (the verb `evals-tree`); the compact tree (the R-DEV-4 default) is the compact delivery view — a reading form inside
-    a session (§R4b; his §377). A development tool: nothing under `src/` reads it.
+    show_handles = true` (the verb `evals-tree`); the compact tree (the default) is the compact delivery view — a reading form for
+    a quick look. A development tool: nothing under `src/` reads it.
 DOES: reads the rows through the public reader `GoMeta.readAltValuesEvals(result.altValues_evals)`, decodes each handle
     with the shared `decode_handle` and resolves its Component by the plain path walk through the door (`DTEvalRow`); a
     row's text is the door's `BLS.content` of that Component. Absence is explicit: a shown component with no rows reads
     `(no evals — defaults apply)` — the printer reads the Engine's rows alone, never the answer function, so it asserts no
     value where no row exists (an Alterant's declared default — `Alterant.default`, Visib's `:show`, the explicit default
-    R-DEV-6 required, carried by the Engine since stage 2's commit 3 — is the answer function's, `GoMeta.evaluatedAltValue`,
+    carried by the Engine since 0.4.0 — is the answer function's, `GoMeta.evaluatedAltValue`,
     never a row). With no rows at all it prints `(no evals rows — no metaLine on any surface)` after the filters' echo.
     METHOD DISPATCH — which call form triggers what: exactly as `print_BLS_Component_Tree` (core `(io, result)`;
     `(result)` = stdout convenience; the write twin infers `format` from the extension, `.html` ⇒ styled HTML page, else
@@ -760,8 +751,8 @@ DOES: reads the rows through the public reader `GoMeta.readAltValuesEvals(result
       `:tree`  (default): the component-tree skeleton with eval bullets attached AT their Components. The skeleton's
                NODES stop at the Line grain, and rows anchor accordingly: `:label_<name>`/`:visib` rows key on the owning
                Line/Block (the causing metaSegment rides the `← Segment #N` origin tag — the inline head row too since
-               R-V04B-98, stage 5's E1: keyed on its Line, grain 0x0a, the Segment its origin); a Segment-grain row, were
-               one minted (none by the default registry since E1), would attach to its owning Line with a dim
+               0.4.0: keyed on its Line, grain 0x0a, the Segment its origin); a Segment-grain row, were
+               one minted (none by the default registry), would attach to its owning Line with a dim
                `[Segment #N]` target tag; File-grain rows render at a `[File]` bullet under the header. Every counted row
                renders somewhere. Segment STRUCTURE questions belong to `print_BLS_Component_Tree`.
       `:rows`  — one line per eval, input-line span first, sorted by input line then attr: the evals-rows-by-Component view.
@@ -769,7 +760,7 @@ DOES: reads the rows through the public reader `GoMeta.readAltValuesEvals(result
                input-line order. Unanchored rows appear as red `### CELL (… no document tree position)` dossiers (this
                layout has no counting header and no separate section).
     - `include_empty = nothing` — `:tree` ONLY; any other layout ERRORS on an explicit `true`/`false` (the `nothing`
-      sentinel is HOW that is detected: unset means "the R-DEV-4 default `false`", so only a deliberate value can
+      sentinel is HOW that is detected: unset means "the default `false`", so only a deliberate value can
       conflict with the layout). `false` collapses to evals-bearing subtrees with dim IN-PLACE elision rows
       (`… N Blocks/Lines (no evals)`); `true` keeps every node visible, making ABSENCE readable ("why did `:label1` NOT
       apply?"). With a filter active the absence labels say `(no matching evals)` — never asserting engine-level absence
@@ -785,20 +776,20 @@ DOES: reads the rows through the public reader `GoMeta.readAltValuesEvals(result
       `basename(path)`).
     An unknown `layout`, `color`, `attrs` or `lines` value ERRORS with a message naming the accepted forms. Every row
     renders in every layout: a row the tools cannot place (a handle that does not decode; a grain above the File grain —
-    the user-context plane, on which no shipped path keys a row since stage 1 of the Alterants build, d904689, 2026-10-16,
-    his §D242 of 2026-10-14; a path step with no such child) is never dropped — `:rows`/`:tree` render it in a red
+    the user-context plane, on which no shipped path keys a row since 0.4.0;
+    a path step with no such child) is never dropped — `:rows`/`:tree` render it in a red
     `unanchored rows` section (the headers count it); `:cells` renders it as a red `### CELL (… no document tree position)`
     dossier of its own. The two `print_altValues_evals` methods return `nothing`; `write_altValues_evals_to_file`
     returns `path`.
 REASONING: what a run evaluated, for which Component, is stated from the Engine's rows (`altValues_evals`) and the
-    delivered tree — the run's two MAIN PRODUCTS (his words of 2026-09-30, OWNER-WORDS §242 item 3) — never re-derived
-    from raw text (canon R1). The row's Component is resolved by the plain walk stage 5's T3 kept (the design note's §6
-    defensive contract left); `polarity` renders DIM because it is constant `true` at v0 — a polarity-driven color would
+    delivered tree — the run's two MAIN PRODUCTS (the creator's term) — never re-derived
+    from raw text. The row's Component is resolved by the plain walk (a former
+    defensive contract was removed); `polarity` renders DIM because it is constant `true` at v0 — a polarity-driven color would
     be constant fake signal. An absence label never asserts a value the Engine did not record.
-PURPOSE: the canon's rule (AGENT-RULES_GoMeta.md §R4b): no claim about what a run evaluated, for which Component, without
-    one of these printouts — the FULL delivery view for any claim that leaves a session; inside a session any view naming the Component — and the printout goes,
+PURPOSE: the tools' rule (devtools/README.md): no claim about what a run evaluated, for which Component, without
+    one of these printouts — the FULL delivery view for any published claim, any view naming the Component for a quick look — and the printout goes,
     unabridged, into any page or record that carries the claim. The "why NOT" companion: when a label/action you expected
-    is ABSENT here, the next step is the canon-R4 command-line entry `devtools.jl trace <file>` (evals rows + decoded
+    is ABSENT here, the next step is the command-line entry `devtools.jl trace <file>` (evals rows + decoded
     handles) and `print_BLS_Component_Tree` (the settribute state the conditions tested).
 """
 function print_altValues_evals(io::IO, result::GoMeta.GoMetaDelivery;
@@ -817,7 +808,7 @@ function print_altValues_evals(io::IO, result::GoMeta.GoMetaDelivery;
         error("print_altValues_evals: attrs must be :all, a Symbol, or a Vector of Symbols (got $(repr(attrs)))")
     lines === nothing || lines isa AbstractUnitRange{<:Integer} ||
         error("print_altValues_evals: lines must be nothing or an integer range like 5:12 (got $(repr(lines)))")
-    inc = include_empty === nothing ? false : include_empty      # R-DEV-4 default
+    inc = include_empty === nothing ? false : include_empty      # the default
     io = color === :auto ? io : IOContext(io, :color => (color === :always))
     doc = _dt_doc(result; name = _name)
     rows = _dt_eval_rows(doc)
@@ -842,10 +833,10 @@ end
 print_altValues_evals(result::GoMeta.GoMetaDelivery; kwargs...) =
     print_altValues_evals(stdout, result; kwargs...)
 
-## IS: the §4 filter contract. DOES: normalizes `attrs` (:all | Symbol | Vector),
+## IS: the filter contract. DOES: normalizes `attrs` (:all | Symbol | Vector),
 ## validates + filters BEFORE layout, keeps unanchored rows immune to `lines`, and
 ## returns `(filtered_rows, echo_lines, active)` — the echo lines carry the active filters, per-attr match counts and the EXPLICIT never-minted state;
-## `active` is true when an attrs or lines filter was supplied (the one flag the absence labels read, :939–:940).
+## `active` is true when an attrs or lines filter was supplied (the one flag the absence labels read — `nolabel` / `eliword` in `_dt_t2_tree`).
 function _dt_filter_rows(rows, attrs, lines_r)
     echo = Vector{Tuple{String,Union{Symbol,Nothing}}}()   # (text, color-key) pairs
     fr = rows
@@ -866,7 +857,7 @@ function _dt_filter_rows(rows, attrs, lines_r)
         push!(echo, ("filter lines=$(lines_r) (unanchored rows are never hidden by lines)", nothing))
     end
     active = attrs !== :all || lines_r !== nothing
-    active &&                                            # §4: filtered/total ALWAYS echoed
+    active &&                                            # filtered/total ALWAYS echoed
         push!(echo, ("showing $(length(fr)) of $(length(rows)) rows", nothing))
     (fr, echo, active)      # `active` is THE filter flag — single source for the labels
 end
@@ -878,7 +869,7 @@ function _dt_echo(io, echo)
     end
 end
 
-## The ONE decoded-handle formatter (impl CrossReview T2-L2 #1): namespace, grain,
+## The ONE decoded-handle formatter: namespace, grain,
 ## FULL path + origin steps — used by show_handles in every layout and by :cells.
 _dt_fmtsteps(v) = "[" * join(["(" * (st == 0x01 ? "direct" : st == 0x02 ? "insert" :
                                      st == 0x00 ? "TRUNCATED" :
@@ -906,7 +897,7 @@ function _dt_t2_rows(io, doc, frows, allrows, echo; show_handles::Bool = false)
         _dt_sty(io, _dt_tpad(_dt_span(c), 9), color = _DT_C_CHROME)
         _dt_sty(io, _dt_tpad("$(_dt_grain(c)) #$(_dt_ni(c,:idComponent))", 11),
                 color = _dt_gcolor(c), bold = c isa _DT_BLS.Block)
-        ## R-DEV-9: the dedicated flavor triple (supersedes R-DEV-8's dim chrome —
+        ## the dedicated flavor triple (supersedes the former dim chrome —
         ## flavors must be distinct from each other AND from every other used color)
         _dt_sty(io, _dt_tpad(_dt_flavor(c), 6), color = _dt_fcolor(_dt_flavor(c)))
         _dt_sty(io, _dt_tpad(string(row.attr), 12), color = _DT_C_ATTR, bold = true)
@@ -923,9 +914,9 @@ function _dt_t2_rows(io, doc, frows, allrows, echo; show_handles::Bool = false)
 end
 
 ## ── :tree — evals AT their Components (default layout) ────────────────────────────────
-## Layout totality: an inline metaSegment's head row is LINE-anchored since R-V04B-98 (stage 5's E1:
+## Layout totality: an inline metaSegment's head row is LINE-anchored since 0.4.0 (keyed on its Line:
 ## grain 0x0a, the Segment its origin, shown by the `← Segment #N` tag); a Segment-anchored row, were one minted
-## (none by the default registry since E1), would attach to its OWNING LINE with a dim `[Segment #N]` target tag; File-anchored rows render at a File node
+## (none by the default registry), would attach to its OWNING LINE with a dim `[Segment #N]` target tag; File-anchored rows render at a File node
 ## right under the header. Headers therefore never count a row the body omits.
 function _dt_t2_tree(io, doc, frows, allrows, echo;
                      include_empty::Bool, lines_r, show_handles::Bool = false,
@@ -954,14 +945,14 @@ function _dt_t2_tree(io, doc, frows, allrows, echo;
         show_handles && _dt_handle_note(io, row, "    ")
     end
     # with a filter active, an absence label must not assert "no evals" — rows may
-    # simply be filtered out (impl-panel adversary finding)
+    # simply be filtered out
     nolabel  = filtered ? "   (no matching evals)" : "   (no evals — defaults apply)"
     eliword  = filtered ? "(no matching evals)" : "(no evals)"
     node(c, guide, name) = begin
         has = haskey(am, _dt_akey(c))
         _dt_sty(io, guide, color = _DT_C_CHROME)
         _dt_sty(io, _dt_tpad("$name #$(_dt_id(c))", 10), color = _dt_gcolor(c), bold = has)
-        _dt_sty(io, _dt_tpad(_dt_flavor(c), 5), color = _dt_fcolor(_dt_flavor(c)))  # R-DEV-9
+        _dt_sty(io, _dt_tpad(_dt_flavor(c), 5), color = _dt_fcolor(_dt_flavor(c)))  # the flavor triple
         _dt_sty(io, " " * _dt_tpad(_dt_span(c), 8), color = _DT_C_CHROME)
         _dt_sty(io, " \"" * _dt_excerpt(strip(_dt_content(doc, c)), 38) * "\"")
         has || _dt_sty(io, nolabel, color = _DT_C_CHROME)
@@ -974,7 +965,7 @@ function _dt_t2_tree(io, doc, frows, allrows, echo;
     emit_rows(c, indent) = for row in get(am, _dt_akey(c), DTEvalRow[])
         tag = row.comp isa _DT_BLS.Segment ?
               "[Segment #$(_dt_ni(row.comp, :idComponent))]" : ""
-        _dt_eval_bullet(io, doc, row; indent, target_tag = tag)   # guide + "● " (T2-L2)
+        _dt_eval_bullet(io, doc, row; indent, target_tag = tag)   # guide + "● "
         show_handles && _dt_handle_note(io, row, indent * "    ")
     end
     empty_ok(c) = include_empty && _dt_intersects(c, lines_r)   # lines= is also the focus
@@ -1038,7 +1029,7 @@ function _dt_t2_cells(io, doc, frows, allrows, echo)
             _dt_sty(io, "### CELL  ", color = _dt_gcolor(c), bold = true)
             _dt_sty(io, "$(_dt_grain(c)) #$(_dt_ni(c,:idComponent))  ",
                     color = _dt_gcolor(c), bold = true)
-            _dt_sty(io, _dt_flavor(c), color = _dt_fcolor(_dt_flavor(c)), bold = true)  # R-DEV-9
+            _dt_sty(io, _dt_flavor(c), color = _dt_fcolor(_dt_flavor(c)), bold = true)  # the flavor triple
             _dt_sty(io, "  $(_dt_span(c))\n", color = _dt_gcolor(c), bold = true)
             _dt_sty(io, "### content  ", color = _DT_C_CHROME)
             _dt_sty(io, "\"" * _dt_excerpt(strip(_dt_content(doc, c)), 60) * "\"\n")
@@ -1054,11 +1045,11 @@ function _dt_t2_cells(io, doc, frows, allrows, echo)
 end
 
 #########################################################################################
-##  §F — the file twins (owner ruling R-DEV-3/4 + D-17 format inference)
+##  §F — the file twins (the format inferred from the sink's extension)
 #########################################################################################
 
 ## The HTML page wrapper — byte-identical to the mockup generator's, so .html output
-## stays comparable to the approved mockups.
+## stays comparable to the design mockups.
 function _dt_write_html(path, renderfn, title)
     open(path, "w") do f
         print(f, "<!doctype html><meta charset=\"utf-8\"><title>", _dt_htmlesc(title),
@@ -1078,9 +1069,9 @@ end
     write_BLS_Component_Tree_to_file(path, result; format=:auto, color=:never,
                                      title="print_BLS_Component_Tree", kwargs...)
 
-IS: the file twin of [`print_BLS_Component_Tree`](@ref) (the February `print*`/`write*` pair convention; the file sinks
-    owner-ruled R-DEV-3, the format inference D-17) — the `.html` / `.txt` twin of the canon's print tool
-    (AGENT-RULES_GoMeta.md §R4b).
+IS: the file twin of [`print_BLS_Component_Tree`](@ref) (the February `print*`/`write*` pair convention, with its file sinks
+    and the format inferred from the extension) — the `.html` / `.txt` twin of the print tool
+    (a development tool).
 DOES: `format` selects the sink: `:auto` (default) infers from the extension — `.html` (case-insensitive) ⇒ the
     self-contained styled HTML page, ANY other extension (or none) ⇒ text; an explicit `:html` / `:txt` OVERRIDES the
     extension entirely; any other value ERRORS (`write_*_to_file: unknown format=…`). `color` does not apply to the HTML
@@ -1090,8 +1081,8 @@ DOES: `format` selects the sink: `:auto` (default) infers from the extension —
     core method. Opens `path` for writing, renders, closes; returns `path`.
 REASONING: the HTML sink is the core method rendered into an `IOContext` carrying `:gm_html => true`, which the one
     styled-run emitter `_dt_sty` routes to `<span>` styles — one renderer, three sinks (terminal, plain text, HTML); the
-    page wrapper is byte-identical to the mockup generator's, so `.html` output stays comparable to the approved mockups.
-PURPOSE: a printout as a file — the site's capture of the authored tests (`agent-doc/site/capture-devtools.jl`) writes the
+    page wrapper is byte-identical to the mockup generator's, so `.html` output stays comparable to the design mockups.
+PURPOSE: a printout as a file — a page that shows what a run produced carries the
     `:mix` tree as `.html` through it; the `.txt` form is the grep-friendly record.
 """
 function write_BLS_Component_Tree_to_file(path::AbstractString, result::GoMeta.GoMetaDelivery;
@@ -1112,8 +1103,8 @@ end
     write_altValues_evals_to_file(path, result; format=:auto, color=:never,
                                   title=..., kwargs...)
 
-IS: the file twin of [`print_altValues_evals`](@ref) — the `.html` / `.txt` twin of the canon's print tool
-    (AGENT-RULES_GoMeta.md §R4b; the file sinks owner-ruled R-DEV-4, the format inference D-17).
+IS: the file twin of [`print_altValues_evals`](@ref) — the `.html` / `.txt` twin of the print tool
+    (a development tool; the format inferred from the sink's extension).
 DOES: same format/color/title/_name rules as [`write_BLS_Component_Tree_to_file`](@ref): `format` `:auto` infers the sink
     from the extension (`.html`, case-insensitive ⇒ the styled HTML page; else text), `:html` / `:txt` override it, any
     other value ERRORS; `color` applies to the text sink only (default `:never`); `title` defaults to
@@ -1122,10 +1113,10 @@ DOES: same format/color/title/_name rules as [`write_BLS_Component_Tree_to_file`
 REASONING: one renderer, three sinks — the HTML sink is the core method rendered into an `IOContext` carrying
     `:gm_html => true`, routed by the one styled-run emitter `_dt_sty`; the page wrapper is the mockup generator's,
     byte-identical.
-PURPOSE: the FULL delivery view as a file for the owner (`include_empty = true, show_handles = true`): the site's capture of the
-    authored tests (`agent-doc/site/capture-devtools.jl`) writes it as `.html` through this twin; the JuliaCon deck's
-    dev-tool slides and the demo deck were produced from its output with the tools' former `slide` option (left at
-    stage 5's T2).
+PURPOSE: the FULL delivery view as a file for the creator (`include_empty = true, show_handles = true`): a page that shows
+    what a run produced carries it as `.html` through this twin; the JuliaCon deck's
+    dev-tool slides and the demo deck were produced from its output with the tools' former `slide` option (removed within the
+    0.4 development).
 """
 function write_altValues_evals_to_file(path::AbstractString, result::GoMeta.GoMetaDelivery;
         format::Symbol = :auto, color::Symbol = :never,
@@ -1142,22 +1133,22 @@ function write_altValues_evals_to_file(path::AbstractString, result::GoMeta.GoMe
 end
 
 #########################################################################################
-##  §I — THE COMPARISON FORM (stage 4 of the v0.4 build; R-V04B-36 — the reference set's comparison form, so that
-##  GoMetaRetro is compared with v0.4 by CONTENT, never by bytes or Julia types; his §68–§71 of 2026-09-17; the
+##  §I — THE COMPARISON FORM (the reference set's comparison form, so that
+##  GoMetaRetro is compared with v0.4 by CONTENT, never by bytes or Julia types; the
 ##  definition: tests/comparison/README.md — written ONCE, the grammar fixed by what this section emits).
-##  IS:   the v0.4 lane's adapter (R-V04B-36 (c)): ONE content-keyed TEXT form per input — one line per Component
+##  IS:   the v0.4 engine's adapter: ONE content-keyed TEXT form per input — one line per Component
 ##        (kind, span, the parent's key, the position among the parent's children, the children's keys, the content
-##        type, the flags of his approved table) and one line per Component per Alterant (the resolved value and its
+##        type, the flags of the creator's approved table) and one line per Component per Alterant (the resolved value and its
 ##        SOURCE as the deciding Component's own key, or its level: user / file / default); ordinals, ids, handles and
-##        Julia types never appear. The File has its Component line and NO answer lines (the session's narrowing of
-##        R-V04B-36 (a) — nothing is built for the File before his word, card 6 / Q10).
+##        Julia types never appear. The File has its Component line and NO answer lines (nothing is built for the
+##        File before the creator's decision).
 ##  DOES: walks the delivered tree through the door (`root`, `children`, `parent`, `kind`, `content`, `getElement`),
 ##        asks the Engine's answer through `evaluatedAltValues` (= `evaluatedAltValue` per registered Alterant), and emits the lines
 ##        SORTED by code point under one header line that names the input, the producing commit and the counts.
-##  REASONING: the two lanes may deliver different shapes and types (his §70 (1)); only a projection keyed by
+##  REASONING: the two variants may deliver different shapes and types; only a projection keyed by
 ##        content can be compared. A Segment's span is given in CHARACTERS of its line (the parser's byte offsets
-##        converted on the line's own bytes — the definition's recommended unit, his to confirm).
-##  PURPOSE: the twelve forms under tests/comparison/ — v0.4's reference altValues in his terms of 2026-09-29 (`regenerate.jl`) — and the first comparator
+##        converted on the line's own bytes — the definition's recommended unit, an open point).
+##  PURPOSE: the twelve forms under tests/comparison/ (`regenerate.jl`) — v0.4's reference altValues, the creator's term — and the first comparator
 ##        `devtools/compare_forms.sh` (a sorted-text diff). A development tool: nothing under src/ reads it.
 #########################################################################################
 const _CF_VERSION = 1
@@ -1199,11 +1190,11 @@ end
 ## the Component's content KEY — its kind and span; the form's only way of naming a Component (never an id or a handle)
 _cf_key(doc, c) = _cf_kind(c) * " " * _cf_span(doc, c)
 
-## the flags of his approved table that are TRUE on the Component: every ComponentSettribute flag (the three Visib flags left the
-## record at stage 5's E12 of the v0.4 build — census row 45; his §69 item 5 — the former exclusion of them is dead and gone),
+## the flags of the creator's approved table that are TRUE on the Component: every ComponentSettribute flag (the three Visib flags
+## were removed from the record within the 0.4 development — the former exclusion of them is dead and gone),
 ## qualified `component.<name>`, sorted by code point, joined by `,`; `-` when none. The content flag vector
-## (`contentSettributeBitVec`) has no read through the door and no writer in the parser (measured 2026-10-02 — the grep banked as
-## receipts/S8-branch/PROBES-s4-content-flags.txt of the build record) — no `content.<name>` flag can be emitted today (a question for his word).
+## (`contentSettributeBitVec`) has no read through the door and no writer in the parser (measured 2026-10-02)
+## — no `content.<name>` flag can be emitted today (an open point).
 function _cf_flags(c)
     names = String[]
     for k in keys(_DT_BLS.ComponentSettribute)
@@ -1259,8 +1250,8 @@ end
 """
     comparisonForm(result; name = "", at = "-") -> String
 
-IS: the comparison form of ONE `goMeta` result (R-V04B-36; the definition `tests/comparison/README.md`) — the text
-    the twelve forms under `tests/comparison/` hold (v0.4's reference altValues, his term of 2026-09-29); the v0.4 lane's
+IS: the comparison form of ONE `goMeta` result (the definition `tests/comparison/README.md`) — the text
+    the twelve forms under `tests/comparison/` hold (v0.4's reference altValues, the creator's term); v0.4's
     adapter, a development tool: nothing under `src/` reads it.
 DOES: one header line `# GoMeta comparison form v1 | <name> | produced by GoMeta v0.4 at <at> | <nC> Components |
     <nA> answer lines`, then every line of the form SORTED by code point: `C | kind | span | parent key | position |
@@ -1272,8 +1263,8 @@ DOES: one header line `# GoMeta comparison form v1 | <name> | produced by GoMeta
     given in CHARACTERS of its line (the parser's byte offsets converted on the line's own bytes); the File's span runs
     from its first Block's start to its last Block's stop, `0-0` without a Block. Throws (the door's own throw) on a
     delivery whose tree cannot be walked.
-REASONING: the two lanes may deliver different shapes and types (his §70 (1)); only a projection keyed by content can be
-    compared — ordinals, ids, handles and Julia types never appear — and the lines carry content keys only, so two lanes'
+REASONING: the two variants may deliver different shapes and types; only a projection keyed by content can be
+    compared — ordinals, ids, handles and Julia types never appear — and the lines carry content keys only, so two variants'
     projections compare as text; sorting makes the order a non-fact.
 PURPOSE: `writeComparisonFormToFile`, the `comparison` verb, `tests/comparison/regenerate.jl` (which writes or checks the
     twelve), the battery's §18 and the first comparator `devtools/compare_forms.sh` (a sorted-text diff).
@@ -1309,7 +1300,7 @@ end
 """
     writeComparisonFormToFile(path, result; name = basename(path), at = "-") -> path
 
-IS: the comparison form's file writer (the reference set's producer — stage 4 of the v0.4 build; R-V04B-36); a
+IS: the comparison form's file writer (the reference set's producer); a
     development tool.
 DOES: writes `comparisonForm(result; name, at)` to `path`, verbatim (`write(path, text)`); returns `path`. `name`
     defaults to `basename(path)` and lands in the header; `at` is the producing commit the header names (the caller
@@ -1332,18 +1323,17 @@ printComparisonForm(result::GoMeta.GoMetaDelivery; kwargs...) = printComparisonF
 
 #########################################################################################
 ##  §Z — THE COMMAND-LINE ENTRY (the former one-line command tool devtools/gometa.jl, FOLDED here on
-##  2026-09-12 — R-V04B-24's tidy-up row, the owner's OWNER-WORDS §18 item 2 "we may remove
-##  'devtools/gometa.jl' entirely?"; the file is deleted): the eight verbs (the eighth, `comparison`, since stage 4 of the v0.4 build)
+##  2026-09-12; the file is deleted): the eight verbs
 ##      julia --startup-file=no --project=$GM/tests $GM/devtools/devtools.jl <verb> <file>
-##      tree · segments · evals · render · trace · evals-tree · bls-tree · comparison (stage 4, R-V04B-36: the comparison form, §I)
+##      tree · segments · evals · render · trace · evals-tree · bls-tree · comparison (the comparison form, §I)
 ##  IS: the smallest complete consumer of the two containers — `altValues_evals` (the excerpts through the
-##  door: `BLS.content` of each row's resolved Component, since commit 9b) and the development tool's (tree, render) pair (`Main.BasicRenderer.outputs`,
+##  door: `BLS.content` of each row's resolved Component) and the development tool's (tree, render) pair (`Main.BasicRenderer.outputs`,
 ##  loaded through the ONE path at this file's top). DOES: runs goMeta on ONE file; status + diagnostics
 ##  to stderr, the surface to stdout; exit 0 = PROCESS_OK, 1 = a non-OK result, 2 = usage. The `trace`
-##  verb decodes each row's cell_handle with the SHARED `decode_handle` (handle_decoder.jl, §C; R-V04B-102) — the former CLI's
+##  verb decodes each row's cell_handle with the SHARED `decode_handle` (handle_decoder.jl, §C) — the former CLI's
 ##  duplicate decoders (its rd_u16/rd_u32/rd_steps/decode_handle) are gone: ONE copy. REASONING: the
 ##  block runs ONLY when this file is the program (`abspath(PROGRAM_FILE) == @__FILE__`), never when it
-##  is `include`d (the Play's frozen copy, the battery, the site's capture script include this file and
+##  is `include`d (the battery and other consumers include this file and
 ##  see definitions only). Evaluates, never executes.
 #########################################################################################
 const _DT_VERBS = ("tree", "segments", "evals", "render", "trace", "evals-tree", "bls-tree", "comparison")
@@ -1385,27 +1375,27 @@ function _dt_cli_main(args)
         rows = _dt_eval_rows(doc)
         isempty(rows) && println(stderr, "(no evals rows — no LIVE metaLine on any surface)")
         for row in rows
-            cell = replace(row.comp === nothing ? "" : _dt_content(doc, row.comp), '\n' => '⏎')   # a row the tools cannot place (no Component): no piece in the tree — none produced by a shipped path since stage 1 of the Alterants build (d904689; his §D242)
+            cell = replace(row.comp === nothing ? "" : _dt_content(doc, row.comp), '\n' => '⏎')   # a row the tools cannot place (no Component): no piece in the tree — none produced by a shipped path since 0.4.0
             println(rpad(String(row.attr), 14), " => ", rpad(repr(row.value), 40), " (", row.polarity, ")  \"",
                     first(cell, 60), length(cell) > 60 ? "…\"" : "\"")
         end
     elseif cmd == "comparison"
-        ## the comparison form (stage 4; R-V04B-36; §I): the header names the input, the producing commit unknown here (`-`)
+        ## the comparison form (§I): the header names the input, the producing commit unknown here (`-`)
         print(comparisonForm(r; name = basename(path), at = "-"))
     elseif cmd == "evals-tree"
-        ## the owner's print tool, the FULL delivery view (R-DEV-4's option): every Component visible,
+        ## the print tool's FULL delivery view: every Component visible,
         ## absence labelled "(no evals — defaults apply)", every row with its decoded handle
         print_altValues_evals(stdout, r; layout = :tree, include_empty = true,
                               show_handles = true, _name = basename(path))
     elseif cmd == "bls-tree"
-        ## the owner's tree printer (R-DEV-1 :mix): tree rows + typed named-int / settribute dumps
+        ## the tree printer (:mix): tree rows + typed named-int / settribute dumps
         print_BLS_Component_Tree(stdout, r; style = :mix, _name = basename(path))
     elseif cmd == "trace"
         doc = _dt_doc(r; name = basename(path))                 # the rows resolved to their Components (§C); the excerpt through the door
         rows = _dt_eval_rows(doc)
         isempty(rows) && println(stderr, "(no evals rows — no LIVE metaLine on any surface)")
         for row in rows
-            cell = replace(row.comp === nothing ? "" : _dt_content(doc, row.comp), '\n' => '⏎')   # a row the tools cannot place (no Component): no piece in the tree — none produced by a shipped path since stage 1 of the Alterants build (d904689; his §D242)
+            cell = replace(row.comp === nothing ? "" : _dt_content(doc, row.comp), '\n' => '⏎')   # a row the tools cannot place (no Component): no piece in the tree — none produced by a shipped path since 0.4.0
             println(rpad(String(row.attr), 14), " => ", rpad(repr(row.value), 40), " (", row.polarity, ")  \"",
                     first(cell, 60), length(cell) > 60 ? "…\"" : "\"")
             d = decode_handle(row.handle)

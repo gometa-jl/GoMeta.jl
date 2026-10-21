@@ -1,10 +1,10 @@
-## labels.jl — THE LABELS ALTERANT'S OWN FILE (stage 2 of the Alterants build, `plan/2026-10-15-gometa-alterants-build/`; his words:
-## R-V04-20, 2026-08-22 — the whitelist "for some unknown reason hard part of GoMeta Core. That is a MISTAKE and must be rectified.
-## It is NOT a new feature or improvement, it is fixing a bug."; §D202, 2026-10-08 — "CC and/or the user may add labels by simply
+## labels.jl — THE LABELS ALTERANT'S OWN FILE (the creator's words:
+## 2026-08-22 — the whitelist "for some unknown reason hard part of GoMeta Core. That is a MISTAKE and must be rectified.
+## It is NOT a new feature or improvement, it is fixing a bug."; 2026-10-08 — labels are added "by simply
 ## writing it into the code of the Labels Alterant (i.e.: hard coded). … If the label :doc or some other label is required, then
-## simply hard code it into the Alterant for now."; §D179 — "a basic true Labels Alterant first, inside v0.4. Keep it SIMPLE AND
-## ELEGANT."; his selections of 2026-10-16, R-ALT-20 … R-ALT-22). Under `alterants-std/` — the std-Alterants' territory
-## (R-V04B-6 (a): never a Core literal; vocabulary_tests [10] scans `src/` around this directory).
+## simply hard code it into the Alterant for now."; "a basic true Labels Alterant first, inside v0.4. Keep it SIMPLE AND
+## ELEGANT."). Under `alterants-std/` — the std-Alterants' territory
+## (never a Core literal; vocabulary_tests [10] scans `src/` around this directory).
 ##
 ## STAGE A OF THE LABELS LANE (`plan/2026-10-18-gometa-labels-add-remove/`; his decisions R-LAB-6 / R-LAB-9 / R-LAB-12 of 2026-10-18 and
 ## R-LAB-20 … R-LAB-23 of 2026-10-20): THE VOCABULARY STATEMENTS — `:++x` / `:(++, x, y)` ADD names to the Labels Alterant's VOCABULARY,
@@ -17,21 +17,21 @@
 ## write-out reads); the effective set = base ∪ added − removed, in that order.
 ##
 ## IS:   the Labels Alterant's code — THE HARD-CODED LIST `LABELS_VOCABULARY` (the 38 names the plain file `labels_vocabulary.txt`
-##       carried until stage 2, in that file's order, plus `:doc`; a later name is one line here — his §D202; none of the
-##       legacy's other names, R-ALT-21; `public` / `private` out for now, R-ALT-15 (ii)(5)); `base_vocabulary()`; `LabelsVocabulary`
+##       carried before, in that file's order, plus `:doc`; a later name is one line here; none of the
+##       original engine's other names; `public` / `private` out for now); `base_vocabulary()`; `LabelsVocabulary`
 ##       (the run state) and `LabelsInstance` (the per-Component instance: the applied labels and the run's vocabulary); the hook
-##       `declareLabels!`; `setLabels` — the closed check against the RUN's vocabulary (the legacy's scan, GoMetaRetro Alterants.jl
+##       `declareLabels!`; `setLabels` — the closed check against the RUN's vocabulary (the original engine's scan, GoMetaRetro Alterants.jl
 ##       :73–:78 at 47f0521: an applied name outside the set refuses with a message naming the accepted set, sorted for display);
-##       `checkLabels` — the legacy's checker (:87–:99): an unset or unknown name answers false. The `Dict{Symbol,Bool}` methods of the
-##       setter and the checker STAY: a custom registration pairing them with `altConstructor = Dict{Symbol,Bool}` runs as before stage A — WITHOUT the hook: a run state handed to `Dict{Symbol,Bool}(…)` by `_freshInstance` (apply.jl) is Julia's own error.
-## DOES: a run WITHOUT a vocabulary statement evaluates as stage 0 did — every label statement passes the hook's `nothing` path, the
+##       `checkLabels` — the original engine's checker (:87–:99): an unset or unknown name answers false. The `Dict{Symbol,Bool}` methods of the
+##       setter and the checker STAY: a custom registration pairing them with `altConstructor = Dict{Symbol,Bool}` runs without the hook: a run state handed to `Dict{Symbol,Bool}(…)` by `_freshInstance` (apply.jl) is Julia's own error.
+## DOES: a run WITHOUT a vocabulary statement evaluates as before the vocabulary statements — every label statement passes the hook's `nothing` path, the
 ##       instance is built by the zero-argument constructor over the base, the setter's scan is the former one over the same 39 names
-##       in the same order and its message the former one but for its noun ("the Labels Alterant's vocabulary", R-LAB-23).
-## REASONING: the ∈-scan over the vector in declaration order (the C4E-4 law — never `insorted` over an unsorted declaration);
-##       the ZWJ name `⛓️‍💥` is one name (its former `query=false` field was inert data since stage 5's E9).
+##       in the same order and its message the former one but for its noun ("the Labels Alterant's vocabulary").
+## REASONING: the ∈-scan over the vector in declaration order (never `insorted` over an unsorted declaration);
+##       the ZWJ name `⛓️‍💥` is one name (its former `query=false` field was inert data).
 ## PURPOSE: a basic, true Labels Alterant whose vocabulary a file (at `#~0`) or the user level can extend and prune, per run.
 
-"the hard-coded Labels vocabulary — the 38 shipped names in the former plain file's order, plus `:doc` (39 names; R-ALT-21) — the INTERIM base of every run (his §21 of 2026-10-20; stage C loads it from a data file outside the Engine)"
+"the hard-coded Labels vocabulary — the 38 shipped names in the former plain file's order, plus `:doc` (39 names) — the INTERIM base of every run (a later release loads it from a data file outside the Engine)"
 const LABELS_VOCABULARY = Symbol[Symbol(n) for n in (
     "label1",
     "label2",
@@ -205,19 +205,18 @@ function _setLabels!(
 )
 
     if actionName == :(:)
-        ## §4.8 guard (v0.3.1, "fixed WITHIN THE Labels Alterant"): a lone ':'
+        ## The guard (since v0.3.1, "fixed WITHIN THE Labels Alterant"): a lone ':'
         ## (or ':()') reaches this setter with ZERO labels — the vacuous loop below then stored
         ## nothing, minted no evals row, and the author's mistyped label vanished SILENTLY
-        ## (probe m_lone_colon). The Alterant verifies its own input: an empty label list
-        ## refuses loudly. error() (not ArgumentError): chosen when the setter seam — left at stage 5's E6 of
-        ## the v0.4 build, census row 14 — reduced an ArgumentError to its type name; an ArgumentError now
+        ## (measured). The Alterant verifies its own input: an empty label list
+        ## refuses loudly. error() (not ArgumentError): chosen when a former setter seam —
+        ## since removed — reduced an ArgumentError to its type name; an ArgumentError now
         ## propagates with its message; kept as the Alterant's own refusal (the unknown-label mechanics below).
         isempty(labels) && error("GoMeta apply: empty label list — the labels action ':' ",
             "names no label; v0 requires at least one label (e.g. ':label1'); ",
             "see docs/public-api.md §3.4")
-        ## the closed check (the legacy's): the ∈-scan over the vocabulary's order (never `insorted` over declaration
-        ## order — the C4E-4 law); the refusal renders a SORTED display copy of the accepted set — the RUN's effective
-        ## vocabulary since stage A (the noun re-cut on his word, R-LAB-23)
+        ## the closed check (the original engine's): the ∈-scan over the vocabulary's order (never `insorted` over declaration
+        ## order); the refusal renders a SORTED display copy of the accepted set — the RUN's effective vocabulary
         for label ∈ labels
             if label ∈ vocab
                 applied[label] = true
@@ -247,17 +246,15 @@ function checkLabels(
     actionName::Symbol,
     labels::Vararg{Symbol}
 )
-    ## §4.8 twin guard (v0.3.1, with the setLabels guard above): the word-less
+    ## The twin guard (since v0.3.1, with the setLabels guard above): the word-less
     ## label query ':()' reached this checker with ZERO labels and returned a vacuous TRUE —
-    ## a wrong-outcome class (the K5/K6 family). The K2 pin that held the misapply at its old
-    ## fate ("so it cannot drift silently") is flipped by name in the same change. The corpus
-    ## sweep (v0.3.1) found no input depending on the vacuous form.
+    ## a wrong-outcome class; no corpus input depended on the vacuous form (measured at v0.3.1).
     isempty(labels) && error("GoMeta apply: empty label query — ':()' names no label to ",
         "check; v0 requires at least one label (e.g. ':(:label1)'); ",
         "see docs/public-api.md §3.4")
     ## no membership gate, no valve: a label outside the shipped set is simply not set — the query answers false
-    ## (the legacy's checker, GoMetaRetro Alterants.jl :87–:99; the T4 membership refusal and the R-V04-36 write-only
-    ## valve left at stage 5's E9 of the v0.4 build, census row 55)
+    ## (the original engine's checker, GoMetaRetro Alterants.jl :87–:99; the membership refusal of 0.3.2 and a write-only
+    ## valve of the 0.4 development were removed before 0.4.0)
     for label ∈ labels
         if label ∉ keys(crntLabels)
             return false

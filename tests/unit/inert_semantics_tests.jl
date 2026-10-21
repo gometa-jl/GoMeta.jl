@@ -1,4 +1,4 @@
-# inert_semantics_tests.jl — R-INERT-4 + §4.1 + §4.8 witnesses (the v0.3.1 rulings)
+# inert_semantics_tests.jl — the inert-marker witnesses (the v0.3.1 decisions)
 #
 # IS:   the pinned test law of the v0.3.1 inert-marker fix: the DIFFERENTIAL ORACLE — `#~N! <content>` ≡ `#~N` (the
 #       marker is structurally LIVE, only its content is ignored) — plus the bang-first refusal
@@ -6,15 +6,15 @@
 # DOES: [O] table-drives the oracle over every specified shape class (status + evals rows equal;
 #       renders equal after normalizing the metaLine's own bytes by the same truncation);
 #       [R] pins the `#~!N` refusal in all three neighbourhoods at BOTH grains; [P] pins the
-#       named post-fix outcomes (supersession, the cured swallow, SD-1's E-06, t_P6's
-#       still-governable inert line); [G] pins the setLabels (LIST-side) §4.8 guard with the
-#       positive controls — the checkLabels QUERY twin is witnessed by the flipped K2
-#       (condition_interp_tests.jl); [U] pins the unchanged-by-ruling shapes.
-# REASONING: the ≡ law is the RULING itself, so the oracle — not hand-picked expectations —
-#       is the primary witness; hand-pins remain for the outcomes the sitting names, so a
+#       named post-fix outcomes (supersession, the cured swallow, the E-06 refusal, the
+#       still-governable inert line); [G] pins the setLabels (LIST-side) guard with the
+#       positive controls — the checkLabels QUERY twin (an unknown label answers false) is witnessed in
+#       error_message_tests.jl; [U] pins the unchanged shapes.
+# REASONING: the ≡ law is the DECISION itself, so the oracle — not hand-picked expectations —
+#       is the primary witness; hand-pins remain for the named outcomes, so a
 #       regression flips a NAMED test. The bang-first family is the REFUSAL class, excluded
-#       from the oracle by ruling (§4.1).
-# PURPOSE: R-INERT-4 / SD-1 / SD-2 / §4.1 / §4.8 cannot drift silently.
+#       from the oracle by the decision.
+# PURPOSE: the inert-marker law, the bang-first refusal and the Labels guards cannot drift silently.
 
 using Test
 import GoMeta as GM
@@ -36,7 +36,7 @@ _liveempty(text) = join(
     [(m = match(_INERT_LINE_RE, l); m === nothing ? l : m.captures[1]) for l in split(text, '\n')],
     '\n')
 
-@testset "inert semantics (R-INERT-4 + §4.1 + §4.8)" begin
+@testset "inert semantics" begin
 
     @testset "[O] the differential oracle — #~N! content ≡ #~N (per shape class)" begin
         for src in (
@@ -49,15 +49,15 @@ _liveempty(text) = join(
             "#~2 :label1\n#~2! :label2\n# B\n",          # inert non-first
             "#~2 :label1\n#~! foo\n#~2 :label2\n# T\n",  # mid-run continuation (Extended-L10 class)
             "#~2! hide{ isText }\n# A\n\n#~2! hide{ isText }\n# B\n",  # two inert blocks
-            "#~ hide{ isMeta }\n\n#~2! show{ isMeta }\n# T\n",         # t_P6: governable inert
+            "#~ hide{ isMeta }\n\n#~2! show{ isMeta }\n# T\n",         # the governable inert
             "#~2 hide{ isText }\n# A\n\n#~2! :label1\n# B\n\n#~3 :label2\n# C\n",  # deeper re-entry
-            "# T #~0! hide{ isText }\n# U\n",            # inline Segment grain (SD-2)
-            "x = 1 #~2! hide{ isCode }\ny = 2\n",        # inline on Code (SD-2)
+            "# T #~0! hide{ isText }\n# U\n",            # inline Segment grain
+            "x = 1 #~2! hide{ isCode }\ny = 2\n",        # inline on Code
             "#~0! \"Title\"\n# T\n",                     # heading-content inert
             "#~ discard{ isText }\n\n#~2! x\n# B\n",     # a standing discard shield holds through an inert head
             "#~ hide{ isText }\n\n#~2! x\n# B\n",        # the shallow depth-1 rule survives a depth-2 inert head
             "#~2 hide{ isText }\n# A\n#~2! x\n# B\n",    # the glued sandwich (no blanks)
-            "#~ hide{ isText }\n\n#~2! x\n# B\n\n#~2 :label1\n# C\n",  # the owner's own 3-block example
+            "#~ hide{ isText }\n\n#~2! x\n# B\n\n#~2 :label1\n# C\n",  # the creator's own 3-block example
         )
             twin = _liveempty(src)
             r_i, r_l = _is(src), _is(twin)
@@ -65,7 +65,7 @@ _liveempty(text) = join(
             @test GM.readAltValuesEvals(r_i.altValues_evals) == GM.readAltValuesEvals(r_l.altValues_evals)   # the WHOLE rows, handles included (REAL-1 R2 #7; measured equal on all 18 shapes, 2026-09-30) — an inert-path bug assigning right values to WRONG occurrences now reds
             @test _liveempty(String(copy(Main.BasicRenderer.outputs(r_i).render_bytes))) ==
                   _liveempty(String(copy(Main.BasicRenderer.outputs(r_l).render_bytes)))
-            # §4.4: the inert metaLine's OWN bytes travel VERBATIM in the render ('!' and
+            # the inert metaLine's OWN bytes travel VERBATIM in the render ('!' and
             # content included; a standing hide may `## `-prefix the line — substring holds).
             # Asserted RAW, before _liveempty, so the normalizer stays a comparison aid,
             # never a blind spot.
@@ -78,7 +78,7 @@ _liveempty(text) = join(
         end
     end
 
-    @testset "[O2] the oracle holds THROWN too: #~9! ≡ #~9 (both refuse E-06 — SD-1)" begin
+    @testset "[O2] the oracle holds THROWN too: #~9! ≡ #~9 (both refuse E-06)" begin
         m_i = _is_msg("#~9! hide{ isText }\n# T\n")
         m_l = _is_msg("#~9\n# T\n")
         @test m_i !== nothing && m_l !== nothing
@@ -137,7 +137,7 @@ _liveempty(text) = join(
         end
     end
 
-    @testset "[P] named post-fix outcomes (the sitting §8)" begin
+    @testset "[P] named post-fix outcomes" begin
         # supersession: the inert depth-2 sibling retires the earlier depth-2 rule — B SHOWN:
         r = _is("#~2 hide{ isText }\n# A\n\n#~2! hide{ isText }\n# B\n")
         @test [(a, v) for (h, a, v, p) in GM.readAltValuesEvals(r.altValues_evals)] == [(:visib, :hide)]
@@ -151,7 +151,7 @@ _liveempty(text) = join(
         rd = _is("#~ discard{ isText }\n\n#~2! x\n# B\n")
         @test !occursin("# B", String(copy(Main.BasicRenderer.outputs(rd).render_bytes)))
         @test any(a == :visib && v == :discard for (h, a, v, p) in GM.readAltValuesEvals(rd.altValues_evals))
-        # t_P6: the inert metaLine itself stays governable (altValue ON it, never FROM it):
+        # the inert metaLine itself stays governable (altValue ON it, never FROM it):
         r3 = _is("#~ hide{ isMeta }\n\n#~2! show{ isMeta }\n# T\n")
         @test occursin("## #~2! show{ isMeta }", String(copy(Main.BasicRenderer.outputs(r3).render_bytes)))
         @test occursin("\n# T", String(copy(Main.BasicRenderer.outputs(r3).render_bytes)))
@@ -166,13 +166,13 @@ _liveempty(text) = join(
         # positive control — a named label still lands:
         r = _is("#~0 :label1\n# T\n")
         @test any(a == :label_label1 for (h, a, v, p) in GM.readAltValuesEvals(r.altValues_evals))
-        # the inert exemption (R-INERT-4: content never read — no guard can fire):
+        # the inert exemption (content never read — no guard can fire):
         @test _is("#~2! :\n# T\n").status == GM.PROCESS_OK
         # the neighbouring malformation keeps its own family:
         @test occursin("unknown label", something(_is_msg("#~ :(,)\n# T\n"), ""))
     end
 
-    @testset "[U] unchanged-by-ruling shapes stay unchanged" begin
+    @testset "[U] the unchanged shapes stay unchanged" begin
         # a live metaLine glued directly under `#]` is still skipped (the close-marker-headed
         # block keeps :ignoreThisMeta — the unchanged family remainder):
         r = _is("#~2 :label1\n# A\n#]\n#~2 hide{ isText }\n# B\n")

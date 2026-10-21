@@ -1,22 +1,22 @@
-# fallback_order_tests.jl — stage 2's commit 3a of the v0.4 build: THE fallBack LEVEL IS CONSULTED LAST (R-V04B-55 (3); his §196 (iv):
+# fallback_order_tests.jl — THE fallBack LEVEL IS CONSULTED LAST (the creator's words:
 # "it only gets applied if no altValue … has been set / evaluated for any of the preceeding meta level").
 #
 # IS:   three witnesses of the apply's slot order with the fallBack slot OCCUPIED — the way the user feed occupies the user slot
 #       (`updateMetaHierarchy(fallBackMHIdx)` + `absorbMeta`, a minted user-context identity as the statement's carrier); the Engine's
 #       own absorb walk, apply and capture then run over the prepared state through the test's OWN copy of goMeta's File loop
-#       (the Engine's `_walk_and_apply!` factoring, cut for this test at this commit, left at stage 5's E2 of the v0.4 build —
-#       census row 44, against R-V04B-15; the loop below is that body, verbatim).
+#       (the Engine's `_walk_and_apply!` factoring, once cut for this test, was removed —
+#       the loop below is that body, verbatim).
 # DOES: [F1] a Block under a metaLine WITHOUT Visib takes the fallBack value (hide), its row's `decided_by` the fallBack carrier;
 #       [F2] a document `#~ show` WINS over the fallBack `hide` (the fallBack slot last); [F3] the user feed `discard` WINS over
 #       the fallBack `hide` (the user level precedes); in every case the metaBlock itself follows the same order.
-# REASONING: no feed occupies the fallBack slot in the Engine today (the `metaLevel` Alterant and its feeds come after the branch,
-#       R-V04B-55 (4)); the order is nevertheless BUILT now (R-V04B-55 (4): the room), so the test prepares the slot itself.
-# PURPOSE: the test-layer commit 3a (the plan v8.1 :62); the consult order MEASURED, never inferred from the code's shape.
+# REASONING: no feed occupies the fallBack slot in the Engine today (the `metaLevel` Alterant and its feeds come later —
+#       the creator's design); the order is nevertheless BUILT now, with room for them, so the test prepares the slot itself.
+# PURPOSE: the consult order MEASURED, never inferred from the code's shape.
 
 using Test
 import GoMeta as GM
 
-@testset "fallBack consult order (stage 2 commit 3a; R-V04B-55 (3))" begin
+@testset "fallBack consult order" begin
     _bytes(s) = Vector{UInt8}(codeunits(s))
     _h(t, c) = GM.key_bytes(GM.occurrence_key(t, c; namespace = :default))
     _rows(st) = st.evals.records
@@ -36,14 +36,14 @@ import GoMeta as GM
             GM.CnS.updateMetaHierarchy(GM.fallBackMHIdx)
             st.meta_context = nothing
             prior = st.user_context
-            st.user_context = GM.UserContext(copy(FALLBACK_CARRIER))   # the context carries its handle alone since commit 9b (R-V04B-43 (1): no copy of the statement's bytes)
+            st.user_context = GM.UserContext(copy(FALLBACK_CARRIER))   # the context carries its handle alone (no copy of the statement's bytes)
             try
                 GM.AbsorbMeta.absorbMeta(SubString(fb))
             finally
                 st.user_context = prior
             end
             st.crnt_idx = prev
-            # the File loop — goMeta's own body, copied verbatim (stage 5's E2): per child Block the absorb walk, the apply and the capture
+            # the File loop — goMeta's own body, copied verbatim: per child Block the absorb walk, the apply and the capture
             crntFileComponent::GM.BLS.File = ps.componentsPDict[GM.BLS.File][1][1]
             local metaEnvInt::Int = GM.BLS.orderedComponentTypesNamedT[:noMetaEnvYet]
             local childComponent::GM.BLS.Block
@@ -103,10 +103,10 @@ import GoMeta as GM
         end
     end
 
-    @testset "[F4] the public path: a user profile with a QUEUED action runs (the defect of commit 2, found by F3, cured here)" begin
-        # since commit 2 the enqueue records the statement's origin; on the user feed that is the user-context handle — read through a type
-        # the absorb module did not import (`UserContext`): every earlier user-profile test fed a heading, which the separate lane of the
-        # time diverted before the enqueue (a fed heading refuses at the read since stage 1 of the Alterants build, §D242)
+    @testset "[F4] the public path: a user profile with a QUEUED action runs" begin
+        # the enqueue records the statement's origin; on the user feed that is the user-context handle — read through a type
+        # the absorb module did not then import (`UserContext`): the earlier user-profile tests fed headings, which the former separate path
+        # diverted before the enqueue (a fed heading refuses at the read)
         r = GM.goMeta(_bytes("#~ :label1\nx = 1\n"); config = GM.GoMetaConfig(; user_mh_profile = "discard"))
         @test r.status === GM.PROCESS_OK
         uc = GM.key_bytes(GM.user_context_key(:default, 1))

@@ -9,8 +9,8 @@
 #     (`NUM_MH_LEVELS = 12`: the file level, the depth window `1..maxDepthMH`, then the user / line /
 #     fallBack levels — the user level is the reserved slot that `GoMetaConfig.user_mh_profile`
 #     seeds; docs/public-api.md §2); `Alterant`; `AlterantRegistry` with
-#     `num_alterants` / `num_alt_actions` (4 alterants / 9 actions since the `ids` action of stage 3 of the Alterants build — 8 from the heading registration until then,
-#     the generic action → settribute write-back table left at stage 5's E12 — census row 45); `MetaHierarchyState`; `AlterantQueue`;
+#     `num_alterants` / `num_alt_actions` (4 alterants / 9 actions since 0.4.0;
+#     a generic action → settribute write-back table was removed); `MetaHierarchyState`; `AlterantQueue`;
 #     `ProcessState`; `GoMetaDelivery`; the `STATE` ScopedValue + `ctx()`; `init_state`;
 #     `snapshot_settribute!`; `get_state`; the v0.4 record SLOTS + the registration LIFECYCLE types.
 # REASONING: every mutable container lives in one per-call `ProcessState`, so two concurrent
@@ -19,45 +19,43 @@
 # Honest edges: `AlterantRegistry`'s `Dict`/`Vector` fields are mutable containers — a PUBLISHED
 #     registry is published, not frozen by type: a mutation through any container (declared record,
 #     derived table or callable identity) BY CONFORMING CODE is DETECTED at the
-#     entry door (`POST_SEAL_MUTATION`, v0.4 T2-bis — the ONE structural deep-egal comparison
+#     entry door (`POST_SEAL_MUTATION` — the ONE structural deep-egal comparison
 #     against the publish-time `_snapshot` baseline, `===`-only leaves, firing at the first
 #     divergent path), never silently effective — accident-grade, within the disclosed bounds
-#     (callable behavior ≠ identity; the snapshot's own members are mutable — the mixed B-2
+#     (callable behavior ≠ identity; the snapshot's own members are mutable — the mixed
 #     residue; the entry check is not a lock; docs/public-api.md §1.2's honest-bound block);
 #     the construction capability is token-gated so no POSITIONAL or accidental construction by
-#     conforming code carries a publish-time snapshot (accident-grade: any loaded module can reach the token — B-2);
+#     conforming code carries a publish-time snapshot (accident-grade: any loaded module can reach the token);
 #     `accum_alt_idxs` must stay sorted
 #     ascending (the apply phase's `insorted` membership test depends on it). The queue matrices are
-#     sized `SLOT_CAPACITY × num_slots` as the per-slot upper bound (8 — the named capacity, DECOUPLED from the registered count, 9, since stage 3 of the Alterants build, R-ALT-31; the pages'
-#     "7" was stale since the heading action's registration); a further action meets GoMeta's own message "GoMeta absorb: more than 8
-#     actions in one meta-hierarchy slot …" BEFORE the enqueue write (the slot bound in src/absorb/absorb_meta.jl — stage 5's s5c29;
-#     his Decision 3 of 2026-10-08, OWNER-WORDS §358 — in the session's reading, not his words: a fixed size, raised by hand when an example needs it; between E7 — census row 41,
-#     where the v0.2 capacity guard left — and s5c29 a further action met Julia's own BoundsError; tests/unit/slot_overflow_tests.jl pins
+#     sized `SLOT_CAPACITY × num_slots` as the per-slot upper bound (8 — the named capacity, DECOUPLED from the registered count, 9); a further action meets GoMeta's own message "GoMeta absorb: more than 8
+#     actions in one meta-hierarchy slot …" BEFORE the enqueue write (the slot bound in src/absorb/absorb_meta.jl — the creator's
+#     decision: a fixed size, raised by hand when an example needs it; for a while within the 0.4 development,
+#     after the v0.2 capacity guard's removal, a further action met Julia's own BoundsError; tests/unit/slot_overflow_tests.jl pins
 #     the boundary and the ninth).
 # PURPOSE: a reentrant, reset-safe, eval-compatible per-call state + the typed public surface.
 
 using Base.ScopedValues
 
 # --- the condition's carried type + the meta-hierarchy level layout ----------------------------------------
-## A `{…}` condition is carried as Julia's own `Expr` since stage 5's E13 of the v0.4 build (census row 1 — his order §319,
-## R-V04B-106 (2); his §D174): the absorb seam re-writes the GoMeta-specific parts of the body to Julia text, `Meta.parse` reads it
+## A `{…}` condition is carried as Julia's own `Expr` since 0.4.0 (the creator's design): the absorb seam re-writes the GoMeta-specific parts of the body to Julia text, `Meta.parse` reads it
 ## once (src/absorb/absorb_meta.jl, `parseConditions`), and Julia evaluates the stored `Expr` at apply (src/alterants/apply.jl) —
-## as his legacy did (GoMetaRetro AbsorbMeta.jl :270, goMetaAddOns.jl :37). At E13 the closed interpreter's `ConditionAST`, the
-## opt-in marker `FullEvalCondition` with its handler seam and the alias `ConditionT` left with the interpreter (E13).
+## as the original engine did (GoMetaRetro AbsorbMeta.jl :270, goMetaAddOns.jl :37). The closed interpreter's `ConditionAST`, the
+## opt-in marker `FullEvalCondition` with its handler seam and the alias `ConditionT` were removed with the interpreter.
 
 "The unified meta-hierarchy level count (`= maxDepthMH + 3 = fallBackMHIdx`): the file level, the
 authorable depth window, and the user / line / fallBack levels — 12 at v0. The level formerly named 'default'
-is `fallBack` since stage 2's commit 3 (his word, R-V04B-55 (3)): the word 'default' is the Alterant's declared VALUE."
+is `fallBack` (the creator's word): the word 'default' is the Alterant's declared VALUE."
 const NUM_MH_LEVELS = 12
 
 "The per-slot CAPACITY of the alterant queue — the number of actions one meta-hierarchy slot holds: 8, a NAMED CONSTANT, DECOUPLED
-from the registered action count since stage 3 of the Alterants build (his word of 2026-10-17, R-ALT-31; the registered count is 9
-with the `ids` action). His word behind it: his Decision 3 of 2026-10-08 (OWNER-WORDS §358) — the slot limit is the matrix size he chose to start with,
-increased by hand (hard coded) if 8 proves too small; and his approval of 2026-10-15 (the documentation lane's OWNER-WORDS §D247, his
-letter (a) on the session's option) — the size raised by hand when an example asks. Until this stage the size was the registered action
-count (`num_alt_actions(registry)`, as his legacy's `numAltActions` sized its queue tensor — GoMetaRetro src/CnS.jl :135–:136): a sizing
-of the code, not a sentence of his. A further action in a slot meets the absorb's refusal (absorb_meta.jl: \"more than 8
-actions in one meta-hierarchy slot\"); the slower overflow buffer is a later design (V05-14)."
+from the registered action count (the creator's decision; the registered count is 9
+with the `ids` action) — the slot limit is the matrix size he chose to start with,
+increased by hand (hard coded) if 8 proves too small — the size raised by hand when an example asks.
+Before, the size was the registered action
+count (`num_alt_actions(registry)`, as the original engine's `numAltActions` sized its queue tensor — GoMetaRetro src/CnS.jl :135–:136): a sizing
+of the code, not the creator's sentence. A further action in a slot meets the absorb's refusal (absorb_meta.jl: \"more than 8
+actions in one meta-hierarchy slot\"); the slower overflow buffer is a later design."
 const SLOT_CAPACITY = 8
 
 const maxDepthMH = length(BLS.depthLevelsMH)   # 9 — `depthLevelsMH` incl. `:depth0`
@@ -65,31 +63,29 @@ const maxDepthMH = length(BLS.depthLevelsMH)   # 9 — `depthLevelsMH` incl. `:d
 
 "The meta-hierarchy index layout: the file level, the depth window `1..maxDepthMH`,
 then the user / line / fallBack levels (`fallBackMHIdx == NUM_MH_LEVELS`) — the fallBack level is consulted LAST by
-the apply (R-V04B-55 (3); his §196 (iv)); today no feed occupies it (the `metaLevel` Alterant comes after the branch)."
+the apply (the creator's rule); today no feed occupies it (the `metaLevel` Alterant is a later version's)."
 const fileMHIdx    = 1
 const userMHIdx    = maxDepthMH + 1   # 10
 const lineMHIdx    = maxDepthMH + 2   # 11
-const fallBackMHIdx = maxDepthMH + 3   # 12 == NUM_MH_LEVELS — the fallBack level (R-V04B-55 (3)), consulted LAST by the apply
+const fallBackMHIdx = maxDepthMH + 3   # 12 == NUM_MH_LEVELS — the fallBack level, consulted LAST by the apply
 
-# --- the v0.4 registration-record SLOTS (the Stage-A T1 schema extension) ---------------------------
-# IS: the DECLARED data slots the v0.4 record carries (the architecture chapter's sec 2.a, slots
-#     (1)–(3) of its ten): the per-action settribute mapping (left at stage 5's E12 — census row 45) · the capture declaration · the presence-typed
+# --- the v0.4 registration-record SLOTS ---------------------------------------------------
+# IS: the DECLARED data slots the v0.4 record carries (slots
+#     (1)–(3) of a ten-slot design): the per-action settribute mapping (removed within the 0.4 development) · the capture declaration · the presence-typed
 #     explicit default. The other seven — the render-plane data, the constraint rows, the contributed condition
 #     atoms, the identity/contract/requires, the sugar rows, the schema-versioned provenance group and the RESERVED
-#     permissions manifest — left at stage 5's E10 of the v0.4 build (census rows 24 and 29; his §317 mark, R-V04B-105).
-#     He had approved those slots at the architecture sittings of 2026-08-24 (R-V04-35, the record-carried payload's vehicle;
-#     R-V04-37 SEC-4, the Rung-1 activation); his later mark removes them — the difference between his earlier and later
-#     words resolved by the later word, stated here, not silently. His R-V04-27 (verbatim) put permission levels and hash
-#     checks LATER; his §120: a basic framework BEFORE HARDENING; his §18 (ii): no unnecessary clutter.
+#     permissions manifest — were removed within the 0.4 development.
+#     The creator's later decision removed them: permission levels and hash
+#     checks come LATER; a basic framework BEFORE HARDENING; no unnecessary clutter.
 # DOES: defines the slot types with their closed enum sets; every slot is NOTHING/EMPTY-defaulted (the
-#     v0.3.2 positional constructors that admitted old records left at stage 5's E11 of the v0.4 build —
-#     census row 65, R-V04B-61; nothing is silently defaulted to a VALUE — absence stays mechanically distinguishable
-#     from every declared value, the G-DEF disjointness law).
-# REASONING: the engine's three measured clean planes (apply, interpreter, absorb dispatch) are
+#     v0.3.2 positional constructors that admitted old records were removed within the 0.4 development;
+#     nothing is silently defaulted to a VALUE — absence stays mechanically distinguishable
+#     from every declared value, the disjointness law).
+# REASONING: the engine's measured clean planes (apply, absorb dispatch) are
 #     registry-DATA-driven; the dirty planes (capture, defaults, render, diagnostics) were
-#     hard-coded per Alterant. Moving what those planes need INTO the record as data is the cure's
+#     hard-coded per Alterant. Moving what those planes need INTO the record as data is the
 #     substrate: Core keeps schema knowledge, never a particular Alterant's content. Both slots are consumed:
-#     the capture declaration by the capture walk (T5), the default by the answer function (stage 2's commit 3).
+#     the capture declaration by the capture walk, the default by the answer function.
 # PURPOSE: one record, extended never replaced, that a registration can declare completely.
 
 ## Slot (2): the capture declaration — HOW an Alterant's applied value becomes evals rows.
@@ -99,42 +95,42 @@ const fallBackMHIdx = maxDepthMH + 3   # 12 == NUM_MH_LEVELS — the fallBack le
 IS: the declared capture row of an Alterant — slot (2) of its registration record: HOW the Alterant's applied
 value becomes evals rows.
 
-DOES: The declared capture row (CONSUMED by the capture walk since v0.4 T5 — the registration-driven re-home of the
+DOES: The declared capture row (CONSUMED by the capture walk since 0.4.0 — the registration-driven re-home of the
 retired alt-name ladder): `attr_scheme` ∈ `(:per_key, :single, :per_field, :per_entry)` = how attr names mint
 (`<stem>_<key>` per Dict entry · one `<stem>` row for a NamedElements-shaped single evals row · `<stem>_<field>` per
 non-default numeric field · one row per entry `(text, level)` of a Heading-shaped store — `<stem>_<level>`, a repeat at
 the same level `<stem>_<level>_<k>`, the text the value); `attr_stem` = the declared attr name stem (`nothing` ⇒ the
 derived fallback `lowercase(String(altName))`, `_capture_stem` below — the shipped four DECLARE theirs explicitly). The
 walk reads the store's shape from the record's own `altConstructor`. EVERY Alterant's rows are minted by the one walk
-`captureEvals!` at the two apply sites — the Heading's too since stage 1 of the Alterants build (his §D241: the same
+`captureEvals!` at the two apply sites — the Heading's too (the creator's decision: the same
 process as any other Alterant; the former `mode_gate` field, its closed set, the mode-gate laws and the `:per_occurrence`
-presence scheme of the separate delivery left with it — his R-ALT-12). A PLAIN 2-field struct — NO inner constructor that
+presence scheme of the separate delivery were removed with it). A PLAIN 2-field struct — NO inner constructor that
 changes the positional signature (the domain copier rebuilds slot structs POSITIONALLY over all fields at the exact concrete
 type, src/alterants/registry.jl) — with ONE outer one-positional method, the row's own keyword-default form.
 
-REASONING: the capture walk is registration-driven (v0.4 T5) — never an alt-name ladder — and the struct is plain
+REASONING: the capture walk is registration-driven — never an alt-name ladder — and the struct is plain
 (no inner constructor) because the domain copier rebuilds slot structs positionally.
 
 PURPOSE: the row `captureEvals!` reads to mint an Alterant's evals rows.
 """
 struct CaptureDecl
     attr_scheme::Symbol
-    attr_stem::Union{Nothing,Symbol}    # v0.4 T5 (additive; LAST — the positional law)
+    attr_stem::Union{Nothing,Symbol}    # additive; LAST — the positional law
 end
 CaptureDecl(attr_scheme::Symbol; attr_stem::Union{Nothing,Symbol} = nothing) =
     CaptureDecl(attr_scheme, attr_stem)
 "The attr-name stem a plugin's rows mint under: the declared `attr_stem`, or the derived fallback `lowercase(String(altName))` —
-ONE derivation for the capture walk, the answer function and the scan (stage 5's E5: the four copies folded)."
+ONE derivation for the capture walk, the answer function and the scan (four former copies folded)."
 _capture_stem(p) = p.capture.attr_stem === nothing ? Symbol(lowercase(String(p.altName))) : p.capture.attr_stem
 
-## Slot (3): the presence-typed explicit default — undeclared is a TYPE, never a sentinel value. Since stage 2's
-## commit 3 the slot is the ALTERANT's (one default per Alterant, declared as data — R-V04B-51 (1)–(2); R-V04B-55 (1));
-## the per-action slot of T1 GAVE WAY at commit 3-ii (a clean cut, R-V04B-61).
+## Slot (3): the presence-typed explicit default — undeclared is a TYPE, never a sentinel value. The
+## slot is the ALTERANT's (one default per Alterant, declared as data);
+## an earlier per-action slot GAVE WAY to it (a clean cut).
 "The explicit-default slot's abstract root: `NoDefault()` (undeclared) | `Declared(v)`."
 abstract type DefaultSlot end
-"The UNDECLARED default — mechanically distinct from every declared value (the G-DEF disjointness law)."
+"The UNDECLARED default — mechanically distinct from every declared value (the disjointness law)."
 struct NoDefault <: DefaultSlot end
-"A DECLARED default value — an Alterant's since stage 2's commit 3 (R-V04B-51 (1)); `value` is the Alterant's own datum, Core never interprets it."
+"A DECLARED default value — an Alterant's; `value` is the Alterant's own datum, Core never interprets it."
 struct Declared{T} <: DefaultSlot
     value::T
 end
@@ -144,28 +140,30 @@ end
     Alterant
 
 IS: the registration record of ONE Alterant — the inventory unit the registry holds for `Labels` / `Visib` / `Id` / `Heading` and for
-    any Alterant an Extension registers through the lifecycle (docs/public-api.md §1.2). His legacy's `struct PlugIn` (R-V04B-5;
-    GoMetaRetro `src/Alterants.jl`) carries the name `Alterant` since v0.4 — his words of 2026-07-28 (U5 OQ-149): he prefers NOT to
-    call the record 'PlugIn' anymore, the name clashing with another kind of PlugIn he has in mind (R-V04B-5); the public alias
-    `PlugIn` LEFT at stage 5's E14 of the v0.4 build (R-V04B-62 — a clean cut under R-V04B-61; the register row in docs/public-api.md
-    §6). The FIELD NAMES are his legacy's and stay.
+    any Alterant an Extension registers through the lifecycle (docs/public-api.md §1.2). The original engine's `struct PlugIn`
+    (GoMetaRetro `src/Alterants.jl`) carries the name `Alterant` since v0.4 — the creator prefers NOT to
+    call the record 'PlugIn' anymore, the name clashing with another kind of PlugIn he has in mind; the public alias
+    `PlugIn` was REMOVED before 0.4.0 (a clean cut; its row in docs/public-api.md
+    §6). The FIELD NAMES are the original engine's and stay.
 DOES: carries the Alterant's name (`altName`); its set-mode (`setMode` — `:accumulate`: the inheritance backtrack COLLECTS every
     applicable value · `:mutExclusive`: the backtrack stops at the FIRST applicable value · `:mutExclusivePerField`: the `Id`
     compound — the per-FIELD first-wins semantics its name promises are DEFERRED (the registry's note: the mode sits in neither
     set-mode table by design); at v0.4 the nearest statement sets the compound as a WHOLE (an unset field is not inherited from an
-    outer slot) and within one slot the LAST row of a field wins (MEASURED at stage 2's commit 7, `tests/authored/006_id_compound.toml`,
-    a draft put to the owner; card 8 "next"; the CrossReview set REAL-1 R1 #1 — the contract narrowed, no Engine change) ·
+    outer slot) and within one slot the LAST row of a field wins (MEASURED; `tests/authored/006_id_compound.toml`,
+    a draft awaiting the creator's decision — the contract narrowed, no Engine change) ·
     `:localOnly`: the value applies ONLY at the Component the statement is applied to — queued like every action, decided by the
-    apply loop's one rule for this mode (apply.jl), every other Component passing over it; the Heading's, his set mode of 2026-08-02);
+    apply loop's one rule for this mode (apply.jl), every other Component passing over it; the Heading's, the creator's set mode);
     the alterant-instance constructor type (`altConstructor`); the setter and the query getter (`setAltInstance`,
     `getAltInstance` — the getter `nothing` for an Alterant that answers no query); the precedence tuple (`precedencesTuple`, always
     `nothing` at v0; sized by `NUM_MH_LEVELS`, the unified meta-hierarchy level count); the Alterant's ONE declared default value
-    (`default` — `NoDefault()` | `Declared(v)`; R-V04B-51 (1)–(2), R-V04B-55: Visib's is `:show`; delivered by the answer function
-    with the source "default"; stage 2's commit 3); and the capture declaration (`capture` — `nothing` | a `CaptureDecl`; v0.4 T5:
-    the row that makes the Alterant's applied state mint evals rows); and the read-time hook (`onRead` — `nothing` | a function `(run, mhIdx, actionName, args, hasCondition) -> nothing | run′`, called by `absorbMeta` for the Alterant's statements with arguments before the slot bound; stage A of the Labels lane, R-LAB-20). The keyword form below defaults every optional slot;
+    (`default` — `NoDefault()` | `Declared(v)`: Visib's is `:show`; delivered by the answer function
+    with the source "default"); and the capture declaration (`capture` — `nothing` | a `CaptureDecl`:
+    the row that makes the Alterant's applied state mint evals rows); and the read-time hook (`onRead` — `nothing` | a function
+    `(run, mhIdx, actionName, args, hasCondition) -> nothing | run′`, called by `absorbMeta` for the Alterant's statements with
+    arguments before the slot bound). The keyword form below defaults every optional slot;
     `build_default_registry` builds the four shipped records.
-REASONING: one immutable record per Alterant, declared as DATA and read by the apply plane through the registry's derived tables — his
-    legacy's form (one record per Alterant, registered as data); no fixed-size array inside it.
+REASONING: one immutable record per Alterant, declared as DATA and read by the apply plane through the registry's derived tables — the original
+    engine's form (one record per Alterant, registered as data); no fixed-size array inside it.
 PURPOSE: the unit of the Alterant inventory — what `register!` accepts and what the registry's tables are derived from.
 """
 struct Alterant
@@ -175,11 +173,11 @@ struct Alterant
     setAltInstance::Function
     getAltInstance::Union{Nothing,Function}
     precedencesTuple::Union{Nothing,NTuple{NUM_MH_LEVELS,Symbol}}
-    default::DefaultSlot                           # slot (3) at the ALTERANT: its ONE declared default value (R-V04B-51 (1)–(2);
-                                                   #   R-V04B-55 (1)) — `NoDefault()` undeclared | `Declared(v)`; stage 2's commit 3;
-                                                   #   delivered by the answer function with the source "default" (R-V04B-55 (2)) —
-                                                   #   Visib declares `:show` (R-V04B-51 (2)); Labels `Symbol[]`, Heading `nothing`, Id the zero compound — his word of 2026-10-02, R-V04B-92, PROVISIONAL (the values may change once used on real examples)
-    # --- the capture declaration (v0.4 T5; the seven other declared slots of T1 left at stage 5's E10 of the v0.4 build) ---
+    default::DefaultSlot                           # slot (3) at the ALTERANT: its ONE declared default value —
+                                                   #   `NoDefault()` undeclared | `Declared(v)`;
+                                                   #   delivered by the answer function with the source "default" —
+                                                   #   Visib declares `:show`; Labels `Symbol[]`, Heading `nothing`, Id the zero compound — the creator's decision, PROVISIONAL (the values may change once used on real examples)
+    # --- the capture declaration (the seven other declared slots of an earlier design were removed) ---
     capture::Union{Nothing,CaptureDecl}            # slot (2): the capture declaration
     onRead::Union{Nothing,Function}                # stage A of the Labels lane (R-LAB-20): THE READ-TIME HOOK — `nothing` for every Alterant
                                                    #   but one that declares it; called by `absorbMeta` for the Alterant's statements WITH
@@ -206,21 +204,21 @@ DOES: carries the action `name`, the owning `plugin` index (`Int8` — the Alter
 `register!` checks) and the CAPABILITIES: `accepts_string_slot` — 0 = no String literal slot; N = the accepting
 literal-slot position, retiring the former name literals at the absorb seams — and the `validate` slot (Alterant-owned
 handover validation; `nothing` when absent). The enqueue seam reads both from the record for EVERY action: a String
-argument in any position but the declared one refuses (`_string_slot_check`, since s5c29; the register's PB-7), and the declared
-`validate` runs AT THE READ on the String text of that slot (`absorbMeta`, src/absorb/absorb_meta.jl — since stage 1 of the
-Alterants build, when the Heading's separate path left; the shipped actions but `head` declare none).
-The shipped records: `:` for Labels; `hide` / `show` / `discard` for Visib; `cell` / `parent` / `file` / `ids` for Id (`ids` since stage 3 of the Alterants build); `head`
+argument in any position but the declared one refuses (`_string_slot_check`), and the declared
+`validate` runs AT THE READ on the String text of that slot (`absorbMeta`, src/absorb/absorb_meta.jl — one seam for every action since
+the Heading's separate path was removed; the shipped actions but `head` declare none).
+The shipped records: `:` for Labels; `hide` / `show` / `discard` for Visib; `cell` / `parent` / `file` / `ids` for Id; `head`
 for the Heading — the one record with a String slot (`accepts_string_slot = 1`) and a validator. The declared
-`settribute` write-back key left the record at stage 5's E12 of the v0.4 build (census row 45 — his §317 mark and his
-§319 order; his legacy wrote the Visib flag into the Component directly (its GoMeta.jl :103–:110), and v0.4 writes
-nothing back since stage 3's commit 4: the Engine's answer is `evaluatedAltValue`). The per-overload rows
-(`ActionOverload`) left the record at stage 5's E11 of the v0.4 build with the `spelling` tag, the `sugar_candidacy`
-grant register and the reserved `keyed_slot` (census row 16 — his §317 mark; his legacy registered an action by its
+`settribute` write-back key was removed from the record within the 0.4 development (the
+original engine wrote the Visib flag into the Component directly (its GoMeta.jl :103–:110), and v0.4 writes
+nothing back: the Engine's answer is `evaluatedAltValue`). The per-overload rows
+(`ActionOverload`) were removed from the record with the `spelling` tag, the `sugar_candidacy`
+grant register and the reserved `keyed_slot` (the original engine registered an action by its
 name and let Julia dispatch do the rest): the setter's methods ARE the action's forms. The v0.3.2 positional
-constructor left with them (census row 65, R-V04B-61 — clean cuts, no leftovers of an older version); the keyword
+constructor was removed with them (clean cuts, no leftovers of an older version); the keyword
 form below is the one form.
 
-REASONING: an action is registered by its name and its owner — his legacy registered by name and let Julia dispatch do
+REASONING: an action is registered by its name and its Alterant — the original engine registered by name and let Julia dispatch do
 the rest; what the absorb seam must know beyond the name — the String slot, the validator — rides the record as data,
 never as a name literal in the seam.
 
@@ -232,9 +230,9 @@ struct ActionSpec
     plugin::Int8
     accepts_string_slot::Int
     validate::Union{Nothing,Function}
-    # (the v0.4 T1 slot (1), the per-action settribute write-back key, left at stage 5's E12 of the v0.4 build — census row 45)
+    # (a former slot (1), the per-action settribute write-back key, was removed within the 0.4 development)
 end
-"The keyword form of the per-action record — the one form since stage 5's E11 of the v0.4 build (census rows 16 and 65)."
+"The keyword form of the per-action record — the one form."
 ActionSpec(; name::Symbol, plugin::Int8, accepts_string_slot::Int = 0, validate = nothing) =
     ActionSpec(name, plugin, accepts_string_slot, validate)
 
@@ -245,11 +243,11 @@ IS: the construction capability of `AlterantRegistry` (never `public`), held by 
 value is the first argument of the type's ONE inner constructor.
 
 DOES: its presence as the first argument suppresses the generated all-fields constructor: no positional form carries a
-publish-time snapshot (the ruling's word "seal" names the snapshot MECHANISM, T2BIS-DESIGN §12; the fingerprint field
-left at stage 5's E13). Its two callers under `src/`: `publish` (src/alterants/registry.jl — the snapshot taken) and
+publish-time snapshot (the word "seal" names the snapshot MECHANISM; a former fingerprint field
+was removed). Its two callers under `src/`: `publish` (src/alterants/registry.jl — the snapshot taken) and
 the gated positional route below (the snapshot `nothing`). An ACCIDENT-grade guard: Julia has no access control, so
 any loaded module can call `GoMeta._SealToken()`; such a caller sits outside the trust model (the security frame's
-bound B-2). See the constructor's note.
+bound). See the constructor's note.
 
 REASONING: the guard removes the construction classes CONFORMING code produces by accident — a positional or
 all-fields call carrying a snapshot — and claims nothing against a module that reaches for the token.
@@ -262,13 +260,13 @@ struct _SealToken end
 """
     _SNAPSHOT_FIELDS
 
-IS: the tuple of the nine registry field names the T2-bis snapshot door walks (T2BIS-DESIGN §1): the declared record
-(`plugins`, `action_specs`) + the seven derived tables (eight before stage 5's E12 — census row 45).
+IS: the tuple of the nine registry field names the snapshot door walks: the declared record
+(`plugins`, `action_specs`) + the seven derived tables.
 
 DOES: names the fields `publish` copies a second time into the `_snapshot` baseline (a `NamedTuple` over this tuple,
 src/alterants/registry.jl) and the fields `_registry_door_check` compares, one by one, against that baseline at the
-`goMeta` entry. The published `seal` fingerprint string left the tuple at stage 5's E13 (census row 6 — the
-fingerprint's one consumer, the grammar profile, left with it; the door never read the value, it compares the fields
+`goMeta` entry. A published `seal` fingerprint string was removed from the tuple (the
+fingerprint's one consumer, the grammar profile, went with it; the door never read the value, it compares the fields
 below). The `_snapshot` field itself is NEVER walked (no recursion into the baseline).
 
 REASONING: one field-name tuple is the single source for the snapshot's construction and the door's comparison, so
@@ -303,27 +301,27 @@ DOES: holds the fields below (declaration-order indices: `labels=1, Visib=2, id=
   every route — `build_default_registry` reaches it through `publish`.
 - `action_specs` — the DECLARED registration record: one `ActionSpec` per registered action, DECLARATION order (the
   parallel derived tables above stay the hot-path lookups; the record is the authority — the author's statement since
-  stage 5's E4); `spec_index` — action name → index into `action_specs`.
-- `_snapshot` — the T2-bis baseline (R-V04B-4 (c+)): a deep domain-copy of the nine `_SNAPSHOT_FIELDS` values taken
-  at publish (ten before stage 5's E13 — the seal field left with the fingerprint, census row 6; eleven before E12 —
-  census row 45); `nothing` on an unpublished value; the underscore is deliberate — an integrity baseline is not a
+  0.4.0); `spec_index` — action name → index into `action_specs`.
+- `_snapshot` — the baseline: a deep domain-copy of the nine `_SNAPSHOT_FIELDS` values taken
+  at publish (a former seal field and the settribute table were removed before 0.4.0);
+  `nothing` on an unpublished value; the underscore is deliberate — an integrity baseline is not a
   plain member of a package-public struct.
-- (the generic action → settribute write-back table of v0.4 T1 left at stage 5's E12 of the v0.4 build — census row
-  45; it had read by nothing since stage 3's commit 4.)
+- (a generic action → settribute write-back table was removed within the 0.4 development;
+  it had been read by nothing since the write-back's removal.)
 
 The ONE constructor is token-gated (`_SealToken`): the seven derived tables enter BY NAME as ONE `NamedTuple` argument,
 destructured by field name there — the one reviewed destructuring site, so the two same-typed groups
 (`action_index` / `alt_index`; `action_to_plugin` / `accum_alt_idxs` / `mutex_alt_idxs`) cannot be swapped by a
-caller (T2BIS-DESIGN §5). The `goMeta` door (`_registry_door_check`) refuses an unpublished value (`REG_UNPUBLISHED`)
+caller. The `goMeta` door (`_registry_door_check`) refuses an unpublished value (`REG_UNPUBLISHED`)
 and compares the live fields against `_snapshot` by the ONE structural deep-egal walk (`===`-only leaves), firing
-`POST_SEAL_MUTATION` at the first divergent path. The counts: `num_alterants` / `num_alt_actions` (4 / 9 since the `ids` action of stage 3 of the Alterants build; 4 / 8 since the
+`POST_SEAL_MUTATION` at the first divergent path. The counts: `num_alterants` / `num_alt_actions` (4 / 9 since 0.4.0; 4 / 8 since the
 heading registration).
 
 REASONING: `DEFAULT_REGISTRY` is read-only after construction: its `Dict`/`Vector` fields are mutable
 containers, and mutating any of them post-construction breaks the determinism guarantee. A mutation through any
 container by CONFORMING code is DETECTED at the entry door, never silently effective — accident-grade, within the
 disclosed bounds (a callable's behaviour is not pinned by its identity; the snapshot's own members are mutable — the
-B-2 residue, T2BIS-DESIGN §11; the entry check is not a lock).
+disclosed residue; the entry check is not a lock).
 
 PURPOSE: the alterant inventory every run reads from `ProcessState.registry` (`init_state`), the vocabulary the
 condition rewrite reads (`queryable_action`), and the published value an Extension extends through
@@ -337,34 +335,33 @@ struct AlterantRegistry
     alt_index::Dict{Symbol,Int8}
     accum_alt_idxs::Vector{Int8}
     mutex_alt_idxs::Vector{Int8}
-    # v0.2 registration build: the DECLARED registration record — one ActionSpec per
+    # The DECLARED registration record (since v0.2) — one ActionSpec per
     # registered action, DECLARATION order (the parallel derived tables above stay
-    # the hot-path lookups; the record is the authority — the author's statement since stage 5's E4).
+    # the hot-path lookups; the record is the authority — the author's statement).
     # `spec_index`: action name → index into `action_specs`.
     action_specs::Vector{ActionSpec}
     spec_index::Dict{Symbol,Int}
-    # v0.4 T2-bis (R-V04B-4 (c+)) — THE SNAPSHOT BASELINE: a deep domain-copy of the nine (ten before stage 5's E13 — the seal
-    # field left with the fingerprint, census row 6; eleven before stage 5's E12 — census row 45)
+    # THE SNAPSHOT BASELINE: a deep domain-copy of the nine
     # `_SNAPSHOT_FIELDS` values taken at publish (leaves — callables/Types/Symbols/Strings/
     # VersionNumbers/numbers — carried by reference; containers rebuilt at their exact concrete
     # types). The door compares the live fields against it by the ONE structural deep-egal walk
     # (`===`-only leaves) and fires `POST_SEAL_MUTATION` at the first divergent path — replacing
     # the retired seal re-mint + derived-table re-derivation + callable-identity compare
     # (accident-grade integrity, never security-grade; the entry check is not a lock; the
-    # snapshot's own members are mutable — the B-2 residue, T2BIS-DESIGN §11). `nothing` on
+    # snapshot's own members are mutable — the disclosed residue). `nothing` on
     # unsealed values; the underscore is deliberate — an integrity baseline is not a plain
     # member of a package-public struct.
     _snapshot::Union{Nothing,NamedTuple}
-    # THE ONE CONSTRUCTOR, token-gated. What the token IS and IS NOT (cure batch 2, the honest
+    # THE ONE CONSTRUCTOR, token-gated. What the token IS and IS NOT (the honest
     # bound): it removes the generated all-fields constructor so no POSITIONAL or ACCIDENTAL
     # construction can carry a snapshot — the route-U and mutation classes conforming code produces.
     # It is NOT an unforgeable capability: Julia has no access control, `GoMeta._SealToken()` is
     # callable by any loaded code, and a caller who reaches for it can
     # construct an unvalidated published value — that caller is a loaded module with full process
-    # authority, OUTSIDE the trust model by the security frame's bound B-2 ("no in-process
+    # authority, OUTSIDE the trust model by the security frame's bound ("no in-process
     # arrangement in Julia constrains a loaded module"). Every integrity claim of this type is
     # accident-grade: coded refusal of post-seal mutation by CONFORMING code, never security-grade.
-    # T2-bis FORM (T2BIS-DESIGN §5): the seven derived tables (eight before stage 5's E12) enter BY NAME as ONE NamedTuple
+    # THE FORM: the seven derived tables enter BY NAME as ONE NamedTuple
     # argument, destructured by field name HERE — the one reviewed destructuring site. No
     # hand-written table binding exists at any snapshot-carrying call site, so the two
     # same-typed groups (`action_index`/`alt_index`; `action_to_plugin`/`accum_alt_idxs`/
@@ -381,20 +378,20 @@ end
     AlterantRegistry(plugins, sorted_alt_actions, action_to_plugin, action_index, alt_index,
                      accum_alt_idxs, mutex_alt_idxs, action_specs, spec_index)
 
-IS: ROUTE U — the positional construction of a registry from hand-built tables — GATED at v0.4.0 (the route-U cure:
-every public construction route runs the remaining checks; removal = v0.5).
+IS: ROUTE U — the positional construction of a registry from hand-built tables — GATED at v0.4.0 (every public
+construction route runs the remaining checks; removal = v0.5).
 
 DOES: runs the remaining checks over `(plugins, action_specs)` (`_validate_registration`) AND derives the tables from
 the declarations (`_derive_tables`); the hand-built derived tables must equal the derived ones — each of the seven
 compared by `==` — else a `REG_DERIVED_TABLES` diagnostic is collected ALONGSIDE the others (full collection); any
 error-severity defect throws `RegistrationRefused` with EVERY collected diagnostic. A `_derive_tables` failure always
 co-occurs with an error diagnostic, thrown first; were that ever false, the route refuses coded with its own
-`REG_DERIVED_TABLES` row rather than reaching the token form (T2-bis §15 (8)). A conforming construction yields an
+`REG_DERIVED_TABLES` row rather than reaching the token form. A conforming construction yields an
 UNPUBLISHED registry (`_snapshot === nothing`) whose tables are the DERIVED objects (`==`-equal to the caller's,
 distinct identity — recorded, not silent; no pin reads their identity) — the `goMeta` door refuses it coded, naming
-the sanctioned path (`RegistryBuilder → validate → publish`); route U therefore dies at the entry too (R-V04-34's
+the sanctioned path (`RegistryBuilder → validate → publish`); route U therefore dies at the entry too (the
 STRICT door). No positional form accepts a snapshot: for conforming callers, published values come from `publish`
-(the honest bound: the token form is reachable by any loaded module — accident-grade, B-2).
+(the honest bound: the token form is reachable by any loaded module — accident-grade).
 
 REASONING: a hand-built table can disagree with the declared record; deriving the tables from the record alone and
 refusing on any difference keeps the record the authority, and the missing snapshot keeps the value out of `goMeta`.
@@ -423,7 +420,7 @@ function AlterantRegistry(plugins::Vector{Alterant}, sorted_alt_actions::Vector{
                 "build via RegistryBuilder → validate → publish)"))
     end
     any(d -> d.severity === :error, diags) && throw(RegistrationRefused(diags))
-    # T2-bis (§15 (8)): `derived === nothing` is unreachable here — a `_derive_tables` failure
+    # `derived === nothing` is unreachable here — a `_derive_tables` failure
     # always co-occurs with an error diagnostic, thrown above. Were the invariant ever false,
     # route U refuses coded before the token form rather than passing `t === nothing`.
     derived === nothing && throw(RegistrationRefused([Diagnostic(:REG_DERIVED_TABLES, :error,
@@ -433,10 +430,10 @@ function AlterantRegistry(plugins::Vector{Alterant}, sorted_alt_actions::Vector{
     # distinct identity — recorded, not silent; no pin reads their identity)
     return AlterantRegistry(_SealToken(), plugins, action_specs, derived, nothing)
 end
-"The number of registered alterants (4 since CH-3 step 9; 3 before the heading registration)."
+"The number of registered alterants (4 since the heading registration; 3 before it)."
 num_alterants(r::AlterantRegistry) = length(r.plugins)
 
-# --- the v0.4 registration LIFECYCLE types (T2): Builder → validated → PUBLISHED ------------------
+# --- the v0.4 registration LIFECYCLE types: Builder → validated → PUBLISHED ------------------
 """
     RegistryBuilder()
 
@@ -450,7 +447,7 @@ overflow (`REG_SLOT_EXHAUSTED`); every other check is DEFERRED to `validate(buil
 coded diagnostics (full collection before the one terminal outcome, never throwing), and `publish(builder)` refuses
 on any error, else DEEP-copies every container into a SEALED — published, the snapshot taken — `AlterantRegistry`
 (the sanctioned route to a sealed value; `next_plugin_index(builder)` gives the index the next record must name).
-`default_registry_builder()` returns the four shipped Alterants with their nine action records (eight before the `ids` action of stage 3 of the Alterants build) in one
+`default_registry_builder()` returns the four shipped Alterants with their nine action records in one
 (src/alterants/registry.jl); `RegistryBuilder(published)` preloads one from a published value.
 
 REASONING: declaring is mutable and checking is deferred so that a whole record is collected before one terminal
@@ -494,8 +491,8 @@ IS: a builder PRELOADED with a published registry's declarations — the documen
 DOES: copies `plugins` and `action_specs` by the domain copier `_domain_copy` (`_copy_published_records`,
 src/alterants/registry.jl — one memo across both fields): nothing mutable shared with the published value; leaves
 carried by reference; `deepcopy` is never dispatched. This is the ONE route that meets UNVALIDATED values (the input
-may carry a post-publication cycle, an out-of-domain value, or a position-rule offense), so the copy is CONTAINED
-(T2BIS-DESIGN §3 route 2): a cycle, an outside-domain value, or a `Function`/record struct outside its lawful position
+may carry a post-publication cycle, an out-of-domain value, or a position-rule offense), so the copy is CONTAINED:
+a cycle, an outside-domain value, or a `Function`/record struct outside its lawful position
 converts to a coded `RegistrationRefused` (`REG_PROTOCOL`) whose message names the offending type and the path — as
 do the copier's two path-less classes (a user method thrown at a Dict rebuild; an undefined container element); any
 other exception is rethrown (`_route2_refuse`). No internal exception and no unbounded recursion leaves this public
@@ -515,10 +512,10 @@ IS: the append of one Alterant registration record + ITS action records to a bui
 
 DOES: the plugin takes the next declaration-order index `i` (`length(builder.plugins) + 1`), and every supplied
 `ActionSpec` MUST name `plugin == i` — a record naming another index would pass validation against that other
-Alterant's setter and leave the appended one silently actionless (cure batch 1), so the mismatch refuses HERE,
+Alterant's setter and leave the appended one silently actionless, so the mismatch refuses HERE,
 loudly, as `REG_PROTOCOL` (the message lists the offending action names); the Int8 slot pool refuses
-`REG_SLOT_EXHAUSTED` at the 128th PLUGIN append AND when the appended action records would exceed 127 ACTIONS
-(cure batch 2). The pool checks run before the index check; each refusal is a `RegistrationRefused` carrying one
+`REG_SLOT_EXHAUSTED` at the 128th PLUGIN append AND when the appended action records would exceed 127 ACTIONS.
+The pool checks run before the index check; each refusal is a `RegistrationRefused` carrying one
 diagnostic whose `context` is the Alterant's `altName`. On success it pushes the record, appends the specs and
 returns the builder; nothing else is checked here — the remaining checks are `validate`'s.
 
@@ -538,7 +535,7 @@ function register!(b::RegistryBuilder, plugin::Alterant, specs::ActionSpec...)
     na > typemax(Int8) && throw(RegistrationRefused([Diagnostic(:REG_SLOT_EXHAUSTED, :error, string(
         "GoMeta registry: register! — appending ", length(specs), " action record(s) with alterant ",
         repr(plugin.altName), " would make ", na, " actions, beyond the slot pool of ",
-        Int(typemax(Int8)), " (the Int8 index space)"), plugin.altName)]))   # (cure batch 2: the ACTION pool too)
+        Int(typemax(Int8)), " (the Int8 index space)"), plugin.altName)]))   # the ACTION pool too
     idx = Int8(n)
     bad = [s.name for s in specs if s.plugin != idx]
     isempty(bad) || throw(RegistrationRefused([Diagnostic(:REG_PROTOCOL, :error, string(
@@ -577,26 +574,26 @@ function Base.showerror(io::IO, e::RegistrationRefused)
         print(io, "\n  [", d.severity, "] ", d.code, " — ", d.message)
     end
 end
-"The number of registered alterant actions (9 since the `ids` action of stage 3 of the Alterants build; 8 since CH-3 step 9; 7 before the heading registration) — not the queue's per-slot capacity, which is `SLOT_CAPACITY` (R-ALT-31)."
+"The number of registered alterant actions (9 since 0.4.0; 8 from the heading registration until then; 7 before it) — not the queue's per-slot capacity, which is `SLOT_CAPACITY`."
 num_alt_actions(r::AlterantRegistry) = length(r.sorted_alt_actions)
 """
     queryable_action(r::AlterantRegistry, key::Symbol) -> Bool
 
-IS: the registry's ONE vocabulary rule for a bare name inside a `{…}` condition (stage 5's E12 of the v0.4 build,
-census row 45): TRUE iff `key` is a registered action of an Alterant that ANSWERS queries (its record declares
+IS: the registry's ONE vocabulary rule for a bare name inside a `{…}` condition:
+TRUE iff `key` is a registered action of an Alterant that ANSWERS queries (its record declares
 `getAltInstance`).
 
 DOES: tests `insorted(key, r.sorted_alt_actions)` and, only then, whether the owning record's `getAltInstance` is
 not `nothing` (the lookup through `action_index` and `action_to_plugin` runs only for a registered name). A
 condition's bare name is a settribute key, or a queryable action, or it meets the usual unknown-key refusal — the
-owner's R-V04B-99 delivered by this one rule (the three Visib names, no longer settribute keys, are the actions of a
+creator's rule delivered by this one function (the three Visib names, no longer settribute keys, are the actions of a
 getter-less Alterant — as are Id's and the Heading's; Labels' `:` is the one queryable action among the shipped
-nine — eight before the `ids` action of stage 3 of the Alterants build). The caller is the rewrite's `_cond_target` (src/absorb/absorb_meta.jl), which spells a queryable action as
+nine). The caller is the rewrite's `_cond_target` (src/absorb/absorb_meta.jl), which spells a queryable action as
 `getAltState(Int8(p), Symbol("key"), …)`.
 
-REASONING: the rule is the registry's, not a condition reader's: it outlived the closed interpreter (left at stage
-5's E13, census row 1) and is the vocabulary test of the rewrite that replaced it (`_rewrite_condition`,
-src/absorb/absorb_meta.jl — where his legacy's reader tested `insorted(key, sortedAltActionsSVec)`).
+REASONING: the rule is the registry's, not a condition reader's: it outlived the closed interpreter (removed within
+the 0.4 development) and is the vocabulary test of the rewrite that replaced it (`_rewrite_condition`,
+src/absorb/absorb_meta.jl — where the original engine's reader tested `insorted(key, sortedAltActionsSVec)`).
 
 PURPOSE: what a bare name in a condition may be, decided from the registration record alone.
 """
@@ -644,11 +641,11 @@ space is deliberately not an arm of this union, so numeric arguments keep their 
 parses them itself) or a `String` (the CONTENT of a well-formed quoted token — `_coerce_arg_token`,
 src/absorb/absorb_meta.jl, the one coercion point). ONE grammar accepts the String kind — the Heading action's TEXT
 slot (`accepts_string_slot = 1`, the quoted-first sugar); every slot a record does not declare refuses a quoted argument
-at `absorbMeta`'s enqueue seam (`_string_slot_check`, since s5c29 — PB-7, the session's default) — each
+at `absorbMeta`'s enqueue seam (`_string_slot_check`) — each
 refusal an `ErrorException` raised by `error` ("GoMeta absorb: string argument not accepted — …"; the file's own
 word for its refusals: without a code, its coded conversion deferred). Dispatch alone cannot hold that law: the built-in
-setters keep an untyped value slot that would parse `cell("7")`. *(This docstring said "NO metaLine grammar accepts
-it yet" — stale since the heading registration; corrected at v0.4 T2 on a CrossReview finding.)*
+setters keep an untyped value slot that would parse `cell("7")`.
+The heading's text slot is the one slot a shipped record declares for a String.
 
 REASONING: the floor is exactly Symbol | String so that every bare token stays the Symbol it always became and a
 quoted token is a String only where a record declares the slot; the integer space is reserved.
@@ -660,8 +657,8 @@ const AlterantArgT = Union{Symbol,String}
 """
     AlterantQueue
 
-IS: the per-call enqueue tensors: `queued` (`2 × SLOT_CAPACITY × num_slots`), `conditions`, `args`, `decided_by` (since stage
-2's commit 2 of the v0.4 build, R-V04B-35 (d)) and `applied_to` (since stage 1 of the Alterants build).
+IS: the per-call enqueue tensors: `queued` (`2 × SLOT_CAPACITY × num_slots`), `conditions`, `args`, `decided_by`
+and `applied_to`.
 
 DOES: `queued[1, row, slot]` holds the declaration-order plugin index and `queued[2, row, slot]` the action index
 (into `sorted_alt_actions`) of the enqueued action; `conditions` carries the condition as Julia's `Expr` (what
@@ -669,22 +666,22 @@ DOES: `queued[1, row, slot]` holds the declaration-order plugin index and `queue
 apply), `nothing` for an action without `{}`; `args` carries tuples over the argument literal floor `AlterantArgT`
 (`Symbol` | `String` — see that type's docstring), `nothing` for no arguments; `decided_by` carries per enqueued
 action the `key_bytes` handle of the Component that STATED it (the carrying Component's handle published at the walk
-handover — the metaBlock a whole-line metaLine forms, the Segment of an inline one, R-V04B-50; on the userMH feed the
+handover — the metaBlock a whole-line metaLine forms, the Segment of an inline one; on the userMH feed the
 minted user-context handle), carried through the apply into the stored row's provenance field; `applied_to` carries per
 enqueued action the `key_bytes` of the Component the statement is APPLIED TO (the walk's `MetaContext.applied`: the metaBlock
-for a metaLine's statement, a comment-split metaLine included — R-V04B-50; the Line with the Segment as the key's origin for
-an inline metaSegment — R-V04B-98; `nothing` on the userMH feed) — the referent of the apply loop's one rule for the set mode
-`localOnly` (his §D241 point 2; R-V04B-101 (1)). All four matrices
+for a metaLine's statement, a comment-split metaLine included; the Line with the Segment as the key's origin for
+an inline metaSegment; `nothing` on the userMH feed) — the referent of the apply loop's one rule for the set mode
+`localOnly`. All four matrices
 are indexed `[row, slot_index]`: dim-1 is the per-slot enqueue ROW counter (`1..count_actions_per_slot[slot]` — the
 sequential order in which actions were absorbed into that slot, NOT a registry action index; the matrices are merely
-SIZED `SLOT_CAPACITY × num_slots` as the per-slot upper bound — 8, decoupled from the registered action count since stage 3 of the Alterants build), dim-2 = slot, parallel to `queued[:, row, slot]`.
+SIZED `SLOT_CAPACITY × num_slots` as the per-slot upper bound — 8, decoupled from the registered action count), dim-2 = slot, parallel to `queued[:, row, slot]`.
 The apply phase MUST index `[row, slot]` consistently (a row/slot transposition would corrupt the queue). Written by
 `absorbMeta` (src/absorb/absorb_meta.jl), read by `detAltValuesForSetOfSlots` (src/alterants/apply.jl), wiped per
 slot by `wipeAltActionSlots`. Sized once by `init_state`.
 
 REASONING: the queue holds the absorbed statements as values — the `Expr`, the tuple, the handle — in source order
 per slot, so the apply can evaluate each condition against the Component it applies to and record which statement
-decided the value (R-V04B-35 (d): provenance MEASURED at the enqueue, never inferred).
+decided the value (provenance MEASURED at the enqueue, never inferred).
 
 PURPOSE: the hand-over from the absorb walk to the apply — what was stated, under which condition, with which
 arguments, by which Component.
@@ -694,25 +691,25 @@ struct AlterantQueue
     conditions::Matrix{Union{Nothing,Expr}}
     args::Matrix{Union{Nothing,Tuple{Vararg{AlterantArgT}}}}
     decided_by::Matrix{Union{Nothing,Vector{UInt8}}}
-    applied_to::Matrix{Union{Nothing,Vector{UInt8}}}   # stage 1 of the Alterants build: the applied Component's key — the referent of the localOnly rule
+    applied_to::Matrix{Union{Nothing,Vector{UInt8}}}   # the applied Component's key — the referent of the localOnly rule
 end
 
 """
     MetaContext
 
-IS: the v0.2 CH-3 context record — {grain, depth, application level, occurrence handle, applied key} — published at the
-walk→absorb handover for the current component (its handle the carrying Component's — R-V04B-50; its applied key the
-Component the statement is applied to — R-V04B-98).
+IS: the context record — {grain, depth, application level, occurrence handle, applied key} — published at the
+walk→absorb handover for the current component (its handle the carrying Component's; its applied key the
+Component the statement is applied to).
 
-DOES: The v0.2 CH-3 context record — **{grain, depth, application level, occurrence handle, applied key}**,
+DOES: The context record — **{grain, depth, application level, occurrence handle, applied key}**,
 derived from the parse and the run's configured namespace (`st.config.namespace` keys the handle —
 nothing else of the configuration enters), published at the walk→absorb handover (`applyAbsorbFn`
 builds it from the component + the post-update MH cursor and sets `st.meta_context`) and
-stored in NO Component (the evaluation-free-tree law). Consumers at this step:
+stored in NO Component (the evaluation-free-tree law). Its consumers:
 the enqueue's two provenance columns (`decided_by` ← `handle`, `applied_to` ← `applied`) and the deriving head form's
 level (the attr-fold: the level rides the attr NAME `head_<level>`; no fabricated rows, no record-schema change; the
 userMH feed NULLS the record before its absorb call — no document line exists there — and a heading fed through that
-surface meets the one refusal of his §D242, its wording his, R-ALT-9). `level` is the
+surface meets the one refusal, its wording the creator's). `level` is the
 application level — the RAW MH-ladder index the walk set for this component (a
 Segment-attached metaLine inherits the metaLine's `lineMHIdx`, so the inheritance
 law holds by construction); the RECORDED level is normalized to ladder−1 — the
@@ -720,8 +717,8 @@ author's own `#~`-digit vocabulary — at the enqueue materialization seam (the 
 level vocabulary; the record itself stays as derived — from the parse and the configured
 namespace, mutated by nothing). `handle` is the carrier's
 serialized occurrence key (`key_bytes`) — every row's DECIDING STATEMENT; `applied` is the key of the
-Component the statement is APPLIED TO (R-V04B-98; stage 5's E1) — the referent of the apply loop's rule for the set mode
-`localOnly` (stage 1 of the Alterants build).
+Component the statement is APPLIED TO — the referent of the apply loop's rule for the set mode
+`localOnly`.
 
 REASONING: derived from the parse and the configured namespace, stored in no Component (the evaluation-free-tree
 law), so a consumer reads a record rather than a mutated BLS Component tree.
@@ -733,12 +730,12 @@ struct MetaContext
     depth::Int               # the component's own MH depth marker — 0 at v0.2: the walk's
                              # handover sites are Line/Segment-grain only (no Block-grain
                              # applyAbsorbFn call site exists), so the Block arm is defensive;
-                             # the field is the record's designed shape (delta-review trued)
+                             # the field is the record's designed shape
     level::Int               # the APPLICATION level — the MH-ladder index at absorb time
     handle::Vector{UInt8}    # the CARRIER's occurrence-key bytes (from the parse and the configured
                              # namespace) — every row's deciding statement
-    applied::Vector{UInt8}   # R-V04B-98 (stage 5's E1; his §309 with his §286 (ii)): the occurrence-key bytes of the Component the
-                             # statement is APPLIED TO — the metaBlock for a metaLine's statement (his §286 (i); R-V04B-50), the LINE
+    applied::Vector{UInt8}   # the occurrence-key bytes of the Component the
+                             # statement is APPLIED TO — the metaBlock for a metaLine's statement, the LINE
                              # for a Code Line's trailing metaSegment, keyed as the apply path keys it (the Line with the Segment as
                              # the key's origin), the metaBlock for the statement Segment of a metaLine split by a trailing comment —
                              # the referent of the localOnly rule (the queue's `applied_to`); differs from `handle` only for an inline metaSegment of a Code Line
@@ -755,9 +752,9 @@ DOES: constructed by the feed routine (`feed_user_mh!`, src/GoMeta.jl) immediate
 RESTORED-to-prior in a `finally` right after (the stack-disciplined bracket); the document-side `meta_context` stays
 `nothing` on the feed. Read at the absorb seam as the enqueued
 action's `decided_by` handle when no document context exists, and as the trigger of the one refusal a heading in the
-profile feed meets (his §D242; the wording his, R-ALT-9: no Component of the file levels to be local to). The fed
-profile's bytes are NOT carried on the record since stage 2's commit 9b (R-V04B-43 (1); the row has no piece in the
-tree — its derived fifth column is empty: R-V04B-43 (4), his word OWNER-WORDS §277, R-V04B-90). Immutable; per-call
+profile feed meets (the wording the creator's: no Component of the file levels to be local to). The fed
+profile's bytes are NOT carried on the record (the row has no piece in the
+tree — its derived fifth column is empty, by the creator's decision). Immutable; per-call
 config inputs only.
 
 REASONING: the feed has no document Component behind it, so its statements need an identity of their own to be
@@ -777,7 +774,7 @@ IS: the per-call, mutable, threaded-via-`ctx()`, NEVER-global engine state of on
 DOES: The per-call, mutable, threaded-via-`ctx()`, NEVER-global engine state. Wraps the parse state,
 the config, the (immutable) registry, the meta-hierarchy + queue sub-states, the transient per-slot
 alterant-instance dict (`working`) with its provenance sibling `working_origin` (per Alterant the handles of the
-statements the apply applied, in application order — R-V04B-35 (d), stage 2's commit 2), the `evals` (the evals rows captured
+statements the apply applied, in application order), the `evals` (the evals rows captured
 before the slot wipe → readAltValuesEvals), the current-settribute `snapshot`,
 the accumulating `diagnostics`, the three mutable meta-hierarchy cursors, and the per-component
 `meta_context` record (see `MetaContext`). Constructed only by `init_state`; delivered per-call via the `STATE` ScopedValue, read through `ctx()`.
@@ -796,7 +793,7 @@ mutable struct ProcessState
     mh::MetaHierarchyState
     queue::AlterantQueue
     working::Dict{Int8,Any}
-    working_origin::Dict{Int8,Vector{Vector{UInt8}}}   # stage 2's commit 2 (R-V04B-35 (d)): per Alterant the handles of the
+    working_origin::Dict{Int8,Vector{Vector{UInt8}}}   # the provenance: per Alterant the handles of the
                                                        # statements the apply APPLIED, in application order; rebuilt with `working`
     evals::EvalStore
     snapshot::BLS.ComponentSettribute
@@ -804,14 +801,14 @@ mutable struct ProcessState
     crnt_depth_idx::Int
     first_parent_idx::Int
     crnt_idx::Int
-    meta_context::Union{Nothing,MetaContext}   # v0.2 CH-3 step 9 (see MetaContext above)
+    meta_context::Union{Nothing,MetaContext}   # the context record (see MetaContext above)
     user_context::Union{Nothing,UserContext}   # the user-context build: non-nothing ONLY
                                                # inside the feed routine's bracket (set
                                                # before its absorb call, restored-to-prior
                                                # in the finally) — never set on the
                                                # document walk; read at the absorb seam as
-                                               # a fed action's `decided_by` handle and as the trigger of the one refusal a `localOnly` statement meets in the feed (no capture reads it since stage 1 of the Alterants build).
-    alt_run::Vector{Any}                       # stage A of the Labels lane (R-LAB-20): ONE cell per registered Alterant — its PER-RUN state,
+                                               # a fed action's `decided_by` handle and as the trigger of the one refusal a `localOnly` statement meets in the feed (no capture reads it).
+    alt_run::Vector{Any}                       # ONE cell per registered Alterant — its PER-RUN state,
                                                # `nothing` at `init_state` and until the Alterant's read-time hook (`onRead`) consumes a statement
                                                # and returns the state; read by the apply's instance constructor (`_freshInstance`) — the
                                                # constructor is given the state where one was minted, called bare otherwise; dies with the call
@@ -822,40 +819,38 @@ end
     GoMetaDelivery(blsComponentTree, altValues_evals, status, diagnostics)
 
 IS: the ONE object a GoMeta run hands back — the delivery of `goMeta(bytes; config, registry)` — with its FOUR public
-parts, read by name (the owner's rulings R-V04B-28 the content,
-R-V04B-29 the shape, R-V04B-30 the name, 2026-09-15/16; docs/public-api.md §1.1, §2):
+parts, read by name (the creator's decisions of 2026-09-15/16 on the content,
+the shape and the name; docs/public-api.md §1.1, §2):
 
 - `blsComponentTree::BLS.ParseState` — the BLS Component tree the run was evaluated over, provided by BLS itself;
   it reaches an Extension as the part `blsComponentTree`, not through any function of the GoMeta Engine; an Extension
-  travels it with BLS's own public functions (R-V04B-29; R-V04B-45; the owner's sentence — R-V04B-75 (8)). FIRST in
-  the field order — his pipeline order (§242; R-V04B-71; his word on row 44, R-V04B-89).
+  travels it with BLS's own public functions (the creator's decision). FIRST in
+  the field order — his pipeline order.
 - `altValues_evals::EvalStore` — the data container of the evaluated Alterant values: one final evals row per
   handle and attribute, as the run recorded them; the reader over it is `readAltValuesEvals`.
 - `status::ProcessStatus` — `PROCESS_OK` (no error-severity diagnostic) or `PROCESS_ERROR` (at least one;
   non-OK ⇒ non-empty diagnostics).
 - `diagnostics::Vector{Diagnostic}` — the run's coded diagnostics: every row the run recorded, `:error` and
-  `:warning` alike; empty when it recorded none (the type admits `:warning` rows, yet none is minted under `src/` since stage 1 of the Alterants build, so a `PROCESS_OK` run's vector is empty (the entry door's fail-closed `PROCESS_ERROR` delivery, `_entryErrorDelivery` in src/GoMeta.jl, carries its `:error` rows) —
+  `:warning` alike; empty when it recorded none (the type admits `:warning` rows, yet none is minted under `src/`, so a `PROCESS_OK` run's vector is empty (the entry door's fail-closed `PROCESS_ERROR` delivery, `_entryErrorDelivery` in src/GoMeta.jl, carries its `:error` rows) —
   `PROCESS_OK` means no `:error` row).
 
 DOES: carries these four and NOTHING internal — the per-call working state (`ProcessState`) never leaves the
-core (R-V04B-28). The parts are plain fields, in his pipeline order (R-V04B-89): `d.blsComponentTree`, `d.altValues_evals`,
+core. The parts are plain fields, in the creator's pipeline order: `d.blsComponentTree`, `d.altValues_evals`,
 `d.status`, `d.diagnostics`. The BLS Component tree is the SAME object the run read (`init_state` keeps the parse state by
-identity; the Engine writes nothing into it since stage 3's commit 4 of the v0.4 build, R-V04B-42 (1)), and it is MUTABLE:
+identity; the Engine writes nothing into it), and it is MUTABLE:
 every reader of one delivery shares that one object — a discipline, not a copy. On a fail-closed run (`PROCESS_ERROR`
-before any parse of that call — a registry refused at the entry door, `REG_UNPUBLISHED` / `POST_SEAL_MUTATION`, the ONE entry refusal since stage 5's E13; an unknown `flavor_tag` throws at `flavor_for` instead, E8) the tree is a container
+before any parse of that call — a registry refused at the entry door, `REG_UNPUBLISHED` / `POST_SEAL_MUTATION`, the ONE entry refusal since 0.4.0; an unknown `flavor_tag` throws at `flavor_for` instead) the tree is a container
 built from EMPTY bytes and the store is empty.
 
-REASONING: his words and his selections — `altValues_evals` and the BLS Component tree are "BY FAR the two MOST
-IMPORTANT DATA CONTAINERS produced during the GoMeta process" (the owner's words, 2026-09-11); it is "NOW VERY
+REASONING: the creator's design — `altValues_evals` and the BLS Component tree are "BY FAR the two MOST
+IMPORTANT DATA CONTAINERS produced during the GoMeta process" (the creator's words, 2026-09-11); it is "NOW VERY
 IMPORTANT to RESTRICT THAT INTERFACE TO A MINIMUM in order to MAXIMIZE OUR FLEXIBILITY IN IMPROVING GoMeta"
-(his words, 2026-09-11); the content: his selection of the label F1 put to him — "altValues_evals, the BLS
-Component tree, the status and the diagnostics; nothing else" (the label's wording the session's) — anchored by
-his own "I meant four parts" (R-V04B-28, 2026-09-15); the shape: his "(iii) stands" (R-V04B-29, 2026-09-16) on
-the label put — "One named object, the four parts public by name, no hand-over function" (its wording the
-session's); the name `GoMetaDelivery` his pick (R-V04B-30, 2026-09-16) and his own typing (2026-09-17),
-"object's names such as 'result' are NOT DESCRIPTIVE" (his words, 2026-09-15). The working state is the
+(his words, 2026-09-11); the content: his decision — altValues_evals, the BLS
+Component tree, the status and the diagnostics, nothing else; the shape his decision —
+one named object, the four parts public by name, no hand-over function; the name `GoMetaDelivery` his
+("object's names such as 'result' are NOT DESCRIPTIVE" — his words). The working state is the
 Engine's own and its shape is not part of the delivered surface, so it is not delivered at all rather than
-delivered and declared unstable (his order of 2026-09-15: "I HAD ENOUGH OF INTERIM. NO MORE.").
+delivered and declared unstable (the creator's decision of 2026-09-15).
 
 PURPOSE: what every Extension, development tool and test consumes from a run — and the reference object of
 v0.4 for the GoMetaRetro line ("The final GoMeta v0.4 must produce a GoMetaDelivery which we can use as a
@@ -864,7 +859,7 @@ reference" — his words, 2026-09-17). The one `Base.show` method prints one lin
 rows.
 """
 struct GoMetaDelivery
-    blsComponentTree::BLS.ParseState     # his pipeline order (R-V04B-89, row 44): the tree first
+    blsComponentTree::BLS.ParseState     # the creator's pipeline order: the tree first
     altValues_evals::EvalStore
     status::ProcessStatus
     diagnostics::Vector{Diagnostic}
@@ -904,9 +899,9 @@ eval'd `getState`/`getAltState` reach `ctx()` with zero change to the generated 
 """
     init_state(parse_state, config, registry) -> ProcessState
 
-IS: the constructor of a FRESH `ProcessState`, sized once per call from `SLOT_CAPACITY` and `NUM_MH_LEVELS` (the registry's action count sized the queue until stage 3 of the Alterants build, R-ALT-31).
+IS: the constructor of a FRESH `ProcessState`, sized once per call from `SLOT_CAPACITY` and `NUM_MH_LEVELS` (the registry's action count sized the queue before 0.4.0).
 
-DOES: Build a FRESH `ProcessState`, sizing every container ONCE from `SLOT_CAPACITY` + `NUM_MH_LEVELS` (the registry is carried, never a size, since stage 3 of the Alterants build). Every
+DOES: Build a FRESH `ProcessState`, sizing every container ONCE from `SLOT_CAPACITY` + `NUM_MH_LEVELS` (the registry is carried, never a size). Every
 per-field init is performed here, so each call is independent — no tensor or cursor carries over:
 `slots = zeros(Int8, NUM_MH_LEVELS)`; the `slot_*`/`count_*` per-slot vectors `fill(false,·)`/`zeros(Int8,·)`;
 `queued = zeros(Int8, 2, nAct, nSlot)`; `conditions`/`args`/`decided_by`/`applied_to` matrices filled with `nothing`; `working` and `working_origin`
@@ -920,7 +915,7 @@ carries over (the reset-safe law).
 PURPOSE: the reset-safe start of every run, the only route to a `ProcessState`.
 """
 function init_state(parse_state::BLS.ParseState, config::GoMetaConfig, registry::AlterantRegistry)
-    n_act  = SLOT_CAPACITY               # the per-slot capacity, 8 — DECOUPLED from num_alt_actions (9 since the `ids` action) at stage 3 of the Alterants build (R-ALT-31); until then the registered count (8 since CH-3 step 9)
+    n_act  = SLOT_CAPACITY               # the per-slot capacity, 8 — DECOUPLED from num_alt_actions (9 since the `ids` action); before 0.4.0 the registered count
     n_slot = NUM_MH_LEVELS               # 12
     mh = MetaHierarchyState(
         zeros(Int8, NUM_MH_LEVELS),      # slots
@@ -932,18 +927,18 @@ function init_state(parse_state::BLS.ParseState, config::GoMetaConfig, registry:
         zeros(Int8, 2, n_act, n_slot),                                                     # queued
         fill!(Matrix{Union{Nothing,Expr}}(undef, n_act, n_slot), nothing),                 # conditions
         fill!(Matrix{Union{Nothing,Tuple{Vararg{AlterantArgT}}}}(undef, n_act, n_slot), nothing),# args
-        fill!(Matrix{Union{Nothing,Vector{UInt8}}}(undef, n_act, n_slot), nothing),               # decided_by (R-V04B-35 (d))
-        fill!(Matrix{Union{Nothing,Vector{UInt8}}}(undef, n_act, n_slot), nothing),               # applied_to (stage 1 of the Alterants build)
+        fill!(Matrix{Union{Nothing,Vector{UInt8}}}(undef, n_act, n_slot), nothing),               # decided_by
+        fill!(Matrix{Union{Nothing,Vector{UInt8}}}(undef, n_act, n_slot), nothing),               # applied_to
     )
     return ProcessState(
         parse_state, config, registry, mh, queue,
         Dict{Int8,Any}(),            # working
-        Dict{Int8,Vector{Vector{UInt8}}}(),   # working_origin (R-V04B-35 (d))
+        Dict{Int8,Vector{Vector{UInt8}}}(),   # working_origin
         EvalStore(),              # evals
         BLS.ComponentSettribute(),   # snapshot — FRESH (array copied-into, not aliased)
         Diagnostic[],                # diagnostics
         fileMHIdx, fileMHIdx, fileMHIdx,   # crnt_depth_idx / first_parent_idx / crnt_idx
-        nothing,                     # meta_context — published per component at the walk handover (step 9)
+        nothing,                     # meta_context — published per component at the walk handover
         nothing,                     # user_context — set only inside the feed routine's bracket
         Any[nothing for _ in 1:num_alterants(registry)],   # alt_run (stage A of the Labels lane): every cell `nothing` until a hook mints one
     )

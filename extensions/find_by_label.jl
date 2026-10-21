@@ -8,7 +8,7 @@
 #   2. asks the Engine, through the BLS Component tree, which Components got label values —
 #      `GoMeta.scanAlterant(delivery, :labels)`, each with its sorted label names — and reads
 #      each piece's text through BLS's door (`GoMeta.BLS.content`); the evals rows themselves
-#      (`GoMeta.readAltValuesEvals`) are counted, not joined (stage 2's re-route, R-V04B-43 (2));
+#      (`GoMeta.readAltValuesEvals`) are counted, not joined;
 #   3. builds a label → pieces index across all files, remembering each piece's visibility;
 #   4. answers a query: which pieces carry the label, in which file, and each piece's resolved
 #      visibility — the Engine's ANSWER (`GoMeta.evaluatedAltValue(delivery, component, :Visib)`: the
@@ -20,17 +20,17 @@
 # Run from the repository root (after `Pkg.instantiate()`):
 #   julia --startup-file=no --project=. extensions/find_by_label.jl            # per-label overview
 #   julia --startup-file=no --project=. extensions/find_by_label.jl label5     # one label, all hits
-#   (the file lives under extensions/ since stage 5 of the v0.4 build — R-V04B-27; run it from the code home's root)
+#   (the file lives under extensions/; run it from the repository's root)
 #
 # The corpus-documented labels are `:label1`..`:label5`; since 0.3.0 the closed whitelist also
-# accepts a fixed pictograph vocabulary, and since stage 2 of the Alterants build `:doc` — the whole list
+# accepts a fixed pictograph vocabulary, and since 0.4.0 `:doc` — the whole list
 # hard-coded in `src/alterants-std/labels.jl` (this driver's index covers the corpus labels).
 # A query outside that set is refused with the accepted list — the engine-side refusal
 # behaviour for out-of-whitelist names is documented in `docs/public-api.md` §3.4.
 
 import GoMeta
 
-const EXAMPLES = joinpath(@__DIR__, "..", "examples", "InFileFolder")   # the file lives under extensions/ (R-V04B-27)
+const EXAMPLES = joinpath(@__DIR__, "..", "examples", "InFileFolder")   # the file lives under extensions/
 const LABELS   = [:label1, :label2, :label3, :label4, :label5]
 
 # one indexed occurrence: the file it came from, the piece's verbatim CONTENT bytes (read
@@ -76,7 +76,7 @@ function index_examples()
             n_skipped += 1
             continue
         end
-        # the pieces that carry labels, THROUGH THE TREE (stage 2's re-route, R-V04B-43 (2)): the Components
+        # the pieces that carry labels, THROUGH THE TREE: the Components
         # that got label values, each with its sorted label names; the piece's text through the door; its
         # visibility the Engine's answer. The hits per file come in tree order (formerly the rows' order).
         tree = result.blsComponentTree

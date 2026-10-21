@@ -1,31 +1,18 @@
-# capture_tests.jl — v0.4 T5: the CAPTURE RE-HOME witnesses (T5-DESIGN v2 §6).
+# capture_tests.jl — the CAPTURE RE-HOME witnesses.
 #
-# IS:   the T5 acceptance rows — the registration-driven walk mints for a CONFORMING
-#       mock (the sadd2 anti-T1 cure), a second Alterant of the set mode `localOnly` through the apply loop beside the
-#       Heading (stage 1 of the Alterants build — the per-plugin flush of the separate lane, the mode-gate laws and the
-#       `:per_occurrence` presence arm left with that lane, his R-ALT-12; the measured consequences pinned at [9] and [11]),
+# IS:   the capture plane's acceptance rows — the registration-driven walk mints for a CONFORMING
+#       mock, a second Alterant of the set mode `localOnly` through the apply loop beside the
+#       Heading (the per-plugin flush of the former separate path, the mode-gate laws and the
+#       `:per_occurrence` presence arm were removed with that path — the creator's decision; the measured consequences pinned at [9] and [11]),
 #       the ctor pair, and the `:per_field` positive fixture the corpus never reaches.
 # DOES: registers mock Alterants through the sanctioned lifecycle (the PROBE-proven
-#       shapes: register! varargs; the record's four-field keyword form since stage 5's E12 — five at E11, census row 16; the settribute key left at E12, census row 45),
+#       shapes: register! varargs; the record's four-field keyword form — the settribute key was removed),
 #       drives them through goMeta, and pins rows + diagnostics.
-# REASONING: PROBE-14's sadd2 measurement — on v0.3.2 a conforming mock registered,
+# REASONING: on v0.3.2 a conforming mock registered,
 #       absorbed, applied PROCESS_OK and minted NO evals row (the 3-name ladder). These
 #       witnesses are the only proof the declaration is now LOAD-BEARING at the capture
 #       plane and the silence classes are coded.
-# PURPOSE: the T5 acceptance rows (Σ = 29 in this file after the crx-t5 cure round:
-#       23 at the T5 commit + [11]'s 6 + the [1] end-to-end algebra drive + the [7]
-#       cross-stem pin − the [7] runtime pair made lifecycle-unreachable by the tier-1
-#       store law; + 4 in record_schema_tests (the T5 3 + the B8 seal pin — the pin left at stage 5's E13 with the seal) —
-#       4749 + 29 + 4 = 4782, every movement declared; at stage 5's E4 of the v0.4 build the 29 here
-#       stand — [9]'s identity and stem-clash arms and [11]'s A6 re-cut to the measured consequences,
-#       one assert each — and record_schema_tests' shape-law testset (6 asserts) left with its subject;
-#       at stage 5's E5 20 stand: the floor, gate and algebra witnesses — [1]'s algebra drive, [2]'s floor assert, [3] whole,
-#       [8]'s field assert, [9]'s instance-type arm, [11]'s Float and keys-less mocks — 9 asserts, left with their subjects,
-#       census rows 33 and 34).
-#       At stage 1 of the Alterants build 19 stand: [6] left (−1), [9]'s coherence arm (−1) and [11]'s A5 and A4/C3 (−2) with the
-#       Heading's separate lane; [7]'s locality pin (+1), [8]'s field-names pin (+1) and [12], the witness of the review's cure A1
-#       (+1), added — every movement declared. After the CrossReview set alt-stage1's cures 20 stand: [7]'s key pin (+1).
-#       At stage 3 of the Alterants build 22 stand: [4b], the `ids` action's `:per_field` rows (+2).
+# PURPOSE: the capture plane's acceptance rows — 22 asserts stand in this file (the witnesses of the removed laws were removed with their subjects).
 
 using Test
 import GoMeta as GM
@@ -35,7 +22,7 @@ import GoMeta as GM
     nset(d::Dict{Symbol,Bool}, a::Symbol, r...) = (d[Symbol("n", length(r))] = true; nothing)   # [12]: records how many arguments the apply handed over
 end
 
-@testset "capture (v0.4 T5)" begin
+@testset "capture" begin
 
     _doc(s) = Vector{UInt8}(codeunits(s))
     function _mockb(; capture = GM.CaptureDecl(:per_key; attr_stem = :zm),
@@ -49,11 +36,11 @@ end
         b
     end
 
-    @testset "[1] sadd2 — the conforming mock MINTS (the anti-T1 cure; three witnesses)" begin
+    @testset "[1] sadd2 — the conforming mock MINTS (three witnesses)" begin
         R = GM.publish(_mockb())
         r = GM.goMeta(_doc("x = 1\n#~ zmark(aa)\n\ny = 2\n"); registry = R)
         rows = GM.readAltValuesEvals(r.altValues_evals)
-        # (the crx-t5 B6 strengthening) the three witnesses are INDEPENDENT: existence+
+        # the three witnesses are INDEPENDENT: existence+
         # uniqueness selects by the stem PREFIX (not the expected attr), the attr is
         # then pinned, then the payload
         zrows = [t for t in rows if startswith(String(t[2]), "zm")]
@@ -62,7 +49,7 @@ end
         @test zrows[1][3] === true && zrows[1][4] === true         # value + polarity faithful
     end
 
-    @testset "[2] no capture row: zero rows, PROCESS_OK (the floor warning left at stage 5's E5)" begin
+    @testset "[2] no capture row: zero rows, PROCESS_OK (the former floor warning removed)" begin
         b = _mockb(; capture = nothing)
         R = GM.publish(b)
         r = GM.goMeta(_doc("x = 1\n#~ zmark(aa)\n\ny = 2\n#~ zmark(bb)\n\nz = 3\n"); registry = R)
@@ -71,7 +58,7 @@ end
     end
 
     @testset "[4] the :per_field POSITIVE fixture (the corpus-inert Id arm)" begin
-        # the pre-T5 ladder bytes for a populated Id, checked-in as a literal:
+        # the earlier ladder bytes for a populated Id, checked-in as a literal:
         # `cell(7)` ⇒ the one row (:id_cell, 7); parent/file (0) ABSENT
         R = GM.publish(GM.default_registry_builder())
         r = GM.goMeta(_doc("x = 1\n#~ cell(7)\n\ny = 2\n"); registry = R)
@@ -81,7 +68,7 @@ end
         @test !any(t -> t[2] === :id_parent || t[2] === :id_file, rows)   # defaulted fields absent
     end
 
-    @testset "[4b] the :per_field arm with the `ids` action — three fields in one statement (stage 3 of the Alterants build; the rows' names and values MEASURED by the lane's oracle I01 / I02 on `#~ ids(…)⏎x = 1`; on THIS document — the metaLine after `x = 1`, the [4] shape — the one recorded Component and its exact row set by the testset's own run)" begin
+    @testset "[4b] the :per_field arm with the `ids` action — three fields in one statement (the rows' names and values MEASURED on `#~ ids(…)⏎x = 1`; on THIS document — the metaLine after `x = 1`, the [4] shape — the one recorded Component and its exact row set by the testset's own run)" begin
         R = GM.publish(GM.default_registry_builder())
         r = GM.goMeta(_doc("x = 1\n#~ ids(1, 2, 3)\n\ny = 2\n"); registry = R)
         idrows = sort([(t[2], t[3]) for t in GM.readAltValuesEvals(r.altValues_evals) if startswith(String(t[2]), "id_")])
@@ -96,12 +83,12 @@ end
               occursin("actions (show/hide/discard) are mutually exclusive per component ", src)
     end
 
-    # ([6] — the ungated `:per_occurrence` presence arm — was RETIRED at stage 1 of the Alterants build with the Heading's separate
-    # lane, on his selection of 2026-10-16 (R-ALT-12): after the move no shipped Alterant used it; a future Alterant declares what it
+    # ([6] — the ungated `:per_occurrence` presence arm — was RETIRED with the Heading's separate
+    # path (the creator's decision of 2026-10-16): after the move no shipped Alterant used it; a future Alterant declares what it
     # needs when it comes.)
 
     @testset "[7] a SECOND Alterant of the set mode `localOnly` beside the Heading — both through the apply loop, each under its own stem" begin
-        # stage 1 of the Alterants build (his §D241 point 2 — the same process for every Alterant; R-V04B-101 (1)): a Heading-shaped
+        # the creator's decision — the same process for every Alterant: a Heading-shaped
         # store registered as a second `localOnly` Alterant with the `:per_entry` scheme is queued, applied by the loop's one rule at
         # the metaBlock and recorded by the one capture walk under ITS stem — beside the shipped Heading's row on the same metaBlock
         b = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
@@ -128,7 +115,7 @@ end
         @test only(t[1] for t in rows if t[2] === :zh_2) == mb7 && only(t[1] for t in rows if t[2] === :head_1) == mb7
     end
 
-    @testset "[8] the CaptureDecl ctor triple (the two-field row since stage 1 of the Alterants build)" begin
+    @testset "[8] the CaptureDecl ctor triple (the two-field row)" begin
         c4 = GM.CaptureDecl(:per_key)
         c5 = GM.CaptureDecl(:per_key, :zz)
         ck = GM.CaptureDecl(:per_key; attr_stem = :zz)
@@ -137,10 +124,10 @@ end
         @test fieldnames(GM.CaptureDecl) == (:attr_scheme, :attr_stem)
     end
 
-    @testset "[9] the stem-overlap collapse (the identity and stem-clash laws left at stage 5's E4; the mode-gate coherence law with the Heading's separate lane at stage 1 of the Alterants build)" begin
-        # a mock declaring the shipped :label stem PUBLISHES since E4; on ONE cell the two plugins' same-attr
+    @testset "[9] the stem-overlap collapse (the identity and stem-clash laws removed; the mode-gate coherence law removed with the Heading's separate path)" begin
+        # a mock declaring the shipped :label stem PUBLISHES; on ONE cell the two plugins' same-attr
         # rows collapse to one `label_label1` row — the silent cross-plugin supersede the stem-clash law refused
-        # (measured: [b]; full structural namespacing is T11's row)
+        # (measured: [b]; full structural namespacing is a later design)
         bc = _mockb(; capture = GM.CaptureDecl(:per_key; attr_stem = :label))
         rc = GM.goMeta(_doc("x = 1\n#~ :label1 zmark(label1)\n\ny = 2\n"); registry = GM.publish(bc))
         @test rc.status === GM.PROCESS_OK &&
@@ -153,10 +140,10 @@ end
         @test any(t -> t[2] === :zmock_aa, GM.readAltValuesEvals(r.altValues_evals))   # lowercase(String(:zmock)) = "zmock"
     end
 
-    @testset "[11] the crx-t5 cure witnesses (re-cut at stage 1 of the Alterants build: the floor warning, the scheme law and the store law left with the Heading's separate lane)" begin
+    @testset "[11] the capture-plane witnesses (the floor warning, the scheme law and the store law removed with the Heading's separate path)" begin
         # (A1) a `localOnly` Alterant with capture === nothing: through the loop it is queued and applied like every action and
-        # MINTS NOTHING — no row, no diagnostic (the capture floor's coded warning left with the lane; a record without a row
-        # mints nothing, as for every Alterant since stage 5's E5)
+        # MINTS NOTHING — no row, no diagnostic (the capture floor's coded warning was removed with the separate path; a record without a row
+        # mints nothing, as for every Alterant)
         b1 = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
         p1 = GM.next_plugin_index(b1)
         GM.register!(b1,
@@ -167,18 +154,18 @@ end
         @test r1.status === GM.PROCESS_OK && isempty(r1.diagnostics) &&
               !any(t -> t[3] == "V", GM.readAltValuesEvals(r1.altValues_evals)) &&
               any(t -> t[2] === :head_1 && t[3] == "T", GM.readAltValuesEvals(r1.altValues_evals))
-        # (A5 — the localOnly scheme law — and A4/C3 — the localOnly store law — were RETIRED at stage 1 of the Alterants build with
-        # the separate lane's flush they guarded: a `localOnly` record declares its scheme like any record, and a store outside
+        # (A5 — the localOnly scheme law — and A4/C3 — the localOnly store law — were RETIRED with
+        # the former separate path's flush they guarded: a `localOnly` record declares its scheme like any record, and a store outside
         # its scheme's shape is Julia's own error at the capture, as for every Alterant.)
-        # (A6; re-cut at stage 5's E4 — the stem-clash law left) :label_x beside the shipped :label family
-        # PUBLISHES; distinct keys mint distinct rows (measured: PROBES-e4-capture-laws [b2] — label_label1 · label_x_aa)
+        # (A6; the stem-clash law removed) :label_x beside the shipped :label family
+        # PUBLISHES; distinct keys mint distinct rows (measured: label_label1 · label_x_aa)
         bp = _mockb(; capture = GM.CaptureDecl(:per_key; attr_stem = :label_x))
         rp = GM.goMeta(_doc("x = 1\n#~ :label1 zmark(aa)\n\ny = 2\n"); registry = GM.publish(bp))
         @test rp.status === GM.PROCESS_OK &&
               sort([t[2] for t in GM.readAltValuesEvals(rp.altValues_evals)]) == [:label_label1, :label_x_aa]
     end
 
-    @testset "[12] the deriving form's level is the set mode `localOnly`'s alone (stage 1 of the Alterants build, the review's cure A1)" begin
+    @testset "[12] the deriving form's level is the set mode `localOnly`'s alone" begin
         # a String-slot action of ANOTHER set mode, stated with ONE quoted argument, is handed that one argument — no placement level
         # appended (the retired separate path's scope); fed through the profile it meets no internal error — the status alone asserts it:
         # over this meta-free document the fed action applies nowhere (no Block attached to meta — userfeed_visib_tests.jl [U3])

@@ -3,15 +3,15 @@
 # IS:   the single source of shared fixtures + helpers for the layers tests/runtests.jl dispatches
 #       (golden · unit). runtests.jl includes this file ONCE, before any layer. The golden layer
 #       (golden_tests.jl) keeps its own manifest reader — it is the byte-parity layer — so this hub
-#       serves the unit layer, and (since stage 2's commit 8) every layer's producer of the five-column annotations form.
+#       serves the unit layer, and every layer's producer of the five-column annotations form.
 # DOES: (1) the corpus loaders corpus_fixtures() / corpus_inputs() — the manifest's
 #       byte_identical partition as (id, input bytes) pairs. (1b) derive_annotations_golden(delivery) — the test-layer
-#       deriver of the reference files' five-column annotations form (derive_annotations.jl; stage 2's commit 8,
-#       R-V04B-43 (3)) — the golden runner's producer and, at commit 9, the unit witnesses'. (2) quiet_io(f) — an
+#       deriver of the reference files' five-column annotations form (derive_annotations.jl)
+#       — the golden runner's producer and the unit witnesses'. (2) quiet_io(f) — an
 #       fd-level redirect of stdout+stderr to /dev/null (Base.devnull has no backing fd, so a plain
 #       redirect_stdout(devnull) misses fd-level output), suppressing the benign, deterministic notices
 #       the vendored BLS parser prints on over-capacity/deep inputs. (3) _sha, the shared sha256 hex helper.
-#       (The fresh-process surface helpers were retired 2026-09-12, R-V04B-24 obligation 13 — see below.)
+#       (The fresh-process surface helpers were retired 2026-09-12 — see below.)
 # REASONING: no test may hold a hardcoded byte or size baseline. Every expected render/tree is obtained
 #       through the tests/golden/MANIFEST.toml indirection, so a golden re-pin touches ONLY the manifest
 #       and the golden files — zero test files.
@@ -42,7 +42,7 @@ corpus_inputs() = [(fx["id"], read(_abs(fx["input_path"]))) for fx in corpus_fix
 
 
 # (The fresh-process surface helpers `surface_shas` / `spawn_fresh` / `warmup_fresh` / `surface_code` were
-# RETIRED on 2026-09-12 with the basic renderer's move — R-V04B-24 obligation 13: zero callers, and a fresh
+# RETIRED on 2026-09-12 with the basic renderer's move: zero callers, and a fresh
 # process would have called the pair without the loader.)
 
 # Run `f()` with stdout + stderr redirected to /dev/null at the fd level, returning f()'s value (the redirect
@@ -63,7 +63,7 @@ function quiet_io(f)
     end
 end
 
-# THE TEST-LAYER DERIVER of the reference files' fifth column (stage 2's commit 8; R-V04B-43 (3)): `derive_annotations_golden(delivery)` —
+# THE TEST-LAYER DERIVER of the reference files' fifth column: `derive_annotations_golden(delivery)` —
 # the five-column annotations form, its fifth column through the BLS Component tree and the door's `BLS.content`, never the Engine's copy.
 include(joinpath(@__DIR__, "derive_annotations.jl"))
 

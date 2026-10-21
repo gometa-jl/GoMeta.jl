@@ -1,19 +1,17 @@
-# answer_tests.jl — stage 2's commit 4 of the v0.4 build: THE ONE ANSWER FUNCTION `evaluatedAltValue` (R-V04B-35 (c); R-V04B-52 (2);
-# R-V04B-55 (2); the plan v8.1 :56).
+# answer_tests.jl — THE ONE ANSWER FUNCTION `evaluatedAltValue`.
 #
 # IS:   ten witnesses ([A1]–[A10]) of the answer's value and SOURCE over small inputs whose rows and deciding handles were MEASURED first
-#       (R4b — the evals-tree printouts and the origin probe banked at receipts/S8-branch/precheck-s2c4/PROBES-* for [A1]–[A9], a testset
-#       naming its own receipt where it differs; [A10] by the Alterants build lane's stage-3 oracle I01–I03 and its
-#       instruments/probe-ids-compound.jl — plan/2026-10-15-gometa-alterants-build/receipts/stage3/).
+#       (the evals-tree printouts and the origin probe for [A1]–[A9], a testset
+#       naming its own measurement where it differs; [A10] by the `ids` action's oracle).
 # DOES: [A1] Visib — the metaBlock's own statement, the attached Block indirect through it, a rowless Line inherits; [A2] Labels —
-#       the SET with one source; [A3] no rows anywhere — the declared default of each built-in Alterant (R-V04B-92), the File `:none`; [A4] a
-#       Segment's statement — its Line OWN (the trailing metaSegment applies directly to it, R-V04B-93), its Segments the Line's
+#       the SET with one source; [A3] no rows anywhere — the declared default of each built-in Alterant, the File `:none`; [A4] a
+#       Segment's statement — its Line OWN (the trailing metaSegment applies directly to it), its Segments the Line's
 #       answer marked indirect, the heading metaBlock own, its rowless Line inherits the heading; [A5] the user feed — `:user` on
 #       the Blocks, the Line and its Segments alike (a Segment answers as its Line answers); [A6] the refusals and the registry keyword; [A7] the
 #       surface (package-public, not exported; the one method); [A8] a custom registry — an undeclared capture stem derived as the walk
 #       derives it, a capture-less Alterant its declared default; [A9] the Id compound — a NamedTuple of the recorded fields, the nearest
 #       statement's compound as a whole; [A10] the `ids` action's compound — the three fields at once, the stated zero absent, the later
-#       single action overwriting a field (stage 3 of the Alterants build).
+#       single action overwriting a field.
 # PURPOSE: the measured consult of the answer's two parts — the value and the source — never inferred from a row's presence.
 
 using Test
@@ -23,7 +21,7 @@ const _AN_BLS = GM.BLS
 _an_bytes(s::String) = Vector{UInt8}(codeunits(s))
 _an_id(c) = _AN_BLS.getElement(c.cmpntNamedInt, :idComponent)
 
-@testset "evaluatedAltValue (stage 2 commit 4; R-V04B-35 (c))" begin
+@testset "evaluatedAltValue" begin
 
     @testset "[A1] Visib: own on the metaBlock; indirect through it on the attached Block; a rowless Line inherits" begin
         r = GM.goMeta(_an_bytes("#~ hide\nx = 1\ny = 2\n")); ps = r.blsComponentTree
@@ -50,25 +48,25 @@ _an_id(c) = _AN_BLS.getElement(c.cmpntNamedInt, :idComponent)
         @test b.via isa _AN_BLS.Block && _an_id(b.via) == _an_id(bs[1])
     end
 
-    @testset "[A3] no rows anywhere: the declared default of each built-in Alterant (R-V04B-92); the File answers nothing" begin
+    @testset "[A3] no rows anywhere: the declared default of each built-in Alterant; the File answers nothing" begin
         r = GM.goMeta(_an_bytes("x = 1\n")); ps = r.blsComponentTree
         @test r.status === GM.PROCESS_OK && isempty(r.altValues_evals.records)
         bs = _AN_BLS.children(ps); @test length(bs) == 1
         a = GM.evaluatedAltValue(r, bs[1], :Visib)
-        @test a.value === :show && a.source === :default && a.via === nothing     # Visib's ONE declared default (R-V04B-51 (2))
+        @test a.value === :show && a.source === :default && a.via === nothing     # Visib's ONE declared default
         b = GM.evaluatedAltValue(r, bs[1], :labels)
-        @test b.value == Symbol[] && b.source === :default && b.via === nothing    # Labels' declared default: the EMPTY SET (R-V04B-92, card C2) — MEASURED, PROBES-rvc2-digest.txt
+        @test b.value == Symbol[] && b.source === :default && b.via === nothing    # Labels' declared default: the EMPTY SET — MEASURED
         hd = GM.evaluatedAltValue(r, bs[1], :heading)
-        @test hd.value === nothing && hd.source === :default && hd.via === nothing  # Heading's declared default: NONE (R-V04B-92)
+        @test hd.value === nothing && hd.source === :default && hd.via === nothing  # Heading's declared default: NONE
         id = GM.evaluatedAltValue(r, bs[1], :id)
-        @test id.value == (cell = Int16(0), parent = Int16(0), file = Int16(0)) && id.source === :default   # Id's declared default: the ZERO compound (R-V04B-92)
+        @test id.value == (cell = Int16(0), parent = Int16(0), file = Int16(0)) && id.source === :default   # Id's declared default: the ZERO compound
         l = GM.evaluatedAltValue(r, _AN_BLS.children(ps, bs[1])[1], :Visib)
         @test l.value === :show && l.source === :default                          # a rowless Line under a rowless Block: the default too
         f = GM.evaluatedAltValue(r, _AN_BLS.root(ps), :Visib)
-        @test f.value === nothing && f.source === :none && f.via === nothing      # the File: NOTHING built (card 6 "next")
+        @test f.value === nothing && f.source === :none && f.via === nothing      # the File: NOTHING built (an open point)
     end
 
-    @testset "[A4] a Segment's statement and a heading: the Line OWN (the trailing metaSegment applies directly to it), the Segment its Line's answer marked indirect (R-V04B-93); the metaBlock's heading own; its Line inherits" begin
+    @testset "[A4] a Segment's statement and a heading: the Line OWN (the trailing metaSegment applies directly to it), the Segment its Line's answer marked indirect; the metaBlock's heading own; its Line inherits" begin
         r = GM.goMeta(_an_bytes("#~ \"Title\"\nx = 1 #~ discard\ny = 2\n")); ps = r.blsComponentTree
         bs = _AN_BLS.children(ps); @test length(bs) == 2
         h = GM.evaluatedAltValue(r, bs[1], :heading)
@@ -76,18 +74,18 @@ _an_id(c) = _AN_BLS.getElement(c.cmpntNamedInt, :idComponent)
         hl = GM.evaluatedAltValue(r, _AN_BLS.children(ps, bs[1])[1], :heading)
         @test hl.value == "Title" && hl.source === :indirect && _an_id(hl.via) == _an_id(bs[1])
         ls = _AN_BLS.children(ps, bs[2]); @test length(ls) == 2
-        l = GM.evaluatedAltValue(r, ls[1], :Visib)                      # "x = 1 #~ discard": the Line-keyed row, decided by Segment #3 — the Line's OWN statement (R-V04B-93: the trailing metaSegment applies directly to its Line)
+        l = GM.evaluatedAltValue(r, ls[1], :Visib)                      # "x = 1 #~ discard": the Line-keyed row, decided by Segment #3 — the Line's OWN statement (the trailing metaSegment applies directly to its Line)
         @test l.value === :discard && l.source === :own && l.via === nothing
         segs = _AN_BLS.children(ps, ls[1]); @test !isempty(segs)
         k = findfirst(s -> _an_id(s) == 3, segs); @test k !== nothing
-        s = GM.evaluatedAltValue(r, segs[k], :Visib)                     # the Segment: no row keyed on itself — its Line's answer marked INDIRECT through the Line (his §288: applied to the metaSegment indirectly through its Line)
+        s = GM.evaluatedAltValue(r, segs[k], :Visib)                     # the Segment: no row keyed on itself — its Line's answer marked INDIRECT through the Line (the creator's words: applied to the metaSegment indirectly through its Line)
         @test s.value === :discard && s.source === :indirect && s.via isa _AN_BLS.Line && _an_id(s.via) == _an_id(ls[1])
         s0 = GM.evaluatedAltValue(r, segs[1], :Visib)                    # the Line's first Segment ("x = 1"): the same — its Line's answer, indirect through the Line
         @test s0.value === :discard && s0.source === :indirect && _an_id(s0.via) == _an_id(ls[1])
         l2 = GM.evaluatedAltValue(r, ls[2], :Visib)                     # "y = 2": neither it nor its Block carries a Visib row
         @test l2.value === :show && l2.source === :default
         n = GM.evaluatedAltValue(r, bs[2], :heading)
-        @test n.value === nothing && n.source === :default       # Heading's declared default: none (R-V04B-92, card C2); the code Block carries no heading
+        @test n.value === nothing && n.source === :default       # Heading's declared default: none; the code Block carries no heading
     end
 
     @testset "[A5] the user feed: the source `:user`" begin
@@ -97,9 +95,9 @@ _an_id(c) = _AN_BLS.getElement(c.cmpntNamedInt, :idComponent)
             a = GM.evaluatedAltValue(r, b, :Visib)
             @test a.value === :show && a.source === :user && a.via === nothing
         end
-        # a Line WITH Segments under the feed (card C24; the decisions seat's F-1): the fed value wins on the Line (:user) and its Segments answer AS
-        # the Line answers — :user, not :indirect through the Line. MEASURED (PROBES-rvc24-user-segment.txt [F1a]): :user on the base and on C2,
-        # :indirect through the Line on C24's first build, :user on the cured tree. ("x = 1" alone has NO Segments — a Segment needs the inline `#~`.)
+        # a Line WITH Segments under the feed: the fed value wins on the Line (:user) and its Segments answer AS
+        # the Line answers — :user, not :indirect through the Line (MEASURED).
+        # ("x = 1" alone has NO Segments — a Segment needs the inline `#~`.)
         r2 = GM.goMeta(_an_bytes("x = 1 #~ discard
 "); config = GM.GoMetaConfig(; user_mh_profile = "show")); ps2 = r2.blsComponentTree
         bs2 = _AN_BLS.children(ps2); @test length(bs2) == 1
@@ -121,7 +119,7 @@ _an_id(c) = _AN_BLS.getElement(c.cmpntNamedInt, :idComponent)
     end
 
     @testset "[A8] a custom registry: an undeclared capture stem derives as the walk derives it; a capture-less Alterant answers its declared default" begin
-        # the seat wf-s10-s2c4-check F-1: the Engine mints a stem-less Alterant's rows under lowercase(altName) and a capture-less Alterant's none
+        # the Engine mints a stem-less Alterant's rows under lowercase(altName) and a capture-less Alterant's none
         _with_capture(p, cap) = GM.Alterant(; altName = p.altName, setMode = p.setMode, altConstructor = p.altConstructor,
             setAltInstance = p.setAltInstance, getAltInstance = p.getAltInstance, precedencesTuple = p.precedencesTuple,
             default = p.default, capture = cap)
@@ -140,11 +138,11 @@ _an_id(c) = _AN_BLS.getElement(c.cmpntNamedInt, :idComponent)
         r2 = GM.goMeta(_an_bytes("#~ hide\nx = 1\n"); registry = R2); @test r2.status === GM.PROCESS_OK
         @test !any(x -> x.attr === :visib, r2.altValues_evals.records)                 # no capture declaration: no Visib rows
         a2 = GM.evaluatedAltValue(r2, _AN_BLS.children(r2.blsComponentTree)[2], :Visib; registry = R2)
-        @test a2.value === :show && a2.source === :default && a2.via === nothing       # the declared default (R-V04B-55 (2))
+        @test a2.value === :show && a2.source === :default && a2.via === nothing       # the declared default
     end
 
     @testset "[A9] the Id compound: a NamedTuple of the recorded fields; the nearest statement's compound as a WHOLE" begin
-        # stage 2's commit 7 (the seat of commit 4, F-8): measured by receipts/S8-branch/precheck-s2c7/PROBES-F_id_two_levels.evals-tree.txt
+        # MEASURED (the evals-tree printout of the two-level Id document)
         r = GM.goMeta(_an_bytes("#~ cell(7) parent(3)\nx = 1\n#~2 cell(9)\ny = 2\n")); ps = r.blsComponentTree
         bs = _AN_BLS.children(ps); @test length(bs) == 4
         a = GM.evaluatedAltValue(r, bs[1], :id); @test a.value == (cell = 7, parent = 3) && a.source === :own
@@ -155,11 +153,11 @@ _an_id(c) = _AN_BLS.getElement(c.cmpntNamedInt, :idComponent)
         za = GM.evaluatedAltValue(z, _AN_BLS.children(z.blsComponentTree)[1], :id); @test za.value == (parent = 5,) && za.source === :own   # a stated zero is not recorded (zero-versus-unset)
     end
 
-    @testset "[A10] the `ids` action — the three fields at once, as the single actions set them (stage 3 of the Alterants build; his §D218 (3), R-ALT-30; MEASURED: the lane's oracle I01–I03; the compound's FORM — the fields in alphabetical order — by instruments/probe-ids-compound.jl)" begin
+    @testset "[A10] the `ids` action — the three fields at once, as the single actions set them (the creator's decision; MEASURED; the compound's FORM — the fields in alphabetical order)" begin
         r = GM.goMeta(_an_bytes("#~ ids(1, 2, 3)\nx = 1\n")); bs = _AN_BLS.children(r.blsComponentTree)
         a = GM.evaluatedAltValue(r, bs[1], :id); @test a.value == (cell = 1, file = 3, parent = 2) && a.source === :own   # the answer's compound names its fields alphabetically (MEASURED)
         b = GM.evaluatedAltValue(r, bs[2], :id); @test b.value == (cell = 1, file = 3, parent = 2) && b.source === :indirect && _an_id(b.via) == _an_id(bs[1])
-        z = GM.goMeta(_an_bytes("#~ ids(0, 5, 2)\nx = 1\n"))                 # I02: the stated zero is not recorded (zero-versus-unset, OQ-15 untouched)
+        z = GM.goMeta(_an_bytes("#~ ids(0, 5, 2)\nx = 1\n"))                 # I02: the stated zero is not recorded (zero-versus-unset — an open point)
         za = GM.evaluatedAltValue(z, _AN_BLS.children(z.blsComponentTree)[1], :id); @test za.value == (file = 2, parent = 5) && za.source === :own
         o = GM.goMeta(_an_bytes("#~ ids(1, 2, 3) cell(7)\nx = 1\n"))           # I03: the later statement overwrites the field, as `cell(1) cell(7)` does
         oa = GM.evaluatedAltValue(o, _AN_BLS.children(o.blsComponentTree)[1], :id); @test oa.value == (cell = 7, file = 3, parent = 2) && oa.source === :own

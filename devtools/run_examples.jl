@@ -1,5 +1,5 @@
 # run_examples.jl — the runnable driver for the GoMeta example corpus (in devtools/ since 2026-09-12,
-#   R-V04B-24 A1: a development tool beside the basic renderer whose render it compares).
+#   a development tool beside the basic renderer whose render it compares).
 #
 # IS:   the corpus driver: it processes every input in examples/InFileFolder/ through GoMeta and
 #       verifies the rendered output against the committed examples/OutFileFolder/ reference files.
@@ -18,7 +18,7 @@
 #   julia --startup-file=no --project=. devtools/run_examples.jl [--out <dir>]
 
 import GoMeta as GM
-include(joinpath(@__DIR__, "load_basic_renderer.jl"))   # the ONE path to the basic renderer (R-V04B-24 obligation 7)
+include(joinpath(@__DIR__, "load_basic_renderer.jl"))   # the ONE path to the basic renderer
 
 const HERE   = normpath(joinpath(@__DIR__, ".."))   # the repository root (this file lives in devtools/)
 const INDIR  = joinpath(HERE, "examples", "InFileFolder")
