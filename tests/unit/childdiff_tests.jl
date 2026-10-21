@@ -1,5 +1,5 @@
-# childdiff_tests.jl — stage 2's commit 6 of the v0.4 build: THE CHILD-DIFFERS SIGNAL `childDiffers` (R-V04B-35 (e); his §37 item 4.2;
-# the plan v8.1 :58), over the inputs whose rows and deciding handles were MEASURED for commit 4 (receipts/S8-branch/precheck-s2c4/PROBES-*).
+# childdiff_tests.jl — THE CHILD-DIFFERS SIGNAL `childDiffers` (the creator's design),
+# over the inputs whose rows and deciding handles were MEASURED for the answer function.
 #
 # IS:   four witnesses: [D1] a rowless Line inheriting its Block's value does NOT differ; a Block differs from the File; [D2] a Line with its
 #       own inline statement differs from its Block, its Segment does not differ from the Line; [D3] a meta-free input — the Lines do not
@@ -12,7 +12,7 @@ const _CD_BLS = GM.BLS
 
 _cd_bytes(s::String) = Vector{UInt8}(codeunits(s))
 
-@testset "childDiffers (stage 2 commit 6; R-V04B-35 (e))" begin
+@testset "childDiffers" begin
 
     @testset "[D1] a rowless Line inheriting its Block's value does not differ; a Block differs from the File" begin
         r = GM.goMeta(_cd_bytes("#~ hide\nx = 1\ny = 2\n")); ps = r.blsComponentTree
@@ -21,7 +21,7 @@ _cd_bytes(s::String) = Vector{UInt8}(codeunits(s))
         @test GM.childDiffers(r, bs[2], :Visib) === true
         ls = _CD_BLS.children(ps, bs[2]); @test length(ls) == 2
         @test all(l -> GM.childDiffers(r, l, :Visib) === false, ls)      # :hide inherited — hidden as PART OF the Block
-        @test GM.childDiffers(r, bs[2], :labels) === true               # Labels' declared default (the empty set, R-V04B-92) against the File's nothing — as Visib's :show does (card C12: a top Block always differs from the File)
+        @test GM.childDiffers(r, bs[2], :labels) === true               # Labels' declared default (the empty set) against the File's nothing — as Visib's :show does (a top Block always differs from the File)
     end
 
     @testset "[D2] a Line's own inline statement differs from its Block; its Segment does not differ from the Line" begin
@@ -40,7 +40,7 @@ _cd_bytes(s::String) = Vector{UInt8}(codeunits(s))
         r = GM.goMeta(_cd_bytes("x = 1\n")); ps = r.blsComponentTree
         bs = _CD_BLS.children(ps); @test length(bs) == 1
         @test GM.childDiffers(r, bs[1], :Visib) === true                 # :show (the declared default) against nothing
-        @test GM.childDiffers(r, bs[1], :labels) === true                # the declared empty set against the File's nothing (R-V04B-92; card C12)
+        @test GM.childDiffers(r, bs[1], :labels) === true                # the declared empty set against the File's nothing
         ls = _CD_BLS.children(ps, bs[1]); @test length(ls) == 1
         @test GM.childDiffers(r, ls[1], :Visib) === false
     end

@@ -3,34 +3,34 @@
 # IS:   the unit witnesses of Builder → validate → PUBLISH, the remaining checks on every public
 #       construction route (the route-U cure; no generated/public positional form accepts a publish-time snapshot —
 #       the token-gated constructor; the token form itself is reachable by loaded code, the
-#       disclosed accident-grade bound; the validation chain of v0.4 T2–T4 left at stage 5's E4 — census
-#       row 3, OWNER-WORDS §317: the domain probe remains — the vocabulary check left at stage 5's E9, the capture
-#       mode-gate laws with the Heading's separate lane at stage 1 of the Alterants build), the coded diagnostics with FULL collection (validate
-#       never throws), atomic domain-copy publication, the T2-bis ONE-check door (the fingerprint `seal` left at stage 5's E13 —
-#       census row 6; the nine `_SNAPSHOT_FIELDS` — ten before E13, eleven before stage 5's E12, census row 45 — compared structurally against the publish-time snapshot —
+#       disclosed accident-grade bound; the former validation chain was removed —
+#       the domain probe remains; the vocabulary check and the
+#       mode-gate laws were removed with the Heading's separate path), the coded diagnostics with FULL collection (validate
+#       never throws), atomic domain-copy publication, the ONE-check door (a former fingerprint `seal` was removed;
+#       the nine `_SNAPSHOT_FIELDS` compared structurally against the publish-time snapshot —
 #       REPRESENTATIVE fields mutated here, not every one; the property file is the proof), the STRICT
 #       published-only door at `goMeta(bytes; registry)` (an unpublished value refuses coded NAMING the
-#       sanctioned path; the internal callable seam that ran the door too left at stage 5's E2), the real freeze gate
+#       sanctioned path; an internal callable seam that ran the door too was removed), the real freeze gate
 #       (`POST_SEAL_MUTATION` on declared, derived, re-ordered, cyclic and callable-identity mutations by
 #       conforming code), `register!`'s binding + pool refusals, the slot encoding's distinctions
 #       (length-prefixed boundaries, concrete numeric types incl. bit-exact floats, vectors vs tuples,
 #       the CLOSED domain — data slots hold concrete data, the refusals witnessed below; the encoder's
-#       one caller since stage 5's E13 is the validate walk's Dict-entry order — the fingerprint it fed left; the
+#       one caller is the validate walk's Dict-entry order — the fingerprint it fed was removed; the
 #       former (iv)/(v) hard-stop classes are CLOSED — docs/public-api.md §1.2), `register!`'s pool refusal + the
 #       stable-message per-call slot-pool guard (the entry-collection testset — config + registry rows in ONE result —
-#       left at stage 5's E13 with the config-time row).
+#       was removed with the config-time row).
 # DOES: builds registries through every route, mutates published values, drives the door, and pins
 #       the codes and the messages' load-bearing substrings.
 # REASONING: the golden layer proves the PUBLISHED default is byte-neutral; only these witnesses prove
 #       the refusals fire, fully, coded, and in deterministic order.
-# PURPOSE: the T2 acceptance rows of the v0.4 build (M-AC-9 registry gates; the door; FM-REG rows).
+# PURPOSE: the registry's acceptance rows (the registry gates; the door; the refusal rows).
 
 using Test
 import GoMeta as GM
 
 _plugin_with_default(p, d) = GM.Alterant(; altName = p.altName, setMode = p.setMode, altConstructor = p.altConstructor,
         setAltInstance = p.setAltInstance, getAltInstance = p.getAltInstance, precedencesTuple = p.precedencesTuple,
-        default = d, capture = p.capture)   # stage 2's commit 3-ii: the declared default is the ALTERANT's — the record `p` with the slot `d`, every other field copied
+        default = d, capture = p.capture)   # the declared default is the ALTERANT's — the record `p` with the slot `d`, every other field copied
 
 @testset "registry_lifecycle (v0.4 T2)" begin
 
@@ -43,14 +43,14 @@ _plugin_with_default(p, d) = GM.Alterant(; altName = p.altName, setMode = p.setM
         @test isempty(GM.validate(b))                       # the shipped record is clean
         R = GM.publish(b)
         D = GM.DEFAULT_REGISTRY
-        @test D._snapshot !== nothing                          # published (the `seal` fingerprint field left at stage 5's E13 — census row 6)
+        @test D._snapshot !== nothing                          # published (the former `seal` fingerprint field was removed)
         @test R._snapshot !== nothing && keys(R._snapshot) == GM._SNAPSHOT_FIELDS
         for f in (:sorted_alt_actions, :action_to_plugin, :action_index, :alt_index,
                   :accum_alt_idxs, :mutex_alt_idxs, :spec_index)
             @test getfield(R, f) == getfield(D, f)
         end
-        @test length(R.plugins) == 4 && length(R.action_specs) == 9   # 9 since the `ids` action of stage 3 of the Alterants build (R-ALT-30; 8 from the heading registration until then — a MEASURED re-pin)
-        @test GM._deep_egal(R.plugins, D.plugins) === nothing && GM._deep_egal(R.action_specs, D.action_specs) === nothing   # the two record vectors structurally equal — the door's own comparator (the seal's whole-record compare left at stage 5's E13, census row 6; MEASURED on the s5c37 scratch: PROBES-s5c37-witness-values_on-0cf389d4.txt [E])
+        @test length(R.plugins) == 4 && length(R.action_specs) == 9   # 9 since the `ids` action (8 from the heading registration until then — a MEASURED re-pin)
+        @test GM._deep_egal(R.plugins, D.plugins) === nothing && GM._deep_egal(R.action_specs, D.action_specs) === nothing   # the two record vectors structurally equal — the door's own comparator (the former seal's whole-record compare was removed; MEASURED)
         # publication COPIES: no container is shared with the builder
         @test R.plugins !== b.plugins && R.action_specs !== b.action_specs
         push!(b.plugins, GM.Alterant(; altName = :zz, setMode = :accumulate, altConstructor = Dict{Symbol,Bool}, setAltInstance = identity))
@@ -67,11 +67,11 @@ _plugin_with_default(p, d) = GM.Alterant(; altName = p.altName, setMode = p.setM
         r = GM.goMeta(Vector{UInt8}(codeunits("x = 1\n#~ hide\n\ny = 2\n")); registry = U)
         @test r.status === GM.PROCESS_ERROR
         @test _codes(r.diagnostics) == [:REG_UNPUBLISHED]
-        @test _errors(r.diagnostics) == [:REG_UNPUBLISHED]                    # [C14h1] card C14 (h), R-V04B-96 (his §306): the refusal's one row is an :error (MEASURED 2026-10-03, receipts/S8-branch/PROBES-c14-pins_cd3ee9d3.txt) — the clause "PROCESS_ERROR ⇒ at least one :error row" (src/state.jl) pinned on the refusal path, where _entryErrorDelivery sets PROCESS_ERROR without reading severity
+        @test _errors(r.diagnostics) == [:REG_UNPUBLISHED]                    # the refusal's one row is an :error (MEASURED 2026-10-03) — the clause "PROCESS_ERROR ⇒ at least one :error row" (src/state.jl) pinned on the refusal path, where _entryErrorDelivery sets PROCESS_ERROR without reading severity
         @test occursin("RegistryBuilder → validate → publish", r.diagnostics[1].message)
         @test isempty(Main.BasicRenderer.outputs(r).render_bytes)           # no parse, no render attempted
-        @test isempty(GM.readAltValuesEvals(r.altValues_evals))                # the delivered part carries no rows on the refusal path (REAL-1 R2 #9; measured 2026-09-30: rows 0)
-        @test isempty(GM.BLS.children(r.blsComponentTree))                     # [C14g2] card C14 (g), R-V04B-96: the refusal delivers a tree built from EMPTY bytes — no Block, read through the door (re-cut from the callable seam's door block, which left with the seam at stage 5's E2; its (g1) "not the injected state" and (h3) rows retired with the injection — goMeta's door refusal is pinned here, [C14h1])
+        @test isempty(GM.readAltValuesEvals(r.altValues_evals))                # the delivered part carries no rows on the refusal path (measured 2026-09-30: rows 0)
+        @test isempty(GM.BLS.children(r.blsComponentTree))                     # the refusal delivers a tree built from EMPTY bytes — no Block, read through the door (the former callable seam's door block was removed with the seam; goMeta's door refusal is pinned here)
         @test !isempty(r.diagnostics)                                          # non-OK ⇒ non-empty diagnostics — the documented contract (src/state.jl; measured: 1, :REG_UNPUBLISHED)
         # route U REFUSES inconsistent hand-built tables (never a silently misrouting registry)
         bad_idx = copy(D.action_index); bad_idx[:hide] = Int8(99)
@@ -99,9 +99,9 @@ _plugin_with_default(p, d) = GM.Alterant(; altName = p.altName, setMode = p.setM
         @test isempty(Main.BasicRenderer.outputs(r1).render_bytes)
         @test isempty(GM.readAltValuesEvals(r1.altValues_evals))               # the delivered part carries no rows on the refusal path (REAL-1 R2 #9; measured: rows 0)
         @test !isempty(r1.diagnostics)                                         # non-OK ⇒ non-empty diagnostics (measured: 1, :POST_SEAL_MUTATION)
-        # (cure batch 1; T2-bis) a mutated DERIVED table — the declared record untouched — is
-        # refused too: every table is a walked snapshot field (the CRX after-T2 breaker's attack on the write-back
-        # table left with that table at stage 5's E12 of the v0.4 build — census row 45; the action index carries the case)
+        # a mutated DERIVED table — the declared record untouched — is
+        # refused too: every table is a walked snapshot field (a former attack on the write-back
+        # table was removed with that table; the action index carries the case)
         R3 = GM.publish(GM.default_registry_builder())
         R3.action_index[:hide] = Int8(3)
         @test _codes(GM._registry_door_check(R3)) == [:POST_SEAL_MUTATION]
@@ -119,8 +119,8 @@ _plugin_with_default(p, d) = GM.Alterant(; altName = p.altName, setMode = p.setM
         p5 = R5.plugins[2]
         R5.plugins[2] = GM.Alterant(; altName = p5.altName, setMode = p5.setMode, altConstructor = p5.altConstructor, setAltInstance = evil, getAltInstance = p5.getAltInstance, precedencesTuple = p5.precedencesTuple, default = p5.default, capture = p5.capture)   # every field the published record's but the setter
         d5 = GM._registry_door_check(R5)
-        @test _codes(d5) == [:POST_SEAL_MUTATION] && d5[1].context == "plugins[2].setAltInstance"   # the setter's === leaf alone (the path MEASURED on the s5c37 scratch at 0cf389d4: PROBES-s5c37-witness-values_on-0cf389d4.txt [J])
-        # (T2-bis — one of the TWO named append-only exceptions, T2BIS-DESIGN §8) the snapshot
+        @test _codes(d5) == [:POST_SEAL_MUTATION] && d5[1].context == "plugins[2].setAltInstance"   # the setter's === leaf alone (the path MEASURED)
+        # (one of the TWO named append-only exceptions) the snapshot
         # BINDING is immutable: a NamedTuple has no `setindex!`, so the baseline binding cannot
         # be rewritten to match the swap through the published value (the snapshot's MEMBERS are
         # mutable — the disclosed §11 residue, deliberately NOT pinned here)
@@ -128,20 +128,20 @@ _plugin_with_default(p, d) = GM.Alterant(; altName = p.altName, setMode = p.setM
         @test_throws MethodError setindex!(R5._snapshot, evil, :plugins)
         # no GENERATED/public positional form accepts a snapshot — the token form exists for the lifecycle
         # and is reachable by loaded code (the disclosed accident-grade bound); the all-fields constructor is gone (the forge
-        # attack: copying DEFAULT_REGISTRY's snapshot onto hand-built tables; the seal-carrying form left with the seal at E13)
+        # attack: copying DEFAULT_REGISTRY's snapshot onto hand-built tables; the seal-carrying form was removed with the seal)
         D = GM.DEFAULT_REGISTRY
         @test_throws MethodError GM.AlterantRegistry(D.plugins, D.sorted_alt_actions, D.action_to_plugin,
             D.action_index, D.alt_index, D.accum_alt_idxs, D.mutex_alt_idxs,
             D.action_specs, D.spec_index, D._snapshot)
-        # the injective slot encoding (cure batch 1): a re-cut vector boundary no longer collides
+        # the injective slot encoding: a re-cut vector boundary no longer collides
         @test GM._slot_text([Symbol("a,b")]) != GM._slot_text([:a, :b])
         @test GM._slot_text(GM.Declared(Symbol[:a, :b])) != GM._slot_text(GM.Declared(Symbol[Symbol("a,b")]))
-        # (cure batch 2) the concrete numeric type and the container kind are part of the value
+        # the concrete numeric type and the container kind are part of the value
         @test GM._slot_text(Int8(1)) != GM._slot_text(Int64(1))
         @test GM._slot_text([:a]) != GM._slot_text((:a,))
         @test GM._slot_text(GM.Declared(Int8(1))) != GM._slot_text(GM.Declared(1))
-        # (cure batch 2) validate is total over a PARAMETRIC (`where`) setter — since stage 5's E4 (the reflection cross-check
-        # left, census row 3) no method signature is read: the setter is a Function leaf in a designated field (registry.jl :1025–:1027)
+        # validate is total over a PARAMETRIC (`where`) setter — since the reflection cross-check
+        # was removed no method signature is read: the setter is a Function leaf in a designated field (registry.jl)
         @eval module _ParamSetter
             paramset(store::T, ::Symbol, x::Symbol) where {T<:AbstractDict} = (store[x] = true; nothing)
         end
@@ -151,8 +151,8 @@ _plugin_with_default(p, d) = GM.Alterant(; altName = p.altName, setMode = p.setM
                      GM.ActionSpec(; name = :pzset, plugin = Int8(5)))
         dp = GM.validate(bp)                                  # must return, not throw
         @test dp isa Vector{GM.Diagnostic}
-        # (the cure-batch-2 broken-record index witness left at stage 5's E4 with the tier-1/tier-2 chain)
-        # (cure batch 2) register! refuses the ACTION pool too
+        # (a former broken-record index witness was removed with the validation chain)
+        # register! refuses the ACTION pool too
         ba = GM.RegistryBuilder()
         many = [GM.ActionSpec(; name = Symbol("act", i), plugin = Int8(1)) for i in 1:128]
         e = try GM.register!(ba, GM.Alterant(; altName = :big, setMode = :accumulate, altConstructor = Dict{Symbol,Bool}, setAltInstance = GM.Alterants.setLabels),
@@ -160,8 +160,8 @@ _plugin_with_default(p, d) = GM.Alterant(; altName = p.altName, setMode = p.setM
         @test e isa GM.RegistrationRefused && _errors(e.diagnostics) == [:REG_SLOT_EXHAUSTED]
         @test isempty(ba.plugins) && isempty(ba.action_specs)
         @test GM.next_plugin_index(ba) == 1 && GM.next_plugin_index(GM.default_registry_builder()) == 5
-        # (cure batch 2; re-cut at stage 5's E4 — the setMode enum check left) route U reports REG_DERIVED_TABLES
-        # ALONGSIDE an independent defect of the domain probe (measured: PROBES-e4-validate_stage1-src-cut [2b])
+        # route U reports REG_DERIVED_TABLES
+        # ALONGSIDE an independent defect of the domain probe (measured)
         D = GM.DEFAULT_REGISTRY
         badp = copy(D.plugins); badp[2] = _plugin_with_default(badp[2], GM.Declared(1:3))
         bad_idx = copy(D.action_index); bad_idx[:hide] = Int8(99)
@@ -170,33 +170,32 @@ _plugin_with_default(p, d) = GM.Alterant(; altName = p.altName, setMode = p.setM
                                     D.action_specs, D.spec_index); nothing catch err; err end
         @test e isa GM.RegistrationRefused
         @test _errors(e.diagnostics) == [:REG_PROTOCOL, :REG_DERIVED_TABLES]
-        # (the cure-batch-2 reflection-order witness left at stage 5's E4 with the reflection cross-check)
-        # (cure batch 2, interim until T7) a PUBLISHED custom registry WITHOUT the built-in Visib RUNS
+        # (a former reflection-order witness was removed with the reflection cross-check)
+        # a PUBLISHED custom registry WITHOUT the built-in Visib RUNS
         bc = GM.RegistryBuilder()
         GM.register!(bc, GM.Alterant(; altName = :bag, setMode = :accumulate, altConstructor = Dict{Symbol,Bool}, setAltInstance = GM.Alterants.setLabels, getAltInstance = GM.Alterants.checkLabels),
                      GM.ActionSpec(; name = Symbol(":"), plugin = Int8(1)))
         Rc = GM.publish(bc)
         rc = GM.goMeta(Vector{UInt8}(codeunits("x = 1\n#~ :label1\n\ny = 2\n")); registry = Rc)
         @test rc.status === GM.PROCESS_OK && !isempty(Main.BasicRenderer.outputs(rc).render_bytes)
-        # (cure batch 3; re-cut at stage 5's E4 — the shadow law left; re-cut again at stage 5's E12 of the v0.4 build,
-        # census row 45 — the write-back key is gone from the record) a re-built Visib record PUBLISHES and runs
+        # (the shadow law and the write-back key were removed from the record) a re-built Visib record PUBLISHES and runs
         bv = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
         h = bv.action_specs[2]
         bv.action_specs[2] = GM.ActionSpec(; name = :hide, plugin = Int8(2))
         Rv = GM.publish(bv)
         @test Rv isa GM.AlterantRegistry
         @test GM.goMeta(Vector{UInt8}(codeunits("x = 1\n#~ hide\n\ny = 2\n")); registry = Rv).status === GM.PROCESS_OK
-        # (cure batch 3) floats fold BIT-EXACTLY: two NaN payloads with different bits differ
+        # floats fold BIT-EXACTLY: two NaN payloads with different bits differ
         nan1 = reinterpret(Float64, 0x7ff8000000000001); nan2 = reinterpret(Float64, 0x7ff8000000000002)
         @test string(nan1) == string(nan2) && GM._slot_text(nan1) != GM._slot_text(nan2)
-        # (cure batch 3) a published container mutated into a CYCLE is refused as a mutation, not a StackOverflow
+        # a published container mutated into a CYCLE is refused as a mutation, not a StackOverflow
         bcy = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
         bcy.plugins[2] = _plugin_with_default(bcy.plugins[2], GM.Declared(Any[]))
         Rcy = GM.publish(bcy)
         v = Rcy.plugins[2].default.value; push!(v, v)
         @test _codes(GM._registry_door_check(Rcy)) == [:POST_SEAL_MUTATION]
-        # (the cure-batch-3 plugin-level/tier-2 witness left at stage 5's E4 with the chain)
-        # (cure batch 4) the encodable domain is CLOSED — composite numbers fold structurally, an
+        # (a former plugin-level witness was removed with the validation chain)
+        # the encodable domain is CLOSED — composite numbers fold structurally, an
         # unknown value type is REFUSED at validation, never folded by a lossy fallback
         @test GM._slot_text(complex(nan1, 0.0)) != GM._slot_text(complex(nan2, 0.0))
         @test GM._slot_text(1//2) != GM._slot_text(2//4 + 0//1 + 1//3)   # structural, not display
@@ -206,7 +205,7 @@ _plugin_with_default(p, d) = GM.Alterant(; altName = p.altName, setMode = p.setM
         du = GM.validate(bu)
         @test :REG_PROTOCOL in _errors(du) && occursin("no canonical encoder", only(filter(x -> x.code === :REG_PROTOCOL, du)).message)
         @test_throws GM.RegistrationRefused GM.publish(bu)
-        # (cure batch 4) a PRE-publication cycle is a validation refusal, never a leaked internal exception
+        # a PRE-publication cycle is a validation refusal, never a leaked internal exception
         bpc = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
         cyc = Any[]; push!(cyc, cyc)
         bpc.plugins[2] = _plugin_with_default(bpc.plugins[2], GM.Declared(cyc))
@@ -214,18 +213,18 @@ _plugin_with_default(p, d) = GM.Alterant(; altName = p.altName, setMode = p.setM
         @test :REG_PROTOCOL in _errors(dpc) && occursin("CYCLIC", only(filter(x -> x.code === :REG_PROTOCOL, dpc)).message)
         e = try GM.publish(bpc); nothing catch err; err end
         @test e isa GM.RegistrationRefused
-        # (cure batch 4) a published Dict mutated into a cycle is refused as a mutation (the Dict encoder is guarded)
+        # a published Dict mutated into a cycle is refused as a mutation (the Dict encoder is guarded)
         bdc = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
         bdc.plugins[2] = _plugin_with_default(bdc.plugins[2], GM.Declared(Dict{Any,Any}(:k => 1)))
         Rdc = GM.publish(bdc)
         dd = Rdc.plugins[2].default.value; dd[:self] = dd
         @test _codes(GM._registry_door_check(Rdc)) == [:POST_SEAL_MUTATION]
-        # (cure batch 4) a DAG (the same container reached twice, no cycle) is NOT reported cyclic
+        # a DAG (the same container reached twice, no cycle) is NOT reported cyclic
         shared = Symbol[:a]
         @test GM._slot_text(Any[shared, shared]) == GM._slot_text(Any[Symbol[:a], Symbol[:a]])
-        # (cure batch 4) dict encoding is canonical over entry text, not `string(key)` order
+        # dict encoding is canonical over entry text, not `string(key)` order
         @test GM._slot_text(Dict{Any,Any}(:x => 1, "x" => 2)) == GM._slot_text(Dict{Any,Any}("x" => 2, :x => 1))
-        # (cure batch 5) DATA SLOTS HOLD DATA: a Function inside a declared value/payload is refused at
+        # DATA SLOTS HOLD DATA: a Function inside a declared value/payload is refused at
         # validation (a same-named swap there was invisible to the retired fingerprint fold); the
         # designated callable fields still encode by name
         @test_throws GM._UnencodableSlot GM._slot_text(GM.Declared(Any[sin]))
@@ -234,16 +233,16 @@ _plugin_with_default(p, d) = GM.Alterant(; altName = p.altName, setMode = p.setM
         bfn.plugins[2] = _plugin_with_default(bfn.plugins[2], GM.Declared(Any[sin]))
         dfn = GM.validate(bfn)
         @test :REG_PROTOCOL in _errors(dfn) && occursin("slot default", only(filter(x -> x.code === :REG_PROTOCOL, dfn)).message)
-        # (cure batch 5) CONCRETE containers only: a range/view is not a Vector — refused, so `1:3` can
+        # CONCRETE containers only: a range/view is not a Vector — refused, so `1:3` can
         # never collide with `[1,2,3]` inside a published value
         @test_throws GM._UnencodableSlot GM._slot_text(1:3)
         @test_throws GM._UnencodableSlot GM._slot_text(view([1, 2, 3], 1:2))
         @test GM._slot_text([1, 2, 3]) isa String
-        # (cure batch 5) type parameters are TYPE-TAGGED values
+        # type parameters are TYPE-TAGGED values
         @test GM._slot_text(Val{Int8(1)}) != GM._slot_text(Val{Int64(1)})
         @test GM._slot_text(Val{:x}) != GM._slot_text(Val{1})
         @test GM._type_text(Tuple{Vararg{Symbol}}) isa String && GM._type_text(Vector{Symbol}) isa String
-        # (cure batch 5) the publish → mutate → DOOR witness of the bit-exact composite encoding (t2r4 A-4:
+        # the publish → mutate → DOOR witness of the bit-exact composite encoding (a review finding:
         # the batch-4 witness only compared two encodings and passed on the pre-batch tree)
         bcx = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
         bcx.plugins[2] = _plugin_with_default(bcx.plugins[2], GM.Declared(Any[complex(nan1, 0.0)]))
@@ -251,33 +250,33 @@ _plugin_with_default(p, d) = GM.Alterant(; altName = p.altName, setMode = p.setM
         @test isempty(GM._registry_door_check(Rcx))
         Rcx.plugins[2].default.value[1] = complex(nan2, 0.0)
         @test _codes(GM._registry_door_check(Rcx)) == [:POST_SEAL_MUTATION]
-        # (cure batch 5) a published value mutated from encodable to UNENCODABLE is a mutation at the door
+        # a published value mutated from encodable to UNENCODABLE is a mutation at the door
         Rcx.plugins[2].default.value[1] = 'c'
         @test _codes(GM._registry_door_check(Rcx)) == [:POST_SEAL_MUTATION]
-        # (cure batch 5) Rational: concrete-type-tagged + structural; BigInt parts are outside the machine domain
+        # Rational: concrete-type-tagged + structural; BigInt parts are outside the machine domain
         @test GM._slot_text(Rational{Int8}(1, 2)) != GM._slot_text(1//2)
         @test_throws GM._UnencodableSlot GM._slot_text(big(1)//2)
-        # (cure batch 5) a failed encode leaves the visiting set clean — a second encode in the same scope succeeds
+        # a failed encode leaves the visiting set clean — a second encode in the same scope succeeds
         dv = Dict{Any,Any}(:k => 'c')
         @test_throws GM._UnencodableSlot GM._slot_text(Any[dv])
         dv[:k] = 1
         @test GM._slot_text(Any[dv]) isa String
-        # (cure batch 5) encodability is probed PER SLOT with FULL collection: two defective records ⇒ two
+        # encodability is probed PER SLOT with FULL collection: two defective records ⇒ two
         # diagnostics, each naming its record + slot
         bps = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
         bps.plugins[2] = _plugin_with_default(bps.plugins[2], GM.Declared(1:3))
         bps.plugins[1] = _plugin_with_default(bps.plugins[1], GM.Declared('c'))   # the second defective default on another Alterant (labels)
         dps = filter(x -> x.code === :REG_PROTOCOL, GM.validate(bps))
         @test length(dps) == 2 && all(x -> occursin("slot default", x.message), dps) &&
-              Set(x.context for x in dps) == Set([:labels, :Visib])   # commit 3-ii: the slots are the Alterants' — the contexts their names
+              Set(x.context for x in dps) == Set([:labels, :Visib])   # the slots are the Alterants' — the contexts their names
         # deep-copy publication: a NESTED declared container of the builder is not shared with the published value
         bdp = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
         bdp.plugins[2] = GM.Alterant(; altName = :Visib, setMode = :mutExclusive, altConstructor = GM.Alterants.Visib,
                                      setAltInstance = GM.Alterants.setVisib, default = GM.Declared(Any[:hide, :show]))   # the declared default's
-        Rdp = GM.publish(bdp)                                                                                         #   container since stage 5's E10
+        Rdp = GM.publish(bdp)                                                                                         #   container
         push!(bdp.plugins[2].default.value, :discard)
         @test Rdp.plugins[2].default.value == [:hide, :show] && isempty(GM._registry_door_check(Rdp))
-        # (cure batch 3) next_plugin_index is Int8 and passes straight into ActionSpec; RegistryBuilder(published) preloads
+        # next_plugin_index is Int8 and passes straight into ActionSpec; RegistryBuilder(published) preloads
         bx = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
         @test length(bx.plugins) == 4 && bx.plugins !== GM.DEFAULT_REGISTRY.plugins
         i5 = GM.next_plugin_index(bx)
@@ -287,15 +286,15 @@ _plugin_with_default(p, d) = GM.Alterant(; altName = p.altName, setMode = p.setM
         Rx = GM.publish(bx)
         rx = GM.goMeta(Vector{UInt8}(codeunits("x = 1\n#~ hide\n\ny = 2\n")); registry = Rx)
         @test rx.status === GM.PROCESS_OK
-        # (the publish-time warning witness left at stage 5's E4 with the candidacy diagnostic — no remaining
+        # (a former publish-time warning witness was removed with the candidacy diagnostic — no remaining
         # check warns; publish's warning path stands unexercised)
     end
 
-    @testset "register!'s refusals + the remaining validate rows (re-cut at stage 5's E4: the coded inventory refusals left with the chain)" begin
+    @testset "register!'s refusals + the remaining validate rows" begin
         base = GM.default_registry_builder()
         # slot-pool exhaustion at the REGISTRY grain (the Int8 index space): `register!` refuses the 128th
-        # append (cure batch 1); the validate-time pool row for a directly-pushed builder left at E4 — such a
-        # builder fails at `publish` with Julia's InexactError (measured: PROBES-e4-validate_stage1-src-cut [8]),
+        # append; the validate-time pool row for a directly-pushed builder was removed — such a
+        # builder fails at `publish` with Julia's InexactError (measured),
         # the honest bound of bypassing `register!`
         b = GM.RegistryBuilder(copy(base.plugins), copy(base.action_specs))
         for i in 1:123
@@ -306,7 +305,7 @@ _plugin_with_default(p, d) = GM.Alterant(; altName = p.altName, setMode = p.setM
         e = try GM.register!(b, GM.Alterant(; altName = :zz128, setMode = :accumulate, altConstructor = Dict{Symbol,Bool},
                                           setAltInstance = GM.Alterants.setLabels, getAltInstance = GM.Alterants.checkLabels)); nothing catch err; err end
         @test e isa GM.RegistrationRefused && _errors(e.diagnostics) == [:REG_SLOT_EXHAUSTED]
-        # `register!` binds the records to the appended plugin (cure batch 1): a record naming another
+        # `register!` binds the records to the appended plugin: a record naming another
         # index refuses loudly instead of leaving the appended alterant silently actionless
         b = GM.RegistryBuilder(copy(base.plugins), copy(base.action_specs))
         e = try GM.register!(b, GM.Alterant(; altName = :p5, setMode = :mutExclusive, altConstructor = GM.Alterants.Visib, setAltInstance = GM.Alterants.setVisib),
@@ -314,11 +313,11 @@ _plugin_with_default(p, d) = GM.Alterant(; altName = p.altName, setMode = p.setM
         catch err; err end
         @test e isa GM.RegistrationRefused && _errors(e.diagnostics) == [:REG_PROTOCOL]
         @test length(b.plugins) == 4                         # nothing appended on refusal
-        # (the odd-vararg_kind-row and the :candidate-sugar_candidacy witnesses left at stage 5's E11 of the v0.4 build with
-        # their subjects — the overload rows and the grant register, census row 16)
+        # (the odd-vararg_kind-row and the :candidate-sugar_candidacy witnesses were removed with
+        # their subjects — the overload rows and the grant register)
     end
 
-    @testset "T2-bis: the EIGHT snapshot-door witnesses W1–W8 (T2BIS-DESIGN §8; APPENDED — W4 left at stage 5's E13, W8 at E10: six stand)" begin
+    @testset "the snapshot door's EIGHT witnesses W1–W8 (W4 and W8 removed: six stand)" begin
         # W1 — the CONTAINED route refuses a published value mutated into a CYCLE, coded,
         # naming the record + slot via the path (Rcx/Rcy above are testset-locals — rebuilt)
         b1 = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
@@ -342,8 +341,8 @@ _plugin_with_default(p, d) = GM.Alterant(; altName = p.altName, setMode = p.setM
         d3 = GM._registry_door_check(R3b)
         @test _codes(d3) == [:POST_SEAL_MUTATION]
         @test occursin("at plugins", d3[1].message)
-        # (W4 — the seal-via-token-seam witness, a FOREIGN seal beside DEFAULT's snapshot firing at path `seal` — left at stage 5's
-        # E13 of the v0.4 build with the seal field, census row 6; W1–W3 and W5–W7 carry the door's classes — W8 left at E10, the note below.)
+        # (W4 — the seal-via-token-seam witness, a FOREIGN seal beside DEFAULT's snapshot firing at path `seal` — was removed
+        # with the seal field; W1–W3 and W5–W7 carry the door's classes — W8 removed too, the note below.)
         # W5 — KNOWN OPEN (v) closes: `altConstructor = Val{'c'}` is a SLOT-NAMED validate row
         # (record in context, slot in the message) + a coded publish refusal
         b5 = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
@@ -357,7 +356,7 @@ _plugin_with_default(p, d) = GM.Alterant(; altName = p.altName, setMode = p.setM
         # W6 — a RECORD STRUCT in declared data refuses at validate (the slot-named row, never
         # the publish-containment generic row) + a coded publish refusal
         b6 = GM.RegistryBuilder(GM.DEFAULT_REGISTRY)
-        b6.plugins[2] = _plugin_with_default(b6.plugins[2], GM.Declared(GM.ActionSpec(; name = :zz, plugin = Int8(1))))   # a record struct in data (ActionSpec since stage 5's E11 — the overload row left, census row 16)
+        b6.plugins[2] = _plugin_with_default(b6.plugins[2], GM.Declared(GM.ActionSpec(; name = :zz, plugin = Int8(1))))   # a record struct in data (ActionSpec — the former overload row was removed)
         d6 = GM.validate(b6)
         @test any(x -> x.code === :REG_PROTOCOL && x.context === :Visib &&   # commit 3-ii: the context is the Alterant's name
                        occursin("slot default", x.message) && occursin("ActionSpec", x.message), d6)
@@ -372,7 +371,7 @@ _plugin_with_default(p, d) = GM.Alterant(; altName = p.altName, setMode = p.setM
         @test e7 isa GM.RegistrationRefused
         @test occursin("position rule", e7.diagnostics[1].message) &&
               occursin("plugins[2].default.value[1]", e7.diagnostics[1].message)
-        # (W8 — the atom-nested-in-data witness — left at stage 5's E10 with `ConditionAtom`; W7 above carries the Function-in-data refusal.)
+        # (W8 — the atom-nested-in-data witness — was removed with `ConditionAtom`; W7 above carries the Function-in-data refusal.)
     end
 
     @testset "T2-bis crx-t2bis cure witnesses (A1/A2/A3; APPENDED)" begin
@@ -385,7 +384,7 @@ _plugin_with_default(p, d) = GM.Alterant(; altName = p.altName, setMode = p.setM
             Base.show(io::IO, ::Type{Poison}) = error("A1-BOOM")
             # (v0.4 T3, the round's T3P-C3 cure — an append-only line, disclosed §S2.15):
             # the UnionAll `Poison` had no zero-argument method and would have tripped T3's eager
-            # DEP_MISSING gate (left at stage 5's E4); this ctor keeps `altConstructor = Poison` — and with it the
+            # DEP_MISSING gate (since removed); this ctor keeps `altConstructor = Poison` — and with it the
             # only UnionAll-at-altConstructor fold coverage — while the witness itself
             # never calls the constructor (publish + door only).
             Poison() = Poison{Int}()

@@ -1,7 +1,7 @@
-# tests/unit/ws_alphabet_tests.jl — F-14 WS-ALPHABET matrix (owner-ruled 2026-08-08:
+# tests/unit/ws_alphabet_tests.jl — THE WS-ALPHABET matrix (the creator's decision of 2026-08-08:
 # "Unicode horizontal whitespace (\\h) as THE delimiter class, unified everywhere").
 #
-# THE RULING'S REASONS, pinned: the original grammar was owner-authored `[\\h]`;
+# THE DECISION'S REASONS, pinned: the original grammar was the creator's `[\\h]`;
 # international keyboards must delimit (U+3000 = CJK full-width IME space, U+00A0 = Mac
 # Option+Space / French typography); the emoji/plugin-head future requires char-safe
 # multibyte token machinery. Boundary law: newline-class chars stay LINE boundaries;
@@ -80,14 +80,14 @@ _ws_err(s; kw...)    = try _ws_r(s; kw...); nothing catch e sprint(showerror, e)
         end
     end
 
-    @testset "[8] the ruling-conditional LIVE pin: today's engine class is PCRE \\h (19 cp)" begin
-        # RELOCATED whole from the text-law kernel's tests ([4], :49–:52) when the kernel left at stage 5's E1' of the
-        # v0.4 build: its mechanism, the engine's own predicate, survives; the kernel's 18-codepoint tuple
-        # is spelled as literals here. The successor site of the citation in R-V04B-83 (3)(ii) (":49" of those tests).
+    @testset "[8] the decision-conditional LIVE pin: today's engine class is PCRE \\h (19 cp)" begin
+        # RELOCATED whole from the former text-law kernel's tests when the kernel was removed:
+        # its mechanism, the engine's own predicate, survives; the kernel's 18-codepoint tuple
+        # is spelled as literals here.
         # THE ONE EXCEPTION the header's boundary law does not carry: U+180E (MONGOLIAN VOWEL SEPARATOR, a Cf FORMAT
         # character since Unicode 6.3) DELIMITS today — PCRE's frozen `[\h]` list keeps it — against the 2026-08-08
-        # ruling's recorded note "zero-width format chars … never delimit" (the unicode proof's GROUND-3 §6). The pin
-        # makes the interim EXPLICIT: it flips WITH his BLS review's word (OWNER-WORDS §18; R-V04B-83 (3)(ii)),
+        # decision's recorded note "zero-width format chars … never delimit". The pin
+        # makes the interim EXPLICIT: it flips WITH the creator's BLS review's word,
         # consciously, never silently.
         @test GM.BLS._is_h_ws(Char(0x180E)) === true
         for cp in (0x0009, 0x0020, 0x00A0, 0x1680,                      # the other 18 codepoints of PCRE's `\h`

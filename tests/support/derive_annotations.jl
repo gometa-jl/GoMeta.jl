@@ -2,9 +2,9 @@
 #
 # IS:   `derive_annotations_golden(delivery) -> Vector{UInt8}` — the five-column byte form of a delivery's evals rows
 #       (the twelve annotation pins' form), its fifth column DERIVED through the BLS Component tree and the door's
-#       content function `BLS.content` — never read from the Engine (R-V04B-43 (1): "it is read from the BLS Component
+#       content function `BLS.content` — never read from the Engine (the creator's decision: "it is read from the BLS Component
 #       tree through BLS's own access function"). Lives in the support hub (module TestSupport) because the golden
-#       runner AND two unit-layer witnesses produce this form (`unicode_cure_tests.jl`, `latex_flavor_tests.jl`; the third, the fed heading's, left at stage 1 of the Alterants build) (the plan :60 names `tests/golden/`; the hub is the one
+#       runner AND two unit-layer witnesses produce this form (`unicode_cure_tests.jl`, `latex_flavor_tests.jl`; a third, the fed heading's, was removed) (the hub is the one
 #       file every layer loads once — the placement named in the recipe).
 # DOES: (1) the four columns are the public reader's rows (`readAltValuesEvals`, the reader's sort order) — one row per
 #       line, `<attr>\t<repr(value)>\t<polarity>\t<hex(cell_handle)>`, the attr column RAW as the Engine's five-column
@@ -15,9 +15,9 @@
 #       other Component's key is a prefix); `hex(BLS.content(tree, component))`. (3) A handle that MORE THAN ONE Component's
 #       prefix matches is an error (fail-closed — the prefix rule promises uniqueness). (4) A handle that NO Component
 #       carries yields an EMPTY fifth column: what the tree holds for that handle (the non-document plane — a heading fed
-#       through the configuration's user profile — produced such a row until stage 1 of the Alterants build; since then a
-#       heading in the profile refuses at the read, §D242, and no shipped path produces one — the arm kept). That row was
-#       R-V04B-43 (4)'s — shown to the owner before the unit 8–9 landed; nothing here asserts on it.
+#       through the configuration's user profile — once produced such a row; now a
+#       heading in the profile refuses at the read, and no shipped path produces one — the arm kept). That row was
+#       shown to the creator before the deriver landed; nothing here asserts on it.
 # REASONING: the pins stay byte-identical under the removals of commit 9 only if the test layer can produce the fifth column
 #       without the Engine's stored copy; the proof is binary — the golden runner compares these bytes with the Engine's
 #       producer (while it exists) AND with the pinned file: one differing byte stops the act.

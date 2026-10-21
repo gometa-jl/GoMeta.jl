@@ -1,4 +1,4 @@
-# inert_semantics_tests.jl — R-INERT-4 + §4.1 + §4.8 witnesses (the v0.3.1 rulings)
+# inert_semantics_tests.jl — R-INERT-4 + §4.1 + §4.8 witnesses (the v0.3.1 decisions)
 #
 # IS:   the pinned test law of the v0.3.1 inert-marker fix: the DIFFERENTIAL ORACLE — `#~N! <content>` ≡ `#~N` (the
 #       marker is structurally LIVE, only its content is ignored) — plus the bang-first refusal
@@ -9,11 +9,11 @@
 #       named post-fix outcomes (supersession, the cured swallow, SD-1's E-06, t_P6's
 #       still-governable inert line); [G] pins the setLabels (LIST-side) §4.8 guard with the
 #       positive controls — the checkLabels QUERY twin is witnessed by the flipped K2
-#       (condition_interp_tests.jl); [U] pins the unchanged-by-ruling shapes.
-# REASONING: the ≡ law is the RULING itself, so the oracle — not hand-picked expectations —
+#       (condition_interp_tests.jl); [U] pins the unchanged shapes.
+# REASONING: the ≡ law is the DECISION itself, so the oracle — not hand-picked expectations —
 #       is the primary witness; hand-pins remain for the outcomes the sitting names, so a
 #       regression flips a NAMED test. The bang-first family is the REFUSAL class, excluded
-#       from the oracle by ruling (§4.1).
+#       from the oracle by the decision (§4.1).
 # PURPOSE: R-INERT-4 / SD-1 / SD-2 / §4.1 / §4.8 cannot drift silently.
 
 using Test
@@ -172,7 +172,7 @@ _liveempty(text) = join(
         @test occursin("unknown label", something(_is_msg("#~ :(,)\n# T\n"), ""))
     end
 
-    @testset "[U] unchanged-by-ruling shapes stay unchanged" begin
+    @testset "[U] the unchanged shapes stay unchanged" begin
         # a live metaLine glued directly under `#]` is still skipped (the close-marker-headed
         # block keeps :ignoreThisMeta — the unchanged family remainder):
         r = _is("#~2 :label1\n# A\n#]\n#~2 hide{ isText }\n# B\n")

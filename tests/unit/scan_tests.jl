@@ -1,5 +1,5 @@
-# scan_tests.jl — stage 2's commit 5 of the v0.4 build: THE SCAN BY ALTERANT and THE ACCESS BY COMPONENT (the plan v8.1 :57; card 4;
-# his §6 item 9.A), over the inputs whose rows and deciding handles were MEASURED for commit 4 (receipts/S8-branch/precheck-s2c4/PROBES-*).
+# scan_tests.jl — THE SCAN BY ALTERANT and THE ACCESS BY COMPONENT (the creator's design),
+# over the inputs whose rows and deciding handles were MEASURED for the answer function.
 #
 # IS:   six witnesses: [S1] the scan lists the recorded Components only, in tree order, each with its answer; [S2] the scan of a Labels
 #       set; [S3] a meta-free input scans empty; [S4] the Segment-carried row lists its Line with the Line's OWN answer; [S5] the access by Component in the
@@ -14,7 +14,7 @@ const _SC_BLS = GM.BLS
 _sc_bytes(s::String) = Vector{UInt8}(codeunits(s))
 _sc_id(c) = _SC_BLS.getElement(c.cmpntNamedInt, :idComponent)
 
-@testset "scanAlterant / evaluatedAltValues (stage 2 commit 5; his 9.A)" begin
+@testset "scanAlterant / evaluatedAltValues" begin
 
     @testset "[S1] the scan by Alterant: the recorded Components only, in tree order, with their answers" begin
         r = GM.goMeta(_sc_bytes("#~ hide\nx = 1\ny = 2\n")); ps = r.blsComponentTree
@@ -42,12 +42,12 @@ _sc_id(c) = _SC_BLS.getElement(c.cmpntNamedInt, :idComponent)
         end
     end
 
-    @testset "[S4] a Segment-carried row lists its Line — the Line's OWN answer (the trailing metaSegment applies directly to it, R-V04B-93)" begin
+    @testset "[S4] a Segment-carried row lists its Line — the Line's OWN answer (the trailing metaSegment applies directly to it)" begin
         r = GM.goMeta(_sc_bytes("#~ \"Title\"\nx = 1 #~ discard\ny = 2\n")); ps = r.blsComponentTree
         bs = _SC_BLS.children(ps); @test length(bs) == 2
         sc = GM.scanAlterant(r, :Visib); @test length(sc) == 1
         @test sc[1].first isa _SC_BLS.Line && _sc_id(sc[1].first) == _sc_id(_SC_BLS.children(ps, bs[2])[1])
-        @test sc[1].second.value === :discard && sc[1].second.source === :own && sc[1].second.via === nothing   # R-V04B-93 (his §286/§288): the Line answers :own — the Segment is the statement's carrier, not a foreign decider
+        @test sc[1].second.value === :discard && sc[1].second.source === :own && sc[1].second.via === nothing   # the creator's words: the Line answers :own — the Segment is the statement's carrier, not a foreign decider
         hs = GM.scanAlterant(r, :heading); @test length(hs) == 1
         @test _sc_id(hs[1].first) == _sc_id(bs[1]) && hs[1].second.value == "Title" && hs[1].second.source === :own
     end
@@ -79,7 +79,7 @@ _sc_id(c) = _SC_BLS.getElement(c.cmpntNamedInt, :idComponent)
         @test an isa Vector{Pair{Symbol,GM.EvaluatedAltValue}}
         @test first.(an) == [p.altName for p in GM.DEFAULT_REGISTRY.plugins] == [:labels, :Visib, :id, :heading]
         @test an[2].second.value === :hide && an[2].second.source === :indirect
-        @test an[1].second.source === :default && an[3].second.source === :default && an[4].second.source === :default   # the three declared defaults (R-V04B-92, card C2)
+        @test an[1].second.source === :default && an[3].second.source === :default && an[4].second.source === :default   # the three declared defaults
         @test all(pr -> pr.second == GM.evaluatedAltValue(r, bs[2], pr.first), an)
         fa = GM.evaluatedAltValues(r, _SC_BLS.root(ps)); @test length(fa) == 4 && all(pr -> pr.second.source === :none, fa)
         @test_throws ArgumentError GM.scanAlterant(r, :nosuch)

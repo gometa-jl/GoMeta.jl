@@ -1,26 +1,26 @@
-# fed_profile_order_tests.jl — STAGE 0 OF THE LABELS LANE (0.4.1): THE USER LEVEL'S PLACE IN THE APPLY LOOP — his R-LAB-8 of 2026-10-18
-# ("Not intended — cure it FIRST as a small stage 0") and his build order R-LAB-15 of 2026-10-19 ("Apply your fix."), superseding his
-# acceptance R-ALT-15 (ii)(3) of 2026-10-16 (the plan: the lane plan/2026-10-18-gometa-labels-add-remove/, its STAGE-0-PLAN file §1–§3;
-# the cure: src/alterants/apply.jl `detAltValuesForSetOfSlots`, S1–S6).
+# fed_profile_order_tests.jl — 0.4.1: THE USER LEVEL'S PLACE IN THE APPLY LOOP — the creator's decision of 2026-10-18
+# ("Not intended — cure it FIRST") and his order of 2026-10-19 ("Apply your fix."), superseding his
+# acceptance of 2026-10-16 (
+# the cure: src/alterants/apply.jl `detAltValuesForSetOfSlots`).
 #
-# IS:   thirteen witnesses [W1]–[W13] over the public entry, EVERY expected value read from the lane's AFTER oracle on the cured scratch
-#       (receipts/stage0/AFTER_scratch/stage0-oracle/{views,traces}/ — the FULL delivery views and the `decided_by` traces; canon R4b) and
+# IS:   thirteen witnesses [W1]–[W13] over the public entry, EVERY expected value MEASURED on the cured tree
+#       (the FULL delivery views and the `decided_by` traces) and
 #       never written before that run. THE THREE LIMBS of the cure under a fed profile: (a) a Component's own metaBlock applies in WRITTEN
-#       order — a condition stated before its label does not see that label, as his example files' own comments say ([W1] 026 fed `:label2`,
+#       order — a condition stated before its label does not see that label, as the creator's example files' own comments say ([W1] 026 fed `:label2`,
 #       [W2] 027 fed `:doc`, [W5] the two former pins P24 / P25, [W8] the Segment overload); (b) a user-level NON-accumulate statement sees the
 #       Component's own labels ([W3] on a Segment-carried label, [W4] on a metaBlock's; [W7] the other way — a file condition sees a fed
 #       label); (c) an applicable user-level value OVERRIDES the file's — `decided_by` the user context alone, replaced not appended ([W6]
-#       over an own CONDITIONED value, [W9] the Id compound replaced whole, [W11] the within-user-level stop and the set-vector's capacity; [W13] a second user-level Id row fills the same fresh instance — the build panel's measure-first cure C9).
+#       over an own CONDITIONED value, [W9] the Id compound replaced whole, [W11] the within-user-level stop and the set-vector's capacity; [W13] a second user-level Id row fills the same fresh instance).
 #       The user level's labels are the OUTERMOST level ([W10]: the profile's own NON-accumulate conditions see its labels stated after them; a fed conditional label is blind to
 #       the file's labels; a file's conditional label sees a fed label) and the answer function's Labels source under a feed reads `:user`
 #       ([W12]). WITHOUT a feed nothing changes — the no-feed twins inside [W1], [W2], [W5], [W6], [W8], [W12].
 # REASONING: before the cure the loop took the FIRST eligible slot for the Component's own; with a fed profile that slot was the user
-#       level's, so a Component's own labels were collected in the first pass before its own conditions ran (the lane's measurement E02 /
-#       E03; the BEFORE oracle). The cure identifies the own slot by what it is (the first non-user slot), evaluates the user level after
+#       level's, so a Component's own labels were collected in the first pass before its own conditions ran (MEASURED
+#       before the cure). The cure identifies the own slot by what it is (the first non-user slot), evaluates the user level after
 #       it with full sight and with the override; pass 1 walks the user level's slot when fed and the outer slots for their accumulate rows, pass 2 every slot for the rest, so no row is evaluated twice — a row the prior-slot guard, the within-slot
 #       `:mutExclusive` stop or the localOnly rule skips is not evaluated at all (G13's second user-level row, the `show`). These witnesses pin the three limbs and the declared
-#       consequences (G11, G12, G15, G16) at the public entry, each against the measured AFTER rows. NOT witnessed here: G03, the fed sweep's A07 / F07 / F08
-#       class, E01 / E04 and the 28-input sweep itself (measured by the lane's oracle, pinned by no unit test); the vector of the user level's slot alone
+#       consequences at the public entry, each against the measured AFTER rows. NOT witnessed here: the wider fed sweep's
+#       inputs (measured, pinned by no unit test); the vector of the user level's slot alone
 #       (UNMEASURED — no fed oracle input reaches it); the fallBack slot under a feed is pinned by fallback_order_tests.jl [F3] over a test-built slot.
 # PURPOSE: the user level's place, measured — never inferred from the feed's docstring or from the loop's comments.
 
@@ -40,13 +40,13 @@ _fo_rows(r, h, a) = [x for x in _fo_recs(r) if x.cell_handle == h && x.attr === 
 _fo_key(r, c) = GM.key_bytes(GM.occurrence_key(r.blsComponentTree, c))      # the key as the Engine's writer derives it (the code-home trap list)
 _fo_blocks(r) = _FO_BLS.children(r.blsComponentTree)
 const _FO_UC = GM.key_bytes(GM.user_context_key(:default, 1))
-const _FO_CORPUS = joinpath(@__DIR__, "..", "golden", "corpus", "InFileFolder")   # 026 / 027 byte-identical to the lane's measurement inputs
+const _FO_CORPUS = joinpath(@__DIR__, "..", "golden", "corpus", "InFileFolder")   # 026 / 027 byte-identical to the measurement inputs
 
-@testset "the user level's place in the apply loop (stage 0 of the Labels lane, 0.4.1; R-LAB-8 / R-LAB-15)" begin
+@testset "the user level's place in the apply loop (0.4.1)" begin
 
-    @testset "[W1] 026 fed `:label2` (E02): every Visib value the no-feed run's; every cell with rows carries label_label2; Block #6's and #7's hide decided by Block #2" begin
-        # AFTER trace T_E02_026_fed_label2: 38 rows = the no-feed 28 + one label_label2 per cell with rows (10 cells); Blocks #6 / #7 `visib => :hide`,
-        # decided_by[1] = Block #2 (the depth-1 `hide{ :label4 , isCode }`) — his comment at 026 lines 26–29 holds under a feed
+    @testset "[W1] 026 fed `:label2`: every Visib value the no-feed run's; every cell with rows carries label_label2; Block #6's and #7's hide decided by Block #2" begin
+        # MEASURED: 38 rows = the no-feed 28 + one label_label2 per cell with rows (10 cells); Blocks #6 / #7 `visib => :hide`,
+        # decided_by[1] = Block #2 (the depth-1 `hide{ :label4 , isCode }`) — the creator's comment at 026 lines 26–29 holds under a feed
         doc = read(joinpath(_FO_CORPUS, "file_for_Example_Proposal_JuliaCon.jl"), String)
         rf = _fo_run(doc; profile = ":label2"); rn = _fo_run(doc)
         @test rf.status === GM.PROCESS_OK && rn.status === GM.PROCESS_OK
@@ -64,9 +64,9 @@ const _FO_CORPUS = joinpath(@__DIR__, "..", "golden", "corpus", "InFileFolder") 
         end
     end
 
-    @testset "[W2] 027 fed `:doc` (E03): every Visib value the no-feed run's; every cell with rows carries label_doc; Block #7 no Visib row; Block #8's hide decided by Block #5" begin
-        # AFTER trace T_E03_027_fed_doc: 34 rows = the no-feed 24 + one label_doc per cell with rows (10 cells); Block #7 (`#~3 discard{:label4} :label4`)
-        # carries no Visib row; Block #8 `visib => :hide`, decided_by[1] = Block #5 — his comment at 027 lines 41–42 holds under a feed
+    @testset "[W2] 027 fed `:doc`: every Visib value the no-feed run's; every cell with rows carries label_doc; Block #7 no Visib row; Block #8's hide decided by Block #5" begin
+        # MEASURED: 34 rows = the no-feed 24 + one label_doc per cell with rows (10 cells); Block #7 (`#~3 discard{:label4} :label4`)
+        # carries no Visib row; Block #8 `visib => :hide`, decided_by[1] = Block #5 — the creator's comment at 027 lines 41–42 holds under a feed
         doc = read(joinpath(_FO_CORPUS, "file_for_Example_Extended.jl"), String)
         rf = _fo_run(doc; profile = ":doc"); rn = _fo_run(doc)
         @test rf.status === GM.PROCESS_OK && rn.status === GM.PROCESS_OK
@@ -204,8 +204,8 @@ const _FO_CORPUS = joinpath(@__DIR__, "..", "golden", "corpus", "InFileFolder") 
         hd = _fo_rows(r14, h2, :head_1); @test length(hd) == 1 && hd[1].value == "T" && hd[1].decided_by == [h2]
     end
 
-    @testset "[W13] G17 `#~ cell(2)⏎x = 1` fed `cell(7) parent(3)`: the user level's second Id row fills the SAME fresh instance — no second rebuild (the override guard's in-slot clause)" begin
-        # AFTER trace G17_two_fed_id_rows_over_own_cell (the build panel's R1-F5 / cure C9, 2026-10-19; run on both trees) — every value below PARSED FROM THAT TRACE by instruments/stage0-fold-c9.py: id_cell => 7 decided_by ['USER_CONTEXT', 'USER_CONTEXT']; id_parent => 3 decided_by ['USER_CONTEXT', 'USER_CONTEXT']
+    @testset "[W13] `#~ cell(2)⏎x = 1` fed `cell(7) parent(3)`: the user level's second Id row fills the SAME fresh instance — no second rebuild (the override guard's in-slot clause)" begin
+        # MEASURED 2026-10-19 on both trees — every value below from that trace: id_cell => 7 decided_by ['USER_CONTEXT', 'USER_CONTEXT']; id_parent => 3 decided_by ['USER_CONTEXT', 'USER_CONTEXT']
         rf = _fo_run("#~ cell(2)\nx = 1\n"; profile = "cell(7) parent(3)")
         @test rf.status === GM.PROCESS_OK
         bs = _fo_blocks(rf); @test length(bs) == 2

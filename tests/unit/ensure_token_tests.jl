@@ -140,7 +140,7 @@ _et_rr(s::AbstractString; cfg = _et_jl) = _et_r(_et_r(s; cfg = cfg); cfg = cfg)
         ## The step-(b) panel MAJOR-1 regression witness (cured 2026-08-10): a
         ## hidden line HEADING with an overlong sequence (0xE0 0x80 0x80 — the
         ## class bare `isspace` throws on at decode) must RENDER — the (b)
-        ## disjunct rides the door's `BLS.isHorizontalSpace` (since stage 5's s5c8, R-V04B-116 (3)(a)); the parser
+        ## disjunct rides the door's `BLS.isHorizontalSpace`; the parser
         ## classifies these bytes CONTENT and emit must agree. Confirmed thrown
         ## pre-cure, measured green post-cure (the measurement records live in the development fork).
         let src = Vector{UInt8}(vcat(codeunits("#~ hide\n"), UInt8[0xE0, 0x80, 0x80], codeunits("x\n")))
@@ -152,8 +152,8 @@ _et_rr(s::AbstractString; cfg = _et_jl) = _et_r(_et_r(s; cfg = cfg); cfg = cfg)
         end
     end
 
-    @testset "[9] the same-result witness (SET REAL-1b row 2; stage 3's commit 3b): ONE delivery rendered twice, its rows serialized twice" begin
-        ## SET-RECORD §4b: "renders ONE result twice and compares" — the basic renderer and the four-column serializer are PURE
+    @testset "[9] the same-result witness: ONE delivery rendered twice, its rows serialized twice" begin
+        ## "renders ONE result twice and compares" — the basic renderer and the four-column serializer are PURE
         ## functions of the delivered object: two renders of the SAME delivery are byte-equal in both halves of the pair, two
         ## serializations of its rows are byte-equal, and the delivery is unchanged by rendering (the same row count, the same
         ## Line count of the tree). Distinct from `_et_rr` above (the render ∘ ingest ∘ render fixed point re-PARSES the render).

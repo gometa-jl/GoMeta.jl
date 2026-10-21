@@ -1,5 +1,5 @@
-# tests/unit/token_law_tests.jl — F-13 TOKEN-DELIMITER LAW verification matrix (owner-ruled
-# 2026-08-08; the spec is recorded in the development fork).
+# tests/unit/token_law_tests.jl — THE TOKEN-DELIMITER LAW verification matrix (the creator's decision of
+# 2026-08-08).
 #
 # THE LAW: every GoMeta marker token requires whitespace-or-line-boundary BEFORE and AFTER
 # its head; a shape failing the after-side is bucket (A) — PLAIN CONTENT of its
@@ -24,7 +24,7 @@ _tl_nblocks(s; kw...) = length(collect(eachmatch(r"\{:B-", _tl_tree(s; kw...))))
 
 @testset "token_law_tests (F-13 verification matrix)" begin
 
-    @testset "[1] the owner's POSSIBILITY-SHAPES: plain content, zero evals, byte-identical" begin
+    @testset "[1] the creator's POSSIBILITY-SHAPES: plain content, zero evals, byte-identical" begin
         for s in ("someCharacters##someMoreCharacters\nx = 1\n",
                   "someCharacters#~someMoreCharacters\nx = 1\n")
             r = _tl_r(s)
@@ -56,7 +56,7 @@ _tl_nblocks(s; kw...) = length(collect(eachmatch(r"\{:B-", _tl_tree(s; kw...))))
     end
 
     @testset "[4] Meta adjacency: bucket (A) joins INERTLY — no refusal, no DSL entry (§B)" begin
-        # line grain — directly after a metaLine (the stale-Meta-landing class the panel
+        # line grain — directly after a metaLine (the stale-Meta-landing class a review
         # proved fatal under a flagless design; β's :ignoreThisMeta is the shield)
         let s = "#~ hide\n###banner\nx = 1\n"
             @test _tl_err(s) === nothing
@@ -186,25 +186,25 @@ _tl_nblocks(s; kw...) = length(collect(eachmatch(r"\{:B-", _tl_tree(s; kw...))))
         @test occursin("{:S-Meta [#]]}", _tl_tree("x = 1 #]\ny = 2\n"))
     end
 
-    @testset "[12] REAL-1b rows 3, 17 and 7 — the delivered object on the edge inputs (stage 1 commit 5; every value measured first, 2026-09-30)" begin
+    @testset "[12] the delivered object on the edge inputs (every value measured first, 2026-09-30)" begin
         let s = "x#~ hide\ny = 1\n", r = _tl_r(s)             # row 3: a missing BEFORE boundary — plain content by the token law
             @test r.status == GM.PROCESS_OK
             @test isempty(GM.readAltValuesEvals(r.altValues_evals))
-            @test _tl_render(s) == s                             # (the one-Block witness — a read of the old tree dump — is written at stage 6 with rows 15/16, against the reference style)
+            @test _tl_render(s) == s                             # (the one-Block witness — a read of the old tree dump — awaits the reference style)
         end
         let r = GM.goMeta(UInt8[])                               # row 17 + R2 #21: the EMPTY input
             @test r.status == GM.PROCESS_OK
             @test isempty(GM.readAltValuesEvals(r.altValues_evals))
             @test isempty(r.diagnostics)
-            @test isempty(Main.BasicRenderer.outputs(r).render_bytes)   # (the terminal-newline fact of the empty input has no witness from the outside — through the door's `endsWithNewline` at stage 2, if door B lands)
+            @test isempty(Main.BasicRenderer.outputs(r).render_bytes)   # (the terminal-newline fact of the empty input has no witness from the outside here — see `endsWithNewline` below)
         end
-        let r = GM.goMeta(Vector{UInt8}(codeunits("\n")))         # card C14 (c), R-V04B-96 (his §306 of 2026-10-03): the LF-ONLY input beside the empty one — R2 #21's "with and without the terminal newline"; every value MEASURED 2026-10-03 (receipts/S8-branch/PROBES-c14-pins_cd3ee9d3.txt)
+        let r = GM.goMeta(Vector{UInt8}(codeunits("\n")))         # the LF-ONLY input beside the empty one — "with and without the terminal newline"; every value MEASURED 2026-10-03
             @test r.status == GM.PROCESS_OK                                                   # [C14c1]
             @test isempty(GM.readAltValuesEvals(r.altValues_evals))                           # [C14c2] no evals row
             @test isempty(r.diagnostics)                                                      # [C14c3]
             @test Main.BasicRenderer.outputs(r).render_bytes == UInt8[0x0a]                  # [C14c4] the render is the one line break back
-            @test length(GM.BLS.children(r.blsComponentTree)) == 1                            # [C14c5] ONE Block — the one empty line — read through the door (measured; the session's presentation had said none)
-            @test GM.BLS.endsWithNewline(r.blsComponentTree)                                  # [C14c6] the terminal-newline fact, through the door (the door landed at stage 2's commit 0)
+            @test length(GM.BLS.children(r.blsComponentTree)) == 1                            # [C14c5] ONE Block — the one empty line — read through the door (measured)
+            @test GM.BLS.endsWithNewline(r.blsComponentTree)                                  # [C14c6] the terminal-newline fact, through the door
             @test isempty(GM.BLS.children(GM.goMeta(UInt8[]).blsComponentTree))               # [C14c7] the EMPTY input beside it: no Block…
             @test !GM.BLS.endsWithNewline(GM.goMeta(UInt8[]).blsComponentTree)                # [C14c8] …and no terminal newline
         end

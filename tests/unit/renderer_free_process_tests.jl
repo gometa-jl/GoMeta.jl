@@ -1,5 +1,5 @@
 # tests/unit/renderer_free_process_tests.jl — the SEPARATION witness: the Engine's delivery needs no development tool
-#   (stage 1 commit 5; item 8 of the stage-1 brief — the set REAL-1's top action #6; SESSION 10, 2026-09-30).
+#   (2026-09-30).
 #
 # IS:   ONE fresh Julia child process that does `import GoMeta` (and `using SHA`, a test dependency) and nothing else — no
 #       `Main.BasicRenderer`, no devtools — it runs
@@ -12,8 +12,8 @@
 #       without the development tool in the image.
 # REASONING: every other test runs after the renderer is loaded; none proved that the delivered object needs no tool. A fresh
 #       process is the only witness of absence (the fresh-process helpers retired from tests/support/_support.jl on 2026-09-12
-#       called the pair without the loader — this one never touches the pair; R-V04B-24).
-# PURPOSE: the branch's headline — the delivered object without the pair — pinned mechanically (THE PLAN §2 Stage 1 item 8, #6).
+#       called the pair without the loader — this one never touches the pair).
+# PURPOSE: the delivered object without the pair — pinned mechanically.
 
 using Test
 using SHA

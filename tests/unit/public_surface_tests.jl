@@ -1,7 +1,7 @@
 # tests/unit/public_surface_tests.jl — the public-surface introspection guard.
 #
 # IS:   the standing guard that GoMeta's PUBLIC surface is EXACTLY the declared one
-#       (docs/public-api.md §1), and the three clauses of R-V04B-24 (2026-09-12) — in the row's own words:
+#       (docs/public-api.md §1), and the three clauses of the creator's decision of 2026-09-12 — in its own words:
 #       (i) "the package's canonical observable output = `altValues_evals` (+ `serialize_evals`,
 #       `content_fingerprint`)" and "the Engine's delivered surface after the move = the run and the
 #       evaluated values"; (ii) the (tree, render) pair is the development tool's and is obtained ONLY
@@ -10,7 +10,7 @@
 # DOES: (1) introspects the surface — `names(GoMeta)` (minus the module name) returns the
 #       exported ∪ `public` names; the EXPORTED tier (via `Base.isexported`) must equal the FOUR
 #       declared exports and the remaining tier (via `Base.ispublic`) must equal the declared
-#       package-public names (27 since stage 5's E14 of the v0.4 build — the history of the count in docs/public-api.md §6;
+#       package-public names (27 — the history of the count in docs/public-api.md §6;
 #       no accidental leak, no gap, no silent demotion) — the
 #       machine-checkable surface oracle; (2) asserts each supporting package-public name is
 #       defined, `public`, and NOT exported (the controlled surface); (3) asserts the internal
@@ -32,7 +32,7 @@
 #       SUPPORTING_PUBLIC sets below MIRROR docs/public-api.md §1.1/§1.2 (the human-facing doc is
 #       the same contract; this test is the code-side enforcement).
 # PURPOSE: the public/export surface stays EXACTLY the declared one; the Engine's output is
-#       `altValues_evals` (+ `serialize_evals`; `content_fingerprint` removed at stage 2's commit 9b, R-V04B-43 (1)); the (tree, render) pair is the
+#       `altValues_evals` (+ `serialize_evals`; `content_fingerprint` removed within the 0.4 development); the (tree, render) pair is the
 #       development tool's, reached only through `Main.BasicRenderer.outputs` (the one-path assertions).
 
 using Test
@@ -52,14 +52,14 @@ import TOML
                          :Alterant, :ActionSpec, :CaptureDecl, :DefaultSlot, :NoDefault, :Declared,
                          :BLS,   # the parser module, public by name — its door inside it
                          :evaluatedAltValue, :EvaluatedAltValue,   # THE ONE ANSWER FUNCTION and its record
-                         :scanAlterant, :evaluatedAltValues,   # the scan by Alterant and the access by Component (his §6 9.A)
-                         :childDiffers]   # mirrors docs/public-api.md §1.2 EXACTLY — 27 names since stage 5's E14 of the v0.4 build; every change of the set is a row of §6
+                         :scanAlterant, :evaluatedAltValues,   # the scan by Alterant and the access by Component
+                         :childDiffers]   # mirrors docs/public-api.md §1.2 EXACTLY — 27 names; every change of the set is a row of §6
 
     @testset "export set is EXACTLY the declared semver surface" begin
         live = setdiff(Set(names(GM)), Set([:GoMeta]))     # names() on Julia ≥1.11 == exported ∪ `public` (+ the module name)
         exported = Set(filter(n -> Base.isexported(GM, n), collect(live)))
         @test exported == DECLARED_EXPORTS                        # [1] no accidental leak AND no gap (exact equality)
-        @test setdiff(live, exported) == Set(SUPPORTING_PUBLIC)   # [1b] the `public` tier is EXACTLY the declared names (27 since stage 5's E14 of the v0.4 build; the history of the count in docs/public-api.md §6)
+        @test setdiff(live, exported) == Set(SUPPORTING_PUBLIC)   # [1b] the `public` tier is EXACTLY the declared names (27; the history of the count in docs/public-api.md §6)
         @test all(n -> Base.ispublic(GM, n), SUPPORTING_PUBLIC)   # [1c] every supporting name carries the `public` marking
         @test all(n -> !Base.isexported(GM, n), SUPPORTING_PUBLIC) # [1d] …and none is exported (the two-tier partition is real)
         for n in DECLARED_EXPORTS
@@ -76,8 +76,8 @@ import TOML
         @test :render_bytes ∉ exported                           # [5] render_bytes is never an exported name
     end
 
-    @testset "the BLS tier (stage 2's commit 0, R-V04B-58): the parser module public by name; its door EXACTLY the declared set" begin
-        DOOR = Set([:children, :parent, :kind, :content, :root, :flavor, :endsWithNewline, :isHorizontalSpace, :getElement, :File, :Block, :Line, :Segment, :ComponentSettribute, :CmpntNamedInt])   # the door's declared set (the plan v8 :35; card 10; R-V04B-58)
+    @testset "the BLS tier: the parser module public by name; its door EXACTLY the declared set" begin
+        DOOR = Set([:children, :parent, :kind, :content, :root, :flavor, :endsWithNewline, :isHorizontalSpace, :getElement, :File, :Block, :Line, :Segment, :ComponentSettribute, :CmpntNamedInt])   # the door's declared set
         live = setdiff(Set(names(GM.BLS)), Set([:BLS]))
         @test live == DOOR                                        # [B1] the door is EXACTLY the declared names — no leak, no gap
         @test all(n -> Base.ispublic(GM.BLS, n), DOOR)            # [B2] every door name carries the `public` marking
@@ -94,7 +94,7 @@ import TOML
         # pin the method inventory so a collision with the retired earlier driver family (or any
         # accidental extra method) fails LOUD instead of silently widening dispatch.
         @test length(methods(GM.goMeta)) == 1                    # [T1] exactly the pipeline entry
-        @test Main.BasicRenderer.outputs isa Function && length(methods(Main.BasicRenderer.outputs)) >= 1  # [T3] the development tool's pair is live (re-pointed at R-V04B-24; never deleted)
+        @test Main.BasicRenderer.outputs isa Function && length(methods(Main.BasicRenderer.outputs)) >= 1  # [T3] the development tool's pair is live (never deleted)
         # the one-path assertions — the SENTINEL is the gate against a second
         # copy of the module in another namespace; the method check alone is not.
         @test isdefined(Main, :BasicRenderer)                    # [T4] the module lives in Main
@@ -125,18 +125,18 @@ import TOML
         ser = String(GM.serialize_evals(ann))
         @test first(split(ser, '\n')) == "# annotations golden — sorted (cell_handle, attr, value); final-verdicts-only."   # [8d] the serializer + its layout-stable header line, byte-pinned in-suite
         let hand = Tuple{Vector{UInt8},Symbol,Any,Bool}[(UInt8[0x00], :visib, :hide, true), (UInt8[0x01, 0x02], :label_label1, true, true), (UInt8[0xab, 0xcd], :heading, "a\tb", false), (UInt8[0xab, 0xce], :heading, "c\nd", false), (UInt8[0xab, 0xcf], :heading, "e\\f", false)]   # in the reader's sort order (by handle); tab, newline and backslash payloads
-            @test String(GM.serialize_evals(hand)) == "# annotations golden — sorted (cell_handle, attr, value); final-verdicts-only.\n# columns: <attr>\\t<value>\\t<polarity>\\t<cell_handle = occurrence-key bytes, hex>\nvisib\t:hide\ttrue\t00\nlabel_label1\ttrue\ttrue\t0102\nheading\t\"a\\tb\"\tfalse\tabcd\nheading\t\"c\\nd\"\tfalse\tabce\nheading\t\"e\\\\f\"\tfalse\tabcf\n"   # [8g] the 4-column form's BYTES over a hand vector in the reader's order — value-discriminating; the tab, newline and backslash payloads escaped by repr (REAL-1 R2 #3; the bytes MEASURED 2026-09-30, receipts/S8-branch/c5-oracles/probe_c5_v2.txt)
+            @test String(GM.serialize_evals(hand)) == "# annotations golden — sorted (cell_handle, attr, value); final-verdicts-only.\n# columns: <attr>\\t<value>\\t<polarity>\\t<cell_handle = occurrence-key bytes, hex>\nvisib\t:hide\ttrue\t00\nlabel_label1\ttrue\ttrue\t0102\nheading\t\"a\\tb\"\tfalse\tabcd\nheading\t\"c\\nd\"\tfalse\tabce\nheading\t\"e\\\\f\"\tfalse\tabcf\n"   # [8g] the 4-column form's BYTES over a hand vector in the reader's order — value-discriminating; the tab, newline and backslash payloads escaped by repr (the bytes MEASURED 2026-09-30)
         end
         let hand = Tuple{Vector{UInt8},Symbol,Any,Bool}[(UInt8[0x00], Symbol("label_a\tb"), true, true), (UInt8[0x01], Symbol("x\ny\\z\r"), :v, false)]   # attribute NAMES carrying a tab, a newline, a backslash, a carriage return (a third-party stem or member)
-            @test String(GM.serialize_evals(hand)) == "# annotations golden — sorted (cell_handle, attr, value); final-verdicts-only.\n# columns: <attr>\\t<value>\\t<polarity>\\t<cell_handle = occurrence-key bytes, hex>\nlabel_a\\tb\ttrue\ttrue\t00\nx\\ny\\\\z\\r\t:v\tfalse\t01\n"   # [8h] the attr column ENCODED (stage 2's commit 7a; R1 #2): one row, one line, four columns
+            @test String(GM.serialize_evals(hand)) == "# annotations golden — sorted (cell_handle, attr, value); final-verdicts-only.\n# columns: <attr>\\t<value>\\t<polarity>\\t<cell_handle = occurrence-key bytes, hex>\nlabel_a\\tb\ttrue\ttrue\t00\nx\\ny\\\\z\\r\t:v\tfalse\t01\n"   # [8h] the attr column ENCODED: one row, one line, four columns
             @test count(==('\n'), String(GM.serialize_evals(hand))) == 4 && all(l -> count(==('\t'), l) == 3, split(String(GM.serialize_evals(hand)), '\n'; keepempty = false)[3:end])
         end
-        @test hasmethod(GM.readAltValuesEvals, Tuple{GM.EvalStore})          # [8e] the reader takes the delivered PART `altValues_evals` (stage 1 commit 3; R-V04B-29's record; R-V04B-40 (2))
+        @test hasmethod(GM.readAltValuesEvals, Tuple{GM.EvalStore})          # [8e] the reader takes the delivered PART `altValues_evals` (the delivered part's record)
         @test !hasmethod(GM.readAltValuesEvals, Tuple{GM.GoMetaDelivery})   # [8f] and no method over the whole delivered object remains — the clean cut
     end
 
-    @testset "card C14 (R-V04B-96; his word §306 of 2026-10-03) — the delivered object, its show, the reader: (a) (b) (e) (f); every value MEASURED 2026-10-03 (receipts/S8-branch/PROBES-c14-pins_cd3ee9d3.txt)" begin
-        # (a) the four parts by name, in HIS order (R-V04B-89, row 44 — OWNER-WORDS §270): the tree, the evals, the status, the diagnostics
+    @testset "the delivered object, its show, the reader: (a) (b) (e) (f); every value MEASURED 2026-10-03 on the creator's word" begin
+        # (a) the four parts by name, in the creator's order: the tree, the evals, the status, the diagnostics
         @test fieldnames(GM.GoMetaDelivery) == (:blsComponentTree, :altValues_evals, :status, :diagnostics)   # [C14a]
         # (b) ONE `Base.show` method over the delivered object — one line of counts, never the tree or the rows (src/state.jl); the strings MEASURED
         @test count(m -> (p = Base.unwrap_unionall(m.sig).parameters; length(p) == 3 && p[3] === GM.GoMetaDelivery), methods(Base.show, (IO, GM.GoMetaDelivery))) == 1   # [C14b1] exactly one method whose third parameter is the delivery itself
@@ -146,12 +146,12 @@ import TOML
             @test s == "GoMetaDelivery(blsComponentTree: BLS.ParseState over 4 source lines; altValues_evals: 1 evals rows; PROCESS_OK; diagnostics: 0)"   # [C14b4] the measured string — the counts, never the tree or the rows
             @test sprint(show, GM.goMeta(UInt8[])) == "GoMetaDelivery(blsComponentTree: BLS.ParseState over 0 source lines; altValues_evals: 0 evals rows; PROCESS_OK; diagnostics: 0)"   # [C14b5] the empty input's
         end
-        # (e) the reader's method COUNT — one, over the delivered PART ([8e]/[8f]; R-V04B-61). Its alternative — a convenience method over the whole
-        # delivered object (stage 1's agenda §A 4 (3)) — is HIS, carried past the branch (the review's C23): a later word of his re-cuts this pin
+        # (e) the reader's method COUNT — one, over the delivered PART ([8e]/[8f]). Its alternative — a convenience method over the whole
+        # delivered object — is the creator's to take, an open point: a later word of his re-cuts this pin
         # in the commit that adds the method. A test of the present state, not a decision.
         @test length(methods(GM.readAltValuesEvals)) == 1                                               # [C14e]
-        # (f) the reader's PURITY and the copied handles — a hand-built store, two records pushed in reverse handle order (the closing set's L4
-        # test of 2026-10-01, re-cut without the field `content` removed at stage 2's commit 9b — R-V04B-43 (1))
+        # (f) the reader's PURITY and the copied handles — a hand-built store, two records pushed in reverse handle order (a review
+        # test of 2026-10-01, re-cut without the field `content`, since removed)
         let st = GM.EvalStore(), h2 = UInt8[0x02], h1 = UInt8[0x01]
             push!(st.records, GM.EvalRecord(h2, :visib, :hide, true, [copy(h2)]))
             push!(st.records, GM.EvalRecord(h1, :visib, :show, true, [copy(h1)]))
@@ -173,7 +173,7 @@ import TOML
         # `∉ exported` assertion would be implied by [1]). The two load-bearing checks below red the
         # moment a future edit binds either name — any module addition must consciously update the oracle.
         @test !isdefined(GM, :OtherImpl)                         # [9] the name is not bound in the top module
-        @test !isdefined(GM, :PlugIn)                           # [10] the public alias `PlugIn` LEFT at stage 5's E14 of the v0.4 build (R-V04B-62 — a clean cut, R-V04B-61): a re-binding reds here where [1b] alone would not
+        @test !isdefined(GM, :PlugIn)                           # [10] the public alias `PlugIn` was REMOVED (a clean cut): a re-binding reds here where [1b] alone would not
     end
 
     @testset "env_twin (test/ and tests/ resolve the same environment)" begin

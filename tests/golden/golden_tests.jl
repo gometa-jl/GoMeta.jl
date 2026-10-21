@@ -12,10 +12,10 @@
 #       its current render equals the NEW pinned bytes, and its tree golden is held
 #       to the same two-leg check. (4) net_new_surface: the serialized annotations golden (sha
 #       pre-check + byte-compare), a PROCESS_OK clean-run guard, determinism across two fresh
-#       runs, sorted order, all-true verdict polarity (the collision-warning assert left at stage 5's E5 of the v0.4 build with the warning); the golden's
+#       runs, sorted order, all-true verdict polarity (a former collision-warning assert was removed with the warning); the golden's
 #       bytes PRODUCED by the test-layer deriver (TestSupport.derive_annotations_golden — the fifth column through the
-#       BLS Component tree and the door's `BLS.content`; stage 2's commit 8, R-V04B-43 (3)); the Engine's five-column
-#       producer LEFT at commit 9b — the byte-compare against the pinned files below holds the twelve unmoved.
+#       BLS Component tree and the door's `BLS.content`); the Engine's five-column
+#       producer was REMOVED — the byte-compare against the pinned files below holds the twelve unmoved.
 #       (5) an oracle-depth gate: at least three byte_identical fixtures sourced from the
 #       reference render corpus. (6) a corpus drift-check: each harvested fixture's input byte-equals
 #       its examples/InFileFolder original, and its render golden equals the examples/OutFileFolder

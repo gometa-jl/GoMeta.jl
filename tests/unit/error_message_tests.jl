@@ -2,12 +2,12 @@
 #
 # IS:   witnesses for the stabilized error messages that a plain input can trigger.
 # DOES: proves those messages carry their stable substrings on real triggers. The deep-state
-#       loci (duplicate-conditions; the condition-key family — witnessed in condition_tests.jl since stage 5's E13) and the
+#       loci (duplicate-conditions; the condition-key family — witnessed in condition_tests.jl) and the
 #       internal-invariant messages ship unwitnessed here, as does the unknown-action message.
 # REASONING: the spaced `#~ : x` form reads as TWO metaStatements since the metaLine parser effort: the lone `:`
-#       with zero arguments is the Labels Alterant's (his §359 (7); the register's PB-2) and `x` meets the registry's unknown-action
-#       refusal at absorb (the battery's r13; the former "misplaced one-word label" refusal left at s5c29 — the set-invocation seam the
-#       first draft of this line named left at E6), so the unspaced form is the true label path exercised below.
+#       with zero arguments is the Labels Alterant's (the creator's decision) and `x` meets the registry's unknown-action
+#       refusal at absorb (the parser-quality battery's r13; the former "misplaced one-word label" refusal was removed — the set-invocation seam the
+#       first draft of this line named removed too), so the unspaced form is the true label path exercised below.
 # PURPOSE: no bare stack traces — every user-triggerable failure names what went wrong.
 
 using Test
@@ -29,18 +29,18 @@ import GoMeta as GM
         @test occursin("zznotalabel", err.msg)
     end
 
-    @testset "a second argument list → the grammar's one refusal names the '(' (the metaLine parser effort, stage 5's s5c29)" begin
+    @testset "a second argument list → the grammar's one refusal names the '('" begin
         err = _err("#~ hide(a)(b)\n# content\n")
         @test err isa ErrorException
         @test occursin("unexpected character '('", err.msg)
         @test occursin("after the metaStatement \"hide(a)\"", err.msg)
     end
 
-    @testset "unknown label queried in a CONDITION → no refusal: the query answers false (the legacy's checker; stage 5's E9 of the v0.4 build, census row 55)" begin
+    @testset "unknown label queried in a CONDITION → no refusal: the query answers false (the original engine's checker)" begin
         r = GM.goMeta(Vector{UInt8}(codeunits("#~ :label1 hide{ :zznotalabel }\n# content\n")))
         @test r isa GM.GoMetaDelivery && r.status === GM.PROCESS_OK
         @test _err("#~ :label1 hide{ :zznotalabel }\n# content\n") === nothing
-        # MEASURED by the devtools printout on the E9 scratch (receipts/S8-branch/PROBES-e9-query-role_on-841707af.txt; R4b): PROCESS_OK,
+        # MEASURED by the devtools printout: PROCESS_OK,
         # 2 evals rows on 2 cells — label_label1 => true on Block #2 (the metaLine) and Block #3 (the content); NO visib row: the
         # hide{ … } did not fire — the query of the unknown label answered false
         rows = GM.readAltValuesEvals(r.altValues_evals)

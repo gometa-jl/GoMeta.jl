@@ -1,17 +1,17 @@
 # snapshot_property_tests.jl — v0.4 T2-bis: the PROPERTY proof of the snapshot door (T2BIS-DESIGN §9).
 #
-# IS:   the ruled property test of R-V04B-4 (iv) — the proof that EVERY in-place or rebuild
+# IS:   the property test — the proof that EVERY in-place or rebuild
 #       mutation of a published registry's walked fields FIRES the door at a prefix-comparable
 #       path, and that structurally identical rebuilds (fresh containers, leaves by reference,
 #       DAG split/joined) stay SILENT. It REPLACES the enumerated witnesses AS THE PROOF of the
-#       door's coverage; no existing test is deleted (the batch-2..5 `_slot_text` witnesses stay as the encoder's
-#       regression pins — its one caller since stage 5's E13 the validate walk's Dict order —, the door pins as door regression pins).
+#       door's coverage; no existing test is deleted (the `_slot_text` witnesses stay as the encoder's
+#       regression pins — its one caller the validate walk's Dict order —, the door pins as door regression pins).
 # DOES: N = 1024 iterations — each takes a FRESH publish of the fixed generator builder, checks
 #       the door EMPTY, applies one site mutation (sites cycle deterministically; the rng picks
 #       only replacement values), and checks ONE fire at a segment-prefix-comparable path — plus
-#       the 8 false-positive rebuild cases, the named cases (Σ = 42 asserts — the v0.4 T4 VocabularyRef case's
-#       two left at stage 5's E9 of the v0.4 build, the overload-leaf case's two at E11), and 5 aggregate
-#       coverage asserts. P = 1024×3 + 8 + 42 + 5 = 3127 (T2BIS-DESIGN §9's closed arithmetic, re-counted at stage 5).
+#       the 8 false-positive rebuild cases, the named cases (Σ = 42 asserts — the former VocabularyRef case's
+#       two and the overload-leaf case's two removed), and 5 aggregate
+#       coverage asserts. P = 1024×3 + 8 + 42 + 5 = 3127 (the closed arithmetic).
 # REASONING: the enumerated door witnesses cannot prove coverage over the whole walked domain;
 #       the site-cycling property can — full site coverage is guaranteed by |sites| ≤ N.
 # PURPOSE: the T2-bis acceptance row; the door's coverage proof.
@@ -34,8 +34,8 @@ import GoMeta as GM
     Base.hash(::Type{CountKey}, h::UInt) = (HASH_COUNT[] += 1; h ⊻ 0x9e3779b97f4a7c15)
     # the Ref-backed SETTER (the captured-state silence class): an anonymous function over a
     # module-global Ref — a LOCAL-capture closure could not be a setter under the reflection
-    # law of the time (left at stage 5's E4; its method sig carried the UnionAll closure type, so the EXACT
-    # per-signature match refused it — recorded at the T2-bis commit, §S2.9); the semantics
+    # law of the time (since removed; its method sig carried the UnionAll closure type, so the EXACT
+    # per-signature match refused it); the semantics
     # under test — behavior moving through a Ref while `===` identity stands — are identical
     const SETTER_REF = Base.RefValue(0)
     const setclo = (store::Dict{Symbol,Bool}, name::Symbol) ->
@@ -66,7 +66,7 @@ end
             altConstructor = Dict{Symbol,Bool},
             setAltInstance = GM.Alterants.setLabels, getAltInstance = GM.Alterants.checkLabels,
             capture = GM.CaptureDecl(:per_key),
-            # stage 2's commit 3-ii: the default slot is the ALTERANT's — the value-domain carrier (formerly action 1's) rides plugin 1
+            # the default slot is the ALTERANT's — the value-domain carrier (formerly action 1's) rides plugin 1
             default = GM.Declared(Any[Int8(3), 1.5, Float32(2.5), Float16(1.0), _nan64,
                                       "str", :sym, true, Int128(7), UInt8(2),
                                       complex(1, 2), 1//2, Complex(1//2, 1//2),
@@ -77,7 +77,7 @@ end
         b.action_specs[1] = GM.ActionSpec(; name = s1.name, plugin = s1.plugin,
             accepts_string_slot = s1.accepts_string_slot, validate = _callable_struct)
         # the slot-struct default (formerly action 3's) rides plugin 2 (Visib; the DEFAULT_REGISTRY's fields copied) — a `Declared`
-        # nested in the data since stage 5's E10 of the v0.4 build (the `EffectRow` that carried the case left with its slot)
+        # nested in the data (the `EffectRow` that once carried the case was removed with its slot)
         b.plugins[2] = GM.Alterant(; altName = :Visib, setMode = :mutExclusive, altConstructor = GM.Alterants.Visib,
             setAltInstance = GM.Alterants.setVisib,
             capture = GM.CaptureDecl(:single; attr_stem = :visib),
@@ -181,8 +181,8 @@ end
         pT === GM.Alterant && pf === :precedencesTuple && return ntuple(i -> Symbol("p", i), GM.NUM_MH_LEVELS)
         pT === GM.Alterant && pf === :capture && return GM.CaptureDecl(:single)
         pT === GM.ActionSpec && pf === :validate && return _swap_fn_a
-        pT === GM.Alterant && pf === :default && return GM.Declared(1)   # stage 2's commit 3-ii: the slot is the Alterant's
-        pT === GM.CaptureDecl && pf === :attr_stem && return :zz   # v0.4 T5 (the round's B-3 cure — the raw error() fault otherwise)
+        pT === GM.Alterant && pf === :default && return GM.Declared(1)   # the slot is the Alterant's
+        pT === GM.CaptureDecl && pf === :attr_stem && return :zz   # (the raw error() fault otherwise)
         error("no single-point substitute for ($pT, $pf)")
     end
 
@@ -230,7 +230,7 @@ end
                 walk(v.second, Any[path; :second], Pair, pf)
             elseif v isa GM._SLOT_STRUCT_UNION
                 flds = fieldnames(typeof(v))
-                if isempty(flds) || (v isa GM.Declared && v.value === nothing)   # NoDefault() — or a `Declared(nothing)` (Heading's default since card C2, R-V04B-92): a single-point site, substituted WHOLE by `_single_substitute(Alterant, :default, …)` — its `nothing` value is no leaf to vary and no imm site to rebuild
+                if isempty(flds) || (v isa GM.Declared && v.value === nothing)   # NoDefault() — or a `Declared(nothing)` (Heading's default): a single-point site, substituted WHOLE by `_single_substitute(Alterant, :default, …)` — its `nothing` value is no leaf to vary and no imm site to rebuild
                     push!(sites, (path = path, cat = :slotstruct, kind = :single, pT = pT, pf = pf))
                 else
                     push!(sites, (path = path, cat = :slotstruct, kind = :imm, pT = pT, pf = pf))
@@ -312,9 +312,9 @@ end
             error("no mutable descendant for imm site at $path")
         elseif site.kind === :vec
             v = _objs_along(R, path)[end]::Vector
-            # the op ROTATES per pass over the sites since stage 3 of the Alterants build: with |sites| = 225 (a multiple of 3 — the `ids`
-            # action's 11 sites joined the 214) the former `i % 3` froze ONE op per site and `:vec_push` was never drawn (MEASURED by the
-            # lane's diagnostic copy at N = 1024 and N = 2048 — receipts/stage3/snapshot-diag_N1024.txt, _N2048.txt); the site's ordinal plus
+            # the op ROTATES per pass over the sites: with |sites| = 225 (a multiple of 3 — the `ids`
+            # action's 11 sites joined the 214) the former `i % 3` froze ONE op per site and `:vec_push` was never drawn (MEASURED by a
+            # diagnostic copy at N = 1024 and N = 2048); the site's ordinal plus
             # the pass count rotates the op per pass at EVERY site for EVERY |sites| — all three ops at a site once it sees three passes, so at
             # every site while |sites| ≤ N ÷ 3 (341 at N = 1024; at 225 every site sees four or five passes); above that some sites see two
             # passes or one, and §9's amend rule (|sites| > N) does not fire (the pass count added to `i` itself would freeze again whenever
@@ -335,8 +335,8 @@ end
             end
         elseif site.kind === :dict
             d = _objs_along(R, path)[end]::Dict
-            # the Dict op ROTATES per pass at EVERY site for EVERY |sites| (stage 3 of the Alterants build): under the former `i % 3` a |sites|
-            # that is a multiple of 3 — 225 since the `ids` action — held ONE op per Dict site for the whole run, where the base 63ffff7's 214 cycled
+            # the Dict op ROTATES per pass at EVERY site for EVERY |sites|: under the former `i % 3` a |sites|
+            # that is a multiple of 3 — 225 since the `ids` action — held ONE op per Dict site for the whole run, where the former 214 cycled
             # all three; the site's ordinal plus the pass count, as the vector op above
             op = (:new, :del, :set)[1 + ((i - 1) % length(sites) + (i - 1) ÷ length(sites)) % 3]
             if op === :del && !isempty(d)
@@ -404,12 +404,12 @@ end
 
     # ═══ the FALSE-POSITIVE half (§9): structurally identical rebuilds are SILENT — 8 ═══
     dagseen = Set{Symbol}()
-    let R = GM.publish(_mk_prop_builder())                       # (1) Vector rebuilt fresh (the default's value vector since stage 5's E10 — the constraints left)
+    let R = GM.publish(_mk_prop_builder())                       # (1) Vector rebuilt fresh (the default's value vector — the former constraints removed)
         c = R.plugins[1].default.value
         _set_at!(R, Any[:plugins, 1, :default, :value], Any[e for e in c])
         @test isempty(GM._registry_door_check(R))
     end
-    let b = _mk_prop_builder()                                   # (2) Dict rebuilt fresh (the vocabulary flags Dict left at stage 5's E9;
+    let b = _mk_prop_builder()                                   # (2) Dict rebuilt fresh (the former vocabulary flags Dict removed;
         k = Int(b.action_specs[4].plugin); p = b.plugins[k]      #     a Dict declared as plugin k's default carries the case)
         b.plugins[k] = GM.Alterant(; altName = p.altName, setMode = p.setMode, altConstructor = p.altConstructor,
             setAltInstance = p.setAltInstance, getAltInstance = p.getAltInstance, precedencesTuple = p.precedencesTuple,
@@ -424,7 +424,7 @@ end
         _set_at!(R, Any[:plugins, 1, :default, :value, 17], ntuple(j -> t[j], length(t)))
         @test isempty(GM._registry_door_check(R))
     end
-    let R = GM.publish(_mk_prop_builder())                       # (4) Pair rebuilt (the default value's Pair at [19] since stage 5's E10 — the render effects left)
+    let R = GM.publish(_mk_prop_builder())                       # (4) Pair rebuilt (the default value's Pair at [19] — the former render effects removed)
         p = R.plugins[1].default.value[19]
         _set_at!(R, Any[:plugins, 1, :default, :value, 19], (p.first => p.second))
         @test isempty(GM._registry_door_check(R))
@@ -436,11 +436,11 @@ end
     end
     let R = GM.publish(_mk_prop_builder())                       # (6) slot struct rebuilt
         cd = R.plugins[1].capture
-        _set_at!(R, Any[:plugins, 1, :capture],                  # every field carried (B-3 — a dropped field made this a NON-faithful rebuild); two since stage 1 of the Alterants build
+        _set_at!(R, Any[:plugins, 1, :capture],                  # every field carried (a dropped field made this a NON-faithful rebuild); two since the mode-gate field's removal
                  GM.CaptureDecl(cd.attr_scheme, cd.attr_stem))
         @test isempty(GM._registry_door_check(R))
     end
-    # stage 2's commit 3-ii: the default slot is the ALTERANT's — `_with_default(b, i, v)` declares `v` on the plugin OWNING action i
+    # the default slot is the ALTERANT's — `_with_default(b, i, v)` declares `v` on the plugin OWNING action i
     # (action 4 = Visib's :discard → plugin 2), every other field copied; the readers below read `R.plugins[2].default`
     _with_default(b, i, v) = begin
         k = Int(b.action_specs[i].plugin); p = b.plugins[k]
@@ -469,16 +469,16 @@ end
         push!(dagseen, :join)
     end
 
-    # ═══ the NAMED cases (§9): Σ = 42 asserts (44 at T2-bis; the T4 VocabularyRef case's two left at stage 5's E9; the overload-leaf case's two at E11) ═══
+    # ═══ the NAMED cases: Σ = 42 asserts (44 before the VocabularyRef case's two and the overload-leaf case's two were removed) ═══
     _with_ctor(b, T) = (b.plugins[2] = GM.Alterant(; altName = :Visib, setMode = :mutExclusive,
         altConstructor = T, setAltInstance = GM.Alterants.setVisib); b)
     _swap_ctor!(R, T) = (R.plugins[2] = GM.Alterant(; altName = :Visib, setMode = :mutExclusive,
         altConstructor = T, setAltInstance = GM.Alterants.setVisib); R)
     # (v0.4 T3 — the case-(iv) migration; RE-HOMED at T5: `SubString{String}` and its
     # swap target `String` are the ONLY named-case types without a zero-argument method,
-    # so under the eager DEP_MISSING gate of the time (left at stage 5's E4) case (iv)'s TYPE half could not ride the ctor
-    # slot. T3 parked it on the capture row's former `instance_type` field (left at stage 5's E5) while that slot was CARRIED; T5
-    # CONSUMED the slot (the identity law left at stage 5's E4, the field itself at E5) — the slot
+    # so under the eager DEP_MISSING gate of the time (since removed) case (iv)'s TYPE half could not ride the ctor
+    # slot. It was parked on the capture row's former `instance_type` field (since removed) while that slot was CARRIED; the capture re-home
+    # CONSUMED the slot (the identity law and the field itself removed) — the slot
     # correctly refuses the old vehicle — the Type half now rides a DECLARED default
     # VALUE (a `Type` is an admitted domain leaf, compared `===` at the door — the same
     # Type-leaf compare the case exists to pin); cases (i)-(iii) keep the ctor slot.)
@@ -520,7 +520,7 @@ end
         d = R.plugins[2].default.value
         d[:b] = 2
         @test _codesp(GM._registry_door_check(R)) == [:POST_SEAL_MUTATION]
-        @test _reported_segments(R) == _dpath && only(GM._registry_door_check(R)).context == "plugins[2].default.value"   # …and the door's OWN rendered path (registry.jl :1997–:1999) at depth — the oracle recomputes the comparator; this pins the door's assembly (MEASURED on the s5c37 scratch at 0cf389d4: PROBES-s5c37-witness-values_on-0cf389d4.txt [I]; the closing set's row L5 r5)
+        @test _reported_segments(R) == _dpath && only(GM._registry_door_check(R)).context == "plugins[2].default.value"   # …and the door's OWN rendered path (registry.jl) at depth — the oracle recomputes the comparator; this pins the door's assembly (MEASURED)
     end
     let R = _dict_reg()
         delete!(R.plugins[2].default.value, :a)
@@ -549,9 +549,9 @@ end
         @test _codesp(GM._registry_door_check(R)) == [:POST_SEAL_MUTATION]
         @test _reported_segments(R) == _dpath
     end
-    # (the OVERLOAD LEAF case (2) left at stage 5's E11 of the v0.4 build with the overload rows — census row 16)
-    # the STRUCT-KEYED-Dict silence case (1) — the struct keys are `Declared{Vector}` since stage 5's E10: two instances stay two
-    # Dict keys, as two of the former constraint rows did (that slot struct left with its slot at stage 5's E10)
+    # (the OVERLOAD LEAF case (2) was removed with the overload rows)
+    # the STRUCT-KEYED-Dict silence case (1) — the struct keys are `Declared{Vector}`: two instances stay two
+    # Dict keys, as two of the former constraint rows did (that slot struct was removed with its slot)
     let R = GM.publish(_with_default(_mk_prop_builder(), 4, Dict{Any,Any}(GM.Declared(Any[:hide, :show]) => 1)))
         @test isempty(GM._registry_door_check(R))
     end
@@ -582,7 +582,7 @@ end
         d = R.plugins[2].default.value
         ks = collect(keys(d))
         v1 = d[ks[1]]; d[ks[1]] = d[ks[2]]; d[ks[2]] = v1        # a pure VALUE SWAP — structurally equal
-        @test isempty(GM._registry_door_check(R))                # SILENT (scope note 4 — surfaced, ruled-covered reading)
+        @test isempty(GM._registry_door_check(R))                # SILENT (a documented scope note)
     end
     let b = _mk_prop_builder()                                   # GUARD-ISOLATION: candidates share nested containers
         inner = Any[Int8(1)]
@@ -710,7 +710,7 @@ end
         s.pT in (GM.Alterant, GM.ActionSpec) && s.path[end] isa Symbol &&
             push!(recfields, (s.pT, s.path[end]))
     end
-    @test length(recfields) == 12                                # every §1 record field exercised (12 since stage 5's E12 of the v0.4 build — census row 45, the action record's settribute slot left; 13 since stage 5's E11 of the v0.4 build — the overload rows' ten fields and the action record's spelling, sugar_candidacy and keyed_slot left, census row 16; 27 before: the Alterant's default slot joined at commit 3, the action's left at 3-ii — R-V04B-51; the vocabulary slot left at stage 5's E9; the record's eight slots at E10 — MEASURED, the second build's counts probe caught the stale 35)
+    @test length(recfields) == 12                                # every record field exercised (12 since the action record's settribute slot was removed; 13 before that, since the overload rows' ten fields and the action record's spelling, sugar_candidacy and keyed_slot were removed; 27 before: the Alterant's default slot joined, the action's was removed, the vocabulary slot and the record's eight slots were removed — MEASURED)
     leafcats = Set(s.cat for s in sites if s.kind in (:leaf, :single, :dictkey))
     @test issubset(Set([:bool, :symbol, :int, :float, :string, :type, :function, :version,
                         :complex, :rational, :nothing_leaf]), leafcats)

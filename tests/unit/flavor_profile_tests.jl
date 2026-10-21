@@ -3,13 +3,13 @@
 # the rows-only-grow sense — the F-18 record reshape trued the construction kwargs
 # and the [3] identity pins to the live regime, the declared witness churn).
 #
-# Covers: construction green for both armed records; the five prototype fields (six before stage 5's P1 — the extensions pin left, census row 72)
+# Covers: construction green for both armed records; the five prototype fields (six before — the extensions pin removed)
 # VERBATIM-pinned; the directive TABLE rows (now with the F-18 consume verbs); the
 # glued/bare policies + the run-arm strictness; the lead codeunit generalization; the
 # record guards (incl. the F-18 collision/consume vocabularies + the positional-constructor
 # removal); ParseState threading (setup default · kwarg · goMeta resolve-once for
-# BOTH armed tags + the guarded invalid-tag path). (The parse_header! seam identity left at stage 5's P1 of the
-# v0.4 build (census rows 63, 39, 72, 58) with the header_strategy pins, the digest PROPERTIES testset, the
+# BOTH armed tags + the guarded invalid-tag path). (The parse_header! seam identity was removed
+# with the header_strategy pins, the digest PROPERTIES testset, the
 # extensions pin and the compat-alias identities — each with its subject.)
 
 using Test
@@ -43,8 +43,8 @@ const _FP_CLOSE_ROW = (char = ']', status = :claimed, flags = (:startNewBlock,
     :ignoreThisMeta, :containsMeta, :stopAttachmentToMeta), ws_strict = true,
     consume = :single)
 
-## The julia construction kwargs, shared by the guard witnesses (10 kwargs since stage 5's P1 of the v0.4 build —
-## the extensions field, the parse_header! pointer and the header_strategy identifier left, census rows 72 and 63).
+## The julia construction kwargs, shared by the guard witnesses (10 kwargs —
+## the extensions field, the parse_header! pointer and the header_strategy identifier removed).
 _fp_julia_kwargs(; overrides...) = merge((
     flavor_tag       = :julia,
     lead             = "#",
@@ -60,7 +60,7 @@ _fp_julia_kwargs(; overrides...) = merge((
 
 @testset "flavor_profile_tests (WP1-W1 record + threading)" begin
 
-    @testset "[1] construction + the five prototype fields, verbatim (the extensions pin left at stage 5's P1)" begin
+    @testset "[1] construction + the five prototype fields, verbatim (the extensions pin removed)" begin
         @test _FP_BLS.FLAVOR_JULIA isa _FP_BLS.FlavorProfile
         @test _FP_BLS.FLAVOR_CFAM  isa _FP_BLS.FlavorProfile
         jl = _FP_BLS.FLAVOR_JULIA; cf = _FP_BLS.FLAVOR_CFAM
@@ -69,7 +69,7 @@ _fp_julia_kwargs(; overrides...) = merge((
         @test jl.comment_run_char == '#' && cf.comment_run_char == '/'
         @test jl.hide_marker == "## " && cf.hide_marker == "//# "
         @test jl.hide_fold_prefix == "##" && cf.hide_fold_prefix == "//"
-        ## (the extensions pin and the compat-alias identities left at stage 5's P1 of the v0.4 build — census rows 72 and 58)
+        ## (the extensions pin and the compat-alias identities were removed)
     end
 
     @testset "[2] the directive TABLE (the deletion-note shape) + policies" begin
@@ -103,16 +103,16 @@ _fp_julia_kwargs(; overrides...) = merge((
         @test jl.comment_run_strict && !cf.comment_run_strict
     end
 
-    @testset "[3] the lead generalization (the parse_header! seam pins left at stage 5's P1 — census row 63)" begin
+    @testset "[3] the lead generalization (the parse_header! seam pins removed)" begin
         @test _FP_BLS.FLAVOR_JULIA.lead_ncu == 1
         @test _FP_BLS.FLAVOR_JULIA.lead_cus == (UInt8('#'),)
         @test _FP_BLS.FLAVOR_CFAM.lead_ncu == 2
         @test _FP_BLS.FLAVOR_CFAM.lead_cus == (UInt8('/'), UInt8('/'))
-        ## (the `_CFAM_LEAD_*` consts the record values generalized left at stage 5's P1 — census row 58)
+        ## (the `_CFAM_LEAD_*` consts the record values generalized were removed)
     end
 
-    # (the [4] digest-properties testset was CONSCIOUSLY RETIRED at stage 5's P1 of the v0.4 build with its subject — the
-    # flavor record's digest fold, census row 39: a cache-key component no code read.)
+    # (the [4] digest-properties testset was CONSCIOUSLY RETIRED with its subject — the
+    # flavor record's digest fold: a cache-key component no code read.)
 
     @testset "[5] record guards + the INTERIM reserved-arms law" begin
         ## The INTERIM law: a NON-julia flavor claiming a reserved arm REFUSES at
@@ -186,7 +186,7 @@ _fp_julia_kwargs(; overrides...) = merge((
         ## mechanically): positional construction throws MethodError.
         @test_throws MethodError _FP_BLS.FlavorProfile(:julia, "#", '#', "## ",
             "##", r"^x", _FP_BLS.FLAVOR_JULIA.directives, :content,
-            :content, true, true, 1, (UInt8('#'),))   # the record's 13 values since stage 5's P1 (census rows 39, 63, 72)
+            :content, true, true, 1, (UInt8('#'),))   # the record's 13 values
     end
 
     @testset "[6] ParseState threading (setup default · kwarg · goMeta resolve-once)" begin
@@ -204,7 +204,7 @@ _fp_julia_kwargs(; overrides...) = merge((
             config = GM.GoMetaConfig(flavor_tag = :c))
         @test r_c.blsComponentTree.flavor === _FP_BLS.FLAVOR_CFAM
         ## The invalid-tag path throws raw at flavor_for — the closed inventory's stable message, no
-        ## fallback (the coded refusal left at stage 5's E8 of the v0.4 build — census row 30).
+        ## fallback (the former coded refusal was removed).
         @test_throws ErrorException GM.goMeta(_fp_bytes("x\n");
             config = GM.GoMetaConfig(flavor_tag = :cobol))
     end

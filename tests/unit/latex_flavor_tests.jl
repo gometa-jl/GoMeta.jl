@@ -1,6 +1,6 @@
 # tests/unit/latex_flavor_tests.jl — WP1-W5 (F-22): the FLAVOR_LATEX data point —
-# THE ACCEPTANCE PROOF's witness battery (SYNTHESIS-JUDGE §3 row WP1-W5; the .tex
-# classification vocabulary per the owner's N-4 ruling = the cfam-parallel
+# THE ACCEPTANCE PROOF's witness battery (the .tex
+# classification vocabulary per the creator's decision = the cfam-parallel
 # default). Every tree/render pin below was MEASURED AT BIRTH (the probe run
 # preceding this file — empirical-first; goldens-additive-only honored: the pins
 # live HERE, the golden layer's files untouched).
@@ -24,7 +24,7 @@ end
 
 @testset "latex_flavor_tests (WP1-W5 pure-data flavor)" begin
 
-    @testset "[1] the record: pure data (the shared reader is the loop's direct call since stage 5's P1 — census row 63)" begin
+    @testset "[1] the record: pure data (the shared reader is the loop's direct call)" begin
         lx = _LX_BLS.FLAVOR_LATEX
         @test lx isa _LX_BLS.FlavorProfile
         @test lx.flavor_tag === :latex
@@ -39,10 +39,10 @@ end
         ## The deletion-note shape: four :absent + the claimed ws-strict close.
         @test all(r -> r.status === :absent, lx.directives[1:4])
         @test lx.directives[5].status === :claimed && lx.directives[5].ws_strict
-        ## (the extensions pin, the seam pins and the digest distinctness left at stage 5's P1 of the v0.4 build — census rows 72, 63, 39)
+        ## (the extensions pin, the seam pins and the digest distinctness were removed)
     end
 
-    @testset "[2] the inventory rows: flavor_for (the coded config-time refusal left at stage 5's E8 — census row 30)" begin
+    @testset "[2] the inventory rows: flavor_for (the former coded config-time refusal removed)" begin
         @test _LX_BLS.flavor_for(:latex) === _LX_BLS.FLAVOR_LATEX
         r_ok = GM.goMeta(_lx_bytes("x 1\n"); config = _lx_cfg)
         @test r_ok.status === GM.PROCESS_OK
@@ -147,8 +147,8 @@ end
         ## ORDER mechanically observable: the REAL reader returns the bucket-A
         ## sentinel 0 on the glued `!!~x` (the `~` arm's glued no-match falls through
         ## to `_lead_fallthrough!` under the :content policy — measured on the base
-        ## tree before this re-cut at stage 5's P1: probe-p1-latex12.jl; the pointer seam
-        ## that carried a sentinel reader left, census row 63): raw 0 ⇒ (true, lead_ncu-1+1);
+        ## tree before this re-cut; the pointer seam
+        ## that carried a sentinel reader was removed): raw 0 ⇒ (true, lead_ncu-1+1);
         ## with the width added first (the defect class), the sentinel test could never see the 0.
         ## The :julia tag is REUSED deliberately: the INTERIM reserved-arms law
         ## admits claimed directive rows for :julia only, and this synthetic

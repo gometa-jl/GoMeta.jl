@@ -1,17 +1,17 @@
-# origin_tests.jl — stage 2's commit 2 of the v0.4 build: THE ONE PROVENANCE FIELD `decided_by` on `EvalRecord` (R-V04B-35 (b), (d)).
+# origin_tests.jl — THE ONE PROVENANCE FIELD `decided_by` on `EvalRecord`.
 #
 # IS:   the unit witnesses that the origin of an applied action is RECORDED at the enqueue (the stating Component's
 #       handle), carried through the apply and captured with the row — MEASURED, never inferred from a row's presence.
 # DOES: runs goMeta on four inline documents and pins each row's `decided_by` against the handles computed from the
 #       delivered tree through the door (`occurrence_key` + `key_bytes`, the default namespace).
-# REASONING: R-V04B-35 (d) — "so that own or indirect is MEASURED, never inferred from a row's presence"; the authored
-#       runner's `decided_by` assertion (the brief's 4a) builds on this field.
+# REASONING: the creator's design — "so that own or indirect is MEASURED, never inferred from a row's presence"; the authored
+#       runner's `decided_by` assertion builds on this field.
 # PURPOSE: the commit-2 witness (the same-commit triple's test leg).
 
 using Test
 import GoMeta as GM
 
-@testset "origin — the provenance field decided_by (stage 2 commit 2; R-V04B-35 (d))" begin
+@testset "origin — the provenance field decided_by" begin
     _run(s) = GM.goMeta(Vector{UInt8}(codeunits(s)))
     _h(t, c) = GM.key_bytes(GM.occurrence_key(t, c; namespace = :default))
     _blocks(t) = collect(GM.BLS.children(t))
