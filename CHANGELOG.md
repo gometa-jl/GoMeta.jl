@@ -6,7 +6,7 @@ sees, in the breaking-change register of the API reference, [`docs/public-api.md
 **No backward compatibility and no deprecation until at least v0.7**: every change of the public surface is
 a clean cut. A date is the day of the version's tag (since 0.3.0) or, before 0.3.0, of the day the version reached `main` (those versions carry no tag).
 
-## 0.4.2 — unreleased
+## 0.4.2 — 2026-10-22
 
 - **The Labels Alterant's vocabulary statements.** A file at `#~0` or the user's profile adds names to the Labels
   Alterant's vocabulary for the run and removes names from it: `:++x` / `:(++, x, y)` add, `:--x` / `:(--, x)` remove. A
