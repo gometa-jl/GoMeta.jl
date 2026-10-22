@@ -17,11 +17,11 @@
 #       orders ([B-W11]); THE CREATOR's 026 with a withhold ([B-W12]); THE `Dict{Symbol,Bool}` METHOD unchanged ([B-W13]); THE PROVENANCE
 #       of a withhold ([B-W14]); THE COIN CASE ([B-W15]); THE ENGINE'S DOOR by a custom registration ([B-W16]); THE DOOR at the apply loop's FIRST setter call — an outer slot's plain label met by a withhold applied before it ([B-W17]).
 # REASONING: a withhold removes a name from the Component's applied set and marks it withheld for the rest of that slot's walk; an explicit
-#       apply applies the name and lifts the mark; a plain name met by the mark applies nothing and returns a `:warning` Diagnostic the Engine
+#       apply applies the name and lifts the mark; a plain name met by the mark applies nothing and returns a `Vector{Diagnostic}` of `:warning` rows, one per such name occurrence, the Engine
 #       delivers with the result (the status untouched — the user is INFORMED and the run PROCEEDS); a run without a sign form is pinned
 #       already (labels_vocabulary_tests.jl, fed_profile_order_tests.jl, vocabulary_tests.jl) — no new testset for it. NOT witnessed here (the
 #       measured sweeps' alone): W03b's Line answers, W35 (`:doc`), the 28-input sweep × 3 but for A12's `:-label1` twin ([B-W17]) (its `:-label1` run: 22 inputs with diagnostics,
-#       6 without, the seven condition-decided Visib rows gone and one replaced).
+#       6 without, the condition-decided Visib rows gone in seven inputs — fourteen rows — and one replaced).
 # PURPOSE: the withhold and the explicit apply, measured — never inferred from the setter's docstring or from prose.
 
 using Test
@@ -134,7 +134,7 @@ end
         k = _lw_keys(r); @test length(k) == 8; _lw_pair(r, 1, [:label1], [k[1]]); _lw_pair(r, 5, [:label1], [k[1], k[3], k[5]]; sources = (:indirect, :indirect)); @test isempty(_lw_rows(r, k[7])) && isempty(_lw_rows(r, k[8]))
     end
 
-    @testset "[B-W5] the unknown and the excluded names: `:-zzz` / `:+zzz` (W12 / W13) and, after `#~0 :--label1`, `:-label1` / `:+label1` (W14 / W15) — each REFUSED as an unknown label, the message naming the bare name (the one-character asymmetry: `:-x` informs, `:--x` refuses)" begin
+    @testset "[B-W5] the unknown and the excluded names: `:-zzz` / `:+zzz` (W12 / W13) and, after `#~0 :--label1`, `:-label1` / `:+label1` (W14 / W15) — each REFUSED as an unknown label, the message naming the bare name (the one-character asymmetry: a one-run `:-x` informs where a one-run `:--x` refuses a later use)" begin
         @test _lw_msg("#~ :-zzz\nx = 1\n") == raw"""GoMeta apply: unknown label "zzz" — not in the Labels Alterant's vocabulary (the accepted set = [:doc, :label1, :label2, :label3, :label4, :label5, :⌛, :⛓️, Symbol("⛓️\u200d💥"), :⛔, :🇨🇭, :🌍, :🌛, :🌞, :🌳, :🌷, :🌹, :🌼, :🍀, :🍒, :🍻, :🎨, :🎿, :🏔️, :🐣, :💕, :💡, :💣, :💫, :💯, :💸, :💾, :📝, :📸, :🔥, :😘, :🚀, :🧮, :🫕]); see docs/public-api.md §3.4"""
         @test _lw_msg("#~ :+zzz\nx = 1\n") == raw"""GoMeta apply: unknown label "zzz" — not in the Labels Alterant's vocabulary (the accepted set = [:doc, :label1, :label2, :label3, :label4, :label5, :⌛, :⛓️, Symbol("⛓️\u200d💥"), :⛔, :🇨🇭, :🌍, :🌛, :🌞, :🌳, :🌷, :🌹, :🌼, :🍀, :🍒, :🍻, :🎨, :🎿, :🏔️, :🐣, :💕, :💡, :💣, :💫, :💯, :💸, :💾, :📝, :📸, :🔥, :😘, :🚀, :🧮, :🫕]); see docs/public-api.md §3.4"""
         @test _lw_msg("#~0 :--label1\n\n#~ :-label1\nx = 1\n") == raw"""GoMeta apply: unknown label "label1" — not in the Labels Alterant's vocabulary (the accepted set = [:doc, :label2, :label3, :label4, :label5, :⌛, :⛓️, Symbol("⛓️\u200d💥"), :⛔, :🇨🇭, :🌍, :🌛, :🌞, :🌳, :🌷, :🌹, :🌼, :🍀, :🍒, :🍻, :🎨, :🎿, :🏔️, :🐣, :💕, :💡, :💣, :💫, :💯, :💸, :💾, :📝, :📸, :🔥, :😘, :🚀, :🧮, :🫕]); see docs/public-api.md §3.4"""
@@ -173,7 +173,7 @@ end
         # AFTER trace W46 `#~ :-label1⏎x = 1 #~ :label1⏎y = 2` (an inline PLAIN under a Block-level withhold) — EVERY VALUE BELOW FROM THE PRINTOUT before this line is kept: the status, the rows, the one Line-grain diagnostic (its cell the Line's key with the Segment as the origin, stated_by the Segment's handle, statements [Block #2, the Segment]), every Line's answer
         r = _lw_run("#~ :-label1\nx = 1 #~ :label1\ny = 2\n"); @test r.status === GM.PROCESS_OK && isempty(_lw_recs(r)); k = _lw_keys(r); d = _lw_diags(r); @test length(d) == 1
         @test d[1].code === :LABEL_NOT_APPLIED_WITHHELD && d[1].severity === :warning && d[1].context.label === :label1 && !(d[1].context.cell in k) && length(d[1].context.statements) == 2 && d[1].context.statements[1] == k[1] && d[1].context.stated_by == d[1].context.statements[2]
-        kS = _lw_key(r, _LW_BLS.children(r.blsComponentTree, _lw_lines(r, _lw_blocks(r)[2])[1])[2]); _lw_withheld(d[1], :label1, d[1].context.cell, kS, [k[1], kS])   # the stating statement = the Line's trailing metaSegment (its key as the Engine derives it); the message bytes the shared ones
+        lS = _lw_lines(r, _lw_blocks(r)[2])[1]; sS = _LW_BLS.children(r.blsComponentTree, lS)[2]; kS = _lw_key(r, sS); kL = GM.key_bytes(GM.occurrence_key(r.blsComponentTree, lS; origin = sS)); _lw_withheld(d[1], :label1, kL, kS, [k[1], kS])   # the cell = the Line's key with its trailing metaSegment as the origin, the stating statement = that Segment (both keys as the Engine derives them, apply.jl); the message bytes the shared ones
         # AFTER trace W46b `#~ :-label1⏎x = 1 #~ :+label1⏎y = 2` (an inline EXPLICIT apply under it) — FROM THE PRINTOUT: the one Line-grain row label_label1, its decided_by [Block #2, the Segment], 0 diagnostics
         r = _lw_run("#~ :-label1\nx = 1 #~ :+label1\ny = 2\n"); @test r.status === GM.PROCESS_OK && isempty(_lw_diags(r)); k = _lw_keys(r); vs = [x for x in _lw_recs(r) if !(x.cell_handle in k)]; @test length(_lw_recs(r)) == 1 && length(vs) == 1 && vs[1].attr === :label_label1 && vs[1].decided_by[1] == k[1] && length(vs[1].decided_by) == 2
     end

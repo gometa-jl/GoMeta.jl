@@ -33,9 +33,10 @@
 ##       :73–:78 at 47f0521: an applied name outside the set refuses with a message naming the accepted set, sorted for display);
 ##       `checkLabels` — the original engine's checker (:87–:99): an unset or unknown name answers false. The `Dict{Symbol,Bool}` methods of the
 ##       setter and the checker STAY: a custom registration pairing them with `altConstructor = Dict{Symbol,Bool}` runs without the hook: a run state handed to `Dict{Symbol,Bool}(…)` by `_freshInstance` (apply.jl) is Julia's own error.
-## DOES: a run WITHOUT a vocabulary statement evaluates as before the vocabulary statements — every label statement passes the hook's `nothing` path, the
+## DOES: a run WITHOUT a vocabulary statement checks its label names as before the vocabulary statements — every label statement passes the hook's `nothing` path, the
 ##       instance is built by the zero-argument constructor over the base, the setter's scan is the former one over the same 39 names
-##       in the same order and its message the former one but for its noun ("the Labels Alterant's vocabulary").
+##       in the same order and its message the former one but for its noun ("the Labels Alterant's vocabulary"); a plain label statement no withhold
+##       meets evaluates as before; the signed statements `:-x` / `:+x` and a plain `:x` met by a withhold are 0.4.3's (above).
 ## REASONING: the ∈-scan over the vector in declaration order (never `insorted` over an unsorted declaration);
 ##       the ZWJ name `⛓️‍💥` is one name (its former `query=false` field was inert data).
 ## PURPOSE: a basic, true Labels Alterant whose vocabulary a file (at `#~0`) or the user level can extend and prune, per run.
@@ -167,7 +168,7 @@ function declareLabels!(run, mhIdx::Int, actionName::Symbol, args::Tuple, hasCon
     ## (an empty member — a stray comma — refused like no name; measured V42 … V45)
     any(n -> isempty(String(n)), names) &&
         error("GoMeta absorb: the vocabulary statement `:", s1, "` names an empty label (a stray comma) — the forms are `:", sign, "x` and `:(", sign, ", x, y)`; see docs/public-api.md §3.4")
-    ## (ii) a declared name beginning with a sign (the names `+x` / `-x` kept free for a later release's forms; a signed member of a PLAIN list stays an unknown label, as before)
+    ## (ii) a declared name beginning with a sign (the signed statements `:+x` / `:-x` are the setter's own since 0.4.3 — a declared name never carries a sign; a signed member of a PLAIN label list is refused by the setter at the apply as a name beginning with a sign, no longer as an unknown label)
     for n in names
         ns = String(n)
         (startswith(ns, "+") || startswith(ns, "-")) &&

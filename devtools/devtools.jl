@@ -1341,9 +1341,9 @@ printComparisonForm(result::GoMeta.GoMetaDelivery; kwargs...) = printComparisonF
 
 THE DIAGNOSTICS OF A RUN FOR A HUMAN (a `PROCESS_OK` run may carry `:warning` rows — the Labels Alterant's `LABEL_NOT_APPLIED_WITHHELD`,
 a plain `:x` met by a withhold): the rows FOLDED by (code, severity, label, stating statement) — each group once: the code and the
-severity, the label where the row's context carries one, the count, the message, the stating statement's place and the places the row
+severity, the label where the row's context carries one, the count, the message (each distinct message of the group once), the stating statement's place and the places the row
 stands at (`L<n>` / `L<a>–L<b>`, decoded through the door from the handles the Engine attached — the applying Component's key, the stating
-statement's handle, the Alterant's statements applied at that Component so far; "the user level's profile" for a fed statement, whose text
+statement's handle, the Alterant's statements applied at that Component so far — each distinct history of the group once, with its places where the group holds more than one; "the user level's profile" for a fed statement, whose text
 is not in the tree), a count line last; nothing printed for an empty vector; an error delivery's rows (a string or `nothing` context) print
 their context as is. Reads the delivered object alone; evaluates nothing; the Engine prints nothing itself — this is the development tools'
 print, the command line's end-of-run one.
@@ -1371,14 +1371,26 @@ function print_diagnostics(io::IO, r; name::AbstractString = "")
     for k in order
         rows = groups[k]; d = rows[1]; ctx = d.context
         println(io, "diagnostic: ", d.code, " (", d.severity, ")", k[3] === nothing ? "" : string(" — label ", k[3]), " — ", length(rows), " occurrence(s)")
-        println(io, "   ", d.message)
+        for m in unique(x.message for x in rows)
+            println(io, "   ", m)
+        end
         if ctx isa NamedTuple
             haskey(ctx, :stated_by) && println(io, "   stated by: ", place(ctx.stated_by))
             haskey(ctx, :cell) && println(io, "   at: ", join([place(x.context.cell) for x in rows], ", "))
-            haskey(ctx, :statements) && println(io, "   the ", haskey(ctx, :label) ? "Labels " : "", "statements applied there so far: ", join([place(h) for h in ctx.statements], ", "))
-            haskey(ctx, :alterant_context) && println(io, "   context: ", repr(ctx.alterant_context))
+            if haskey(ctx, :statements)
+                hs = unique(x.context.statements for x in rows if x.context isa NamedTuple && haskey(x.context, :statements))
+                for sts in hs
+                    println(io, "   the ", haskey(ctx, :label) ? "Labels " : "", "statements applied there so far: ", join([place(h) for h in sts], ", "),
+                            length(hs) == 1 ? "" : string(" (at: ", join([place(x.context.cell) for x in rows if x.context isa NamedTuple && haskey(x.context, :cell) && haskey(x.context, :statements) && x.context.statements == sts], ", "), ")"))
+                end
+            end
+            for ac in unique(x.context.alterant_context for x in rows if x.context isa NamedTuple && haskey(x.context, :alterant_context))
+                println(io, "   context: ", repr(ac))
+            end
         elseif ctx !== nothing
-            println(io, "   context: ", repr(ctx))
+            for c in unique(x.context for x in rows)
+                println(io, "   context: ", repr(c))
+            end
         end
     end
     println(io, length(r.diagnostics), " diagnostic row(s) in ", length(order), " group(s)")
