@@ -73,6 +73,7 @@ import GoMeta
 bytes    = read("examples/InFileFolder/file_for_Example_Proposal_JuliaCon.jl")
 delivery = GoMeta.goMeta(bytes)             # one run: BLS, GoMeta's parser, reads the file; the GoMeta Engine evaluates the metadata
 delivery.status == GoMeta.PROCESS_OK || error("processing failed")
+foreach(d -> println(stderr, d.message), delivery.diagnostics)   # a completed run may still carry warning diagnostics — a label a withhold kept from applying (docs/public-api.md §3.4)
 
 tree  = delivery.blsComponentTree           # the BLS Component tree — the file as BLS parsed it: Blocks, Lines, Segments
 evals = GoMeta.readAltValuesEvals(delivery.altValues_evals)   # the evaluated Alterant values, one row per evaluated value (a piece and an attribute)
@@ -97,7 +98,7 @@ Julia file you `include`. One caveat: metaLine names intern as Julia `Symbol`s, 
 
 ## Status
 
-`0.4.2`, **alpha**: a working, tested engine for the **v0 subset** of the GoMeta language. The seven
+`0.4.3`, **alpha**: a working, tested engine for the **v0 subset** of the GoMeta language. The seven
 committed examples render byte for byte as their committed outputs, pinned by the shipped test suite
 (`Pkg.test()`) and checked by CI on Julia 1.12, Linux. The surface may still
 move: **no backward compatibility and no deprecation until at least v0.7**, by the creator's policy —

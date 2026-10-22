@@ -160,7 +160,8 @@ DOES: carries the Alterant's name (`altName`); its set-mode (`setMode` — `:acc
     with the source "default"); and the capture declaration (`capture` — `nothing` | a `CaptureDecl`:
     the row that makes the Alterant's applied state mint evals rows); and the read-time hook (`onRead` — `nothing` | a function
     `(run, mhIdx, actionName, args, hasCondition) -> nothing | run′`, called by `absorbMeta` for the Alterant's statements with
-    arguments before the slot bound). The keyword form below defaults every optional slot;
+    arguments before the slot bound); and the setter's RETURN is read by the apply loop for diagnostics — a `Vector{Diagnostic}` delivered
+    with the place attached, anything else ignored (since 0.4.3; no record field). The keyword form below defaults every optional slot;
     `build_default_registry` builds the four shipped records.
 REASONING: one immutable record per Alterant, declared as DATA and read by the apply plane through the registry's derived tables — the original
     engine's form (one record per Alterant, registered as data); no fixed-size array inside it.
@@ -831,8 +832,7 @@ the shape and the name; docs/public-api.md §1.1, §2):
 - `status::ProcessStatus` — `PROCESS_OK` (no error-severity diagnostic) or `PROCESS_ERROR` (at least one;
   non-OK ⇒ non-empty diagnostics).
 - `diagnostics::Vector{Diagnostic}` — the run's coded diagnostics: every row the run recorded, `:error` and
-  `:warning` alike; empty when it recorded none (the type admits `:warning` rows, yet none is minted under `src/`, so a `PROCESS_OK` run's vector is empty (the entry door's fail-closed `PROCESS_ERROR` delivery, `_entryErrorDelivery` in src/GoMeta.jl, carries its `:error` rows) —
-  `PROCESS_OK` means no `:error` row).
+  `:warning` alike; empty when it recorded none; a `PROCESS_OK` run may carry `:warning` rows (since 0.4.3) — the Labels Alterant's `LABEL_NOT_APPLIED_WITHHELD`, a plain `:x` met by a withhold, returned by the setter and delivered by the apply loop's door with the place in its context — so `PROCESS_OK` means no `:error` row, not an empty vector (the entry door's fail-closed `PROCESS_ERROR` delivery, `_entryErrorDelivery` in src/GoMeta.jl, carries its `:error` rows).
 
 DOES: carries these four and NOTHING internal — the per-call working state (`ProcessState`) never leaves the
 core. The parts are plain fields, in the creator's pipeline order: `d.blsComponentTree`, `d.altValues_evals`,

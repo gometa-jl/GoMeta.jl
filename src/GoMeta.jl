@@ -415,11 +415,13 @@ function goMeta(
     ## The typed `GoMetaDelivery` supersedes the original three-field NamedTuple (render, tree, configDict)
     ## (the historical field name `tree_bytes` predates the `blsStructure_bytes` rename; kept verbatim in this
     ## comment only). `status` is computed from the accumulated diagnostics: `PROCESS_ERROR` iff an `:error` row
-    ## exists, else `PROCESS_OK`. On this path no `:error` row is ever pushed (the door's
+    ## exists, else `PROCESS_OK`. On this path the Engine itself pushes no `:error` row (the registry door's
     ## refusal fail-closes through `_entryErrorDelivery` before the parse; the absorb/apply-path refusals still
     ## THROW — the unknown-condition-key refusal at the absorb seam, Julia's own ParseError for a body it cannot read,
-    ## the E-06 row raw), so a run that returns
-    ## here is `PROCESS_OK`, its diagnostics vector empty — the two capture-floor warnings of the Heading's separate path were removed
+    ## the E-06 row raw); its diagnostics vector carries the rows the apply loop's door delivered from a setter's return (since 0.4.3), each with the
+    ## severity its Alterant gave it — a custom Alterant's `:error` row makes the run `PROCESS_ERROR` with the tree and the rows delivered; under the
+    ## shipped registry a run that returns here is `PROCESS_OK` and its vector carries the `:warning` rows alone (the
+    ## Labels Alterant's `LABEL_NOT_APPLIED_WITHHELD`, a plain `:x` met by a withhold; `_deliver_diagnostics!`, apply.jl) and is empty otherwise — the two capture-floor warnings of the Heading's separate path were removed
     ## with that path within the 0.4 development (the type's docstring). The evaluated values are read by `readAltValuesEvals(result.altValues_evals)`; the development tool's
     ## (tree, render) pair (`Main.BasicRenderer.outputs`) is a pure function of the delivery — the tree READ, never written
     ## — every Visib value the Engine's answer (`evaluatedAltValue`).

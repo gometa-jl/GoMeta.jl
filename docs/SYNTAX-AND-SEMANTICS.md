@@ -314,6 +314,11 @@ content-only block across the blank.
   full accepted set): applying a label from outside the run's vocabulary refuses with a stable message naming the
   accepted set; a label QUERIED in a condition answers false when it is unknown or unset (as
   the original engine answered; since `0.4.0`).
+- **Withhold and explicit apply (since `0.4.3`)** — `:-x` / `:(-, x, y)` WITHHOLDS a label from the current set of labels applied to the
+  current Component and to everything under its metaBlock until a later metaBlock of the same or a shallower depth replaces the slot
+  (the written order within a metaBlock decides); `:+x` / `:(+, x)` applies it explicitly. A plain `:x` met by a withhold applies nothing and
+  the run completes with a `:warning` diagnostic naming the label, the place and the ways out (`docs/public-api.md` §3.4); a withheld
+  label read by a condition answers false. The sign stands at the head of a statement, never inside a list: `:(x, -y)` refuses.
 - **Conditional application** — `:labelN{ condition }` applies the label **only** to components satisfying the
   condition. Cite: `Extended L8` `#~ :label1{ isText && containsMeta }` — `:label1` reaches only text that
   contains meta; `Proposal L3` `#~ :label1{ (isText && containsMeta), isMeta }`.
@@ -474,7 +479,7 @@ drops `:label1` from depth 1 to depth 2. One blank line, two flips, two reasons.
 **DOES** — the v0 forms, each engine-verified:
 
 - **Labels (the `:` action) — documented, both forms:** repeated one-word labels
-  (`#~ :label1 :label2`) AND the parenthesized list (`#~ :(label1, label2)`) are equivalent; each
+  (`#~ :label1 :label2`) AND the parenthesized list (`#~ :(label1, label2)`) are equivalent, and since `0.4.3` a sign at the head of the statement withholds (`:-x`, `:(-, x, y)`) or applies explicitly (`:+x`, `:(+, x)`) — §5; each
   label APPLIED is checked against the Labels Alterant's vocabulary — the run's since `0.4.2` (an unknown label refuses with a stable
   message); a label QUERIED answers false when unknown or unset (since `0.4.0` —
   `docs/public-api.md` §3.4).

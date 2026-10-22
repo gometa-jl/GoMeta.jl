@@ -1,7 +1,7 @@
 name = "GoMeta"
 uuid = "98657bb6-a3a3-4080-bc8f-2c439ca970f1"
 authors = ["GoMeta Project <hello@gometa.dev>"]
-version = "0.4.2"
+version = "0.4.3"
 
 [deps]
 SHA = "ea8e919c-243c-51af-8825-aaa63cd721ce"

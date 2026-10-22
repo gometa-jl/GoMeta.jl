@@ -54,6 +54,9 @@ using StaticArrays: SVector
 ## index the Engine hands it (`#~0` = the file slot, the user level, an inline metaSegment) — the structural consts have their single
 ## source in state.jl, included before this file (the pattern of `module CnS` below).
 using ..GoMeta: fileMHIdx, userMHIdx, lineMHIdx
+## the Labels Alterant's setter RETURNS `Diagnostic` rows for a plain name met by a withhold — the type is the Engine's (result.jl, included
+## before this file); the Engine's door (apply.jl) delivers them with the place attached.
+using ..GoMeta: Diagnostic
 
 #########################################################################################
 #########################################################################################
@@ -393,7 +396,7 @@ instances (the `state.jl` record type) for `labels` / `Visib` / `Id` / `Heading`
 returned as an UNVALIDATED `RegistryBuilder`.
 
 DOES: builds the four records in the keyword form, each with its declared default and its capture row — `labels`
-(`:accumulate`; `Alterants.LabelsInstance` (since 0.4.2) — the applied labels and the run's vocabulary, iterating as the former bare `Dict{Symbol,Bool}` did (labels.jl); setter `setLabels`, getter `checkLabels`; the read-time hook `onRead = Alterants.declareLabels!` — the vocabulary statements consumed at the read; the setter's and the checker's kept `Dict{Symbol,Bool}` methods serve a custom registration with `altConstructor = Dict{Symbol,Bool}` and NO hook — with a hook, a minted run state reaches `Dict{Symbol,Bool}(run)` and is Julia's own error (apply.jl `_freshInstance`; labels.jl); default the EMPTY SET; capture
+(`:accumulate`; `Alterants.LabelsInstance` (since 0.4.2) — the applied labels, the run's vocabulary and the names withheld at the Component (the withhold `:-x`, since 0.4.3), iterating as the former bare `Dict{Symbol,Bool}` did (labels.jl); a plain `:x` met by a withhold applies nothing and is reported through the setter's returned `:warning` diagnostics, delivered by the apply loop's door with the place attached; setter `setLabels`, getter `checkLabels`; the read-time hook `onRead = Alterants.declareLabels!` — the vocabulary statements consumed at the read; the setter's and the checker's kept `Dict{Symbol,Bool}` methods serve a custom registration with `altConstructor = Dict{Symbol,Bool}` and NO hook — with a hook, a minted run state reaches `Dict{Symbol,Bool}(run)` and is Julia's own error (apply.jl `_freshInstance`; labels.jl); default the EMPTY SET; capture
 `:per_key`, stem `:label`), `Visib` (`:mutExclusive`; default `:show`; `:single`, stem `:visib`), `id`
 (`:mutExclusivePerField`; default the ZERO compound; `:per_field`, stem `:id`) and `heading` (`:localOnly` —
 queued like every action, applied by the apply loop's one rule for this mode ONLY at the Component the statement is applied

@@ -6,6 +6,21 @@ sees, in the breaking-change register of the API reference, [`docs/public-api.md
 **No backward compatibility and no deprecation until at least v0.7**: every change of the public surface is
 a clean cut. A date is the day of the version's tag (since 0.3.0) or, before 0.3.0, of the day the version reached `main` (those versions carry no tag).
 
+## 0.4.3 — unreleased
+
+- **The Labels Alterant's withhold and explicit apply.** `:-x` / `:(-, x, y)` WITHHOLDS a label from the current set of labels applied
+  to the current Component and to everything under its metaBlock until a later metaBlock of the same or a shallower depth replaces the
+  slot; `:+x` / `:(+, x)` APPLIES it explicitly, after a withhold or not; within one metaBlock the written order decides. A plain `:x` met
+  by a withhold applies nothing and the run completes `PROCESS_OK` with ONE `:warning` diagnostic for each such statement and name at each affected Component (a name a statement writes twice is reported twice)
+  (`LABEL_NOT_APPLIED_WITHHELD`: the label, the Component, the statement and the Labels statements applied there so far in the row's
+  context; the message names the ways out) — the user informed, the run proceeding, the file never rewritten for one run. A withheld
+  label read by a condition answers false. The malformed shapes are refused at the apply: the prefixed sign with several names, a sign
+  with no name, an empty member of a signed list, a name beginning with a sign — after a prefixed sign (`:+-x`) or inside a list, signed or plain (`:(x, -y)`, refused before
+  as an unknown label, keeps its refusal with another message). The apply loop reads a setter's RETURN for one purpose: a
+  `Vector{Diagnostic}` is delivered with the place merged into each row's context, the severity copied; anything else is ignored as before.
+  The development tools print a run's diagnostics at the end of the run (`print_diagnostics`); `extensions/find_by_label.jl` reports the
+  count per file. The register's row: "The Labels Alterant's WITHHOLD and EXPLICIT APPLY".
+
 ## 0.4.2 — 2026-10-22
 
 - **The Labels Alterant's vocabulary statements.** A file at `#~0` or the user's profile adds names to the Labels

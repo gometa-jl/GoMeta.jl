@@ -49,7 +49,8 @@ the config-time and condition-path codes were removed with the closed interprete
 path; docs/public-api.md §3); `severity::Symbol ∈ {:error,:warning,:info}` — the declared set;
 under `src/` the rows minted are `:error` (`REG_UNPUBLISHED`, `POST_SEAL_MUTATION` — delivered; `REG_PROTOCOL`,
 `REG_SLOT_EXHAUSTED`, `REG_DERIVED_TABLES` — returned by `validate` as data or carried by a thrown `RegistrationRefused`);
-no `:warning` row is minted under `src/` (`WARN_CAPTURE_FLOOR` / `WARN_CAPTURE_UNREADABLE`
+the one `:warning` row minted under `src/` is the Labels Alterant's `LABEL_NOT_APPLIED_WITHHELD` (since 0.4.3 — a plain `:x` met by a withhold:
+returned by the setter, delivered by the apply loop's door with the place merged into its context; `WARN_CAPTURE_FLOOR` / `WARN_CAPTURE_UNREADABLE`
 were removed with the Heading's separate path — the §6 row); `message::String` is human-readable; `context` is
 optional structured context — what the minters pass: a record's name (an Alterant's `altName`, an action's `name`),
 a rendered path text, a field name, or `nothing` when absent (the three-argument outer constructor supplies it).

@@ -1336,6 +1336,55 @@ printComparisonForm(result::GoMeta.GoMetaDelivery; kwargs...) = printComparisonF
 ##  is `include`d (the battery and other consumers include this file and
 ##  see definitions only). Evaluates, never executes.
 #########################################################################################
+"""
+    print_diagnostics(io, delivery; name = "")
+
+THE DIAGNOSTICS OF A RUN FOR A HUMAN (a `PROCESS_OK` run may carry `:warning` rows — the Labels Alterant's `LABEL_NOT_APPLIED_WITHHELD`,
+a plain `:x` met by a withhold): the rows FOLDED by (code, severity, label, stating statement) — each group once: the code and the
+severity, the label where the row's context carries one, the count, the message, the stating statement's place and the places the row
+stands at (`L<n>` / `L<a>–L<b>`, decoded through the door from the handles the Engine attached — the applying Component's key, the stating
+statement's handle, the Alterant's statements applied at that Component so far; "the user level's profile" for a fed statement, whose text
+is not in the tree), a count line last; nothing printed for an empty vector; an error delivery's rows (a string or `nothing` context) print
+their context as is. Reads the delivered object alone; evaluates nothing; the Engine prints nothing itself — this is the development tools'
+print, the command line's end-of-run one.
+"""
+function print_diagnostics(io::IO, r; name::AbstractString = "")
+    isempty(r.diagnostics) && return nothing
+    doc = _dt_doc(r; name = name)
+    function place(h)
+        h isa Vector{UInt8} || return repr(h)
+        d = decode_handle(h)
+        d === nothing && return "UNDECODED"
+        d.grain == 0xe0 && return "the user level's profile"
+        c = _dt_resolve(doc, d.path)
+        c === nothing ? _dt_cli_fmt_steps(d.path) : _dt_span(c)
+    end
+    groups = Dict{Any,Vector{Any}}(); order = Any[]
+    for d in r.diagnostics
+        ctx = d.context
+        lab = ctx isa NamedTuple && haskey(ctx, :label) ? ctx.label : nothing
+        sb  = ctx isa NamedTuple && haskey(ctx, :stated_by) ? ctx.stated_by : nothing
+        k = (d.code, d.severity, lab, sb)
+        haskey(groups, k) || (groups[k] = Any[]; push!(order, k))
+        push!(groups[k], d)
+    end
+    for k in order
+        rows = groups[k]; d = rows[1]; ctx = d.context
+        println(io, "diagnostic: ", d.code, " (", d.severity, ")", k[3] === nothing ? "" : string(" — label ", k[3]), " — ", length(rows), " occurrence(s)")
+        println(io, "   ", d.message)
+        if ctx isa NamedTuple
+            haskey(ctx, :stated_by) && println(io, "   stated by: ", place(ctx.stated_by))
+            haskey(ctx, :cell) && println(io, "   at: ", join([place(x.context.cell) for x in rows], ", "))
+            haskey(ctx, :statements) && println(io, "   the ", haskey(ctx, :label) ? "Labels " : "", "statements applied there so far: ", join([place(h) for h in ctx.statements], ", "))
+            haskey(ctx, :alterant_context) && println(io, "   context: ", repr(ctx.alterant_context))
+        elseif ctx !== nothing
+            println(io, "   context: ", repr(ctx))
+        end
+    end
+    println(io, length(r.diagnostics), " diagnostic row(s) in ", length(order), " group(s)")
+    return nothing
+end
+
 const _DT_VERBS = ("tree", "segments", "evals", "render", "trace", "evals-tree", "bls-tree", "comparison")
 
 function _dt_cli_usage()
@@ -1356,9 +1405,7 @@ function _dt_cli_main(args)
 
     r = GoMeta.goMeta(read(path))
     println(stderr, "status: ", r.status)
-    for d in r.diagnostics
-        println(stderr, "diagnostic: ", d)
-    end
+    print_diagnostics(stderr, r; name = basename(path))   # the end-of-run print: the rows folded, the places decoded
 
     if cmd == "tree"
         print(String(copy(Main.BasicRenderer.outputs(r).blsStructure_bytes)))

@@ -57,6 +57,7 @@ function index_examples()
     index = Dict(l => Hit[] for l in LABELS)
     n_evals = 0
     n_skipped = 0
+    n_warned = 0
     for f in files
         bytes  = read(joinpath(EXAMPLES, f))
         # a malformed input is typically REFUSED by the engine with a stable message
@@ -76,6 +77,13 @@ function index_examples()
             n_skipped += 1
             continue
         end
+        # a completed run may carry warning diagnostics — a label a withhold kept from applying
+        # (docs/public-api.md §3.4): the file is indexed as delivered, the count reported so nothing passes silently
+        n_warn = count(d -> d.severity === :warning, result.diagnostics)
+        if n_warn > 0
+            println(stderr, "$f — $n_warn warning diagnostic(s): a label a withhold kept from applying (docs/public-api.md §3.4)")
+            n_warned += n_warn
+        end
         # the pieces that carry labels, THROUGH THE TREE: the Components
         # that got label values, each with its sorted label names; the piece's text through the door; its
         # visibility the Engine's answer. The hits per file come in tree order (formerly the rows' order).
@@ -89,13 +97,14 @@ function index_examples()
             end
         end
     end
-    return (index, length(files) - n_skipped, n_evals, n_skipped)
+    return (index, length(files) - n_skipped, n_evals, n_skipped, n_warned)
 end
 
 function main()
-    (index, n_files, n_evals, n_skipped) = index_examples()
+    (index, n_files, n_evals, n_skipped, n_warned) = index_examples()
     println("processed $n_files files → $n_evals evaluated entries",
-            n_skipped > 0 ? " ($n_skipped file(s) skipped — see the messages above)" : "")
+            n_skipped > 0 ? " ($n_skipped file(s) skipped — see the messages above)" : "",
+            n_warned > 0 ? " ($n_warned warning diagnostic(s) — see the messages above)" : "")
     if isempty(ARGS)
         println("\nlabel overview (pass a label name for the full hit list, e.g. `label5`):")
         for l in LABELS

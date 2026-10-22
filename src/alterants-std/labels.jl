@@ -15,10 +15,20 @@
 ## Alterant, is a later release's) — and the run's ADDITIONS and REMOVALS kept APART (`LabelsVocabulary`: the delta a later copy-and-merge
 ## write-out reads); the effective set = base ∪ added − removed, in that order.
 ##
+## THE WITHHOLD AND THE EXPLICIT APPLY (0.4.3): `:-x` / `:(-, x, y)` WITHHOLDS a label from the current set of labels
+## applied to the current Component (and, through the Engine's walk, from every Component under its metaBlock until the slot is replaced —
+## the Engine's own walk, no reach law of its own); `:+x` / `:(+, x)` APPLIES it explicitly, after a withhold or not; a PLAIN `:x` met by a
+## withhold APPLIES NOTHING and is REPORTED — one `:warning` Diagnostic per statement and name at each such Component (a name a statement writes twice is reported twice), returned by the setter to the
+## Engine's door (apply.jl), the run proceeding `PROCESS_OK` (the creator's design: the user informed and allowed to proceed; the file never
+## rewritten for one run); the malformed shapes refused (the sign at the head of a statement, never inside a list); the instance's third
+## field `withheld`; the `Dict{Symbol,Bool}` setter method unchanged. A withheld label read by a condition answers false silently (the
+## withhold's meaning; the limit stated on the pages). An applied name outside the run's vocabulary keeps the refusal (its turn into a
+## warning diagnostic is a later release's).
+##
 ## IS:   the Labels Alterant's code — THE HARD-CODED LIST `LABELS_VOCABULARY` (the 38 names the plain file `labels_vocabulary.txt`
 ##       carried before, in that file's order, plus `:doc`; a later name is one line here; none of the
 ##       original engine's other names; `public` / `private` out for now); `base_vocabulary()`; `LabelsVocabulary`
-##       (the run state) and `LabelsInstance` (the per-Component instance: the applied labels and the run's vocabulary); the hook
+##       (the run state) and `LabelsInstance` (the per-Component instance: the applied labels, the run's vocabulary and the names withheld); the hook
 ##       `declareLabels!`; `setLabels` — the closed check against the RUN's vocabulary (the original engine's scan, GoMetaRetro Alterants.jl
 ##       :73–:78 at 47f0521: an applied name outside the set refuses with a message naming the accepted set, sorted for display);
 ##       `checkLabels` — the original engine's checker (:87–:99): an unset or unknown name answers false. The `Dict{Symbol,Bool}` methods of the
@@ -102,17 +112,18 @@ end
 """
     LabelsInstance
 
-THE PER-COMPONENT INSTANCE of the Labels Alterant (since 0.4.2): the applied labels (the former bare `Dict{Symbol,Bool}`) and the run's
-vocabulary the setter checks against. Built by the Engine's instance constructor: the zero-argument call where the run minted no
+THE PER-COMPONENT INSTANCE of the Labels Alterant (since 0.4.2): the applied labels (the former bare `Dict{Symbol,Bool}`), the run's
+vocabulary the setter checks against and — since 0.4.3 — the names WITHHELD at the Component (`:-x`). Built by the Engine's instance constructor: the zero-argument call where the run minted no
 vocabulary (the base), the one-argument call with the run state where it did (`_freshInstance`, apply.jl). Iterates as the Dict did —
 the capture's one read of the instance (`for (kk, vv) in inst`, annotations.jl).
 """
 struct LabelsInstance
     applied::Dict{Symbol,Bool}
     vocab::LabelsVocabulary
+    withheld::Set{Symbol}      # the names WITHHELD at this Component (`:-x`); a plain `:x` met by one applies nothing and is reported
 end
-LabelsInstance() = LabelsInstance(Dict{Symbol,Bool}(), LabelsVocabulary())
-LabelsInstance(run::LabelsVocabulary) = LabelsInstance(Dict{Symbol,Bool}(), run)
+LabelsInstance() = LabelsInstance(Dict{Symbol,Bool}(), LabelsVocabulary(), Set{Symbol}())
+LabelsInstance(run::LabelsVocabulary) = LabelsInstance(Dict{Symbol,Bool}(), run, Set{Symbol}())
 Base.iterate(x::LabelsInstance) = iterate(x.applied)
 Base.iterate(x::LabelsInstance, s) = iterate(x.applied, s)
 Base.length(x::LabelsInstance) = length(x.applied)
@@ -178,13 +189,90 @@ function declareLabels!(run, mhIdx::Int, actionName::Symbol, args::Tuple, hasCon
     return _recompute_effective!(v)
 end
 
-"the setter on the `LabelsInstance`: the applied labels checked against the RUN's effective vocabulary"
+"""
+    setLabels(inst::LabelsInstance, :(:), tokens...) -> nothing | Vector{Diagnostic}
+
+THE SETTER ON THE `LabelsInstance` (the withhold and the explicit apply — since 0.4.3): the sign is read from the FIRST token alone — `-` or
+`+` as the whole first token is the LIST form (the verb for every following name: `:(-, x, y)`, `:(+, x)`), a first token beginning with
+`-` / `+` and longer is the PREFIXED form (one name: `:-x`, `:+x`), any other first token a PLAIN statement (every token a name — the former
+path). THE SHAPES refused with GoMeta's message at the apply (the standing class, out of the call): the prefixed sign with several arguments;
+a sign with no name; an empty member of a SIGNED list (a stray comma — a plain list's empty member keeps the former path, the unknown-label
+refusal); a name beginning with a sign — after a prefixed sign (`:+-x`), inside a signed list and inside a PLAIN list alike (the mixed list `:(x, -y)`): the sign stands at
+the head of a statement, never inside a list. PER NAME, in token order: the vocabulary check as before (an unknown name refuses, naming the
+accepted set — the unknown label's turn into a warning diagnostic is a later release's), then THE VERB: WITHHOLD — the name leaves the
+applied set and joins the withheld set (a name not applied: the same, a harmless no-op in the delivery); APPLY EXPLICITLY — the name joins
+the applied set and leaves the withheld set; PLAIN — a name WITHHELD here applies nothing and is REPORTED: one `Diagnostic` of severity
+`:warning` per such name, code `LABEL_NOT_APPLIED_WITHHELD`, the label as data in its context, RETURNED to the Engine (which attaches the
+place and delivers it with the run's result; the run proceeds, the status untouched — the creator's design: the user informed and allowed
+to proceed, the file never rewritten for one run); every other name applies as before. A withhold reaches every Component whose walk
+includes its statement's slot — the Engine's own walk, no reach law here. The `Dict{Symbol,Bool}` method below is untouched (a custom
+registration pairing it with the shipped setter keeps the former scan).
+"""
 function setLabels(
     crntLabels::LabelsInstance, # The Alterant here.
     actionName::Symbol,
     labels::Vararg{Symbol}
 )
-    _setLabels!(crntLabels.applied, crntLabels.vocab.effective, actionName, labels...)
+    actionName == :(:) || error("GoMeta internal invariant violated: setLabels called with actionName = ",
+        actionName, " != :(:) — please report this (not reachable from any v0 input)")
+    ## the guard (since v0.3.1, "fixed WITHIN THE Labels Alterant"): a lone ':' / ':()' names no label — the former refusal, kept
+    isempty(labels) && error("GoMeta apply: empty label list — the labels action ':' ",
+        "names no label; v0 requires at least one label (e.g. ':label1'); ",
+        "see docs/public-api.md §3.4")
+    s1 = String(labels[1])
+    verb = :plain
+    names = labels
+    if s1 == "-" || s1 == "+"
+        ## the LIST form: the sign the first member, the verb for every following name
+        verb = s1 == "-" ? :withhold : :explicit
+        names = labels[2:end]
+        isempty(names) && error("GoMeta apply: the label statement `:(", s1, ")` names no label — the forms are `:", s1, "x` and `:(", s1,
+            ", x, y)`; see docs/public-api.md §3.4")
+    elseif startswith(s1, "-") || startswith(s1, "+")
+        ## the PREFIXED form: one name after the sign
+        verb = startswith(s1, "-") ? :withhold : :explicit
+        length(labels) > 1 && error("GoMeta apply: the prefixed label statement `:", s1, "` takes one name — ", length(labels),
+            " arguments given (the list form is `:(", s1[1:1], ", x, y)`); see docs/public-api.md §3.4")
+        names = (Symbol(s1[2:end]),)
+    end
+    ## an EMPTY member (a stray comma) is refused as a shape in the SIGNED forms (`:(-, )`, `:(+, )`), checked over the whole statement before any
+    ## name's sign; in a plain statement (`:(,)`) it keeps the former path — the vocabulary check refuses the empty name as unknown, as before
+    ## (a later release decides its shape)
+    (verb !== :plain && any(n -> isempty(String(n)), names)) && error("GoMeta apply: the label statement `:(", s1, ", )` names an empty label (a stray comma) — the forms are `:",
+        s1, "x` and `:(", s1, ", x, y)`; see docs/public-api.md §3.4")
+    for n in names
+        ns = String(n)
+        (startswith(ns, "+") || startswith(ns, "-")) && error("GoMeta apply: a label name may not begin with `+` or `-` inside a label list — got ",
+            repr(ns), " (the sign stands at the head of a statement: `:-x`, `:(-, x, y)`, `:+x`, `:(+, x)`); see docs/public-api.md §3.4")
+    end
+    vocab = crntLabels.vocab.effective
+    applied = crntLabels.applied
+    withheld = crntLabels.withheld
+    diags = nothing
+    for n in names
+        ## the closed check (the original engine's): the ∈-scan over the vocabulary's order; the refusal renders a SORTED display copy of the RUN's set
+        n ∈ vocab || error("GoMeta apply: unknown label ", repr(first(String(n), 40)),
+            " — not in the Labels Alterant's vocabulary (the accepted set = ",
+            sort(copy(vocab)), "); see docs/public-api.md §3.4")
+        if verb === :withhold
+            delete!(applied, n)
+            push!(withheld, n)
+        elseif verb === :explicit
+            applied[n] = true
+            delete!(withheld, n)
+        elseif n ∈ withheld
+            diags === nothing && (diags = Diagnostic[])
+            push!(diags, Diagnostic(:LABEL_NOT_APPLIED_WITHHELD, :warning,
+                string("GoMeta apply: the plain `:", n, "` did not apply ", n, " here — withheld; if this run means to withhold it, nothing to do; ",
+                       "drop `:-", n, "` (in the user level's profile or in the file) to apply it everywhere; write `:+", n,
+                       "` where one statement must apply it regardless — a written `:+", n, "` then applies under every later withhold at that place; ",
+                       "see docs/public-api.md §3.4"),
+                (label = n,)))
+        else
+            applied[n] = true
+        end
+    end
+    return diags
 end
 
 "the setter on a bare `Dict{Symbol,Bool}` — KEPT: a custom registration pairing the shipped setter with `altConstructor = Dict{Symbol,Bool}` checks against the base list, as before"

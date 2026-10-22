@@ -56,9 +56,11 @@ error-mode catalogue ([Public API + error modes](public-api.md) §3).
 
 ## Status
 
-`0.4.2` (alpha maturity) — a working, tested engine for the **v0 subset** of the GoMeta language, with a
+`0.4.3` (alpha maturity) — a working, tested engine for the **v0 subset** of the GoMeta language, with a
 byte-exact oracle: the seven committed example pairs under `examples/` render byte-identically,
 pinned by the shipped test suite under a plain `Pkg.test()`. The language grows by design; the
 v0 subset forecloses none of it. `0.4.1` changes one behaviour under a fed profile (`GoMetaConfig.user_mh_profile`):
 the Component's own slot applies in written order with or without a feed; the profile's labels are collected first, as the
-outermost level, and its other statements are evaluated after the Component's own slot, with priority (`docs/public-api.md` §6, the row on the user level's place in the apply loop).
+outermost level, and its other statements are evaluated after the Component's own slot, with priority (`docs/public-api.md` §6, the row on the user level's place in the apply loop). Since `0.4.3` a file may also
+withhold a label from a Component's set (`:-x`) and apply it explicitly (`:+x`); a plain `:x` met by a withhold applies nothing and is
+reported by a `:warning` diagnostic, the run completing (`docs/public-api.md` §3.4).
