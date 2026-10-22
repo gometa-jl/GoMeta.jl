@@ -1,10 +1,10 @@
 schema = 1
 stem = "029_labels_withhold_readmit"
-status = "draft"
+status = "confirmed"
 drafted_by = "a draft of 2026-10-21 (the withhold and the explicit-apply forms of the Labels Alterant; every value by position FROM the measured FULL delivery view and decided_by trace of this document on the built tree; the forms `:-x` / `:(-, x, y)` and `:+x` / `:(+, x)`, docs/public-api.md §3.4)"
-confirmed_by = ""
+confirmed_by = "the creator, 2026-10-22"
 scenario = "The three colon forms of the Labels Alterant in one file. Line 1, at the file level (#~0), DECLARES the names x, y, z for this run (a vocabulary statement: it applies no label and mints no row). Line 2 is blank; line 3 (a depth-1 metaLine) applies {x, y}: block@2 (the depth-1 metaBlock, lines 2–3) carries {x, y}, and block@4 (the Code Block a = 1) inherits it. Line 5 (a depth-2 metaLine) WITHHOLDS x and applies z: block@5 and block@6 (b = 2) carry {y, z} — y inherited from the depth-1 statement, x absent. Line 7 (a depth-3 metaLine) applies x EXPLICITLY (:+x), which applies under the depth-2 withhold: block@7 and block@8 (c = 3) carry {x, y, z}. Each set applies to its Block and indirectly to that Block's child Lines. A plain :x at line 7 would have applied nothing and reported a warning diagnostic. The File is not stated in this scenario."
-history = ["2026-10-21: DRAFTED from a measured delivery of this document (the FULL delivery view: Block #3 Meta L2–L3 label_x, label_y; Block #4 Code L4 the same; Block #5 Meta L5 and Block #6 Code L6 label_y, label_z; Block #7 Meta L7 and Block #8 Code L8 label_x, label_y, label_z; Block #2 Meta L1 no row; the trace: the decided_by lists below) on the built tree — a proposal with no specification authority until the creator confirms (README rule 3). The Line statements apply the indirect-application principle as 004 and 028 state it."]
+history = ["2026-10-21: DRAFTED from a measured delivery of this document (the FULL delivery view: Block #3 Meta L2–L3 label_x, label_y; Block #4 Code L4 the same; Block #5 Meta L5 and Block #6 Code L6 label_y, label_z; Block #7 Meta L7 and Block #8 Code L8 label_x, label_y, label_z; Block #2 Meta L1 no row; the trace: the decided_by lists below) on the built tree — a proposal with no specification authority until the creator confirms (README rule 3). The Line statements apply the indirect-application principle as 004 and 028 state it.", "2026-10-22: confirmed by the creator on these exact bytes (asked first whether the document stands as written; answered from the file)"]
 
 [[expect]]
 component = "block@1"

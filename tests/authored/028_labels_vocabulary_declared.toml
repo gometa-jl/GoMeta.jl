@@ -1,10 +1,10 @@
 schema = 1
 stem = "028_labels_vocabulary_declared"
-status = "draft"
+status = "confirmed"
 drafted_by = "from the measured printout V01 (the FULL delivery view and the decided_by trace) of the built tree, 2026-10-20 — the vocabulary statements (0.4.2), the creator's design"
-confirmed_by = ""
+confirmed_by = "the creator, 2026-10-22"
 scenario = "A metaLine on line 1, at the file level (#~0), ADDS the name label6 to the Labels Alterant's vocabulary for this run — a vocabulary statement (:++label6): it applies no label and mints no row. A metaLine on line 2, in the same metaBlock, applies the label label6 — a name of the run's vocabulary now. Line 3 (x = 1) carries no meta of its own. Block 1 (the metaBlock of lines 1–2) carries {label6}, by its own metaLine on line 2. Block 3 (the Code Block holding line 3) is attached to that meta and therefore inherits {label6}. Each set applies to its Block and indirectly to that Block's child Lines — line 1 {label6}, line 2 {label6}, line 3 {label6}; the Lines are not explicitly issued the label and did not explicitly inherit it. Without the line-1 statement the line-2 application would be refused (label6 is not a shipped name — measured V11 / V28); nothing of the declaration persists beyond this run. The File is not stated in this scenario."
-history = ["2026-10-20: DRAFTED from the measured printout V01 (the FULL delivery view: Block #2 Meta L1–L2 one label_label6 row, Block #3 Code L3 one label_label6 row; the trace: both decided_by Block #2; the answer sources own / indirect) — a draft with no specification authority until the creator confirms (README rule 3). The Line statements apply the creator's indirect-application principle, as 004 states them. Whether a vocabulary statement is ever delivered (its own row or field) is a later release's question: nothing delivered now."]
+history = ["2026-10-20: DRAFTED from the measured printout V01 (the FULL delivery view: Block #2 Meta L1–L2 one label_label6 row, Block #3 Code L3 one label_label6 row; the trace: both decided_by Block #2; the answer sources own / indirect) — a draft with no specification authority until the creator confirms (README rule 3). The Line statements apply the creator's indirect-application principle, as 004 states them. Whether a vocabulary statement is ever delivered (its own row or field) is a later release's question: nothing delivered now.", "2026-10-22: confirmed by the creator on these exact bytes (asked first whether the document stands as written; answered from the file)"]
 
 [[expect]]
 component = "block@1"
