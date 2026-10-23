@@ -4,8 +4,9 @@
 # the Labels Alterant moved them — with `:doc` — into its own file `alterants-std/labels.jl` as a hard-coded list,
 # the creator's decision; [2b] below its witnesses).
 #
-# IS:   the membership witnesses over the Labels Alterant's hard-coded list ([2] the set role refuses an unknown name; [2b] `:doc`
-#       applied and queried, and in the accepted set an unknown name's refusal names; [3] the late-order name — the ∈-scan
+# IS:   the membership witnesses over the Labels Alterant's vocabulary (the vocabulary file since 0.4.3, the hard-coded list before it — [2] the set role
+#       reports an unknown name by a warning diagnostic; [2b] `:doc` applied and queried, an unknown name reported, the shipped count 46; [3] the late-order
+#       name in its glued form — the ∈-scan
 #       in the set role, the applied hide in the query role), the zero-literal law in its DECIDABLE form ([10]: no Core literal of the
 #       names re-enters src outside alterants-std/), and the validate-chain hardening witnesses that live here by history ([11]'s A3,
 #       [12]–[18]: the zero-dispatch validate chain, the DomainRef read-once law ([14] — retired with `DomainRef`), the identity/getfield hardening, the
@@ -125,30 +126,33 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
         e
     end
 
-    @testset "[2] membership over the Alterant's hard-coded list: a shipped name applies, an unknown name refuses in the SET role" begin
+    @testset "[2] membership over the Alterant's vocabulary: a shipped name applies, an unknown name is REPORTED in the SET role (since 0.4.3; refused before)" begin
         r = _drive("x = 1\n#~ :label1\n\ny = 2\n")
-        @test r isa GM.GoMetaDelivery && r.status === GM.PROCESS_OK
-        e = _drive("x = 1\n#~ :nope\n\ny = 2\n")
-        @test e isa ErrorException && occursin("unknown label", e.msg)
+        @test r isa GM.GoMetaDelivery && r.status === GM.PROCESS_OK && isempty(r.diagnostics) && count(t -> t[2] === :label_label1, GM.readAltValuesEvals(r.altValues_evals)) == 1   # the shipped name applies: one row, the metaBlock alone (the blank line keeps `y = 2` unattached), no diagnostic
+        # MEASURED: PROCESS_OK, 0 evals rows, ONE warning row LABEL_NOT_APPLIED_UNKNOWN (the metaBlock alone — the blank line keeps `y = 2` unattached)
+        r2 = _drive("x = 1\n#~ :nope\n\ny = 2\n")
+        @test r2 isa GM.GoMetaDelivery && r2.status === GM.PROCESS_OK && isempty(GM.readAltValuesEvals(r2.altValues_evals))
+        @test length(r2.diagnostics) == 1 && r2.diagnostics[1].code === :LABEL_NOT_APPLIED_UNKNOWN && r2.diagnostics[1].severity === :warning && occursin("`:nope`", r2.diagnostics[1].message)
     end
 
-    @testset "[2b] `:doc` — hard-coded into the Labels Alterant (the creator's decision; MEASURED)" begin
+    @testset "[2b] `:doc` — a shipped name of the Labels Alterant (the creator's decision; MEASURED; the vocabulary file since 0.4.3)" begin
+        TestSupport.fresh_vocabulary!()   # the count 46 read on a fresh copy of the shipped file, whatever an earlier witness persisted
         rd = _drive("#~ :doc\nx = 1\n")                                  # L01: two `label_doc` rows — the metaBlock and the attached Code Block
         @test rd isa GM.GoMetaDelivery && rd.status === GM.PROCESS_OK && count(t -> t[2] === :label_doc, GM.readAltValuesEvals(rd.altValues_evals)) == 2
         rq = _drive("#~ :doc\n#~2 hide{ :doc }\nx = 1\n")              # L02: the label SET then QUERIED (two glued metaLines, ONE metaBlock): the hide APPLIES on both Blocks
         @test rq isa GM.GoMetaDelivery && rq.status === GM.PROCESS_OK && count(t -> t[2] === :visib && t[3] === :hide, GM.readAltValuesEvals(rq.altValues_evals)) == 2
-        ez = _drive("#~ :zzz\nx = 1\n")                                  # L03: an unknown name REFUSED, the accepted set named — `:doc` in it (its place in the sorted display not pinned)
-        @test ez isa ErrorException && occursin("unknown label", ez.msg) && occursin("the accepted set = [", ez.msg) && occursin(":doc,", ez.msg)
-        @test :doc ∈ GM.Alterants.LABELS_VOCABULARY && length(GM.Alterants.LABELS_VOCABULARY) == 39   # the 38 shipped + `:doc`, none beyond
+        ez = _drive("#~ :zzz\nx = 1\n")                                  # L03: an unknown name REPORTED (since 0.4.3) — two warning rows, the metaBlock and the attached Code Block; the accepted set is not listed (the development tools print it)
+        @test ez isa GM.GoMetaDelivery && ez.status === GM.PROCESS_OK && isempty(GM.readAltValuesEvals(ez.altValues_evals)) && length(ez.diagnostics) == 2 && all(d -> d.code === :LABEL_NOT_APPLIED_UNKNOWN, ez.diagnostics)
+        @test :doc ∈ GM.Alterants.base_vocabulary() && length(GM.Alterants.base_vocabulary()) == 46   # the shipped file's 46 names (the user level's copy): label1 … label5, doc, the 33 glued pictograph names, the seven everyday names
     end
 
-    @testset "[3] the LATE-order name :💫 (the C4E-4 order-independence pin)" begin
-        # `:💫` sits late in DECLARATION order, which is UNSORTED — an `insorted` scan over it would silently lose the names after
+    @testset "[3] the LATE-order name :label💫 (the C4E-4 order-independence pin; the glued shipped form since 0.4.3)" begin
+        # `:label💫` sits late in DECLARATION order, which is UNSORTED — an `insorted` scan over it would silently lose the names after
         # the first sort break while the corpus stayed green (the 28/38 class). The SET role passes through the ∈-scan; the QUERY role
         # has no membership gate (`checkLabels`: a label not set answers false), so the query witness pins the applied hide, never a refusal.
-        rs = _drive("x = 1\n#~ :💫\n\ny = 2\n")
+        rs = _drive("x = 1\n#~ :label💫\n\ny = 2\n")
         @test rs isa GM.GoMetaDelivery && rs.status === GM.PROCESS_OK
-        rq = _drive("x = 1\n#~1 :💫 hide{ :💫 }\n\ny = 2\n")
+        rq = _drive("x = 1\n#~1 :label💫 hide{ :label💫 }\n\ny = 2\n")
         @test rq isa GM.GoMetaDelivery && rq.status === GM.PROCESS_OK
         @test any(t -> t[2] === :visib && t[3] === :hide, GM.readAltValuesEvals(rq.altValues_evals))   # the late-order label SET then QUERIED on one metaLine: the hide APPLIES (MEASURED; a query answering false would leave PROCESS_OK with no hide row)
     end

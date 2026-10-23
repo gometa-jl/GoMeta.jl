@@ -20,6 +20,28 @@ a clean cut. A date is the day of the version's tag (since 0.3.0) or, before 0.3
   `Vector{Diagnostic}` is delivered with the place merged into each row's context, the severity copied; anything else is ignored as before.
   The development tools print a run's diagnostics at the end of the run (`print_diagnostics`); `extensions/find_by_label.jl` reports the
   count per file. The register's row: "The Labels Alterant's WITHHOLD and EXPLICIT APPLY".
+- **The unknown label is reported, not refused.** A label applied from outside the run's vocabulary — never declared, removed, misspelled, or
+  with an invisible separator swallowed inside — applies nothing under any form (plain, withhold, explicit) and the run completes
+  `PROCESS_OK` with ONE `:warning` diagnostic per name occurrence at each affected Component (`LABEL_NOT_APPLIED_UNKNOWN`: the statement's
+  form and the remedy named, the accepted set not listed); a list applies its other names; the empty member of a plain list (a stray
+  comma) is a shape refusal. The register's row: "The Labels Alterant's UNKNOWN LABEL".
+- **The vocabulary lives in a data file; `++` and `--` persist.** The shipped vocabulary is the data file
+  `data/alterants-std/labels-vocabulary.txt` — 46 names: `label1` … `label5`, `doc`, the 33 pictograph names in the glued form (`label🍀`),
+  and the everyday names `warning`, `note`, `info`, `definition`, `todo`, `public`, `private`; the bare pictographs left the list. A run reads
+  the user level's copy `~/.gometa/labels-vocabulary.txt` (created from the shipped file at the first need; another path through
+  `GOMETA_LABELS_VOCABULARY`), and the vocabulary statements EDIT that copy when they are read — every change of a run that completes reported by an `:info` diagnostic
+  (`LABELS_VOCABULARY_FILE_CHANGED`; a file that cannot be written: ONE `:warning` per change, `LABELS_VOCABULARY_FILE_NOT_WRITTEN`, the change holding for the run); the shipped file is never written and is the revert source. A declared name carrying white space or an invisible separator inside, or beginning with `#`, is refused (the inner character accepted at 0.4.2); a vocabulary file whose line carries an inner one refuses the run. The literal
+  `GoMeta.Alterants.LABELS_VOCABULARY` is gone (`base_vocabulary()` reads the file). The register's row: "The Labels Alterant's VOCABULARY FILES".
+- **Two facilities of the Engine, for every Alterant.** The reader trims every bare argument's two edges of the ordinary white space and
+  six invisible separators (U+2028, U+2029, U+180E, U+200B, U+2060, U+FEFF) before the Alterant sees it — the class the new package-public
+  `GoMeta.is_argument_space` names (a quoted text untouched). A read-time hook's return is read in one grammar: `nothing`, a vector of
+  diagnostics alone (delivered, the statement enqueued), a state, or a state with a vector of diagnostics (consumed and delivered) — the
+  rows pass the one door with the read-time place (the stating statement, the level, the statement's text). The register's rows:
+  "`GoMeta.is_argument_space`" and "The read-time hook's return".
+- **The development tools.** The tree views of `print_altValues_evals` — the FULL delivery view and the compact tree, their `.html` / `.txt`
+  twins — end with the run section: the status line and the diagnostics folded as the end-of-run print folds them, printed also where the
+  view has no evals rows; the command line's one-liner takes the user level's profile as an optional third argument
+  (`devtools.jl <verb> <file> [profile]`); `print_diagnostics` prints every other key of a row's context as data.
 
 ## 0.4.2 — 2026-10-22
 

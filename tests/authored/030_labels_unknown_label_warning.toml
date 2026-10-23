@@ -1,0 +1,58 @@
+schema = 1
+stem = "030_labels_unknown_label_warning"
+status = "draft"
+drafted_by = "a draft of 2026-10-23 from the measured FULL delivery view and decided_by trace of this document on the built tree (the unknown label of 0.4.3 — reported by a warning diagnostic, not applied, the run proceeding; the three lines of the document the creator's layout)"
+confirmed_by = ""
+scenario = "A metaLine on line 1 applies two names: todo, a shipped everyday name of the Labels Alterant's vocabulary, and tod0, a misspelling of it — not in the vocabulary. The known name applies: block@1 (the metaBlock of lines 1–2 — line 2 is a comment line inside it) carries {todo}, and block@3 (the Code Block x = 1, attached to that meta) inherits it; the three Lines fall under their Blocks indirectly. The unknown name applies nothing and is REPORTED: one warning diagnostic LABEL_NOT_APPLIED_UNKNOWN at each affected Component — block@1 and block@3 — naming the statement (the plain :tod0) and the remedy (declare it with :++tod0 at #~0 or in the user level's profile, or correct the spelling); the run completes PROCESS_OK. The two ## comments say so in the file, in the host language's comment syntax: 'todo' is a label's name, 'tod0' a misspelling of it."
+history = ["2026-10-23: DRAFTED from the measured FULL delivery view (Block #2 Meta L1–L2 one label_todo row; Block #3 Code L3 one label_todo row; 2 evals rows on 2 cells) and the trace (both rows decided_by Block #2 twice — the two statements of the metaLine recorded, the unknown one too; 2 diagnostics LABEL_NOT_APPLIED_UNKNOWN warning — cell Block #2 and Block #3, stated by Block #2) on the built tree — a proposal with no specification authority until the creator confirms (README rule 3). The [[expect_diagnostic]] table is new with this scenario (the runner reads it since 0.4.3); its form the creator's to confirm or re-cut."]
+
+[[expect]]
+component = "block@1"
+alterant = "Labels"
+value = ["todo"]
+decided_by = ["block@1"]
+note = "the metaBlock of lines 1–2: its own metaLine applies todo; tod0 applies nothing. Provenance: one Block-grain row label_todo, decided_by [block@1, block@1] — both statements of the metaLine recorded, the unknown one too (observed 2026-10-23)"
+
+[[expect]]
+component = "block@3"
+alterant = "Labels"
+value = ["todo"]
+decided_by = ["block@1"]
+note = "the Code Block x = 1, attached to that meta: inherits {todo}. Provenance: one Block-grain row decided_by [block@1, block@1] (observed 2026-10-23)"
+
+[[expect]]
+component = "line@1"
+alterant = "Labels"
+value = ["todo"]
+decided_by = ["block@1"]
+note = "the metaLine's own Line: a child of block@1; the set applies indirectly. Provenance: no per-Line row (observed 2026-10-23)"
+
+[[expect]]
+component = "line@2"
+alterant = "Labels"
+value = ["todo"]
+decided_by = ["block@1"]
+note = "the comment line inside the metaBlock (## 'tod0' is a misspelling …): a child of block@1; the set applies indirectly. Provenance: no per-Line row (observed 2026-10-23)"
+
+[[expect]]
+component = "line@3"
+alterant = "Labels"
+value = ["todo"]
+decided_by = ["block@1"]
+note = "a plain Line: a child of block@3, attached to block@1's meta; the set applies indirectly. Provenance: no per-Line row (observed 2026-10-23)"
+
+[[expect_diagnostic]]
+code = "LABEL_NOT_APPLIED_UNKNOWN"
+severity = "warning"
+component = "block@1"
+label = "tod0"
+count = 1
+note = "the plain :tod0 had no effect at the metaBlock — not in the vocabulary; the message names the remedy. Provenance: the diagnostic's cell the metaBlock, its stating statement the metaBlock (observed 2026-10-23)"
+
+[[expect_diagnostic]]
+code = "LABEL_NOT_APPLIED_UNKNOWN"
+severity = "warning"
+component = "block@3"
+label = "tod0"
+count = 1
+note = "the same statement reported at the Code Block attached to that meta — one row per affected Component. Provenance: the diagnostic's cell the Code Block, its stating statement the metaBlock (observed 2026-10-23)"

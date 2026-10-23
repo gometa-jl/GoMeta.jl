@@ -24,10 +24,11 @@ say.
 
 ```
 GM=/path/to/GoMeta          # this repository's root
-julia --startup-file=no --project=$GM/tests $GM/devtools/devtools.jl <verb> <file>
+julia --startup-file=no --project=$GM/tests $GM/devtools/devtools.jl <verb> <file> [profile]
 ```
 `--project` selects WHICH GoMeta runs (`$GM/tests` = this repository's test environment, which holds the package).
-Status and diagnostics go to stderr, the printout to stdout. Verbs:
+Status and diagnostics go to stderr, the printout to stdout; `[profile]`, optional, is the user level's profile text (fed as
+`GoMetaConfig(user_mh_profile = …)`; since `0.4.3`). Verbs:
 
 | verb | prints |
 |---|---|
@@ -36,7 +37,7 @@ Status and diagnostics go to stderr, the printout to stdout. Verbs:
 | `evals` | the evaluated values, one row per line: `attr => value (polarity) "cell excerpt"` — the evals-rows-only view (no Component identity) |
 | `trace` | the evals-rows-with-keys view: `evals` plus each row's decoded key: namespace · grain · path · origin |
 | `render` | the share-view bytes (the basic renderer's output) |
-| `evals-tree` | **`print_altValues_evals`, the FULL delivery view** — the rows placed in the Component tree, every Component shown, absence labelled `(no evals — defaults apply)`, every row with its decoded handle and the Segment that caused it |
+| `evals-tree` | **`print_altValues_evals`, the FULL delivery view** — the rows placed in the Component tree, every Component shown, absence labelled `(no evals — defaults apply)`, every row with its decoded handle and the Segment that caused it; since `0.4.3` the tree views end with the run section — the status line and the diagnostics folded as the end-of-run print folds them |
 | `bls-tree` | **`print_BLS_Component_Tree`** (`style=:mix`) — the Component-tree view: the tree with every Component's typed named-int and settribute dumps |
 | `comparison` | **`comparisonForm`** — the comparison form: one line per Component and one per Component per Alterant, sorted; the definition `tests/comparison/README.md` |
 

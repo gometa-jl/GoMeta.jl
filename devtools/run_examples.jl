@@ -18,6 +18,9 @@
 #   julia --startup-file=no --project=. devtools/run_examples.jl [--out <dir>]
 
 import GoMeta as GM
+## the Labels Alterant's user-level vocabulary file (0.4.3): the check runs on a fresh copy of the shipped vocabulary — the renders are
+## compared byte for byte with the committed outputs, so the developer's own vocabulary file must not colour them
+ENV["GOMETA_LABELS_VOCABULARY"] = joinpath(mktempdir(), "labels-vocabulary.txt")
 include(joinpath(@__DIR__, "load_basic_renderer.jl"))   # the ONE path to the basic renderer
 
 const HERE   = normpath(joinpath(@__DIR__, ".."))   # the repository root (this file lives in devtools/)

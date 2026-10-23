@@ -168,8 +168,9 @@ _liveempty(text) = join(
         @test any(a == :label_label1 for (h, a, v, p) in GM.readAltValuesEvals(r.altValues_evals))
         # the inert exemption (content never read — no guard can fire):
         @test _is("#~2! :\n# T\n").status == GM.PROCESS_OK
-        # the neighbouring malformation keeps its own family:
-        @test occursin("unknown label", something(_is_msg("#~ :(,)\n# T\n"), ""))
+        # the neighbouring malformation keeps its own family — since 0.4.3 the empty member of a plain list is a SHAPE refusal of the Labels
+        # Alterant, a stray comma (MEASURED: `GoMeta apply: the label statement `:(, )` names an empty label (a stray comma) — …`):
+        @test occursin("names an empty label (a stray comma)", something(_is_msg("#~ :(,)\n# T\n"), ""))
     end
 
     @testset "[U] the unchanged shapes stay unchanged" begin

@@ -25,6 +25,10 @@ if any(p -> startswith(p, "@v"), Base.LOAD_PATH)
 end
 
 using Test
+## THE LABELS ALTERANT's USER-LEVEL VOCABULARY FILE (0.4.3): the suite never touches the real one (`~/.gometa/labels-vocabulary.txt`) — every
+## run of every layer reads and edits a temporary file named here, created from the shipped file at the first need; a witness that must
+## observe a fresh file names its own through `TestSupport.fresh_vocabulary!()` (a vocabulary statement persists into the named file).
+ENV["GOMETA_LABELS_VOCABULARY"] = joinpath(mktempdir(), "labels-vocabulary.txt")
 ## THE ONE PATH to the basic renderer (a development tool): loaded ONCE here, at
 ## Main's top level, BEFORE the support hub and every layer; every layer spells the call `Main.BasicRenderer.outputs`.
 include(joinpath(@__DIR__, "..", "devtools", "load_basic_renderer.jl"))

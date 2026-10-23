@@ -1,8 +1,8 @@
-#~0 :(++, x, y, z)
+#~0 :(++, todo, note, info)
 
-#~ :(x, y)
+#~ :(todo, note)
 a = 1
-#~2 :-x :z
+#~2 :-todo :info
 b = 2
-#~3 :+x
+#~3 :+todo
 c = 3

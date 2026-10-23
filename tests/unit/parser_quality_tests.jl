@@ -1,7 +1,8 @@
 # parser_quality_tests.jl — THE PARSER-QUALITY BATTERY of the metaLine parser (the creator's words:
 # "I DO want tests which check the quality of the parsers"). GENERATED from the rows table by a generator outside the repository
 # (one override file for the
-# rows the Heading's move into the apply loop changed); the comments were edited after generation.
+# rows the Heading's move into the apply loop changed); the comments were edited after generation; ten rows were re-pinned at 0.4.3 from the measured
+# delivery (the Labels Alterant's vocabulary files: an unknown label reported, not refused; the bare pictographs no shipped names).
 #
 # IS:   every shape of the parser inventory (100 items, A01–I08), the 50 needs-a-run shapes
 #       (r01–r49, r19b) and the quote-scan shapes, each driven through goMeta on its one-line document (or its DOC), with the
@@ -333,11 +334,10 @@ end
         @test occursin("unexpected character ',' after the metaStatement \":label1\"", e.msg)
         @test occursin(":(name1, name2)", e.msg)
     end
-    # F06 [malformed] — UNCHANGED — BEFORE: THROWS ErrorException: GoMeta apply: unknown label "label9"
+    # F06 [malformed] — CHANGED (0.4.3: an unknown label is reported by a warning diagnostic and skipped, the run proceeding) — BEFORE: THROWS ErrorException: GoMeta apply: unknown label "label9"
     @testset "F06" begin
         k, st, n, e = _pq("#~ :label9\nx = 1\n")
-        @test k === :throw && e isa ErrorException
-        @test occursin("GoMeta apply: unknown label \"label9\"", e.msg)
+        @test k === :ok && st == GM.PROCESS_OK && n == 0
     end
     # F07 [malformed] — UNCHANGED — BEFORE: THROWS ErrorException: GoMeta apply: empty label list
     @testset "F07" begin
@@ -363,15 +363,15 @@ end
         @test k === :throw && e isa ErrorException
         @test occursin("unexpected character '\"' after ':'", e.msg)
     end
-    # F11 [valid] — UNCHANGED — BEFORE: OK PROCESS_OK, 2 evals rows
+    # F11 [valid] — CHANGED (0.4.3: the bare pictograph is no shipped name since the glued form label + pictograph — an unknown label, reported, no row) — BEFORE: OK PROCESS_OK, 2 evals rows
     @testset "F11" begin
         k, st, n, e = _pq("#~ :\U0001F525\nx = 1\n")
-        @test k === :ok && st == GM.PROCESS_OK && n == 2
+        @test k === :ok && st == GM.PROCESS_OK && n == 0
     end
-    # F12 [valid] — UNCHANGED — BEFORE: OK PROCESS_OK, 2 evals rows
+    # F12 [valid] — CHANGED (0.4.3: the bare pictograph is no shipped name since the glued form label + pictograph — an unknown label, reported, no row) — BEFORE: OK PROCESS_OK, 2 evals rows
     @testset "F12" begin
         k, st, n, e = _pq("#~ :⛓️‍\U0001F4A5\nx = 1\n")
-        @test k === :ok && st == GM.PROCESS_OK && n == 2
+        @test k === :ok && st == GM.PROCESS_OK && n == 0
     end
     # G01 [valid] — UNCHANGED — BEFORE: OK PROCESS_OK, 1 evals rows
     @testset "G01" begin
@@ -535,15 +535,15 @@ end
         k, st, n, e = _pq("#~ hide{:abcdefghijklmnopqrstuvwxyzabc}\nx = 1\n")
         @test k === :ok && st == GM.PROCESS_OK && n == 0
     end
-    # H16 [valid] — UNCHANGED — BEFORE: OK PROCESS_OK, 4 evals rows
+    # H16 [valid] — CHANGED (0.4.3: the bare pictograph is no shipped name since the glued form label + pictograph — an unknown label, reported, no row) — BEFORE: OK PROCESS_OK, 4 evals rows
     @testset "H16" begin
         k, st, n, e = _pq("#~ :\U0001F525 hide{ :\U0001F525 }\nx = 1\n")
-        @test k === :ok && st == GM.PROCESS_OK && n == 4
+        @test k === :ok && st == GM.PROCESS_OK && n == 0
     end
-    # H17 [ambiguous] — UNCHANGED — BEFORE: OK PROCESS_OK, 4 evals rows
+    # H17 [ambiguous] — CHANGED (0.4.3: the bare pictograph is no shipped name since the glued form label + pictograph — an unknown label, reported, no row) — BEFORE: OK PROCESS_OK, 4 evals rows
     @testset "H17" begin
         k, st, n, e = _pq("#~ :⛓️‍\U0001F4A5 hide{ :⛓️‍\U0001F4A5 }\nx = 1\n")
-        @test k === :ok && st == GM.PROCESS_OK && n == 4
+        @test k === :ok && st == GM.PROCESS_OK && n == 0
     end
     # I01 [valid] — UNCHANGED — BEFORE: OK PROCESS_OK, 1 evals rows
     @testset "I01" begin
@@ -734,10 +734,10 @@ end
         k, st, n, e = _pq("#~ hide{:abcdefghijklmnopqrstuvwxyzabc}\nx = 1\n")
         @test k === :ok && st == GM.PROCESS_OK && n == 0
     end
-    # r26 [needs-a-run] — UNCHANGED — BEFORE: OK PROCESS_OK, 4 evals rows
+    # r26 [needs-a-run] — CHANGED (0.4.3: the bare pictograph is no shipped name since the glued form label + pictograph — an unknown label, reported, no row) — BEFORE: OK PROCESS_OK, 4 evals rows
     @testset "r26" begin
         k, st, n, e = _pq("#~ :\u26d3\ufe0f\u200d\U0001f4a5 hide{ :\u26d3\ufe0f\u200d\U0001f4a5 }\nx = 1\n")
-        @test k === :ok && st == GM.PROCESS_OK && n == 4
+        @test k === :ok && st == GM.PROCESS_OK && n == 0
     end
     # r27 [needs-a-run] — UNCHANGED — BEFORE: THROWS ErrorException: GoMeta absorb: unknown condition key "cell"
     @testset "r27" begin
@@ -761,10 +761,10 @@ end
         @test k === :throw && e isa ErrorException
         @test occursin("GoMeta absorb: the condition block {} carries no condition expression (an empty block)", e.msg)
     end
-    # r31 [needs-a-run] — UNCHANGED — BEFORE: OK PROCESS_OK, 2 evals rows
+    # r31 [needs-a-run] — CHANGED (0.4.3: the bare pictograph is no shipped name since the glued form label + pictograph — an unknown label, reported, no row) — BEFORE: OK PROCESS_OK, 2 evals rows
     @testset "r31" begin
         k, st, n, e = _pq("#~ :\u26d3\ufe0f\u200d\U0001f4a5\nx = 1\n")
-        @test k === :ok && st == GM.PROCESS_OK && n == 2
+        @test k === :ok && st == GM.PROCESS_OK && n == 0
     end
     # r32 [needs-a-run] — CHANGED — BEFORE: OK PROCESS_OK, 2 evals rows
     @testset "r32" begin
@@ -830,23 +830,20 @@ end
         k, st, n, e = _pq("#~ :label1\u0085hide\nx = 1\n")
         @test k === :ok && st == GM.PROCESS_OK && n == 4
     end
-    # r43 [needs-a-run] — CHANGED — BEFORE: OK PROCESS_OK, 2 evals rows
+    # r43 [needs-a-run] — CHANGED (0.4.3: the name with the swallowed separator is an unknown label — reported, not refused) — BEFORE: OK PROCESS_OK, 2 evals rows
     @testset "r43" begin
         k, st, n, e = _pq("#~ :label1\u2028hide\nx = 1\n")
-        @test k === :throw && e isa ErrorException
-        @test occursin("unknown label", e.msg)
+        @test k === :ok && st == GM.PROCESS_OK && n == 0
     end
-    # r44 [needs-a-run] — CHANGED — BEFORE: OK PROCESS_OK, 2 evals rows
+    # r44 [needs-a-run] — CHANGED (0.4.3: the name with the swallowed separator is an unknown label — reported, not refused) — BEFORE: OK PROCESS_OK, 2 evals rows
     @testset "r44" begin
         k, st, n, e = _pq("#~ :label1\u2029hide\nx = 1\n")
-        @test k === :throw && e isa ErrorException
-        @test occursin("unknown label", e.msg)
+        @test k === :ok && st == GM.PROCESS_OK && n == 0
     end
-    # r45 [needs-a-run] — CHANGED — BEFORE: OK PROCESS_OK, 2 evals rows
+    # r45 [needs-a-run] — CHANGED (0.4.3: the name with the swallowed separator is an unknown label — reported, not refused) — BEFORE: OK PROCESS_OK, 2 evals rows
     @testset "r45" begin
         k, st, n, e = _pq("#~ :label1\u180ehide\nx = 1\n")
-        @test k === :throw && e isa ErrorException
-        @test occursin("unknown label", e.msg)
+        @test k === :ok && st == GM.PROCESS_OK && n == 0
     end
     # r46 [needs-a-run] — UNCHANGED — BEFORE: OK PROCESS_OK, 2 evals rows
     @testset "r46" begin

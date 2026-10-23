@@ -10,7 +10,9 @@
 #       — the golden runner's producer and the unit witnesses'. (2) quiet_io(f) — an
 #       fd-level redirect of stdout+stderr to /dev/null (Base.devnull has no backing fd, so a plain
 #       redirect_stdout(devnull) misses fd-level output), suppressing the benign, deterministic notices
-#       the vendored BLS parser prints on over-capacity/deep inputs. (3) _sha, the shared sha256 hex helper.
+#       the vendored BLS parser prints on over-capacity/deep inputs. (3) _sha, the shared sha256 hex helper. (4) fresh_vocabulary!() — a NEW
+#       temporary user-level vocabulary file for the Labels Alterant (the environment variable `GOMETA_LABELS_VOCABULARY`), so no run's
+#       persisted vocabulary change reaches another witness.
 #       (The fresh-process surface helpers were retired 2026-09-12 — see below.)
 # REASONING: no test may hold a hardcoded byte or size baseline. Every expected render/tree is obtained
 #       through the tests/golden/MANIFEST.toml indirection, so a golden re-pin touches ONLY the manifest
@@ -29,6 +31,9 @@ const REPO = normpath(joinpath(@__DIR__, "..", ".."))
 const MANIFEST_PATH = joinpath(REPO, "tests", "golden", "MANIFEST.toml")
 
 _sha(b::AbstractVector{UInt8}) = bytes2hex(sha256(b))
+
+"THE FRESH VOCABULARY FILE: points the Labels Alterant's user-level file (`GOMETA_LABELS_VOCABULARY`) at a NEW temporary path — created from the shipped file at the run's first need — and returns the path; a witness that declares or removes names calls it first, so no run's persisted change (the vocabulary statements persist since 0.4.3) reaches another witness"
+fresh_vocabulary!() = (ENV["GOMETA_LABELS_VOCABULARY"] = joinpath(mktempdir(), "labels-vocabulary.txt"))
 
 _manifest() = TOML.parsefile(MANIFEST_PATH)
 _abs(relpath::AbstractString) = joinpath(REPO, relpath)

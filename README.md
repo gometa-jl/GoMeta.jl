@@ -73,7 +73,7 @@ import GoMeta
 bytes    = read("examples/InFileFolder/file_for_Example_Proposal_JuliaCon.jl")
 delivery = GoMeta.goMeta(bytes)             # one run: BLS, GoMeta's parser, reads the file; the GoMeta Engine evaluates the metadata
 delivery.status == GoMeta.PROCESS_OK || error("processing failed")
-foreach(d -> println(stderr, d.message), delivery.diagnostics)   # a completed run may still carry warning diagnostics — a label a withhold kept from applying (docs/public-api.md §3.4)
+foreach(d -> println(stderr, d.message), delivery.diagnostics)   # a completed run may still carry warning and info diagnostics — a label a withhold kept from applying, a label not in the vocabulary, a vocabulary statement that edited the user level's vocabulary file (docs/public-api.md §2, §3.4)
 
 tree  = delivery.blsComponentTree           # the BLS Component tree — the file as BLS parsed it: Blocks, Lines, Segments
 evals = GoMeta.readAltValuesEvals(delivery.altValues_evals)   # the evaluated Alterant values, one row per evaluated value (a piece and an attribute)
@@ -94,7 +94,7 @@ committed examples carry `:label5` (without a label: an overview of the five).
 A `{…}` condition is **Julia**: GoMeta rewrites its own parts of the body to Julia text, Julia's parser
 reads it once, and Julia evaluates it when the statement is applied. **Processing a file you did not
 write therefore runs its conditions as Julia code.** Use GoMeta on input you trust, as you would any
-Julia file you `include`. One caveat: metaLine names intern as Julia `Symbol`s, which persist for the Julia session. The full statement: [`docs/public-api.md`](docs/public-api.md) §3.2; the documented limits: §3.4.
+Julia file you `include`. A vocabulary statement in such a file (`#~0 :++x`, `#~0 :--x`) also edits your Labels vocabulary file for good — every edit of a completed run reported by an `:info` diagnostic ([`docs/public-api.md`](docs/public-api.md) §2). One caveat: metaLine names intern as Julia `Symbol`s, which persist for the Julia session. The full statement: [`docs/public-api.md`](docs/public-api.md) §3.2; the documented limits: §3.4.
 
 ## Status
 

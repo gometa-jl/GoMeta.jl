@@ -117,7 +117,8 @@ end
 @testset "the label test — every admitted name spelled the one way" begin
     # the ZWJ pictograph `⛓️‍💥` is no Julia identifier (U+200D is no identifier character): the closed scanner refused it QUERIED while
     # the SET role accepted it; the rewrite quotes every label name by `repr`, so the query is a label test like `:label1`
-    r = GM.goMeta(Vector{UInt8}(codeunits("#~ :\u26d3\ufe0f\u200d\U1f4a5 hide{ :\u26d3\ufe0f\u200d\U1f4a5 }\n# content\n")))
+    # the name in its glued shipped form `label` + the pictograph since 0.4.3 (the bare pictograph is no shipped name: applied, it is reported as unknown)
+    r = GM.goMeta(Vector{UInt8}(codeunits("#~ :label\u26d3\ufe0f\u200d\U1f4a5 hide{ :label\u26d3\ufe0f\u200d\U1f4a5 }\n# content\n")))
     @test r.status === GM.PROCESS_OK
     @test length(GM.readAltValuesEvals(r.altValues_evals)) == 4           # the label rows and the Visib rows — the set and the query agree
     # the parenthesized label form of the original engine (`:(args)`), raw

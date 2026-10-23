@@ -29,7 +29,7 @@ In reading order:
 
 1. [Syntax & semantics](SYNTAX-AND-SEMANTICS.md) — the language: every rule cites a runnable
    committed example.
-2. [Public API + error modes](public-api.md) — the API: four exported names (plus twenty-seven
+2. [Public API + error modes](public-api.md) — the API: four exported names (plus twenty-eight
    qualified-public names, reached as `GoMeta.*`), the error-mode catalogue, the refusal
    strings.
 3. [Canonical output](CANONICAL-OUTPUT.md) — the package's canonical observable output (`altValues_evals`)
@@ -63,4 +63,7 @@ v0 subset forecloses none of it. `0.4.1` changes one behaviour under a fed profi
 the Component's own slot applies in written order with or without a feed; the profile's labels are collected first, as the
 outermost level, and its other statements are evaluated after the Component's own slot, with priority (`docs/public-api.md` §6, the row on the user level's place in the apply loop). Since `0.4.3` a file may also
 withhold a label from a Component's set (`:-x`) and apply it explicitly (`:+x`); a plain `:x` met by a withhold applies nothing and is
-reported by a `:warning` diagnostic, the run completing (`docs/public-api.md` §3.4).
+reported by a `:warning` diagnostic, the run completing (`docs/public-api.md` §3.4). Since `0.4.3` too, the Labels Alterant's vocabulary lives in a
+data file (46 names: `label1` … `label5`, `doc`, the pictograph names in the glued form `label🍀`, the everyday names `warning`, `note`, `info`, `definition`,
+`todo`, `public`, `private`), the vocabulary statements persist in the user level's copy of it, and a label outside the vocabulary is reported by a
+`:warning` diagnostic instead of stopping the run (`docs/public-api.md` §2, §3.4).

@@ -18,7 +18,7 @@
   drift.
 - **PURPOSE:** GoMeta's observable behavior is **pinned, deterministic, and hash-stable** for the Engine's
   own operations and for conditions free of side effects and of reads of changing state (a condition body is Julia, evaluated by Julia since
-  `0.4.0` — what it reads or does is the author's act; see the SECURITY section of `README.md`); the committed example
+  `0.4.0` — what it reads or does is the author's act; see the SECURITY section of `README.md`) and, since `0.4.3`, for a given state of the Labels Alterant's user-level vocabulary file (`docs/public-api.md` §2, THE VOCABULARY FILES — the test suite and the golden layer run on a fresh copy of the shipped file); the committed example
   corpus and the golden test layer prove it byte-for-byte.
 
 ---

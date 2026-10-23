@@ -6,9 +6,10 @@
 # multibyte final character whole in the slice the door hands out and in every derived content payload ([6] holds it).
 # Every assertion below pins a MEASURED value. GENERATED file:
 # exotic characters are REAL codepoints, byte-verified at authoring.
-# HAND-EDITS of the 0.4 development: testset [7]'s membership probes read the plain
-# shipped list (`GM.Alterants.LABELS_VOCABULARY`; the former G-VOC surface removed); testset [2]
-# applies its unknown labels instead of querying them (a queried unknown label answers false).
+# HAND-EDITS of the 0.4 development: testset [7]'s membership probes read the Labels Alterant's vocabulary
+# (`GM.Alterants.base_vocabulary()` since 0.4.3 — the vocabulary file; the hard-coded list before it; the former G-VOC surface removed); testset [2]
+# applies its unknown labels instead of querying them (a queried unknown label answers false; since 0.4.3 an APPLIED unknown label is reported
+# by a warning diagnostic and not refused — [2] and [7] read the delivery's rows; the pictograph names of [7] in their glued shipped form).
 # Assert-count neutral. Until the closed interpreter's removal, testsets
 # [1], [3] and [5] drove `parse_condition` and `print_condition` directly; they drive the whole run now (the same shapes END-TO-END,
 # 37 → 34 asserts: [1] 4 → 3, [3] 3 → 2, [5] 4 → 3). The CURE this file holds — a multibyte-final atom flush against the closing
@@ -17,7 +18,7 @@
 # each count MEASURED from the FULL delivery view). A later HAND-EDIT
 # (2026-10-09): the header's store clause above re-cut to the door's slice (the Engine stores no copy). The Labels Alterant's HAND-EDIT
 # (2026-10-16): [7]'s membership comment re-cut — the constant is the Labels Alterant's hard-coded list in `alterants-std/labels.jl` since
-# that date, the plain file gone; assert-count neutral. A regeneration of this file must re-apply all six forms.
+# that date, the plain file gone; assert-count neutral. A regeneration of this file must re-apply all seven forms (the 0.4.3 re-cut of [2] and [7] the seventh).
 
 using Test
 import GoMeta as GM
@@ -35,16 +36,18 @@ _uc_err(s)     = try _uc_full(s); nothing catch e sprint(showerror, e) end
         @test _uc_full("#~ hide{ :🔥}\nx = 1\n").status == GM.PROCESS_OK
     end
 
-    @testset "[2] store-present flush trio: apply's unknown-label names the FULL token" begin
-        # Witness note: 🔥 joined the pictograph whitelist at 0.3.0, so it can no longer
-        # serve as the UNKNOWN-label witness — 🐙 (not whitelisted) carries the
-        # multibyte-final role in its place. The refusal lives in the SET
-        # role alone (a queried unknown label answers false), so the witness APPLIES the label.
+    @testset "[2] store-present flush trio: the unknown label's warning names the FULL token" begin
+        # Witness note: 🔥 joined the pictograph vocabulary at 0.3.0 (the glued form label🔥 since 0.4.3), so it can no longer
+        # serve as the UNKNOWN-label witness — 🐙 (no shipped name) carries the
+        # multibyte-final role in its place. The unknown label lives in the SET role alone (a queried unknown label answers false), so the
+        # witness APPLIES the label; since 0.4.3 it is REPORTED, not refused — one warning row per affected Component (the metaBlock and the
+        # Code Block attached to it), the run proceeding (MEASURED: PROCESS_OK, 0 evals rows, 2 rows LABEL_NOT_APPLIED_UNKNOWN for each token).
         for (lbl,) in (("é",), ("🐙",), ("aß",))
-            m = _uc_err("#~ :" * lbl * "\nx = 1\n")
-            @test m !== nothing
-            @test occursin("unknown label", m)
-            @test occursin("\"" * lbl * "\"", m)   # the FULL token, never truncated
+            r = _uc_full("#~ :" * lbl * "\nx = 1\n")
+            @test r.status == GM.PROCESS_OK && isempty(GM.readAltValuesEvals(r.altValues_evals))
+            @test length(r.diagnostics) == 2 && all(d -> d.code === :LABEL_NOT_APPLIED_UNKNOWN && d.severity === :warning, r.diagnostics)
+            @test all(d -> occursin("`:" * lbl * "`", d.message), r.diagnostics)   # the FULL token, never truncated
+            @test _uc_err("#~ :" * lbl * "\nx = 1\n") === nothing
         end
     end
 
@@ -100,22 +103,26 @@ _uc_err(s)     = try _uc_full(s); nothing catch e sprint(showerror, e) end
         end
     end
 
-    @testset "[7] the pictograph label vocabulary (0.3.0): byte-exact, both roles" begin
-        # The fixed pictograph names are whitelist members BYTE-EXACTLY — incl. the
+    @testset "[7] the pictograph label vocabulary (0.3.0; the glued form label + pictograph since 0.4.3): byte-exact, both roles" begin
+        # The shipped pictograph names are members BYTE-EXACTLY in their glued form — incl. the
         # regional-indicator pair and a ZWJ sequence; a variation-selector-less base
-        # char is a DIFFERENT byte sequence and refuses like any unknown name.
+        # char is a DIFFERENT byte sequence and is unknown like any other name; the bare pictograph is no shipped name since 0.4.3 (a user
+        # declares it with `:++`).
         for name in ("⛔", "💯", "🇨🇭", "⛓️‍💥", "🌛", "💫")
-            @test Symbol(name) ∈ GM.Alterants.LABELS_VOCABULARY   # the Labels Alterant's hard-coded list (the plain file's before)
+            @test Symbol("label" * name) ∈ GM.Alterants.base_vocabulary()   # the Labels Alterant's vocabulary (the user level's copy of the shipped file)
+            @test Symbol(name) ∉ GM.Alterants.base_vocabulary()
         end
-        r = _uc_full("#~ :⛔ hide{ :⛔ }\n# content\n")
-        @test r.status == GM.PROCESS_OK           # set role + condition role, end-to-end
+        r = _uc_full("#~ :label⛔ hide{ :label⛔ }\n# content\n")
+        @test r.status == GM.PROCESS_OK && length(GM.readAltValuesEvals(r.altValues_evals)) == 4   # set role + condition role, end-to-end (MEASURED: 4 rows)
         # the pictograph label FLUSH against the brace (the multibyte-final atom flush this file's cure holds): the name is read whole to the
         # body's end and the known label applies — read short it would be unknown, false, 2 rows (the original engine's byte-count end test threw);
         # MEASURED from the FULL delivery view: 4 rows
-        r7 = _uc_full("#~ :⛔ hide{ :⛔}\nx = 1\n")
+        r7 = _uc_full("#~ :label⛔ hide{ :label⛔}\nx = 1\n")
         @test r7.status == GM.PROCESS_OK && length(GM.readAltValuesEvals(r7.altValues_evals)) == 4
-        @test Symbol("⛓") ∉ GM.Alterants.LABELS_VOCABULARY   # no VS16 ⇒ unknown
-        m = _uc_err("#~ :⛓\n# content\n")
-        @test m !== nothing && occursin("unknown label", m)
+        @test Symbol("label⛓") ∉ GM.Alterants.base_vocabulary()   # no VS16 ⇒ unknown
+        # the bare chain without its selector: an unknown label — reported, not applied, the run proceeding (MEASURED: 0 rows, 2 warning rows)
+        r8 = _uc_full("#~ :⛓\n# content\n")
+        @test r8.status == GM.PROCESS_OK && isempty(GM.readAltValuesEvals(r8.altValues_evals)) && length(r8.diagnostics) == 2 && all(d -> d.code === :LABEL_NOT_APPLIED_UNKNOWN, r8.diagnostics)
+        @test _uc_err("#~ :⛓\n# content\n") === nothing
     end
 end

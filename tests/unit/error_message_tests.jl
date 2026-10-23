@@ -1,7 +1,8 @@
 # error_message_tests.jl — stable-message witnesses for GoMeta.goMeta errors.
 #
 # IS:   witnesses for the stabilized error messages that a plain input can trigger.
-# DOES: proves those messages carry their stable substrings on real triggers. The deep-state
+# DOES: proves those messages carry their stable substrings on real triggers (since 0.4.3 the unknown label is no refusal —
+#       its witness reads the warning rows of the delivery, the run proceeding). The deep-state
 #       loci (duplicate-conditions; the condition-key family — witnessed in condition_tests.jl) and the
 #       internal-invariant messages ship unwitnessed here, as does the unknown-action message.
 # REASONING: the spaced `#~ : x` form reads as TWO metaStatements since 0.4.0: the lone `:`
@@ -22,11 +23,14 @@ import GoMeta as GM
         e
     end
 
-    @testset "unknown label → the apply-stage whitelist message" begin
-        err = _err("#~ :zznotalabel\n# content\n")
-        @test err isa ErrorException
-        @test occursin("unknown label", err.msg)
-        @test occursin("zznotalabel", err.msg)
+    @testset "unknown label → a warning diagnostic per affected Component, the run proceeding (since 0.4.3; the apply-stage refusal before it)" begin
+        # MEASURED (the FULL delivery view and the trace): PROCESS_OK, 0 evals rows; 2 rows LABEL_NOT_APPLIED_UNKNOWN (warning) — the metaBlock
+        # and the Text Block attached to it — each naming the token and the remedy
+        r = GM.goMeta(Vector{UInt8}(codeunits("#~ :zznotalabel\n# content\n")))
+        @test r isa GM.GoMetaDelivery && r.status === GM.PROCESS_OK && isempty(GM.readAltValuesEvals(r.altValues_evals))
+        @test length(r.diagnostics) == 2 && all(d -> d.code === :LABEL_NOT_APPLIED_UNKNOWN && d.severity === :warning, r.diagnostics)
+        @test all(d -> occursin("`:zznotalabel`", d.message) && occursin("not in the Labels Alterant's vocabulary", d.message) && occursin("correct the spelling", d.message), r.diagnostics)
+        @test _err("#~ :zznotalabel\n# content\n") === nothing
     end
 
     @testset "a second argument list → the grammar's one refusal names the '('" begin

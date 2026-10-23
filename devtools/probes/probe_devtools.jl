@@ -21,6 +21,8 @@
 const _PB_HOME = normpath(joinpath(@__DIR__, "..", ".."))   # the repository root
 const _PB_FIX  = joinpath(@__DIR__, "fixtures")             # the battery's own fixture inputs
 import GoMeta
+## the Labels Alterant's user-level vocabulary file: this battery never touches the real one — a temporary file, unless a path is named already
+haskey(ENV, "GOMETA_LABELS_VOCABULARY") || (ENV["GOMETA_LABELS_VOCABULARY"] = joinpath(mktempdir(), "labels-vocabulary.txt"))
 include(joinpath(@__DIR__, "..", "load_basic_renderer.jl"))   # the ONE path to the basic renderer
 include(joinpath(@__DIR__, "..", "devtools.jl"))   # the tools, one level up
 
@@ -46,7 +48,7 @@ check(occursin("0 matches — :label_nope never minted", out), "never-minted sta
 ## 3 — lines filter restricts anchored rows (the unanchored-row half of this probe — a heading fed through the user profile — was removed:
 ##     a heading in the profile refuses at the read; no shipped path produces an unanchored row)
 out = plain(io -> print_altValues_evals(io, mini; layout = :rows, lines = 1:1))
-check(!occursin("label_🍻", out), "lines=1:1 leaked a row outside the range")
+check(!occursin("label_label🍻", out), "lines=1:1 leaked a row outside the range")
 check(occursin("filter lines=", out), "the lines filter echo missing")
 uhd = try GoMeta.goMeta(read(joinpath(_PB_FIX, "mini-Documenter-Source-File.jl"));
                          config = GoMeta.GoMetaConfig(user_mh_profile = "head(\"Fed head\", 1)")); nothing catch e; e end
@@ -143,7 +145,7 @@ check(!isempty(out), "invalid-UTF-8 input rendered empty")
 nsr = GoMeta.goMeta(read(joinpath(_PB_FIX, "mini-Documenter-Source-File.jl"));
                     config = GoMeta.GoMetaConfig(namespace = :other))
 out = plain(io -> print_altValues_evals(io, nsr; layout = :rows))
-check(!occursin("unanchored", out) && occursin("label_🍻", out),
+check(!occursin("unanchored", out) && occursin("label_label🍻", out),
       "namespace=:other rows failed to anchor against their own result")
 
 ## 12 — (the USER_CONTEXT totality probe over a fed heading's unanchored row was removed: no shipped path
@@ -159,7 +161,7 @@ nrend = count(l -> occursin("=>", l), split(out, '\n'))
 check(nrend == nraw, ":rows rendered $nrend rows for $nraw raw rows — totality broken")
 check(count(l -> occursin("=> :show", l), split(out, '\n')) >
       count(l -> occursin("=> :show", l), split(plain(io -> print_altValues_evals(io, mini; layout = :rows)), '\n')),
-      "the fed show minted no anchored row")   # the fixture's own `#~1 show{ :🍻 && !isMeta }` mints one
+      "the fed show minted no anchored row")   # the fixture's own `#~1 show{ :label🍻 && !isMeta }` mints one
                                                # `=> :show` row WITHOUT a feed (Block #6), so the fed run must render MORE of them
                                                # (MEASURED: 4 with the feed; 1 without)
 check(!occursin("unanchored", out) && !occursin("USER_CONTEXT", out), "a fed queued action produced an unanchored row")
@@ -293,6 +295,26 @@ check(_cf_value(nothing) == "null" && _cf_value(true) == "true" && _cf_value(:sh
 check(_cf_value("a \"q\" | b\n") == "\"a \\\"q\\\" | b\\n\"", "§18: the text value grammar drifted ($(_cf_value("a \"q\" | b\n")))")
 check(_cf_value([:label5, :label1]) == "{label1,label5}" && _cf_value(Symbol[]) == "{}", "§18: the set value grammar drifted")
 check(_cf_value((parent = Int16(3), cell = Int16(7))) == "(cell=7,parent=3)", "§18: the compound value grammar drifted")
+
+## 19 — THE RUN SECTION of the tree views (0.4.3): the status line and the diagnostics folded as the end-of-run print folds them;
+##      nothing of it in the :rows layout; the .html twin carries it escaped
+out = plain(io -> print_altValues_evals(io, mini))
+check(endswith(out, "── the run: status PROCESS_OK · no diagnostics\n"), "the compact tree does not end with the run section (no diagnostics)")
+out = plain(io -> print_altValues_evals(io, mini; include_empty = true, show_handles = true))
+check(endswith(out, "── the run: status PROCESS_OK · no diagnostics\n"), "the FULL delivery view does not end with the run section (no diagnostics)")
+unk = GoMeta.goMeta(Vector{UInt8}(codeunits("#~ :zzz\nx = 1\n")))   # an unknown label: no evals row, two warning rows
+out = plain(io -> print_altValues_evals(io, unk; include_empty = true, show_handles = true))
+check(occursin("(no evals rows — no Alterant value recorded on any surface)", out) && occursin("── the run: status PROCESS_OK · 2 diagnostic rows\n", out) &&
+      occursin("diagnostic: LABEL_NOT_APPLIED_UNKNOWN (warning) — label zzz — 2 occurrence(s)\n", out) && endswith(out, "2 diagnostic row(s) in 1 group(s)\n"),
+      "the FULL delivery view of a run without rows does not carry the run section with the folded warning rows")
+out = plain(io -> print_altValues_evals(io, unk; layout = :rows))
+check(!occursin("── the run:", out) && !occursin("diagnostic:", out), "the :rows layout carries the run section")
+mktempdir() do tmp
+    ph = write_altValues_evals_to_file(joinpath(tmp, "s.html"), unk; include_empty = true, show_handles = true)
+    h = read(ph, String)
+    check(occursin("── the run: status PROCESS_OK · 2 diagnostic rows", h) && occursin("diagnostic: LABEL_NOT_APPLIED_UNKNOWN (warning)", h), "the .html twin lost the run section")
+    check(!occursin("<diagnostic", h) && occursin("&#96;", h) == false && occursin("`:zzz`", h), "the .html twin's run section is not the escaped text")
+end
 
 println(fails == 0 ? "probe_devtools: ALL GREEN" : "probe_devtools: $fails FAILURE(S)")
 exit(fails == 0 ? 0 : 1)

@@ -2,7 +2,8 @@
 #
 # IS: the register file of the alterant layer — two nested sub-modules plus a top-level tail. `module
 #     Alterants`: the Labels Alterant's own file's include (`alterants-std/labels.jl`: the
-#     hard-coded list of 39 names — the 38 shipped + `:doc` — with `setLabels`/`checkLabels`; the plain file and its loader were removed,
+#     vocabulary of 46 names read from the data file `data/alterants-std/labels-vocabulary.txt` through the user level's copy (since 0.4.3;
+#     the hard-coded list of 39 before it) — with `setLabels`/`checkLabels`; the plain file and its loader were removed,
 #     its digest pin, capture cache and scope law as well) + the toy
 #     setters `setVisib`/`setId` over the `@namedElement` types `Visib` (Bool: hide/show/discard)
 #     and `Id` (Int16: cell/parent/file). `module CnS`: the per-call state accessors `wipeAltActionSlots`/
@@ -14,19 +15,20 @@
 #     it through the v0.4 lifecycle (Builder → validate → publish): the sorted action table, the parallel action→plugin index, the name→index Dicts,
 #     the SORTED `accum_alt_idxs` (the apply-phase `insorted` consumer in apply.jl depends on the sort),
 #     (the identity Visib-action→settribute-key map was removed). `setLabels` (the `:` labels action) checks every
-#     label against the Labels Alterant's vocabulary (the run's — the base plus the run's own vocabulary statements, labels.jl `declareLabels!`); an unknown label raises the stable "GoMeta apply: unknown label"
-#     refusal, which names the accepted set (docs/public-api.md §3.4). `getState`/`getAltState` read the
+#     label against the Labels Alterant's vocabulary (the run's — the base plus the run's own vocabulary statements, labels.jl `declareLabels!`); an unknown label is SKIPPED and reported
+#     by a `:warning` diagnostic (`LABEL_NOT_APPLIED_UNKNOWN`, since 0.4.3 — the refusal naming the accepted set before it; the kept `Dict{Symbol,Bool}` method's still) (docs/public-api.md §3.4). `getState`/`getAltState` read the
 #     per-call `ProcessState` via `ctx()` (a ScopedValue — no module-global state). `updateMetaHierarchy`/`wipeAltActionSlots` maintain the meta-hierarchy cursor + the slot
 #     tensors on `ctx()` under the single-source `maxDepthMH`/`NUM_MH_LEVELS` consts (src/state.jl).
 # REASONING: the inventory is deterministic BY CONSTRUCTION (declaration order, built once, read-only)
 #     rather than hanging on any iteration order. A `{…}` condition is read by Julia's parser and evaluated by Julia
 #     since 0.4.0 (the creator's design) — this registry supplies its VOCABULARY:
 #     the settribute keys and the queryable actions (`queryable_action`, src/state.jl), read by the rewrite at absorb.
-# EDGES (honest): the Labels Alterant's BASE vocabulary is fixed, and since 0.4.2 a run's vocabulary statements at `#~0` or in the profile add names to it and remove names from it (labels.jl `declareLabels!`, the record's `onRead`) — the base: the corpus-documented labels
-#     :label1..:label5 plus (since 0.3.0) a fixed pictograph vocabulary (byte-exact names, no
-#     normalization) plus `:doc` (since 0.4.0, the creator's decision) — hard-coded in the Labels Alterant's own file
-#     `alterants-std/labels.jl`; an unknown label APPLIED meets the stable refusal that
-#     names the accepted set; a label QUERIED answers false when unknown or unset — the original engine's checker, since 0.4.0
+# EDGES (honest): the Labels Alterant's BASE vocabulary is the user level's vocabulary file (since 0.4.3 — created from the shipped data file
+#     `data/alterants-std/labels-vocabulary.txt`: `label1`..`label5`, `doc`, the 33 pictograph names in the glued form `label` + pictograph, the
+#     everyday names; byte-exact names, no normalization; before 0.4.3 a hard-coded list in `alterants-std/labels.jl`), and since 0.4.2 a run's
+#     vocabulary statements at `#~0` or in the profile add names to it and remove names from it — since 0.4.3 PERSISTENTLY, the user file edited
+#     and every change of a run that completes reported by an `:info` row (labels.jl `declareLabels!`, the record's `onRead`); an unknown label APPLIED is skipped and
+#     reported by a `:warning` row; a label QUERIED answers false when unknown or unset — the original engine's checker, since 0.4.0
 #     (the membership refusal of 0.3.2 and a write-only valve of the 0.4 development were removed). `setId` parses values into the Int16 domain; the value/arity walls
 #     around these setters are Julia's own since 0.4.0 (the apply seam's guarded
 #     refusal was removed; docs/public-api.md §3.4). Only the labels
@@ -54,20 +56,25 @@ using StaticArrays: SVector
 ## index the Engine hands it (`#~0` = the file slot, the user level, an inline metaSegment) — the structural consts have their single
 ## source in state.jl, included before this file (the pattern of `module CnS` below).
 using ..GoMeta: fileMHIdx, userMHIdx, lineMHIdx
-## the Labels Alterant's setter RETURNS `Diagnostic` rows for a plain name met by a withhold — the type is the Engine's (result.jl, included
-## before this file); the Engine's door (apply.jl) delivers them with the place attached.
+## the Labels Alterant's setter RETURNS `Diagnostic` rows (a plain name met by a withhold; a name outside the run's vocabulary) and its hook
+## RETURNS them with the run state (a persisted vocabulary change) — the type is the Engine's (result.jl, included before this file); the
+## Engine's one door (state.jl) delivers them with the place attached.
 using ..GoMeta: Diagnostic
+## the argument-edge class (src/arguments.jl): the Labels Alterant trims the lines of its vocabulary files with it and refuses a character of
+## the class INSIDE a declared name or a file's name.
+using ..GoMeta: is_argument_space
 
 #########################################################################################
 #########################################################################################
 ## Labels.jl for `alterant` `Labels`:
 
 ## The Labels Alterant has its OWN file since 0.4.0 (the creator's decision — the whitelist belongs in the Labels
-## Alterant, "fixing a bug"; "writing it into the code of the Labels Alterant (i.e.: hard coded)"): the
-## hard-coded list `LABELS_VOCABULARY` (the 38 shipped names + `:doc`), `setLabels` (the closed check — the original engine's,
-## GoMetaRetro Alterants.jl :73–:78) and `checkLabels` (false for an unset or unknown name — the original engine's :87–:99) live in
-## `alterants-std/labels.jl` (std-Alterant territory, never a Core literal — vocabulary_tests [10] scans around it).
-## The plain file `labels_vocabulary.txt` and its loader were removed within the 0.4 development.
+## Alterant, "fixing a bug"): the vocabulary files' reader `base_vocabulary()` (the user level's copy of the shipped data file
+## `data/alterants-std/labels-vocabulary.txt`, since 0.4.3 — the hard-coded list `LABELS_VOCABULARY` of 0.4.0 … 0.4.2 before it), `setLabels`
+## (the check against the run's vocabulary — an unknown name reported, since 0.4.3; the original engine's refusal, GoMetaRetro Alterants.jl
+## :73–:78, kept in the `Dict{Symbol,Bool}` method) and `checkLabels` (false for an unset or unknown name — the original engine's :87–:99)
+## live in `alterants-std/labels.jl` (std-Alterant territory, never a Core literal — vocabulary_tests [10] scans around it).
+## The plain file `labels_vocabulary.txt` of the 0.4 development and its loader were removed within it; the data file is 0.4.3's.
 include(joinpath(@__DIR__, "..", "alterants-std", "labels.jl"))
 
 #########################################################################################
@@ -396,7 +403,7 @@ instances (the `state.jl` record type) for `labels` / `Visib` / `Id` / `Heading`
 returned as an UNVALIDATED `RegistryBuilder`.
 
 DOES: builds the four records in the keyword form, each with its declared default and its capture row — `labels`
-(`:accumulate`; `Alterants.LabelsInstance` (since 0.4.2) — the applied labels, the run's vocabulary and the names withheld at the Component (the withhold `:-x`, since 0.4.3), iterating as the former bare `Dict{Symbol,Bool}` did (labels.jl); a plain `:x` met by a withhold applies nothing and is reported through the setter's returned `:warning` diagnostics, delivered by the apply loop's door with the place attached; setter `setLabels`, getter `checkLabels`; the read-time hook `onRead = Alterants.declareLabels!` — the vocabulary statements consumed at the read; the setter's and the checker's kept `Dict{Symbol,Bool}` methods serve a custom registration with `altConstructor = Dict{Symbol,Bool}` and NO hook — with a hook, a minted run state reaches `Dict{Symbol,Bool}(run)` and is Julia's own error (apply.jl `_freshInstance`; labels.jl); default the EMPTY SET; capture
+(`:accumulate`; `Alterants.LabelsInstance` (since 0.4.2) — the applied labels, the run's vocabulary and the names withheld at the Component (the withhold `:-x`, since 0.4.3), iterating as the former bare `Dict{Symbol,Bool}` did (labels.jl); a plain `:x` met by a withhold, and a name outside the run's vocabulary under any verb, apply nothing and are reported through the setter's returned `:warning` diagnostics, delivered by the apply loop's door with the place attached; setter `setLabels`, getter `checkLabels`; the read-time hook `onRead = Alterants.declareLabels!` — the vocabulary statements consumed at the read, a persisted change of the user level's vocabulary file reported through the hook's returned `:info` row; the setter's and the checker's kept `Dict{Symbol,Bool}` methods serve a custom registration with `altConstructor = Dict{Symbol,Bool}` and NO hook — with a hook, a minted run state reaches `Dict{Symbol,Bool}(run)` and is Julia's own error (apply.jl `_freshInstance`; labels.jl); default the EMPTY SET; capture
 `:per_key`, stem `:label`), `Visib` (`:mutExclusive`; default `:show`; `:single`, stem `:visib`), `id`
 (`:mutExclusivePerField`; default the ZERO compound; `:per_field`, stem `:id`) and `heading` (`:localOnly` —
 queued like every action, applied by the apply loop's one rule for this mode ONLY at the Component the statement is applied

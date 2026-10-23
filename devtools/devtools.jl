@@ -168,7 +168,7 @@ function _dt_sty(io, txt; color = nothing, bold::Bool = false)
 end
 
 ## textwidth-aware padding — `rpad` counts chars, not display width, and mis-aligns
-## pictograph labels like `label_🍻` (probe-proven); this pads to WIDTH.
+## pictograph labels like `label_label🍻` (probe-proven); this pads to WIDTH.
 _dt_tpad(s, w) = s * ' '^max(0, w - textwidth(s))
 
 ## IS: the bounded excerpt maker. DOES: flattens in-cell newlines to '⏎' (the command-line entry's
@@ -734,14 +734,16 @@ IS: the second of the two print tools — the
     which metaSegment caused it), with the input-line spans the raw rows lack. The FULL delivery view — every
     Component shown, absence labelled, every row with its decoded handle — is `layout = :tree, include_empty = true,
     show_handles = true` (the verb `evals-tree`); the compact tree (the default) is the compact delivery view — a reading form for
-    a quick look. A development tool: nothing under `src/` reads it.
+    a quick look. Both tree views end with THE RUN SECTION (since 0.4.3): the run's status line and its diagnostics folded as
+    `print_diagnostics` folds them — printed also where the view has no evals rows; the `:rows` and `:cells` layouts carry none.
+    A development tool: nothing under `src/` reads it.
 DOES: reads the rows through the public reader `GoMeta.readAltValuesEvals(result.altValues_evals)`, decodes each handle
     with the shared `decode_handle` and resolves its Component by the plain path walk through the door (`DTEvalRow`); a
     row's text is the door's `BLS.content` of that Component. Absence is explicit: a shown component with no rows reads
     `(no evals — defaults apply)` — the printer reads the Engine's rows alone, never the answer function, so it asserts no
     value where no row exists (an Alterant's declared default — `Alterant.default`, Visib's `:show`, the explicit default
     carried by the Engine since 0.4.0 — is the answer function's, `GoMeta.evaluatedAltValue`,
-    never a row). With no rows at all it prints `(no evals rows — no metaLine on any surface)` after the filters' echo.
+    never a row). With no rows at all it prints `(no evals rows — no Alterant value recorded on any surface)` after the filters' echo.
     METHOD DISPATCH — which call form triggers what: exactly as `print_BLS_Component_Tree` (core `(io, result)`;
     `(result)` = stdout convenience; the write twin infers `format` from the extension, `.html` ⇒ styled HTML page, else
     text with `color = :never` default).
@@ -815,7 +817,8 @@ function print_altValues_evals(io::IO, result::GoMeta.GoMetaDelivery;
     frows, echo, filtered = _dt_filter_rows(rows, attrs, lines)
     if isempty(rows)
         _dt_echo(io, echo)      # active filters echo (incl. "never minted") even here
-        _dt_sty(io, "(no evals rows — no metaLine on any surface)\n", color = _DT_C_CHROME)
+        _dt_sty(io, "(no evals rows — no Alterant value recorded on any surface)\n", color = _DT_C_CHROME)
+        layout === :tree && _dt_run_section(io, result, _name)   # the run section even without rows — an unknown label's run has none and carries its warning rows
         return nothing
     end
     if layout === :rows
@@ -823,6 +826,7 @@ function print_altValues_evals(io::IO, result::GoMeta.GoMetaDelivery;
     elseif layout === :tree
         _dt_t2_tree(io, doc, frows, rows, echo; include_empty = inc, lines_r = lines,
                     show_handles, filtered)
+        _dt_run_section(io, result, _name)   # THE RUN SECTION (since 0.4.3): the status line and the diagnostics folded — the view self-contained
     else
         _dt_t2_cells(io, doc, frows, rows, echo)
     end
@@ -832,6 +836,21 @@ end
 "REPL convenience — `print_altValues_evals(stdout, result; kwargs...)`. See the core docstring."
 print_altValues_evals(result::GoMeta.GoMetaDelivery; kwargs...) =
     print_altValues_evals(stdout, result; kwargs...)
+
+## THE RUN SECTION of the tree views (since 0.4.3 — the creator's decision: the FULL delivery view and the compact tree end with the run's
+## status line and its diagnostics, so a view carries what the run reported): one chrome line — the status and the count of diagnostic rows
+## (or "no diagnostics") — then, where rows exist, the diagnostics folded EXACTLY as the end-of-run print `print_diagnostics` folds them (the
+## same function; its text routed through the one styled-run emitter, so the HTML sink escapes it); printed also where the view has no evals
+## rows; the `:rows` and `:cells` layouts untouched.
+function _dt_run_section(io, result, name)
+    n = length(result.diagnostics)
+    _dt_sty(io, "── the run: status " * string(result.status) * (n == 0 ? " · no diagnostics" : " · " * _dt_plural(n, "diagnostic row")) * "\n", color = _DT_C_CHROME)
+    if n > 0
+        b = IOBuffer(); print_diagnostics(b, result; name = name)
+        _dt_sty(io, String(take!(b)))
+    end
+    nothing
+end
 
 ## IS: the filter contract. DOES: normalizes `attrs` (:all | Symbol | Vector),
 ## validates + filters BEFORE layout, keeps unanchored rows immune to `lines`, and
@@ -1344,7 +1363,8 @@ a plain `:x` met by a withhold): the rows FOLDED by (code, severity, label, stat
 severity, the label where the row's context carries one, the count, the message (each distinct message of the group once), the stating statement's place and the places the row
 stands at (`L<n>` / `L<a>–L<b>`, decoded through the door from the handles the Engine attached — the applying Component's key, the stating
 statement's handle, the Alterant's statements applied at that Component so far — each distinct history of the group once, with its places where the group holds more than one; "the user level's profile" for a fed statement, whose text
-is not in the tree), a count line last; nothing printed for an empty vector; an error delivery's rows (a string or `nothing` context) print
+is not in the tree), every OTHER key of the context as data (a row minted at the read carries no Component key but the statement's text and
+its level — `statement`, `level`; the Labels Alterant's vocabulary-file rows `file` and `change`; a custom Alterant's own keys — the tools know no Alterant's keys), a count line last; nothing printed for an empty vector; an error delivery's rows (a string or `nothing` context) print
 their context as is. Reads the delivered object alone; evaluates nothing; the Engine prints nothing itself — this is the development tools'
 print, the command line's end-of-run one.
 """
@@ -1370,7 +1390,7 @@ function print_diagnostics(io::IO, r; name::AbstractString = "")
     end
     for k in order
         rows = groups[k]; d = rows[1]; ctx = d.context
-        println(io, "diagnostic: ", d.code, " (", d.severity, ")", k[3] === nothing ? "" : string(" — label ", k[3]), " — ", length(rows), " occurrence(s)")
+        println(io, "diagnostic: ", d.code, " (", d.severity, ")", k[3] === nothing ? "" : string(" — label ", escape_string(string(k[3]))), " — ", length(rows), " occurrence(s)")
         for m in unique(x.message for x in rows)
             println(io, "   ", m)
         end
@@ -1387,6 +1407,14 @@ function print_diagnostics(io::IO, r; name::AbstractString = "")
             for ac in unique(x.context.alterant_context for x in rows if x.context isa NamedTuple && haskey(x.context, :alterant_context))
                 println(io, "   context: ", repr(ac))
             end
+            ## every other key of the context — a read-time row's `level` and `statement`, the Labels Alterant's `file` and `change`, a custom
+            ## Alterant's own keys — printed as data, each distinct value of the group once (the tools know no Alterant's keys)
+            for k in keys(ctx)
+                k in (:label, :cell, :stated_by, :statements, :alterant_context) && continue
+                for v in unique(getfield(x.context, k) for x in rows if x.context isa NamedTuple && haskey(x.context, k))
+                    println(io, "   ", k, ": ", repr(v))
+                end
+            end
         elseif ctx !== nothing
             for c in unique(x.context for x in rows)
                 println(io, "   context: ", repr(c))
@@ -1400,7 +1428,7 @@ end
 const _DT_VERBS = ("tree", "segments", "evals", "render", "trace", "evals-tree", "bls-tree", "comparison")
 
 function _dt_cli_usage()
-    println(stderr, "usage: devtools.jl <", join(_DT_VERBS, "|"), "> <file>")
+    println(stderr, "usage: devtools.jl <", join(_DT_VERBS, "|"), "> <file> [profile]   — [profile]: the user level's profile text, optional (since 0.4.3)")
     exit(2)
 end
 
@@ -1410,12 +1438,13 @@ _dt_cli_store_name(s) = s == 0x01 ? "direct" : s == 0x02 ? "insert" : s == 0x00 
 _dt_cli_fmt_steps(v) = "[" * join(["($(_dt_cli_store_name(s)),$(Int(o)))" for (s, o) in v], " ") * "]"
 
 function _dt_cli_main(args)
-    length(args) == 2 || _dt_cli_usage()
+    length(args) in (2, 3) || _dt_cli_usage()
     cmd, path = args[1], args[2]
+    profile = length(args) == 3 ? args[3] : nothing   # the user level's profile text (since 0.4.3): fed as `GoMetaConfig(user_mh_profile = …)`
     cmd in _DT_VERBS || _dt_cli_usage()
     isfile(path) || (println(stderr, "devtools: no such file: ", path); exit(2))
 
-    r = GoMeta.goMeta(read(path))
+    r = GoMeta.goMeta(read(path); config = GoMeta.GoMetaConfig(user_mh_profile = profile))
     println(stderr, "status: ", r.status)
     print_diagnostics(stderr, r; name = basename(path))   # the end-of-run print: the rows folded, the places decoded
 
@@ -1432,7 +1461,7 @@ function _dt_cli_main(args)
     elseif cmd == "evals"
         doc = _dt_doc(r; name = basename(path))                 # the rows resolved to their Components (§C); the excerpt through the door
         rows = _dt_eval_rows(doc)
-        isempty(rows) && println(stderr, "(no evals rows — no LIVE metaLine on any surface)")
+        isempty(rows) && println(stderr, "(no evals rows — no Alterant value recorded on any surface)")
         for row in rows
             cell = replace(row.comp === nothing ? "" : _dt_content(doc, row.comp), '\n' => '⏎')   # a row the tools cannot place (no Component): no piece in the tree — none produced by a shipped path since 0.4.0
             println(rpad(String(row.attr), 14), " => ", rpad(repr(row.value), 40), " (", row.polarity, ")  \"",
@@ -1452,7 +1481,7 @@ function _dt_cli_main(args)
     elseif cmd == "trace"
         doc = _dt_doc(r; name = basename(path))                 # the rows resolved to their Components (§C); the excerpt through the door
         rows = _dt_eval_rows(doc)
-        isempty(rows) && println(stderr, "(no evals rows — no LIVE metaLine on any surface)")
+        isempty(rows) && println(stderr, "(no evals rows — no Alterant value recorded on any surface)")
         for row in rows
             cell = replace(row.comp === nothing ? "" : _dt_content(doc, row.comp), '\n' => '⏎')   # a row the tools cannot place (no Component): no piece in the tree — none produced by a shipped path since 0.4.0
             println(rpad(String(row.attr), 14), " => ", rpad(repr(row.value), 40), " (", row.polarity, ")  \"",

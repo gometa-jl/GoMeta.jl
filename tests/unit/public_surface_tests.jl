@@ -10,7 +10,7 @@
 # DOES: (1) introspects the surface — `names(GoMeta)` (minus the module name) returns the
 #       exported ∪ `public` names; the EXPORTED tier (via `Base.isexported`) must equal the FOUR
 #       declared exports and the remaining tier (via `Base.ispublic`) must equal the declared
-#       package-public names (27 — the history of the count in docs/public-api.md §6;
+#       package-public names (28 since 0.4.3, 27 at 0.4.0 — the history of the count in docs/public-api.md §6;
 #       no accidental leak, no gap, no silent demotion) — the
 #       machine-checkable surface oracle; (2) asserts each supporting package-public name is
 #       defined, `public`, and NOT exported (the controlled surface); (3) asserts the internal
@@ -53,13 +53,14 @@ import TOML
                          :BLS,   # the parser module, public by name — its door inside it
                          :evaluatedAltValue, :EvaluatedAltValue,   # THE ONE ANSWER FUNCTION and its record
                          :scanAlterant, :evaluatedAltValues,   # the scan by Alterant and the access by Component
-                         :childDiffers]   # mirrors docs/public-api.md §1.2 EXACTLY — 27 names; every change of the set is a row of §6
+                         :childDiffers,
+                         :is_argument_space]   # THE ARGUMENT-EDGE CLASS (0.4.3; src/arguments.jl) — the list mirrors docs/public-api.md §1.2 EXACTLY — 28 names; every change of the set is a row of §6
 
     @testset "export set is EXACTLY the declared semver surface" begin
         live = setdiff(Set(names(GM)), Set([:GoMeta]))     # names() on Julia ≥1.11 == exported ∪ `public` (+ the module name)
         exported = Set(filter(n -> Base.isexported(GM, n), collect(live)))
         @test exported == DECLARED_EXPORTS                        # [1] no accidental leak AND no gap (exact equality)
-        @test setdiff(live, exported) == Set(SUPPORTING_PUBLIC)   # [1b] the `public` tier is EXACTLY the declared names (27; the history of the count in docs/public-api.md §6)
+        @test setdiff(live, exported) == Set(SUPPORTING_PUBLIC)   # [1b] the `public` tier is EXACTLY the declared names (28; the history of the count in docs/public-api.md §6)
         @test all(n -> Base.ispublic(GM, n), SUPPORTING_PUBLIC)   # [1c] every supporting name carries the `public` marking
         @test all(n -> !Base.isexported(GM, n), SUPPORTING_PUBLIC) # [1d] …and none is exported (the two-tier partition is real)
         for n in DECLARED_EXPORTS

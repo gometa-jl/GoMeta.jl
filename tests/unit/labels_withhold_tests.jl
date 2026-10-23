@@ -2,7 +2,7 @@
 # — the creator's design: a label withheld from a Component's set for one run without the file rewritten; a plain `:x` met by a withhold
 # APPLIES NOTHING and the run proceeds — ONE warning diagnostic per statement and name at each affected Component, the status PROCESS_OK; the rule the same for the
 # user level's profile and for the file; the Engine's door = the setter's `Vector{Diagnostic}` return read at the apply and delivered with
-# the place merged into the context; a withheld label answers false in a condition; the unknown name refused as before; the malformed shapes
+# the place merged into the context; a withheld label answers false in a condition; the unknown name reported, not refused (since 0.4.3 — labels_unknown_tests.jl); the malformed shapes
 # refused; the reach as the Engine's walk gives it. The code: src/alterants-std/labels.jl (`setLabels(::LabelsInstance, …)` — the sign read
 # from the first token; `LabelsInstance.withheld`), src/alterants/apply.jl (`_deliver_diagnostics!` at the two setter call sites),
 # src/alterants/registry.jl, src/result.jl, src/state.jl.
@@ -12,7 +12,7 @@
 #       message and the warning diagnostic's message a byte-exact copy of its printout, never retyped — the `raw"""…"""` literals below) or
 #       from the door probe (D1 … D10, K1 … K4), and never written before those runs. THE FORMS ([B-W1]); THE CREATOR's SEQUENCE in the colon
 #       forms ([B-W2]); THE PLAIN `:x` MET BY A WITHHOLD — nothing applied, the run proceeds, the warning diagnostic with its place ([B-W3]);
-#       THE EXPLICIT APPLY and the fold ([B-W4]); THE UNKNOWN and the excluded names ([B-W5]); THE CONDITIONS ([B-W6]); THE INLINE
+#       THE EXPLICIT APPLY and the fold ([B-W4]); THE UNKNOWN and the removed names — reported since 0.4.3 ([B-W5]); THE CONDITIONS ([B-W6]); THE INLINE
 #       metaSegment ([B-W7]); THE USER LEVEL ([B-W8]); THE MALFORMED SHAPES ([B-W9]); THE SUPERSESSION ([B-W10]); `#~0` and the one-line
 #       orders ([B-W11]); THE CREATOR's 026 with a withhold ([B-W12]); THE `Dict{Symbol,Bool}` METHOD unchanged ([B-W13]); THE PROVENANCE
 #       of a withhold ([B-W14]); THE COIN CASE ([B-W15]); THE ENGINE'S DOOR by a custom registration ([B-W16]); THE DOOR at the apply loop's FIRST setter call — an outer slot's plain label met by a withhold applied before it ([B-W17]).
@@ -29,8 +29,8 @@ import GoMeta as GM
 const _LW_BLS = GM.BLS
 
 _lw_bytes(s::String) = Vector{UInt8}(codeunits(s))
-_lw_run(s::String; profile = nothing, registry = nothing) =
-    GM.goMeta(_lw_bytes(s); (registry === nothing ? (;) : (; registry = registry))..., config = GM.GoMetaConfig(; user_mh_profile = profile))
+_lw_run(s::String; profile = nothing, registry = nothing) =   # every document on a FRESH user-level vocabulary file: a vocabulary statement persists (0.4.3)
+    (TestSupport.fresh_vocabulary!(); GM.goMeta(_lw_bytes(s); (registry === nothing ? (;) : (; registry = registry))..., config = GM.GoMetaConfig(; user_mh_profile = profile)))
 _lw_msg(s::String; profile = nothing, registry = nothing) = try; _lw_run(s; profile = profile, registry = registry); nothing; catch e; sprint(showerror, e); end   # the message as the oracle's view prints it
 _lw_recs(r) = collect(r.altValues_evals.records)
 _lw_diags(r) = r.diagnostics
@@ -58,8 +58,14 @@ end
 "one `LABEL_NOT_APPLIED_WITHHELD` warning row of the shipped Labels Alterant: the code, the severity, the message bytes (the AFTER trace W04's diagnostics block) and the decoded context — the label, the Component (`cell`), the statement's Component (`stated_by`), the Labels statements applied there so far (`statements`)"
 function _lw_withheld(d, label::Symbol, cell::Vector{UInt8}, stated_by::Vector{UInt8}, statements::Vector{Vector{UInt8}})
     @test d.code === :LABEL_NOT_APPLIED_WITHHELD && d.severity === :warning
-    @test d.message == raw"""GoMeta apply: the plain `:label1` did not apply label1 here — withheld; if this run means to withhold it, nothing to do; drop `:-label1` (in the user level's profile or in the file) to apply it everywhere; write `:+label1` where one statement must apply it regardless — a written `:+label1` then applies under every later withhold at that place; see docs/public-api.md §3.4"""
+    @test d.message == raw"""GoMeta apply: the plain `:label1` did not apply label1 here — withheld; if this run means to withhold it, nothing to do; drop `:-label1` (in the user level's profile or in the file) to apply it everywhere; write `:+label1` where one statement must apply it regardless — a written `:+label1` then holds against a withhold stated above it or in the user level's profile; see docs/public-api.md §3.4"""
     @test d.context == (label = label, cell = cell, stated_by = stated_by, statements = statements)
+end
+"the three `:info` rows of 029's declaration `:(++, x, y, z)` (since 0.4.3 a vocabulary statement persists into the run's user file): x, y, z added — stated by the `#~0` metaBlock, level 1, the statement's text, the run's file"
+function _lw_three_added(r)
+    d = _lw_diags(r); k = _lw_keys(r)
+    @test length(d) == 3 && all(x -> x.code === :LABELS_VOCABULARY_FILE_CHANGED && x.severity === :info, d)
+    @test [x.context.label for x in d] == [:x, :y, :z] && all(x -> x.context.change === :added && x.context.stated_by == k[1] && x.context.level == 1 && x.context.statement == ":(++, x, y, z)" && x.context.file == ENV["GOMETA_LABELS_VOCABULARY"], d)
 end
 
 @testset "the withhold and the explicit apply of the Labels Alterant (0.4.3)" begin
@@ -84,14 +90,14 @@ end
 
     @testset "[B-W2] the creator's sequence in the colon forms (W03): `#~0 :(++, x, y, z)` · (a blank line) · `#~ :(x, y)` · `a = 1` · `#~2 :-x :z` · `b = 2` · `#~3 :+x` · `c = 3` — c1 {x, y}, c2 {y, z}, c3 {x, y, z} by Block, the decided_by lists as measured; the glued spelling (W03b) the same sets one Block earlier" begin
         # AFTER view + trace W03: PROCESS_OK, 14 rows on 6 cells; Block #2 Meta L1 (the `#~0` metaBlock) no rows; Block #3 Meta L2–L3 / Block #4 Code L4 {x, y} decided_by [Block #3];
-        # Block #5 Meta L5 / Block #6 Code L6 {y, z} decided_by [#3, #5, #5]; Block #7 Meta L7 / Block #8 Code L8 {x, y, z} decided_by [#3, #5, #5, #7]; 0 diagnostics
-        r = _lw_run("#~0 :(++, x, y, z)\n\n#~ :(x, y)\na = 1\n#~2 :-x :z\nb = 2\n#~3 :+x\nc = 3\n"); @test r.status === GM.PROCESS_OK && length(_lw_recs(r)) == 14 && isempty(_lw_diags(r))
+        # Block #5 Meta L5 / Block #6 Code L6 {y, z} decided_by [#3, #5, #5]; Block #7 Meta L7 / Block #8 Code L8 {x, y, z} decided_by [#3, #5, #5, #7]; 3 info rows — x, y, z added to the run's file (the declaration persists since 0.4.3)
+        r = _lw_run("#~0 :(++, x, y, z)\n\n#~ :(x, y)\na = 1\n#~2 :-x :z\nb = 2\n#~3 :+x\nc = 3\n"); @test r.status === GM.PROCESS_OK && length(_lw_recs(r)) == 14; _lw_three_added(r)
         k = _lw_keys(r); @test length(k) == 7 && isempty(_lw_rows(r, k[1]))
         _lw_pair(r, 2, [:x, :y], [k[2]]); _lw_pair(r, 4, [:y, :z], [k[2], k[4], k[4]]; sources = (:indirect, :indirect)); _lw_pair(r, 6, [:x, :y, :z], [k[2], k[4], k[4], k[6]]; sources = (:indirect, :indirect))
         # the eight Lines answer their Block's set indirectly (L1 of the `#~0` metaBlock: Symbol[] :default)
         @test _lw_line_answers(r) == [(Symbol[], :default), ([:x, :y], :indirect), ([:x, :y], :indirect), ([:x, :y], :indirect), ([:y, :z], :indirect), ([:y, :z], :indirect), ([:x, :y, :z], :indirect), ([:x, :y, :z], :indirect)]
         # AFTER trace W03b (no blank line — `:(x, y)` sits in the `#~0` metaBlock, the vocabulary statements' rule): 14 rows on 6 cells, the same sets on Blocks #2 … #7
-        r = _lw_run("#~0 :(++, x, y, z)\n#~ :(x, y)\na = 1\n#~2 :-x :z\nb = 2\n#~3 :+x\nc = 3\n"); @test r.status === GM.PROCESS_OK && length(_lw_recs(r)) == 14 && isempty(_lw_diags(r))
+        r = _lw_run("#~0 :(++, x, y, z)\n#~ :(x, y)\na = 1\n#~2 :-x :z\nb = 2\n#~3 :+x\nc = 3\n"); @test r.status === GM.PROCESS_OK && length(_lw_recs(r)) == 14; _lw_three_added(r)
         k = _lw_keys(r); @test length(k) == 6
         _lw_pair(r, 1, [:x, :y], [k[1]]); _lw_pair(r, 3, [:y, :z], [k[1], k[3], k[3]]; sources = (:indirect, :indirect)); _lw_pair(r, 5, [:x, :y, :z], [k[1], k[3], k[3], k[5]]; sources = (:indirect, :indirect))
     end
@@ -134,11 +140,21 @@ end
         k = _lw_keys(r); @test length(k) == 8; _lw_pair(r, 1, [:label1], [k[1]]); _lw_pair(r, 5, [:label1], [k[1], k[3], k[5]]; sources = (:indirect, :indirect)); @test isempty(_lw_rows(r, k[7])) && isempty(_lw_rows(r, k[8]))
     end
 
-    @testset "[B-W5] the unknown and the excluded names: `:-zzz` / `:+zzz` (W12 / W13) and, after `#~0 :--label1`, `:-label1` / `:+label1` (W14 / W15) — each REFUSED as an unknown label, the message naming the bare name (the one-character asymmetry: a one-run `:-x` informs where a one-run `:--x` refuses a later use)" begin
-        @test _lw_msg("#~ :-zzz\nx = 1\n") == raw"""GoMeta apply: unknown label "zzz" — not in the Labels Alterant's vocabulary (the accepted set = [:doc, :label1, :label2, :label3, :label4, :label5, :⌛, :⛓️, Symbol("⛓️\u200d💥"), :⛔, :🇨🇭, :🌍, :🌛, :🌞, :🌳, :🌷, :🌹, :🌼, :🍀, :🍒, :🍻, :🎨, :🎿, :🏔️, :🐣, :💕, :💡, :💣, :💫, :💯, :💸, :💾, :📝, :📸, :🔥, :😘, :🚀, :🧮, :🫕]); see docs/public-api.md §3.4"""
-        @test _lw_msg("#~ :+zzz\nx = 1\n") == raw"""GoMeta apply: unknown label "zzz" — not in the Labels Alterant's vocabulary (the accepted set = [:doc, :label1, :label2, :label3, :label4, :label5, :⌛, :⛓️, Symbol("⛓️\u200d💥"), :⛔, :🇨🇭, :🌍, :🌛, :🌞, :🌳, :🌷, :🌹, :🌼, :🍀, :🍒, :🍻, :🎨, :🎿, :🏔️, :🐣, :💕, :💡, :💣, :💫, :💯, :💸, :💾, :📝, :📸, :🔥, :😘, :🚀, :🧮, :🫕]); see docs/public-api.md §3.4"""
-        @test _lw_msg("#~0 :--label1\n\n#~ :-label1\nx = 1\n") == raw"""GoMeta apply: unknown label "label1" — not in the Labels Alterant's vocabulary (the accepted set = [:doc, :label2, :label3, :label4, :label5, :⌛, :⛓️, Symbol("⛓️\u200d💥"), :⛔, :🇨🇭, :🌍, :🌛, :🌞, :🌳, :🌷, :🌹, :🌼, :🍀, :🍒, :🍻, :🎨, :🎿, :🏔️, :🐣, :💕, :💡, :💣, :💫, :💯, :💸, :💾, :📝, :📸, :🔥, :😘, :🚀, :🧮, :🫕]); see docs/public-api.md §3.4"""
-        @test _lw_msg("#~0 :--label1\n\n#~ :+label1\nx = 1\n") == raw"""GoMeta apply: unknown label "label1" — not in the Labels Alterant's vocabulary (the accepted set = [:doc, :label2, :label3, :label4, :label5, :⌛, :⛓️, Symbol("⛓️\u200d💥"), :⛔, :🇨🇭, :🌍, :🌛, :🌞, :🌳, :🌷, :🌹, :🌼, :🍀, :🍒, :🍻, :🎨, :🎿, :🏔️, :🐣, :💕, :💡, :💣, :💫, :💯, :💸, :💾, :📝, :📸, :🔥, :😘, :🚀, :🧮, :🫕]); see docs/public-api.md §3.4"""
+    @testset "[B-W5] the unknown and the removed names — REPORTED, not refused (since 0.4.3): `:-zzz` / `:+zzz` (W12 / W13) and, after `#~0 :--label1`, `:-label1` / `:+label1` (W14 / W15) — one warning row per affected Component naming the statement's form, nothing applied, nothing withheld; the removal's info row first (the one-character asymmetry: a one-run `:-x` informs where `:--x` removes the name for good — labels_vocabulary_file_tests.jl)" begin
+        # AFTER trace W12 `#~ :-zzz⏎x = 1`: PROCESS_OK, 0 rows; 2 diagnostics LABEL_NOT_APPLIED_UNKNOWN — cell Block #2 / #3, stated_by Block #2, statements [#2]; the message names the withhold `:-zzz`
+        r = _lw_run("#~ :-zzz\nx = 1\n"); @test r.status === GM.PROCESS_OK && isempty(_lw_recs(r)); k = _lw_keys(r); d = _lw_diags(r); @test length(d) == 2
+        for (i, c) in ((1, k[1]), (2, k[2])); @test d[i].code === :LABEL_NOT_APPLIED_UNKNOWN && d[i].severity === :warning && d[i].message == raw"""GoMeta apply: the withhold `:-zzz` had no effect here — not in the Labels Alterant's vocabulary; declare it with `:++zzz` at `#~0` or in the user level's profile, or correct the spelling; see docs/public-api.md §3.4""" && d[i].context == (label = :zzz, cell = c, stated_by = k[1], statements = [k[1]]); end
+        # AFTER trace W13 `#~ :+zzz⏎x = 1`: the same shape; the message names the explicit `:+zzz`
+        r = _lw_run("#~ :+zzz\nx = 1\n"); @test r.status === GM.PROCESS_OK && isempty(_lw_recs(r)); k = _lw_keys(r); d = _lw_diags(r); @test length(d) == 2
+        for (i, c) in ((1, k[1]), (2, k[2])); @test d[i].code === :LABEL_NOT_APPLIED_UNKNOWN && d[i].severity === :warning && d[i].message == raw"""GoMeta apply: the explicit `:+zzz` had no effect here — not in the Labels Alterant's vocabulary; declare it with `:++zzz` at `#~0` or in the user level's profile, or correct the spelling; see docs/public-api.md §3.4""" && d[i].context == (label = :zzz, cell = c, stated_by = k[1], statements = [k[1]]); end
+        # AFTER trace W14 `#~0 :--label1⏎⏎#~ :-label1⏎x = 1`: 0 rows; 3 diagnostics — the info row (label1 removed from the run's file; stated by Block #2, level 1), then the withhold `:-label1` reported at Block #3 / #4 (stated_by Block #3, statements [#3])
+        r = _lw_run("#~0 :--label1\n\n#~ :-label1\nx = 1\n"); @test r.status === GM.PROCESS_OK && isempty(_lw_recs(r)); k = _lw_keys(r); @test length(k) == 3; d = _lw_diags(r); @test length(d) == 3
+        @test d[1].code === :LABELS_VOCABULARY_FILE_CHANGED && d[1].severity === :info && d[1].context == (file = ENV["GOMETA_LABELS_VOCABULARY"], change = :removed, label = :label1, stated_by = k[1], level = 1, statement = ":--label1")
+        for (i, c) in ((2, k[2]), (3, k[3])); @test d[i].code === :LABEL_NOT_APPLIED_UNKNOWN && d[i].severity === :warning && d[i].message == raw"""GoMeta apply: the withhold `:-label1` had no effect here — not in the Labels Alterant's vocabulary; declare it with `:++label1` at `#~0` or in the user level's profile, or correct the spelling; see docs/public-api.md §3.4""" && d[i].context == (label = :label1, cell = c, stated_by = k[2], statements = [k[2]]); end
+        # AFTER trace W15 `#~0 :--label1⏎⏎#~ :+label1⏎x = 1`: the same shape; the message names the explicit `:+label1`
+        r = _lw_run("#~0 :--label1\n\n#~ :+label1\nx = 1\n"); @test r.status === GM.PROCESS_OK && isempty(_lw_recs(r)); k = _lw_keys(r); d = _lw_diags(r); @test length(d) == 3
+        @test d[1].code === :LABELS_VOCABULARY_FILE_CHANGED && d[1].context.change === :removed && d[1].context.label === :label1
+        for (i, c) in ((2, k[2]), (3, k[3])); @test d[i].code === :LABEL_NOT_APPLIED_UNKNOWN && d[i].severity === :warning && d[i].message == raw"""GoMeta apply: the explicit `:+label1` had no effect here — not in the Labels Alterant's vocabulary; declare it with `:++label1` at `#~0` or in the user level's profile, or correct the spelling; see docs/public-api.md §3.4""" && d[i].context == (label = :label1, cell = c, stated_by = k[2], statements = [k[2]]); end
     end
 
     @testset "[B-W6] a condition on a withhold or an explicit apply, and a condition reading a withheld name: W16, W29, W30, W40, W43" begin
@@ -204,7 +220,7 @@ end
         @test _lw_msg("#~ :(+)\nx = 1\n") == raw"""GoMeta apply: the label statement `:(+)` names no label — the forms are `:+x` and `:(+, x, y)`; see docs/public-api.md §3.4"""
         @test _lw_msg("#~ :(-, +label1, )\nx = 1\n") == raw"""GoMeta apply: the label statement `:(-, )` names an empty label (a stray comma) — the forms are `:-x` and `:(-, x, y)`; see docs/public-api.md §3.4"""    # TWO defects in one signed list — a signed member and an empty member (W47a)
         @test _lw_msg("#~ :(-, , +label1)\nx = 1\n") == raw"""GoMeta apply: the label statement `:(-, )` names an empty label (a stray comma) — the forms are `:-x` and `:(-, x, y)`; see docs/public-api.md §3.4"""    # the same two defects in the other order (W47b) — the shapes checked in order: the form, no name, an empty member, then a sign on a name
-        # the PLAIN list's empty member `:(,)` keeps the former path — an unknown label (inert_semantics_tests.jl :172)
+        # the PLAIN list's empty member `:(,)` is a SHAPE refusal too since 0.4.3, the plain forms named (labels_unknown_tests.jl; inert_semantics_tests.jl)
     end
 
     @testset "[B-W10] the withhold's reach ends with its slot: a second depth-2 metaBlock REPLACES the slot (W28) — its pair {label1, label2} decided_by [#2, #6]; a SHALLOWER supersession (W42) wipes the depth-1 and depth-2 slots — `c = 3` {label2} alone, decided_by [#6]" begin
@@ -237,15 +253,15 @@ end
         for h in (k[5], k[6], kL), a in (:label_label1, :label_label3, :label_label4); vs = _lw_rows(r, h, a); @test length(vs) == 1 && vs[1].decided_by == [k[1], k[3], k[5], k[5], k[5]]; end   # the withhold RECORDED: the depth-3 metaBlock stands a third time in the decided_by of every label row that remains under it (AFTER trace W34)
     end
 
-    @testset "[B-W13] the `Dict{Symbol,Bool}` method of the shipped setter UNCHANGED: a custom registration pairing it with the Dict constructor (the pattern of registry_lifecycle_tests.jl :176–:180) runs a plain `:label1` and refuses `:-label1`, `:+label1` and `:(-, label1)` as unknown labels — the former body (MEASURED: K1–K4)" begin
+    @testset "[B-W13] the `Dict{Symbol,Bool}` method of the shipped setter UNCHANGED: a custom registration pairing it with the Dict constructor (the pattern of registry_lifecycle_tests.jl :176–:180) runs a plain `:label1` and refuses `:-label1`, `:+label1` and `:(-, label1)` as unknown labels — the former body, its accepted set the 46 shipped names since 0.4.3 (MEASURED: K1–K4)" begin
         bc = GM.RegistryBuilder()
         GM.register!(bc, GM.Alterant(; altName = :bag, setMode = :accumulate, altConstructor = Dict{Symbol,Bool}, setAltInstance = GM.Alterants.setLabels, getAltInstance = GM.Alterants.checkLabels),
                      GM.ActionSpec(; name = Symbol(":"), plugin = Int8(1)))
         RC = GM.publish(bc)
         r = _lw_run("x = 1\n#~ :label1\n\ny = 2\n"; registry = RC); @test r.status === GM.PROCESS_OK && isempty(_lw_diags(r))
-        @test _lw_msg("#~ :-label1\nx = 1\n"; registry = RC) == raw"""GoMeta apply: unknown label "-label1" — not in the Labels Alterant's vocabulary (the accepted set = [:doc, :label1, :label2, :label3, :label4, :label5, :⌛, :⛓️, Symbol("⛓️\u200d💥"), :⛔, :🇨🇭, :🌍, :🌛, :🌞, :🌳, :🌷, :🌹, :🌼, :🍀, :🍒, :🍻, :🎨, :🎿, :🏔️, :🐣, :💕, :💡, :💣, :💫, :💯, :💸, :💾, :📝, :📸, :🔥, :😘, :🚀, :🧮, :🫕]); see docs/public-api.md §3.4"""
-        @test _lw_msg("#~ :+label1\nx = 1\n"; registry = RC) == raw"""GoMeta apply: unknown label "+label1" — not in the Labels Alterant's vocabulary (the accepted set = [:doc, :label1, :label2, :label3, :label4, :label5, :⌛, :⛓️, Symbol("⛓️\u200d💥"), :⛔, :🇨🇭, :🌍, :🌛, :🌞, :🌳, :🌷, :🌹, :🌼, :🍀, :🍒, :🍻, :🎨, :🎿, :🏔️, :🐣, :💕, :💡, :💣, :💫, :💯, :💸, :💾, :📝, :📸, :🔥, :😘, :🚀, :🧮, :🫕]); see docs/public-api.md §3.4"""
-        @test _lw_msg("#~ :(-, label1)\nx = 1\n"; registry = RC) == raw"""GoMeta apply: unknown label "-" — not in the Labels Alterant's vocabulary (the accepted set = [:doc, :label1, :label2, :label3, :label4, :label5, :⌛, :⛓️, Symbol("⛓️\u200d💥"), :⛔, :🇨🇭, :🌍, :🌛, :🌞, :🌳, :🌷, :🌹, :🌼, :🍀, :🍒, :🍻, :🎨, :🎿, :🏔️, :🐣, :💕, :💡, :💣, :💫, :💯, :💸, :💾, :📝, :📸, :🔥, :😘, :🚀, :🧮, :🫕]); see docs/public-api.md §3.4"""
+        @test _lw_msg("#~ :-label1\nx = 1\n"; registry = RC) == raw"""GoMeta apply: unknown label "-label1" — not in the Labels Alterant's vocabulary (the accepted set = [:definition, :doc, :info, :label1, :label2, :label3, :label4, :label5, :label⌛, :label⛓️, Symbol("label⛓️\u200d💥"), :label⛔, :label🇨🇭, :label🌍, :label🌛, :label🌞, :label🌳, :label🌷, :label🌹, :label🌼, :label🍀, :label🍒, :label🍻, :label🎨, :label🎿, :label🏔️, :label🐣, :label💕, :label💡, :label💣, :label💫, :label💯, :label💸, :label💾, :label📝, :label📸, :label🔥, :label😘, :label🚀, :label🧮, :label🫕, :note, :private, :public, :todo, :warning]); see docs/public-api.md §3.4"""
+        @test _lw_msg("#~ :+label1\nx = 1\n"; registry = RC) == raw"""GoMeta apply: unknown label "+label1" — not in the Labels Alterant's vocabulary (the accepted set = [:definition, :doc, :info, :label1, :label2, :label3, :label4, :label5, :label⌛, :label⛓️, Symbol("label⛓️\u200d💥"), :label⛔, :label🇨🇭, :label🌍, :label🌛, :label🌞, :label🌳, :label🌷, :label🌹, :label🌼, :label🍀, :label🍒, :label🍻, :label🎨, :label🎿, :label🏔️, :label🐣, :label💕, :label💡, :label💣, :label💫, :label💯, :label💸, :label💾, :label📝, :label📸, :label🔥, :label😘, :label🚀, :label🧮, :label🫕, :note, :private, :public, :todo, :warning]); see docs/public-api.md §3.4"""
+        @test _lw_msg("#~ :(-, label1)\nx = 1\n"; registry = RC) == raw"""GoMeta apply: unknown label "-" — not in the Labels Alterant's vocabulary (the accepted set = [:definition, :doc, :info, :label1, :label2, :label3, :label4, :label5, :label⌛, :label⛓️, Symbol("label⛓️\u200d💥"), :label⛔, :label🇨🇭, :label🌍, :label🌛, :label🌞, :label🌳, :label🌷, :label🌹, :label🌼, :label🍀, :label🍒, :label🍻, :label🎨, :label🎿, :label🏔️, :label🐣, :label💕, :label💡, :label💣, :label💫, :label💯, :label💸, :label💾, :label📝, :label📸, :label🔥, :label😘, :label🚀, :label🧮, :label🫕, :note, :private, :public, :todo, :warning]); see docs/public-api.md §3.4"""
     end
 
     @testset "[B-W14] a withheld name mints no row, but the withholding statement is RECORDED in the decided_by of the rows that remain at that Component (W36's depth-2 pair: one row label_label2 decided_by [#2, #4, #4]; W03's c2: [#3, #5, #5]) — a withhold's trace is its place in the provenance" begin

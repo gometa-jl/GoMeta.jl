@@ -159,9 +159,13 @@ DOES: carries the Alterant's name (`altName`); its set-mode (`setMode` — `:acc
     (`default` — `NoDefault()` | `Declared(v)`: Visib's is `:show`; delivered by the answer function
     with the source "default"); and the capture declaration (`capture` — `nothing` | a `CaptureDecl`:
     the row that makes the Alterant's applied state mint evals rows); and the read-time hook (`onRead` — `nothing` | a function
-    `(run, mhIdx, actionName, args, hasCondition) -> nothing | run′`, called by `absorbMeta` for the Alterant's statements with
-    arguments before the slot bound); and the setter's RETURN is read by the apply loop for diagnostics — a `Vector{Diagnostic}` delivered
-    with the place attached, anything else ignored (since 0.4.3; no record field). The keyword form below defaults every optional slot;
+    `(run, mhIdx, actionName, args, hasCondition) -> nothing | Vector{Diagnostic} | run′ | (run′, Vector{Diagnostic})`, called by `absorbMeta`
+    for the Alterant's statements with arguments before the slot bound — ONE GRAMMAR for every Alterant: `nothing` = not the hook's, the
+    statement enqueued as stated; a `Vector{Diagnostic}` ALONE = the rows delivered through the door with the read-time place and the
+    statement enqueued as stated; any other value = CONSUMED as the Alterant's per-run state, the statement's processing ending; a tuple
+    `(state, Vector{Diagnostic})` = consumed AND the rows delivered); and THE DOOR (since 0.4.3): a callable's return may carry a vector of
+    diagnostics — the setter's at the apply, the hook's at the read — delivered by the ONE function `_deliver_diagnostics!` (below) with the
+    place the Engine knows at that moment merged into each row's context, the severity copied, anything else ignored (no record field). The keyword form below defaults every optional slot;
     `build_default_registry` builds the four shipped records.
 REASONING: one immutable record per Alterant, declared as DATA and read by the apply plane through the registry's derived tables — the original
     engine's form (one record per Alterant, registered as data); no fixed-size array inside it.
@@ -183,10 +187,14 @@ struct Alterant
     onRead::Union{Nothing,Function}                # THE READ-TIME HOOK — `nothing` for every Alterant
                                                    #   but one that declares it; called by `absorbMeta` for the Alterant's statements WITH
                                                    #   arguments, BEFORE the slot bound, as `onRead(run, mhIdx, actionName, args, hasCondition)`:
-                                                   #   `nothing` = not the hook's (enqueued as stated); any other value = CONSUMED at the read and
-                                                   #   stored as the Alterant's per-run state (`ProcessState.alt_run`), the statement's processing
-                                                   #   ends. A designated callable field (the registry's four loci), appended LAST (the copier
-                                                   #   rebuilds the record positionally). The Labels Alterant's hook: labels.jl `declareLabels!`.
+                                                   #   `nothing` = not the hook's (enqueued as stated); a `Vector{Diagnostic}` ALONE = the rows
+                                                   #   delivered through the door with the read-time place, the statement enqueued as stated; any
+                                                   #   other value = CONSUMED at the read and stored as the Alterant's per-run state
+                                                   #   (`ProcessState.alt_run`), the statement's processing ends; a tuple `(state, Vector{Diagnostic})`
+                                                   #   = consumed AND the rows delivered (the one grammar, for every Alterant). A designated callable
+                                                   #   field (the registry's four loci), appended LAST (the copier rebuilds the record positionally).
+                                                   #   The Labels Alterant's hook: labels.jl `declareLabels!` (the vocabulary statements; a
+                                                   #   persisted change's `:info` row returned with the run state).
 end
 "The keyword form: the two declared slots and the read-time hook addressable by name; an unnamed slot takes its nothing/undeclared default."
 Alterant(; altName::Symbol, setMode::Symbol, altConstructor::Type, setAltInstance::Function,
@@ -814,6 +822,28 @@ mutable struct ProcessState
                                                # and returns the state; read by the apply's instance constructor (`_freshInstance`) — the
                                                # constructor is given the state where one was minted, called bare otherwise; dies with the call
                                                # (the reset-safe law). The Labels Alterant's: the run's vocabulary (labels.jl `LabelsVocabulary`).
+end
+
+"""
+    _deliver_diagnostics!(st, ds::Vector{Diagnostic}, place::NamedTuple)
+
+THE ONE DOOR (since 0.4.3): an Alterant's callable may RETURN a vector of diagnostics — the setter's at the apply, the read-time hook's at the
+read — and the Engine delivers them on the run's `diagnostics`, the PLACE it knows at that moment merged into each row's context: at the apply
+the applying Component's key, the stating statement's handle and the Alterant's statements applied at that Component so far (`cell`,
+`stated_by`, `statements` — apply.jl builds it); at the read the stating statement's handle, the meta-hierarchy index the hook received and
+the statement's text (`stated_by`, `level`, `statement` — absorb_meta.jl builds it). A named-tuple context is merged (the place's keys
+winning where a name collides), a `nothing` context replaced by the place alone, any other context kept under `alterant_context`; the
+severity is copied, never decided (the status rule reads `:error` alone). The one test at every call site is `isa Vector{Diagnostic}` —
+a vector typed `Any` or of a subtype is ignored like any other value. For EVERY Alterant: the hook and the setter are registration fields
+any Alterant may declare, and none must use the door (the creator's law on the Engine's facilities).
+"""
+@noinline function _deliver_diagnostics!(st::ProcessState, ds::Vector{Diagnostic}, place::NamedTuple)
+    for d in ds
+        ctx = d.context
+        merged = ctx isa NamedTuple ? merge(ctx, place) : ctx === nothing ? place : merge((alterant_context = ctx,), place)
+        push!(st.diagnostics, Diagnostic(d.code, d.severity, d.message, merged))
+    end
+    return nothing
 end
 
 """

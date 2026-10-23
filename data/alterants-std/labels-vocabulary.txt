@@ -1,0 +1,60 @@
+# labels-vocabulary.txt — the Labels Alterant's vocabulary (shipped with GoMeta 0.4.3; the user level's copy starts as this file).
+# One label name per line. A line beginning with # is a comment; blank lines are ignored; the edges of a line are trimmed
+# (ordinary white space and the invisible separators U+2028, U+2029, U+180E, U+200B, U+2060, U+FEFF); white space or such a
+# character inside a name refuses the file at that line.
+# The shipped file data/alterants-std/labels-vocabulary.txt is never written by a run. A run reads the user level's copy —
+# ~/.gometa/labels-vocabulary.txt, created from the shipped file when first needed, or the file GOMETA_LABELS_VOCABULARY names —
+# and the vocabulary statements :++x / :--x edit that copy. To revert the copy, delete it or copy the shipped file over it.
+# The contract: docs/public-api.md §2, THE VOCABULARY FILES.
+
+# the corpus-documented names
+label1
+label2
+label3
+label4
+label5
+doc
+
+# the pictograph names, each the word label glued to its pictograph
+label⛔
+label💯
+label🇨🇭
+label🏔️
+label🍒
+label🫕
+label💡
+label💣
+label🧮
+label📝
+label💕
+label⌛
+label💸
+label💾
+label⛓️‍💥
+label⛓️
+label📸
+label🎨
+label🍻
+label🔥
+label🐣
+label😘
+label🎿
+label🚀
+label🌍
+label🌳
+label🌛
+label🌷
+label🌹
+label🌼
+label🍀
+label🌞
+label💫
+
+# the everyday names
+warning
+note
+info
+definition
+todo
+public
+private

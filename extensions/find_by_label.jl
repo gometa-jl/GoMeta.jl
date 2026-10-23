@@ -22,11 +22,11 @@
 #   julia --startup-file=no --project=. extensions/find_by_label.jl label5     # one label, all hits
 #   (the file lives under extensions/; run it from the repository's root)
 #
-# The corpus-documented labels are `:label1`..`:label5`; since 0.3.0 the closed whitelist also
-# accepts a fixed pictograph vocabulary, and since 0.4.0 `:doc` — the whole list
-# hard-coded in `src/alterants-std/labels.jl` (this driver's index covers the corpus labels).
-# A query outside that set is refused with the accepted list — the engine-side refusal
-# behaviour for out-of-whitelist names is documented in `docs/public-api.md` §3.4.
+# The corpus-documented labels are `:label1`..`:label5`; the Labels Alterant's shipped vocabulary (the data file
+# `data/alterants-std/labels-vocabulary.txt`, read through the user level's copy — docs/public-api.md §2) also holds `:doc`, the
+# pictograph names in their glued form (`label` + pictograph) and the everyday names `warning`, `note`, `info`, `definition`, `todo`,
+# `public`, `private` (this driver's index covers the corpus labels). A label applied from outside the run's vocabulary is reported
+# by a warning diagnostic and skipped, the run completing — the behaviour is documented in `docs/public-api.md` §3.4.
 
 import GoMeta
 
@@ -77,11 +77,12 @@ function index_examples()
             n_skipped += 1
             continue
         end
-        # a completed run may carry warning diagnostics — a label a withhold kept from applying
-        # (docs/public-api.md §3.4): the file is indexed as delivered, the count reported so nothing passes silently
+        # a completed run may carry warning and info diagnostics — a label a withhold kept from applying, a label not in the vocabulary, a
+        # vocabulary statement that edited the user level's vocabulary file (docs/public-api.md §2, §3.4): the file is indexed as delivered, the
+        # warning count reported so nothing passes silently
         n_warn = count(d -> d.severity === :warning, result.diagnostics)
         if n_warn > 0
-            println(stderr, "$f — $n_warn warning diagnostic(s): a label a withhold kept from applying (docs/public-api.md §3.4)")
+            println(stderr, "$f — $n_warn warning diagnostic(s): a label a withhold kept from applying or a label not in the vocabulary (docs/public-api.md §3.4)")
             n_warned += n_warn
         end
         # the pieces that carry labels, THROUGH THE TREE: the Components

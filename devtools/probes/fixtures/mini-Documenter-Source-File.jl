@@ -1,6 +1,6 @@
 #~0! hide{ :label1 }
 
-#~1 show{ :🍻 && !isMeta }
+#~1 show{ :label🍻 && !isMeta }
 
 # # Manual: the area of a circle
 
@@ -11,7 +11,7 @@
 # 12.566370614359172
 # ```
 
-#~2 :🍻
+#~2 :label🍻
 # ## Deep dive: π from scratch
 
 # ```jldoctest

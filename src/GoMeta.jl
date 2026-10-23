@@ -105,6 +105,7 @@ using StaticArrays  # stack-allocated fixed-size arrays; the slot tensors and th
 
 include("config.jl")    # GoMetaConfig (the public input options)
 include("result.jl")    # ProcessStatus / Diagnostic / EvalStore (the GoMetaDelivery support types)
+include("arguments.jl") # THE ARGUMENT-EDGE CLASS `is_argument_space` — the characters the reader trims at every bare argument's edges, for every Alterant (package-public; since 0.4.3)
 include("bls/BLS.jl")
 include("occurrence.jl")            # the normalized occurrence handle (since v0.2) — depends
                                     # on BLS ONLY; everything downstream may
@@ -135,7 +136,7 @@ include("childdiff.jl")             # THE CHILD-DIFFERS SIGNAL `childDiffers` �
 # The four names below ARE GoMeta's declared public API (docs/public-api.md §1.1); `export` re-exports them — all defined directly in
 # this module via the include spine above — so `using GoMeta` brings exactly these into scope and `names(GoMeta)` IS the
 # machine-checkable semver surface (asserted by tests/unit/public_surface_tests.jl). EVERYTHING else stays PACKAGE-PUBLIC (reached
-# qualified, e.g. GoMeta.PROCESS_OK / .Diagnostic): the names on the `public` lines below — TWENTY-SEVEN since 0.4.0;
+# qualified, e.g. GoMeta.PROCESS_OK / .Diagnostic): the names on the `public` lines below — TWENTY-EIGHT since 0.4.3 (twenty-seven at 0.4.0; `is_argument_space` added at 0.4.3);
 # the former `PlugIn` alias is not among them; docs/public-api.md §1.2 is the mirror
 # and its §6 register carries every change of the set as a row.
 # Qualified import (`import GoMeta as GM`) is UNAFFECTED by these exports and remains canonical for namespace
@@ -148,6 +149,7 @@ public BLS   # the parser module public by name — its door of travel / access 
 public evaluatedAltValue, EvaluatedAltValue   # THE ONE ANSWER FUNCTION and its record — package-public, NOT exported (docs/public-api.md §1.2; its row in §6)
 public scanAlterant, evaluatedAltValues   # THE SCAN BY ALTERANT and THE ACCESS BY COMPONENT — package-public, NOT exported (docs/public-api.md §1.2; its row in §6); functions of their own, not methods of the reader
 public childDiffers   # THE CHILD-DIFFERS SIGNAL computed from the answer — the per-child primitive; a Boolean beside a PARENT's entry is `any` of it over the children — package-public, NOT exported (docs/public-api.md §1.2; its row in §6)
+public is_argument_space   # THE ARGUMENT-EDGE CLASS — the one predicate over the characters the Engine's reader trims at the two edges of every bare argument, for every Alterant and every reader of names (src/arguments.jl; docs/public-api.md §1.2; its row in §6)
 
 """
     _entryErrorDelivery(parse_state, config, registry, diags) -> GoMetaDelivery
@@ -252,7 +254,9 @@ IS: the pipeline driver — the package's primary public entry, `goMeta(bytes; c
 DOES: Run the GoMeta pipeline over `bytes` and return a typed `GoMetaDelivery` — the package's primary public entry
 (docs/public-api.md §2). PURE + DETERMINISTIC for the ENGINE'S OWN OPERATIONS under `DEFAULT_REGISTRY`: the same
 `(bytes, config, registry)` always yields the same `GoMetaDelivery`, with no filesystem / clock / environment read by the
-Engine. A `{…}` condition is Julia text evaluated by Julia (since 0.4.0, the creator's design — the
+Engine — one exception since 0.4.3, the shipped Labels Alterant's vocabulary files: the Labels Alterant reads the user level's
+vocabulary file and its vocabulary statements edit it, so a run's labels and diagnostics depend on that file (docs/public-api.md §2,
+THE VOCABULARY FILES). A `{…}` condition is Julia text evaluated by Julia (since 0.4.0, the creator's design — the
 full parser, for those who work with their own GoMeta statements), so what a condition body reads or does is the
 author's act, outside the Engine's guarantee — as a custom registry's own callables are (the trust model; README
 SECURITY). The pipeline is parse -> Absorb-walk (enqueue alterant
@@ -261,7 +265,7 @@ actions) -> Apply (evaluate conditions + apply), run inside one per-call dynamic
 
 Arguments:
 - `bytes` — the input document as raw bytes. Line ENDINGS normalize to LF (CRLF is chomped — documented, not an
-  error; see `docs/CANONICAL-OUTPUT.md`); content bytes are preserved faithfully for arbitrary bytes, including invalid UTF-8; non-ASCII inside a META line parses character-safely, a non-ASCII label APPLIED from outside the run's vocabulary (the shipped set with the run's vocabulary statements folded in since 0.4.2, docs/public-api.md §2) or a non-ASCII action meeting the stable unknown-label/unknown-action refusal (docs/public-api.md §4).
+  error; see `docs/CANONICAL-OUTPUT.md`); content bytes are preserved faithfully for arbitrary bytes, including invalid UTF-8; non-ASCII inside a META line parses character-safely, a non-ASCII label APPLIED from outside the run's vocabulary (the user level's vocabulary file's names with the run's vocabulary statements folded in, docs/public-api.md §2) is reported by the unknown label's warning diagnostic and skipped (since 0.4.3; a refusal before), a non-ASCII action meets the stable unknown-action refusal (docs/public-api.md §4).
 - `config::GoMetaConfig` — the v0 input options (flavor_tag / parse_range / user_mh_profile / namespace; see `GoMetaConfig`;
   the `profile` field was removed with the grammar profile it selected). An unknown `flavor_tag` throws raw at
   `BLS.flavor_for` (the closed inventory, no fallback — a stable message, docs/public-api.md §3.4); a given `parse_range`
@@ -294,7 +298,8 @@ closes the innermost metaBlock and detaches what follows · a trailing `#~ …` 
 its own line. Full family + laws: the module docstring and `docs/SYNTAX-AND-SEMANTICS.md`.
 
 REASONING: the Engine's own operations are pure and deterministic — no filesystem, clock or environment read — so that
-the same `(bytes, config, registry)` always yields the same result (the byte law's ground); the trust model bounds the
+the same `(bytes, config, registry)` always yields the same result (the byte law's ground) — the shipped Labels Alterant's user-level
+vocabulary file the one state beside the bytes since 0.4.3 (docs/public-api.md §2); the trust model bounds the
 guarantee: a condition body (Julia, evaluated by Julia) and a custom registry's own callables are the
 author's, outside it.
 
@@ -418,10 +423,13 @@ function goMeta(
     ## exists, else `PROCESS_OK`. On this path the Engine itself pushes no `:error` row (the registry door's
     ## refusal fail-closes through `_entryErrorDelivery` before the parse; the absorb/apply-path refusals still
     ## THROW — the unknown-condition-key refusal at the absorb seam, Julia's own ParseError for a body it cannot read,
-    ## the E-06 row raw); its diagnostics vector carries the rows the apply loop's door delivered from a setter's return (since 0.4.3), each with the
+    ## the E-06 row raw); its diagnostics vector carries the rows the Engine's one door delivered from an Alterant's return — a setter's at the apply (since 0.4.3),
+    ## a read-time hook's at the read (since 0.4.3 too, with the vocabulary files) — each with the
     ## severity its Alterant gave it — a custom Alterant's `:error` row makes the run `PROCESS_ERROR` with the tree and the rows delivered; under the
-    ## shipped registry a run that returns here is `PROCESS_OK` and its vector carries the `:warning` rows alone (the
-    ## Labels Alterant's `LABEL_NOT_APPLIED_WITHHELD`, a plain `:x` met by a withhold; `_deliver_diagnostics!`, apply.jl) and is empty otherwise — the two capture-floor warnings of the Heading's separate path were removed
+    ## shipped registry a run that returns here is `PROCESS_OK` and its vector carries the Labels Alterant's rows alone (`:warning`:
+    ## `LABEL_NOT_APPLIED_WITHHELD`, a plain `:x` met by a withhold; `LABEL_NOT_APPLIED_UNKNOWN`, a name outside the run's vocabulary under any verb;
+    ## `LABELS_VOCABULARY_FILE_NOT_WRITTEN`; `:info`: `LABELS_VOCABULARY_FILE_CHANGED`, a `++` / `--` that edited the user level's vocabulary file;
+    ## `_deliver_diagnostics!`, state.jl) and is empty otherwise — the two capture-floor warnings of the Heading's separate path were removed
     ## with that path within the 0.4 development (the type's docstring). The evaluated values are read by `readAltValuesEvals(result.altValues_evals)`; the development tool's
     ## (tree, render) pair (`Main.BasicRenderer.outputs`) is a pure function of the delivery — the tree READ, never written
     ## — every Visib value the Engine's answer (`evaluatedAltValue`).

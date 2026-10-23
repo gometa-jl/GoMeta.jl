@@ -19,7 +19,8 @@
 #     st.queue.queued at the current meta-hierarchy slot, st.mh.slot_has_accum set for the accumulate set, the condition (Julia's `Expr`,
 #     or `nothing` for an action written without `{}`) and the argument tuple stored by value; ONE text-argument rule (`_string_slot_check`,
 #     the creator's rule) admits a quoted (String) argument in the slot the action's declared record names and refuses it elsewhere; an empty
-#     argument piece (`cell(7,)`) is handed on as the empty token — the Alterant decides. A condition body is READ HERE: a
+#     argument (`cell(7,)`) is handed on as the empty token — the Alterant decides; every bare argument token is trimmed at its two edges of the argument-edge class
+#     (`is_argument_space`, src/arguments.jl — the ordinary white space and six invisible separators; for every Alterant; a quoted text untouched) at the coercion. A condition body is READ HERE: a
 #     settribute key becomes its state read `getState(:key)`, an action of an Alterant that answers queries becomes its query
 #     `getAltState(Int8(p), Symbol("…"), …)` (the registry's one rule `queryable_action`), a label test `:name`
 #     the Labels query of that name, the creator's `,` becomes `||`, everything else — `&&`, `!`, `()`, `|`, `&`, decimal integers and plain decimal floats (a numeral with a letter or an underscore — `1e3`, `0xff`, `1_000` — starts a key at its letter and refuses), Julia operators but `:` (every `:` outside a quoted text is a label test; this rule and the numerals' hold where the walk reads: the interior of a `:(…)` or `key(…)` argument list is spliced to Julia unread — `{ :(:a) }`),
@@ -62,6 +63,10 @@ import ..GoMeta: ctx
 import ..GoMeta: queryable_action
 # the widened action-argument literal floor (Symbol|String; ints reserved).
 import ..GoMeta: AlterantArgT
+## the argument-edge class — the characters trimmed at every bare argument token's two edges at the coercion (src/arguments.jl; for every Alterant)
+import ..GoMeta: is_argument_space
+## THE DOOR at the read: a hook's returned rows delivered by the one delivery function with the read-time place (state.jl); the row type
+import ..GoMeta: Diagnostic, _deliver_diagnostics!
 # the context record type (the enqueue's provenance columns and the deriving head form's level
 # read it) and the user-context record (the feed's identity).
 import ..GoMeta: MetaContext, UserContext   # UserContext — the enqueue's origin line reads it on the user feed
@@ -476,6 +481,7 @@ function absorbMeta(
 
         if !_isspace_valid(metaSS[thisInd])
 
+            local stmtStart = thisInd   # the statement's first character — the read-time place's text runs from here to the statement's last character (parseAlt's return)
             (altActionName, argsSSVec, conditionExpr, thisInd) = parseAlt(
                 metaSS,
                 prevind(metaSS, thisInd),
@@ -500,23 +506,37 @@ function absorbMeta(
                         " (see docs/public-api.md §3.4)")
                 ## the kind-preserving coercion (moved from the enqueue to here — after the action lookup and the feed's one
                 ## `localOnly` refusal, before the hook and the slot bound, so those two refusals keep their order; the hook and the
-                ## enqueue read ONE tuple; `nothing` for a statement without arguments): a bare token stays the Symbol it always was; a
+                ## enqueue read ONE tuple; `nothing` for a statement without arguments): a bare token stays the Symbol it always was, its two edges
+                ## trimmed of the argument-edge class (`is_argument_space` — for every Alterant); a
                 ## well-formed quoted token (the splitter's or the heading arm's — both scanned by `_span`) becomes its String content
                 ## (`_coerce_arg_token`).
                 argsTup = isempty(argsSSVec) ? nothing : Tuple{Vararg{AlterantArgT}}(_coerce_arg_token.(argsSSVec))
                 ## THE READ-TIME HOOK — an Alterant that declares `onRead` is consulted
-                ## for every one of its statements WITH arguments, HERE, before the slot bound: `nothing` = not the hook's — the statement
-                ## is enqueued exactly as before; any other value = CONSUMED at the read — stored as the Alterant's run state
-                ## (`st.alt_run`), and this statement's processing ENDS: no slot action (the capacity untouched), no queue, origin or
-                ## applied-to write, no condition or argument store, no evals row. A statement without arguments (the lone `:`) never
-                ## reaches the hook and meets the setter's refusal as before. The Labels Alterant's hook records a vocabulary
-                ## statement (`:++x` / `:(++, x, y)` / `:--x` / `:(--, x)`; the place and the malformed shapes refused there) and
-                ## hands every plain label statement back (labels.jl, `declareLabels!`); every other shipped Alterant declares no hook.
+                ## for every one of its statements WITH arguments, HERE, before the slot bound; its return read in ONE GRAMMAR, for every
+                ## Alterant: `nothing` = not the hook's — the statement is enqueued exactly as before; a `Vector{Diagnostic}` ALONE = the rows
+                ## DELIVERED through the one door with the read-time place and the statement enqueued as stated (a warning at the read);
+                ## any other value = CONSUMED at the read — stored as the Alterant's run state (`st.alt_run`), and this statement's
+                ## processing ENDS: no slot action (the capacity untouched), no queue, origin or applied-to write, no condition or argument
+                ## store, no evals row; a tuple `(state, Vector{Diagnostic})` = consumed AND the rows delivered. THE READ-TIME PLACE: what the
+                ## Engine knows here — the stating Component's handle (`stated_by`: the carrying Component's, the user context's on the feed),
+                ## the meta-hierarchy index the hook received (`level`) and the statement's text (`statement`); no Component key yet (the keys
+                ## are minted at the capture). A statement without arguments (the lone `:`) never reaches the hook and meets the setter's
+                ## refusal as before. The Labels Alterant's hook records a vocabulary statement (`:++x` / `:(++, x, y)` / `:--x` / `:(--, x)`;
+                ## the place and the malformed shapes refused there), persists it in the user level's vocabulary file and returns the run
+                ## state with one `:info` row per persisted change (labels.jl, `declareLabels!`); it hands every plain label statement back;
+                ## every other shipped Alterant declares no hook.
                 local _pIdx = st.registry.action_to_plugin[crntAltActionIdx]
                 if st.registry.plugins[_pIdx].onRead !== nothing && argsTup !== nothing
                     local _hooked = st.registry.plugins[_pIdx].onRead(st.alt_run[_pIdx], st.crnt_idx, Symbol(altActionName), argsTup, conditionExpr !== nothing)
-                    if _hooked !== nothing
-                        st.alt_run[_pIdx] = _hooked
+                    if _hooked isa Vector{Diagnostic}
+                        _deliver_diagnostics!(st, _hooked, _read_place(st, metaSS, stmtStart, thisInd))   # rows alone: delivered; the statement enqueued below
+                    elseif _hooked !== nothing
+                        if _hooked isa Tuple{Any,Vector{Diagnostic}}
+                            st.alt_run[_pIdx] = _hooked[1]
+                            _deliver_diagnostics!(st, _hooked[2], _read_place(st, metaSS, stmtStart, thisInd))   # consumed AND delivered
+                        else
+                            st.alt_run[_pIdx] = _hooked
+                        end
                         continue
                     end
                 end
@@ -537,11 +557,7 @@ function absorbMeta(
                 ## Component that STATES it (the carrying Component's, published at the walk handover;
                 ## on the userMH feed the minted user-context handle), carried through the
                 ## apply into the stored row's `decided_by`.
-                st.queue.decided_by[altActionOnRow, crntSlot] =
-                    st.meta_context !== nothing ? (st.meta_context::MetaContext).handle :
-                    st.user_context !== nothing ? (st.user_context::UserContext).handle :
-                    error("GoMeta absorb: an action enqueued without a document or user context — ",
-                        "please report this (not reachable from any input by construction)")
+                st.queue.decided_by[altActionOnRow, crntSlot] = _stating_handle(st)
                 ## The Component the statement is APPLIED TO (the walk's record; `nothing` on the
                 ## feed) — the referent of the apply loop's one rule for the set mode `localOnly`
                 ## (the metaBlock for a metaLine's statement, the Line for a Code Line's trailing metaSegment).
@@ -627,6 +643,17 @@ end
 ## line (`_rewrite_condition`)); on every VALID char it is exactly `isspace`.
 _isspace_valid(c::AbstractChar) = isvalid(c) && isspace(c)
 
+"the handle of the Component that STATES the metaStatement being read — the carrying Component's (published at the walk handover), on the user feed the minted user-context handle: the enqueue's `decided_by` and the read-time place's `stated_by`"
+_stating_handle(st) =
+    st.meta_context !== nothing ? (st.meta_context::MetaContext).handle :
+    st.user_context !== nothing ? (st.user_context::UserContext).handle :
+    error("GoMeta absorb: an action enqueued without a document or user context — ",
+        "please report this (not reachable from any input by construction)")
+
+"THE READ-TIME PLACE for the door at the read (state.jl `_deliver_diagnostics!`): the stating Component's handle, the meta-hierarchy index the hook received (1 = the file level `#~0`, 2 … 9 = a metaBlock of depth 1 … 8, 10 = the user level's profile, 11 = an inline metaSegment) and the statement's own text — the place for every Alterant's hook"
+_read_place(st, metaSS::SubString{String}, s::Int, e::Int) =
+    (stated_by = _stating_handle(st), level = st.crnt_idx, statement = String(SubString(metaSS, s, e)))
+
 "THE ONE TEXT-ARGUMENT RULE: a quoted (String) argument is accepted in the one slot the action's DECLARED record names (`accepts_string_slot` — `head`'s text slot; 0 for every other shipped action) and refused in every other — the shipped setters keep untyped value slots, so dispatch alone cannot hold the law (byte-probed: `cell(\"7\")` would parse)"
 function _string_slot_check(spec, argsTup, metaSS::SubString{String})
     for (k, a) in enumerate(argsTup)
@@ -638,9 +665,9 @@ function _string_slot_check(spec, argsTup, metaSS::SubString{String})
     return nothing
 end
 
-"the kind-preserving coercion of one argument token: a bare token stays the Symbol it always was (numeric text included — the integer space is reserved, the setter parses it); a `\"`-led token is a well-formed quoted span — its two producers, the splitter and the heading arm, are scanned by `_span` and validated — and becomes its String content"
+"the kind-preserving coercion of one argument token: a bare token stays the Symbol it always was (numeric text included — the integer space is reserved, the setter parses it), its two EDGES trimmed of the argument-edge class (`is_argument_space`, src/arguments.jl — the ordinary white space the splitter stripped already and the six invisible separators; for every Alterant; an inner character untouched — the Alterant decides); a `\"`-led token is a well-formed quoted span — its two producers, the splitter and the heading arm, are scanned by `_span` and validated — and becomes its String content, untrimmed"
 _coerce_arg_token(a::SubString{String})::AlterantArgT =
-    (isempty(a) || a[firstindex(a)] != '"') ? Symbol(a) : String(a[nextind(a, firstindex(a)):prevind(a, lastindex(a))])
+    (isempty(a) || a[firstindex(a)] != '"') ? Symbol(strip(is_argument_space, a)) : String(a[nextind(a, firstindex(a)):prevind(a, lastindex(a))])
 
 end
 #########################################################################################

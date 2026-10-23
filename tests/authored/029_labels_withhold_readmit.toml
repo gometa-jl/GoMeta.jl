@@ -3,56 +3,56 @@ stem = "029_labels_withhold_readmit"
 status = "confirmed"
 drafted_by = "a draft of 2026-10-21 (the withhold and the explicit-apply forms of the Labels Alterant; every value by position FROM the measured FULL delivery view and decided_by trace of this document on the built tree; the forms `:-x` / `:(-, x, y)` and `:+x` / `:(+, x)`, docs/public-api.md §3.4)"
 confirmed_by = "the creator, 2026-10-22"
-scenario = "The three colon forms of the Labels Alterant in one file. Line 1, at the file level (#~0), DECLARES the names x, y, z for this run (a vocabulary statement: it applies no label and mints no row). Line 2 is blank; line 3 (a depth-1 metaLine) applies {x, y}: block@2 (the depth-1 metaBlock, lines 2–3) carries {x, y}, and block@4 (the Code Block a = 1) inherits it. Line 5 (a depth-2 metaLine) WITHHOLDS x and applies z: block@5 and block@6 (b = 2) carry {y, z} — y inherited from the depth-1 statement, x absent. Line 7 (a depth-3 metaLine) applies x EXPLICITLY (:+x), which applies under the depth-2 withhold: block@7 and block@8 (c = 3) carry {x, y, z}. Each set applies to its Block and indirectly to that Block's child Lines. A plain :x at line 7 would have applied nothing and reported a warning diagnostic. The File is not stated in this scenario."
-history = ["2026-10-21: DRAFTED from a measured delivery of this document (the FULL delivery view: Block #3 Meta L2–L3 label_x, label_y; Block #4 Code L4 the same; Block #5 Meta L5 and Block #6 Code L6 label_y, label_z; Block #7 Meta L7 and Block #8 Code L8 label_x, label_y, label_z; Block #2 Meta L1 no row; the trace: the decided_by lists below) on the built tree — a proposal with no specification authority until the creator confirms (README rule 3). The Line statements apply the indirect-application principle as 004 and 028 state it.", "2026-10-22: confirmed by the creator on these exact bytes (asked first whether the document stands as written; answered from the file)"]
+scenario = "The three colon forms of the Labels Alterant in one file, with three everyday names of the shipped vocabulary. Line 1, at the file level (#~0), DECLARES the names todo, note, info (a vocabulary statement: it applies no label and mints no row; since 0.4.3 the three names are shipped, so the declaration adds nothing — nothing is written to the vocabulary file and no row is reported). Line 2 is blank; line 3 (a depth-1 metaLine) applies {todo, note}: block@2 (the depth-1 metaBlock, lines 2–3) carries {todo, note}, and block@4 (the Code Block a = 1) inherits it. Line 5 (a depth-2 metaLine) WITHHOLDS todo and applies info: block@5 and block@6 (b = 2) carry {note, info} — note inherited from the depth-1 statement, todo absent. Line 7 (a depth-3 metaLine) applies todo EXPLICITLY (:+todo), which applies under the depth-2 withhold: block@7 and block@8 (c = 3) carry {todo, note, info}. Each set applies to its Block and indirectly to that Block's child Lines. A plain :todo at line 7 would have applied nothing and reported a warning diagnostic. The File is not stated in this scenario."
+history = ["2026-10-21: DRAFTED from a measured delivery of this document (the FULL delivery view: Block #3 Meta L2–L3 label_x, label_y; Block #4 Code L4 the same; Block #5 Meta L5 and Block #6 Code L6 label_y, label_z; Block #7 Meta L7 and Block #8 Code L8 label_x, label_y, label_z; Block #2 Meta L1 no row; the trace: the decided_by lists below) on the built tree — a proposal with no specification authority until the creator confirms (README rule 3). The Line statements apply the indirect-application principle as 004 and 028 state it.", "2026-10-22: confirmed by the creator on these exact bytes (asked first whether the document stands as written; answered from the file)", "2026-10-23: the names x, y, z replaced by the shipped everyday names todo, note, info on the creator's decision of 2026-10-23 (the shipped vocabulary re-cut to names that read as labels, the everyday names among them; every example may use them directly); the structure, the rows and the provenance unchanged — MEASURED on the built tree (the FULL delivery view: Block #3 Meta L2–L3 label_note, label_todo; Block #4 Code L4 the same; Block #5 Meta L5 and Block #6 Code L6 label_info, label_note; Block #7 Meta L7 and Block #8 Code L8 label_info, label_note, label_todo; Block #2 Meta L1 no row; the decided_by lists as below; no diagnostic — the declaration of three shipped names writes nothing)"]
 
 [[expect]]
 component = "block@1"
 alterant = "Labels"
 present = false
-note = "the file-level metaBlock (line 1) holds the vocabulary statement alone: it applies no label and mints no row. Provenance: no row on this Block in the measured delivery (observed 2026-10-21)"
+note = "the file-level metaBlock (line 1) holds the vocabulary statement alone: it applies no label and mints no row. Provenance: no row on this Block in the measured delivery (observed 2026-10-21; re-measured with the names of 2026-10-23)"
 
 [[expect]]
 component = "block@2"
 alterant = "Labels"
-value = ["x", "y"]
+value = ["todo", "note"]
 decided_by = ["block@2"]
-note = "the depth-1 metaBlock — its first Line is the blank line 2, its metaLine line 3 (#~ :(x, y)): its own two labels. Provenance: two Block-grain rows label_x, label_y, each decided_by this Block (observed 2026-10-21)"
+note = "the depth-1 metaBlock — its first Line is the blank line 2, its metaLine line 3 (#~ :(todo, note)): its own two labels. Provenance: two Block-grain rows label_todo, label_note, each decided_by this Block (observed 2026-10-21; the names of 2026-10-23)"
 
 [[expect]]
 component = "block@4"
 alterant = "Labels"
-value = ["x", "y"]
+value = ["todo", "note"]
 decided_by = ["block@2"]
-note = "the Code Block a = 1, attached to that meta: inherits {x, y}. Provenance: two Block-grain rows decided_by block@2 (observed 2026-10-21)"
+note = "the Code Block a = 1, attached to that meta: inherits {todo, note}. Provenance: two Block-grain rows decided_by block@2 (observed 2026-10-21; the names of 2026-10-23)"
 
 [[expect]]
 component = "block@5"
 alterant = "Labels"
-value = ["y", "z"]
+value = ["note", "info"]
 decided_by = ["block@2", "block@5"]
-note = "the depth-2 metaBlock (#~2 :-x :z): x WITHHELD here — no row for x; z applied; y inherited. Provenance: two Block-grain rows label_y, label_z, each decided_by [block@2, block@5, block@5] — the withhold and the apply both recorded (observed 2026-10-21)"
+note = "the depth-2 metaBlock (#~2 :-todo :info): todo WITHHELD here — no row for todo; info applied; note inherited. Provenance: two Block-grain rows label_note, label_info, each decided_by [block@2, block@5, block@5] — the withhold and the apply both recorded (observed 2026-10-21; the names of 2026-10-23)"
 
 [[expect]]
 component = "block@6"
 alterant = "Labels"
-value = ["y", "z"]
+value = ["note", "info"]
 decided_by = ["block@2", "block@5"]
-note = "the Code Block b = 2, attached to the depth-2 meta: inherits {y, z}. Provenance: two Block-grain rows decided_by [block@2, block@5, block@5] (observed 2026-10-21)"
+note = "the Code Block b = 2, attached to the depth-2 meta: inherits {note, info}. Provenance: two Block-grain rows decided_by [block@2, block@5, block@5] (observed 2026-10-21; the names of 2026-10-23)"
 
 [[expect]]
 component = "block@7"
 alterant = "Labels"
-value = ["x", "y", "z"]
+value = ["todo", "note", "info"]
 decided_by = ["block@2", "block@5", "block@7"]
-note = "the depth-3 metaBlock (#~3 :+x): x applied EXPLICITLY under the depth-2 withhold; y and z inherited. Provenance: three Block-grain rows, each decided_by [block@2, block@5, block@5, block@7] (observed 2026-10-21)"
+note = "the depth-3 metaBlock (#~3 :+todo): todo applied EXPLICITLY under the depth-2 withhold; note and info inherited. Provenance: three Block-grain rows, each decided_by [block@2, block@5, block@5, block@7] (observed 2026-10-21; the names of 2026-10-23)"
 
 [[expect]]
 component = "block@8"
 alterant = "Labels"
-value = ["x", "y", "z"]
+value = ["todo", "note", "info"]
 decided_by = ["block@2", "block@5", "block@7"]
-note = "the Code Block c = 3, attached to the depth-3 meta: inherits {x, y, z}. Provenance: three Block-grain rows decided_by [block@2, block@5, block@5, block@7] (observed 2026-10-21)"
+note = "the Code Block c = 3, attached to the depth-3 meta: inherits {todo, note, info}. Provenance: three Block-grain rows decided_by [block@2, block@5, block@5, block@7] (observed 2026-10-21; the names of 2026-10-23)"
 
 [[expect]]
 component = "line@1"
@@ -63,48 +63,48 @@ note = "the vocabulary statement's own Line, the only Line of block@1: no label 
 [[expect]]
 component = "line@2"
 alterant = "Labels"
-value = ["x", "y"]
+value = ["todo", "note"]
 decided_by = ["block@2"]
-note = "the blank line 2 — the first Line of block@2; the set applies to it indirectly as a child of the metaBlock. Provenance: no per-Line row; the Line answers [x, y] (observed 2026-10-21)"
+note = "the blank line 2 — the first Line of block@2; the set applies to it indirectly as a child of the metaBlock. Provenance: no per-Line row; the Line answers [note, todo] (observed 2026-10-21; the names of 2026-10-23)"
 
 [[expect]]
 component = "line@3"
 alterant = "Labels"
-value = ["x", "y"]
+value = ["todo", "note"]
 decided_by = ["block@2"]
 note = "the applying metaLine's own Line: a child of block@2; the set applies indirectly. Provenance: no per-Line row (observed 2026-10-21)"
 
 [[expect]]
 component = "line@4"
 alterant = "Labels"
-value = ["x", "y"]
+value = ["todo", "note"]
 decided_by = ["block@2"]
 note = "a plain Line: a child of block@4, attached to block@2's meta; the set applies indirectly. Provenance: no per-Line row (observed 2026-10-21)"
 
 [[expect]]
 component = "line@5"
 alterant = "Labels"
-value = ["y", "z"]
+value = ["note", "info"]
 decided_by = ["block@2", "block@5"]
-note = "the withholding metaLine's own Line: a child of block@5; its set {y, z} applies indirectly. Provenance: no per-Line row (observed 2026-10-21)"
+note = "the withholding metaLine's own Line: a child of block@5; its set {note, info} applies indirectly. Provenance: no per-Line row (observed 2026-10-21)"
 
 [[expect]]
 component = "line@6"
 alterant = "Labels"
-value = ["y", "z"]
+value = ["note", "info"]
 decided_by = ["block@2", "block@5"]
 note = "a plain Line: a child of block@6; the set applies indirectly. Provenance: no per-Line row (observed 2026-10-21)"
 
 [[expect]]
 component = "line@7"
 alterant = "Labels"
-value = ["x", "y", "z"]
+value = ["todo", "note", "info"]
 decided_by = ["block@2", "block@5", "block@7"]
 note = "the explicitly applying metaLine's own Line: a child of block@7; its set applies indirectly. Provenance: no per-Line row (observed 2026-10-21)"
 
 [[expect]]
 component = "line@8"
 alterant = "Labels"
-value = ["x", "y", "z"]
+value = ["todo", "note", "info"]
 decided_by = ["block@2", "block@5", "block@7"]
 note = "a plain Line: a child of block@8; the set applies indirectly. Provenance: no per-Line row (observed 2026-10-21)"

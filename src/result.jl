@@ -49,8 +49,11 @@ the config-time and condition-path codes were removed with the closed interprete
 path; docs/public-api.md §3); `severity::Symbol ∈ {:error,:warning,:info}` — the declared set;
 under `src/` the rows minted are `:error` (`REG_UNPUBLISHED`, `POST_SEAL_MUTATION` — delivered; `REG_PROTOCOL`,
 `REG_SLOT_EXHAUSTED`, `REG_DERIVED_TABLES` — returned by `validate` as data or carried by a thrown `RegistrationRefused`);
-the one `:warning` row minted under `src/` is the Labels Alterant's `LABEL_NOT_APPLIED_WITHHELD` (since 0.4.3 — a plain `:x` met by a withhold:
-returned by the setter, delivered by the apply loop's door with the place merged into its context; `WARN_CAPTURE_FLOOR` / `WARN_CAPTURE_UNREADABLE`
+the `:warning` and `:info` rows minted under `src/` are the Labels Alterant's (since 0.4.3): `LABEL_NOT_APPLIED_WITHHELD` (a plain `:x` met by a
+withhold) and `LABEL_NOT_APPLIED_UNKNOWN` (a name outside the run's vocabulary, under any verb) — `:warning`, returned by the setter and delivered
+by the apply loop's door with the place merged into the context; `LABELS_VOCABULARY_FILE_CHANGED` (`:info` — a `++` / `--` that edited the user
+level's vocabulary file) and `LABELS_VOCABULARY_FILE_NOT_WRITTEN` (`:warning` — the file could not be written) — returned by the read-time hook
+and delivered by the absorb's door with the read-time place (`WARN_CAPTURE_FLOOR` / `WARN_CAPTURE_UNREADABLE`
 were removed with the Heading's separate path — the §6 row); `message::String` is human-readable; `context` is
 optional structured context — what the minters pass: a record's name (an Alterant's `altName`, an action's `name`),
 a rendered path text, a field name, or `nothing` when absent (the three-argument outer constructor supplies it).

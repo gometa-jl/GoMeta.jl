@@ -89,8 +89,9 @@ actions, and an optional human comment. Its general shape:
 - The middle carries **labels** (`:labelN`) and **actions** (`discard{…}` / `hide{…}` / `show{…}`), processed
   **left to right** (see §8 rule 4).
 - At `#~0` (a metaBlock opened by `#~0`) and in the user's profile the middle may also carry the Labels Alterant's **vocabulary
-  statements** — `:++x` / `:(++, x, y)` add names to the vocabulary for the run, `:--x` / `:(--, x)` remove names — recorded once when
-  read, applied to no Component (since `0.4.2`; `docs/public-api.md` §3.4).
+  statements** — `:++x` / `:(++, x, y)` add names to the vocabulary, `:--x` / `:(--, x)` remove names — recorded once when
+  read, applied to no Component (since `0.4.2`), and since `0.4.3` PERSISTED in the user level's vocabulary file, every change of a run that completes reported by an `:info`
+  diagnostic (`docs/public-api.md` §2, §3.4).
 - Anything after a `## ` on the same line is a **human comment** — the meta-parser ignores it.
   Cite: `Extended L7` `#~ discard{ :label2 , isCode} ## This is a comment within a meta Block.` → the
   `## …` part has no effect.
@@ -306,13 +307,13 @@ content-only block across the blank.
 ## 5. Labels
 
 - **IS** — labels are accumulative tags a metaLine applies to the content in its scope. **Label
-  names are validated when APPLIED** against the Labels Alterant's vocabulary — since `0.4.2` the run's: the shipped list below plus
-  the run's own vocabulary statements (`docs/public-api.md` §3.4) — the
-  corpus-documented set `:label1` … `:label5` plus, since `0.3.0`, a fixed pictograph
-  vocabulary (byte-exact names like `:💡`, `:🔥`) plus, since `0.4.0`, `:doc` — the
-  whole list hard-coded in the Labels Alterant's own file `src/alterants-std/labels.jl` (the refusal message lists the
-  full accepted set): applying a label from outside the run's vocabulary refuses with a stable message naming the
-  accepted set; a label QUERIED in a condition answers false when it is unknown or unset (as
+  names are checked when APPLIED** against the Labels Alterant's vocabulary — the run's: the names of the user level's vocabulary file (since
+  `0.4.3` — a copy of the shipped data file `data/alterants-std/labels-vocabulary.txt` made at the first need: `label1` … `label5`, `doc`, the 33
+  pictograph names in the glued form `label🍀`, and the everyday names `warning`, `note`, `info`, `definition`, `todo`, `public`, `private`;
+  byte-exact names, no normalization) plus the run's own vocabulary statements (`docs/public-api.md` §2). Applying a label from outside the
+  run's vocabulary — a name never declared, removed, misspelled — applies nothing and is REPORTED by a `:warning` diagnostic at each affected
+  Component (`LABEL_NOT_APPLIED_UNKNOWN`, naming the statement and the remedy), the run completing (since `0.4.3`; before it the run refused); a
+  list applies its other names; a label QUERIED in a condition answers false when it is unknown or unset (as
   the original engine answered; since `0.4.0`).
 - **Withhold and explicit apply (since `0.4.3`)** — `:-x` / `:(-, x, y)` WITHHOLDS a label from the current set of labels applied to the
   current Component and to everything under its metaBlock until a later metaBlock of the same or a shallower depth replaces the slot
@@ -480,9 +481,11 @@ drops `:label1` from depth 1 to depth 2. One blank line, two flips, two reasons.
 
 - **Labels (the `:` action) — documented, both forms:** repeated one-word labels
   (`#~ :label1 :label2`) AND the parenthesized list (`#~ :(label1, label2)`) are equivalent, and since `0.4.3` a sign at the head of the statement withholds (`:-x`, `:(-, x, y)`) or applies explicitly (`:+x`, `:(+, x)`) — §5; each
-  label APPLIED is checked against the Labels Alterant's vocabulary — the run's since `0.4.2` (an unknown label refuses with a stable
-  message); a label QUERIED answers false when unknown or unset (since `0.4.0` —
-  `docs/public-api.md` §3.4).
+  label APPLIED is checked against the Labels Alterant's vocabulary — the run's since `0.4.2` (an unknown label is reported by a `:warning`
+  diagnostic and skipped since `0.4.3`); a label QUERIED answers false when unknown or unset (since `0.4.0` —
+  `docs/public-api.md` §3.4). Every BARE argument of every action is trimmed at its two edges of the ordinary white space and the invisible
+  separators U+2028, U+2029, U+180E, U+200B, U+2060, U+FEFF before it reaches the Alterant (since `0.4.3`; `GoMeta.is_argument_space`,
+  `docs/public-api.md` §1.2); a quoted text is content, untrimmed.
 - **Id actions (`cell` / `parent` / `file`, and `ids` since `0.4.0`) — EXPERIMENTAL at this release:** the three single actions take one integer value
   argument each (`#~ cell(7)`), Int16 domain; `#~ ids(c, p, f)` sets the three fields at once, exactly as `cell(c) parent(p) file(f)`
   would (the same parse, rows and fault class). The Id alterant is a v0 placeholder implementation; this
@@ -555,19 +558,19 @@ To keep the verified claims honest, these are **known but not established here**
   therefore discards code and shows everything else. (The corpus itself does not exercise a
   same-statement pair whose second value would apply; the first-wins rule above is the contract.)
 - **Engine limits** — metaLines live in comments (`#`/`##`), not as executable code. The Labels Alterant's
-  shipped vocabulary is the corpus-documented `:label1`..`:label5` plus (since `0.3.0`) the fixed
-  pictograph vocabulary plus (since `0.4.0`) `:doc`, the whole list hard-coded in the Labels
-  Alterant's own file `src/alterants-std/labels.jl` — byte-exact names, no normalization —
-  and **label names are validated when APPLIED** against the Labels Alterant's vocabulary (since `0.4.2` the run's: that list plus
-  the run's own vocabulary statements, `docs/public-api.md` §3.4) — an unknown label refuses with the stable
-  `GoMeta apply: unknown label …` message, which names the accepted set; a label QUERIED in a condition
+  vocabulary lives in a data file since `0.4.3` — the shipped `data/alterants-std/labels-vocabulary.txt` (46 names: `label1`..`label5`, `doc`, the 33
+  pictograph names in the glued form `label🍀`, the everyday names) read through the user level's copy `~/.gometa/labels-vocabulary.txt`, which
+  the vocabulary statements edit — byte-exact names, no normalization —
+  and **label names are checked when APPLIED** against the Labels Alterant's vocabulary (since `0.4.2` the run's: that file's names plus
+  the run's own vocabulary statements, `docs/public-api.md` §2) — an unknown label is reported by a `:warning` diagnostic
+  (`LABEL_NOT_APPLIED_UNKNOWN`) and skipped, the run completing (since `0.4.3`); a label QUERIED in a condition
   answers false when it is unknown or unset (as the original engine answered; since
   `0.4.0`). Eight actions accumulate per meta-hierarchy slot (`SLOT_CAPACITY` — a named constant,
   decoupled from the registered action count of 9)
   (a further one meets the stable message "GoMeta absorb: more than 8 actions in one meta-hierarchy slot …" since `0.4.0`; `docs/public-api.md` §3.4). The
-  authorable depth window is 1–8 in the digit form (§2). Custom label names applied without a vocabulary statement admitting them (since `0.4.2` a file at `#~0` or the profile may add names — `docs/public-api.md` §2; a queried name that is unset or unknown
-  answers false — `docs/public-api.md` §3.4), and
-  bare names outside the settribute keys and the queryable actions, are refused; a Julia Boolean expression over those
+  authorable depth window is 1–8 in the digit form (§2). Custom label names applied without a vocabulary statement admitting them are reported, not refused (since `0.4.3`; a file at `#~0` or the profile may add names — persistently since `0.4.3` — `docs/public-api.md` §2; a queried name that is unset or unknown
+  answers false — `docs/public-api.md` §3.4);
+  bare names outside the settribute keys and the queryable actions are refused; a Julia Boolean expression over those
   names is accepted and evaluated by Julia (`0.4.0`; `docs/public-api.md` §3.2).
 
 > Status: this is the verified working reference for the v0 subset of the GoMeta language. The

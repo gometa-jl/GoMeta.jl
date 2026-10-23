@@ -26,6 +26,10 @@
 #           the fed profile `user`, no statement `default` — must equal
 #           the expectation's set (a string or a list); the rows' `decided_by` handles are decoded like the
 #           cell handles (step 4) and mapped to the tree's Blocks and Lines.
+#       (7b) `[[expect_diagnostic]]` (since 0.4.3): a diagnostic row the creator expects the run to deliver — `code`, `severity` (default
+#           "warning"), `component` (the position the row stands at: its context's `cell`, decoded like a row's handle), `label` (optional,
+#           the context's `label`), `count` (default 1) — the number of matching rows of the delivery must equal `count`.
+#       (7c) every scenario runs on a FRESH user-level vocabulary file of the Labels Alterant (a vocabulary statement persists since 0.4.3).
 #       (8) EXPECTED FAILURES: a confirmed statement the Engine is KNOWN not to meet yet is listed in
 #           `EXPECTED_FAILURES` with its reason and runs as `@test_broken` — the suite stays green while
 #           the gap stays visible, and the day the Engine meets it the `@test_broken` UNEXPECTED PASS
@@ -114,6 +118,9 @@ end
 _grain(c) = c isa GB.Block ? GRAIN_BLOCK : c isa GB.Line ? GRAIN_LINE : error("authored: unsupported grain $(typeof(c))")
 _ordinal(c) = UInt32(abs(_ni(c, :idComponent)))
 _block_of(t, l::GB.Line) = GB.parent(t.ps, l)   # the Line's Block through the door (the former store index by `:idParent`)
+
+## --- a handle ON a Component: the grain and the last path step's ordinal (a diagnostic row's `cell`, step 7b) ---
+_handle_on(h::Vector{UInt8}, c) = (d = decode_handle_strict(h); d.grain == _grain(c) && !isempty(d.path) && last(d.path)[2] == _ordinal(c))
 
 ## --- the rows: those ON a Component (its own), by grain + the last path step's ordinal ---
 function _rows_on(rows, c)
@@ -241,11 +248,25 @@ const CONFIRMED = sort([f for f in readdir(AUTHORED_DIR) if endswith(f, ".toml")
         input = joinpath(AUTHORED_DIR, stem * ".jl")
         @testset verbose = true "$stem" begin
             @test isfile(input)
+            TestSupport.fresh_vocabulary!()                        # step 7c: a fresh user-level vocabulary file per scenario
             r = GA.goMeta(read(input))
             @test r.status == GA.PROCESS_OK
             rows = GA.readAltValuesEvals(r.altValues_evals)
             dec  = Dict{Tuple{Vector{UInt8},Symbol},Vector{Vector{UInt8}}}((rec.cell_handle, rec.attr) => rec.decided_by for rec in r.altValues_evals.records)   # step 7: the rows' provenance by (handle, attr)
             t    = _components(r.blsComponentTree)
+            for ex in get(spec, "expect_diagnostic", [])          # step 7b: the diagnostic rows the creator expects
+                n_stmt += 1
+                pos = ex["component"]; c = _component(t, pos)
+                want_code = Symbol(ex["code"]); want_sev = Symbol(get(ex, "severity", "warning"))
+                want_label = get(ex, "label", nothing); want_n = get(ex, "count", 1)
+                hits = [d for d in r.diagnostics if d.code === want_code && d.severity === want_sev && d.context isa NamedTuple &&
+                        haskey(d.context, :cell) && _handle_on(d.context.cell, c) &&
+                        (want_label === nothing || (haskey(d.context, :label) && String(string(d.context.label)) == String(want_label)))]
+                label = "$pos · diagnostic $want_code ($want_sev)$(want_label === nothing ? "" : " — label $want_label") — expected $want_n row(s), the delivery carries $(length(hits))"
+                @testset "$label" begin
+                    @test length(hits) == want_n
+                end
+            end
             for ex in spec["expect"]
                 n_stmt += 1
                 pos, alt = ex["component"], ex["alterant"]

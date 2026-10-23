@@ -12,7 +12,8 @@
 #     plus, when the enclosing Block is `:attachedToMeta`, the depth window; the Block overload
 #     scans `userMHIdx` plus the depth window down to `fileMHIdx`; both append the `fallBack` level LAST), and delegate.
 #     The setters are called directly (a record-armed invocation seam `_invoke_set` was removed within the 0.4 development).
-#     A setter's RETURN is read for ONE purpose (since 0.4.3) — a `Vector{Diagnostic}` is delivered through `_deliver_diagnostics!`
+#     A setter's RETURN is read for ONE purpose (since 0.4.3) — a `Vector{Diagnostic}` is delivered through `_deliver_diagnostics!` (the one
+#     door function, state.jl — a read-time hook's return passes the same door at the read, absorb_meta.jl)
 #     with the place attached, the severity copied; anything else is ignored as before (not the removed seam: no wrapper, no catch; the
 #     Engine reads a vector of diagnostics and never a label — the framework compartmentalized; the creator's design, possibly interim).
 # DOES: evaluates each queued action's stored condition — `nothing` means set unconditionally,
@@ -50,21 +51,15 @@
     return nothing
 end
 
-## THE DOOR (since 0.4.3): a setter's return value is read for ONE purpose — a `Vector{Diagnostic}` is delivered on the run's
-## diagnostics, the Engine's PLACE merged into each row's context (the applying Component's key, the stating statement's handle, the
-## Alterant's statements applied at this Component so far — a withhold's source among them); the severity copied, never decided here;
-## anything else returned is ignored exactly as before. No wrapper, no catch, no type check beyond this one test: the Engine reads a vector
-## of diagnostics and never a label (the creator's design — the framework compartmentalized; a possibly interim agreement, the Engine /
+## THE DOOR AT THE APPLY (since 0.4.3): a setter's return value is read for ONE purpose — a `Vector{Diagnostic}` is delivered on the run's
+## diagnostics by the one delivery function (state.jl `_deliver_diagnostics!` — the read-time hook's return passes the same door at the read),
+## the apply's PLACE merged into each row's context (the applying Component's key, the stating statement's handle, the Alterant's statements
+## applied at this Component so far — a withhold's source among them); the severity copied, never decided here; anything else returned is
+## ignored exactly as before. No wrapper, no catch, no type check beyond the one test at the call sites: the Engine reads a vector of
+## diagnostics and never a label (the creator's design — the framework compartmentalized; a possibly interim agreement, the Engine /
 ## Alterants interface to be revised later).
-@noinline function _deliver_diagnostics!(st::ProcessState, ds::Vector{Diagnostic}, altIdx::Int8, row::Int, slot::Int8, appliedKey::Vector{UInt8})
-    place = (cell = appliedKey, stated_by = st.queue.decided_by[row, slot], statements = copy(get(st.working_origin, altIdx, Vector{UInt8}[])))
-    for d in ds
-        ctx = d.context
-        merged = ctx isa NamedTuple ? merge(ctx, place) : ctx === nothing ? place : merge((alterant_context = ctx,), place)
-        push!(st.diagnostics, Diagnostic(d.code, d.severity, d.message, merged))
-    end
-    return nothing
-end
+@noinline _deliver_diagnostics!(st::ProcessState, ds::Vector{Diagnostic}, altIdx::Int8, row::Int, slot::Int8, appliedKey::Vector{UInt8}) =
+    _deliver_diagnostics!(st, ds, (cell = appliedKey, stated_by = st.queue.decided_by[row, slot], statements = copy(get(st.working_origin, altIdx, Vector{UInt8}[]))))
 
 "THE FRESH INSTANCE of an Alterant for the Component at hand: the registered constructor, given the Alterant's PER-RUN state where its read-time hook minted one (`st.alt_run`), the zero-argument call otherwise — every Alterant without a hook, and the Labels Alterant in a run without a vocabulary statement, meets the former call"
 _freshInstance(st, idx) = (run = st.alt_run[idx]; run === nothing ? st.registry.plugins[idx].altConstructor() : st.registry.plugins[idx].altConstructor(run))
