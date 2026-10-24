@@ -41,6 +41,18 @@ Status and diagnostics go to stderr (the end-of-run print), the printout to stdo
 | `bls-tree` | **`print_BLS_Component_Tree`** (`style=:mix`) — the Component-tree view: the tree with every Component's typed named-int and settribute dumps |
 | `comparison` | **`comparisonForm`** — the comparison form: one line per Component and one per Component per Alterant, sorted; the definition `tests/comparison/README.md` |
 
+**Colour.** The two tree views print in colour, with bold and italic as further marks: bold marks the header, the Blocks of the
+Component tree, every Component of the evaluated-values tree that carries rows, the attribute names, the values and the warnings;
+italic marks the tools' own notes — `(no evals — defaults apply)`, a run of elided Components, the filter lines, the empty-view
+notes (not the no-rows note of the evaluated-values views, nor the frozen `:legacy` style). Colour follows Julia's own setting: a terminal is coloured, a pipe or a file is not unless Julia runs with `--color=yes` (or
+`FORCE_COLOR` is set) — `julia --color=yes --startup-file=no --project=$GM/tests $GM/devtools/devtools.jl evals-tree <file> | less -R`
+— and `--color=no` (or `NO_COLOR`) prints plain. One flag, at any place on the line, picks the colours: `--scheme=NAME` —
+`terminal` (the default, a fixed 256-colour palette for a dark ground), `gometa_dark` and `light` (the colours of the dark and of the
+light slides of the JuliaCon 2026 deck; `light` for a light terminal), `cvd_dark` and `cvd_light` (the same two grounds, safe for
+colour-blind readers) and `projector` (every colour at 7:1 or more on a dark ground). The deck's schemes print 24-bit colour on the
+terminal's own ground — choose the one of your ground. The other verbs print plain; a plain printout is the same bytes under every
+scheme.
+
 ## From Julia (the REPL, a script, a test)
 
 ```julia
@@ -61,11 +73,22 @@ write_BLS_Component_Tree_to_file("tree.html", result)
 ```
 Keywords of `print_altValues_evals`: `layout` (`:tree` | `:rows` | `:cells`), `include_empty`
 (`:tree` only — `false` compact, `true` full), `show_handles`, `attrs` (`:all` | a Symbol | a
-Vector), `lines` (an input-line range), `color` (`:auto` | `:always` | `:never`). The full
+Vector), `lines` (an input-line range), `color` (`:auto` | `:always` | `:never`), `scheme` (`:terminal` | `:gometa_dark` |
+`:light` | `:cvd_dark` | `:cvd_light` | `:projector` — the colours of a coloured print; the file twins take it for the `.html`
+page too). The full
 docstrings are in `devtools.jl`.
 
+**The `.html` twin** writes the printout inside `<pre class="gm-dt">` under a stylesheet of the chosen scheme; every styled run is a
+`<span>` whose classes name its role — `gm-dt-gutter` (the guides, spans, labels and notes), `gm-dt-tree` (the grain names),
+`gm-dt-payload` (the attribute names), `gm-dt-marker`, `gm-dt-code`, `gm-dt-text` (the flavor words Meta, Code, Text), `gm-dt-neutral`
+(the values) — then, where a role is shared, the finer identity — `gm-dt-block`, `gm-dt-line`, `gm-dt-segment`; `gm-dt-good`,
+`gm-dt-warn`, `gm-dt-bad` (a Visib value show, hide, discard; the warnings and errors); `gm-dt-legacy` — and `gm-dt-bold`,
+`gm-dt-italic`; a run with no colour of its own (the header, an excerpt, the Component tree's record values) carries only its
+`gm-dt-bold`, or no span at all; an empty printout line between two line ends is a line holding an empty `gm-dt-empty` span. The classes are the same
+under every scheme: another page styles them with its own colours. The `.txt` twin is the plain printout.
+
 **Two facts for reading the printouts.** A byte comparison of a printout against a banked comparator runs the
-tool with the colour variable unset (`env -u FORCE_COLOR julia …`) — a shell environment carrying `FORCE_COLOR`
+tool with the colour variable unset (`env -u FORCE_COLOR julia …`, or `julia --color=no …`) — a shell environment carrying `FORCE_COLOR`
 makes Julia print ANSI escapes and the comparison then reports differences that are not differences of the
 evaluation. The views right-pad a short name before its arrow, so a value cut from a printout column by a regex has
 its padding stripped before it is compared with a name list.

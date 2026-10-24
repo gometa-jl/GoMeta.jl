@@ -6,6 +6,14 @@ sees, in the breaking-change register of the API reference, [`docs/public-api.md
 **No backward compatibility and no deprecation until at least v0.7**: every change of the public surface is
 a clean cut. A date is the day of the version's tag (since 0.3.0) or, before 0.3.0, of the day the version reached `main` (those versions carry no tag).
 
+## Unreleased — after 0.4.3
+
+- **The development tools' colours.** The print tools take `scheme` — `:terminal` (the default, the 256-colour palette),
+  `:gometa_dark`, `:light`, `:cvd_dark`, `:cvd_light` and `:projector` (the colours of the JuliaCon 2026 deck's slides, as 24-bit
+  colour on the terminal's own ground) — and print the tools' own notes in italic beside colour and bold; the command line's tree
+  views take `--scheme=NAME`; the `.html` twin writes classed runs under the scheme's stylesheet, an empty line as an empty span.
+  The plain printouts are unchanged, byte for byte.
+
 ## 0.4.3 — 2026-10-25
 
 - **The Labels Alterant's withhold and explicit apply.** `:-x` / `:(-, x, y)` WITHHOLDS a label from the current set of labels applied

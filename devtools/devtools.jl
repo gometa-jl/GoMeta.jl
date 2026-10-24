@@ -146,25 +146,86 @@ const _DT_HTML_COLORS = Dict{Any,String}(
 
 _dt_htmlesc(s) = replace(s, '&' => "&amp;", '<' => "&lt;", '>' => "&gt;")
 
-## IS: the ONE styled-run emitter every renderer uses. DOES: routes a flat run to the HTML sink
-## (IOContext key :gm_html), to `printstyled` (only when the io carries
-## :color=>true AND the run is actually styled), or to plain `print` — so plain runs
-## emit ZERO escape bytes. REASONING: printstyled closers reset to terminal defaults,
-## so runs are FLAT, never nested; `:normal`-unbold runs bypass printstyled entirely
-## (ANSI hygiene). PURPOSE: one source of truth for terminal/plain/HTML parity.
-function _dt_sty(io, txt; color = nothing, bold::Bool = false)
+## THE COLOUR SCHEMES (2026-10-24). IS: a ground and the nine roles of a printout — gutter (the chrome: the guides, spans, labels and
+##   notes), marker (the Meta flavor word), payload (the attribute names), text / code (the Text / Code flavor words), tree (the
+##   grain names), neutral (the values and every unpainted run); comment and hideprefix carried whole, unused by these views.
+## DOES: the five are the colours of the JuliaCon 2026 deck's slides — gometa_dark its dark slides, light its light slides (the
+##   website's light palette), cvd_dark / cvd_light the colour-blind-safe pair on the same two grounds, projector every role at 7:1
+##   or more on the dark ground. :terminal (the default) is the computed palette above, by paint value.
+## REASONING: a scheme is data — a tuple, never a Dict, so every stylesheet and probe iterates one fixed order; the table is the
+##   deck's authority copied, lowercase, and a probe pins it. PURPOSE: a coloured print and the .html page in the colours of the
+##   ground they are read on — the deck, the website, a light terminal.
+const _DT_ROLES = (:gutter, :marker, :payload, :text, :code, :comment, :tree, :hideprefix, :neutral)
+const _DT_SCHEMES = (
+    gometa_dark = (bg = "#201d1d", gutter = "#706d6d", marker = "#ff1fa9", payload = "#ffd6d6", text = "#ffe994",
+                   code = "#96efbe", comment = "#5eb91e", tree = "#7bc4dc", hideprefix = "#ffd21f", neutral = "#e8e6e3"),
+    light       = (bg = "#f1e6d2", gutter = "#7a5f6e", marker = "#b80074", payload = "#4b3421", text = "#7a5c00",
+                   code = "#157554", comment = "#35690e", tree = "#066374", hideprefix = "#8f3500", neutral = "#6a533c"),
+    cvd_dark    = (bg = "#201d1d", gutter = "#8d8989", marker = "#ff7bc1", payload = "#ffd6d6", text = "#ffe994",
+                   code = "#96efd6", comment = "#3cca90", tree = "#a8bef7", hideprefix = "#e69f00", neutral = "#e8e6e3"),
+    cvd_light   = (bg = "#f1e6d2", gutter = "#776068", marker = "#8d277f", payload = "#382625", text = "#332800",
+                   code = "#043540", comment = "#4f6a3c", tree = "#064ac2", hideprefix = "#8f5d00", neutral = "#34302c"),
+    projector   = (bg = "#201d1d", gutter = "#b5a78e", marker = "#ff85c2", payload = "#ffe0e0", text = "#ffe994",
+                   code = "#acf5ca", comment = "#7cc24e", tree = "#88c8f4", hideprefix = "#ffc93f", neutral = "#f0eeeb"))
+const _DT_SCHEME_NAMES = (:terminal, keys(_DT_SCHEMES)...)
+
+## every paint value a renderer passes to _dt_sty, :normal first (the :terminal stylesheet's neutral rule precedes the identity rules)
+const _DT_PAINTS = (:normal, _DT_C_CHROME, _DT_C_BLOCK, _DT_C_LINE, _DT_C_SEG, _DT_C_ATTR, _DT_C_LEGACY_DUMP,
+                    _DT_C_META_F, _DT_C_CODE_F, _DT_C_TEXT_F, _DT_C_GOOD, _DT_C_WARN, _DT_C_BAD)
+## the deck's role of a paint value (the deck's own map): chrome -> gutter; the three grain colours -> tree; the attribute names ->
+## payload; Meta -> marker, Code -> code, Text -> text; everything else (the Visib values, the warnings and errors, the archival dump
+## colour, :normal, unpainted) -> neutral
+_dt_role_of(c) = c === _DT_C_CHROME ? :gutter :
+    (c === _DT_C_BLOCK || c === _DT_C_LINE || c === _DT_C_SEG) ? :tree :
+    c === _DT_C_ATTR ? :payload : c === _DT_C_META_F ? :marker : c === _DT_C_CODE_F ? :code : c === _DT_C_TEXT_F ? :text : :neutral
+## the finer identity where paint values share a role: the grain under tree; under neutral the terminal palette's traffic light
+## (good = :show; warn = :hide and the warnings; bad = :discard and the errors) and the archival dump colour; "" where a role is one-to-one
+_dt_ident_of(c) = c === _DT_C_BLOCK ? "block" : c === _DT_C_LINE ? "line" : c === _DT_C_SEG ? "segment" :
+    c === _DT_C_GOOD ? "good" : c === _DT_C_WARN ? "warn" : c === _DT_C_BAD ? "bad" : c === _DT_C_LEGACY_DUMP ? "legacy" : ""
+
+## IS: the ONE styled-run emitter every renderer uses. DOES: routes a flat run by its sink — the HTML sink (IOContext key :gm_html):
+## a <span> whose classes name the run's role, its finer identity where one exists, bold and italic (the colours come from the page's
+## stylesheet, so another page colours the same classes its own way); a colour-carrying io (:color => true) under the :terminal
+## scheme: `printstyled` with the palette's 256-colour index (only when the run is actually styled); under a deck scheme (IOContext
+## key :gm_scheme): the scheme's colour of the run's role as 24-bit foreground, the neutral role left in the terminal's own ink;
+## everything else: plain `print` — so plain runs emit ZERO escape bytes, under every scheme. REASONING: printstyled closers reset
+## to terminal defaults, so runs are FLAT, never nested; `:normal`-unstyled runs bypass printstyled entirely (ANSI hygiene).
+## PURPOSE: one source of truth for terminal/plain/HTML parity.
+function _dt_sty(io, txt; color = nothing, bold::Bool = false, italic::Bool = false)
     s = string(txt)
     if get(io, :gm_html, false)
-        css = String[]
-        color !== nothing && push!(css, "color:" * get(_DT_HTML_COLORS, color, _DT_HTML_COLORS[:normal]))
-        bold && push!(css, "font-weight:700")
-        isempty(css) ? print(io, _dt_htmlesc(s)) :
-            print(io, "<span style=\"", join(css, ";"), "\">", _dt_htmlesc(s), "</span>")
-    elseif get(io, :color, false) && ((color !== nothing && color !== :normal) || bold)
-        printstyled(io, s; color = color === nothing ? :normal : color, bold)
+        cls = String[]
+        if color !== nothing
+            push!(cls, "gm-dt-" * String(_dt_role_of(color)))
+            id = _dt_ident_of(color); isempty(id) || push!(cls, "gm-dt-" * id)
+        end
+        bold && push!(cls, "gm-dt-bold"); italic && push!(cls, "gm-dt-italic")
+        isempty(cls) ? print(io, _dt_htmlesc(s)) :
+            print(io, "<span class=\"", join(cls, ' '), "\">", _dt_htmlesc(s), "</span>")
+    elseif get(io, :color, false) && ((color !== nothing && color !== :normal) || bold || italic)
+        sch = get(io, :gm_scheme, :terminal)
+        if sch === :terminal
+            printstyled(io, s; color = color === nothing ? :normal : color, bold, italic)
+        else
+            r = color === nothing ? :neutral : _dt_role_of(color)
+            _dt_rgbrun(io, s, r === :neutral ? nothing : _DT_SCHEMES[sch][r], bold, italic)
+        end
     else
         print(io, s)
     end
+end
+
+## one run in a deck scheme's colour on the terminal: the 24-bit foreground (printstyled takes the 256 indices only), bold and italic,
+## closed by a reset at the end of every line — no escape spans a newline, as printstyled wraps a run; the ground stays the terminal's own
+function _dt_rgbrun(io, s, hex, bold, italic)
+    on = (hex === nothing ? "" : "\e[38;2;" * join((parse(Int, hex[i:i+1]; base = 16) for i in (2, 4, 6)), ';') * "m") *
+         (bold ? "\e[1m" : "") * (italic ? "\e[3m" : "")
+    isempty(on) && return print(io, s)
+    for (k, ln) in enumerate(eachsplit(s, '\n'))
+        k > 1 && print(io, '\n')
+        isempty(ln) || print(io, on, ln, "\e[0m")
+    end
+    nothing
 end
 
 ## textwidth-aware padding — `rpad` counts chars, not display width, and mis-aligns
@@ -374,7 +435,7 @@ _dt_vcolor(row) = row.attr === :visib ?
     (row.value === :show ? _DT_C_GOOD : row.value === :discard ? _DT_C_BAD : _DT_C_WARN) : :normal
 
 function _dt_eval_bullet(io, doc, row; indent = "", target_tag::String = "")
-    _dt_sty(io, indent)
+    isempty(indent) || _dt_sty(io, indent, color = _DT_C_CHROME)   # the rail before the bullet in the chrome, as the guides
     _dt_sty(io, "● ", color = _DT_C_CHROME)
     isempty(target_tag) || _dt_sty(io, target_tag * " ", color = _DT_C_CHROME)
     _dt_sty(io, _dt_tpad(string(row.attr), 12), color = _DT_C_ATTR, bold = true)
@@ -434,6 +495,12 @@ DOES: prints the tree of `result.blsComponentTree`, read through the door alone 
     - `color::Symbol = :auto` — `:auto` passes the io's own `:color` property through (a deliberate
       `IOContext(io, :color=>true)` is honored; `stdout` resolves from the tty and `--color=yes`/`FORCE_COLOR`/`NO_COLOR`);
       `:always`/`:never` WRAP the io via `IOContext(io, :color => true/false)`.
+    - `scheme::Symbol = :terminal` — the colours of a coloured print (in the file twins also of the `.html` page): `:terminal`, the fixed 256-colour
+      palette for a dark ground; `:gometa_dark`, `:light`, `:cvd_dark`, `:cvd_light`, `:projector`, the JuliaCon 2026 deck's
+      schemes by role (the Meta word, the attribute names, the grain names, the chrome …), printed as 24-bit colour on the
+      terminal's own ground — choose the scheme of the ground; a plain print is the same bytes under every scheme; any other
+      value ERRORS. Italic marks the tools' own notes — the absence notes, the elisions, the filter lines, the empty-view
+      notes (not the no-rows note of the evaluated-values views, nor the frozen `:legacy` style); bold stays as it was.
     - `style::Symbol = :mix` — selects the renderer (the four of `_DT_T1_STYLES`):
       `:mix`    (the default): guide-line tree; under EACH component two dump lines labeled by the REAL
                 element types (`Int64` named-int pairs, `Bool` TRUE-flag names; values in default fg); a blank
@@ -459,7 +526,7 @@ DOES: prints the tree of `result.blsComponentTree`, read through the door alone 
       not displayed; the print-once law binds displayed components).
     - `_name::AbstractString = ""` — the display name in the `File` header line (an internal-ish kwarg: the write twins
       default it to `basename(path)`; REPL calls may set it for a labeled header).
-    An unknown `style`, `grain`, `color`, `detail`, `blocks` or `lines` value ERRORS with a message naming the accepted
+    An unknown `style`, `grain`, `color`, `scheme`, `detail`, `blocks` or `lines` value ERRORS with a message naming the accepted
     forms. With no Block selected (an empty document, or a `blocks=` request matching none) the styles other than
     `:legacy` print the `File` summary line and the reason; `:legacy` keeps its frozen chrome. In `:mix` a shown
     Block whose `idExtension` is not 0 prints a one-line extension-chain notice (the logical walk flattens the chain).
@@ -480,7 +547,7 @@ PURPOSE: the tools' instrument (the verb `bls-tree` = `style = :mix`): what the 
     tested). The tools work on the run's MAIN PRODUCTS (the creator's term).
 """
 function print_BLS_Component_Tree(io::IO, result::GoMeta.GoMetaDelivery;
-        color::Symbol = :auto, style::Symbol = :mix, detail::Symbol = :auto,
+        color::Symbol = :auto, scheme::Symbol = :terminal, style::Symbol = :mix, detail::Symbol = :auto,
         blocks = :all, lines = nothing, grain::Symbol = :segment,
         _name::AbstractString = "")
     style in _DT_T1_STYLES ||
@@ -489,6 +556,7 @@ function print_BLS_Component_Tree(io::IO, result::GoMeta.GoMetaDelivery;
         error("print_BLS_Component_Tree: unknown grain=:$grain (:block | :line | :segment)")
     color in (:auto, :always, :never) ||
         error("print_BLS_Component_Tree: unknown color=:$color (:auto | :always | :never)")
+    _dt_check_scheme("print_BLS_Component_Tree", scheme)
     if style === :tree
         detail in (:auto, :compact, :full) ||
             error("print_BLS_Component_Tree: detail=:$detail is not valid for style=:tree (:auto | :compact | :full)")
@@ -502,6 +570,7 @@ function print_BLS_Component_Tree(io::IO, result::GoMeta.GoMetaDelivery;
     lines === nothing || lines isa AbstractUnitRange{<:Integer} ||
         error("print_BLS_Component_Tree: lines must be nothing or an integer range like 5:12 (got $(repr(lines)))")
     io = color === :auto ? io : IOContext(io, :color => (color === :always))
+    scheme === :terminal || (io = IOContext(io, :gm_scheme => scheme))
     doc = _dt_doc(result; name = _name)
     sel = blocks === :all ? doc.blocks : Any[b for b in doc.blocks if _dt_id(b) in blocks]
     if isempty(sel) && style !== :legacy   # :legacy keeps its frozen chrome;
@@ -510,7 +579,7 @@ function print_BLS_Component_Tree(io::IO, result::GoMeta.GoMetaDelivery;
         _dt_sty(io, "File  ", bold = true); _dt_sty(io, doc.name, bold = true)
         _dt_sty(io, "  —  $nb Blocks · $nl Lines · $ns2 Segments\n", color = _DT_C_CHROME)
         _dt_sty(io, isempty(doc.blocks) ? "(no Blocks — empty document)\n" :
-                    "(no Blocks — nothing matched the blocks= request)\n", color = _DT_C_CHROME)
+                    "(no Blocks — nothing matched the blocks= request)\n", color = _DT_C_CHROME, italic = true)
         return nothing
     end
     if style === :mix
@@ -560,7 +629,7 @@ function _dt_t1_mix(io, doc, sel, lines_r, grain)
     end
     shown = [b for b in sel if _dt_intersects(b, lines_r)]
     isempty(shown) &&
-        (_dt_sty(io, "(no Blocks matched the lines= range)\n", color = _DT_C_CHROME); return)
+        (_dt_sty(io, "(no Blocks matched the lines= range)\n", color = _DT_C_CHROME, italic = true); return)
     any(_dt_ni(b, :idExtension) != 0 for b in shown) &&
         _dt_sty(io, "… extension chain present — physical extension components are " *
                 "flattened by the logical walk (see the Int64 idExtension/idExtended values)\n",
@@ -614,7 +683,7 @@ function _dt_t1_tree(io, doc, sel, lines_r, grain; dumps::Bool = false)
     end
     shown = [b for b in sel if _dt_intersects(b, lines_r)]
     isempty(shown) &&
-        (_dt_sty(io, "(no Blocks matched the lines= range)\n", color = _DT_C_CHROME); return)
+        (_dt_sty(io, "(no Blocks matched the lines= range)\n", color = _DT_C_CHROME, italic = true); return)
     for (bi, b) in enumerate(shown)
         lastb = bi == length(shown)
         row(b, lastb ? "└─ " : "├─ ", _DT_C_BLOCK, "Block")
@@ -749,6 +818,7 @@ DOES: reads the rows through the public reader `GoMeta.readAltValuesEvals(result
     text with `color = :never` default).
     PARAMETERS:
     - `color::Symbol = :auto` — as in `print_BLS_Component_Tree`.
+    - `scheme::Symbol = :terminal` — as in `print_BLS_Component_Tree`.
     - `layout::Symbol = :tree` — selects the renderer:
       `:tree`  (default): the component-tree skeleton with eval bullets attached AT their Components. The skeleton's
                NODES stop at the Line grain, and rows anchor accordingly: `:label_<name>`/`:visib` rows key on the owning
@@ -776,7 +846,7 @@ DOES: reads the rows through the public reader `GoMeta.readAltValuesEvals(result
     - `show_handles::Bool = false` — `:cells` always shows decoded handles; `:rows`/`:tree` add them per row when `true`.
     - `_name::AbstractString = ""` — the display name in the header line (internal-ish; the write twin defaults it to
       `basename(path)`).
-    An unknown `layout`, `color`, `attrs` or `lines` value ERRORS with a message naming the accepted forms. Every row
+    An unknown `layout`, `color`, `scheme`, `attrs` or `lines` value ERRORS with a message naming the accepted forms. Every row
     renders in every layout: a row the tools cannot place (a handle that does not decode; a grain above the File grain —
     the user-context plane, on which no shipped path keys a row since 0.4.0;
     a path step with no such child) is never dropped — `:rows`/`:tree` render it in a red
@@ -795,7 +865,7 @@ PURPOSE: the tools' rule (devtools/README.md): no claim about what a run evaluat
     handles) and `print_BLS_Component_Tree` (the settribute state the conditions tested).
 """
 function print_altValues_evals(io::IO, result::GoMeta.GoMetaDelivery;
-        color::Symbol = :auto, layout::Symbol = :tree,
+        color::Symbol = :auto, scheme::Symbol = :terminal, layout::Symbol = :tree,
         include_empty::Union{Bool,Nothing} = nothing,
         attrs = :all, lines = nothing, show_handles::Bool = false,
         _name::AbstractString = "")
@@ -803,6 +873,7 @@ function print_altValues_evals(io::IO, result::GoMeta.GoMetaDelivery;
         error("print_altValues_evals: unknown layout=:$layout (one of $(_DT_T2_LAYOUTS))")
     color in (:auto, :always, :never) ||
         error("print_altValues_evals: unknown color=:$color (:auto | :always | :never)")
+    _dt_check_scheme("print_altValues_evals", scheme)
     layout !== :tree && include_empty !== nothing &&
         error("print_altValues_evals: include_empty applies to layout=:tree only (got layout=:$layout)")
     attrs === :all || attrs isa Symbol ||
@@ -812,6 +883,7 @@ function print_altValues_evals(io::IO, result::GoMeta.GoMetaDelivery;
         error("print_altValues_evals: lines must be nothing or an integer range like 5:12 (got $(repr(lines)))")
     inc = include_empty === nothing ? false : include_empty      # the default
     io = color === :auto ? io : IOContext(io, :color => (color === :always))
+    scheme === :terminal || (io = IOContext(io, :gm_scheme => scheme))
     doc = _dt_doc(result; name = _name)
     rows = _dt_eval_rows(doc)
     frows, echo, filtered = _dt_filter_rows(rows, attrs, lines)
@@ -884,7 +956,7 @@ end
 function _dt_echo(io, echo)
     for (txt, kind) in echo
         _dt_sty(io, txt * "\n", color = kind === :bad ? _DT_C_BAD : _DT_C_CHROME,
-                bold = kind === :bad)
+                bold = kind === :bad, italic = kind !== :bad)
     end
 end
 
@@ -974,13 +1046,13 @@ function _dt_t2_tree(io, doc, frows, allrows, echo;
         _dt_sty(io, _dt_tpad(_dt_flavor(c), 5), color = _dt_fcolor(_dt_flavor(c)))  # the flavor triple
         _dt_sty(io, " " * _dt_tpad(_dt_span(c), 8), color = _DT_C_CHROME)
         _dt_sty(io, " \"" * _dt_excerpt(strip(_dt_content(doc, c)), 38) * "\"")
-        has || _dt_sty(io, nolabel, color = _DT_C_CHROME)
+        has || _dt_sty(io, nolabel, color = _DT_C_CHROME, italic = true)
         println(io)
         has
     end
     elision(guide, n, word) = (_dt_sty(io, guide, color = _DT_C_CHROME);
                                _dt_sty(io, "… " * _dt_plural(n, word) * " " * eliword * "\n",
-                                       color = _DT_C_CHROME))
+                                       color = _DT_C_CHROME, italic = true))
     emit_rows(c, indent) = for row in get(am, _dt_akey(c), DTEvalRow[])
         tag = row.comp isa _DT_BLS.Segment ?
               "[Segment #$(_dt_ni(row.comp, :idComponent))]" : ""
@@ -992,7 +1064,7 @@ function _dt_t2_tree(io, doc, frows, allrows, echo;
                      any(haskey(am, _dt_akey(l)) for l in _dt_children(doc, b))
     shownBlocks = filter(block_shown, doc.blocks)
     if isempty(shownBlocks)
-        isempty(doc.blocks) && _dt_sty(io, "(no Blocks)\n", color = _DT_C_CHROME)
+        isempty(doc.blocks) && _dt_sty(io, "(no Blocks)\n", color = _DT_C_CHROME, italic = true)
     end
     pending = 0
     for b in doc.blocks
@@ -1067,16 +1139,33 @@ end
 ##  §F — the file twins (the format inferred from the sink's extension)
 #########################################################################################
 
-## The HTML page wrapper — byte-identical to the mockup generator's, so .html output
-## stays comparable to the design mockups.
-function _dt_write_html(path, renderfn, title)
+## the .html page's stylesheet: the ground and the ink on the page and on pre.gm-dt (a consumer lifts the <pre> alone); one colour per
+## class — per role for a deck scheme, per paint value for :terminal (its identity class where one exists, the neutral rule first,
+## so the identity rules of equal specificity win) — then bold and italic
+function _dt_css(scheme::Symbol)
+    t = scheme === :terminal
+    bg, ink = t ? ("#1e2127", _DT_HTML_COLORS[:normal]) : (_DT_SCHEMES[scheme].bg, _DT_SCHEMES[scheme].neutral)
+    rules = t ? [".gm-dt-" * (isempty(_dt_ident_of(c)) ? String(_dt_role_of(c)) : _dt_ident_of(c)) * "{color:" * _DT_HTML_COLORS[c] * "}"
+                 for c in _DT_PAINTS] :
+                [".gm-dt-" * String(r) * "{color:" * _DT_SCHEMES[scheme][r] * "}" for r in _DT_ROLES]
+    "body{background:" * bg * ";margin:1.5em}.gm-dt{background:" * bg * ";color:" * ink * ";font:14px/1.45 monospace}" *
+        join(rules) * ".gm-dt-bold{font-weight:700}.gm-dt-italic{font-style:italic}"
+end
+
+## THE HTML PAGE: the scheme's stylesheet in the head, the printout inside <pre class="gm-dt"> as classed runs; an empty printout
+## line is written as a line holding an empty span (gm-dt-empty), so that a page embedding the <pre> as raw HTML never carries a
+## blank source line — the text of the body, tags removed and entities decoded, is the plain print, byte for byte
+function _dt_write_html(path, renderfn, title, scheme::Symbol)
+    b = IOBuffer()
+    renderfn(IOContext(b, :gm_html => true))
+    body = replace(String(take!(b)), r"(?<=\n)(?=\n)" => "<span class=\"gm-dt-empty\"></span>")
     open(path, "w") do f
-        print(f, "<!doctype html><meta charset=\"utf-8\"><title>", _dt_htmlesc(title),
-              "</title><body style=\"background:#1e2127;margin:1.5em\"><pre style=\"color:#d7dae0;font:14px/1.45 monospace\">")
-        renderfn(IOContext(f, :gm_html => true))
-        print(f, "</pre></body>")
+        print(f, "<!doctype html><meta charset=\"utf-8\"><title>", _dt_htmlesc(title), "</title><style>", _dt_css(scheme),
+              "</style><body><pre class=\"gm-dt\">", body, "</pre></body>")
     end
 end
+
+_dt_check_scheme(fn, s) = s in _DT_SCHEME_NAMES || error("$fn: unknown scheme=:$s (one of $(_DT_SCHEME_NAMES))")
 
 function _dt_resolve_format(path, format)
     format in (:auto, :html, :txt) ||
@@ -1085,7 +1174,7 @@ function _dt_resolve_format(path, format)
 end
 
 """
-    write_BLS_Component_Tree_to_file(path, result; format=:auto, color=:never,
+    write_BLS_Component_Tree_to_file(path, result; format=:auto, color=:never, scheme=:terminal,
                                      title="print_BLS_Component_Tree", kwargs...)
 
 IS: the file twin of [`print_BLS_Component_Tree`](@ref) (the February `print*`/`write*` pair convention, with its file sinks
@@ -1095,57 +1184,60 @@ DOES: `format` selects the sink: `:auto` (default) infers from the extension —
     self-contained styled HTML page, ANY other extension (or none) ⇒ text; an explicit `:html` / `:txt` OVERRIDES the
     extension entirely; any other value ERRORS (`write_*_to_file: unknown format=…`). `color` does not apply to the HTML
     sink (always styled). Text default `color=:never` (plain, grep-friendly); `color=:always` writes ANSI escape bytes
-    (view with `less -R`). `title` is the HTML page's `<title>` (ignored for text output). The rendered `File` header
+    (view with `less -R`). `scheme` (default `:terminal`) selects the stylesheet of the HTML page and the colours of a
+    `color=:always` text file; the plain text is the same bytes under every scheme. `title` is the HTML page's `<title>` (ignored for text output). The rendered `File` header
     uses `basename(path)` as the document name unless `_name` is passed explicitly. All other kwargs pass through to the
     core method. Opens `path` for writing, renders, closes; returns `path`.
 REASONING: the HTML sink is the core method rendered into an `IOContext` carrying `:gm_html => true`, which the one
-    styled-run emitter `_dt_sty` routes to `<span>` styles — one renderer, three sinks (terminal, plain text, HTML); the
-    page wrapper is byte-identical to the mockup generator's, so `.html` output stays comparable to the design mockups.
+    styled-run emitter `_dt_sty` routes to classed `<span>`s under the page's stylesheet — one renderer, three sinks (terminal,
+    plain text, HTML); the classes are the same under every scheme, so another page colours them its own way.
 PURPOSE: a printout as a file — a page that shows what a run produced carries the
     `:mix` tree as `.html` through it; the `.txt` form is the grep-friendly record.
 """
 function write_BLS_Component_Tree_to_file(path::AbstractString, result::GoMeta.GoMetaDelivery;
-        format::Symbol = :auto, color::Symbol = :never,
+        format::Symbol = :auto, color::Symbol = :never, scheme::Symbol = :terminal,
         title::AbstractString = "print_BLS_Component_Tree",
         _name::AbstractString = basename(path), kwargs...)
+    _dt_check_scheme("write_BLS_Component_Tree_to_file", scheme)   # before the path is opened
     if _dt_resolve_format(path, format) === :html
-        _dt_write_html(path, io -> print_BLS_Component_Tree(io, result; _name, kwargs...), title)
+        _dt_write_html(path, io -> print_BLS_Component_Tree(io, result; _name, kwargs...), title, scheme)
     else
         open(path, "w") do f
-            print_BLS_Component_Tree(f, result; color, _name, kwargs...)
+            print_BLS_Component_Tree(f, result; color, scheme, _name, kwargs...)
         end
     end
     path
 end
 
 """
-    write_altValues_evals_to_file(path, result; format=:auto, color=:never,
+    write_altValues_evals_to_file(path, result; format=:auto, color=:never, scheme=:terminal,
                                   title=..., kwargs...)
 
 IS: the file twin of [`print_altValues_evals`](@ref) — the `.html` / `.txt` twin of the print tool
     (a development tool; the format inferred from the sink's extension).
-DOES: same format/color/title/_name rules as [`write_BLS_Component_Tree_to_file`](@ref): `format` `:auto` infers the sink
+DOES: same format/color/scheme/title/_name rules as [`write_BLS_Component_Tree_to_file`](@ref): `format` `:auto` infers the sink
     from the extension (`.html`, case-insensitive ⇒ the styled HTML page; else text), `:html` / `:txt` override it, any
     other value ERRORS; `color` applies to the text sink only (default `:never`); `title` defaults to
     `"print_altValues_evals"`; `_name` defaults to `basename(path)`; all other kwargs pass through to the core method
     (`layout`, `include_empty`, `show_handles`, `attrs`, `lines`). Returns `path`.
 REASONING: one renderer, three sinks — the HTML sink is the core method rendered into an `IOContext` carrying
-    `:gm_html => true`, routed by the one styled-run emitter `_dt_sty`; the page wrapper is the mockup generator's,
-    byte-identical.
+    `:gm_html => true`, routed by the one styled-run emitter `_dt_sty` to classed `<span>`s under the scheme's stylesheet;
+    the classes are the same under every scheme.
 PURPOSE: the FULL delivery view as a file for the creator (`include_empty = true, show_handles = true`): a page that shows
     what a run produced carries it as `.html` through this twin; the JuliaCon deck's
     dev-tool slides and the demo deck were produced from its output with the tools' former `slide` option (removed within the
     0.4 development).
 """
 function write_altValues_evals_to_file(path::AbstractString, result::GoMeta.GoMetaDelivery;
-        format::Symbol = :auto, color::Symbol = :never,
+        format::Symbol = :auto, color::Symbol = :never, scheme::Symbol = :terminal,
         title::AbstractString = "print_altValues_evals",
         _name::AbstractString = basename(path), kwargs...)
+    _dt_check_scheme("write_altValues_evals_to_file", scheme)   # before the path is opened
     if _dt_resolve_format(path, format) === :html
-        _dt_write_html(path, io -> print_altValues_evals(io, result; _name, kwargs...), title)
+        _dt_write_html(path, io -> print_altValues_evals(io, result; _name, kwargs...), title, scheme)
     else
         open(path, "w") do f
-            print_altValues_evals(f, result; color, _name, kwargs...)
+            print_altValues_evals(f, result; color, scheme, _name, kwargs...)
         end
     end
     path
@@ -1474,10 +1566,10 @@ function _dt_cli_main(args)
         ## the print tool's FULL delivery view: every Component visible,
         ## absence labelled "(no evals — defaults apply)", every row with its decoded handle
         print_altValues_evals(stdout, r; layout = :tree, include_empty = true,
-                              show_handles = true, _name = basename(path))
+                              show_handles = true, _name = basename(path), scheme = _DT_CLI_SCHEME[])
     elseif cmd == "bls-tree"
         ## the tree printer (:mix): tree rows + typed named-int / settribute dumps
-        print_BLS_Component_Tree(stdout, r; style = :mix, _name = basename(path))
+        print_BLS_Component_Tree(stdout, r; style = :mix, _name = basename(path), scheme = _DT_CLI_SCHEME[])
     elseif cmd == "trace"
         doc = _dt_doc(r; name = basename(path))                 # the rows resolved to their Components (§C); the excerpt through the door
         rows = _dt_eval_rows(doc)
@@ -1503,6 +1595,31 @@ function _dt_cli_main(args)
     exit(r.status == GoMeta.PROCESS_OK ? 0 : 1)
 end
 
+## THE COMMAND LINE'S ONE FLAG, at any place on the line: --scheme=<name> (gometa-dark read as gometa_dark); the tree views
+## evals-tree and bls-tree take it, the other verbs print plain. Colour itself follows Julia: a terminal colours, a pipe or a file
+## does not unless Julia runs with --color=yes (or FORCE_COLOR); --color=no prints plain. Any other argument opening with -- is a
+## usage error, so a profile text is never read as a flag (a profile opens with a letter or a colon).
+const _DT_CLI_SCHEME = Ref(:terminal)
+function _dt_cli_flags(args)          # (rest, scheme) — or nothing for a flag or a scheme it does not know
+    rest = String[]; scheme = :terminal
+    for a in args
+        m = match(r"^--scheme=(.+)$", a)
+        if m === nothing
+            startswith(a, "--") && return nothing
+            push!(rest, a)
+        else
+            scheme = Symbol(replace(m.captures[1], '-' => '_'))
+        end
+    end
+    scheme in _DT_SCHEME_NAMES || return nothing
+    (rest, scheme)
+end
+
 if abspath(PROGRAM_FILE) == @__FILE__
-    _dt_cli_main(ARGS)
+    fl = _dt_cli_flags(ARGS)
+    fl === nothing && (println(stderr, "flag: --scheme=", join(_DT_SCHEME_NAMES, '|')); _dt_cli_usage())
+    fl[2] !== :terminal && length(fl[1]) in (2, 3) && fl[1][1] in ("evals-tree", "bls-tree") && !get(stdout, :color, false) &&
+        println(stderr, "devtools: colour is off for this output — run julia --color=yes for colour in a pipe or a file")
+    _DT_CLI_SCHEME[] = fl[2]
+    _dt_cli_main(fl[1])
 end

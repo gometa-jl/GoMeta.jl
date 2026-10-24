@@ -127,6 +127,92 @@ b = IOBuffer()
 print_altValues_evals(IOContext(b, :color => true), mini)
 check(occursin('\e', String(take!(b))), ":auto did not pass a :color=>true IOContext through")
 
+## 8b — THE COLOUR SCHEMES (2026-10-24): the table, the two maps, the plain print the same under every scheme, colour as escapes
+##      only, italic and the 24-bit colours, the .html twin's classes and its text, the validation, the command line's flags
+check(_DT_SCHEME_NAMES == (:terminal, :gometa_dark, :light, :cvd_dark, :cvd_light, :projector), "§8b: the scheme names drifted")
+for (nm, sch) in pairs(_DT_SCHEMES)
+    check(Tuple(keys(sch)) == (:bg, _DT_ROLES...), "§8b: the roles of $nm are not the nine in order")
+    check(all(occursin(r"^#[0-9a-f]{6}$", getfield(sch, k)) for k in keys(sch)), "§8b: a colour of $nm is not lowercase #rrggbb")
+end
+check(_DT_SCHEMES.gometa_dark.marker == "#ff1fa9" && _DT_SCHEMES.light.bg == "#f1e6d2" && _DT_SCHEMES.light.tree == "#066374",
+      "§8b: a pinned scheme value drifted")
+_pb_lin(c) = (v = c / 255; v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055)^2.4)
+_pb_lum(h) = 0.2126 * _pb_lin(parse(Int, h[2:3]; base = 16)) + 0.7152 * _pb_lin(parse(Int, h[4:5]; base = 16)) +
+             0.0722 * _pb_lin(parse(Int, h[6:7]; base = 16))
+_pb_contrast(a, b) = (max(_pb_lum(a), _pb_lum(b)) + 0.05) / (min(_pb_lum(a), _pb_lum(b)) + 0.05)
+for (nm, sch) in pairs(_DT_SCHEMES), r in _DT_ROLES
+    check(_pb_contrast(sch[r], sch.bg) >= (nm === :projector ? 7.0 : 3.0), "§8b: $nm.$r below the floor on its own ground")
+end
+check(length(unique(_DT_PAINTS)) == length(_DT_PAINTS), "§8b: two paint values are equal")
+check(map(_dt_role_of, _DT_PAINTS) == (:neutral, :gutter, :tree, :tree, :tree, :payload, :neutral, :marker, :code, :text,
+                                       :neutral, :neutral, :neutral), "§8b: the role map drifted")
+check(_dt_role_of(nothing) === :neutral, "§8b: an unpainted run is not neutral")
+check(map(_dt_ident_of, _DT_PAINTS) == ("", "", "block", "line", "segment", "", "legacy", "", "", "", "good", "warn", "bad"),
+      "§8b: the identity map drifted")
+let views = ((io, r, s) -> print_altValues_evals(io, r; scheme = s, include_empty = true, show_handles = true),
+             (io, r, s) -> print_altValues_evals(io, r; scheme = s),
+             (io, r, s) -> print_altValues_evals(io, r; scheme = s, layout = :rows, show_handles = true),
+             (io, r, s) -> print_altValues_evals(io, r; scheme = s, layout = :cells),
+             (io, r, s) -> print_BLS_Component_Tree(io, r; scheme = s),
+             (io, r, s) -> print_BLS_Component_Tree(io, r; scheme = s, style = :tree, detail = :full),
+             (io, r, s) -> print_BLS_Component_Tree(io, r; scheme = s, style = :legacy),
+             (io, r, s) -> print_BLS_Component_Tree(io, r; scheme = s, style = :banner))
+    for r in (mini, ext), (vi, v) in enumerate(views)
+        ref = plain(io -> v(io, r, :terminal))
+        for s in _DT_SCHEME_NAMES
+            check(plain(io -> v(io, r, s)) == ref, "§8b: the plain print of view $vi differs under scheme $s")
+            col = ansi(io -> v(io, r, s))
+            check(replace(col, r"\e\[[0-9;]*m" => "") == ref, "§8b: view $vi under $s is not the plain print plus escapes")
+            check(s === :terminal ? !occursin("38;2;", col) : !occursin("38;5;", col), "§8b: view $vi under $s mixes the colour forms")
+        end
+    end
+end
+out = ansi(io -> print_altValues_evals(io, ext; include_empty = true, show_handles = true))
+check(occursin("\e[3m", out) && occursin("\e[23m", out), "§8b: no italic in the coloured FULL view under :terminal")
+out = ansi(io -> print_altValues_evals(io, ext; scheme = :gometa_dark, include_empty = true, show_handles = true))
+check(occursin("\e[3m", out) && occursin("\e[38;2;255;31;169m", out) && occursin("\e[38;2;123;196;220m", out),
+      "§8b: the gometa_dark marker or tree colour or the italic missing")
+out = ansi(io -> print_altValues_evals(io, ext; scheme = :light, include_empty = true))
+check(occursin("\e[38;2;6;99;116m", out), "§8b: the light tree colour missing")
+mktempdir() do tmp
+    ph = write_altValues_evals_to_file(joinpath(tmp, "c.html"), ext; include_empty = true, show_handles = true, _name = "c")
+    h = read(ph, String)
+    check(startswith(h, "<!doctype html>") && occursin("<pre class=\"gm-dt\">", h) && !occursin("<span style=", h), "§8b: the .html twin's form drifted")
+    check(occursin("#1e2127", h) && findfirst(".gm-dt-neutral{", h)[1] < findfirst(".gm-dt-warn{", h)[1], "§8b: the :terminal page's rule order lost")
+    check(occursin("class=\"gm-dt-tree gm-dt-block gm-dt-bold\"", h) && occursin("class=\"gm-dt-marker\"", h) && occursin("gm-dt-italic", h),
+          "§8b: a class string missing from the twin")
+    body = h[findfirst("<pre class=\"gm-dt\">", h)[end]+1:findlast("</pre>", h)[1]-1]
+    classes = unique(reduce(vcat, [split(m.captures[1]) for m in eachmatch(r"<span class=\"([^\"]*)\"", body)]; init = SubString{String}[]))
+    vocab = ["gm-dt-" * String(r) for r in _DT_ROLES] ∪ ["gm-dt-block", "gm-dt-line", "gm-dt-segment", "gm-dt-good", "gm-dt-warn",
+                                                        "gm-dt-bad", "gm-dt-legacy", "gm-dt-bold", "gm-dt-italic", "gm-dt-empty"]
+    check(all(c in vocab for c in classes), "§8b: a class outside the vocabulary: $(setdiff(classes, vocab))")
+    untag(x) = replace(replace(x, r"<[^>]*>" => ""), "&lt;" => "<", "&gt;" => ">", "&amp;" => "&")
+    check(untag(body) == plain(io -> print_altValues_evals(io, ext; include_empty = true, show_handles = true, _name = "c")),
+          "§8b: the twin's text is not the plain print")
+    pt = write_BLS_Component_Tree_to_file(joinpath(tmp, "t.html"), ext; _name = "t")
+    ht = read(pt, String)
+    check(occursin("\n<span class=\"gm-dt-empty\"></span>\n", ht), "§8b: the blank line between Blocks is not an empty span in the twin")
+    check(untag(ht[findfirst("<pre class=\"gm-dt\">", ht)[end]+1:findlast("</pre>", ht)[1]-1]) ==
+          plain(io -> print_BLS_Component_Tree(io, ext; _name = "t")), "§8b: the Component tree twin's text is not the plain print")
+    pl = write_altValues_evals_to_file(joinpath(tmp, "l.html"), ext; scheme = :light)
+    check(occursin(".gm-dt{background:#f1e6d2", read(pl, String)), "§8b: the light page's ground missing")
+    pc = write_altValues_evals_to_file(joinpath(tmp, "l.txt"), ext; color = :always, scheme = :light, include_empty = true)
+    check(occursin("\e[38;2;6;99;116m", read(pc, String)), "§8b: a coloured .txt twin does not carry the light scheme's colours")
+    for (f, w) in (("n.html", write_altValues_evals_to_file), ("n.txt", write_altValues_evals_to_file),
+                   ("m.html", write_BLS_Component_Tree_to_file), ("m.txt", write_BLS_Component_Tree_to_file))
+        expect_throw(() -> w(joinpath(tmp, f), ext; scheme = :nope), "§8b: scheme=:nope must error in the twin ($f)")
+        check(!isfile(joinpath(tmp, f)), "§8b: the twin wrote a file for an unknown scheme ($f)")
+    end
+end
+expect_throw(() -> plain(io -> print_altValues_evals(io, mini; scheme = :nope)), "§8b: unknown scheme must error (tool 2)")
+expect_throw(() -> plain(io -> print_BLS_Component_Tree(io, mini; scheme = :nope)), "§8b: unknown scheme must error (tool 1)")
+check(_dt_cli_flags(["--scheme=light", "evals-tree", "f.jl"]) == (["evals-tree", "f.jl"], :light), "§8b: the flag parser (the flag first) drifted")
+check(_dt_cli_flags(["evals-tree", "f.jl", "show", "--scheme=gometa-dark"]) == (["evals-tree", "f.jl", "show"], :gometa_dark),
+      "§8b: the flag parser (the flag last, the hyphen spelling) drifted")
+check(_dt_cli_flags(["evals-tree", "f.jl"]) == (["evals-tree", "f.jl"], :terminal), "§8b: the flag parser without the flag drifted")
+check(all(_dt_cli_flags(a) === nothing for a in (["--scheme=nope", "evals-tree", "f.jl"], ["--color=always", "evals-tree", "f.jl"],
+                                                  ["--verbose", "evals-tree", "f.jl"])), "§8b: the flag parser accepted an unknown flag or scheme")
+
 ## 9 — friendly kwarg validation (friendly errors, not raw MethodErrors)
 expect_throw(() -> plain(io -> print_altValues_evals(io, mini; attrs = "visib")),
              "attrs=\"visib\" (a String) must raise the friendly error")
