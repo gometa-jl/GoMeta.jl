@@ -53,12 +53,13 @@
 ##       `checkLabels` — the original engine's checker (:87–:99): an unset or unknown name answers false. The `Dict{Symbol,Bool}` methods of the
 ##       setter and the checker STAY: a custom registration pairing them with `altConstructor = Dict{Symbol,Bool}` runs without the hook, the
 ##       setter's check the former refusal over the base (the original engine's scan, GoMetaRetro Alterants.jl :73–:78 at 47f0521).
-## DOES: a run WITHOUT a vocabulary statement reads the user file once (its memo answers every later Component), applies every shipped and every
-##       persisted name as before, reports an unknown one and proceeds; a run WITH vocabulary statements edits the user file at the read and
+## DOES: a run WITHOUT a vocabulary statement reads the user file once (its memo answers every later Component), applies every name that file
+##       holds — the shipped names it still carries and the names persisted into it; a shipped name an earlier `--` removed from it is
+##       unknown —, reports an unknown one and proceeds; a run WITH vocabulary statements edits the user file at the read and
 ##       reports each change; the signed statements and a plain `:x` met by a withhold as 0.4.3's withhold (above).
 ## REASONING: the ∈-scan over the vector in declaration order (never `insorted` over an unsorted declaration); the joiner name (the broken
 ##       chain, U+200D inside) is one name — the argument-edge class carves the joiner and the variation selectors out; the memo on the file's stat
-##       is the one read per run the creator asked for, a changed file seen at the next run (a `stat` per Component, never a read).
+##       is the one read per run the creator asked for, a changed file seen at the next need (a `stat` per Component, never a read — a file changed by hand or by another run mid-run is read again at the next Component).
 ## PURPOSE: a basic, true Labels Alterant whose vocabulary lives in a data file a user extends and prunes for good, per file or per profile.
 
 "the environment variable naming another user-level vocabulary file (the test suite's temporary file; a project's own); unset or empty: `~/.gometa/labels-vocabulary.txt`"
@@ -124,31 +125,42 @@ function _atomic_write(path::AbstractString, text::AbstractString)
     return nothing
 end
 
-"the shipped file's text — a missing shipped file refuses the run (a fault of the installation, not of the file processed)"
-function _shipped_vocabulary_text()
+"the shipped file's path, its presence checked at every need — a missing shipped file refuses the run whether or not the user file exists (a fault of the installation, not of the file processed)"
+function _shipped_vocabulary_file()
     sp = shipped_vocabulary_path()
     isfile(sp) || error("GoMeta labels: the Labels Alterant's shipped vocabulary file is missing — expected at ", sp, "; see docs/public-api.md §2")
-    return read(sp, String)
+    return sp
 end
+"the user path whose creation failed at an earlier need of this process (a home that cannot be written; an override naming a directory): the shipped file stays the base for it and the creation is not tried again — no read of the shipped text and no write per Component in the fallback; another path or a new process tries again"
+const _VOCAB_UNCREATABLE = Ref{String}("")
 
 """
     base_vocabulary() -> Vector{Symbol}
 
 THE BASE VOCABULARY OF A RUN — ONE function: the USER FILE's names (`user_vocabulary_path()`), the file created from the shipped one the first
 time it is needed, read once and remembered by its stat — a file changed since (by a vocabulary statement of this or another run, or by hand)
-is read again at the next call; a user file that cannot be created (a home that cannot be written) leaves the run reading the shipped file. The
-returned vector is shared and never mutated (the persistence writes the file; the memo follows). A `stat` per call, never a read.
+is read again at the next call; a user file that cannot be created (a home that cannot be written) leaves the run reading the shipped file, the
+failed creation remembered for the path in this process (no read of the shipped text and no write tried again at a later need). The shipped
+file's presence is checked at every need — a missing shipped file refuses the run whether or not the user file exists. The
+returned vector is shared and never mutated (the persistence writes the file; the memo follows). Only `stat`s per call (the shipped file's
+presence, the user file's existence and its identity), never a read.
 """
 function base_vocabulary()
     lock(_VOCAB_LOCK) do
+        sp = _shipped_vocabulary_file()
         p = user_vocabulary_path()
         if !isfile(p)
-            text = _shipped_vocabulary_text()
-            try
-                _atomic_write(p, text)
-            catch e
-                e isa InterruptException && rethrow()
-                p = shipped_vocabulary_path()      # the user file cannot be created: the shipped file read directly
+            if _VOCAB_UNCREATABLE[] == p
+                p = sp      # the creation failed at an earlier need of this process: the shipped file read, nothing tried again (a `stat` alone below)
+            else
+                text = read(sp, String)
+                try
+                    _atomic_write(p, text)
+                catch e
+                    e isa InterruptException && rethrow()
+                    _VOCAB_UNCREATABLE[] = p
+                    p = sp      # the user file cannot be created: the shipped file read directly
+                end
             end
         end
         s = stat(p)
@@ -168,7 +180,7 @@ end
 THE PERSISTENCE of a vocabulary statement: the USER FILE edited where the statement changes ITS set — an added name not yet in the file is
 appended as a line; a removed name's lines are removed; comments and blank lines kept; the write atomic. Returns the rows for the Engine's
 door: one `:info` `LABELS_VOCABULARY_FILE_CHANGED` per change (the file, the change `:added` / `:removed` and the label as data); where the
-file cannot be written, one `:warning` `LABELS_VOCABULARY_FILE_NOT_WRITTEN` per change naming the fault, the change holding for the run alone.
+file cannot be written — an override resolving to the shipped file among such files, which no run writes —, one `:warning` `LABELS_VOCABULARY_FILE_NOT_WRITTEN` per change naming the fault, the change holding for the run alone.
 """
 _persist_vocabulary!(adding::Bool, names::Vector{Symbol}) = lock(() -> _persist_vocabulary_locked!(adding, names), _VOCAB_LOCK)   # the read-modify-write under the one lock (reentrant: `base_vocabulary()` takes it again inside)
 
@@ -181,6 +193,8 @@ function _persist_vocabulary_locked!(adding::Bool, names::Vector{Symbol})
     sign = adding ? "++" : "--"
     try
         isfile(p) || error("the user file does not exist and could not be created")
+        sp = shipped_vocabulary_path()
+        (isfile(sp) && Base.Filesystem.samefile(p, sp)) && error("the path names the shipped vocabulary file, which no run writes")   # an override resolving to the shipped file: the revert source stays untouched, the change holds for the run alone (NOT_WRITTEN)
         text = read(p, String)
         if adding
             (isempty(text) || endswith(text, "\n")) || (text *= "\n")

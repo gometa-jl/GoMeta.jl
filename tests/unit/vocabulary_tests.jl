@@ -127,6 +127,7 @@ Base.numerator(::Rational{_VocR6.MyIntB}) = (_VocR6.RCALLS[] += 1;
     end
 
     @testset "[2] membership over the Alterant's vocabulary: a shipped name applies, an unknown name is REPORTED in the SET role (since 0.4.3; refused before)" begin
+        TestSupport.fresh_vocabulary!()   # the one-row count read on a fresh copy of the shipped file (PC07), whatever an earlier witness persisted
         r = _drive("x = 1\n#~ :label1\n\ny = 2\n")
         @test r isa GM.GoMetaDelivery && r.status === GM.PROCESS_OK && isempty(r.diagnostics) && count(t -> t[2] === :label_label1, GM.readAltValuesEvals(r.altValues_evals)) == 1   # the shipped name applies: one row, the metaBlock alone (the blank line keeps `y = 2` unattached), no diagnostic
         # MEASURED: PROCESS_OK, 0 evals rows, ONE warning row LABEL_NOT_APPLIED_UNKNOWN (the metaBlock alone — the blank line keeps `y = 2` unattached)

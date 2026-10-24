@@ -834,7 +834,7 @@ the applying Component's key, the stating statement's handle and the Alterant's 
 the statement's text (`stated_by`, `level`, `statement` — absorb_meta.jl builds it). A named-tuple context is merged (the place's keys
 winning where a name collides), a `nothing` context replaced by the place alone, any other context kept under `alterant_context`; the
 severity is copied, never decided (the status rule reads `:error` alone). The one test at every call site is `isa Vector{Diagnostic}` —
-a vector typed `Any` or of a subtype is ignored like any other value. For EVERY Alterant: the hook and the setter are registration fields
+a vector typed `Any` or of a subtype is no vector of diagnostics and goes the way of any other value — ignored at the apply, consumed as the Alterant's run state at the read. For EVERY Alterant: the hook and the setter are registration fields
 any Alterant may declare, and none must use the door (the creator's law on the Engine's facilities).
 """
 @noinline function _deliver_diagnostics!(st::ProcessState, ds::Vector{Diagnostic}, place::NamedTuple)

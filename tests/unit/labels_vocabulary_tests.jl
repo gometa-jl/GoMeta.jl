@@ -1,7 +1,7 @@
 # labels_vocabulary_tests.jl — 0.4.2: THE VOCABULARY STATEMENTS `:++x` / `:(++, x, y)` / `:--x` / `:(--, x)` — since 0.4.3 PERSISTENT —
 # the creator's design (the vocabulary first; the places `#~0` and the user level's profile; the mechanism at the read; the reach
 # from the own metaBlock onward; the malformed shapes refused; no row, nothing delivered for a declaration but the `:info` row of a persisted
-# change; the noun re-cut); the code: src/alterants-std/labels.jl `declareLabels!` (the hook), src/state.jl (`onRead`, `alt_run`, the one door),
+# change — or, where the file cannot be written, the `:warning` row `LABELS_VOCABULARY_FILE_NOT_WRITTEN` (labels_vocabulary_file_tests.jl [F11]); the noun re-cut); the code: src/alterants-std/labels.jl `declareLabels!` (the hook), src/state.jl (`onRead`, `alt_run`, the one door),
 # src/absorb/absorb_meta.jl (the hook before the slot bound; its return in one grammar), src/alterants/apply.jl (`_freshInstance`).
 #
 # IS:   sixteen witnesses [V-W1]–[V-W16] over the public entry, EVERY expected value READ from the measured printouts of the built
@@ -176,7 +176,7 @@ const _LV_V01 = "#~0 :++label6\n#~ :label6\nx = 1\n"
     end
 
     @testset "[V-W9] one line: the use BEFORE the declaration applies (V19 — the order inside a metaBlock immaterial); the one-line bracket `:++label6 :label6 :--label6` is reported (V36)" begin
-        r = _lv_run("#~0 :label6 :++label6\nx = 1\n"); @test r.status === GM.PROCESS_OK; _lv_two_blocks(r, [:label6]); @test length(r.diagnostics) == 1
+        r = _lv_run("#~0 :label6 :++label6\nx = 1\n"); @test r.status === GM.PROCESS_OK; _lv_two_blocks(r, [:label6]); @test length(r.diagnostics) == 1; _lv_info(r.diagnostics[1], :added, :label6, _lv_keys(r)[1], 1, ":++label6")   # the AFTER view V19's run section: ONE LABELS_VOCABULARY_FILE_CHANGED info row — label6 added, stated by L1 (Block #2), level 1, the statement `:++label6`
         # AFTER trace V36 `#~0 :++label6 :label6 :--label6⏎x = 1`: 0 rows; 4 diagnostics — added, removed (two info rows), the plain `:label6` reported at Block #2 / #3
         r36 = _lv_run("#~0 :++label6 :label6 :--label6\nx = 1\n"); @test r36.status === GM.PROCESS_OK && isempty(_lv_recs(r36)); k = _lv_keys(r36); d = r36.diagnostics; @test length(d) == 4
         _lv_info(d[1], :added, :label6, k[1], 1, ":++label6"); _lv_info(d[2], :removed, :label6, k[1], 1, ":--label6"); _lv_unknown(d[3], _LV_MSG_LABEL6, :label6, k[1], k[1], [k[1]]); _lv_unknown(d[4], _LV_MSG_LABEL6, :label6, k[2], k[1], [k[1]])

@@ -358,7 +358,8 @@ function goMeta(
 
     ## The tree print is the development tool's (`structural_serialization` in
     ## `devtools/basic_renderer.jl`, a pure function of `parse_state` after the run) — the pipeline
-    ## writes no file anywhere; `parseBLS` above is called purely for its parse side-effect.
+    ## itself writes no file anywhere — the one file a run writes is the shipped Labels Alterant's own, the user level's vocabulary file, created
+    ## at the first need and edited by a vocabulary statement (src/alterants-std/labels.jl; docs/public-api.md §2); `parseBLS` above is called purely for its parse side-effect.
 
     ## The absorb/apply driver — ONE function again since 0.4.0 (the creator's words on the callable driver seam of
     ## v0.3.2: a seam serving the

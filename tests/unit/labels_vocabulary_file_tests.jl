@@ -1,10 +1,10 @@
 # labels_vocabulary_file_tests.jl — THE VOCABULARY FILES OF THE LABELS ALTERANT (0.4.3) — the creator's design: the vocabulary in a data file
 # outside the Engine; a user's additions and removals PERSISTENT in a file of the user's own, the shipped file never written and the revert
-# source; every persisted change reported. The code: src/alterants-std/labels.jl (`shipped_vocabulary_path`, `user_vocabulary_path`,
+# source; every change of a run that completes reported by one `:info` row — a change written before a refusal later in the same run stands in the file, reported by no row (PC01, [F14]). The code: src/alterants-std/labels.jl (`shipped_vocabulary_path`, `user_vocabulary_path`,
 # `parse_vocabulary`, `base_vocabulary` with its memo, `_persist_vocabulary!`, the hook `declareLabels!`), src/arguments.jl (the edge class the
 # lines are trimmed with), the data file data/alterants-std/labels-vocabulary.txt.
 #
-# IS:   twelve witnesses [F1]–[F12] over the files and the public entry, EVERY expected value READ from the measured printouts of the built
+# IS:   fifteen witnesses [F1]–[F15] over the files and the public entry, EVERY expected value READ from the measured printouts of the built
 #       tree (the F set F00 … F18: the run log and the traces with the files printed whole; the view of each run). Every witness names its OWN
 #       temporary user file (`TestSupport.fresh_vocabulary!()`) — the real one (`~/.gometa/labels-vocabulary.txt`) is never touched; the path
 #       with the variable unset is computed, never created. THE PATHS ([F1]); THE FIRST NEED creates the user file from the shipped one, 46
@@ -13,7 +13,9 @@
 #       ([F5]); a SHIPPED name removed for good, the shipped file untouched ([F6]); THE NO-OPS ([F7]); THE PROFILE's statement persists ([F8]);
 #       two names in one list, an add then a remove on one line ([F9]); THE FORM of a file — comments, blank lines, the edge trim, a duplicate,
 #       CRLF; an inner invisible character refused with the line named ([F10]); a user file that cannot be created — the shipped file read, a
-#       `++` reported NOT_WRITTEN ([F11]); the memo after a run's write ([F12]).
+#       `++` reported NOT_WRITTEN ([F11]); the memo after a run's write ([F12]); the override naming an existing directory — NOT_WRITTEN, no temporary
+#       file beside it ([F13]); a change written before a refusal later in the same run — in the file, no row, the retry silent ([F14]); the
+#       reverse-order document twice on one file ([F15]).
 # REASONING: the one function `base_vocabulary()` reads the user file once and remembers it by its stat (a `stat` per call, never a read); the
 #       hook edits the file atomically and returns the run state with the rows the Engine's door delivers at the read, for every Alterant alike.
 # PURPOSE: the vocabulary files, measured — never inferred from the docstrings or from prose.
@@ -82,7 +84,7 @@ end
         _vf_fresh()
         r = _vf_run("#~0 :++zzz\n#~ :zzz\nx = 1\n"); @test r.status === GM.PROCESS_OK && length(_vf_rows(r)) == 2 && all(t -> t[2] === :label_zzz, _vf_rows(r)); k = _vf_keys(r)
         @test length(r.diagnostics) == 1; _vf_info(r.diagnostics[1], :added, :zzz, k[1], 1, ":++zzz")
-        text = read(_vf_user(), String); @test endswith(text, "private\nzzz\n") && count(l -> startswith(l, "#"), split(text, '\n')) == count(l -> startswith(l, "#"), split(String(copy(_VF_SHIPPED_BYTES)), '\n'))   # `String(v)` empties `v` — a copy
+        text = read(_vf_user(), String); @test endswith(text, "private\nzzz\n") && filter(l -> startswith(l, "#"), split(text, '\n')) == filter(l -> startswith(l, "#"), split(String(copy(_VF_SHIPPED_BYTES)), '\n'))   # `String(v)` empties `v` — a copy
         @test _vf_names(_vf_user()) == vcat(_vf_names(_VF_SHIPPED), [:zzz])
         r2 = _vf_run("#~ :zzz\nx = 1\n"); @test r2.status === GM.PROCESS_OK && length(_vf_rows(r2)) == 2 && isempty(r2.diagnostics)   # F05
     end
@@ -163,5 +165,31 @@ end
         _vf_fresh()
         b1 = _VF.base_vocabulary(); _vf_run("#~0 :++zzz\nx = 1\n"); b2 = _VF.base_vocabulary()
         @test !(b2 === b1) && :zzz ∈ b2 && length(b1) == 46 && length(b2) == 47 && _VF._VOCAB_MEMO[].names === b2
+    end
+
+    @testset "[F13] the override naming an existing directory (PC05): the shipped file read — `:label1` applies with no diagnostic; a `++` reported by ONE `:warning` row NOT_WRITTEN naming the cause, no temporary file left beside the directory; `:label1` again as before" begin
+        d = mktempdir(); vd = joinpath(d, "vocab-dir"); mkdir(vd); ENV["GOMETA_LABELS_VOCABULARY"] = vd
+        try
+            r = _vf_run("#~ :label1\nx = 1\n"); @test r.status === GM.PROCESS_OK && length(_vf_rows(r)) == 2 && all(t -> t[2] === :label_label1, _vf_rows(r)) && isempty(r.diagnostics) && readdir(d) == ["vocab-dir"]
+            r = _vf_run("#~0 :++zzz\nx = 1\n"); @test r.status === GM.PROCESS_OK && length(r.diagnostics) == 1 && r.diagnostics[1].code === :LABELS_VOCABULARY_FILE_NOT_WRITTEN && r.diagnostics[1].severity === :warning
+            @test r.diagnostics[1].message == "GoMeta absorb: `:++zzz` could not be written to the vocabulary file " * vd * " (the user file does not exist and could not be created) — the change holds for this run alone; see docs/public-api.md §2" && readdir(d) == ["vocab-dir"]
+            r = _vf_run("#~ :label1\nx = 1\n"); @test r.status === GM.PROCESS_OK && length(_vf_rows(r)) == 2 && isempty(r.diagnostics) && readdir(d) == ["vocab-dir"]
+        finally
+            _vf_fresh()
+        end
+    end
+
+    @testset "[F14] a change written before a refusal later in the same run (PC01): `#~0 :++zzz :++-yyy` REFUSED by the sign rule, the file ending with the line `zzz`, nothing delivered; `#~0 :++zzz` on that file then reports nothing; `#~ :zzz` on it applies" begin
+        p = _vf_fresh()
+        m = try; _vf_run("#~0 :++zzz :++-yyy\nx = 1\n"); nothing; catch e; sprint(showerror, e); end
+        @test m == raw"""GoMeta absorb: a label name in a vocabulary statement may not begin with `+` or `-` — got "-yyy" in `:++-yyy`; see docs/public-api.md §3.4""" && endswith(read(p, String), "private\nzzz\n")
+        r = _vf_run("#~0 :++zzz\nx = 1\n"); @test r.status === GM.PROCESS_OK && isempty(r.diagnostics)
+        r = _vf_run("#~ :zzz\nx = 1\n"); @test r.status === GM.PROCESS_OK && length(_vf_rows(r)) == 2 && all(t -> t[2] === :label_zzz, _vf_rows(r)) && isempty(r.diagnostics)
+    end
+
+    @testset "[F15] the reverse-order document twice on one file (PC02): run 1 — two warning rows then one `:info` row, no label row; run 2 — two label rows, no diagnostic" begin
+        _vf_fresh(); doc = "#~ :zzz\nx = 1\n\n#~0 :++zzz\ny = 2\n"
+        r1 = _vf_run(doc); @test r1.status === GM.PROCESS_OK && isempty(_vf_rows(r1)) && [d.code for d in r1.diagnostics] == [:LABEL_NOT_APPLIED_UNKNOWN, :LABEL_NOT_APPLIED_UNKNOWN, :LABELS_VOCABULARY_FILE_CHANGED]
+        r2 = _vf_run(doc); @test r2.status === GM.PROCESS_OK && length(_vf_rows(r2)) == 2 && all(t -> t[2] === :label_zzz, _vf_rows(r2)) && isempty(r2.diagnostics)
     end
 end

@@ -91,7 +91,7 @@ actions, and an optional human comment. Its general shape:
 - At `#~0` (a metaBlock opened by `#~0`) and in the user's profile the middle may also carry the Labels Alterant's **vocabulary
   statements** — `:++x` / `:(++, x, y)` add names to the vocabulary, `:--x` / `:(--, x)` remove names — recorded once when
   read, applied to no Component (since `0.4.2`), and since `0.4.3` PERSISTED in the user level's vocabulary file, every change of a run that completes reported by an `:info`
-  diagnostic (`docs/public-api.md` §2, §3.4).
+  diagnostic — a file that cannot be written: the change holds for the run alone, reported by a `:warning` diagnostic (`docs/public-api.md` §2, §3.4).
 - Anything after a `## ` on the same line is a **human comment** — the meta-parser ignores it.
   Cite: `Extended L7` `#~ discard{ :label2 , isCode} ## This is a comment within a meta Block.` → the
   `## …` part has no effect.

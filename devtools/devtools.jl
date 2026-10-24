@@ -1409,7 +1409,7 @@ function print_diagnostics(io::IO, r; name::AbstractString = "")
             end
             ## every other key of the context — a read-time row's `level` and `statement`, the Labels Alterant's `file` and `change`, a custom
             ## Alterant's own keys — printed as data, each distinct value of the group once (the tools know no Alterant's keys)
-            for k in keys(ctx)
+            for k in unique(kk for x in rows for kk in (x.context isa NamedTuple ? keys(x.context) : ()))   # the keys of every row of the group, not the first row's alone
                 k in (:label, :cell, :stated_by, :statements, :alterant_context) && continue
                 for v in unique(getfield(x.context, k) for x in rows if x.context isa NamedTuple && haskey(x.context, k))
                     println(io, "   ", k, ": ", repr(v))

@@ -82,7 +82,7 @@ function index_examples()
         # warning count reported so nothing passes silently
         n_warn = count(d -> d.severity === :warning, result.diagnostics)
         if n_warn > 0
-            println(stderr, "$f — $n_warn warning diagnostic(s): a label a withhold kept from applying or a label not in the vocabulary (docs/public-api.md §3.4)")
+            println(stderr, "$f — $n_warn warning diagnostic(s) (", join(unique(String(d.code) for d in result.diagnostics if d.severity === :warning), ", "), "): a label a withhold kept from applying, a label not in the vocabulary, or a vocabulary file that could not be written (docs/public-api.md §2, §3.4)")
             n_warned += n_warn
         end
         # the pieces that carry labels, THROUGH THE TREE: the Components

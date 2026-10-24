@@ -61,7 +61,7 @@ function _lw_withheld(d, label::Symbol, cell::Vector{UInt8}, stated_by::Vector{U
     @test d.message == raw"""GoMeta apply: the plain `:label1` did not apply label1 here — withheld; if this run means to withhold it, nothing to do; drop `:-label1` (in the user level's profile or in the file) to apply it everywhere; write `:+label1` where one statement must apply it regardless — a written `:+label1` then holds against a withhold stated above it or in the user level's profile; see docs/public-api.md §3.4"""
     @test d.context == (label = label, cell = cell, stated_by = stated_by, statements = statements)
 end
-"the three `:info` rows of 029's declaration `:(++, x, y, z)` (since 0.4.3 a vocabulary statement persists into the run's user file): x, y, z added — stated by the `#~0` metaBlock, level 1, the statement's text, the run's file"
+"the three `:info` rows of the declaration `:(++, x, y, z)` of the creator's sequence (W03 / W03b; 029 declares three shipped names since its re-cut and reports nothing) (since 0.4.3 a vocabulary statement persists into the run's user file): x, y, z added — stated by the `#~0` metaBlock, level 1, the statement's text, the run's file"
 function _lw_three_added(r)
     d = _lw_diags(r); k = _lw_keys(r)
     @test length(d) == 3 && all(x -> x.code === :LABELS_VOCABULARY_FILE_CHANGED && x.severity === :info, d)

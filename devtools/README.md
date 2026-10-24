@@ -27,7 +27,7 @@ GM=/path/to/GoMeta          # this repository's root
 julia --startup-file=no --project=$GM/tests $GM/devtools/devtools.jl <verb> <file> [profile]
 ```
 `--project` selects WHICH GoMeta runs (`$GM/tests` = this repository's test environment, which holds the package).
-Status and diagnostics go to stderr, the printout to stdout; `[profile]`, optional, is the user level's profile text (fed as
+Status and diagnostics go to stderr (the end-of-run print), the printout to stdout — the tree views (`evals-tree`) end with the run section, so their stdout carries the status line and the folded diagnostics as well; `[profile]`, optional, is the user level's profile text (fed as
 `GoMetaConfig(user_mh_profile = …)`; since `0.4.3`). Verbs:
 
 | verb | prints |

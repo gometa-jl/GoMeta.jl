@@ -76,8 +76,8 @@ const _UN_WITHHOLD_LABEL1 = raw"""GoMeta apply: the withhold `:-label1` had no e
         _un_warn(d[3], _UN_PLAIN_ZZZ, :zzz, k[2], k[1], [k[1]]); _un_warn(d[4], _UN_PLAIN_ZZZ, :zzz, k[2], k[1], [k[1], k[1]])
         # AFTER trace U27: 0 rows; 4 diagnostics — zzz then yyy at Block #2, zzz then yyy at Block #3 (the token order)
         r = _un_run("#~ :(zzz, yyy)\nx = 1\n"); @test r.status === GM.PROCESS_OK && isempty(_un_recs(r)); k = _un_keys(r); d = r.diagnostics; @test length(d) == 4
-        @test [(x.context.label, x.context.cell) for x in d] == [(:zzz, k[1]), (:yyy, k[1]), (:zzz, k[2]), (:yyy, k[2])] && all(x -> x.code === :LABEL_NOT_APPLIED_UNKNOWN && x.context.stated_by == k[1] && x.context.statements == [k[1]], d)
-        @test occursin("the plain `:yyy` had no effect here", d[2].message)
+        @test [(x.context.label, x.context.cell) for x in d] == [(:zzz, k[1]), (:yyy, k[1]), (:zzz, k[2]), (:yyy, k[2])] && all(x -> x.code === :LABEL_NOT_APPLIED_UNKNOWN && x.severity === :warning && x.context.stated_by == k[1] && x.context.statements == [k[1]], d)
+        @test d[1].message == _UN_PLAIN_ZZZ && d[3].message == _UN_PLAIN_ZZZ && d[2].message == d[4].message == raw"""GoMeta apply: the plain `:yyy` had no effect here — not in the Labels Alterant's vocabulary; declare it with `:++yyy` at `#~0` or in the user level's profile, or correct the spelling; see docs/public-api.md §3.4"""   # the AFTER trace U27: the four rows `warning`, the four messages byte for byte
     end
 
     @testset "[N4] deeper (U03): the depth-2 `:zzz` under a depth-1 `:label1` — label1 on all four Blocks, the warnings at the depth-2 pair with both statements recorded; at the file level (U33 `#~0 :zzz`): two warnings" begin
