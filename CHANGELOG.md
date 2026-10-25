@@ -6,7 +6,7 @@ sees, in the breaking-change register of the API reference, [`docs/public-api.md
 **No backward compatibility and no deprecation until at least v0.7**: every change of the public surface is
 a clean cut. A date is the day of the version's tag (since 0.3.0) or, before 0.3.0, of the day the version reached `main` (those versions carry no tag).
 
-## 0.4.3 — unreleased
+## 0.4.3 — 2026-10-25
 
 - **The Labels Alterant's withhold and explicit apply.** `:-x` / `:(-, x, y)` WITHHOLDS a label from the current set of labels applied
   to the current Component and to everything under its metaBlock until a later metaBlock of the same or a shallower depth replaces the
@@ -30,7 +30,7 @@ a clean cut. A date is the day of the version's tag (since 0.3.0) or, before 0.3
   and the everyday names `warning`, `note`, `info`, `definition`, `todo`, `public`, `private`; the bare pictographs left the list. A run reads
   the user level's copy `~/.gometa/labels-vocabulary.txt` (created from the shipped file at the first need; another path through
   `GOMETA_LABELS_VOCABULARY`), and the vocabulary statements EDIT that copy when they are read — every change of a run that completes reported by an `:info` diagnostic
-  (`LABELS_VOCABULARY_FILE_CHANGED`; a file that cannot be written: ONE `:warning` per change, `LABELS_VOCABULARY_FILE_NOT_WRITTEN`, the change holding for the run); the shipped file is never written and is the revert source. A declared name carrying white space or an invisible separator inside, or beginning with `#`, is refused (the inner character accepted at 0.4.2); a vocabulary file whose line carries an inner one refuses the run. The literal
+  (`LABELS_VOCABULARY_FILE_CHANGED`; a file that cannot be written: ONE `:warning` per change, `LABELS_VOCABULARY_FILE_NOT_WRITTEN`, the change holding for the run); the shipped file is never written and is the revert source; a missing shipped file refuses the run, whether or not the user file exists. A declared name carrying white space or an invisible separator inside, or beginning with `#`, is refused (the inner character accepted at 0.4.2); a vocabulary file whose line carries an inner one refuses the run. The literal
   `GoMeta.Alterants.LABELS_VOCABULARY` is gone (`base_vocabulary()` reads the file). The register's row: "The Labels Alterant's VOCABULARY FILES".
 - **Two facilities of the Engine, for every Alterant.** The reader trims every bare argument's two edges of the ordinary white space and
   six invisible separators (U+2028, U+2029, U+180E, U+200B, U+2060, U+FEFF) before the Alterant sees it — the class the new package-public
