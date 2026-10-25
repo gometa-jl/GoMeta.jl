@@ -6,7 +6,7 @@ sees, in the breaking-change register of the API reference, [`docs/public-api.md
 **No backward compatibility and no deprecation until at least v0.7**: every change of the public surface is
 a clean cut. A date is the day of the version's tag (since 0.3.0) or, before 0.3.0, of the day the version reached `main` (those versions carry no tag).
 
-## Unreleased — after 0.4.3
+## 0.4.4 — unreleased
 
 - **The development tools' colours.** The print tools take `scheme` — `:terminal` (the default, the 256-colour palette),
   `:gometa_dark`, `:light`, `:cvd_dark`, `:cvd_light` and `:projector` (the colours of the JuliaCon 2026 deck's slides, as 24-bit
