@@ -149,8 +149,8 @@ _dt_htmlesc(s) = replace(s, '&' => "&amp;", '<' => "&lt;", '>' => "&gt;")
 ## THE COLOUR SCHEMES (2026-10-24). IS: a ground and the nine roles of a printout — gutter (the chrome: the guides, spans, labels and
 ##   notes), marker (the Meta flavor word), payload (the attribute names), text / code (the Text / Code flavor words), tree (the
 ##   grain names), neutral (the values and every unpainted run); comment and hideprefix carried whole, unused by these views.
-## DOES: the five are the colours of the JuliaCon 2026 deck's slides — gometa_dark its dark slides, light its light slides (the
-##   website's light palette), cvd_dark / cvd_light the colour-blind-safe pair on the same two grounds, projector every role at 7:1
+## DOES: the five are the colours of the JuliaCon 2026 deck's slides — gometa_dark its dark slides, light its light slides,
+##   cvd_dark / cvd_light the colour-blind-safe pair on the same two grounds, projector every role at 7:1
 ##   or more on the dark ground. :terminal (the default) is the computed palette above, by paint value.
 ## REASONING: a scheme is data — a tuple, never a Dict, so every stylesheet and probe iterates one fixed order; the table is the
 ##   deck's authority copied, lowercase, and a probe pins it. PURPOSE: a coloured print and the .html page in the colours of the
@@ -498,9 +498,11 @@ DOES: prints the tree of `result.blsComponentTree`, read through the door alone 
     - `scheme::Symbol = :terminal` — the colours of a coloured print (in the file twins also of the `.html` page): `:terminal`, the fixed 256-colour
       palette for a dark ground; `:gometa_dark`, `:light`, `:cvd_dark`, `:cvd_light`, `:projector`, the JuliaCon 2026 deck's
       schemes by role (the Meta word, the attribute names, the grain names, the chrome …), printed as 24-bit colour on the
-      terminal's own ground — choose the scheme of the ground; a plain print is the same bytes under every scheme; any other
-      value ERRORS. Italic marks the tools' own notes — the absence notes, the elisions, the filter lines, the empty-view
-      notes (not the no-rows note of the evaluated-values views, nor the frozen `:legacy` style); bold stays as it was.
+      terminal's own ground — choose the scheme of the ground (under a deck scheme the Visib values, the warnings and errors
+      and the `:legacy` / `:banner` dumps print in the terminal's own ink); a plain print is the same bytes under every scheme;
+      any other value ERRORS. Italic marks the tools' own notes — the absence notes, the elisions, the filter lines (not the
+      never-minted one, a warning), the empty-view notes (not the no-rows note of `print_altValues_evals`, nor the frozen
+      `:legacy` style); bold stays as it was.
     - `style::Symbol = :mix` — selects the renderer (the four of `_DT_T1_STYLES`):
       `:mix`    (the default): guide-line tree; under EACH component two dump lines labeled by the REAL
                 element types (`Int64` named-int pairs, `Bool` TRUE-flag names; values in default fg); a blank
@@ -1520,7 +1522,7 @@ end
 const _DT_VERBS = ("tree", "segments", "evals", "render", "trace", "evals-tree", "bls-tree", "comparison")
 
 function _dt_cli_usage()
-    println(stderr, "usage: devtools.jl <", join(_DT_VERBS, "|"), "> <file> [profile]   — [profile]: the user level's profile text, optional (since 0.4.3)")
+    println(stderr, "usage: devtools.jl [--scheme=NAME] <", join(_DT_VERBS, "|"), "> <file> [profile]   — [--scheme=NAME]: the colours of evals-tree and bls-tree, optional; [profile]: the user level's profile text, optional (since 0.4.3)")
     exit(2)
 end
 
@@ -1619,7 +1621,7 @@ if abspath(PROGRAM_FILE) == @__FILE__
     fl = _dt_cli_flags(ARGS)
     fl === nothing && (println(stderr, "flag: --scheme=", join(_DT_SCHEME_NAMES, '|')); _dt_cli_usage())
     fl[2] !== :terminal && length(fl[1]) in (2, 3) && fl[1][1] in ("evals-tree", "bls-tree") && !get(stdout, :color, false) &&
-        println(stderr, "devtools: colour is off for this output — run julia --color=yes for colour in a pipe or a file")
+        println(stderr, "devtools: colour is off for this output — julia --color=yes turns it on")
     _DT_CLI_SCHEME[] = fl[2]
     _dt_cli_main(fl[1])
 end

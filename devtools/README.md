@@ -24,7 +24,7 @@ say.
 
 ```
 GM=/path/to/GoMeta          # this repository's root
-julia --startup-file=no --project=$GM/tests $GM/devtools/devtools.jl <verb> <file> [profile]
+julia --startup-file=no --project=$GM/tests $GM/devtools/devtools.jl [--scheme=NAME] <verb> <file> [profile]
 ```
 `--project` selects WHICH GoMeta runs (`$GM/tests` = this repository's test environment, which holds the package).
 Status and diagnostics go to stderr (the end-of-run print), the printout to stdout — the tree views (`evals-tree`) end with the run section, so their stdout carries the status line and the folded diagnostics as well; `[profile]`, optional, is the user level's profile text (fed as
@@ -42,14 +42,15 @@ Status and diagnostics go to stderr (the end-of-run print), the printout to stdo
 | `comparison` | **`comparisonForm`** — the comparison form: one line per Component and one per Component per Alterant, sorted; the definition `tests/comparison/README.md` |
 
 **Colour.** The two tree views print in colour, with bold and italic as further marks: bold marks the header, the Blocks of the
-Component tree, every Component of the evaluated-values tree that carries rows, the attribute names, the values and the warnings;
-italic marks the tools' own notes — `(no evals — defaults apply)`, a run of elided Components, the filter lines, the empty-view
-notes (not the no-rows note of the evaluated-values views, nor the frozen `:legacy` style). Colour follows Julia's own setting: a terminal is coloured, a pipe or a file is not unless Julia runs with `--color=yes` (or
+Component tree (`bls-tree`), every Component of the delivery views (`evals-tree`) that carries rows, the attribute names, the values
+and the warnings; italic marks the tools' own notes — `(no evals — defaults apply)`, a run of elided Components, the filter lines
+(not the never-minted one, a warning), the empty-view notes (not the no-rows note of `print_altValues_evals`, nor the frozen
+`:legacy` style). Colour follows Julia's own setting: a terminal is coloured, a pipe or a file is not unless Julia runs with `--color=yes` (or
 `FORCE_COLOR` is set) — `julia --color=yes --startup-file=no --project=$GM/tests $GM/devtools/devtools.jl evals-tree <file> | less -R`
 — and `--color=no` (or `NO_COLOR`) prints plain. One flag, at any place on the line, picks the colours: `--scheme=NAME` —
 `terminal` (the default, a fixed 256-colour palette for a dark ground), `gometa_dark` and `light` (the colours of the dark and of the
-light slides of the JuliaCon 2026 deck; `light` for a light terminal), `cvd_dark` and `cvd_light` (the same two grounds, safe for
-colour-blind readers) and `projector` (every colour at 7:1 or more on a dark ground). The deck's schemes print 24-bit colour on the
+light slides of the JuliaCon 2026 deck; `light` for a light terminal), `cvd_dark` and `cvd_light` (the same two grounds, the deck's
+colour-blind-safe pair) and `projector` (every colour at 7:1 or more on a dark ground). The deck's schemes print 24-bit colour on the
 terminal's own ground — choose the one of your ground. The other verbs print plain; a plain printout is the same bytes under every
 scheme.
 
@@ -79,7 +80,7 @@ page too). The full
 docstrings are in `devtools.jl`.
 
 **The `.html` twin** writes the printout inside `<pre class="gm-dt">` under a stylesheet of the chosen scheme; every styled run is a
-`<span>` whose classes name its role — `gm-dt-gutter` (the guides, spans, labels and notes), `gm-dt-tree` (the grain names),
+`<span>` whose classes name its role — `gm-dt-gutter` (the guides, the input-line spans, labels and notes), `gm-dt-tree` (the grain names),
 `gm-dt-payload` (the attribute names), `gm-dt-marker`, `gm-dt-code`, `gm-dt-text` (the flavor words Meta, Code, Text), `gm-dt-neutral`
 (the values) — then, where a role is shared, the finer identity — `gm-dt-block`, `gm-dt-line`, `gm-dt-segment`; `gm-dt-good`,
 `gm-dt-warn`, `gm-dt-bad` (a Visib value show, hide, discard; the warnings and errors); `gm-dt-legacy` — and `gm-dt-bold`,
